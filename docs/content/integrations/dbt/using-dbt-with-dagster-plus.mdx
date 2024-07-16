@@ -72,7 +72,7 @@ Once Dagster+ finishes importing the project, move onto the next step.
 The file structure of the repository will change the first time a project is deployed using Dagster+. For dbt projects, a few things will happen:
 
 - **A [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) will be created.** This file defines the project as a Dagster+ code location.
-- **CI/CD will be automatically set up**, using the contents of `.github/workflows`.\*\* [The files in this directory](/dagster-plus/references/ci-cd-file-reference) manage the deployments of the repository.
+- **CI/CD will be automatically set up**, using the contents of `.github/workflows`. [The files in this directory](/dagster-plus/references/ci-cd-file-reference) manage the deployments of the repository.
 - **For dbt-only projects being deployed for the first time**, Dagster+ will create a new Dagster project in the repository using the [`dagster-dbt scaffold`](/integrations/dbt/reference#scaffolding-a-dagster-project-from-a-dbt-project) command. This will result in a Dagster project that matches the dbt project. For example, a dbt project named `my_dbt_project` will contain a Dagster project in `my_dbt_project/my_dbt_project` after the process completes. Refer to the [Dagster project files reference](/guides/understanding-dagster-project-files) to learn more about the files in a Dagster project.
 
 **Use the following tabs** to see how the repository will change for a [dbt-only project](#dbt-only-projects) and a [dbt and Dagster project](#dbt-and-dagster-projects) being deployed for the first time.
