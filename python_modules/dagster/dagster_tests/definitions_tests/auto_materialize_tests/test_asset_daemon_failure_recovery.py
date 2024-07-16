@@ -59,9 +59,7 @@ def daemon_paused_instance():
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
             },
-            "auto_materialize": {
-                "max_tick_retries": 2,
-            },
+            "auto_materialize": {"max_tick_retries": 2, "use_sensors": False},
         }
     ) as the_instance:
         yield the_instance

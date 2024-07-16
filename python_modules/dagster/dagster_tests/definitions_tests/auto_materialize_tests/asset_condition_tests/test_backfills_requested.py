@@ -24,7 +24,9 @@ from ..updated_scenarios.asset_daemon_scenario import AssetDaemonScenarioState
     return_value=True,
 )
 def test_simple_conditions_with_backfills(mock_da_request_backfills) -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         state = (
             AssetDaemonScenarioState(
                 two_assets_in_sequence.with_asset_properties(
@@ -89,7 +91,9 @@ def test_simple_conditions_with_backfills(mock_da_request_backfills) -> None:
     return_value=True,
 )
 def test_eager_conditions_with_backfills(mock_da_request_backfills) -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         state = (
             AssetDaemonScenarioState(
                 two_assets_in_sequence.with_asset_properties(
@@ -150,7 +154,9 @@ def test_eager_conditions_with_backfills(mock_da_request_backfills) -> None:
     return_value=True,
 )
 def test_disconnected_graphs_backfill(mock_da_request_backfills) -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         state = (
             AssetDaemonScenarioState(
                 two_disconnected_graphs.with_asset_properties(
@@ -209,7 +215,9 @@ def test_disconnected_graphs_backfill(mock_da_request_backfills) -> None:
     return_value=True,
 )
 def test_multiple_partitions_defs_backfill(mock_da_request_backfills) -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         state = (
             AssetDaemonScenarioState(
                 two_assets_depend_on_one.with_asset_properties(

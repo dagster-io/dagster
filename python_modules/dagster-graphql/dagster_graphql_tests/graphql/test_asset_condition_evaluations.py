@@ -382,15 +382,6 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             )
         )
 
-        results = execute_dagster_graphql(
-            graphql_context,
-            AUTO_MATERIALIZE_POLICY_SENSORS_QUERY,
-            variables={
-                "assetKey": {"path": ["fresh_diamond_bottom"]},
-            },
-        )
-        assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
-
         with patch(
             graphql_context.instance.__class__.__module__
             + "."
@@ -398,7 +389,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             + ".auto_materialize_use_sensors",
             new_callable=PropertyMock,
         ) as mock_my_property:
-            mock_my_property.return_value = True
+            mock_my_property.return_value = False
 
             results = execute_dagster_graphql(
                 graphql_context,
@@ -407,12 +398,21 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                     "assetKey": {"path": ["fresh_diamond_bottom"]},
                 },
             )
+            assert not results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"]
 
-            assert any(
-                instigator["name"] == "my_auto_materialize_sensor"
-                for instigator in results.data["assetNodeOrError"]["targetingInstigators"]
-            )
-            assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
+        results = execute_dagster_graphql(
+            graphql_context,
+            AUTO_MATERIALIZE_POLICY_SENSORS_QUERY,
+            variables={
+                "assetKey": {"path": ["fresh_diamond_bottom"]},
+            },
+        )
+
+        assert any(
+            instigator["name"] == "my_auto_materialize_sensor"
+            for instigator in results.data["assetNodeOrError"]["targetingInstigators"]
+        )
+        assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
 
     def test_get_historic_rules_without_evaluation_data(
         self, graphql_context: WorkspaceRequestContext
@@ -581,7 +581,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             },
         )
         assert results.data == {
-            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": 0},
+            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": None},
             "assetConditionEvaluationRecordsOrError": {"records": []},
         }
 

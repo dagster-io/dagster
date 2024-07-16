@@ -280,7 +280,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
 
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": 0,
+                "currentAutoMaterializeEvaluationId": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -334,7 +334,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
-            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": 0},
+            "assetNodeOrError": {"currentAutoMaterializeEvaluationId": None},
         }
 
         check.not_none(
@@ -361,7 +361,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": 0,
+                "currentAutoMaterializeEvaluationId": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -384,7 +384,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": 0,
+                "currentAutoMaterializeEvaluationId": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [
@@ -493,7 +493,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": 0,
+                "currentAutoMaterializeEvaluationId": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {"records": []},
         }
@@ -551,7 +551,7 @@ class TestAutoMaterializeAssetEvaluations(ExecutingGraphQLContextTestMatrix):
         )
         assert results.data == {
             "assetNodeOrError": {
-                "currentAutoMaterializeEvaluationId": 0,
+                "currentAutoMaterializeEvaluationId": None,
             },
             "autoMaterializeAssetEvaluationsOrError": {
                 "records": [],

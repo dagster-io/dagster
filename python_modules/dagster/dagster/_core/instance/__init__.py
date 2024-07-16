@@ -954,7 +954,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def auto_materialize_use_sensors(self) -> int:
-        return self.get_settings("auto_materialize").get("use_sensors", False)
+        return self.get_settings("auto_materialize").get("use_sensors", True)
 
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:

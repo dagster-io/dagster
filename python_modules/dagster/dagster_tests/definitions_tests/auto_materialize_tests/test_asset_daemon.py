@@ -188,7 +188,9 @@ auto_materialize_sensor_scenarios = [
     "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
 )
 def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         scenario.evaluate_daemon(instance)
 
 
@@ -202,7 +204,9 @@ daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
 )
 def test_asset_daemon_with_threadpool_without_sensor(scenario: AssetDaemonScenario) -> None:
     with get_daemon_instance(
-        extra_overrides={"auto_materialize": {"use_threads": True, "num_workers": 4}}
+        extra_overrides={
+            "auto_materialize": {"use_threads": True, "num_workers": 4, "use_sensors": False}
+        }
     ) as instance:
         with _get_threadpool_executor(instance) as threadpool_executor:
             scenario.evaluate_daemon(instance, threadpool_executor=threadpool_executor)
@@ -218,7 +222,6 @@ def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario, num_threads: in
     with get_daemon_instance(
         extra_overrides={
             "auto_materialize": {
-                "use_sensors": True,
                 "use_threads": num_threads > 0,
                 "num_workers": num_threads,
             }
@@ -270,7 +273,9 @@ daemon_scenario = AssetDaemonScenario(
 
 
 def test_daemon_paused() -> None:
-    with get_daemon_instance(paused=True) as instance:
+    with get_daemon_instance(
+        paused=True, extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         ticks = _get_asset_daemon_ticks(instance)
         assert len(ticks) == 0
 
@@ -358,14 +363,7 @@ def _assert_sensor_state(
 def test_auto_materialize_sensor_no_transition():
     # have not been using global AMP before - first tick does not create
     # any sensor states except for the one that is declared in code
-    with get_daemon_instance(
-        paused=False,
-        extra_overrides={
-            "auto_materialize": {
-                "use_sensors": True,
-            }
-        },
-    ) as instance:
+    with get_daemon_instance(paused=False) as instance:
         assert not get_has_migrated_to_sensors(instance)
 
         result = daemon_sensor_scenario.evaluate_daemon(instance)
@@ -416,14 +414,7 @@ def test_auto_materialize_sensor_no_transition():
 
 
 def test_auto_materialize_sensor_transition():
-    with get_daemon_instance(
-        paused=False,
-        extra_overrides={
-            "auto_materialize": {
-                "use_sensors": True,
-            }
-        },
-    ) as instance:
+    with get_daemon_instance(paused=False) as instance:
         # Have been using global AMP, so there is a cursor
         pre_sensor_evaluation_id = 12345
 
@@ -506,9 +497,7 @@ def test_auto_materialize_sensor_name_transition() -> None:
 """
 
     # now pre-populate this instance with that modified instigator state
-    with get_daemon_instance(
-        paused=False, extra_overrides={"auto_materialize": {"use_sensors": True}}
-    ) as instance:
+    with get_daemon_instance(paused=False) as instance:
         assert instance.schedule_storage is not None
 
         # copy over the state from the old scenario
@@ -572,7 +561,6 @@ def test_auto_materialize_sensor_ticks(num_threads):
         paused=True,
         extra_overrides={
             "auto_materialize": {
-                "use_sensors": True,
                 "use_threads": num_threads > 0,
                 "num_workers": num_threads,
             }
@@ -804,7 +792,9 @@ def test_auto_materialize_sensor_ticks(num_threads):
 
 
 def test_default_purge() -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         scenario_time = daemon_scenario.initial_spec.current_time
         _create_tick(
             instance, TickStatus.SKIPPED, (scenario_time - datetime.timedelta(days=8)).timestamp()
@@ -834,7 +824,12 @@ def test_default_purge() -> None:
 
 def test_custom_purge() -> None:
     with get_daemon_instance(
-        extra_overrides={"retention": {"auto_materialize": {"purge_after_days": {"skipped": 2}}}},
+        extra_overrides={
+            "retention": {
+                "auto_materialize": {"purge_after_days": {"skipped": 2}},
+            },
+            "auto_materialize": {"use_sensors": False},
+        },
     ) as instance:
         freeze_datetime = get_current_datetime()
 
