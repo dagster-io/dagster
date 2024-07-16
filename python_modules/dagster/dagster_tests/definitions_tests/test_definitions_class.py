@@ -37,6 +37,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
@@ -919,3 +920,31 @@ def test_invalid_partitions_subclass():
         match="custom PartitionsDefinition subclasses",
     ):
         Definitions(assets=[asset1])
+
+
+def test_hoist_automation_assets():
+    @asset
+    def foo():
+        pass
+
+    @asset
+    def bar():
+        pass
+
+    @sensor(name="foo_sensor", target=foo)
+    def foo_sensor():
+        pass
+
+    @schedule(name="bar_schedule", cron_schedule="* * * * *", target=bar)
+    def bar_schedule():
+        pass
+
+    foo_job = define_asset_job("foo_job", selection=[foo])
+
+    defs = Definitions(sensors=[foo_sensor], schedules=[bar_schedule], jobs=[foo_job])
+
+    assert defs.get_assets_def(foo.key) == foo
+    assert defs.get_assets_def(bar.key) == bar
+
+    # We can define and execute asset jobs that reference assets only defined in targets
+    assert defs.get_job_def(foo_job.name).execute_in_process().success
