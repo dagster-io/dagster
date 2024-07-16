@@ -88,13 +88,13 @@ When deploying your Dagster project to production, **we recommend generating the
 
 Select one of the following to handle the creation of your manifest:
 
-- [**Option 1:**](#option-1-with-dbtproject) With DbtProject
-- [**Option 2:**](#option-2-without-dbtproject) Without DbtProject
+- [**Option 1:**](#option-1-using-dbtproject) Using `DbtProject`
+- [**Option 2:**](#option-2-not-using-dbtproject) Not using `DbtProject`
 
 </TabItem>
-<TabItem name="Option 1: With DbtProject">
+<TabItem name="Option 1: Using DbtProject">
 
-### Option 1: With `DbtProject`
+### Option 1: Using `DbtProject`
 
 The easiest way to handle the creation of your manifest file is to use [DbtProject](/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject).
 
@@ -126,9 +126,9 @@ dagster dev
 In production, a precompiled manifest should be used. Using `DbtProject`, the manifest can be created at build time by running the [dagster-dbt project prepare-and-package](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-prepare-and-package) command line interface in your CI/CD workflow. For more information, see the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section.
 
 </TabItem>
-<TabItem name="Option 2: Without DbtProject">
+<TabItem name="Option 2: Not using DbtProject">
 
-### Option 2: Without `DbtProject`
+### Option 2: Not using `DbtProject`
 
 Creating the manifest can be done by running `dbt parse` using the command line interface (CLI) with [DbtCliResource](/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtCliResource).
 
@@ -223,8 +223,14 @@ In your CI/CD workflows for your Dagster project:
 
 1. Include any secrets that are required by your dbt project in your CI/CD environment.
 2. Clone the dbt project repository as a subdirectory of your Dagster project.
-3. Run `dbt deps` to build your dbt project's dependencies.
-4. Run `dbt parse` to create a dbt manifest for your Dagster project.
+3. Depending on whether [DbtProject](/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject) is used, this step will vary:
+   - **For projects using `DbtProject`**, run `dagster-dbt project prepare-and-package --file path/to/project.py` to
+      - build your dbt project's dependencies,
+      - create a dbt manifest for your Dagster project,
+      - and package your dbt project.
+   - **For projects not using `DbtProject`**:
+      - Run `dbt deps` to build your dbt project's dependencies.
+      - Run `dbt parse` to create a dbt manifest for your Dagster project.
 
 In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project when your dbt project changes.
 
@@ -241,8 +247,14 @@ If you are managing your Dagster project in the same git repository as your dbt 
 In your CI/CD workflows for your Dagster and dbt project:
 
 1. Include any secrets that are required by your dbt project in your CI/CD environment.
-2. Run `dbt deps` to build your dbt project's dependencies.
-3. Run `dbt parse` to create a dbt manifest for your Dagster project.
+3. Depending on whether [DbtProject](/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject) is used, this step will vary:
+   - **For projects using `DbtProject`**, run `dagster-dbt project prepare-and-package --file path/to/project.py` to
+      - build your dbt project's dependencies,
+      - create a dbt manifest for your Dagster project,
+      - and package your dbt project.
+   - **For projects not using `DbtProject`**:
+      - Run `dbt deps` to build your dbt project's dependencies.
+      - Run `dbt parse` to create a dbt manifest for your Dagster project.
 
 ---
 
