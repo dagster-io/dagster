@@ -6,9 +6,9 @@ import {TopNavLink} from './AppTopNav';
 import {
   assetsPathMatcher,
   automationPathMatcher,
+  deploymentPathMatcher,
   jobsPathMatcher,
   locationPathMatcher,
-  settingsPathMatcher,
 } from './activePathMatchers';
 import {DeploymentStatusIcon} from '../../nav/DeploymentStatusIcon';
 import {FeatureFlag, featureEnabled} from '../Flags';
@@ -96,21 +96,28 @@ export const navLinks = () => {
     ),
   };
 
-  const settings = {
-    key: 'settings',
-    path: '/settings',
-    element: (
-      <TopNavLink to="/settings" data-cy="AppTopNav_SettingsLink" isActive={settingsPathMatcher}>
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-          Settings
-          <DeploymentStatusIcon />
-        </Box>
-      </TopNavLink>
-    ),
-  };
+  if (featureEnabled(FeatureFlag.flagSettingsPage)) {
+    const deployment = {
+      key: 'deployment',
+      path: '/deployment',
+      element: (
+        <TopNavLink
+          to="/deployment"
+          data-cy="AppTopNav_DeploymentLink"
+          isActive={deploymentPathMatcher}
+        >
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+            Deployment
+            <DeploymentStatusIcon />
+          </Box>
+        </TopNavLink>
+      ),
+    };
+    return [overview, assets, jobs, automation, runs, deployment];
+  }
 
   const deployment = {
-    key: 'deployment',
+    key: 'locations',
     path: '/locations',
     element: (
       <TopNavLink to="/locations" data-cy="AppTopNav_StatusLink" isActive={locationPathMatcher}>
@@ -121,10 +128,6 @@ export const navLinks = () => {
       </TopNavLink>
     ),
   };
-
-  if (featureEnabled(FeatureFlag.flagSettingsPage)) {
-    return [overview, assets, jobs, automation, runs, settings];
-  }
 
   return [overview, runs, assets, deployment];
 };

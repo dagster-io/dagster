@@ -19,7 +19,7 @@ from typing import (
 
 from typing_extensions import Annotated
 
-from .functions import CheckError, TypeOrTupleOfTypes, failed
+from .functions import CheckError, TypeOrTupleOfTypes, failed, invariant
 
 try:
     # this type only exists in python 3.10+
@@ -32,6 +32,18 @@ NoneType = type(None)
 _contextual_ns: ContextVar[Mapping[str, Type]] = ContextVar("_contextual_ns", default={})
 
 
+class ImportFrom(NamedTuple):
+    """A pointer to where to lazily import from to resolve a ForwardRef.
+
+    Used with Annotated ie: Annotated['Foo', ImportFrom('baz.bar')]
+    """
+
+    module: str
+
+
+class _LazyImportPlaceholder: ...
+
+
 class EvalContext(NamedTuple):
     """Utility class for managing references to global and local namespaces.
 
@@ -41,6 +53,7 @@ class EvalContext(NamedTuple):
 
     global_ns: dict
     local_ns: dict
+    lazy_imports: dict
 
     @staticmethod
     def capture_from_frame(
@@ -67,6 +80,7 @@ class EvalContext(NamedTuple):
         return EvalContext(
             global_ns=global_ns,
             local_ns=local_ns,
+            lazy_imports={},
         )
 
     @staticmethod
@@ -84,6 +98,14 @@ class EvalContext(NamedTuple):
         self.global_ns.update(ctx_frame.f_globals)
         self.local_ns.update(ctx_frame.f_locals)
 
+    def register_lazy_import(self, type_name: str, module: str):
+        invariant(
+            self.lazy_imports.get(type_name, module) == module,
+            f"Conflict in lazy imports for type {type_name}, tried to overwrite "
+            f"{self.lazy_imports.get(type_name)} with {module}.",
+        )
+        self.lazy_imports[type_name] = module
+
     def get_merged_ns(self):
         return {
             **_contextual_ns.get(),
@@ -92,6 +114,10 @@ class EvalContext(NamedTuple):
         }
 
     def eval_forward_ref(self, ref: ForwardRef) -> Optional[Type]:
+        if ref.__forward_arg__ in self.lazy_imports:
+            # if we are going to add a lazy import for the type,
+            # return a placeholder to grab the name from
+            return type(ref.__forward_arg__, (_LazyImportPlaceholder,), {})
         try:
             if sys.version_info <= (3, 9):
                 return ref._evaluate(self.get_merged_ns(), {})  # noqa
@@ -99,7 +125,8 @@ class EvalContext(NamedTuple):
                 return ref._evaluate(self.get_merged_ns(), {}, frozenset())  # noqa
         except NameError as e:
             raise CheckError(
-                f"Unable to resolve {ref}, could not map string name to actual type."
+                f"Unable to resolve {ref}, could not map string name to actual type using captured frames. "
+                f"Use Annotated['{ref.__forward_arg__}', ImportFrom('module.to.import.from')] to create a lazy import."
             ) from e
 
     def compile_fn(self, body: str, fn_name: str) -> Callable:
@@ -114,7 +141,7 @@ class EvalContext(NamedTuple):
 
 def _coerce_type(
     ttype: Optional[TypeOrTupleOfTypes],
-    eval_ctx: Optional[EvalContext],
+    eval_ctx: EvalContext,
 ) -> Optional[TypeOrTupleOfTypes]:
     # coerce input type in to the type we want to pass to the check call
 
@@ -136,9 +163,16 @@ def _coerce_type(
     if isinstance(ttype, TypeVar):
         return _coerce_type(ttype.__bound__, eval_ctx) if ttype.__bound__ else None
 
+    origin = get_origin(ttype)
+    args = get_args(ttype)
+
+    if _is_annotated(origin, args):
+        _process_annotated(args, eval_ctx)
+        return _coerce_type(args[0], eval_ctx)
+
     # Unions should become a tuple of types to pass to the of_type argument
     # ultimately used as second arg in isinstance(target, tuple_of_types)
-    if get_origin(ttype) in (UnionType, Union):
+    if origin in (UnionType, Union):
         union_types = get_args(ttype)
         coerced_types = []
         for t in union_types:
@@ -165,7 +199,7 @@ def _container_pair_args(
 
 
 def _container_single_arg(
-    args: Tuple[Type, ...], eval_ctx: Optional[EvalContext]
+    args: Tuple[Type, ...], eval_ctx: EvalContext
 ) -> Optional[TypeOrTupleOfTypes]:
     # process tuple of types as if its the single argument to a container type
 
@@ -184,13 +218,38 @@ def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
     if isinstance(target, tuple):
         return f"({', '.join(tup_type.__name__ if tup_type is not NoneType else 'check.NoneType' for tup_type in target)})"
 
-    return target.__name__
+    if hasattr(target, "__name__"):
+        return target.__name__
+
+    if hasattr(target, "_name"):
+        return getattr(target, "_name")
+
+    failed(f"Could not calculate string name for {target}")
+
+
+def _is_annotated(origin, args):
+    # 3.9+: origin is Annotated, 3.8: origin == args[0]
+    return (origin is Annotated and args) or (len(args) == 1 and args[0] == origin)
+
+
+def _process_annotated(args, eval_ctx: EvalContext):
+    ttype = args[0]
+    for arg in args[1:]:
+        if isinstance(arg, ImportFrom):
+            if isinstance(ttype, ForwardRef):
+                eval_ctx.register_lazy_import(args[0].__forward_arg__, arg.module)
+            elif isinstance(ttype, str):
+                eval_ctx.register_lazy_import(args[0], arg.module)
+            else:
+                failed(
+                    f"ImportFrom in Annotated expected to be used with string or ForwardRef only, got {args[0]}",
+                )
 
 
 def build_check_call_str(
     ttype: Type,
     name: str,
-    eval_ctx: Optional[EvalContext],
+    eval_ctx: EvalContext,
 ) -> str:
     # assumes this module is in global/local scope as check
     origin = get_origin(ttype)
@@ -219,8 +278,8 @@ def build_check_call_str(
         else:
             return name  # no-op
     else:
-        # 3.9+: origin is Annotated, 3.8: origin == args[0]
-        if (origin is Annotated and args) or (len(args) == 1 and args[0] == origin):
+        if _is_annotated(origin, args):
+            _process_annotated(args, eval_ctx)
             return build_check_call_str(args[0], f"{name}", eval_ctx)
 
         pair_left, pair_right = _container_pair_args(args, eval_ctx)
@@ -283,6 +342,11 @@ def build_check_call_str(
                         return f'check.opt_nullable_iterable_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Mapping:
                         return f'check.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
+                    elif inner_origin is collections.abc.Set:
+                        return (
+                            f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
+                        )
+
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)

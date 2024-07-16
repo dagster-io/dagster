@@ -273,7 +273,7 @@ def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: 
                 for asset_key in asset_keys
             ],
             can_subset=True,
-            name=f"freshness_check_{unique_id_from_asset_and_check_keys(asset_keys, [])}",
+            name=f"freshness_check_{unique_id_from_asset_and_check_keys(asset_keys)}",
         )(fn)
 
     return inner
@@ -287,7 +287,7 @@ def build_multi_asset_check(
     @multi_asset_check(
         specs=check_specs,
         can_subset=True,
-        name=f"asset_check_{unique_id_from_asset_and_check_keys([], [spec.key for spec in check_specs])}",
+        name=f"asset_check_{unique_id_from_asset_and_check_keys([spec.key for spec in check_specs])}",
     )
     def _checks(context):
         for asset_check_key in context.selected_asset_check_keys:

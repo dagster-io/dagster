@@ -1081,22 +1081,22 @@ class ExecutionPlan(
             (FromPendingDynamicStepOutput, FromUnresolvedStepOutput),
         ):
             return UnresolvedMappedStepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_source,
+                name=step_input_snap.name,
+                dagster_type_key=step_input_snap.dagster_type_key,
+                source=step_input_source,
             )
         elif isinstance(step_input_source, FromDynamicCollect):
             return UnresolvedCollectStepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_source,
+                name=step_input_snap.name,
+                dagster_type_key=step_input_snap.dagster_type_key,
+                source=step_input_source,
             )
         else:
             check.inst_param(step_input_source, "step_input_source", StepInputSource)
             return StepInput(
-                step_input_snap.name,
-                step_input_snap.dagster_type_key,
-                step_input_snap.source,  # type: ignore  # (possible none)
+                name=step_input_snap.name,
+                dagster_type_key=step_input_snap.dagster_type_key,
+                source=step_input_snap.source,  # type: ignore  # (possible none)
             )
 
     @staticmethod

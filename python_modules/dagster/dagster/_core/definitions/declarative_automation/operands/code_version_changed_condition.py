@@ -1,5 +1,6 @@
 from typing import Optional
 
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
@@ -7,6 +8,7 @@ from ..automation_context import AutomationContext
 
 
 @whitelist_for_serdes
+@record
 class CodeVersionChangedCondition(AutomationCondition):
     @property
     def description(self) -> str:

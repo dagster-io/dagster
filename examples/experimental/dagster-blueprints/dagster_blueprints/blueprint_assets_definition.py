@@ -34,7 +34,7 @@ class BlueprintAssetsDefinition(Blueprint):
         specs = [spec_model.to_asset_spec() for spec_model in self.assets]
 
         @multi_asset(
-            name=f"assets_{unique_id_from_asset_and_check_keys([spec.key for spec in specs], [])}",
+            name=f"assets_{unique_id_from_asset_and_check_keys([spec.key for spec in specs])}",
             specs=specs,
             required_resource_keys=self.get_required_resource_keys(),
         )

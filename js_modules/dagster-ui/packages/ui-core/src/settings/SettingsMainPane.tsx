@@ -17,20 +17,20 @@ export const SettingsMainPane = () => {
   return (
     <Box flex={{direction: 'column', alignItems: 'stretch'}} style={{flex: 1, overflow: 'hidden'}}>
       <Switch>
-        <Route path="/settings/locations">
+        <Route path="/deployment/locations">
           <CodeLocationsPageContent />
         </Route>
-        <Route path="/settings/daemons">
+        <Route path="/deployment/daemons">
           <InstanceHealthPageContent />
         </Route>
-        <Route path="/settings/concurrency">
+        <Route path="/deployment/concurrency">
           <InstanceConcurrencyPageContent />
         </Route>
-        <Route path="/settings/config">
+        <Route path="/deployment/config">
           <InstanceConfigContent />
         </Route>
         <Route path="*" isNestingRoute>
-          <Redirect to="/settings/locations" />
+          <Redirect to="/deployment/locations" />
         </Route>
       </Switch>
     </Box>

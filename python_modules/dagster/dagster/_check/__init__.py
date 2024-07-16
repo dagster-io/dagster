@@ -1,5 +1,6 @@
 from .builder import (
     EvalContext as EvalContext,
+    ImportFrom as ImportFrom,
     NoneType as NoneType,
     build_check_call_str as build_check_call_str,
 )

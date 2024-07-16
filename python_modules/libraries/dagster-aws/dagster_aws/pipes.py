@@ -360,7 +360,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             pipes_args = session.get_bootstrap_cli_arguments()
 
             if isinstance(self._context_injector, PipesS3ContextInjector):
-                arguments.update(pipes_args)
+                arguments = {**arguments, **pipes_args}
 
             params = {
                 "JobName": job_name,

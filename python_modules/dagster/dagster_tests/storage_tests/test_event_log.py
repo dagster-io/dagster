@@ -24,6 +24,7 @@ from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
 from dagster._core.utils import make_new_run_id
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
+from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy.engine import Connection
 
 from .utils.event_log_storage import TestEventLogStorage
@@ -39,6 +40,13 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
             yield storage
         finally:
             storage.dispose()
+
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 12) and sqlalchemy_version.startswith("1.4."),
+        reason="flaky Sqlite issues on certain version combinations",
+    )
+    def test_basic_get_logs_for_run_multiple_runs_cursors(self, instance, storage):
+        super().test_basic_get_logs_for_run_multiple_runs_cursors(instance, storage)
 
 
 class TestSqliteEventLogStorage(TestEventLogStorage):

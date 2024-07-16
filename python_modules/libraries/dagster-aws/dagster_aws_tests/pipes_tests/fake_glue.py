@@ -24,7 +24,7 @@ class LocalGlueMockClient:
         }
 
         if Arguments:
-            params["Arguments"] = Arguments
+            params["Arguments"] = Arguments  # type: ignore
 
         script_s3_path = self.glue_client.get_job(JobName=JobName)["Job"]["Command"][
             "ScriptLocation"

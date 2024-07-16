@@ -12,6 +12,7 @@ from dagster._annotations import (
     is_experimental,
     is_public,
 )
+from dagster._record import get_original_class, is_record
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
@@ -86,6 +87,11 @@ class DagsterClassDocumenter(ClassDocumenter):
     objtype = "class"
 
     def get_object_members(self, want_all: bool) -> Tuple[bool, ObjectMembers]:
+        # the @record transform creates a new outer class, so redirect
+        # sphinx to target the original class for scraping members out of __dict__
+        if is_record(self.object):
+            self.object = get_original_class(self.object)
+
         _, unfiltered_members = super().get_object_members(want_all)
         # Use form `is_public(self.object, attr_name) if possible, because to access a descriptor
         # object (returned by e.g. `@staticmethod`) you need to go in through

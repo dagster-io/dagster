@@ -177,11 +177,12 @@ class ScenarioSpec:
                         "deps",
                         "group_name",
                         "code_version",
-                        "auto_materialize_policy",
+                        "automation_condition",
                         "freshness_policy",
                         "partitions_def",
                         "metadata",
                     }
+
                     assets.append(
                         asset(
                             compute_fn=compute_fn,
@@ -225,6 +226,9 @@ class ScenarioSpec:
     ) -> "ScenarioSpec":
         """Convenience method to update the properties of one or more assets in the scenario state."""
         new_asset_specs = []
+        if "auto_materialize_policy" in kwargs:
+            policy = kwargs.pop("auto_materialize_policy")
+            kwargs["automation_condition"] = policy.to_automation_condition() if policy else None
         for spec in self.asset_specs:
             if isinstance(spec, MultiAssetSpec):
                 partitions_def = kwargs.get("partitions_def", spec.partitions_def)
