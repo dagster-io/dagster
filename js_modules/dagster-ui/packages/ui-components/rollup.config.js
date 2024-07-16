@@ -54,10 +54,10 @@ export default {
     '@blueprintjs/core',
     '@blueprintjs/popover2',
     '@blueprintjs/select',
+    '@tanstack/react-virtual',
     'react',
     'react-dom',
     'react-is',
-    'react-virtualized',
     'styled-components',
   ],
 };

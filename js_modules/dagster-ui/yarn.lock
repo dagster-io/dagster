@@ -3702,7 +3702,6 @@ __metadata:
     react: "npm:^18.2.0"
     react-docgen-typescript-plugin: "npm:^1.0.8"
     react-dom: "npm:^18.2.0"
-    react-virtualized: "npm:^9.22.3"
     regenerator-runtime: "npm:^0.13.9"
     rollup: "npm:^2.70.1"
     rollup-plugin-node-globals: "npm:^1.4.0"
@@ -3716,6 +3715,7 @@ __metadata:
     "@blueprintjs/core": ^4.20.2
     "@blueprintjs/popover2": 1.13.12
     "@blueprintjs/select": ^4.9.12
+    "@tanstack/react-virtual": ^3.0.1
     react: ^18.2.0
     react-dom: ^18.2.0
     react-is: ^18.2.0

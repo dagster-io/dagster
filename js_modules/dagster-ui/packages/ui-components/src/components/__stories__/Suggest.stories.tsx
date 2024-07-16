@@ -1,6 +1,8 @@
 import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
+import {Box} from '../Box';
+import {Colors} from '../Color';
 import {MenuItem} from '../Menu';
 import {Suggest} from '../Suggest';
 
@@ -70,7 +72,7 @@ export const Default = () => {
       key="loading"
       inputProps={{
         placeholder: 'Type the name of a US state…',
-        style: {width: '250px'},
+        style: {width: '260px'},
       }}
       icon="search"
       items={US_STATES}
@@ -84,7 +86,11 @@ export const Default = () => {
           text={item}
         />
       )}
-      noResults={<MenuItem disabled={true} text="No presets." />}
+      noResults={
+        <Box padding={4} style={{color: Colors.textDisabled()}}>
+          No matching states
+        </Box>
+      }
       onItemSelect={(item) => setSelectedItem(item)}
       selectedItem={selectedItem}
     />
