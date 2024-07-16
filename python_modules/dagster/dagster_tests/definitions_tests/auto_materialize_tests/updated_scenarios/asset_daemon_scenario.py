@@ -245,6 +245,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 )
                 for backfill in self.instance.get_backfills()
                 if backfill.tags.get("dagster/asset_evaluation_id") == str(new_cursor.evaluation_id)
+                and backfill.asset_backfill_data is not None
             ]
 
             new_run_requests.extend(backfill_requests)

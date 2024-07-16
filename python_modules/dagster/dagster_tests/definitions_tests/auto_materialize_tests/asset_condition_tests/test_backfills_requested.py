@@ -50,7 +50,7 @@ def test_simple_conditions_with_backfills(mock_da_request_backfills) -> None:
         assert len(new_run_requests) == 1
         assert new_run_requests[0].requires_backfill_daemon()
 
-        # latest parent updated, now can execute
+        # materialize the latest partition of A, B should be requested again
         state = state.with_runs(run_request("A", "2020-02-02-00:00"))
         state, new_run_requests = state.evaluate_tick_daemon()
         assert len(new_run_requests) == 1
@@ -171,11 +171,6 @@ def test_disconnected_graphs_backfill(mock_da_request_backfills) -> None:
         state, new_run_requests = state.evaluate_tick_daemon()
         assert len(new_run_requests) == 0
 
-        # historical parent updated, doesn't matter
-        # state = state.with_runs(run_request("A", "2019-07-05"))
-        # state, new_run_requests = state.evaluate_tick_daemon()
-        # assert len(new_run_requests) == 0
-
         # A updated, now can execute B, but not D
         state = state.with_runs(run_request("A", "2020-02-01"))
         state, new_run_requests = state.evaluate_tick_daemon()
@@ -199,7 +194,7 @@ def test_disconnected_graphs_backfill(mock_da_request_backfills) -> None:
         state, new_run_requests = state.evaluate_tick_daemon()
         assert len(new_run_requests) == 0
 
-        # both A and C get materialized, B and D requested
+        # both A and C get materialized, B and D requested in the same backfill
         state = state.with_runs(*(run_request("A", "2020-02-02"), run_request("C", "2")))
         state, new_run_requests = state.evaluate_tick_daemon()
         assert len(new_run_requests) == 1
