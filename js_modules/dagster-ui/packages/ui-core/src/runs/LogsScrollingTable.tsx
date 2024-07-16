@@ -25,7 +25,7 @@ interface Props {
   metadata: IRunMetadataDict;
 }
 
-export const LogsScrollingTableNew = (props: Props) => {
+export const LogsScrollingTable = (props: Props) => {
   const {filterStepKeys, metadata, filter, logs} = props;
 
   const parentRef = useRef<HTMLDivElement>(null);
