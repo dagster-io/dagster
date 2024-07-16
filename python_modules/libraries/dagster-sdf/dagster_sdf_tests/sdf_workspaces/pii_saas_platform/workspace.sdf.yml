@@ -1,0 +1,31 @@
+workspace:
+  name: pii_saas_platform # The name of this workspace -- required
+  edition: "1.3" # The edition of this workspace -- required
+  description: >
+    This workspace mocks a Snowflake environment of users, organizations, and invoices and demonstrates code contracts & reports in action. 
+
+    Try `sdf compile`, `sdf test`, and `sdf report` to see the magic happen
+  
+  defaults:
+    dialect: snowflake # The dialect of SQL used in this workspace, defaults to "presto"
+  
+  includes:
+    - path: classification
+    - path: checks
+      type: check
+      defaults:
+        catalog: sdf
+        schema: checks
+        dialect: presto
+    - path: reports
+      type: report
+      defaults:
+        catalog: sdf
+        schema: reports
+        dialect: presto
+    - path: models # The path to sql sources for this workspace -- at least one path is required
+      defaults:
+        catalog: transformations
+      index: schema-table-name
+    - path: ddls # The path to ddl sources for this workspace -- at least one path is required
+      index: catalog-schema-table-name

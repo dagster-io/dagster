@@ -1,0 +1,50 @@
+table:
+  name: raw_customers
+  description: >
+    All relevant information related to customers known to mom s flower shop. 
+    This information comes from the user input into the mobile app.
+
+  # Uncomment below to begin the "Enriching Your Warehouse" Tutorial >>>>>
+  # classifiers:
+    # - RETENTION.d7
+  # <<<<<
+
+  columns:
+    - name: id
+      description: A unique identifier of a mom s floewr shop customer
+      
+    - name: first_name
+      description: The first name of the customer
+      # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
+      # classifiers:
+      #   - PII.name
+      # <<<<<
+
+    - name: last_name
+      description: The last name of the customer
+      # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
+      # classifiers:
+      #   - PII.name
+      # <<<<<
+
+    - name: email
+      description: The email of the customer
+      # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
+      # classifiers:
+      #   - PII.email
+      # <<<<<
+      
+    - name: gender
+      description: The gender of the customer
+      # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
+      # classifiers:
+      #   - PII.gender
+      # <<<<<
+
+    - name: address_id
+      description: The address_id of the address associated with the customer
+      # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
+      # classifiers:
+      #   - PII.address
+      # <<<<<
+    

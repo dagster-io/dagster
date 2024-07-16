@@ -1,0 +1,6 @@
+classifier:
+  name: PII
+  labels: 
+    - name: name
+    - name: email
+    - name: phone

@@ -1,0 +1,13 @@
+table:
+  name: payment.public.users
+  description: DDL for the users table
+  columns:
+    - name: name
+      classifiers:
+        - PII.name
+    - name: email
+      classifiers:
+        - PII.email
+    - name: phone
+      classifiers:
+        - PII.phone

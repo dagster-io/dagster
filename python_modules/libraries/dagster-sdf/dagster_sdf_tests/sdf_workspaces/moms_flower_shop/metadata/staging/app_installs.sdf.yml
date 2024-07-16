@@ -1,0 +1,8 @@
+table:
+  name: app_installs
+  description: >
+    This table is a staging table which adds campaign information
+    to app install events
+  # Uncomment here to add a "deprecated" classifier to the table
+  # classifiers:
+    # - TABLE_STATUS.deprecated

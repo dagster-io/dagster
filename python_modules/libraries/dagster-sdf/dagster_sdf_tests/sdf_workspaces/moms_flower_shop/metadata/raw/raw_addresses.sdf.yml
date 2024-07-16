@@ -1,0 +1,32 @@
+table:
+  name: raw_addresses
+  description: >
+    All relevant information related to street addresses known to mom s flower shop. 
+    This information comes from the user input into the mobile app.
+  
+  # Uncomment below to begin the "Enriching Your Warehouse" Tutorial >>>>>
+  # classifiers:
+    # - RETENTION.d7
+  # <<<<<
+
+  columns:
+    - name: index
+      description: Row number
+      
+    - name: address_id
+      description: A unique identifier of an address
+
+    - name: full_address
+      description: The full address associated with the address_id
+
+    - name: street_number
+      description: The address street number associated with the address_id
+      
+    - name: street_name
+      description: The address street name associated with the address_id
+
+    - name: state
+      description: The address US state associated with the address_id
+    
+    - name: city
+      description: The address US city associated with the address_id

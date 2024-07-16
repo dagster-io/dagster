@@ -1,0 +1,44 @@
+table:
+  name: raw_inapp_events
+  description: Logged actions (events) that users perform inside the mobile app of mom s flower shop.
+  
+  # Uncomment below to begin the "Enriching Your Warehouse" Tutorial >>>>>
+  # classifiers:
+    # - RETENTION.d7
+  # <<<<<
+
+  columns:
+    - name: index
+      description: row_number
+      
+    - name: event_id
+      description: A unique identifier of an in-app event within mom s flower shop s mobile app
+      # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
+      # classifiers:
+      #   - EVENT.inapp
+      # <<<<<
+
+    - name: customer_id
+      description: The identifier of the customer that performed the event
+
+    - name: event_time
+      description: The unixtime in which the event occurred 
+      
+    - name: event_name
+      description: The name of the in-app events. Supported events - install, add_to_cart, go_to_checkout, place_order
+
+    - name: event_value
+      description: >
+        Any numeric value associated with the event. 
+        For example, upon placing an order, the event value would be the total order amount in USD.
+    
+    - name: additional_details
+      description: >
+        A JSON containing additional details about the order. 
+        For exmaple, upon placing an order, the additional details will contain a delivery ID and other order information.
+
+    - name: platform
+      description: iOS or Android
+      
+    - name: campaign_id
+      description: The identifier of a marketing campaign that is associated with the install of mom s flower shop mobile app.

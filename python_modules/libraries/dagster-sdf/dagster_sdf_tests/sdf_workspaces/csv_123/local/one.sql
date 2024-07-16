@@ -1,0 +1,1 @@
+create table one WITH(format='csv', location='data/a.csv');

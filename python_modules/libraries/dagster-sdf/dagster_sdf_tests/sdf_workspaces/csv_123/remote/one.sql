@@ -1,0 +1,1 @@
+create table one with (format='csv', location='s3://sdfdatasets/csv_123/a.csv');

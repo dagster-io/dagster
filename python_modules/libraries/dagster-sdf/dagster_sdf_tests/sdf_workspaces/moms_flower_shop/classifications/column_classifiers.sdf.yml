@@ -1,0 +1,14 @@
+classifier:
+  name: EVENT
+  labels:
+    - name: inapp
+    - name: marketing
+
+---
+classifier: 
+  name: PII
+  labels:
+    - name: name
+    - name: address
+    - name: email
+    - name: gender

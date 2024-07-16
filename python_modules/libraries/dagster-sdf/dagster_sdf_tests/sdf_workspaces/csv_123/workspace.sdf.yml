@@ -1,0 +1,28 @@
+workspace:
+   name: csv_123
+   edition: "1.3"
+   defaults:
+      dialect: presto
+   includes:
+      - path: local
+      - path: src
+      - path: data
+        type: resource
+   description: >
+      csv_123 is a pipeline with three tables, called one, two, three, where one is an external table (i.e. csv or s3), two depends on one and three depends on two
+
+      To build using the local base table (./data/a.csv), run using the 'local' environment: 'sdf build --profile local'
+
+      To pull data from s3 (s3://sdfdatasets), build using the remote environment: 'sdf build --profile remote'
+
+      Type 'sdf build' on the commandline to run the pipeline
+
+      Type 'sdf compile' to view schema information
+
+      Type 'sdf auth login' and 'sdf deploy --profile <local|remote>' to deploy the workspace to the sdf console
+---
+environment:
+   name: remote
+   includes:
+      - path: remote
+      - path: src
