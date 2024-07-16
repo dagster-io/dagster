@@ -66,7 +66,7 @@ import {
 } from '../pipelines/GraphExplorer';
 import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
 

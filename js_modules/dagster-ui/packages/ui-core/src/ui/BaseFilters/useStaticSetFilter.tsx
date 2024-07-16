@@ -1,5 +1,14 @@
-import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
-import {Fragment, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {Box, Checkbox, Colors, IconName, Popover} from '@dagster-io/ui-components';
+import {
+  ComponentProps,
+  Fragment,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
@@ -9,7 +18,8 @@ export type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
-type Args<TValue> = {
+
+export type StaticBaseConfig<TValue> = {
   name: string;
   icon: IconName;
   renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
@@ -17,6 +27,10 @@ type Args<TValue> = {
   getKey?: (value: TValue) => string;
   getStringValue: (value: TValue) => string;
   getTooltipText?: (value: TValue) => string;
+  matchType?: 'any-of' | 'all-of';
+};
+
+type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
   allValues: SetFilterValue<TValue>[];
 
   // This hook is NOT a "controlled component". Changing state only updates the component's current state.
@@ -25,8 +39,8 @@ type Args<TValue> = {
   // to the old state and pass that in.
   state?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
+
   allowMultipleSelections?: boolean;
-  matchType?: 'any-of' | 'all-of';
   selectAllText?: React.ReactNode;
   canSelectAll?: boolean;
   menuWidth?: number | string;
@@ -57,7 +71,7 @@ export function useStaticSetFilter<TValue>({
   closeOnSelect = false,
   selectAllText,
   canSelectAll = true,
-}: Args<TValue>): StaticSetFilter<TValue> {
+}: FilterArgs<TValue>): StaticSetFilter<TValue> {
   const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
 
   const allValues = useMemo(() => {
@@ -244,18 +258,22 @@ export function SetFilterActiveState({
   getStringValue,
   onRemove,
   renderLabel,
-  matchType,
+  matchType = 'any-of',
   getTooltipText,
+  theme,
 }: {
   name: string;
   icon: IconName;
   state: Set<any>;
   getStringValue: (value: any) => string;
-  getTooltipText: ((value: any) => string) | undefined;
-  onRemove: () => void;
+  getTooltipText?: ((value: any) => string) | undefined;
+  onRemove?: () => void;
   renderLabel: (value: any) => JSX.Element;
-  matchType: 'any-of' | 'all-of';
+  matchType?: 'any-of' | 'all-of';
+  tagColor?: string;
+  theme?: ComponentProps<typeof FilterTag>['theme'];
 }) {
+  const highlightColor = theme === 'cyan' ? Colors.accentCyan() : undefined;
   const isAnyOf = matchType === 'any-of';
   const arr = useMemo(() => Array.from(state), [state]);
   const label = useMemo(() => {
@@ -268,7 +286,10 @@ export function SetFilterActiveState({
           {arr.map((value, index) => {
             return (
               <Fragment key={index}>
-                <FilterTagHighlightedText tooltipText={getTooltipText?.(value)}>
+                <FilterTagHighlightedText
+                  tooltipText={getTooltipText?.(value) ?? getStringValue?.(value)}
+                  color={highlightColor}
+                >
                   {getStringValue(value)}
                 </FilterTagHighlightedText>
                 {index < arr.length - 1 ? <>,&nbsp;</> : ''}
@@ -302,12 +323,14 @@ export function SetFilterActiveState({
               </Box>
             }
           >
-            <FilterTagHighlightedText>{`(${arr.length})`}</FilterTagHighlightedText>
+            <FilterTagHighlightedText
+              color={highlightColor}
+            >{`(${arr.length})`}</FilterTagHighlightedText>
           </Popover>
         </Box>
       );
     }
-  }, [arr, getStringValue, getTooltipText, isAnyOf, renderLabel]);
+  }, [arr, getStringValue, getTooltipText, highlightColor, isAnyOf, renderLabel]);
 
   if (arr.length === 0) {
     return null;
@@ -315,6 +338,7 @@ export function SetFilterActiveState({
   return (
     <FilterTag
       iconName={icon}
+      theme={theme}
       label={
         <Box flex={{direction: 'row', alignItems: 'center'}}>
           {capitalizeFirstLetter(name)}&nbsp;{label}

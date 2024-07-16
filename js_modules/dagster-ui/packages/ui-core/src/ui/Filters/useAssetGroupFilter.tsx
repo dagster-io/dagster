@@ -1,11 +1,11 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {buildAssetGroupSelector} from '../../assets/AssetGroupSuggest';
 import {AssetGroupSelector, AssetNode} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 export const useAssetGroupFilter = ({
   allAssetGroups,
@@ -17,8 +17,7 @@ export const useAssetGroupFilter = ({
   setGroups?: null | ((groups: AssetGroupSelector[]) => void);
 }) => {
   return useStaticSetFilter<AssetGroupSelector>({
-    name: 'Asset Groups',
-    icon: 'asset_group',
+    ...BaseConfig,
     allValues: (allAssetGroups || []).map((group) => ({
       key: group.groupName,
       value:
@@ -31,32 +30,6 @@ export const useAssetGroupFilter = ({
       match: [group.groupName],
     })),
     menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="repo" />
-        <TruncatedTextWithFullTextOnHover
-          tooltipText={
-            value.groupName +
-            ' - ' +
-            buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)
-          }
-          text={
-            <>
-              {value.groupName}
-              <span style={{opacity: 0.5, paddingLeft: '4px'}}>
-                {buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)}
-              </span>
-            </>
-          }
-        />
-      </Box>
-    ),
-    getStringValue: (group) => group.groupName,
-    getTooltipText: (group) =>
-      group.groupName +
-      ' - ' +
-      buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
-
     state: useMemo(() => new Set(assetGroups ?? []), [assetGroups]),
     onStateChanged: (values) => {
       if (setGroups) {
@@ -87,3 +60,31 @@ export function useAssetGroupsForAssets(
     ).sort((a, b) => a.groupName.localeCompare(b.groupName));
   }, [assets]);
 }
+
+const getTooltipText = (group: AssetGroupSelector) =>
+  group.groupName +
+  ' - ' +
+  buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName);
+
+export const BaseConfig: StaticBaseConfig<AssetGroupSelector> = {
+  name: 'Asset groups',
+  icon: 'asset_group',
+  renderLabel: ({value}: {value: AssetGroupSelector}) => (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Icon name="repo" />
+      <TruncatedTextWithFullTextOnHover
+        tooltipText={getTooltipText(value)}
+        text={
+          <>
+            {value.groupName}
+            <span style={{opacity: 0.5, paddingLeft: '4px'}}>
+              {buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)}
+            </span>
+          </>
+        }
+      />
+    </Box>
+  ),
+  getStringValue: (group) => group.groupName,
+  getTooltipText,
+};

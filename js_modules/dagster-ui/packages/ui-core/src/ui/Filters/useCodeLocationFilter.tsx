@@ -1,11 +1,11 @@
 import {useCallback, useContext, useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {WorkspaceContext} from '../../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 type Props =
   | {
@@ -58,17 +58,14 @@ export const useCodeLocationFilter = (
   );
 
   return useStaticSetFilter<RepoAddress>({
-    name: 'Code location',
-    icon: 'folder',
     state: repos ? repos : visibleRepoAddresses,
-    allValues: allRepoAddresses.map((repoAddress) => {
-      return {value: repoAddress, match: [repoAddressAsHumanString(repoAddress)]};
-    }),
-    getKey: (repoAddress) => repoAddressAsHumanString(repoAddress),
-    renderLabel: ({value}) => (
-      <TruncatedTextWithFullTextOnHover text={repoAddressAsHumanString(value)} />
+    allValues: useMemo(
+      () =>
+        allRepoAddresses.map((repoAddress) => {
+          return {value: repoAddress, match: [repoAddressAsHumanString(repoAddress)]};
+        }),
+      [allRepoAddresses],
     ),
-    getStringValue: (value) => repoAddressAsHumanString(value),
     onStateChanged: (state) => {
       if (setRepos) {
         setRepos(Array.from(state));
@@ -77,5 +74,18 @@ export const useCodeLocationFilter = (
       }
     },
     menuWidth: '500px',
+    ...BaseConfig,
   });
+};
+
+const getStringValue = (value: RepoAddress) => repoAddressAsHumanString(value);
+
+export const BaseConfig: StaticBaseConfig<RepoAddress> = {
+  name: 'Code location',
+  icon: 'folder',
+  renderLabel: ({value}: {value: RepoAddress}) => (
+    <TruncatedTextWithFullTextOnHover text={repoAddressAsHumanString(value)} />
+  ),
+  getStringValue,
+  getKey: getStringValue,
 };

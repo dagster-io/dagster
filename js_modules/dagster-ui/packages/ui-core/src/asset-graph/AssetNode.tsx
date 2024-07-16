@@ -24,7 +24,7 @@ import {
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
-import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {

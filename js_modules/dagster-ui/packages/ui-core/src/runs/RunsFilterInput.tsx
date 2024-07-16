@@ -22,11 +22,14 @@ import {RunStatus, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
-import {useFilters} from '../ui/Filters';
-import {FilterObject} from '../ui/Filters/useFilter';
-import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
-import {SuggestionFilterSuggestion, useSuggestionFilter} from '../ui/Filters/useSuggestionFilter';
-import {TimeRangeState, useTimeRangeFilter} from '../ui/Filters/useTimeRangeFilter';
+import {useFilters} from '../ui/BaseFilters';
+import {FilterObject} from '../ui/BaseFilters/useFilter';
+import {capitalizeFirstLetter, useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {
+  SuggestionFilterSuggestion,
+  useSuggestionFilter,
+} from '../ui/BaseFilters/useSuggestionFilter';
+import {TimeRangeState, useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 export interface RunsFilterInputProps {

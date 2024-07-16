@@ -3,8 +3,8 @@ import React, {useCallback, useContext, useMemo, useState} from 'react';
 import {CodeLocationFilters, flattenCodeLocationRows} from './flattenCodeLocationRows';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
-import {useFilters} from '../ui/Filters';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {useFilters} from '../ui/BaseFilters';
+import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
