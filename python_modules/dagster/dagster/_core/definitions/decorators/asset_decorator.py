@@ -104,13 +104,17 @@ def asset(
 
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
-@experimental_param(param="auto_materialize_policy")
 @experimental_param(param="automation_condition")
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+)
+@deprecated_param(
+    param="auto_materialize_policy",
+    breaking_version="1.9.0",
+    additional_warn_text="use `automation_condition` instead.",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
