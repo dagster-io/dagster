@@ -285,14 +285,15 @@ class PipesGlueLogsMessageReader(PipesCloudWatchMessageReader):
 
 @experimental
 class PipesGlueClient(PipesClient, TreatAsResourceParam):
-    """A pipes client for invoking AWS Glue jobs.
+    """A pipes client for invoking AWS Glue jobs. Expects the external process to call
+    `open_dagster_pipes` with :py:class:`PipesClirArgsParamsLoader` as `params_loader`.
 
     Args:
-        client (boto3.client): The boto Glue client used to call invoke.
-        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
-            context into the Glue job, for example, :py:class:`PipesGlueContextInjector`.
-        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
-            from the glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
+        client (boto3.client): The boto Glue client used to create the job run.
+        context_injector (Optional[PipesContextInjector]): A context injector used to inject
+            Dagster context into the Glue job. Defaults to :py:class:`PipesGlueContextInjector`.
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read Dagster messages
+            from the Glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
     """
 
     def __init__(
