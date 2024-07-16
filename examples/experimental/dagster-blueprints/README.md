@@ -30,17 +30,10 @@ Why use Blueprints when you can write your own code to parse YAML and generate D
 
 ### Install
 
-Clone the Dagster repo:
+Install the dagster-blueprints package:
 
 ```python
-git clone https://github.com/dagster-io/dagster.git
-```
-
-Install the dagster-blueprints package, as well as the HEAD version of Dagster:
-
-```python
-pip install -e python_modules/dagster
-pip install -e examples/experimental/dagster-blueprints/
+pip install dagster-blueprints
 ```
 
 ### Try out one of the examples:
