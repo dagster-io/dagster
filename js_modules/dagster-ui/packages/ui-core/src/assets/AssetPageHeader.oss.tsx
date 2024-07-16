@@ -17,11 +17,20 @@ import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {AnchorButton} from '../ui/AnchorButton';
 
-type Props = {assetKey: {path: string[]}; headerBreadcrumbs: BreadcrumbProps[]} & Partial<
-  React.ComponentProps<typeof PageHeader>
->;
+type Props = Partial<React.ComponentProps<typeof PageHeader>> & {
+  assetKey: {path: string[]};
+  headerBreadcrumbs: BreadcrumbProps[];
+  Title?: ({children}: {children: React.ReactNode}) => React.ReactNode;
+};
 
-export const AssetPageHeader = ({assetKey, headerBreadcrumbs, ...extra}: Props) => {
+const defaultTitleComponent = ({children}: {children: React.ReactNode}) => children;
+
+export const AssetPageHeader = ({
+  assetKey,
+  headerBreadcrumbs,
+  Title = defaultTitleComponent,
+  ...extra
+}: Props) => {
   const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
   const [didCopy, setDidCopy] = React.useState(false);
@@ -64,27 +73,31 @@ export const AssetPageHeader = ({assetKey, headerBreadcrumbs, ...extra}: Props) 
           flex={{alignItems: 'center', gap: 4}}
           style={{maxWidth: '600px', overflow: 'hidden', marginBottom: 4}}
         >
-          <BreadcrumbsWithSlashes
-            items={breadcrumbs}
-            currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
-            breadcrumbRenderer={({text, href}) => (
-              <Heading>
-                <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
-              </Heading>
-            )}
-            $numHeaderBreadcrumbs={headerBreadcrumbs.length}
-            popoverProps={{popoverClassName: 'dagster-popover'}}
-          />
-          {copyableString ? (
-            <Tooltip placement="bottom" content="Copy asset key">
-              <CopyButton onClick={performCopy}>
-                <Icon
-                  name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                  color={Colors.accentGray()}
-                />
-              </CopyButton>
-            </Tooltip>
-          ) : undefined}
+          <Title>
+            <>
+              <BreadcrumbsWithSlashes
+                items={breadcrumbs}
+                currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
+                breadcrumbRenderer={({text, href}) => (
+                  <Heading>
+                    <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
+                  </Heading>
+                )}
+                $numHeaderBreadcrumbs={headerBreadcrumbs.length}
+                popoverProps={{popoverClassName: 'dagster-popover'}}
+              />
+              {copyableString ? (
+                <Tooltip placement="bottom" content="Copy asset key">
+                  <CopyButton onClick={performCopy}>
+                    <Icon
+                      name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
+                      color={Colors.accentGray()}
+                    />
+                  </CopyButton>
+                </Tooltip>
+              ) : undefined}
+            </>
+          </Title>
         </Box>
       }
       {...extra}
