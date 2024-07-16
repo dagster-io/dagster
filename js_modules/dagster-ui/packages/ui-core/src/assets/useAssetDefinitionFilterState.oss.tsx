@@ -15,7 +15,7 @@ import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
-type FilterableAssetDefinition = Partial<
+export type FilterableAssetDefinition = Partial<
   Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'computeKind'> & {
     repository: Pick<AssetNode['repository'], 'name'> & {
       location: Pick<AssetNode['repository']['location'], 'name'>;
