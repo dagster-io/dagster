@@ -1,0 +1,18 @@
+classifier: 
+  name: TABLE_STATUS
+  labels:
+    - name: deprecated
+    - name: dev
+    - name: public
+  propagate: false
+
+---
+classifier: 
+  name: RETENTION
+  labels:
+    - name: d7
+    - name: d30
+    - name: d90
+    - name: d180
+    - name: infinity
+  propagate: false
