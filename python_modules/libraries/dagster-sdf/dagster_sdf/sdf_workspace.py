@@ -34,7 +34,7 @@ class SdfWorkspacePreparer:
     def using_dagster_dev(self) -> bool:
         return using_dagster_dev()
 
-    def parse_on_load_opt_in(self) -> bool:
+    def compile_on_load_opt_in(self) -> bool:
         return bool(os.getenv("DAGSTER_SDF_COMPILE_ON_LOAD"))
 
 
@@ -56,7 +56,7 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
         self._generate_cli_args = generate_cli_args or ["compile", "--show=none", "--log-level=info", "--log-form=nested"]
 
     def on_load(self, workspace: "SdfWorkspace"):
-        if self.using_dagster_dev() or self.parse_on_load_opt_in():
+        if self.using_dagster_dev() or self.compile_on_load_opt_in():
             self.prepare(workspace)
             information_schema = SdfInformationSchema(
                 workspace_dir=workspace.workspace_dir, 
