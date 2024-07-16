@@ -314,11 +314,11 @@ class AutomationCondition(ABC):
                 & ~any_parents_missing
                 & ~any_parents_in_progress
                 & ~AutomationCondition.in_progress()
-            )
+            ).with_label("eager")
 
     @experimental
     @staticmethod
-    def cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
         """Returns a condition which will materialize asset partitions within the latest time window
         on a given cron schedule, after their parents have been updated. For example, if the
         cron_schedule is set to "0 0 * * *" (every day at midnight), then this rule will not become
@@ -333,16 +333,19 @@ class AutomationCondition(ABC):
         - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
         with disable_dagster_warnings():
-            cron_tick_passed = AutomationCondition.cron_tick_passed(cron_schedule, cron_timezone)
+            cron_label = f"'{cron_schedule}' ({cron_timezone})"
+            cron_tick_passed = AutomationCondition.cron_tick_passed(
+                cron_schedule, cron_timezone
+            ).with_label(f"tick of {cron_label} passed")
             all_deps_updated_since_cron = AutomationCondition.all_deps_match(
                 AutomationCondition.newly_updated().since(cron_tick_passed)
                 | AutomationCondition.will_be_requested()
-            )
+            ).with_label(f"all parents updated since {cron_label}")
             return (
                 AutomationCondition.in_latest_time_window()
                 & cron_tick_passed.since(AutomationCondition.newly_requested())
                 & all_deps_updated_since_cron
-            )
+            ).with_label(f"on cron {cron_label}")
 
     @experimental
     @staticmethod
