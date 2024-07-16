@@ -645,7 +645,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
 
-\--
+---
 
 ## dbt models, code versions, and "Unsynced"
 
@@ -656,70 +656,12 @@ Note that Dagster allows the optional specification of a [`code_version`](/conce
 ## Loading dbt tests as asset checks
 
 <Note>
-  <strong>Asset checks for dbt have been enabled by default, starting in `dagster-dbt` 0.23.0.</strong><br/>
-  `dbt-core` 1.6 or later is required for full functionality.
-
+  <strong>Heads up!</strong> Asset checks for dbt have been enabled by default
+  starting in <code>dagster-dbt</code> 0.23.0. <code>dbt-core</code> 1.6 or
+  later is required for full functionality.
 </Note>
 
-Dagster loads your dbt tests as [asset checks](/concepts/assets/asset-checks).
-
-### Indirect selection
-
-Dagster uses [dbt indirect selection](https://docs.getdbt.com/reference/global-configs/indirect-selection) to select dbt tests. By default, Dagster won't set `DBT_INDIRECT_SELECTION` so that the set of tests selected by Dagster is the same as the selected by dbt. When required, Dagster will override `DBT_INDIRECT_SELECTION` to `empty` in order to explicitly select dbt tests. For example:
-
-- Materializing dbt assets and excluding their asset checks
-- Executing dbt asset checks without materializing their assets
-
-### Singular tests
-
-Dagster will load both generic and singular tests as asset checks. In the event that your singular test depends on multiple dbt models, you can use dbt metadata to specify which Dagster asset it should target. These fields can be filled in as they would be for the dbt [ref function](https://docs.getdbt.com/reference/dbt-jinja-functions/ref). The configuration can be supplied in a [config block](https://docs.getdbt.com/reference/data-test-configs) for the singular test.
-
-```sql
-{{
-    config(
-        meta={
-            'dagster': {
-                'ref': {
-                    'name': 'customers',
-                    'package_name': 'my_dbt_assets'
-                    'version': 1,
-                },
-            }
-        }
-    )
-}}
-```
-
-`dbt-core` version 1.6 or later is required for Dagster to read this metadata.
-
-If this metadata isn't provided, Dagster won't ingest the test as an asset check. It will still run the test and emit a <PyObject object="AssetObservation" /> events with the test results.
-
-### Disabling asset checks
-
-You can disable modeling your dbt tests as asset checks. The tests will still run and will be emitted as <PyObject object="AssetObservation"/> events. To do so you'll need to define a <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have asset checks disabled. The following example disables asset checks when using <PyObject module="dagster_dbt" object="dbt_assets" decorator/>:
-
-```python startafter=start_disable_asset_check_dagster_dbt_translator endbefore=end_disable_asset_check_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
-from pathlib import Path
-from dagster import AssetExecutionContext
-from dagster_dbt import (
-    DagsterDbtTranslator,
-    DagsterDbtTranslatorSettings,
-    DbtCliResource,
-    dbt_assets,
-)
-
-manifest_path = Path("path/to/dbt_project/target/manifest.json")
-dagster_dbt_translator = DagsterDbtTranslator(
-    settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
-)
-
-@dbt_assets(
-    manifest=manifest_path,
-    dagster_dbt_translator=dagster_dbt_translator,
-)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-    yield from dbt.cli(["build"], context=context).stream()
-```
+Dagster's [dbt integration](/integrations/dbt) can load all dbt tests as [asset checks](/concepts/assets/asset-checks). Refer to the [Loading dbt tests as asset checks](/integrations/dbt/loading-dbt-tests-as-asset-checks) guide for more information.
 
 ---
 

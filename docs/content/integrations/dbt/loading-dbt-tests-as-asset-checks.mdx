@@ -1,0 +1,113 @@
+---
+title: "Loading dbt tests as asset checks | Dagster Docs"
+description: ""
+---
+
+# Loading dbt tests as asset checks
+
+<Note>
+  <strong>Heads up!</strong> Asset checks for dbt have been enabled by default
+  starting in <code>dagster-dbt</code> 0.23.0. <code>dbt-core</code> 1.6 or
+  later is required for full functionality.
+</Note>
+
+Dagster's [dbt integration](/integrations/dbt) can load all dbt tests as [asset checks](/concepts/assets/asset-checks), making it easier to visualize the success and failure of tests alongside the Dagster assets they target.
+
+By the end of this guide, you'll understand how Dagster loads dbt tests as asset checks, how to select singular tests, and how to disable loading dbt tests as asset checks.
+
+---
+
+## Prerequisites
+
+Before continuing, you'll need:
+
+- Familiarity with Dagster [asset checks](/concepts/assets/asset-checks)
+- Familiarity with [dbt tests](https://docs.getdbt.com/docs/build/data-tests)
+
+---
+
+## Selecting dbt tests
+
+Dagster uses [dbt indirect selection](https://docs.getdbt.com/reference/global-configs/indirect-selection) to select dbt tests. By default, Dagster won't set `DBT_INDIRECT_SELECTION` so that the set of tests selected by Dagster is the same as the selected by dbt.
+
+When required, Dagster will override `DBT_INDIRECT_SELECTION` to `empty` in order to explicitly select dbt tests. For example:
+
+- Materializing dbt assets and excluding their asset checks
+- Executing dbt asset checks without materializing their assets
+
+### Singular tests
+
+<Note>
+  <strong>Heads up!</strong> To use the approach described in this section,
+  Dagster requires <code>dbt-core</code> version 1.6 or later.
+</Note>
+
+Dagster will load both generic and singular tests as asset checks. In the event that a singular test depends on multiple dbt models, dbt metadata can be used to specify the Dagster asset the test should target.
+
+The metadata fields can be filled in as they would be for the dbt [ref function](https://docs.getdbt.com/reference/dbt-jinja-functions/ref). For the singular test, the configuration can be supplied in a [config block](https://docs.getdbt.com/reference/data-test-configs):
+
+```sql
+{{
+    config(
+        meta={
+            'dagster': {
+                'ref': {
+                    'name': 'customers',
+                    'package_name': 'my_dbt_assets'
+                    'version': 1,
+                },
+            }
+        }
+    )
+}}
+```
+
+If this metadata isn't provided, Dagster won't ingest the test as an asset check. However, Dagster will still run the test and emit an <PyObject object="AssetObservation" /> event with the test results.
+
+---
+
+## Disabling dbt test selection for asset checks
+
+To disable modeling dbt tests as asset checks, define a <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have asset checks disabled. For example, the following disables asset checks when using <PyObject module="dagster_dbt" object="dbt_assets" decorator/>:
+
+```python startafter=start_disable_asset_check_dagster_dbt_translator endbefore=end_disable_asset_check_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetExecutionContext
+from dagster_dbt import (
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+    DbtCliResource,
+    dbt_assets,
+)
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+dagster_dbt_translator = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+)
+
+@dbt_assets(
+    manifest=manifest_path,
+    dagster_dbt_translator=dagster_dbt_translator,
+)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Asset checks"
+    href="/concepts/assets/asset-checks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster & dbt"
+    href="/integrations/dbt"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset definitions"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+</ArticleList>
