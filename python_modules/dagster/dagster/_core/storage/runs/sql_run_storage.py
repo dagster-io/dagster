@@ -749,10 +749,14 @@ class SqlRunStorage(RunStorage):
                     continue
             if print_fn:
                 print_fn(f"Starting data migration: {migration_name}")
-            migration_fn()(self, print_fn)
-            self.mark_index_built(migration_name)
-            if print_fn:
-                print_fn(f"Finished data migration: {migration_name}")
+            completed = migration_fn()(self, print_fn)
+            if completed:
+                self.mark_index_built(migration_name)
+                if print_fn:
+                    print_fn(f"Finished data migration: {migration_name}")
+            else:
+                if print_fn:
+                    print_fn(f"Skipped data migration: {migration_name}")
 
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
