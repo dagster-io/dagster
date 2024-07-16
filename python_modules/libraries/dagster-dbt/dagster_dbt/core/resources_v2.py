@@ -829,7 +829,16 @@ def _build_column_lineage_metadata(
     # 1. Retrieve the current node's SQL file and its parents' column schemas.
     sql_dialect = manifest["metadata"]["adapter_type"]
     sqlglot_mapping_schema = MappingSchema(dialect=sql_dialect)
-    for parent_relation_name, parent_relation_metadata in event_history_metadata.parents.items():
+
+    parent_relation_metadata_by_relation_name = {
+        **event_history_metadata.parents,
+        # Include the current node's column schema to optimize self-referential models.
+        dbt_resource_props["relation_name"]: event_history_metadata.columns,
+    }
+    for (
+        parent_relation_name,
+        parent_relation_metadata,
+    ) in parent_relation_metadata_by_relation_name.items():
         sqlglot_mapping_schema.add_table(
             table=to_table(parent_relation_name, dialect=sql_dialect),
             column_mapping={
