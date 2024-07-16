@@ -199,6 +199,10 @@ class AutoMaterializePolicy(
 
     @public
     @staticmethod
+    @deprecated(
+        breaking_version="1.9",
+        additional_warn_text="Use `AutomationCondition.eager()` instead.",
+    )
     def eager(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
         """Constructs an eager AutoMaterializePolicy.
 
@@ -228,10 +232,8 @@ class AutoMaterializePolicy(
     @public
     @staticmethod
     @deprecated(
-        breaking_version="1.8",
-        additional_warn_text="Lazy auto-materialize is deprecated, in favor of explicit cron-based "
-        "scheduling rules. Additional alternatives to replicate more of the lazy auto-materialize "
-        "behavior will be provided before this is fully removed.",
+        breaking_version="1.9",
+        additional_warn_text="Use `AutomationCondition.any_downstream_conditions()` instead.",
     )
     def lazy(max_materializations_per_minute: Optional[int] = 1) -> "AutoMaterializePolicy":
         """(Deprecated) Constructs a lazy AutoMaterializePolicy.
