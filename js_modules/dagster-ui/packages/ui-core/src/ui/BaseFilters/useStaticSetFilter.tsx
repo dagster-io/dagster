@@ -273,7 +273,7 @@ export function SetFilterActiveState({
   tagColor?: string;
   style?: ComponentProps<typeof FilterTag>['style'];
 }) {
-  const highlightColor = style === 'light-blue' ? Colors.accentCyan() : undefined;
+  const highlightColor = style === 'cyan' ? Colors.accentCyan() : undefined;
   const isAnyOf = matchType === 'any-of';
   const arr = useMemo(() => Array.from(state), [state]);
   const label = useMemo(() => {

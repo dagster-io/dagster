@@ -27,15 +27,15 @@ export const FilterTag = ({
   iconName,
   label,
   onRemove,
-  style = 'default',
+  theme = 'default',
 }: {
   label: JSX.Element;
   iconName?: IconName;
   onRemove?: () => void;
-  style?: 'default' | 'light-blue';
+  theme?: 'default' | 'cyan';
 }) => {
   const {color, fillColor, textColor} = useMemo(() => {
-    if (style === 'default') {
+    if (theme === 'default') {
       return {
         color: Colors.linkDefault(),
         fillColor: Colors.backgroundBlue(),
@@ -48,11 +48,11 @@ export const FilterTag = ({
         textColor: Colors.textCyan(),
       };
     }
-  }, [style]);
+  }, [theme]);
   return (
     <div>
       <BaseTag
-        icon={iconName ? <Icon name={iconName} color={color ?? Colors.linkDefault()} /> : undefined}
+        icon={iconName ? <Icon name={iconName} color={color} /> : undefined}
         rightIcon={
           onRemove ? (
             <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>

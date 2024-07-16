@@ -61,18 +61,19 @@ export function useAssetGroupsForAssets(
   }, [assets]);
 }
 
+const getTooltipText = (group: AssetGroupSelector) =>
+  group.groupName +
+  ' - ' +
+  buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName);
+
 export const BaseConfig: StaticBaseConfig<AssetGroupSelector> = {
-  name: 'Asset Groups',
+  name: 'Asset groups',
   icon: 'asset_group',
   renderLabel: ({value}: {value: AssetGroupSelector}) => (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
       <Icon name="repo" />
       <TruncatedTextWithFullTextOnHover
-        tooltipText={
-          value.groupName +
-          ' - ' +
-          buildRepoPathForHuman(value.repositoryName, value.repositoryLocationName)
-        }
+        tooltipText={getTooltipText(value)}
         text={
           <>
             {value.groupName}
@@ -85,8 +86,5 @@ export const BaseConfig: StaticBaseConfig<AssetGroupSelector> = {
     </Box>
   ),
   getStringValue: (group) => group.groupName,
-  getTooltipText: (group) =>
-    group.groupName +
-    ' - ' +
-    buildRepoPathForHuman(group.repositoryName, group.repositoryLocationName),
+  getTooltipText,
 };
