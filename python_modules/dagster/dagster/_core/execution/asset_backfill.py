@@ -1325,7 +1325,9 @@ def _partition_subset_str(
 ):
     return ",".join(
         f"{partition_range.start} -> {partition_range.end}"
-        for partition_range in partition_subset.get_partition_key_ranges(partitions_def, instance)
+        for partition_range in partition_subset.get_partition_key_ranges(
+            partitions_def=partitions_def, dynamic_partitions_store=instance
+        )
     )
 
 
@@ -1377,7 +1379,7 @@ def execute_asset_backfill_iteration_inner(
         #     f"Root assets that have not yet been requested:\n {_asset_key_partition_key_iter_to_str(target_roots)}"
         # )
         logger.info(
-            f"Root assets that have not yet been requested:\n {_asset_subsets_iter_to_str(AssetGraphSubset.from_asset_partition_set(target_roots, asset_graph), asset_graph, instance_queryer)}"
+            f"Root assets that have not yet been requested:\n {_asset_subsets_iter_to_str(AssetGraphSubset.from_asset_partition_set(set(target_roots), asset_graph), asset_graph, instance_queryer)}"
         )
 
         yield None
