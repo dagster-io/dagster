@@ -1,13 +1,12 @@
-classifier: 
+classifier:
   name: TABLE_STATUS
   labels:
     - name: deprecated
     - name: dev
     - name: public
   propagate: false
-
 ---
-classifier: 
+classifier:
   name: RETENTION
   labels:
     - name: d7

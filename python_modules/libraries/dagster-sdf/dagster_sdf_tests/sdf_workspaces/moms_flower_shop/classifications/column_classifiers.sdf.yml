@@ -3,9 +3,8 @@ classifier:
   labels:
     - name: inapp
     - name: marketing
-
 ---
-classifier: 
+classifier:
   name: PII
   labels:
     - name: name

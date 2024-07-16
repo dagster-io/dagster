@@ -24,8 +24,8 @@ workspace:
     - path: classifications
     - path: reports
     - path: checks
-  
-  defaults: 
+
+  defaults:
     preprocessor: jinja
 ---
 environment:
