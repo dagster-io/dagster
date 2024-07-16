@@ -69,6 +69,7 @@ def evaluate_scheduling_conditions(context: SensorEvaluationContext):
         cursor=cursor,
         respect_materialization_data_versions=True,
         auto_materialize_run_tags={},
+        request_backfills=context.instance.da_request_backfills(),
     )
     results, to_request = evaluator.evaluate()
     new_cursor = cursor.with_updates(

@@ -55,6 +55,7 @@ class AutomationConditionScenarioState(ScenarioState):
     condition_cursor: Optional[AutomationConditionCursor] = None
     requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
     ensure_empty_result: bool = True
+    request_backfills: bool = False
 
     def _get_current_results_by_key(
         self, asset_graph_view: AssetGraphView
@@ -110,6 +111,7 @@ class AutomationConditionScenarioState(ScenarioState):
                 respect_materialization_data_versions=False,
                 logger=self.logger,
                 evaluation_time=self.current_time,
+                request_backfills=self.request_backfills,
             )
             legacy_context = LegacyRuleEvaluationContext.create_within_asset_daemon(
                 asset_key=asset_key,
