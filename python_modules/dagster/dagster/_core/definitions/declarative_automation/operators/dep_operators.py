@@ -1,14 +1,18 @@
 from abc import abstractmethod
-from typing import AbstractSet, Optional
+from typing import TYPE_CHECKING, AbstractSet, Optional
+
+from typing_extensions import Annotated
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._record import copy, record
+from dagster._record import ImportFrom, copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AssetSelection
 
 
 @record
@@ -20,6 +24,7 @@ class DepConditionWrapperCondition(AutomationCondition):
 
     dep_key: AssetKey
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -45,8 +50,13 @@ class DepConditionWrapperCondition(AutomationCondition):
 @record
 class DepCondition(AutomationCondition):
     operand: AutomationCondition
-    allow_selection: Optional[AssetSelection] = None
-    ignore_selection: Optional[AssetSelection] = None
+    allow_selection: Optional[
+        Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
+    ] = None
+    ignore_selection: Optional[
+        Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
+    ] = None
+    label: Optional[str] = None
 
     @property
     @abstractmethod
@@ -61,7 +71,7 @@ class DepCondition(AutomationCondition):
             description += f" except for {self.ignore_selection}"
         return description
 
-    def allow(self, selection: AssetSelection) -> "DepCondition":
+    def allow(self, selection: "AssetSelection") -> "DepCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.
         """
@@ -70,7 +80,7 @@ class DepCondition(AutomationCondition):
         )
         return copy(self, allow_selection=allow_selection)
 
-    def ignore(self, selection: AssetSelection) -> "DepCondition":
+    def ignore(self, selection: "AssetSelection") -> "DepCondition":
         """Returns a copy of this condition that will ignore dependencies within the provided
         AssetSelection.
         """

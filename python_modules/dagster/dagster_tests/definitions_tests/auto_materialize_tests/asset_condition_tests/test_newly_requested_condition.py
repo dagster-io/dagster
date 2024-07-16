@@ -1,5 +1,5 @@
-from dagster._core.definitions.declarative_automation import NewlyRequestedCondition
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.operands import NewlyRequestedCondition
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset

@@ -20,6 +20,7 @@ from typing_extensions import dataclass_transform
 import dagster._check as check
 from dagster._check import EvalContext, build_check_call_str
 
+ImportFrom = check.ImportFrom  # re-expose for convenience
 TType = TypeVar("TType", bound=Type)
 TVal = TypeVar("TVal")
 
@@ -32,18 +33,22 @@ _RECORD_ANNOTATIONS_FIELD = "__record_annotations__"
 _CHECKED_NEW = "__checked_new__"
 _DEFAULTS_NEW = "__defaults_new__"
 _INJECTED_DEFAULT_VALS_LOCAL_VAR = "__dm_defaults__"
+_NAMED_TUPLE_BASE_NEW_FIELD = "__nt_new__"
+_REMAPPING_FIELD = "__field_remap__"
+_ORIGINAL_CLASS_FIELD = "__original_class__"
 
 
-def _namedtuple_model_transform(
+def _namedtuple_record_transform(
     cls: TType,
     *,
     checked: bool,
     with_new: bool,
     decorator_frames: int,
+    field_to_new_mapping: Optional[Mapping[str, str]],
 ) -> TType:
     """Transforms the input class in to one that inherits a generated NamedTuple base class
     and:
-        * bans tuple methods that don't make sense for a model object
+        * bans tuple methods that don't make sense for a record object
         * creates a run time checked __new__  (optional).
     """
     field_set = getattr(cls, "__annotations__", {})
@@ -52,19 +57,20 @@ def _namedtuple_model_transform(
     for name in field_set.keys():
         if hasattr(cls, name):
             attr_val = getattr(cls, name)
-            check.invariant(
-                not isinstance(attr_val, property),
-                f"Conflicting @property for field {name} on record {cls.__name__}."
-                "If you are trying to declare an abstract property "
-                "you will have to use a class attribute instead.",
-            )
-            check.invariant(
-                not inspect.isfunction(attr_val),
-                f"Conflicting function for field {name} on record {cls.__name__}. "
-                "If you are trying to set a function as a default value "
-                "you will have to override __new__.",
-            )
-            defaults[name] = attr_val
+            if isinstance(attr_val, property):
+                check.invariant(
+                    attr_val.__isabstractmethod__,
+                    f"Conflicting non-abstract @property for field {name} on record {cls.__name__}."
+                    "Add the the @abstractmethod decorator to make it abstract.",
+                )
+            else:
+                check.invariant(
+                    not inspect.isfunction(attr_val),
+                    f"Conflicting function for field {name} on record {cls.__name__}. "
+                    "If you are trying to set a function as a default value "
+                    "you will have to override __new__.",
+                )
+                defaults[name] = attr_val
 
     base = NamedTuple(f"_{cls.__name__}", field_set.items())
     nt_new = base.__new__
@@ -89,6 +95,7 @@ def _namedtuple_model_transform(
             global_ns={},
             # inject default values in to the local namespace for reference in generated __new__
             local_ns={_INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
+            lazy_imports={},
         )
         defaults_new = eval_ctx.compile_fn(
             _build_defaults_new(field_set, defaults),
@@ -100,28 +107,28 @@ def _namedtuple_model_transform(
         # verify the alignment since it impacts frame capture
         check.failed(f"Expected __new__ on {cls}, add it or switch from the _with_new decorator.")
 
-    # clear default values
-    for name in defaults.keys():
-        delattr(cls, name)
-
     new_type = type(
         cls.__name__,
         (cls, base),
         {  # these will override an implementation on the class if it exists
+            **{n: getattr(base, n) for n in field_set.keys()},
             "__iter__": _banned_iter,
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
             _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
             _RECORD_ANNOTATIONS_FIELD: field_set,
-            "__nt_new__": nt_new,
+            _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
+            _REMAPPING_FIELD: field_to_new_mapping or {},
+            _ORIGINAL_CLASS_FIELD: cls,
             "__bool__": _true,
             "__reduce__": _reduce,
+            # functools doesn't work, so manually update_wrapper
+            "__module__": cls.__module__,
+            "__qualname__": cls.__qualname__,
+            "__annotations__": field_set,
+            "__doc__": cls.__doc__,
         },
     )
-
-    # functools doesn't work, so manually update_wrapper
-    new_type.__module__ = cls.__module__
-    new_type.__qualname__ = cls.__qualname__
 
     return new_type  # type: ignore
 
@@ -148,26 +155,26 @@ def record(
     *,
     checked: bool = True,
 ) -> Union[TType, Callable[[TType], TType]]:
-    """A class decorator that will create an immutable model class based on the defined fields.
+    """A class decorator that will create an immutable record class based on the defined fields.
 
     Args:
         checked: Whether or not to generate runtime type checked construction.
-        enable_cached_method: Whether or not to support object instance level caching using @cached_method.
-        serdes: whitelist this class for serdes, with the defined options if SerdesOptions used.
     """
     if cls:
-        return _namedtuple_model_transform(
+        return _namedtuple_record_transform(
             cls,
             checked=checked,
             with_new=False,
             decorator_frames=1,
+            field_to_new_mapping=None,
         )
     else:
         return partial(
-            _namedtuple_model_transform,
+            _namedtuple_record_transform,
             checked=checked,
             with_new=False,
             decorator_frames=0,
+            field_to_new_mapping=None,
         )
 
 
@@ -181,6 +188,7 @@ def record_custom(
 def record_custom(
     *,
     checked: bool = True,
+    field_to_new_mapping: Optional[Mapping[str, str]] = None,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
@@ -188,6 +196,7 @@ def record_custom(
     cls: Optional[TType] = None,
     *,
     checked: bool = True,
+    field_to_new_mapping: Optional[Mapping[str, str]] = None,
 ) -> Union[TType, Callable[[TType], TType]]:
     """Variant of the record decorator to use to opt out of the dataclass_transform decorator behavior.
     This is often doesn't to be able to override __new__, so the type checker respects your constructor.
@@ -212,18 +221,20 @@ def record_custom(
     the dataclass_transform decorator still impacts all usage of the function."
     """
     if cls:
-        return _namedtuple_model_transform(
+        return _namedtuple_record_transform(
             cls,
             checked=checked,
             with_new=True,
             decorator_frames=1,
+            field_to_new_mapping=field_to_new_mapping,
         )
     else:
         return partial(
-            _namedtuple_model_transform,
+            _namedtuple_record_transform,
             checked=checked,
             with_new=True,
             decorator_frames=0,
+            field_to_new_mapping=field_to_new_mapping,
         )
 
 
@@ -247,22 +258,42 @@ def has_generated_new(obj) -> bool:
 
 
 def get_record_annotations(obj) -> Mapping[str, Type]:
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
     return getattr(obj, _RECORD_ANNOTATIONS_FIELD)
 
 
+def get_original_class(obj):
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
+    return getattr(obj, _ORIGINAL_CLASS_FIELD)
+
+
 def as_dict(obj) -> Mapping[str, Any]:
-    """Creates a dict representation of a model."""
-    if not is_record(obj):
-        raise Exception("Only works for @record decorated classes")
+    """Creates a dict representation of the record based on the fields."""
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
 
     return {key: value for key, value in zip(obj._fields, obj.__hidden_iter__())}
+
+
+def as_dict_for_new(obj) -> Mapping[str, Any]:
+    """Creates a dict representation of the record with field_to_new_mapping applied."""
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
+
+    remap = getattr(obj, _REMAPPING_FIELD)
+    from_obj = {}
+    for k, v in as_dict(obj).items():
+        if k in remap:
+            from_obj[remap[k]] = v
+        else:
+            from_obj[k] = v
+
+    return from_obj
 
 
 def copy(obj: TVal, **kwargs) -> TVal:
     """Create a copy of this record instance, with new values specified as key word args."""
     return obj.__class__(
         **{
-            **as_dict(obj),
+            **as_dict_for_new(obj),
             **kwargs,
         }
     )
@@ -308,7 +339,7 @@ class JitCheckedNew:
         self._eval_ctx = eval_ctx
         self._new_frames = new_frames  # how many frames of __new__ there are
 
-    def __call__(self, cls, **kwargs):
+    def __call__(self, cls, *args, **kwargs):
         # update the context with callsite locals/globals to resolve
         # ForwardRefs that were unavailable at definition time.
         self._eval_ctx.update_from_frame(1 + self._new_frames)
@@ -323,11 +354,10 @@ class JitCheckedNew:
             _CHECKED_NEW,
         )
 
-        return self._nt_base.__new__(cls, **kwargs)
+        return self._nt_base.__new__(cls, *args, **kwargs)
 
     def _build_checked_new_str(self) -> str:
         kw_args_str, set_calls_str = build_args_and_assignment_strs(self._field_set, self._defaults)
-
         check_calls = []
         for name, ttype in self._field_set.items():
             call_str = build_check_call_str(
@@ -338,24 +368,33 @@ class JitCheckedNew:
             check_calls.append(f"{name}={call_str}")
 
         check_call_block = ",\n        ".join(check_calls)
+
+        lazy_imports_str = "\n    ".join(
+            f"from {module} import {t}" for t, module in self._eval_ctx.lazy_imports.items()
+        )
+
         return f"""
 def __checked_new__(cls{kw_args_str}):
+    {lazy_imports_str}
     {set_calls_str}
-    return cls.__nt_new__(
+    return cls.{_NAMED_TUPLE_BASE_NEW_FIELD}(
         cls,
         {check_call_block}
     )
 """
 
 
-def _build_defaults_new(field_set: Mapping[str, Type], defaults: Mapping[str, Any]) -> str:
+def _build_defaults_new(
+    field_set: Mapping[str, Type],
+    defaults: Mapping[str, Any],
+) -> str:
     """Build a __new__ implementation that handles default values."""
     kw_args_str, set_calls_str = build_args_and_assignment_strs(field_set, defaults)
     assign_str = ",\n        ".join([f"{name}={name}" for name in field_set.keys()])
     return f"""
 def __defaults_new__(cls{kw_args_str}):
     {set_calls_str}
-    return cls.__nt_new__(
+    return cls.{_NAMED_TUPLE_BASE_NEW_FIELD}(
         cls,
         {assign_str}
     )
@@ -418,4 +457,4 @@ def _from_reduce(cls, kwargs):
 
 def _reduce(self):
     # pickle support
-    return _from_reduce, (self.__class__, as_dict(self))
+    return _from_reduce, (self.__class__, as_dict_for_new(self))

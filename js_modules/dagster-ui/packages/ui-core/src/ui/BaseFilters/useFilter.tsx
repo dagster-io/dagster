@@ -1,5 +1,6 @@
 import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useMemo} from 'react';
 import styled from 'styled-components';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
@@ -26,28 +27,49 @@ export const FilterTag = ({
   iconName,
   label,
   onRemove,
+  theme = 'default',
 }: {
   label: JSX.Element;
   iconName?: IconName;
-  onRemove: () => void;
-}) => (
-  <div>
-    <BaseTag
-      icon={iconName ? <Icon name={iconName} color={Colors.linkDefault()} /> : undefined}
-      rightIcon={
-        <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
-          <Icon name="close" color={Colors.linkDefault()} />
-        </div>
-      }
-      label={label}
-      fillColor={Colors.backgroundBlue()}
-      textColor={Colors.linkDefault()}
-    />
-  </div>
-);
+  onRemove?: () => void;
+  theme?: 'default' | 'cyan';
+}) => {
+  const {color, fillColor, textColor} = useMemo(() => {
+    if (theme === 'default') {
+      return {
+        color: Colors.linkDefault(),
+        fillColor: Colors.backgroundBlue(),
+        textColor: Colors.linkDefault(),
+      };
+    } else {
+      return {
+        color: Colors.accentCyan(),
+        fillColor: Colors.backgroundCyan(),
+        textColor: Colors.textCyan(),
+      };
+    }
+  }, [theme]);
+  return (
+    <div>
+      <BaseTag
+        icon={iconName ? <Icon name={iconName} color={color} /> : undefined}
+        rightIcon={
+          onRemove ? (
+            <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
+              <Icon name="close" color={Colors.linkDefault()} />
+            </div>
+          ) : null
+        }
+        label={label}
+        fillColor={fillColor}
+        textColor={textColor}
+      />
+    </div>
+  );
+};
 
-const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)`
-  color: ${Colors.textBlue()};
+const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)<{color: string}>`
+  color: ${({color}) => color};
   font-weight: 600;
   font-size: 12px;
   max-width: 100px;
@@ -57,14 +79,17 @@ export const FilterTagHighlightedText = React.forwardRef(
   (
     {
       children,
+      color = Colors.textBlue(),
       ...rest
     }: Omit<React.ComponentProps<typeof TruncatedTextWithFullTextOnHover>, 'text'> & {
       children: string;
+      color?: string;
     },
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     return (
       <FilterTagHighlightedTextSpan
+        color={color}
         text={
           <>
             {children}

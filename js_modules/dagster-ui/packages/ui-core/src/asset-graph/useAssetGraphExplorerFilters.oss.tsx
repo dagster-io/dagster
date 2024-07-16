@@ -3,10 +3,11 @@ import React, {useContext, useEffect, useState} from 'react';
 
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
+import {AssetFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
-import {useFilters} from '../ui/Filters';
+import {useFilters} from '../ui/BaseFilters';
+import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
@@ -16,7 +17,6 @@ import {
   useAssetKindTagsForAssets,
   useComputeKindTagFilter,
 } from '../ui/Filters/useComputeKindTagFilter';
-import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
 import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 

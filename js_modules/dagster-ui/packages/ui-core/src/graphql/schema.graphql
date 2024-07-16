@@ -3210,7 +3210,7 @@ type Query {
     sensorStatus: InstigationStatus
   ): SensorsOrError!
   instigationStateOrError(
-    instigationSelector: InstigationSelector
+    instigationSelector: InstigationSelector!
     id: String
   ): InstigationStateOrError!
   instigationStatesOrError(repositoryID: String!): InstigationStatesOrError!
@@ -3592,6 +3592,21 @@ type AssetConditionEvaluationRecord {
   startTimestamp: Float
   endTimestamp: Float
   evaluation: AssetConditionEvaluation!
+  rootUniqueId: String!
+  evaluationNodes: [AutomationConditionEvaluationNode!]!
+}
+
+type AutomationConditionEvaluationNode {
+  uniqueId: String!
+  description: String!
+  label: String
+  startTimestamp: Float
+  endTimestamp: Float
+  numTrue: Int!
+  isPartitioned: Boolean!
+  trueSubset: AssetSubset!
+  candidateSubset: AssetSubset
+  childUniqueIds: [String!]!
 }
 
 type Mutation {

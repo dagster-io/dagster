@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 import dagster._check as check
 import pytest
@@ -22,6 +22,10 @@ def get_hardcoded_condition():
     true_set = set()
 
     class HardcodedCondition(AutomationCondition):
+        @property
+        def label(self) -> Optional[str]:
+            return None
+
         @property
         def description(self) -> str:
             return "..."

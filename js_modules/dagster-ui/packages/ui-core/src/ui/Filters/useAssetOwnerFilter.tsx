@@ -1,10 +1,10 @@
 import memoize from 'lodash/memoize';
-import {useMemo} from 'react';
+import {ComponentProps, useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {assertUnreachable} from '../../app/Util';
 import {AssetOwner} from '../../graphql/types';
 import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
 
@@ -39,10 +39,8 @@ export const useAssetOwnerFilter = ({
       })
       .filter((o) => o);
   }, [allAssetOwners, owners]);
-  const {UserDisplay} = useLaunchPadHooks();
   return useStaticSetFilter<AssetOwner>({
-    name: 'Owner',
-    icon: 'account_circle',
+    ...BaseConfig,
     allValues: useMemo(
       () =>
         allAssetOwners.map((value) => ({
@@ -52,13 +50,18 @@ export const useAssetOwnerFilter = ({
       [allAssetOwners],
     ),
     menuWidth: '300px',
-    renderLabel: ({value}) => <UserDisplay email={stringValueFromOwner(value)} isFilter={true} />,
-    getStringValue: (value) => stringValueFromOwner(value),
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setOwners?.(Array.from(values));
     },
   });
+};
+
+const UserDisplay = (
+  props: ComponentProps<ReturnType<typeof useLaunchPadHooks>['UserDisplay']>,
+) => {
+  const {UserDisplay: Component} = useLaunchPadHooks();
+  return <Component {...props} />;
 };
 
 export function useAssetOwnersForAssets(
@@ -100,3 +103,12 @@ function stringValueFromOwner(owner: AssetOwner) {
       assertUnreachable(typename);
   }
 }
+
+export const BaseConfig: StaticBaseConfig<AssetOwner> = {
+  name: 'Owner',
+  icon: 'account_circle',
+  renderLabel: ({value}: {value: AssetOwner}) => (
+    <UserDisplay email={stringValueFromOwner(value)} isFilter={true} />
+  ),
+  getStringValue: (value: AssetOwner) => stringValueFromOwner(value),
+};

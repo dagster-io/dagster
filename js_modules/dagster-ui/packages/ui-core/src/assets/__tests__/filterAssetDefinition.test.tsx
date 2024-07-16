@@ -10,7 +10,7 @@ import {
   AssetFilterBaseType,
   AssetFilterType,
   filterAssetDefinition,
-} from '../useAssetDefinitionFilterState';
+} from '../useAssetDefinitionFilterState.oss';
 
 describe('filterAssetDefinition', () => {
   it('returns false when no definition is provided', () => {

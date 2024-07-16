@@ -56,7 +56,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
-from dagster._core.test_utils import create_test_asset_job, instance_for_test
+from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Nothing
 
 
@@ -1006,16 +1006,12 @@ def test_graph_backed_asset_subset():
         one = foo()
         return bar.alias("bar_1")(one), bar.alias("bar_2")(one)
 
-    asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
-            [
-                AssetsDefinition.from_graph(my_graph, can_subset=True),
-            ]
-        )
-    )
-
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        result = materialize(
+            [AssetsDefinition.from_graph(my_graph, can_subset=True)],
+            instance=instance,
+            selection=[AssetKey("one")],
+        )
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
             == 1
@@ -1035,16 +1031,12 @@ def test_graph_backed_asset_partial_output_selection():
         one, two = foo()
         return one, two
 
-    asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
-            [
-                AssetsDefinition.from_graph(graph_asset, can_subset=True),
-            ]
-        ),
-    )
-
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("one")])
+        result = materialize(
+            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
+            instance=instance,
+            selection=[AssetKey("one")],
+        )
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
             == 1
@@ -1081,26 +1073,17 @@ def test_input_subsetting_graph_backed_asset():
             baz(upstream_1, upstream_2),
         )
 
+    assets = [upstream_1, upstream_2, AssetsDefinition.from_graph(my_graph, can_subset=True)]
+
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        asset_job = define_asset_job("yay").resolve(
-            asset_graph=AssetGraph.from_assets(
-                with_resources(
-                    [
-                        upstream_1,
-                        upstream_2,
-                        AssetsDefinition.from_graph(my_graph, can_subset=True),
-                    ],
-                    resource_defs={
-                        "io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})
-                    },
-                ),
-            )
-        )
+        resources = {"io_manager": fs_io_manager.configured({"base_dir": tmpdir_path})}
         with instance_for_test() as instance:
             # test first bar alias
-            result = asset_job.execute_in_process(
+            result = materialize(
+                assets,
+                resources=resources,
                 instance=instance,
-                asset_selection=[AssetKey("one"), AssetKey("upstream_1")],
+                selection=[AssetKey("one"), AssetKey("upstream_1")],
             )
             assert result.success
             assert (
@@ -1117,9 +1100,11 @@ def test_input_subsetting_graph_backed_asset():
 
         # test second "bar" alias
         with instance_for_test() as instance:
-            result = asset_job.execute_in_process(
+            result = materialize(
+                assets,
+                resources=resources,
                 instance=instance,
-                asset_selection=[AssetKey("two"), AssetKey("upstream_2")],
+                selection=[AssetKey("two"), AssetKey("upstream_2")],
             )
             assert result.success
             assert (
@@ -1136,9 +1121,11 @@ def test_input_subsetting_graph_backed_asset():
 
         # test "baz" which uses both inputs
         with instance_for_test() as instance:
-            result = asset_job.execute_in_process(
+            result = materialize(
+                assets,
+                resources=resources,
                 instance=instance,
-                asset_selection=[AssetKey("three"), AssetKey("upstream_1"), AssetKey("upstream_2")],
+                selection=[AssetKey("three"), AssetKey("upstream_1"), AssetKey("upstream_2")],
             )
             assert result.success
             assert (
@@ -1200,10 +1187,12 @@ def test_graph_backed_asset_subset_context(
         out_2, out_3 = add_one(reused_output)
         return {"asset_one": out_1, "asset_two": out_2, "asset_three": out_3}
 
-    job_def = create_test_asset_job([AssetsDefinition.from_graph(three, can_subset=True)])
-
     with instance_for_test() as instance:
-        result = job_def.execute_in_process(asset_selection=asset_selection, instance=instance)
+        result = materialize(
+            [AssetsDefinition.from_graph(three, can_subset=True)],
+            selection=asset_selection,
+            instance=instance,
+        )
         assert result.success
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
@@ -1314,14 +1303,12 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
             "asset_four": out_1,
         }
 
-    asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
-            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
-        )
-    )
-
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        result = materialize(
+            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
+            selection=asset_selection,
+            instance=instance,
+        )
         assert result.success
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
@@ -1377,14 +1364,12 @@ def test_nested_graph_subset_context(
         c, d = downstream_graph(b)
         return {"a": a, "b": b, "c": c, "d": d}
 
-    asset_job = define_asset_job("yay").resolve(
-        asset_graph=AssetGraph.from_assets(
-            [AssetsDefinition.from_graph(nested_graph, can_subset=True)],
-        )
-    )
-
     with instance_for_test() as instance:
-        result = asset_job.execute_in_process(asset_selection=asset_selection, instance=instance)
+        result = materialize(
+            [AssetsDefinition.from_graph(nested_graph, can_subset=True)],
+            selection=asset_selection,
+            instance=instance,
+        )
         assert result.success
         assert (
             get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION)
@@ -1535,13 +1520,7 @@ def test_context_assets_def():
         assert context.assets_def.keys == {b.key}
         return 2
 
-    asset_job = define_asset_job("yay", [a, b]).resolve(
-        asset_graph=AssetGraph.from_assets(
-            [a, b],
-        )
-    )
-
-    asset_job.execute_in_process()
+    materialize([a, b])
 
 
 def test_invalid_context_assets_def():

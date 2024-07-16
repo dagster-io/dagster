@@ -1,11 +1,13 @@
 import pickle
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import pytest
 from dagster._record import (
     _INJECTED_DEFAULT_VALS_LOCAL_VAR,
     IHaveNew,
+    ImportFrom,
     build_args_and_assignment_strs,
     check,
     copy,
@@ -13,6 +15,19 @@ from dagster._record import (
     record_custom,
 )
 from dagster._utils.cached_method import cached_method
+from typing_extensions import Annotated
+
+if TYPE_CHECKING:
+    from dagster._core.test_utils import TestType
+
+
+def test_kwargs_only() -> None:
+    @record
+    class MyClass:
+        foo: str
+
+    with pytest.raises(TypeError, match="takes 1 positional argument but 2 were given"):
+        MyClass("fdslk")  # type: ignore # good job type checker
 
 
 def test_runtime_typecheck() -> None:
@@ -365,34 +380,50 @@ def test_pickle():
     assert a2 == pickle.loads(pickle.dumps(a2))
 
 
-def test_default_collision() -> None:
-    class BadBase(ABC):
+def test_base_class_conflicts() -> None:
+    class ConflictPropBase(ABC):
+        @property
+        def prop(self): ...
+
+    with pytest.raises(check.CheckError, match="Conflicting non-abstract @property"):
+
+        @record
+        class X(ConflictPropBase):
+            prop: Any
+
+    class AbsPropBase(ABC):
         @property
         @abstractmethod
         def abstract_prop(self): ...
 
+        @property
+        @abstractmethod
+        def abstract_prop_with_default(self) -> int: ...
+
+    class DidntImpl(AbsPropBase): ...
+
+    with pytest.raises(
+        TypeError,
+        match="Can't instantiate abstract class DidntImpl",
+    ):
+        DidntImpl()  # type: ignore # good job type checker
+
+    @record
+    class A(AbsPropBase):
+        abstract_prop: Any
+        abstract_prop_with_default: int = 0
+
+    assert A(abstract_prop=4).abstract_prop == 4
+    assert A(abstract_prop=4).abstract_prop_with_default == 0
+
+    class ConflictFnBase:
         def some_method(self): ...
-
-    with pytest.raises(check.CheckError, match="Conflicting @property"):
-
-        @record
-        class _(BadBase):
-            abstract_prop: Any
 
     with pytest.raises(check.CheckError, match="Conflicting function"):
 
         @record
-        class _(BadBase):
+        class _(ConflictFnBase):
             some_method: Any
-
-    class Base(ABC):
-        thing: Any
-
-    @record
-    class Impl(Base):
-        thing: Any
-
-    assert Impl(thing=3).thing == 3
 
     with pytest.raises(check.CheckError, match="will have to override __new__"):
 
@@ -400,5 +431,72 @@ def test_default_collision() -> None:
             return 4
 
         @record
-        class _(Base):
+        class _:
             thing: Any = _some_func
+
+
+def test_lazy_import():
+    @record
+    class BadModel:
+        foos: List["TestType"]
+
+    with pytest.raises(check.CheckError, match="Unable to resolve"):
+        BadModel(foos=[])
+
+    @record
+    class AnnotatedModel:
+        foos: List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]]
+
+    assert AnnotatedModel(foos=[])
+
+    with pytest.raises(
+        check.CheckError, match="Expected <class 'dagster._core.test_utils.TestType'>"
+    ):
+        AnnotatedModel(foos=[1, 2, 3])
+
+    def _out_of_scope():
+        from dagster._core.test_utils import TestType
+
+        return AnnotatedModel(foos=[TestType()])
+
+    assert _out_of_scope()
+
+
+class Complex:
+    def __init__(self, s: str):
+        self.s = s
+
+
+@record_custom(field_to_new_mapping={"foo_str": "foo"})
+class Remapped(IHaveNew):
+    foo_str: str
+
+    def __new__(cls, foo: Union[str, Complex]):
+        if isinstance(foo, Complex):
+            foo = foo.s
+
+        return super().__new__(
+            cls,
+            foo_str=foo,
+        )
+
+    @cached_property
+    def foo(self) -> Complex:
+        return Complex(self.foo_str)
+
+
+def test_new_remaps_fields() -> None:
+    r = Remapped(foo="test")
+    assert r.foo.s == "test"
+    r2 = copy(r)
+    assert r2.foo.s == "test"
+
+    assert pickle.loads(pickle.dumps(r)) == r
+
+
+def test_docs():
+    @record
+    class Documented:
+        """So much to know about this class."""
+
+    assert Documented.__doc__

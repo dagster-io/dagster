@@ -780,3 +780,20 @@ def test_tag_string():
         AssetKey("asset5"),
         AssetKey("asset6"),
     }
+
+
+def test_owner() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1", owners=["owner1@owner.com"]),
+            AssetSpec("asset2", owners=["owner2@owner.com"]),
+            AssetSpec("asset3", owners=["owner1@owner.com"]),
+            AssetSpec("asset4", owners=["owner2@owner.com"]),
+        ]
+    )
+    def assets(): ...
+
+    assert AssetSelection.owner("owner1@owner.com").resolve([assets]) == {
+        AssetKey("asset1"),
+        AssetKey("asset3"),
+    }

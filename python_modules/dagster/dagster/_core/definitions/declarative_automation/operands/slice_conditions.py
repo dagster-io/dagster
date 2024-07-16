@@ -31,6 +31,8 @@ class SliceAutomationCondition(AutomationCondition):
 @whitelist_for_serdes
 @record
 class MissingAutomationCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Missing"
@@ -44,6 +46,8 @@ class MissingAutomationCondition(SliceAutomationCondition):
 @whitelist_for_serdes
 @record
 class InProgressAutomationCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Part of an in-progress run"
@@ -55,6 +59,8 @@ class InProgressAutomationCondition(SliceAutomationCondition):
 @whitelist_for_serdes
 @record
 class FailedAutomationCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Latest run failed"
@@ -66,6 +72,8 @@ class FailedAutomationCondition(SliceAutomationCondition):
 @whitelist_for_serdes
 @record
 class WillBeRequestedCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Will be requested this tick"
@@ -96,6 +104,8 @@ class WillBeRequestedCondition(SliceAutomationCondition):
 @whitelist_for_serdes
 @record
 class NewlyRequestedCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Was requested on the previous tick"
@@ -109,6 +119,8 @@ class NewlyRequestedCondition(SliceAutomationCondition):
 @whitelist_for_serdes
 @record
 class NewlyUpdatedCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Updated since previous tick"
@@ -128,6 +140,7 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
 class CronTickPassedCondition(SliceAutomationCondition):
     cron_schedule: str
     cron_timezone: str
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -158,6 +171,7 @@ class CronTickPassedCondition(SliceAutomationCondition):
 @record
 class InLatestTimeWindowCondition(SliceAutomationCondition):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
+    label: Optional[str] = None
 
     @staticmethod
     def from_lookback_delta(

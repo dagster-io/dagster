@@ -63,7 +63,7 @@ def test_params() -> None:
     }
     assert (
         check.node_def.name
-        == f"freshness_check_{non_secure_md5_hash_str(json.dumps([my_partitioned_asset.key.to_string()]).encode())[:8]}"
+        == f"freshness_check_{non_secure_md5_hash_str(json.dumps([str(my_partitioned_asset.key)]).encode())[:8]}"
     )
 
     @asset(
@@ -191,10 +191,10 @@ def test_params() -> None:
     )[0]
     assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
     unique_id = unique_id_from_asset_and_check_keys(
-        [my_partitioned_asset.key, my_other_partitioned_asset.key], []
+        [my_partitioned_asset.key, my_other_partitioned_asset.key]
     )
     unique_id_switched_order = unique_id_from_asset_and_check_keys(
-        [my_other_partitioned_asset.key, my_partitioned_asset.key], []
+        [my_other_partitioned_asset.key, my_partitioned_asset.key]
     )
     assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id}"
     assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id_switched_order}"

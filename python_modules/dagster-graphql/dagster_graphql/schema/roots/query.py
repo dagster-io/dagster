@@ -62,7 +62,6 @@ from ...implementation.fetch_assets import (
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
-    get_instigation_state_by_id,
     get_instigation_states_by_repository_id,
     get_instigator_state_by_selector,
 )
@@ -289,7 +288,7 @@ class GrapheneQuery(graphene.ObjectType):
 
     instigationStateOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStateOrError),
-        instigationSelector=graphene.Argument(GrapheneInstigationSelector),
+        instigationSelector=graphene.NonNull(GrapheneInstigationSelector),
         id=graphene.Argument(graphene.String),
         description=(
             "Retrieve the state for a schedule or sensor by its location name, repository name, and"
@@ -726,23 +725,14 @@ class GrapheneQuery(graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         *,
-        instigationSelector: Optional[GrapheneInstigationSelector] = None,
+        instigationSelector: GrapheneInstigationSelector,
         id: Optional[str] = None,
     ):
-        if id:
-            return get_instigation_state_by_id(
-                graphene_info,
-                CompoundID.from_string(id),
-            )
-        elif instigationSelector:
-            return get_instigator_state_by_selector(
-                graphene_info,
-                InstigatorSelector.from_graphql_input(instigationSelector),
-            )
-        else:
-            raise DagsterInvariantViolationError(
-                "Must pass either id or instigationSelector (but not both)."
-            )
+        return get_instigator_state_by_selector(
+            graphene_info,
+            InstigatorSelector.from_graphql_input(instigationSelector),
+            CompoundID.from_string(id) if id else None,
+        )
 
     @capture_error
     def resolve_instigationStatesOrError(
@@ -922,7 +912,11 @@ class GrapheneQuery(graphene.ObjectType):
         if group is not None:
             group_name = group.groupName
             repo_sel = RepositorySelector.from_graphql_input(group)
-            repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
+            repo_loc_entry = graphene_info.context.get_location_entry(repo_sel.location_name)
+            repo_loc = repo_loc_entry.code_location if repo_loc_entry else None
+            if not repo_loc or not repo_loc.has_repository(repo_sel.repository_name):
+                return []
+
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes()
             asset_checks_loader = AssetChecksLoader(
@@ -947,8 +941,13 @@ class GrapheneQuery(graphene.ObjectType):
         elif pipeline is not None:
             job_name = pipeline.pipelineName
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
-            repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
+            repo_loc_entry = graphene_info.context.get_location_entry(repo_sel.location_name)
+            repo_loc = repo_loc_entry.code_location if repo_loc_entry else None
+            if not repo_loc or not repo_loc.has_repository(repo_sel.repository_name):
+                return []
+
             repo = repo_loc.get_repository(repo_sel.repository_name)
+
             external_asset_nodes = repo.get_external_asset_nodes(job_name)
             asset_checks_loader = AssetChecksLoader(
                 context=graphene_info.context,

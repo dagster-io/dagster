@@ -255,7 +255,6 @@ def project_scaffold_command(
             "--use-dbt-project-package-data-dir",
             help="Controls whether `DbtProject` is used.",
             is_flag=True,
-            hidden=True,
         ),
     ] = False,
 ) -> None:
@@ -359,6 +358,7 @@ def sync_project_to_packaged_dir(
     console.print("Sync complete.")
 
 
+@project_app.command(name="prepare-for-deployment", hidden=True)
 @project_app.command(name="prepare-and-package")
 def project_prepare_and_package_command(
     file: Annotated[

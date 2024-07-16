@@ -402,7 +402,11 @@ def get_required_resource_keys_for_step(
 
         resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
 
-        resource_keys = resource_keys.union(step_input.source.required_resource_keys(job_def))
+        resource_keys = resource_keys.union(
+            step_input.source.required_resource_keys(
+                job_def, execution_step.node_handle, step_input.name
+            )
+        )
 
         if input_def.input_manager_key:
             resource_keys = resource_keys.union([input_def.input_manager_key])

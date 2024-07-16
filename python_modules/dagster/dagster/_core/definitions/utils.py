@@ -61,6 +61,10 @@ MAX_TITLE_LENGTH = 100
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_key import AssetKey
+    from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
 
 
 class NoValueSentinel:
@@ -393,3 +397,17 @@ def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> M
         ) from err
 
     return config_from_yaml_strings(yaml_strings=yaml_strings)
+
+
+def resolve_automation_condition(
+    automation_condition: Optional["AutomationCondition"],
+    auto_materialize_policy: Optional["AutoMaterializePolicy"],
+) -> Optional["AutomationCondition"]:
+    if auto_materialize_policy is not None:
+        if automation_condition is not None:
+            raise DagsterInvariantViolationError(
+                "Cannot supply both `automation_condition` and `auto_materialize_policy`"
+            )
+        return auto_materialize_policy.to_automation_condition()
+    else:
+        return automation_condition

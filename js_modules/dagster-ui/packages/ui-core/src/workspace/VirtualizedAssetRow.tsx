@@ -31,7 +31,7 @@ import {RepositoryLink} from '../nav/RepositoryLink';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
-import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';

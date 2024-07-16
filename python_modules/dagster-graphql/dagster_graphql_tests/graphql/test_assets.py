@@ -346,7 +346,6 @@ GET_AUTO_MATERIALIZE_POLICY = """
             id
             autoMaterializePolicy {
                 policyType
-                maxMaterializationsPerMinute
             }
         }
     }
@@ -1064,6 +1063,23 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert second_timestamp == int(materializations[0]["timestamp"])
+
+    def test_asset_node_in_pipeline_that_does_not_exist(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        selector = infer_job_selector(graphql_context, "two_assets_job")
+        selector["repositoryLocationName"] = "does_not_exist"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODES_FROM_KEYS,
+            variables={
+                "pipelineSelector": selector,
+                "assetKeys": [{"path": ["asset_one"]}],
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) == 0
 
     def test_asset_node_in_pipeline(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "two_assets_job")
@@ -2479,7 +2495,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
-        assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["maxMaterializationsPerMinute"] == 1
 
     def test_has_asset_checks(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(graphql_context, HAS_ASSET_CHECKS)

@@ -25,12 +25,12 @@ import {autolinkTextContent} from '../ui/autolinking';
 interface StructuredProps {
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
-  style: React.CSSProperties;
+  style?: React.CSSProperties;
   highlighted: boolean;
 }
 
 export const Structured = (props: StructuredProps) => {
-  const {node, metadata, style, highlighted} = props;
+  const {node, metadata, style = {}, highlighted} = props;
   const [expanded, setExpanded] = useState(false);
 
   const {title, body} = useMemo(() => {
@@ -256,7 +256,7 @@ StructuredMemoizedContent.displayName = 'StructuredMemoizedContent';
 
 interface UnstructuredProps {
   node: LogsRowUnstructuredFragment;
-  style: React.CSSProperties;
+  style?: React.CSSProperties;
   highlighted: boolean;
   metadata: IRunMetadataDict;
 }
@@ -286,7 +286,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 
   render() {
     return (
-      <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
+      <CellTruncationProvider style={this.props.style || {}} onExpand={this.onExpand}>
         <UnstructuredMemoizedContent
           node={this.props.node}
           highlighted={this.props.highlighted}

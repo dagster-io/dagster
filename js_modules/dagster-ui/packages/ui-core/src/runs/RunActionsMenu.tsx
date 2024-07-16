@@ -55,7 +55,9 @@ interface Props {
 }
 
 export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRun}: Props) => {
-  const {RunMetricsDialog} = React.useContext(InjectedComponentContext);
+  const {
+    components: {RunMetricsDialog},
+  } = React.useContext(InjectedComponentContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics'

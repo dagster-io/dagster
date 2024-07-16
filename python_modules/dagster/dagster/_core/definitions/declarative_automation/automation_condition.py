@@ -16,8 +16,10 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._record import copy
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -60,12 +62,18 @@ class AutomationCondition(ABC):
     def description(self) -> str:
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def label(self) -> Optional[str]:
+        raise NotImplementedError()
+
     def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
         return AssetConditionSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
+            label=self.label,
         )
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
@@ -92,9 +100,20 @@ class AutomationCondition(ABC):
 
         return AutoMaterializePolicy.from_automation_condition(self)
 
+    def is_rule_condition(self):
+        from .legacy import RuleCondition
+
+        if isinstance(self, RuleCondition):
+            return True
+        return any(child.is_rule_condition() for child in self.children)
+
     @abstractmethod
     def evaluate(self, context: "AutomationContext") -> "AutomationResult":
         raise NotImplementedError()
+
+    def with_label(self, label: Optional[str]) -> "AutomationCondition":
+        """Returns a copy of this AutomationCondition with a human-readable label."""
+        return copy(self, label=label)
 
     def __and__(self, other: "AutomationCondition") -> "AndAssetCondition":
         from .operators import AndAssetCondition
@@ -265,28 +284,29 @@ class AutomationCondition(ABC):
         - None of its parent partitions are missing
         - None of its parent partitions are currently part of an in-progress run
         """
-        became_missing_or_any_deps_updated = (
-            AutomationCondition.missing().newly_true()
-            | AutomationCondition.any_deps_match(
-                AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
+        with disable_dagster_warnings():
+            became_missing_or_any_deps_updated = (
+                AutomationCondition.missing().newly_true()
+                | AutomationCondition.any_deps_match(
+                    AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
+                )
             )
-        )
 
-        any_parent_missing = AutomationCondition.any_deps_match(
-            AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
-        )
-        any_parent_in_progress = AutomationCondition.any_deps_match(
-            AutomationCondition.in_progress()
-        )
-        return (
-            AutomationCondition.in_latest_time_window()
-            & became_missing_or_any_deps_updated.since(
-                AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+            any_parent_missing = AutomationCondition.any_deps_match(
+                AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
             )
-            & ~any_parent_missing
-            & ~any_parent_in_progress
-            & ~AutomationCondition.in_progress()
-        )
+            any_parent_in_progress = AutomationCondition.any_deps_match(
+                AutomationCondition.in_progress()
+            )
+            return (
+                AutomationCondition.in_latest_time_window()
+                & became_missing_or_any_deps_updated.since(
+                    AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+                )
+                & ~any_parent_missing
+                & ~any_parent_in_progress
+                & ~AutomationCondition.in_progress()
+            )
 
     @experimental
     @staticmethod
@@ -304,16 +324,17 @@ class AutomationCondition(ABC):
             schedule, or will be requested this tick
         - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
-        cron_tick_passed = AutomationCondition.cron_tick_passed(cron_schedule, cron_timezone)
-        all_deps_updated_since_cron = AutomationCondition.all_deps_match(
-            AutomationCondition.newly_updated().since(cron_tick_passed)
-            | AutomationCondition.will_be_requested()
-        )
-        return (
-            AutomationCondition.in_latest_time_window()
-            & cron_tick_passed.since(AutomationCondition.newly_requested())
-            & all_deps_updated_since_cron
-        )
+        with disable_dagster_warnings():
+            cron_tick_passed = AutomationCondition.cron_tick_passed(cron_schedule, cron_timezone)
+            all_deps_updated_since_cron = AutomationCondition.all_deps_match(
+                AutomationCondition.newly_updated().since(cron_tick_passed)
+                | AutomationCondition.will_be_requested()
+            )
+            return (
+                AutomationCondition.in_latest_time_window()
+                & cron_tick_passed.since(AutomationCondition.newly_requested())
+                & all_deps_updated_since_cron
+            )
 
     @experimental
     @staticmethod

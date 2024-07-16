@@ -10,6 +10,7 @@ from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 from ..asset_daemon_cursor import AssetDaemonCursor
 from ..base_asset_graph import BaseAssetGraph
@@ -39,6 +40,7 @@ class AutomationConditionEvaluator:
         # as https://docs.dagster.io/deployment/dagster-instance#auto-materialize
         # Should this be a supported feature in DS?
         auto_materialize_run_tags: Mapping[str, str],
+        request_backfills: bool,
     ):
         self.asset_graph = asset_graph
         self.asset_keys = asset_keys
@@ -55,6 +57,7 @@ class AutomationConditionEvaluator:
         self.to_request = set()
         self.num_checked_assets = 0
         self.num_asset_keys = len(asset_keys)
+        self.request_backfills = request_backfills
 
     asset_graph: BaseAssetGraph
     asset_keys: AbstractSet[AssetKey]
@@ -69,6 +72,7 @@ class AutomationConditionEvaluator:
     data_time_resolver: CachingDataTimeResolver
     respect_materialization_data_versions: bool
     auto_materialize_run_tags: Mapping[str, str]
+    request_backfills: bool
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -178,6 +182,11 @@ class AutomationConditionEvaluator:
         asset_condition = check.not_none(
             self.asset_graph.get(asset_key).auto_materialize_policy
         ).to_automation_condition()
+
+        if asset_condition.is_rule_condition() and self.request_backfills:
+            raise DagsterInvalidDefinitionError(
+                "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
+            )
 
         legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,

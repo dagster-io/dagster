@@ -13,7 +13,7 @@ import {
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
-import {useContext} from 'react';
+import {useContext, useMemo} from 'react';
 
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -25,7 +25,7 @@ import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetKeyInput, DefinitionTag} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
-import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 type Asset = AssetTableFragment;
@@ -61,18 +61,26 @@ export const AssetTable = ({
 }: Props) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
-  const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
-  const displayKeys = Object.keys(groupedByDisplayKey).sort();
+  const groupedByDisplayKey = useMemo(
+    () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
+    [assets, displayPathForAsset],
+  );
+  const displayKeys = useMemo(() => Object.keys(groupedByDisplayKey).sort(), [groupedByDisplayKey]);
 
   const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] =
     useSelectionReducer(displayKeys);
 
-  const checkedAssets: Asset[] = [];
-  displayKeys.forEach((displayKey) => {
-    if (checkedDisplayKeys.has(displayKey)) {
-      checkedAssets.push(...(groupedByDisplayKey[displayKey] || []));
-    }
-  });
+  const checkedAssets = useMemo(() => {
+    const assets: Asset[] = [];
+    displayKeys.forEach((displayKey) => {
+      if (checkedDisplayKeys.has(displayKey)) {
+        groupedByDisplayKey[displayKey]?.forEach((asset) => {
+          assets.push(asset);
+        });
+      }
+    });
+    return assets;
+  }, [checkedDisplayKeys, displayKeys, groupedByDisplayKey]);
 
   const content = () => {
     if (!assets.length) {
@@ -186,7 +194,6 @@ export const AssetTable = ({
         assetKeys={toWipe || []}
         isOpen={!!toWipe}
         onClose={() => setToWipe(undefined)}
-        onComplete={() => setToWipe(undefined)}
         requery={requery}
       />
     </>
@@ -241,7 +248,6 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
         isOpen={showBulkWipeDialog}
         onClose={() => setShowBulkWipeDialog(false)}
         onComplete={() => {
-          setShowBulkWipeDialog(false);
           clearSelection();
         }}
         requery={requery}

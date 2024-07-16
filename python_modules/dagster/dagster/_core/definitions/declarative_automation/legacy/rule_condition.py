@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Optional
 
-from dagster._annotations import experimental
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -13,13 +12,13 @@ if TYPE_CHECKING:
     from ..automation_context import AutomationContext
 
 
-@experimental
 @whitelist_for_serdes
 @record
 class RuleCondition(AssetCondition):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 
     rule: AutoMaterializeRule
+    label: Optional[str] = None
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:
         # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating

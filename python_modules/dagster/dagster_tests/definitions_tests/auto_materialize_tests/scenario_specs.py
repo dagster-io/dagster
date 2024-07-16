@@ -85,6 +85,15 @@ three_assets_not_subsettable = ScenarioSpec(
     asset_specs=[MultiAssetSpec(specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C")])]
 )
 
+two_disconnected_graphs = ScenarioSpec(
+    asset_specs=[
+        AssetSpec("A"),
+        AssetSpec("B", deps=["A"]),
+        AssetSpec("C"),
+        AssetSpec("D", deps=["C"]),
+    ]
+)
+
 ##################
 # PARTITION STATES
 ##################
