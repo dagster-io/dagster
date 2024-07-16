@@ -1237,6 +1237,34 @@ def test_graph_backed_asset_subset_two_routes():
     assert materialized_assets == [AssetKey("asset1"), AssetKey("asset2")]
 
 
+def test_graph_backed_asset_subset_two_routes_yield_only_selected():
+    @op(out={"out1": Out(is_required=False), "out2": Out(is_required=False)})
+    def op1():
+        yield Output(None, output_name="out2")
+
+    @op(ins={"in1": In(Nothing), "in2": In(Nothing)})
+    def op2() -> None: ...
+
+    @graph_multi_asset(
+        outs={
+            "out1": AssetOut(key="asset1"),
+            "out2": AssetOut(key="asset2"),
+        },
+        can_subset=True,
+    )
+    def assets():
+        op1_out1, op1_out2 = op1()
+        return op1_out1, op2(in1=op1_out1, in2=op1_out2)
+
+    result = materialize([assets], selection=["asset2"])
+    assert result.success
+    materialized_assets = [
+        event.event_specific_data.materialization.asset_key
+        for event in result.get_asset_materialization_events()
+    ]
+    assert materialized_assets == [AssetKey("asset2")]
+
+
 @pytest.mark.parametrize(
     "asset_selection,selected_output_names_op_1,selected_output_names_op_3,num_materializations",
     [
