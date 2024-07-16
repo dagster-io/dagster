@@ -272,13 +272,19 @@ defs = Definitions(
 ## Step 4: Create our database clone upon opening a branch
 
 <TabGroup>
-  <TabItem name="Using GitHub Actions">
+<TabItem name="Using GitHub Actions">
 
-The `branch_deployments.yml` file located in `.github/workflows/branch_deployments.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
+<Note>
+  <strong>Heads up!</strong> If your Dagster+ account was created before [TODO],
+  refer to your repository's <code>branch_deployments.yml</code> instead of{" "}
+  <code>deploy.yml</code>.
+</Note>
+
+The `deploy.yml` file located in `.github/workflows/deploy.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`.
+
+This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not run if the pull request is closed:
 
 ```yaml file=/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml
-# .github/workflows/branch_deployments.yml
-
 name: Dagster Branch Deployments
   on:
     pull_request:
@@ -327,7 +333,7 @@ width={1431}
 height={537}
 /> </TabItem>
 
-  <TabItem name="Using Gitlab CI/CD">
+<TabItem name="Using Gitlab CI/CD">
 
 The `.gitlab-ci.yaml` script contains a `deploy` job that defines a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end of `deploy`. This job is triggered on when a merge request is created or updated. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`.
 
@@ -408,11 +414,15 @@ height={537}
 <TabGroup>
 <TabItem name="Using GitHub Actions">
 
-Finally, we can add a step to our `branch_deployments.yml` file that queues a run of our `drop_prod_clone` job:
+<Note>
+  <strong>Heads up!</strong> If your Dagster+ account was created before [TODO],
+  refer to your repository's <code>branch_deployments.yml</code> instead of{" "}
+  <code>deploy.yml</code>.
+</Note>
+
+Finally, we can add a step to our `deploy.yml` file that queues a run of our `drop_prod_clone` job:
 
 ```yaml file=/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml
-# .github/workflows/branch_deployments.yml
-
 name: Dagster Branch Deployments
   on:
     pull_request:
