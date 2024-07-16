@@ -179,6 +179,7 @@ def _step_output_error_checked_user_event_sequence(
     step = step_context.step
     op_label = step_context.describe_op()
     output_names = list([output_def.name for output_def in step.step_outputs])
+    selected_output_names = step_context.selected_output_names
 
     for user_event in user_event_sequence:
         if not isinstance(user_event, (Output, DynamicOutput)):
@@ -274,7 +275,11 @@ def _step_output_error_checked_user_event_sequence(
 
     for step_output in step.step_outputs:
         step_output_def = step_context.op_def.output_def_named(step_output.name)
-        if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
+        if (
+            not step_context.has_seen_output(step_output_def.name)
+            and not step_output_def.optional
+            and step_output.name in selected_output_names
+        ):
             asset_layer = step_context.job_def.asset_layer
             asset_key = asset_layer.asset_key_for_output(
                 step_context.node_handle, step_output_def.name

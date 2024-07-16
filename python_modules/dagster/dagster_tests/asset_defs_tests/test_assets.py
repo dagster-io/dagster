@@ -1048,6 +1048,31 @@ def test_graph_backed_asset_partial_output_selection():
         assert set(step_keys) == set(["graph_asset.foo"])
 
 
+def test_graph_backed_asset_partial_output_selection_only_yield_selected():
+    @op(out={"a": Out(is_required=False), "b": Out(is_required=False)})
+    def foo():
+        yield Output(1, "a")
+
+    @graph(out={"one": GraphOut(), "two": GraphOut()})
+    def graph_asset():
+        one, two = foo()
+        return one, two
+
+    with instance_for_test() as instance:
+        result = materialize(
+            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
+            instance=instance,
+            selection=[AssetKey("one")],
+        )
+        assert (
+            get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+            == 1
+        )
+        assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 1
+        step_keys = get_step_keys_from_run(instance, result.run_id)
+        assert set(step_keys) == set(["graph_asset.foo"])
+
+
 def test_input_subsetting_graph_backed_asset():
     @asset
     def upstream_1():
