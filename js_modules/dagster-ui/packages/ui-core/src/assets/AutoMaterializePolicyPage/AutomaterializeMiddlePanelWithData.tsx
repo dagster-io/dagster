@@ -37,32 +37,37 @@ import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 const emptyArray: any[] = [];
 
+interface Props {
+  definition?: AssetViewDefinitionNodeFragment | null;
+  selectedEvaluation?: AssetConditionEvaluationRecordFragment;
+  selectPartition: (partitionKey: string | null) => void;
+  specificPartitionData?: GetEvaluationsSpecificPartitionQuery;
+  selectedPartition: string | null;
+}
+
 export const AutomaterializeMiddlePanelWithData = ({
   selectedEvaluation,
   definition,
   selectPartition,
   specificPartitionData,
   selectedPartition,
-}: {
-  definition?: AssetViewDefinitionNodeFragment | null;
-  selectedEvaluation?: AssetConditionEvaluationRecordFragment;
-  selectPartition: (partitionKey: string | null) => void;
-  specificPartitionData?: GetEvaluationsSpecificPartitionQuery;
-  selectedPartition: string | null;
-}) => {
+}: Props) => {
   const evaluation = selectedEvaluation?.evaluation;
   const rootEvaluationNode = useMemo(
     () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
     [evaluation],
   );
-  const rootPartitionedEvaluationNode =
-    rootEvaluationNode?.__typename === 'PartitionedAssetConditionEvaluationNode'
-      ? rootEvaluationNode
-      : null;
+  const partitionDefinition = definition?.partitionDefinition;
+  const numRequested = selectedEvaluation?.numRequested;
 
   const statusTag = useMemo(() => {
-    if (selectedEvaluation?.numRequested) {
-      if (definition?.partitionDefinition) {
+    const trueSubset =
+      rootEvaluationNode?.__typename === 'PartitionedAssetConditionEvaluationNode'
+        ? rootEvaluationNode.trueSubset
+        : null;
+
+    if (numRequested) {
+      if (partitionDefinition && trueSubset) {
         return (
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Popover
@@ -73,7 +78,7 @@ export const AutomaterializeMiddlePanelWithData = ({
               content={
                 <PartitionSubsetList
                   description="Requested assets"
-                  subset={rootPartitionedEvaluationNode!.trueSubset}
+                  subset={trueSubset}
                   selectPartition={selectPartition}
                 />
               }
@@ -81,18 +86,17 @@ export const AutomaterializeMiddlePanelWithData = ({
               <Tag intent="success">
                 <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                   <StatusDot $color={Colors.accentGreen()} $size={8} />
-                  {selectedEvaluation.numRequested} requested
+                  {numRequested} requested
                 </Box>
               </Tag>
             </Popover>
-            {selectedEvaluation.numRequested === 1 ? (
-              <Tag icon="partition">
-                {rootPartitionedEvaluationNode!.trueSubset.subsetValue.partitionKeys![0]}
-              </Tag>
+            {numRequested === 1 ? (
+              <Tag icon="partition">{trueSubset.subsetValue.partitionKeys![0]}</Tag>
             ) : null}
           </Box>
         );
       }
+
       return (
         <Tag intent="success">
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -102,6 +106,7 @@ export const AutomaterializeMiddlePanelWithData = ({
         </Tag>
       );
     }
+
     return (
       <Tag>
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -110,12 +115,7 @@ export const AutomaterializeMiddlePanelWithData = ({
         </Box>
       </Tag>
     );
-  }, [
-    definition?.partitionDefinition,
-    rootPartitionedEvaluationNode,
-    selectPartition,
-    selectedEvaluation?.numRequested,
-  ]);
+  }, [partitionDefinition, selectPartition, numRequested, rootEvaluationNode]);
 
   const fullPartitionsQueryResult = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
     FULL_PARTITIONS_QUERY,
@@ -142,13 +142,18 @@ export const AutomaterializeMiddlePanelWithData = ({
   const allPartitions = useMemo(() => {
     if (partitionKeys.length === 1) {
       return partitionKeys[0]!.partitionKeys;
-    } else if (partitionKeys.length === 2) {
+    }
+
+    if (partitionKeys.length === 2) {
       const firstSet = partitionKeys[0]!.partitionKeys;
       const secondSet = partitionKeys[1]!.partitionKeys;
       return firstSet.flatMap((key1) => secondSet.map((key2) => `${key1}|${key2}`));
-    } else if (partitionKeys.length > 2) {
+    }
+
+    if (partitionKeys.length > 2) {
       throw new Error('Only 2 dimensions are supported');
     }
+
     return [];
   }, [partitionKeys]);
 
@@ -196,7 +201,7 @@ export const AutomaterializeMiddlePanelWithData = ({
           <Box border="bottom" padding={{vertical: 12}}>
             <Subtitle2>Policy evaluation</Subtitle2>
           </Box>
-          {definition?.partitionDefinition ? (
+          {definition?.partitionDefinition && selectedEvaluation.isLegacy ? (
             <Box padding={{vertical: 12}} flex={{justifyContent: 'flex-end'}}>
               <TagSelectorWrapper>
                 <TagSelectorWithSearch
@@ -251,12 +256,15 @@ export const AutomaterializeMiddlePanelWithData = ({
             </Box>
           ) : null}
           <PolicyEvaluationTable
-            evaluationRecord={
-              selectedPartition && specificPartitionData?.assetConditionEvaluationForPartition
-                ? {evaluation: specificPartitionData.assetConditionEvaluationForPartition}
-                : selectedEvaluation
+            evaluationNodes={
+              !selectedEvaluation.isLegacy
+                ? selectedEvaluation.evaluationNodes
+                : selectedPartition && specificPartitionData?.assetConditionEvaluationForPartition
+                ? specificPartitionData.assetConditionEvaluationForPartition.evaluationNodes
+                : selectedEvaluation.evaluation.evaluationNodes
             }
-            definition={definition}
+            isLegacyEvaluation={selectedEvaluation.isLegacy}
+            rootUniqueId={selectedEvaluation.evaluation.rootUniqueId}
             selectPartition={selectPartition}
           />
         </Box>
@@ -279,6 +287,7 @@ const FULL_PARTITIONS_QUERY = gql`
     }
   }
 `;
+
 const TagSelectorWrapper = styled.div`
   position: relative;
 

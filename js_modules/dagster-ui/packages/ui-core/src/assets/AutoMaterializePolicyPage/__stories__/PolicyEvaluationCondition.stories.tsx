@@ -19,7 +19,7 @@ export const Default = () => {
               icon="resource"
               label="All are true:"
               type="group"
-              isCollapsed={false}
+              isExpanded
               hasChildren
             />
           </td>
@@ -31,7 +31,7 @@ export const Default = () => {
               icon="resource"
               label="Any are true:"
               type="group"
-              isCollapsed={false}
+              isExpanded
               hasChildren
             />
           </td>
@@ -43,7 +43,7 @@ export const Default = () => {
               icon="wysiwyg"
               label="parent_updated"
               type="leaf"
-              isCollapsed={false}
+              isExpanded
               hasChildren={false}
             />
           </td>
@@ -56,7 +56,7 @@ export const Default = () => {
               label="is_missing"
               type="leaf"
               skipped
-              isCollapsed={false}
+              isExpanded
               hasChildren={false}
             />
           </td>
@@ -68,7 +68,7 @@ export const Default = () => {
               icon="resource"
               label="Not:"
               type="group"
-              isCollapsed={false}
+              isExpanded
               hasChildren={true}
             />
           </td>
@@ -80,7 +80,7 @@ export const Default = () => {
               icon="wysiwyg"
               label="parent_updated"
               type="leaf"
-              isCollapsed={false}
+              isExpanded
               hasChildren={false}
             />
           </td>
