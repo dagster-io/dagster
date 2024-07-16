@@ -32,6 +32,8 @@ When Dagster deploys the code, a few things happen:
     - `.github/workflows/deploy.yml` - This file sets up Continuous Deployment (CD) for the repository. We won’t talk through all the steps here, but a high-level summary is that every time a change is made to the `main` branch of your repository, this GitHub Action will build your Dagster project and deploy it to Dagster+.
     - `.github/workflows/branch_deployments.yml` - This file enables the use of [Branch Deployments](https://docs.dagster.io/dagster-cloud/managing-deployments/branch-deployments), a Dagster+ feature that automatically creates staging environments for your Dagster code with every pull request. We won’t work with Branch Deployments during this lesson, but we highly recommend trying them out!
 
+    **Note**: This file is only created if your Dagster+ account was created before [TODO]. If your account was created on or after this date, the `branch_deployments.yml` file will be consolidated into `deploy.yml`.
+
 ---
 
 ## Checking deployment status
