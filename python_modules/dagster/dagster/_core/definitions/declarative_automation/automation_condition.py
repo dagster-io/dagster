@@ -60,12 +60,19 @@ class AutomationCondition(ABC):
     @property
     @abstractmethod
     def description(self) -> str:
+        """Human-readable description of when this condition is true."""
         raise NotImplementedError()
 
     @property
     @abstractmethod
     def label(self) -> Optional[str]:
+        """User-provided label subjectively describing the purpose of this condition in the broader evaluation tree."""
         raise NotImplementedError()
+
+    @property
+    def name(self) -> Optional[str]:
+        """Formal name of this specific condition, generally aligning with its static constructor."""
+        return None
 
     def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
@@ -74,6 +81,7 @@ class AutomationCondition(ABC):
             description=self.description,
             unique_id=unique_id,
             label=self.label,
+            name=self.name,
         )
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
@@ -285,26 +293,26 @@ class AutomationCondition(ABC):
         - None of its parent partitions are currently part of an in-progress run
         """
         with disable_dagster_warnings():
-            became_missing_or_any_deps_updated = (
-                AutomationCondition.missing().newly_true()
+            became_missing_or_any_parents_updated = (
+                AutomationCondition.missing().newly_true().with_label("became missing")
                 | AutomationCondition.any_deps_match(
                     AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
-                )
+                ).with_label("any parents updated")
             )
 
-            any_parent_missing = AutomationCondition.any_deps_match(
+            any_parents_missing = AutomationCondition.any_deps_match(
                 AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
-            )
-            any_parent_in_progress = AutomationCondition.any_deps_match(
+            ).with_label("any parents missing")
+            any_parents_in_progress = AutomationCondition.any_deps_match(
                 AutomationCondition.in_progress()
-            )
+            ).with_label("any parents in progress")
             return (
                 AutomationCondition.in_latest_time_window()
-                & became_missing_or_any_deps_updated.since(
+                & became_missing_or_any_parents_updated.since(
                     AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
                 )
-                & ~any_parent_missing
-                & ~any_parent_in_progress
+                & ~any_parents_missing
+                & ~any_parents_in_progress
                 & ~AutomationCondition.in_progress()
             )
 

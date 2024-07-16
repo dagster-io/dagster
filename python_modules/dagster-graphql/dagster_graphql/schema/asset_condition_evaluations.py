@@ -267,8 +267,8 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
 
 class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
-    description = graphene.NonNull(graphene.String)
-    label = graphene.Field(graphene.String)
+    userLabel = graphene.Field(graphene.String)
+    expandedLabel = non_null_list(graphene.String)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -285,10 +285,11 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
         name = "AutomationConditionEvaluationNode"
 
     def __init__(self, evaluation: AssetConditionEvaluation):
+        self._evaluation = evaluation
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
-            description=evaluation.condition_snapshot.description,
-            label=evaluation.condition_snapshot.label,
+            expandedLabel=_get_expanded_label(evaluation),
+            userLabel=evaluation.condition_snapshot.label,
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
@@ -389,3 +390,22 @@ def _coerce_subset(maybe_subset):
     return GrapheneAssetSubset(
         AssetSubset(asset_key=maybe_subset.asset_key, value=DefaultPartitionsSubset(value))
     )
+
+
+def _get_expanded_label(evaluation: AssetConditionEvaluation, use_label=False) -> Sequence[str]:
+    if use_label and evaluation.condition_snapshot.label is not None:
+        return [evaluation.condition_snapshot.label]
+    node_text = evaluation.condition_snapshot.name or evaluation.condition_snapshot.description
+    child_labels = [
+        f'({" ".join(_get_expanded_label(ce, use_label=True))})'
+        for ce in evaluation.child_evaluations
+    ]
+    if len(child_labels) == 0:
+        return [node_text]
+    elif len(child_labels) == 1:
+        return [node_text, f"{child_labels[0]}"]
+    else:
+        # intersperses node_text (e.g. AND) between each child label
+        return list(itertools.chain(*itertools.zip_longest(child_labels, [], fillvalue=node_text)))[
+            :-1
+        ]

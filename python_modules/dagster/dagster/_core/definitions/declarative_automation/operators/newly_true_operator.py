@@ -24,6 +24,10 @@ class NewlyTrueCondition(AutomationCondition):
         return "Condition newly became true."
 
     @property
+    def name(self) -> str:
+        return "NEWLY_TRUE"
+
+    @property
     def children(self) -> Sequence[AutomationCondition]:
         return [self.operand]
 
