@@ -7,7 +7,7 @@ import {
   linkToAssetTableWithComputeKindFilter,
   linkToAssetTableWithStorageKindFilter,
 } from '../search/useGlobalSearch';
-import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';

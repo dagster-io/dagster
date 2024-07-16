@@ -2,9 +2,9 @@ import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];
@@ -20,8 +20,7 @@ export const useAssetTagFilter = ({
 }) => {
   const memoizedState = useMemo(() => tags?.map(buildDefinitionTag), [tags]);
   return useStaticSetFilter<DefinitionTag>({
-    name: 'Tag',
-    icon: 'tag',
+    ...BaseConfig,
     allValues: useMemo(
       () =>
         allAssetTags.map((value) => ({
@@ -31,19 +30,10 @@ export const useAssetTagFilter = ({
       [allAssetTags],
     ),
     menuWidth: '300px',
-    renderLabel: ({value}) => {
-      return (
-        <TruncatedTextWithFullTextOnHover
-          text={buildTagString({key: value.key, value: value.value})}
-        />
-      );
-    },
-    getStringValue: ({value, key}) => `${key}: ${value}`,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setTags?.(Array.from(values));
     },
-    matchType: 'all-of',
     canSelectAll: false,
   });
 };
@@ -94,3 +84,17 @@ export function doesFilterArrayMatchValueArray<T, V>(
       !valueArray.find((value) => isMatch(filterTag, value)),
   );
 }
+
+export const BaseConfig: StaticBaseConfig<DefinitionTag> = {
+  name: 'Tag',
+  icon: 'tag',
+  renderLabel: ({value}: {value: DefinitionTag}) => {
+    return (
+      <TruncatedTextWithFullTextOnHover
+        text={buildTagString({key: value.key, value: value.value})}
+      />
+    );
+  },
+  getStringValue: ({value, key}: DefinitionTag) => `${key}: ${value}`,
+  matchType: 'all-of',
+};
