@@ -260,7 +260,7 @@ export function SetFilterActiveState({
   renderLabel,
   matchType = 'any-of',
   getTooltipText,
-  style,
+  theme,
 }: {
   name: string;
   icon: IconName;
@@ -271,9 +271,9 @@ export function SetFilterActiveState({
   renderLabel: (value: any) => JSX.Element;
   matchType?: 'any-of' | 'all-of';
   tagColor?: string;
-  style?: ComponentProps<typeof FilterTag>['style'];
+  theme?: ComponentProps<typeof FilterTag>['theme'];
 }) {
-  const highlightColor = style === 'cyan' ? Colors.accentCyan() : undefined;
+  const highlightColor = theme === 'cyan' ? Colors.accentCyan() : undefined;
   const isAnyOf = matchType === 'any-of';
   const arr = useMemo(() => Array.from(state), [state]);
   const label = useMemo(() => {
@@ -338,7 +338,7 @@ export function SetFilterActiveState({
   return (
     <FilterTag
       iconName={icon}
-      style={style}
+      theme={theme}
       label={
         <Box flex={{direction: 'row', alignItems: 'center'}}>
           {capitalizeFirstLetter(name)}&nbsp;{label}
