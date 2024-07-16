@@ -44,7 +44,6 @@ setup(
         "orjson",
         "pandas",
         "pyarrow",
-        "typer>=0.9.0",
     ],
     zip_safe=False,
     extras_require={"test": []},

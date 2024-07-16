@@ -35,7 +35,7 @@ class DagsterSdfCliRuntimeError(DagsterSdfError, ABC):
 class DagsterSdfInformationSchemaNotFoundError(DagsterSdfError):
     """Error when we expect the sdf information schema to have been generated already but it is absent."""
 
-class DagsterSdfWorkspacetNotFoundError(DagsterSdfError):
+class DagsterSdfWorkspaceNotFoundError(DagsterSdfError):
     """Error when the specified workspace directory can not be found."""
 
 class DagsterSdfWorkspaceYmlFileNotFoundError(DagsterSdfError):

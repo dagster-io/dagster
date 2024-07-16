@@ -319,7 +319,6 @@ class SdfCliInvocation:
                 event = SdfCliEventMessage(
                     raw_event=raw_event, event_history_metadata=event_history_metadata
                 )
-                print("EVENT", event)
                 # Parse the error message from the event, if it exists.
                 is_error_message = SdfCliEventMessage.is_error_event(raw_event)
                 if is_error_message and not is_result_event:
@@ -330,7 +329,6 @@ class SdfCliInvocation:
                 sys.stdout.flush()
                 yield event
             except Exception as e:
-                print("FAILED TO PARSE", e)
                 # If we can't parse the log, then just emit it as a raw log.
                 sys.stdout.write(log + "\n")
                 sys.stdout.flush()
