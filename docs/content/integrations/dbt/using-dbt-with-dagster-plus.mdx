@@ -72,7 +72,7 @@ Once Dagster+ finishes importing the project, move onto the next step.
 The file structure of the repository will change the first time a project is deployed using Dagster+. For dbt projects, a few things will happen:
 
 - **A [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) will be created.** This file defines the project as a Dagster+ code location.
-- **A few `.yml` files, used for CI/CD, will be created in `.github/workflows`.** [These files](/dagster-plus/references/ci-cd-file-reference), named `branch_deployments.yml` and `deploy.yml`, manage the deployments of the repository.
+- **CI/CD will be automatically set up**, using the contents of `.github/workflows`.\*\* [The files in this directory](/dagster-plus/references/ci-cd-file-reference) manage the deployments of the repository.
 - **For dbt-only projects being deployed for the first time**, Dagster+ will create a new Dagster project in the repository using the [`dagster-dbt scaffold`](/integrations/dbt/reference#scaffolding-a-dagster-project-from-a-dbt-project) command. This will result in a Dagster project that matches the dbt project. For example, a dbt project named `my_dbt_project` will contain a Dagster project in `my_dbt_project/my_dbt_project` after the process completes. Refer to the [Dagster project files reference](/guides/understanding-dagster-project-files) to learn more about the files in a Dagster project.
 
 **Use the following tabs** to see how the repository will change for a [dbt-only project](#dbt-only-projects) and a [dbt and Dagster project](#dbt-and-dagster-projects) being deployed for the first time.
@@ -112,9 +112,8 @@ When the Dagster+ deployment process completes, the repository will now look lik
 ## after Dagster+ deployment
 
 my_dbt_project
-├── .github                                                ## CI/CD files
+├── .github                                                ## CI/CD setup
 │   ├── workflows
-│   │   ├── branch_deployments.yml
 │   │   ├── deploy.yml
 ├── models
 │   ├── my_model.sql
@@ -156,7 +155,6 @@ After the Dagster+ changes, a dbt and Dagster project will include the files req
 my_dbt_and_dagster_project
 ├── .github                                                ## CI/CD files
 │   ├── workflows
-│   │   ├── branch_deployments.yml
 │   │   ├── deploy.yml
 ├── dbt
 │   ├── models
@@ -220,7 +218,7 @@ The last step is to update the [CI/CD files](/dagster-plus/references/ci-cd-file
 
 5. Save the changes.
 
-6. Open the `branch_deployments.yml` file and repeat steps 3 - 5.
+6. **If your Dagster+ account was created before \[TODO]**, open the `branch_deployments.yml` file and repeat steps 3 - 5.
 
 7. Commit the changes to the repository.
 
