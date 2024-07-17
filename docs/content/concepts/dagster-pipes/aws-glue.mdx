@@ -7,18 +7,27 @@ description: "Learn to integrate Dagster Pipes with AWS Glue to launch external 
 
 This tutorial gives a short overwiew on how to use [Dagster Pipes](/concepts/dagster-pipes) with [AWS Glue](https://aws.amazon.com/glue/).
 
-The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides the [PipesGlueClient](/\_apidocs/libraries/dagster-aws#dagster_aws.pipes.PipesGlueClient) Resource which can be used to launch AWS Glue jobs from Dagster's `asset`s and `op`s. Dagster can receive regular logs and other events like asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
+The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides the <PyObject object="PipesGlueClient" module="dagster_aws.pipes" />) resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular logs and other events like asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
+
+---
 
 ## Prerequisites
+
+To use Dagster Pipes with AWS Glue, you'll need:
 
 - A running Dagster deployment (or local instance)
 - An AWS Glue job with Python 3.8+ runtime environment
 
-## Usage
+---
 
-1. Provide the `dagster-pipes` module to the AWS Glue job either by installing it in the Glue job environment or by packaging it aling with the job script.
+## Step 1: Provide the dagster-pipes module
 
-2. Insert the following code into the job script:
+Provide the `dagster-pipes` module to the AWS Glue job either by installing it in the Glue job environment or packaging it along with the job script.
+
+---
+## Step 2: Add dagster-pipes to the Glue job
+
+Insert the following code into the job script:
 
 ```python
 from dagster_pipes import open_dagster_pipes, PipesCliArgsParamsLoader, Pipes
@@ -58,7 +67,9 @@ if __name__ == "__main__":
     main()
 ```
 
-2. In the Dagster `asset`/`op` code, use the `PipesGlueClient` resource to launch the job:
+## Step 3: Add the PipesGlueClient to Dagster code
+
+In the Dagster asset/op code, use the `PipesGlueClient` resource to launch the job:
 
 ```python file=/guides/dagster/dagster_pipes/glue/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
 import os
@@ -81,7 +92,11 @@ def glue_pipes_asset(
     ).get_materialize_result()
 ```
 
-And pass the resource to `Definitions`:
+---
+
+## Step 4: Creating Dagster definitions
+
+Next, add the `PipesGlueClient` resource to your project's <PyObject object="Definitions" /> object:
 
 ```python file=/guides/dagster/dagster_pipes/glue/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa
@@ -108,7 +123,7 @@ defs = Definitions(
 )
 ```
 
-This will launch the AWS Glue job and monitor it's status until it either fails or succeeds. A job fialure will also cause the Dagster Run to fail with an exception.
+This will launch the AWS Glue job and monitor its status until it either fails or succeeds. A job failure will also cause the Dagster run to fail with an exception.
 
 ---
 
