@@ -5,7 +5,6 @@ import type {AppTopNavRightOfLogo} from './AppTopNav/AppTopNavRightOfLogo.oss';
 import {FallthroughRoot} from './FallthroughRoot.oss';
 import type {UserPreferences} from './UserSettingsDialog/UserPreferences.oss';
 import {assertUnreachable} from './Util';
-import {AssetGraphFilterBar} from '../asset-graph/AssetGraphFilterBar.oss';
 import {useAssetGraphExplorerFilters} from '../asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetCatalogTableBottomActionBar} from '../assets/AssetCatalogTableBottomActionBar.oss';
 import {AssetPageHeader} from '../assets/AssetPageHeader.oss';
@@ -40,7 +39,6 @@ type InjectedComponentContextType = {
   AssetCatalogTableBottomActionBar: AComponentFromComponent<
     typeof AssetCatalogTableBottomActionBar
   >;
-  AssetGraphFilterBar: AComponentFromComponent<typeof AssetGraphFilterBar>;
 };
 
 type InjectedHookContextType = {
