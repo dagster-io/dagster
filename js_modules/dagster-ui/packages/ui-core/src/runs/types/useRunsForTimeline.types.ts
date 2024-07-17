@@ -11,6 +11,7 @@ export type RunTimelineFragment = {
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;
+  tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;
@@ -41,6 +42,7 @@ export type OngoingRunTimelineQuery = {
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
+          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
           repositoryOrigin: {
             __typename: 'RepositoryOrigin';
             id: string;
@@ -73,6 +75,7 @@ export type CompletedRunTimelineQuery = {
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
+          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
           repositoryOrigin: {
             __typename: 'RepositoryOrigin';
             id: string;

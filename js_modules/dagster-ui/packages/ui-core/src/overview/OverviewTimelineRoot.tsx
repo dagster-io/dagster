@@ -1,7 +1,9 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useDeferredValue} from 'react';
+import {useDeferredValue, useMemo} from 'react';
 
+import {groupRunsByAutomation} from './groupRunsByAutomation';
+import {useFeatureFlags} from '../app/Flags';
 import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -10,9 +12,10 @@ import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {usePageLoadTrace} from '../performance';
 import {RunTimeline} from '../runs/RunTimeline';
 import {HourWindow, useHourWindow} from '../runs/useHourWindow';
-import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
+import {useRunsForTimeline} from '../runs/useRunsForTimeline';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
@@ -87,6 +90,7 @@ export function useTimelineRange({
 export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
+  const {flagSettingsPage} = useFeatureFlags();
   const trace = usePageLoadTrace('OverviewTimelineRoot');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
@@ -103,26 +107,42 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
   const {jobs, loading, refreshState} = useDeferredValue(runsForTimelineRet);
 
+  // If we're in the IA flag, re-bucket the grouped rows by their automation.
+  // todo dish: Ship the change, remove the flag.
+  const rows = useMemo(() => {
+    return flagSettingsPage ? groupRunsByAutomation(jobs) : jobs;
+  }, [flagSettingsPage, jobs]);
+
   React.useEffect(() => {
     if (!loading) {
       trace.endTrace();
     }
   }, [loading, trace]);
 
-  const visibleJobKeys = React.useMemo(() => {
-    const searchLower = searchValue.toLocaleLowerCase().trim();
-    const flat = visibleRepos.flatMap((repo) => {
-      const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
-      return repo.repository.pipelines
-        .filter(({name}) => name.toLocaleLowerCase().includes(searchLower))
-        .map((job) => makeJobKey(repoAddress, job.name));
-    });
-    return new Set(flat);
-  }, [visibleRepos, searchValue]);
+  const visibleRepoKeys = useMemo(() => {
+    return new Set(
+      visibleRepos.map((option) => {
+        const repoAddress = buildRepoAddress(
+          option.repository.name,
+          option.repositoryLocation.name,
+        );
+        return repoAddressAsHumanString(repoAddress);
+      }),
+    );
+  }, [visibleRepos]);
 
-  const visibleJobs = React.useMemo(
-    () => jobs.filter(({key}) => visibleJobKeys.has(key)),
-    [jobs, visibleJobKeys],
+  const visibleObjectKeys = React.useMemo(() => {
+    const searchLower = searchValue.toLocaleLowerCase().trim();
+    const keys = rows
+      .filter(({repoAddress}) => visibleRepoKeys.has(repoAddressAsHumanString(repoAddress)))
+      .map(({key}) => key)
+      .filter((key) => key.toLocaleLowerCase().includes(searchLower));
+    return new Set(keys);
+  }, [searchValue, rows, visibleRepoKeys]);
+
+  const visibleRows = React.useMemo(
+    () => rows.filter(({key}) => visibleObjectKeys.has(key)),
+    [rows, visibleObjectKeys],
   );
 
   return (
@@ -139,7 +159,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
             icon="search"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Filter by job name…"
+            placeholder="Filter by name…"
             style={{width: '200px'}}
           />
         </Box>
@@ -162,7 +182,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
         </Box>
       </Box>
       <ErrorBoundary region="timeline">
-        <RunTimeline loading={loading} rangeMs={rangeMs} jobs={visibleJobs} />
+        <RunTimeline loading={loading} rangeMs={rangeMs} rows={visibleRows} />
       </ErrorBoundary>
     </>
   );
