@@ -119,14 +119,14 @@ from dagster_dbt import DbtProject
 dbt_project = DbtProject(
     project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
 )
-# If `dagster dev` is used, the dbt project will be prepared at run time, and manifest will be created.
+# If `dagster dev` is used, the dbt project will be prepared to create the manifest at run time.
 # Otherwise, we expect a manifest to be present in the project's target directory.
 dbt_project.prepare_if_dev()
 ```
 
-As the comment explains, calling `dbt_project.prepare_if_dev()` prepares your dbt project during development, i.e. when `dagster dev` is used, which ensures that the dbt project is ready to be used by Dagster. This process creates the `manifest.json` file.
+Invoking `dbt_project.prepare_if_dev()` prepares your dbt project for local development by creating the `manifest.json` at run time in `dagster dev`.
 
-To disable the project preparation during development, `dbt_project.prepare_if_dev()` can be removed.
+To disable this behavior during local development, remove `dbt_project.prepare_if_dev()`.
 
 Based on whether `dbt_project.prepare_if_dev()` and `dagster dev` are used, either:
 
