@@ -1,4 +1,4 @@
-import {Box, Code, Colors, FontFamily} from '@dagster-io/ui-components';
+import {Box, CaptionMono, Code, Colors, FontFamily, Tooltip} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 interface Props {
@@ -11,7 +11,20 @@ export const EvaluationConditionalLabel = ({segments}: Props) => {
       {segments.map((segment, ii) => {
         const key = `segment-${ii}`;
         if (segment.startsWith('(') && segment.endsWith(')')) {
-          return <Operand key={key}>{segment.slice(1, -1)}</Operand>;
+          const inner = segment.slice(1, -1);
+          return (
+            <Tooltip
+              key={key}
+              content={
+                <div style={{maxWidth: '500px', whiteSpace: 'normal'}}>
+                  <CaptionMono>{inner}</CaptionMono>
+                </div>
+              }
+              placement="top"
+            >
+              <Operand>{inner}</Operand>
+            </Tooltip>
+          );
         }
         return <Operator key={key}>{segment}</Operator>;
       })}
@@ -23,8 +36,13 @@ const Operand = styled(Code)`
   background-color: ${Colors.backgroundGray()};
   border-radius: 8px;
   color: ${Colors.textLight()};
+  display: block;
   font-size: 12px;
   padding: 4px 8px;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const Operator = styled.div`

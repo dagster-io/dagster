@@ -46,6 +46,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
   });
 
   const skip = !!_selectedEvaluation || !!selectedPartition;
+  const isLegacy = !!_selectedEvaluation?.isLegacy;
 
   // We receive the selected evaluation ID and retrieve it here because the middle panel
   // may be displaying an evaluation that was not retrieved at the page level for the
@@ -61,8 +62,11 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       skip,
     },
   );
+
   const {data, loading, error} = queryResult;
   useBlockTraceOnQueryResult(queryResult, 'GetEvaluationsQuery<Single>', {skip});
+
+  const skipSpecificPartitionQuery = !isLegacy || !selectedEvaluationId || !selectedPartition;
 
   const queryResult2 = useQuery<
     GetEvaluationsSpecificPartitionQuery,
@@ -73,11 +77,13 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       evaluationId: selectedEvaluationId!,
       partition: selectedPartition!,
     },
-    skip: !selectedEvaluationId || !selectedPartition,
+    skip: skipSpecificPartitionQuery,
   });
+
   useBlockTraceOnQueryResult(queryResult2, 'GetEvaluationsSpecificPartitionQuery', {
-    skip: !selectedEvaluationId || !selectedPartition,
+    skip: skipSpecificPartitionQuery,
   });
+
   const {data: specificPartitionData, previousData: previousSpecificPartitionData} = queryResult2;
 
   const sensorName = React.useMemo(
@@ -153,7 +159,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
               <Body2>
                 <Box flex={{direction: 'column', gap: 8}}>
                   <Body2>
-                    This asset’s automation policy has not been evaluated yet. Make sure your
+                    This asset&apos;s automation policy has not been evaluated yet. Make sure your
                     automation sensor is running.
                   </Body2>
                   <div>

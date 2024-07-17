@@ -13,7 +13,14 @@ export const NonPartitioned = () => {
     endTimestamp: 200,
   });
 
-  return <PolicyEvaluationTable evaluationRecord={evaluation as any} selectPartition={() => {}} />;
+  return (
+    <PolicyEvaluationTable
+      evaluationNodes={evaluation.evaluationNodes}
+      rootUniqueId={evaluation.rootUniqueId}
+      isLegacyEvaluation
+      selectPartition={() => {}}
+    />
+  );
 };
 
 export const Partitioned = () => {
@@ -22,7 +29,14 @@ export const Partitioned = () => {
     endTimestamp: 200,
   });
 
-  return <PolicyEvaluationTable evaluationRecord={evaluation as any} selectPartition={() => {}} />;
+  return (
+    <PolicyEvaluationTable
+      evaluationNodes={evaluation.evaluationNodes}
+      rootUniqueId={evaluation.rootUniqueId}
+      isLegacyEvaluation
+      selectPartition={() => {}}
+    />
+  );
 };
 
 export const SpecificPartition = () => {
@@ -31,5 +45,12 @@ export const SpecificPartition = () => {
     endTimestamp: 200,
   });
 
-  return <PolicyEvaluationTable evaluationRecord={evaluation as any} selectPartition={() => {}} />;
+  return (
+    <PolicyEvaluationTable
+      evaluationNodes={evaluation.evaluationNodes}
+      rootUniqueId={evaluation.rootUniqueId}
+      isLegacyEvaluation
+      selectPartition={() => {}}
+    />
+  );
 };
