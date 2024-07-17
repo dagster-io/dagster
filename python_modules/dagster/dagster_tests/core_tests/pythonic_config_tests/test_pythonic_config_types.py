@@ -1,6 +1,7 @@
 import enum
 from typing import Any, Dict, List, Literal, Mapping, Optional, Type, Union
 
+import pydantic
 import pytest
 from dagster import (
     Definitions,
@@ -775,7 +776,7 @@ def test_str_enum_value() -> None:
         a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "foo"}}}})
 
 
-def test_literal() -> None:
+def test_literal_in_op_config() -> None:
     class AnOpConfig(Config):
         a_literal: Literal["foo", "bar"] = "foo"
 
@@ -794,6 +795,29 @@ def test_literal() -> None:
 
     with pytest.raises(DagsterInvalidConfigError):
         a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_literal": "baz"}}}})
+
+
+def test_literal_in_resource_config() -> None:
+    class MyResource(ConfigurableResource):
+        a_literal: Literal["foo", "bar"] = "foo"
+
+        def setup_for_execution(self, context):
+            assert self.a_literal in ["foo", "bar"]
+
+    @op
+    def my_op(my_resource: MyResource):
+        pass
+
+    @job
+    def a_job():
+        my_op()
+
+    a_job.execute_in_process(resources={"my_resource": MyResource()})
+
+    a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="bar")})
+
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="baz")})
 
 
 def test_enum_complex() -> None:
@@ -911,6 +935,9 @@ def test_conversion_to_fields() -> None:
         optional_str: Optional[str] = None
         a_literal: FooBarLiteral
         a_default_literal: FooBarLiteral = "bar"
+        a_literal_with_description: FooBarLiteral = Field(
+            default="foo", description="a description"
+        )
 
     fields = ConfigClassToConvert.to_fields_dict()
 
@@ -923,6 +950,7 @@ def test_conversion_to_fields() -> None:
         "optional_str",
         "a_literal",
         "a_default_literal",
+        "a_literal_with_description",
     }
     assert fields["with_description"].description == "a description"
     assert fields["with_description"].is_required is True
@@ -933,6 +961,7 @@ def test_conversion_to_fields() -> None:
     assert fields["a_literal"].is_required is True
     assert fields["a_default_literal"].is_required is False
     assert fields["a_default_literal"].default_value == "bar"
+    assert fields["a_literal_with_description"].description == "a description"
 
 
 def test_to_config_dict_combined_with_cached_method() -> None:
