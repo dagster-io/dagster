@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Dict, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Mapping, Optional, Type, Union
 
 import pytest
 from dagster import (
@@ -18,7 +18,7 @@ from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
-from typing_extensions import Literal
+from typing_extensions import TypeAlias
 
 
 def test_default_config_class_non_permissive() -> None:
@@ -899,9 +899,10 @@ def test_struct_config_non_optional_none_input_errors() -> None:
         )
 
 
-def test_conversion_to_fields() -> None:
-    FooBarLiteral = Literal["foo", "bar"]
+FooBarLiteral: TypeAlias = Literal["foo", "bar"]
 
+
+def test_conversion_to_fields() -> None:
     class ConfigClassToConvert(Config):
         a_string: str
         an_int: str

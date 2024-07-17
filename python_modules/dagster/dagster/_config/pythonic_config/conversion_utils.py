@@ -1,7 +1,6 @@
 import inspect
 from enum import Enum
 from typing import Any, Dict, List, Literal, Mapping, Optional, Type, TypeVar, Union
-from uuid import uuid4
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -310,9 +309,7 @@ def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
 
     return Field(
         config=DagsterEnum(
-            str(
-                str(field_type).lstrip("typing.") + f"-{uuid4()}",
-            ),
+            str(str(field_type).lstrip("typing.")),
             list(map(DagsterEnumValue, sub_fields)),
         ),
         description=pydantic_field.description,
