@@ -52,7 +52,7 @@ dagster_dbt_university:
       path: '../{{ env_var("DUCKDB_DATABASE", "data/staging/data.duckdb") }}'
     prod:
       type: duckdb
-      path: '{{ env_var("MOTHERDUCK_TOKEN", "") }}'
+      path: '{{ env_var("DUCKDB_DATABASE", "") }}'
 ```
 
 Because we’re still using a DuckDB-backed database, our `type` will also be `duckdb` for `prod`. Save and commit the file to git before continuing.
