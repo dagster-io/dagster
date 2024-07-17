@@ -69,6 +69,5 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
     [key, listener],
   );
 
-  const value = React.useMemo(() => [state, setState], [state, setState]);
-  return value as [T, React.Dispatch<React.SetStateAction<T>>];
+  return [state, setState] as const;
 }
