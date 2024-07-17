@@ -1,8 +1,8 @@
-# Full Next.js example
+# Dagster University
 
-This is a full-featured boilerplate for a creating a documentation website using Markdoc and Next.js.
+This directory contains the content for Dagster University, located at https://courses.dagster.io. The site is built with [NextJS](https://nextjs.org/) and [Markdoc](https://markdoc.dev/).
 
-<img width="2032" alt="image" src="https://user-images.githubusercontent.com/62121649/174916143-16f18270-0463-402c-8b48-33c627ea7a7e.png">
+---
 
 ## Setup
 
@@ -14,7 +14,7 @@ npm install
 yarn install
 ```
 
-Then, run the development server:
+To serve the site locally in development mode (hot-reloading), run:
 
 ```bash
 npm run dev
@@ -24,16 +24,57 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `index.md`. The page auto-updates as you edit the file.
+---
 
-## Deploy
+## Authoring
 
-The quickest way to deploy your own version of this boilerplate is by deploying it with [Vercel](https://vercel.com) or [Netlify](https://www.netlify.com/) by clicking one of the buttons below.
+Course content lives in `/dagster-university/pages`. Each course has:
 
-### Deploy with Vercel
+- A category page, located in the directory root, ex: `/../../dagster-essentials.md`. Links to individual lessons are added to these pages to make it easier to navigate the site locally.
+- A dedicated subdirectory, ex: `/../../dagster-essentials`, which contains a folder for each lesson in the course.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/markdoc/next.js-starter)
+### Lesson content
 
-### Deploy to Netlify
+Learn best by example? Check out this PR to see how to [add a new lesson to a course](https://github.com/dagster-io/dagster/pull/20096).
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/markdoc/next.js-starter)
+### Formatting with Markdown
+
+We use [Markdoc](https://markdoc.dev/), a flavor of Markdown, to author our content. This flavor of Markdown is similar to that used on GitHub, but with some additional capabilities. Refer to the [Markdoc syntax documentation](https://markdoc.dev/docs/syntax) for more information.
+
+#### Tables
+
+Commonmark tables are supported, but you can also use list formatting to construct tables. For example:
+
+```markdown
+## commonmark table
+
+| Name  | ID | Description                |
+|-------|----|----------------------------|
+| Daggy | 1  | The most educated octopus. |
+```
+
+Becomes the following in Markdoc syntax:
+
+```markdown
+## markdoc table 
+
+{% table %}
+* Name
+* ID
+* Description
+---
+* Daggy
+* 1
+* The most educated octopus.
+{% /table %}
+```
+
+Refer to the [Markdoc table documentation](https://markdoc.dev/docs/tags#table) for more information and examples.
+
+---
+
+## Getting help
+
+- Join the [Dagster Slack](https://dagster.io/community) community and ask a question in our `#dagster-university` channel
+- Find solutions and patterns in our [GitHub discussions](https://github.com/dagster-io/dagster/discussions)
+- Check out the [Dagster Docs](https://docs.dagster.io/)
