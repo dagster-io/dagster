@@ -13,13 +13,15 @@ export const AssetGraphFilterBar = ({
   clearExplorerPath: () => void;
   explorerPath: string;
 }) => {
-  return activeFiltersJsx.length || explorerPath ? (
+  if (!activeFiltersJsx.length && !explorerPath) {
+    return null;
+  }
+  return (
     <Box
       flex={{direction: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'center'}}
       padding={{vertical: 8, horizontal: 12}}
     >
       <Box flex={{gap: 12, alignItems: 'center', direction: 'row', grow: 1}}>
-        {' '}
         {activeFiltersJsx}
         {explorerPath ? (
           <FilterTag
@@ -37,5 +39,5 @@ export const AssetGraphFilterBar = ({
       </Box>
       {right}
     </Box>
-  ) : null;
+  );
 };
