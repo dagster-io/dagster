@@ -1,13 +1,13 @@
-import {Box} from '@dagster-io/ui-components';
-import React, {useCallback, useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 
+import {AssetGraphFilterBar} from './AssetGraphFilterBar';
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {AssetFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
-import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/BaseFilters/useFilter';
+import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
@@ -207,43 +207,17 @@ export function useAssetGraphExplorerFilters({
   filters.push(ownerFilter);
   const {button, activeFiltersJsx} = useFilters({filters});
 
-  const renderFilterBar = useCallback(
-    ({activeFiltersJsx, right}: {activeFiltersJsx: JSX.Element[]; right?: JSX.Element}) => {
-      return activeFiltersJsx.length || explorerPath ? (
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'center'}}
-          padding={{vertical: 8, horizontal: 12}}
-        >
-          <Box flex={{gap: 12, alignItems: 'center', direction: 'row', grow: 1}}>
-            {' '}
-            {activeFiltersJsx}
-            {explorerPath ? (
-              <FilterTag
-                label={
-                  <Box flex={{direction: 'row', alignItems: 'center'}}>
-                    Asset selection is&nbsp;
-                    <FilterTagHighlightedText tooltipText={explorerPath}>
-                      {explorerPath}
-                    </FilterTagHighlightedText>
-                  </Box>
-                }
-                onRemove={clearExplorerPath}
-              />
-            ) : null}
-          </Box>
-          {right}
-        </Box>
-      ) : null;
-    },
-    [explorerPath, clearExplorerPath],
-  );
-
   return {
     computeKindTagsFilter: kindTagsFilter,
     storageKindTagsFilter,
     button: filters.length ? button : null,
     activeFiltersJsx,
-    filterBar: renderFilterBar({activeFiltersJsx}),
-    renderFilterBar,
+    filterBar: (
+      <AssetGraphFilterBar
+        activeFiltersJsx={activeFiltersJsx}
+        explorerPath={explorerPath}
+        clearExplorerPath={clearExplorerPath}
+      />
+    ),
   };
 }
