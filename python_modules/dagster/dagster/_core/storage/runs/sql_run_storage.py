@@ -318,39 +318,20 @@ class SqlRunStorage(RunStorage):
         self, query: SqlAlchemyQuery, tags: Mapping[str, Union[str, Sequence[str]]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
-        expected_count = len(tags)
-        if expected_count == 1:
-            key, value = next(iter(tags.items()))
-            # since run tags should be much larger than runs, select where exists
-            # should be more efficient than joining
-            subquery = db.exists().where(
-                (RunsTable.c.run_id == RunTagsTable.c.run_id)
-                & (RunTagsTable.c.key == key)
-                & (
-                    (RunTagsTable.c.value == value)
+        for i, (key, value) in enumerate(tags.items()):
+            run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+
+            query = query.join(
+                run_tags_alias,
+                db.and_(
+                    RunsTable.c.run_id == run_tags_alias.c.run_id,
+                    run_tags_alias.c.key == key,
+                    (run_tags_alias.c.value == value)
                     if isinstance(value, str)
-                    else RunTagsTable.c.value.in_(value)
-                )
+                    else run_tags_alias.c.value.in_(value),
+                ),
             )
-            query = query.where(subquery)
-        elif expected_count > 1:
-            # efficient query for filtering by multiple tags. first find all run_ids that match
-            # all tags, then select from runs table where run_id in that set
-            subquery = db_select([RunTagsTable.c.run_id])
-            expressions = []
-            for key, value in tags.items():
-                expression = RunTagsTable.c.key == key
-                if isinstance(value, str):
-                    expression &= RunTagsTable.c.value == value
-                else:
-                    expression &= RunTagsTable.c.value.in_(value)
-                expressions.append(expression)
-            subquery = subquery.where(db.or_(*expressions))
-            subquery = subquery.group_by(RunTagsTable.c.run_id)
-            subquery = subquery.having(
-                db.func.count(db.distinct(RunTagsTable.c.key)) == expected_count
-            )
-            query = query.where(RunsTable.c.run_id.in_(subquery))
+
         return query
 
     def get_runs(
