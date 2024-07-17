@@ -398,6 +398,21 @@ class DbtCliEventMessage:
 DbtDagsterEventType = Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation]
 
 
+class RelationKey(NamedTuple):
+    """Hashable representation of the information needed to identify a relation in a database."""
+
+    database: str
+    schema: str
+    identifier: str
+
+
+class RelationData(NamedTuple):
+    """Relation metadata queried from a database."""
+
+    name: str
+    columns: List[BaseColumn]
+
+
 @dataclass
 class DbtCliInvocation:
     """The representation of an invoked dbt command.
@@ -426,6 +441,35 @@ class DbtCliInvocation:
     )
     _stdout: List[Union[str, Dict[str, Any]]] = field(init=False, default_factory=list)
     _error_messages: List[str] = field(init=False, default_factory=list)
+
+    # Caches fetching relation column metadata to avoid redundant queries to the database.
+    _relation_column_metadata_cache: Dict[RelationKey, RelationData] = field(
+        init=False, default_factory=dict
+    )
+
+    def _get_columns_from_dbt_resource_props(
+        self, adapter: BaseAdapter, dbt_resource_props: Dict[str, Any]
+    ) -> RelationData:
+        """Given a dbt resource properties dictionary, fetches the resource's column metadata from
+        the database, or returns the cached metadata if it has already been fetched.
+        """
+        relation_key = RelationKey(
+            database=dbt_resource_props["database"],
+            schema=dbt_resource_props["schema"],
+            identifier=(
+                dbt_resource_props["identifier"]
+                if dbt_resource_props["unique_id"].startswith("source")
+                else dbt_resource_props["alias"]
+            ),
+        )
+        if relation_key in self._relation_column_metadata_cache:
+            return self._relation_column_metadata_cache[relation_key]
+
+        relation = _get_relation_from_adapter(adapter=adapter, relation_key=relation_key)
+        cols: List = adapter.get_columns_in_relation(relation=relation)
+        return self._relation_column_metadata_cache.setdefault(
+            relation_key, RelationData(name=str(relation), columns=cols)
+        )
 
     @classmethod
     def run(
@@ -778,20 +822,6 @@ class EventHistoryMetadata(NamedTuple):
     parents: Dict[str, Dict[str, Any]]
 
 
-def _build_relation_from_dbt_resource_props(
-    adapter: BaseAdapter, dbt_resource_props: Dict[str, Any]
-) -> BaseRelation:
-    return adapter.Relation.create(
-        database=dbt_resource_props["database"],
-        schema=dbt_resource_props["schema"],
-        identifier=(
-            dbt_resource_props["identifier"]
-            if dbt_resource_props["unique_id"].startswith("source")
-            else dbt_resource_props["alias"]
-        ),
-    )
-
-
 def _build_column_lineage_metadata(
     event_history_metadata: EventHistoryMetadata,
     dbt_resource_props: Dict[str, Any],
@@ -946,6 +976,14 @@ def _build_column_lineage_metadata(
         )
 
 
+def _get_relation_from_adapter(adapter: BaseAdapter, relation_key: RelationKey) -> BaseRelation:
+    return adapter.Relation.create(
+        database=relation_key.database,
+        schema=relation_key.schema,
+        identifier=relation_key.identifier,
+    )
+
+
 def _fetch_column_metadata(
     invocation: DbtCliInvocation, event: DbtDagsterEventType, with_column_lineage: bool
 ) -> Optional[Dict[str, Any]]:
@@ -967,10 +1005,9 @@ def _fetch_column_metadata(
 
     with adapter.connection_named(f"column_metadata_{dbt_resource_props['unique_id']}"):
         try:
-            relation = _build_relation_from_dbt_resource_props(
+            cols = invocation._get_columns_from_dbt_resource_props(  # noqa: SLF001
                 adapter=adapter, dbt_resource_props=dbt_resource_props
-            )
-            cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=relation)
+            ).columns
         except Exception as e:
             logger.warning(
                 "An error occurred while fetching column schema metadata for the dbt resource"
@@ -1008,14 +1045,11 @@ def _fetch_column_metadata(
                         parent_unique_id
                     ) or invocation.manifest["sources"].get(parent_unique_id)
 
-                    parent_relation = _build_relation_from_dbt_resource_props(
+                    parent_name, parent_columns = invocation._get_columns_from_dbt_resource_props(  # noqa: SLF001
                         adapter=adapter, dbt_resource_props=dbt_parent_resource_props
                     )
-                    parent_columns: List[BaseColumn] = adapter.get_columns_in_relation(
-                        relation=parent_relation
-                    )
 
-                    parents[str(parent_relation)] = {
+                    parents[parent_name] = {
                         col.name: {"data_type": col.data_type} for col in parent_columns
                     }
 
