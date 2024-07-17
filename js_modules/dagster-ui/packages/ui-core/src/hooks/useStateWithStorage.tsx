@@ -69,7 +69,9 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
 
   const setState = React.useCallback(
     (input: React.SetStateAction<T>) => {
-      setStateInner(getStateOrSetterValue(key, input, validateRef.current));
+      const next =
+        input instanceof Function ? input(validateRef.current(getJSONForKey(key))) : input;
+      setStateInner(next);
     },
     [key, setStateInner],
   );
@@ -79,12 +81,4 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
   }, [setStateInner]);
 
   return [state, setState, clearState] as const;
-}
-
-function getStateOrSetterValue<T = any>(
-  key: string,
-  input: React.SetStateAction<T>,
-  validate: (value: T | undefined) => T,
-) {
-  return input instanceof Function ? input(validate(getJSONForKey(key))) : input;
 }
