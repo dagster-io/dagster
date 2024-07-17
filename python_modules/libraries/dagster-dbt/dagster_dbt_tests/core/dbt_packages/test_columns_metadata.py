@@ -524,19 +524,18 @@ def test_column_lineage_real_warehouse(
     ],
 )
 @pytest.mark.parametrize(
-    "use_experimental_fetch_column_schema",
+    "use_async_fetch_column_schema",
     [True, False],
 )
 def test_column_lineage(
     sql_dialect: str,
     test_metadata_manifest: Dict[str, Any],
     asset_key_selection: Optional[AssetKey],
-    use_experimental_fetch_column_schema: bool,
+    use_async_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
+    capsys,
 ) -> None:
-    monkeypatch.setenv(
-        "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
-    )
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(not use_async_fetch_column_schema).lower())
     # Simulate the parsing of the SQL into a different dialect.
     assert Dialect.get_or_raise(sql_dialect)
 
@@ -549,7 +548,7 @@ def test_column_lineage(
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         cli_invocation = dbt.cli(["build"], context=context).stream()
-        if use_experimental_fetch_column_schema:
+        if use_async_fetch_column_schema:
             cli_invocation = cli_invocation.fetch_column_metadata()
         yield from cli_invocation
 
@@ -558,7 +557,11 @@ def test_column_lineage(
         resources={"dbt": dbt},
         selection=asset_key_selection and AssetSelection.assets(asset_key_selection),
     )
-    assert result.success
+
+    # Check that the warning is printed only when using log_column_level_metadata
+    assert ("`log_column_level_metadata` macro is deprecated" in capsys.readouterr().err) == (
+        not use_async_fetch_column_schema
+    )
 
     column_lineage_by_asset_key = {
         event.materialization.asset_key: TableMetadataSet.extract(

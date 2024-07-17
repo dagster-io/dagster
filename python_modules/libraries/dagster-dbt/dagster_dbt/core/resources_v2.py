@@ -619,6 +619,8 @@ class DbtCliInvocation:
         Returns:
             Iterator[DbtCliEventMessage]: An iterator of events from the dbt CLI process.
         """
+        has_emitted_metadata_warning = False
+
         event_history_metadata_by_unique_id: Dict[str, Dict[str, Any]] = {}
 
         for raw_event in self._stdout or self._stream_stdout():
@@ -640,6 +642,13 @@ class DbtCliInvocation:
             event = DbtCliEventMessage(
                 raw_event=raw_event, event_history_metadata=event_history_metadata
             )
+            if event.has_column_lineage_metadata and not has_emitted_metadata_warning:
+                logger.warning(
+                    "Fetching column metadata using `log_column_level_metadata` macro is deprecated and will be"
+                    " removed in Dagster 1.9. Use the `fetch_column_metadata` method in your asset definition"
+                    " to fetch column metadata instead."
+                )
+                has_emitted_metadata_warning = True
 
             # Attempt to parse the column level metadata from the event message.
             # If it exists, save it as historical metadata to attach to the NodeFinished event.
