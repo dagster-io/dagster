@@ -20,7 +20,7 @@ By the end of this section, you will:
 
 ## Step 1: Write your first asset
 
-In Dagster, the main way to create data pipelines is by writing assets. By the end of this tutorial section, you'll have written your first asset.
+In Dagster, the main way to create data pipelines is by writing assets, linked to the functions that materialize them. By the end of this tutorial section, you'll have written your first asset and function.
 
 The scaffolded Dagster project has a directory called `tutorial`. If you named your project differently when running the Dagster CLI, the directory will be named after that.
 
@@ -46,7 +46,7 @@ with open("data/topstory_ids.json", "w") as f:
 
 This code creates a list of integers representing the IDs for the current top stories on Hacker News and stores them in a file called `data/topstory_ids.json`.
 
-Next, you will work towards making this code into an asset definition. The first step is turning it into a function:
+Next, you will work towards making this code into an asset definition and associated materialization function. The first step is turning it into a function:
 
 ```python
 import json

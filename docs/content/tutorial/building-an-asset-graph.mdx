@@ -5,7 +5,7 @@ description: Learn how to build graphs of assets in Dagster
 
 # Tutorial, part four: Building an asset graph
 
-In the previous portion of the tutorial, you wrote your first asset definition, looked at Dagster's UI, and manually materialized your asset.
+In the previous portion of the tutorial, you wrote your first asset definition and associated materialization function, looked at Dagster's UI, and manually materialized your asset.
 
 Continuing from there, you will:
 
@@ -100,7 +100,7 @@ For more information about loggers, such as the different types of logging, refe
 
 ---
 
-## Step 2: Creating an unstructured data asset
+## Step 2: An unstructured data asset
 
 Along with structured data like tables, Dagster's assets can also be unstructured data, such as JSON files or images. Your next and final asset will take the DataFrame of stories and create a dictionary of the most frequent words in the titles.
 

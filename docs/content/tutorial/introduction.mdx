@@ -25,7 +25,7 @@ If you have an existing data pipeline, you likely already have assets.
 
 _Asset definitions_ are a Dagster concept that allows you to write data pipelines in terms of the assets that they produce. How they work: you write code that describes an asset that you want to exist, along with any other assets that the asset is derived from, and a function that can be run to compute the contents of the asset.
 
-Here's an example. The asset is a dataset called `topstories`, and it depends on another asset called `topstory_ids`. `topstories` gets the IDs computed in `topstory_ids`, then fetches data for each of those IDs.
+Here's an example asset definition and associated function. The asset is a dataset called `topstories`, and it depends on another asset called `topstory_ids`. `topstories` gets the IDs computed in `topstory_ids`, then fetches data for each of those IDs.
 
 ```python
 @asset(deps=[topstory_ids])

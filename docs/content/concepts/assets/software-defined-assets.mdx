@@ -17,7 +17,7 @@ description: An asset definition is a description of how to compute the contents
   videos to get a quick look at asset definitions.
 </Note>
 
-An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. An **asset definition** is a description, in code, of an asset that should exist and how to produce and update that asset.
+An **asset** is an object in persistent storage, such as a table, file, or persisted machine learning model. An **asset definition** is a description, in code, of an asset that should exist, typically accompanied by a description of how to produce and update that asset.
 
 Asset definitions enable a declarative approach to data management, in which code is the source of truth on what data assets should exist and how those assets are computed.
 
@@ -25,7 +25,9 @@ An asset definition includes the following:
 
 - An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
 - A set of upstream asset keys, which refer to assets that the contents of the asset definition are derived from.
-- A Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
+- Metadata, which describes the asset.
+
+Assets are usually defined along with a Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
 
   **Note**: Behind-the-scenes, the Python function is an [op](/concepts/ops-jobs-graphs/ops). Ops are an advanced topic that isn't required to get started with Dagster. A crucial distinction between asset definitions and ops is that asset definitions know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
@@ -50,9 +52,9 @@ An asset definition includes the following:
 - [Accessing asset context](#asset-context)
 - [Configuring assets](#asset-configuration)
 
-### Basic asset definitions
+### Basic asset definitions, with materialization functions
 
-The easiest way to create an asset definition is with the <PyObject object="asset" decorator /> decorator.
+The easiest way to create an asset definition and accompanying materializaing function is with the <PyObject object="asset" decorator /> decorator.
 
 ```python file=/concepts/assets/basic_asset_definition.py
 import json
@@ -173,7 +175,7 @@ Refer to the [Config schema documentation](/concepts/configuration/config-schema
 
 ### Asset context
 
-When writing an asset, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject object="AssetExecutionContext"/> object to the body of the asset which provides access to system information like loggers and the current run ID.
+When writing an asset materialization function, users can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject object="AssetExecutionContext"/> object to the body of the asset which provides access to system information like loggers and the current run ID.
 
 For example, to access the logger and log an info message:
 
