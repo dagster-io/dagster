@@ -28,6 +28,7 @@ from dagster._core.definitions.asset_selection import (
     AndAssetSelection,
     AssetCheckKeysSelection,
     AssetChecksForAssetKeysSelection,
+    CodeLocationAssetSelection,
     DownstreamAssetSelection,
     GroupsAssetSelection,
     KeyPrefixesAssetSelection,
@@ -797,3 +798,15 @@ def test_owner() -> None:
         AssetKey("asset1"),
         AssetKey("asset3"),
     }
+
+
+def test_code_location() -> None:
+    @asset
+    def my_asset(): ...
+
+    # Selection can be instantiated.
+    selection = CodeLocationAssetSelection(selected_code_location="code_location1")
+
+    # But not resolved.
+    with pytest.raises(NotImplementedError):
+        selection.resolve([my_asset])
