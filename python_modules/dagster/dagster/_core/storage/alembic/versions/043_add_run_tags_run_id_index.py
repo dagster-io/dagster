@@ -5,14 +5,13 @@ Revises: 46b412388816
 Create Date: 2024-07-10 09:35:20.215174
 
 """
-from alembic import op
-import sqlalchemy as sa
 
+from alembic import op
 from dagster._core.storage.migration.utils import has_index, has_table
 
 # revision identifiers, used by Alembic.
-revision = '284a732df317'
-down_revision = '46b412388816'
+revision = "284a732df317"
+down_revision = "46b412388816"
 branch_labels = None
 depends_on = None
 
@@ -21,7 +20,7 @@ def upgrade():
     if not has_table("run_tags"):
         return
 
-    if not has_index('run_tags', 'idx_run_tags_run_idx'):
+    if not has_index("run_tags", "idx_run_tags_run_idx"):
         op.create_index(
             "idx_run_tags_run_idx",
             "run_tags",
