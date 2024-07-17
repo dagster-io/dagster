@@ -70,6 +70,8 @@ if __name__ == "__main__":
     main()
 ```
 
+---
+
 ## Step 3: Add the PipesGlueClient to Dagster code
 
 In the Dagster asset/op code, use the `PipesGlueClient` resource to launch the job:
@@ -99,7 +101,7 @@ This will launch the AWS Glue job and monitor its status until it either fails o
 
 ---
 
-## Step 4: Creating Dagster definitions
+## Step 4: Create Dagster definitions
 
 Next, add the `PipesGlueClient` resource to your project's <PyObject object="Definitions" /> object:
 
@@ -132,7 +134,7 @@ Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` 
 
 ---
 
-## References
+## Related
 
 <ArticleList>
   <ArticleListItem
