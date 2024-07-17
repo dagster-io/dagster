@@ -47,15 +47,20 @@ To complete the steps in this guide, you'll need:
 
 2. Scroll down to the **Advanced Sign-on settings** section.
 
-2. In the **Organization** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
+3. In the **Organization** field, enter your Dagster+ organization name. This is used to route the SAML response to the correct Dagster+ subdomain.
 
    In the following example, the organization name is `hooli` and our Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, we'd enter `hooli` into the **Organization** field:
 
    <!-- ![Okta Subdomain Configuration](/images/dagster-cloud/sso/okta/subdomain_configuration.png) -->
 
-   ![Okta Subdomain Configuration](/images/dagster-cloud/sso/okta/subdomain_configuration.png)
+   <Image
+   alt="Okta Subdomain Configuration"
+   src="/images/dagster-cloud/sso/okta/subdomain_configuration.png"
+   width={709}
+   height={215}
+   />
 
-3. When finished, click **Done**.
+4. When finished, click **Done**.
 
 ---
 
@@ -69,13 +74,22 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 
 3. Click **View IdP metadata**:
 
-   ![The View IdP metadata options in the Okta UI](/images/dagster-cloud/sso/okta/save_identity_provider_metadata.png)
+   <Image
+   alt="The View IdP metadata options in the Okta UI"
+   src="/images/dagster-cloud/sso/okta/save_identity_provider_metadata.png"
+   width={1920}
+   height={970}
+   />
 
    This will open a new page in your browser with the IdP metadata in XML format.
 
 4. Right-click on the page and use **Save As** or **Save Page As**:
 
-   ![](/images/dagster-cloud/sso/okta/save-xml-as-page.png)
+   <Image
+   src="/images/dagster-cloud/sso/okta/save-xml-as-page.png"
+   width={1920}
+   height={743}
+   />
 
    In Chrome and Edge, the file will be downloaded as an XML file. In Firefox, choose **Save Page As > Save as type**, then select **All files**. **Note**: Copying and pasting the metadata can cause formatting issues that will prevent successful setup. Saving the page directly from the browser will avoid this.
 
