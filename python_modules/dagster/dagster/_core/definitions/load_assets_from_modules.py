@@ -5,7 +5,6 @@ from types import ModuleType
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -97,11 +96,6 @@ def assets_from_modules(
     return list(set(assets.values())), source_assets, cacheable_assets
 
 
-@deprecated_param(
-    param="auto_materialize_policy",
-    breaking_version="1.9",
-    additional_warn_text="use `automation_condition` instead.",
-)
 def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
@@ -161,11 +155,6 @@ def load_assets_from_modules(
     )
 
 
-@deprecated_param(
-    param="auto_materialize_policy",
-    breaking_version="1.9",
-    additional_warn_text="use `automation_condition` instead.",
-)
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -238,11 +227,6 @@ def assets_from_package_module(
     )
 
 
-@deprecated_param(
-    param="auto_materialize_policy",
-    breaking_version="1.9",
-    additional_warn_text="use `automation_condition` instead.",
-)
 def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
