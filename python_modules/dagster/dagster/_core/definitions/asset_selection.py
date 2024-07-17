@@ -894,6 +894,24 @@ class OwnerAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
+class CodeLocationAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by code location. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_code_location: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def __str__(self) -> str:
+        return f"code_location:{self.selected_code_location}"
+
+
+@whitelist_for_serdes
 class KeysAssetSelection(AssetSelection):
     selected_keys: Sequence[AssetKey]
 
