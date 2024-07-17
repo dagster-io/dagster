@@ -962,7 +962,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def use_transitive_stale_causes(self) -> bool:
-        return True
+        return False
 
     # python logs
 
