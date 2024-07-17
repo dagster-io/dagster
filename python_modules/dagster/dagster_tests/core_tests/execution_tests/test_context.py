@@ -45,6 +45,9 @@ def test_op_execution_context():
         check.inst(context.job_def, JobDefinition)
         assert context.op_config is None
         check.inst(context.op_def, OpDefinition)
+        dir_context = dir(context)
+        assert "asset_partition_key_range" not in dir_context
+        assert "partition_key_range" in dir_context
 
     @job
     def foo():

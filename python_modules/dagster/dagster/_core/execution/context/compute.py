@@ -17,7 +17,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import HideDeprecatedMethods, deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -133,7 +133,9 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
         return super().__instancecheck__(instance)
 
 
-class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionContextMetaClass):
+class OpExecutionContext(
+    AbstractComputeExecutionContext, HideDeprecatedMethods, metaclass=OpExecutionContextMetaClass
+):
     """The ``context`` object that can be made available as the first argument to the function
     used for computing an op or asset.
 

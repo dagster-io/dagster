@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Mapping, Optional, Sequence, TypeVar, Union, overload
 
 from typing_extensions import Annotated, Final, TypeAlias
 
@@ -575,3 +575,15 @@ def _get_warning_stacklevel(obj: Annotatable):
 def _annotatable_has_param(obj: Annotatable, param: str) -> bool:
     target_fn = get_decorator_target(obj)
     return param in inspect.signature(target_fn).parameters
+
+
+class HideDeprecatedMethods:
+    def __dir__(self) -> Sequence[str]:
+        result = []
+        for attr_name in super().__dir__():
+            attr = getattr(self.__class__, attr_name, None)
+            obj = attr.fget if isinstance(attr, property) else attr
+            if obj is None or not hasattr(obj, _DEPRECATED_ATTR_NAME):
+                result.append(attr_name)
+
+        return result
