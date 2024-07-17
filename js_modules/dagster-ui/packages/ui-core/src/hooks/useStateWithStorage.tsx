@@ -49,10 +49,8 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validate, key, version]);
 
-  const setState = React.useCallback(
-    (input: React.SetStateAction<T>) => {
-      const next =
-        input instanceof Function ? input(validateRef.current(getJSONForKey(key))) : input;
+  const setStateInner = React.useCallback(
+    (next: T | undefined) => {
       if (next === undefined) {
         window.localStorage.removeItem(key);
       } else {
@@ -69,5 +67,24 @@ export function useStateWithStorage<T>(key: string, validate: (json: any) => T) 
     [key, listener],
   );
 
-  return [state, setState] as const;
+  const setState = React.useCallback(
+    (input: React.SetStateAction<T>) => {
+      setStateInner(getStateOrSetterValue(key, input, validateRef.current));
+    },
+    [key, setStateInner],
+  );
+
+  const clearState = React.useCallback(() => {
+    setStateInner(undefined);
+  }, [setStateInner]);
+
+  return [state, setState, clearState] as const;
+}
+
+function getStateOrSetterValue<T = any>(
+  key: string,
+  input: React.SetStateAction<T>,
+  validate: (value: T | undefined) => T,
+) {
+  return input instanceof Function ? input(validate(getJSONForKey(key))) : input;
 }

@@ -27,8 +27,8 @@ export type ProtocolData = {
 };
 
 export const CodeLinkProtocolContext = React.createContext<
-  [ProtocolData, React.Dispatch<React.SetStateAction<ProtocolData | undefined>>]
->([DEFAULT_PROTOCOL, () => '']);
+  ReturnType<typeof useStateWithStorage<ProtocolData>>
+>([DEFAULT_PROTOCOL, () => '', () => {}]);
 
 export const CodeLinkProtocolProvider = ({children}: {children: React.ReactNode}) => {
   const state = useStateWithStorage<ProtocolData>(
