@@ -3,6 +3,11 @@ title: Authoring Component Examples
 description: This page shows off what each of the components we're using in our docs looks like.
 ---
 
+# Testing Code Snippet
+
+{% codeSnippet /%}
+
+
 This page contains examples of all of the native Markdoc node and the custom markdoc tags that we are using in our docs.
 
 To see the rendered version of these tags, move this file into the `next/pages/getting-started` directory, run the local server for the site, and navigate to the `getting-started/markdoc-component-documentation` page in your browser.
