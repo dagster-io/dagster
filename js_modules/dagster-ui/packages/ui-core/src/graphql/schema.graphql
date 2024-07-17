@@ -3591,6 +3591,7 @@ type AssetConditionEvaluationRecord {
   numRequested: Int!
   startTimestamp: Float
   endTimestamp: Float
+  isLegacy: Boolean!
   evaluation: AssetConditionEvaluation!
   rootUniqueId: String!
   evaluationNodes: [AutomationConditionEvaluationNode!]!

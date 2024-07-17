@@ -314,6 +314,8 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
+    isLegacy = graphene.NonNull(graphene.Boolean)
+
     # for legacy UI
     evaluation = graphene.NonNull(GrapheneAssetConditionEvaluation)
 
@@ -342,6 +344,11 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
             numRequested=root_evaluation.true_subset.size,
             startTimestamp=root_evaluation.start_timestamp,
             endTimestamp=root_evaluation.end_timestamp,
+            isLegacy=any(
+                # RuleConditions are the legacy wrappers around AutoMaterializeRules
+                node.condition_snapshot.class_name == "RuleCondition"
+                for node in flattened_evaluations
+            ),
             # for legacy UI
             evaluation=GrapheneAssetConditionEvaluation(root_evaluation),
             # for new UI

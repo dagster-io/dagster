@@ -333,6 +333,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
         ... on AssetConditionEvaluationRecords {
             records {
                 id
+                isLegacy
                 numRequested
                 assetKey {
                     path
@@ -819,6 +820,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert len(records) == 1
 
         record = records[0]
+        assert not record["isLegacy"]
         assert record["numRequested"] == 0
 
         # all nodes in the tree

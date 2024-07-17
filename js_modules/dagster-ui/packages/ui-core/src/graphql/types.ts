@@ -306,6 +306,7 @@ export type AssetConditionEvaluationRecord = {
   evaluationId: Scalars['Int']['output'];
   evaluationNodes: Array<AutomationConditionEvaluationNode>;
   id: Scalars['ID']['output'];
+  isLegacy: Scalars['Boolean']['output'];
   numRequested: Scalars['Int']['output'];
   rootUniqueId: Scalars['String']['output'];
   runIds: Array<Scalars['String']['output']>;
@@ -6093,6 +6094,7 @@ export const buildAssetConditionEvaluationRecord = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '1c158e55-c1c1-43c2-9f14-8e369549e154',
+    isLegacy: overrides && overrides.hasOwnProperty('isLegacy') ? overrides.isLegacy! : true,
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2364,
     rootUniqueId:
