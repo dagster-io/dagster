@@ -775,6 +775,27 @@ def test_str_enum_value() -> None:
         a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "foo"}}}})
 
 
+def test_literal() -> None:
+    class AnOpConfig(Config):
+        a_literal: Literal["foo", "bar"] = "foo"
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        assert isinstance(config.a_literal, str)
+        assert config.a_literal in ["foo", "bar"]
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_literal": "bar"}}}})
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_literal": "baz"}}}})
+
+
 def test_enum_complex() -> None:
     class MyEnum(enum.Enum):
         FOO = "foo"
@@ -879,12 +900,16 @@ def test_struct_config_non_optional_none_input_errors() -> None:
 
 
 def test_conversion_to_fields() -> None:
+    FooBarLiteral = Literal["foo", "bar"]
+
     class ConfigClassToConvert(Config):
         a_string: str
         an_int: str
         with_description: str = Field(description="a description")
         with_default_value: int = Field(default=12)
         optional_str: Optional[str] = None
+        a_literal: FooBarLiteral
+        a_default_literal: FooBarLiteral = "bar"
 
     fields = ConfigClassToConvert.to_fields_dict()
 
@@ -895,6 +920,8 @@ def test_conversion_to_fields() -> None:
         "with_description",
         "with_default_value",
         "optional_str",
+        "a_literal",
+        "a_default_literal",
     }
     assert fields["with_description"].description == "a description"
     assert fields["with_description"].is_required is True
@@ -902,6 +929,9 @@ def test_conversion_to_fields() -> None:
     assert not fields["with_default_value"].is_required
     assert fields["optional_str"]
     assert fields["optional_str"].is_required is False
+    assert fields["a_literal"].is_required is True
+    assert fields["a_default_literal"].is_required is False
+    assert fields["a_default_literal"].default_value == "bar"
 
 
 def test_to_config_dict_combined_with_cached_method() -> None:
