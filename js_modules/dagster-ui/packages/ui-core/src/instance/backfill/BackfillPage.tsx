@@ -33,7 +33,7 @@ import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {Timestamp} from '../../app/time/Timestamp';
-import {BulkActionStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {
@@ -74,7 +74,7 @@ export const BackfillPage = () => {
 
   // for asset backfills, all of the requested runs have concluded in order for the status to be BulkActionStatus.COMPLETED
   const isInProgress = backfill
-    ? [BulkActionStatus.REQUESTED, BulkActionStatus.CANCELING].includes(backfill.status)
+    ? [RunStatus.STARTED, RunStatus.CANCELING].includes(backfill.status)
     : true;
 
   const refreshState = useQueryRefreshAtInterval(queryResult, 10000, isInProgress);
@@ -185,7 +185,7 @@ export const BackfillPage = () => {
               <BackfillActionsMenu
                 backfill={backfill}
                 refetch={queryResult.refetch}
-                canCancelRuns={backfill.status === BulkActionStatus.REQUESTED}
+                canCancelRuns={backfill.status === RunStatus.STARTED}
               />
             ) : null}
           </Box>

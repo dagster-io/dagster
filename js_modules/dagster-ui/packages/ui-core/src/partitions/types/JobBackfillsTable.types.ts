@@ -19,7 +19,7 @@ export type JobBackfillsQuery = {
         backfills: Array<{
           __typename: 'PartitionBackfill';
           id: string;
-          status: Types.BulkActionStatus;
+          status: Types.RunStatus;
           isAssetBackfill: boolean;
           isValidSerialization: boolean;
           partitionNames: Array<string> | null;

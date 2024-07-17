@@ -8,7 +8,7 @@ export type BackfillActionsBackfillFragment = {
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
   isAssetBackfill: boolean;
-  status: Types.BulkActionStatus;
+  status: Types.RunStatus;
   numCancelable: number;
   partitionNames: Array<string> | null;
   partitionSet: {

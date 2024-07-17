@@ -3096,7 +3096,7 @@ export type PartitionBackfill = {
   partitionsTargetedForAssetKey: Maybe<AssetBackfillTargetPartitions>;
   reexecutionSteps: Maybe<Array<Scalars['String']['output']>>;
   runs: Array<Run>;
-  status: BulkActionStatus;
+  status: RunStatus;
   tags: Array<PipelineTag>;
   timestamp: Scalars['Float']['output'];
   title: Maybe<Scalars['String']['output']>;
@@ -10757,9 +10757,7 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     status:
-      overrides && overrides.hasOwnProperty('status')
-        ? overrides.status!
-        : BulkActionStatus.CANCELED,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 8.28,
     title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'veritatis',

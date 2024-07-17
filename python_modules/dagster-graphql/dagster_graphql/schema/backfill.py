@@ -47,6 +47,7 @@ from .errors import (
     create_execution_params_error_types,
 )
 from .pipelines.config import GrapheneRunConfigValidationInvalid
+from .pipelines.status import GrapheneRunStatus
 from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
@@ -250,7 +251,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         name = "PartitionBackfill"
 
     id = graphene.NonNull(graphene.String)
-    status = graphene.NonNull(GrapheneBulkActionStatus)
+    status = graphene.NonNull(GrapheneRunStatus)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
     numPartitions = graphene.Field(graphene.Int)

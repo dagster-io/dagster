@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from dagster._core.execution.backfill import BulkActionStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -20,7 +20,7 @@ def get_backfill(graphene_info: "ResolveInfo", backfill_id: str) -> "GraphenePar
 
 def get_backfills(
     graphene_info: "ResolveInfo",
-    status: Optional[BulkActionStatus] = None,
+    status: Optional[DagsterRunStatus] = None,
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GraphenePartitionBackfills":

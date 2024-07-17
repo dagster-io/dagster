@@ -12,6 +12,7 @@ from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
@@ -37,6 +38,21 @@ class BulkActionStatus(Enum):
     def from_graphql_input(graphql_str):
         return BulkActionStatus(graphql_str)
 
+    def to_dagster_run_status(self) -> DagsterRunStatus:
+        """In the real implementation we'd probably change all the call sites to send the correct
+        DagsterRunStatus, but this gets us most of the way there for prototyping.
+        """
+        if self == BulkActionStatus.REQUESTED:
+            return DagsterRunStatus.STARTED
+        elif self == BulkActionStatus.COMPLETED:
+            return DagsterRunStatus.SUCCESS
+        elif self == BulkActionStatus.FAILED:
+            return DagsterRunStatus.FAILURE
+        elif self == BulkActionStatus.CANCELING:
+            return DagsterRunStatus.CANCELING
+        elif self == BulkActionStatus.CANCELED:
+            return DagsterRunStatus.CANCELED
+
 
 @whitelist_for_serdes
 class PartitionBackfill(
@@ -44,7 +60,7 @@ class PartitionBackfill(
         "_PartitionBackfill",
         [
             ("backfill_id", str),
-            ("status", BulkActionStatus),
+            ("status", DagsterRunStatus),
             ("from_failure", bool),
             ("tags", Mapping[str, str]),
             ("backfill_timestamp", float),
@@ -69,7 +85,7 @@ class PartitionBackfill(
     def __new__(
         cls,
         backfill_id: str,
-        status: BulkActionStatus,
+        status: Union[DagsterRunStatus, BulkActionStatus],
         from_failure: bool,
         tags: Optional[Mapping[str, str]],
         backfill_timestamp: float,
@@ -98,10 +114,13 @@ class PartitionBackfill(
             check.invariant(last_submitted_partition_name is None)
             check.invariant(reexecution_steps is None)
 
+        if isinstance(status, BulkActionStatus):
+            status = status.to_dagster_run_status()
+
         return super(PartitionBackfill, cls).__new__(
             cls,
             backfill_id=check.str_param(backfill_id, "backfill_id"),
-            status=check.inst_param(status, "status", BulkActionStatus),
+            status=check.inst_param(status, "status", DagsterRunStatus),
             from_failure=check.bool_param(from_failure, "from_failure"),
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             backfill_timestamp=check.float_param(backfill_timestamp, "backfill_timestamp"),
@@ -295,7 +314,7 @@ class PartitionBackfill(
         if self.is_asset_backfill:
             return 0
 
-        if self.status != BulkActionStatus.REQUESTED:
+        if self.status != DagsterRunStatus.STARTED:
             return 0
 
         if self.partition_names is None:
@@ -310,8 +329,8 @@ class PartitionBackfill(
         )
         return max(0, total_count - checkpoint_idx)
 
-    def with_status(self, status):
-        check.inst_param(status, "status", BulkActionStatus)
+    def with_status(self, status: DagsterRunStatus):
+        check.inst_param(status, "status", DagsterRunStatus)
         return self._replace(status=status)
 
     def with_partition_checkpoint(self, last_submitted_partition_name):
@@ -383,7 +402,7 @@ class PartitionBackfill(
         )
         return cls(
             backfill_id=backfill_id,
-            status=BulkActionStatus.REQUESTED,
+            status=DagsterRunStatus.STARTED,
             from_failure=False,
             tags=tags,
             backfill_timestamp=backfill_timestamp,
@@ -414,7 +433,7 @@ class PartitionBackfill(
         )
         return cls(
             backfill_id=backfill_id,
-            status=BulkActionStatus.REQUESTED,
+            status=DagsterRunStatus.STARTED,
             from_failure=False,
             tags=tags,
             backfill_timestamp=backfill_timestamp,
@@ -443,7 +462,7 @@ class PartitionBackfill(
         )
         return cls(
             backfill_id=backfill_id,
-            status=BulkActionStatus.REQUESTED,
+            status=DagsterRunStatus.STARTED,
             from_failure=False,
             tags=tags,
             backfill_timestamp=backfill_timestamp,

@@ -727,8 +727,6 @@ def _submit_runs_and_update_backfill_in_chunks(
     run_tags: Mapping[str, str],
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[None]:
-    from dagster._core.execution.backfill import BulkActionStatus
-
     run_requests = asset_backfill_iteration_result.run_requests
 
     # Iterate through runs to request, submitting runs in chunks.
@@ -803,7 +801,7 @@ def _submit_runs_and_update_backfill_in_chunks(
                 asset_backfill_iteration_result.reserved_run_ids[num_submitted:],
             )
 
-            if backfill.status != BulkActionStatus.REQUESTED:
+            if backfill.status != DagsterRunStatus.STARTED:
                 break
 
         yield None
@@ -929,7 +927,7 @@ def execute_asset_backfill_iteration(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import PartitionBackfill
 
     logger.info(f"Evaluating asset backfill {backfill.backfill_id}")
 
@@ -954,7 +952,7 @@ def execute_asset_backfill_iteration(
         f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
     )
 
-    if backfill.status == BulkActionStatus.REQUESTED:
+    if backfill.status == DagsterRunStatus.STARTED:
         if backfill.submitting_run_requests:
             # interrupted in the middle of executing run requests - re-construct the in-progress iteration result
             logger.warn(
@@ -993,7 +991,7 @@ def execute_asset_backfill_iteration(
             updated_backfill: PartitionBackfill = check.not_none(
                 instance.get_backfill(backfill.backfill_id)
             )
-            if updated_backfill.status != BulkActionStatus.REQUESTED:
+            if updated_backfill.status != DagsterRunStatus.STARTED:
                 logger.info("Backfill was canceled mid-iteration, returning")
                 return
 
@@ -1024,7 +1022,7 @@ def execute_asset_backfill_iteration(
         updated_backfill = cast(
             PartitionBackfill, instance.get_backfill(updated_backfill.backfill_id)
         )
-        if updated_backfill.status == BulkActionStatus.REQUESTED:
+        if updated_backfill.status == DagsterRunStatus.STARTED:
             check.invariant(
                 not updated_backfill.submitting_run_requests,
                 "All run requests should have been submitted",
@@ -1038,7 +1036,7 @@ def execute_asset_backfill_iteration(
             # per asset partition, the daemon continues to update the backfill data until all runs have
             # finished in order to display the final partition statuses in the UI.
             updated_backfill: PartitionBackfill = updated_backfill.with_status(
-                BulkActionStatus.COMPLETED
+                DagsterRunStatus.SUCCESS
             )
             instance.update_backfill(updated_backfill)
 
@@ -1049,7 +1047,7 @@ def execute_asset_backfill_iteration(
             f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
         )
 
-    elif backfill.status == BulkActionStatus.CANCELING:
+    elif backfill.status == DagsterRunStatus.CANCELING:
         if not instance.run_coordinator:
             check.failed("The instance must have a run coordinator in order to cancel runs")
 
@@ -1103,7 +1101,7 @@ def execute_asset_backfill_iteration(
             updated_asset_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
         )
         if all_partitions_marked_completed:
-            updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
+            updated_backfill = updated_backfill.with_status(DagsterRunStatus.CANCELED)
 
         instance.update_backfill(updated_backfill)
 
@@ -1125,7 +1123,7 @@ def execute_asset_backfill_iteration(
         logger.debug(
             f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
         )
-    elif backfill.status == BulkActionStatus.CANCELING:
+    elif backfill.status == DagsterRunStatus.CANCELING:
         # The backfill was forcibly canceled, skip iteration
         pass
     else:

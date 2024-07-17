@@ -12,8 +12,9 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._time import get_current_datetime
@@ -53,8 +54,10 @@ def execute_backfill_iteration(
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
 
-    in_progress_backfills = instance.get_backfills(status=BulkActionStatus.REQUESTED)
-    canceling_backfills = instance.get_backfills(status=BulkActionStatus.CANCELING)
+    in_progress_backfills = instance.get_backfills(
+        status=DagsterRunStatus.STARTED
+    )  # could expand this to NOT_STARTED so we can give more granual status info
+    canceling_backfills = instance.get_backfills(status=DagsterRunStatus.CANCELING)
 
     if not in_progress_backfills and not canceling_backfills:
         logger.debug("No backfill jobs in progress or canceling.")
@@ -115,7 +118,7 @@ def execute_backfill_jobs(
                 backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
                 if (
                     backfill.is_asset_backfill
-                    and backfill.status == BulkActionStatus.REQUESTED
+                    and backfill.status == DagsterRunStatus.STARTED
                     and backfill.failure_count < _get_max_asset_backfill_retries()
                     and _is_retryable_asset_backfill_error(e)
                 ):
@@ -151,7 +154,7 @@ def execute_backfill_jobs(
                         log_message=f"Backfill failed for {backfill.backfill_id}",
                     )
                     instance.update_backfill(
-                        backfill.with_status(BulkActionStatus.FAILED)
+                        backfill.with_status(DagsterRunStatus.FAILURE)
                         .with_error(error_info)
                         .with_failure_count(backfill.failure_count + 1)
                     )

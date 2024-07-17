@@ -2762,7 +2762,7 @@ type PartitionRun {
 
 type PartitionBackfill {
   id: String!
-  status: BulkActionStatus!
+  status: RunStatus!
   partitionNames: [String!]
   isValidSerialization: Boolean!
   numPartitions: Int
@@ -2789,14 +2789,6 @@ type PartitionBackfill {
   title: String
   description: String
   logEvents(cursor: String): InstigationEventConnection!
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-  CANCELED
-  CANCELING
 }
 
 type AssetBackfillTargetPartitions {
@@ -3427,6 +3419,14 @@ union PartitionBackfillsOrError = PartitionBackfills | PythonError
 
 type PartitionBackfills {
   results: [PartitionBackfill!]!
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
+  CANCELING
 }
 
 type AssetLatestInfo {

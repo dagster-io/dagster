@@ -160,7 +160,7 @@ def create_and_launch_partition_backfill(
         backfill = PartitionBackfill(
             backfill_id=backfill_id,
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=partition_names,
             from_failure=bool(backfill_params.get("fromFailure")),
             reexecution_steps=backfill_params.get("reexecutionSteps"),
@@ -285,7 +285,7 @@ def cancel_partition_backfill(
             Permissions.CANCEL_PARTITION_BACKFILL,
         )
         graphene_info.context.instance.update_backfill(
-            backfill.with_status(BulkActionStatus.CANCELING)
+            backfill.with_status(BulkActionStatus.CANCELING.to_dagster_run_status())
         )
 
     else:
@@ -295,7 +295,7 @@ def cancel_partition_backfill(
             graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
         )
         graphene_info.context.instance.update_backfill(
-            backfill.with_status(BulkActionStatus.CANCELED)
+            backfill.with_status(BulkActionStatus.CANCELED.to_dagster_run_status())
         )
 
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
@@ -316,5 +316,7 @@ def resume_partition_backfill(
         graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
     )
 
-    graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.REQUESTED))
+    graphene_info.context.instance.update_backfill(
+        backfill.with_status(BulkActionStatus.REQUESTED.to_dagster_run_status())
+    )
     return GrapheneResumeBackfillSuccess(backfill_id=backfill_id)

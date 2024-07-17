@@ -53,7 +53,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
         PartitionBackfill(
             backfill_id="simple",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
@@ -69,7 +69,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
     launch_process.join(timeout=60)
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED.to_dagster_run_status()
 
 
 @pytest.mark.skipif(
@@ -84,7 +84,7 @@ def test_before_submit(
         PartitionBackfill(
             backfill_id="simple",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
@@ -102,7 +102,7 @@ def test_before_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     assert instance.get_runs_count() == 0
 
     # resume backfill
@@ -115,7 +115,7 @@ def test_before_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED.to_dagster_run_status()
     assert instance.get_runs_count() == 3
 
 
@@ -131,7 +131,7 @@ def test_crash_after_submit(
         PartitionBackfill(
             backfill_id="simple",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
@@ -149,7 +149,7 @@ def test_crash_after_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     assert instance.get_runs_count() == 3
 
     # resume backfill
@@ -162,5 +162,5 @@ def test_crash_after_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED.to_dagster_run_status()
     assert instance.get_runs_count() == 3
