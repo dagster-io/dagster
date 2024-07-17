@@ -406,7 +406,7 @@ def resolve_automation_condition(
 ) -> Optional["AutomationCondition"]:
     if auto_materialize_policy is not None:
         deprecation_warning(
-            "The `auto_materialize_policy` parameter",
+            "Parameter `auto_materialize_policy`",
             "1.9",
             additional_warn_text="Use `automation_condition` instead.",
         )
