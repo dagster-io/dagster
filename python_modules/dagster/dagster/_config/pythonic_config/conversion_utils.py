@@ -290,7 +290,7 @@ def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
     Becomes:
 
     Shape({
-      "pet": Enum("cat", "dog")
+      "pet": Enum(["cat", "dog"])
       })
     })
     """
