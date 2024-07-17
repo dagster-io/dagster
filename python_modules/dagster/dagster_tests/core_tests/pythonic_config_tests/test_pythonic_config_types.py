@@ -817,7 +817,7 @@ def test_literal_in_resource_config() -> None:
     a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="bar")})
 
     with pytest.raises(pydantic.error_wrappers.ValidationError):
-        a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="baz")})
+        a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="baz")})  # type: ignore
 
 
 def test_enum_complex() -> None:
