@@ -2,7 +2,9 @@ import {AppTopNavRightOfLogo} from '@dagster-io/ui-core/app/AppTopNav/AppTopNavR
 import {FallthroughRoot} from '@dagster-io/ui-core/app/FallthroughRoot.oss';
 import {InjectedComponentContext} from '@dagster-io/ui-core/app/InjectedComponentContext';
 import {UserPreferences} from '@dagster-io/ui-core/app/UserSettingsDialog/UserPreferences.oss';
+import {AssetGraphFilterBar} from '@dagster-io/ui-core/asset-graph/AssetGraphFilterBar.oss';
 import {useAssetGraphExplorerFilters} from '@dagster-io/ui-core/asset-graph/useAssetGraphExplorerFilters.oss';
+import {AssetCatalogTableBottomActionBar} from '@dagster-io/ui-core/assets/AssetCatalogTableBottomActionBar.oss';
 import {AssetPageHeader} from '@dagster-io/ui-core/assets/AssetPageHeader.oss';
 import {AssetsGraphHeader} from '@dagster-io/ui-core/assets/AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '@dagster-io/ui-core/assets/AssetsOverviewRoot.oss';
@@ -22,6 +24,8 @@ export const InjectedComponents = ({children}: {children: React.ReactNode}) => {
           AssetsGraphHeader,
           OverviewPageAlerts: null,
           RunMetricsDialog: null,
+          AssetCatalogTableBottomActionBar,
+          AssetGraphFilterBar,
         },
         hooks: {
           useAssetDefinitionFilterState,
