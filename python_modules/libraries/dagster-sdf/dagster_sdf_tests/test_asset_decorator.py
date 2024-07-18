@@ -42,7 +42,8 @@ def test_sdf_with_materialize(lineage_target_dir: Path, moms_flower_shop_target_
             [my_sdf_assets],
             resources={
                 "sdf": SdfCliResource(
-                    workspace_dir=os.fspath(workspace_dir), global_config_flags=["--show=none"]
+                    workspace_dir=os.fspath(workspace_dir),
+                    global_config_flags=["--log-form=nested"],
                 )
             },
         )

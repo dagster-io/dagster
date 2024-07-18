@@ -21,16 +21,16 @@ def sdf_fixture() -> SdfCliResource:
     return SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
 
 
-@pytest.mark.parametrize("global_config_flags", [["--show", "none"]])
+@pytest.mark.parametrize("global_config_flags", [["--log-form=nested"]])
 def test_sdf_cli(global_config_flags: List[str]) -> None:
     expected_sdf_cli_args = [
         "sdf",
+        *global_config_flags,
         "--log-level",
         "info",
-        "--log-form",
-        "nested",
         "compile",
-        *global_config_flags,
+        "--show",
+        "none",
         "--environment",
         "dbg",
         "--target-dir",
@@ -143,9 +143,9 @@ def test_sdf_environment_configuration(sdf: SdfCliResource) -> None:
         "sdf",
         "--log-level",
         "info",
-        "--log-form",
-        "nested",
         "compile",
+        "--show",
+        "none",
         "--environment",
         "dev",
         "--target-dir",

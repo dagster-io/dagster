@@ -12,7 +12,7 @@ def _create_sdf_invocation(
     workspace_dir: Path, run_workspace: bool = False, environment: Optional[str] = None
 ) -> SdfCliInvocation:
     sdf = SdfCliResource(
-        workspace_dir=os.fspath(workspace_dir), global_config_flags=["--show=none"]
+        workspace_dir=os.fspath(workspace_dir), global_config_flags=["--log-form=nested"]
     )
 
     sdf_invocation = sdf.cli(["compile"], environment=environment).wait()

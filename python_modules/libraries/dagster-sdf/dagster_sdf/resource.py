@@ -464,7 +464,7 @@ class SdfCliResource(ConfigurableResource):
         target_path = target_dir or self._get_unique_target_path(context=context)
         target_args = ["--target-dir", str(target_path)]
         log_level_args = ["--log-level", "info"]
-        log_form_args = ["--log-form", "nested"]
+        show_args = ["--show", "none"]
 
         output_dir = target_path.joinpath(SDF_TARGET_DIR, environment)
 
@@ -473,10 +473,10 @@ class SdfCliResource(ConfigurableResource):
 
         args = [
             self.sdf_executable,
-            *log_level_args,
-            *log_form_args,
-            *args,
             *self.global_config_flags,
+            *log_level_args,
+            *args,
+            *show_args,
             *environment_args,
             *target_args,
         ]
