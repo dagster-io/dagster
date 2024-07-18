@@ -101,6 +101,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
             {
               label: groupName,
               description: manyLocations ? `Asset group in ${repoPath}` : 'Asset group',
+              definition: assetGroup,
               href: workspacePath(repoName, locationName, `/asset-groups/${groupName}`),
               type: SearchResultType.AssetGroup,
             },
@@ -115,6 +116,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
               ...flat,
               {
                 label: name,
+                definition: pipelineOrJob,
                 description: manyLocations
                   ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
                   : isJob
@@ -132,6 +134,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allSchedules: SearchResult[] = schedules.map((schedule) => ({
           label: schedule.name,
+          definition: schedule,
           description: manyLocations ? `Schedule in ${repoPath}` : 'Schedule',
           href: workspacePath(repoName, locationName, `/schedules/${schedule.name}`),
           type: SearchResultType.Schedule,
@@ -139,6 +142,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allSensors: SearchResult[] = sensors.map((sensor) => ({
           label: sensor.name,
+          definition: sensor,
           description: manyLocations ? `Sensor in ${repoPath}` : 'Sensor',
           href: workspacePath(repoName, locationName, `/sensors/${sensor.name}`),
           type: SearchResultType.Sensor,
@@ -146,6 +150,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allResources: SearchResult[] = allTopLevelResourceDetails.map((resource) => ({
           label: resource.name,
+          definition: resource,
           description: manyLocations ? `Resource in ${repoPath}` : 'Resource',
           href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
           type: SearchResultType.Resource,
@@ -155,6 +160,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
           .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
           .map((partitionSet) => ({
             label: partitionSet.name,
+            definition: partitionSet,
             description: manyLocations ? `Partition set in ${repoPath}` : 'Partition set',
             href: workspacePath(
               repoName,
@@ -164,15 +170,14 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
             type: SearchResultType.PartitionSet,
           }));
 
-        return [
-          ...inner,
-          ...allAssetGroups,
-          ...allPipelinesAndJobs,
-          ...allSchedules,
-          ...allSensors,
-          ...allPartitionSets,
-          ...allResources,
-        ];
+        inner.push(...allAssetGroups);
+        inner.push(...allPipelinesAndJobs);
+        inner.push(...allSchedules);
+        inner.push(...allSensors);
+        inner.push(...allPartitionSets);
+        inner.push(...allResources);
+
+        return inner;
       }, [] as SearchResult[]),
     );
     return accum;
@@ -200,6 +205,7 @@ const secondaryDataToSearchResults = (
         definition!.repository.name,
         definition!.repository.location.name,
       )}`,
+      definition,
       href: assetDetailsPathForKey(key),
       type: SearchResultType.Asset,
       tags: definition!.tags
@@ -505,29 +511,27 @@ export const SEARCH_PRIMARY_QUERY = gql`
                   name
                   assetGroups {
                     id
-                    groupName
+                    ...SearchGroupFragment
                   }
                   pipelines {
                     id
-                    isJob
-                    name
+                    ...SearchPipelineFragment
                   }
                   schedules {
                     id
-                    name
+                    ...SearchScheduleFragment
                   }
                   sensors {
                     id
-                    name
+                    ...SearchSensorFragment
                   }
                   partitionSets {
                     id
-                    name
-                    pipelineName
+                    ...SearchPartitionSetFragment
                   }
                   allTopLevelResourceDetails {
                     id
-                    name
+                    ...SearchResourceDetailFragment
                   }
                 }
               }
@@ -537,6 +541,35 @@ export const SEARCH_PRIMARY_QUERY = gql`
       }
       ...PythonErrorFragment
     }
+  }
+
+  fragment SearchGroupFragment on AssetGroup {
+    id
+    groupName
+  }
+
+  fragment SearchPipelineFragment on Pipeline {
+    id
+    isJob
+    name
+  }
+
+  fragment SearchScheduleFragment on Schedule {
+    id
+    name
+  }
+  fragment SearchSensorFragment on Sensor {
+    id
+    name
+  }
+  fragment SearchPartitionSetFragment on PartitionSet {
+    id
+    name
+    pipelineName
+  }
+  fragment SearchResourceDetailFragment on ResourceDetails {
+    id
+    name
   }
 
   ${PYTHON_ERROR_FRAGMENT}
@@ -553,30 +586,35 @@ export const SEARCH_SECONDARY_QUERY = gql`
           }
           definition {
             id
-            computeKind
-            groupName
-            owners {
-              ... on TeamAssetOwner {
-                team
-              }
-              ... on UserAssetOwner {
-                email
-              }
-            }
-            tags {
-              key
-              value
-            }
-            repository {
-              id
-              name
-              location {
-                id
-                name
-              }
-            }
+            ...SearchAssetDefinitionFragment
           }
         }
+      }
+    }
+  }
+
+  fragment SearchAssetDefinitionFragment on AssetNode {
+    id
+    computeKind
+    groupName
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
+    tags {
+      key
+      value
+    }
+    repository {
+      id
+      name
+      location {
+        id
+        name
       }
     }
   }

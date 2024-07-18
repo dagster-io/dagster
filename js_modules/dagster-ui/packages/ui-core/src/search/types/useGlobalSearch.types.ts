@@ -60,6 +60,32 @@ export type SearchPrimaryQuery = {
       };
 };
 
+export type SearchGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
+
+export type SearchPipelineFragment = {
+  __typename: 'Pipeline';
+  id: string;
+  isJob: boolean;
+  name: string;
+};
+
+export type SearchScheduleFragment = {__typename: 'Schedule'; id: string; name: string};
+
+export type SearchSensorFragment = {__typename: 'Sensor'; id: string; name: string};
+
+export type SearchPartitionSetFragment = {
+  __typename: 'PartitionSet';
+  id: string;
+  name: string;
+  pipelineName: string;
+};
+
+export type SearchResourceDetailFragment = {
+  __typename: 'ResourceDetails';
+  id: string;
+  name: string;
+};
+
 export type SearchSecondaryQueryVariables = Types.Exact<{[key: string]: never}>;
 
 export type SearchSecondaryQuery = {
@@ -91,4 +117,21 @@ export type SearchSecondaryQuery = {
         }>;
       }
     | {__typename: 'PythonError'};
+};
+
+export type SearchAssetDefinitionFragment = {
+  __typename: 'AssetNode';
+  id: string;
+  computeKind: string | null;
+  groupName: string;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  repository: {
+    __typename: 'Repository';
+    id: string;
+    name: string;
+    location: {__typename: 'RepositoryLocation'; id: string; name: string};
+  };
 };
