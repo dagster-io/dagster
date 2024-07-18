@@ -323,8 +323,7 @@ export const MAX_SESSION_WRITE_ATTEMPTS = 10;
  * write is successful or we run out of retries.
  */
 export const writeLaunchpadSessionToStorage =
-  (setState: React.Dispatch<React.SetStateAction<IStorageData | undefined>>) =>
-  (data: IStorageData) => {
+  (setState: React.Dispatch<React.SetStateAction<IStorageData>>) => (data: IStorageData) => {
     const tryWrite = (data: IStorageData) => {
       try {
         setState(data);
