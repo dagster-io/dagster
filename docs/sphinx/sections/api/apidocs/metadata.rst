@@ -66,10 +66,12 @@ These APIs provide the ability to express column schemas (`TableSchema`), rows/r
 
 .. autoclass:: TableColumnDep
 
-Metadata functions
-^^^^^^^^^^^^^^^^^^
+Code references
+^^^^^^^^^^^^^^^
 
-These APIs are used to attach additional metadata to certain objects in the Dagster ecosystem.
+The following functions are used to attach source code references to your assets.
+For more information, refer to the `Linking to asset definition code with code references </guides/dagster/code-references>`_ guide.
+
 
 .. autofunction:: with_source_code_references
 
