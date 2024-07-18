@@ -5,8 +5,50 @@ description: This page shows off what each of the components we're using in our 
 
 # Testing Code Snippet
 
-{% codeSnippet /%}
+### Basic File Retrieval
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" /%}`
 
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" /%}
+
+### Specific Line Range
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" /%}
+
+### Multiple Line Ranges
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="1-5,10-15" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="1-5,10-15" /%}
+
+### Start After a Specific String
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" /%}
+
+### End Before a Specific String
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" endbefore="# end_example" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" endbefore="# end_example" /%}
+
+### Combine Start and End
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" endbefore="# end_example" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" endbefore="# end_example" /%}
+
+### Dedenting
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" dedent=4 /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" dedent=4 /%}
+
+### Disable Trimming
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" trim=false /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" trim=false /%}
+
+### Combining Multiple Parameters
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" startafter="# start_example" dedent=4 trim=true /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" startafter="# start_example" dedent=4 trim=true /%}
 
 This page contains examples of all of the native Markdoc node and the custom markdoc tags that we are using in our docs.
 

@@ -1,52 +1,58 @@
-import {useEffect, useState} from 'react';
+import React, { useState, useEffect } from 'react';
+import { Fence } from './FencedCodeBlock';
 
-import {LATEST_VERSION} from '../../util/version';
+interface CodeSnippetProps {
+  file: string;
+  lang: string;
+  lines?: string;
+  startafter?: string;
+  endbefore?: string;
+  dedent?: number;
+  trim?: boolean;
+}
 
-import {Fence} from './FencedCodeBlock';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-// Logic to get code snippets from files in dagster github repo
-// The following URL contains the raw file https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/concepts/configuration/config_map_example.py
+const fetchSnippet = async (params: CodeSnippetProps) => {
+  const queryParams = new URLSearchParams({
+    file: params.file,
+    ...(params.lines && { lines: params.lines }),
+    ...(params.startafter && { startafter: params.startafter }),
+    ...(params.endbefore && { endbefore: params.endbefore }),
+    ...(params.dedent && { dedent: params.dedent.toString() }),
+    ...(params.trim !== undefined && { trim: params.trim.toString() }),
+  });
 
-// Some work to handle versioning will be needed.
-// The good news is the url contains versioning.
-// For example, the following URL contains the version 1.7.6 as a
-// Prefix to the URL: https://release-1-7-6.dagster.dagster-docs.io
-// Would map to the following URL for the content as a place to fetch the code
-// snippets from the dagster repo:
-// https://raw.githubusercontent.com/dagster-io/dagster/release-1.7.6/examples/docs_snippets/
-
-// So the approach we'll need to take is to get the url from the browser
-// and since it's react, we'll need to use the useEffect hook to get the
-// URL and then fetch the content.
-const url =
-  'https://raw.githubusercontent.com/dagster-io/dagster/master/examples/docs_snippets/docs_snippets/concepts/configuration/config_map_example.py';
-
-const fetchSnippet = async (url) => {
-  console.log('Begin getSnippet \n Starting fetch ', url);
-  const response = await fetch(url);
-  const data = await response.text();
-  console.log(data);
-  return data;
+  const response = await fetch(`${API_BASE_URL}/api/code-snippet?${queryParams}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch snippet');
+  }
+  return response.text();
 };
 
-export const CodeSnippet = (props) => {
-  console.log('CodeSnippet.tsx');
-  console.log(LATEST_VERSION);
-  const [text, setText] = useState('');
+export const CodeSnippet: React.FC<CodeSnippetProps> = (props) => {
+  const [snippet, setSnippet] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const snippet = await fetchSnippet(url);
-      setText(snippet);
+      try {
+        setIsLoading(true);
+        const data = await fetchSnippet(props);
+        setSnippet(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
-    fetchData();
-  }, []); // Empty dependency array means this effect runs once after the initial render
 
-  return (
-    <div>
-      <h3>CodeSnippet</h3>
-      <Fence data-language="python">{text}</Fence>
-    </div>
-  );
+    fetchData();
+  }, [props]);
+
+  if (isLoading) return <div>Loading snippet...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return <Fence data-language={props.lang}>{snippet}</Fence>;
 };
