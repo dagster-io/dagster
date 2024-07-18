@@ -264,7 +264,7 @@ export function SetFilterActiveState({
 }: {
   name: string;
   icon: IconName;
-  state: Set<any>;
+  state: Set<any> | any[];
   getStringValue: (value: any) => string;
   getTooltipText?: ((value: any) => string) | undefined;
   onRemove?: () => void;
