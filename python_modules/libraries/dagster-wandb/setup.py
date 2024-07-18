@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_wandb_tests*"]),
     python_requires=">=3.8,<3.13",
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.7.14",
         "wandb>=0.15.11,<1.0",
         # Pin numpy pending release of wandb that either supports numpy 2 or adds a pin
         "numpy<2",
