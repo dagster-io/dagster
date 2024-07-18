@@ -9,7 +9,6 @@ const DOCS_SNIPPET = path.join(process.cwd(), 'public', 'docs_snippets', 'docs_s
 console.log('DOCS_SNIPPET path:', DOCS_SNIPPET);
 
 
-
 const limitSnippetLines = (
   content: string,
   lines?: string,
@@ -130,7 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ 
       error: 'Failed to read or process file', 
       details: error.message,
-      stack: error.stack,
+      stack: error.stack 
     });
   }
 }
