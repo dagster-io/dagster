@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useCallback, useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 
-import {EvaluationConditionalLabel} from './EvaluationConditionalLabel';
+import {EvaluationConditionalLabel, EvaluationUserLabel} from './EvaluationConditionalLabel';
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
@@ -149,7 +149,13 @@ const NewPolicyEvaluationTable = ({
                       <Icon name="cancel" color={Colors.accentGray()} />
                     )
                   }
-                  label={<EvaluationConditionalLabel segments={expandedLabel} />}
+                  label={
+                    userLabel ? (
+                      <EvaluationUserLabel userLabel={userLabel} expandedLabel={expandedLabel} />
+                    ) : (
+                      <EvaluationConditionalLabel segments={expandedLabel} />
+                    )
+                  }
                   skipped={status === AssetConditionEvaluationStatus.SKIPPED}
                   depth={depth}
                   type={type}
@@ -447,4 +453,9 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
     }
     return '';
   }}
+`;
+
+const UserLabel = styled.div`
+  font-size: 12px;
+  color: ${Colors.textDefault()};
 `;

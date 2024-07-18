@@ -13,15 +13,7 @@ export const EvaluationConditionalLabel = ({segments}: Props) => {
         if (segment.startsWith('(') && segment.endsWith(')')) {
           const inner = segment.slice(1, -1);
           return (
-            <Tooltip
-              key={key}
-              content={
-                <div style={{maxWidth: '500px', whiteSpace: 'normal'}}>
-                  <CaptionMono>{inner}</CaptionMono>
-                </div>
-              }
-              placement="top"
-            >
+            <Tooltip key={key} content={<TooltipContent text={inner} />} placement="top">
               <Operand>{inner}</Operand>
             </Tooltip>
           );
@@ -32,14 +24,39 @@ export const EvaluationConditionalLabel = ({segments}: Props) => {
   );
 };
 
+interface EvaluationUserLabelProps {
+  userLabel: string;
+  expandedLabel: string[];
+}
+
+export const EvaluationUserLabel = ({userLabel, expandedLabel}: EvaluationUserLabelProps) => {
+  return (
+    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
+      <Tooltip content={<TooltipContent text={expandedLabel.join(' ')} />} placement="top">
+        <Operand>{userLabel}</Operand>
+      </Tooltip>
+    </Box>
+  );
+};
+
+const TooltipContent = ({text}: {text: string}) => {
+  return (
+    <div style={{maxWidth: '500px', whiteSpace: 'normal'}}>
+      <CaptionMono>{text}</CaptionMono>
+    </div>
+  );
+};
+
 const Operand = styled(Code)`
   background-color: ${Colors.backgroundGray()};
   border-radius: 8px;
   color: ${Colors.textLight()};
   display: block;
   font-size: 12px;
+  font-weight: 400;
   padding: 4px 8px;
   max-width: 300px;
+  outline: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
