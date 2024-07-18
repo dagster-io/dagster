@@ -6,12 +6,12 @@ import {
   NonIdealState,
   PageHeader,
   Spinner,
+  Subtitle2,
   Tab,
   Tabs,
 } from '@dagster-io/ui-components';
-import {useContext} from 'react';
+import {createContext, useContext} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillLogsTab} from './BackfillLogsTab';
@@ -35,7 +35,13 @@ import {
 } from '../../partitions/BackfillMessaging';
 import {testId} from '../../testing/testId';
 
-export const BackfillPage = () => {
+export const RunRequestContext = createContext<{
+  buildLinkToRun: (run: {id: string}) => string;
+}>({
+  buildLinkToRun: ({id}) => `/runs/${id}`,
+});
+
+export const BackfillAsRunRequestPage = () => {
   const {featureContext} = useContext(CloudOSSContext);
   const {backfillId} = useParams<{backfillId: string}>();
   useTrackPageView();
@@ -80,72 +86,89 @@ export const BackfillPage = () => {
     const backfill = data.partitionBackfillOrError;
 
     return (
-      <>
-        <Box
-          padding={24}
-          flex={{
-            direction: 'row',
-            justifyContent: 'space-between',
-            wrap: 'nowrap',
-            alignItems: 'center',
-          }}
-          data-testid={testId('backfill-page-details')}
-        >
-          <Detail
-            label="Created"
-            detail={
-              <Timestamp
-                timestamp={{ms: Number(backfill.timestamp * 1000)}}
-                timeFormat={{showSeconds: true, showTimezone: false}}
+      <Box flex={{direction: 'row'}} style={{minHeight: 0, flex: 1}}>
+        <Box style={{flex: 3, minHeight: 0}} flex={{direction: 'column'}}>
+          <Box padding={{left: 24}} border="bottom">
+            <Tabs size="large" selectedTabId={selectedTab}>
+              <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
+              <Tab
+                id="partitions"
+                title="Partitions"
+                onClick={() => setSelectedTab('partitions')}
               />
-            }
-          />
-          <Detail
-            label="Duration"
-            detail={
-              <LiveDuration
-                start={backfill.timestamp * 1000}
-                end={backfill.endTimestamp ? backfill.endTimestamp * 1000 : null}
-              />
-            }
-          />
-          <Detail
-            label="Partition selection"
-            detail={
-              <TargetPartitionsDisplay
-                targetPartitionCount={backfill.numPartitions || 0}
-                targetPartitions={backfill.assetBackfillData?.rootTargetedPartitions}
-              />
-            }
-          />
-          <Detail label="Status" detail={<BackfillStatusTagForPage backfill={backfill} />} />
-        </Box>
-
-        {isDaemonHealthy ? null : (
-          <Box padding={{horizontal: 24, bottom: 16}}>
-            <DaemonNotRunningAlert />
+              {featureContext.canSeeBackfillCoordinatorLogs ? (
+                <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
+              ) : null}
+            </Tabs>
           </Box>
-        )}
-
-        <Box padding={{left: 24}} border="bottom">
-          <Tabs size="large" selectedTabId={selectedTab}>
-            <Tab id="partitions" title="Partitions" onClick={() => setSelectedTab('partitions')} />
-            <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
-            {featureContext.canSeeBackfillCoordinatorLogs ? (
-              <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
-            ) : null}
-          </Tabs>
+          {error?.graphQLErrors && (
+            <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
+          )}
+          <RunRequestContext.Provider
+            value={{buildLinkToRun: ({id}) => `/run-requests/b/${backfillId}/${id}`}}
+          >
+            <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
+              {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
+              {selectedTab === 'partitions' && <BackfillPartitionsTab backfill={backfill} />}
+              {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+            </Box>
+          </RunRequestContext.Provider>
         </Box>
+        <Box style={{flex: 1, maxWidth: 400, minWidth: 250}} border="left">
+          <Box
+            padding={{horizontal: 24}}
+            style={{height: 52}}
+            flex={{alignItems: 'center'}}
+            border="bottom"
+          >
+            <Subtitle2>Overview</Subtitle2>
+          </Box>
+          {isDaemonHealthy ? null : (
+            <Box padding={{horizontal: 24, top: 16}}>
+              <DaemonNotRunningAlert />
+            </Box>
+          )}
 
-        {error?.graphQLErrors && (
-          <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
-        )}
-        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
-          {selectedTab === 'partitions' && <BackfillPartitionsTab backfill={backfill} />}
-          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
-          {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+          <Box
+            data-testid={testId('backfill-page-details')}
+            padding={{horizontal: 24, vertical: 16}}
+            flex={{
+              direction: 'column',
+              wrap: 'nowrap',
+              gap: 12,
+            }}
+          >
+            <Detail label="Status" detail={<BackfillStatusTagForPage backfill={backfill} />} />
+            <Detail
+              label="Created"
+              detail={
+                <Timestamp
+                  timestamp={{ms: Number(backfill.timestamp * 1000)}}
+                  timeFormat={{showSeconds: true, showTimezone: false}}
+                />
+              }
+            />
+            <Detail
+              label="Duration"
+              detail={
+                <LiveDuration
+                  start={backfill.timestamp * 1000}
+                  end={backfill.endTimestamp ? backfill.endTimestamp * 1000 : null}
+                />
+              }
+            />
+            <Detail
+              label="Partition selection"
+              detail={
+                <TargetPartitionsDisplay
+                  targetPartitionCount={backfill.numPartitions || 0}
+                  targetPartitions={backfill.assetBackfillData?.rootTargetedPartitions}
+                />
+              }
+            />
+          </Box>
         </Box>
-      </>
+      </Box>
     );
   }
 
@@ -154,8 +177,8 @@ export const BackfillPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to="/overview/backfills" style={{color: Colors.textLight()}}>
-              Backfills
+            <Link to="/run-requests" style={{color: Colors.textLight()}}>
+              All runs
             </Link>
             {' / '}
             {backfillId}
@@ -180,14 +203,8 @@ export const BackfillPage = () => {
 };
 
 const Detail = ({label, detail}: {label: JSX.Element | string; detail: JSX.Element | string}) => (
-  <Box flex={{direction: 'column', gap: 4}} style={{minWidth: '280px'}}>
-    <Label>{label}</Label>
+  <Box flex={{direction: 'column', gap: 4}}>
+    <Subtitle2>{label}</Subtitle2>
     <div>{detail}</div>
   </Box>
 );
-
-const Label = styled.div`
-  color: ${Colors.textLight()};
-  font-size: 12px;
-  line-height: 16px;
-`;

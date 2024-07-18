@@ -5,6 +5,8 @@ import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
+import {BackfillAsRunRequestPage} from '../instance/backfill/BackfillAsRunRequestPage';
+import GroupedRunsRoot from '../runs/GroupedRunsRoot';
 import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
@@ -48,6 +50,15 @@ export const ContentRoot = memo(() => {
                 documentTitlePrefix="Assets"
               />
             </AssetFeatureProvider>
+          </Route>
+          <Route path="/run-requests/b/:requestId/:runId" exact>
+            <RunRoot />
+          </Route>
+          <Route path="/run-requests/b/:backfillId">
+            <BackfillAsRunRequestPage />
+          </Route>
+          <Route path="/run-requests" exact>
+            <GroupedRunsRoot />
           </Route>
           <Route path="/runs" exact>
             <RunsRoot />

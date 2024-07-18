@@ -1,35 +1,32 @@
 import {Box, ButtonLink, Caption, Checkbox, Colors, Mono, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CreatedByTagCell} from './CreatedByTag';
+import {RunGrouping} from './GroupedRunsRoot';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
+import {RunGroupingActionsMenu} from './RunGroupingActionsMenu';
 import {RunRowTags} from './RunRowTags';
-import {RunStatusTagWithStats} from './RunStatusTag';
+import {GroupStatusTagWithStats, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
-import {RunTableRunFragment} from './types/RunTableRunFragment.types';
+import {RunTableRunFragment} from './types/RunTable.types';
 import {useResolveRunTarget} from './useResolveRunTarget';
 import {RunStatus} from '../graphql/types';
-import {RunRequestContext} from '../instance/backfill/BackfillAsRunRequestPage';
 
-export const RunRow = ({
-  run,
+export const GroupedRunRow = ({
+  group,
   hasCheckboxColumn,
   canTerminateOrDelete,
   onAddTag,
   checked,
   onToggleChecked,
-  additionalColumns,
   additionalActionsForRun,
-  isHighlighted,
-  hideCreatedBy,
 }: {
-  run: RunTableRunFragment;
+  group: RunGrouping;
   hasCheckboxColumn: boolean;
   canTerminateOrDelete: boolean;
   onAddTag?: (token: RunFilterToken) => void;
@@ -37,11 +34,11 @@ export const RunRow = ({
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
   additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
-  isHighlighted?: boolean;
   hideCreatedBy?: boolean;
 }) => {
+  const run = group.runs[0]!;
+
   const {isJob, repoAddressGuess} = useResolveRunTarget(run);
-  const {buildLinkToRun} = React.useContext(RunRequestContext);
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
@@ -57,12 +54,9 @@ export const RunRow = ({
   const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
+  const backfillId = run.tags.find((t) => t.key === DagsterTag.Backfill)?.value;
   return (
-    <Row
-      highlighted={!!isHighlighted}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <tr onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {hasCheckboxColumn ? (
         <td>
           {canTerminateOrDelete ? (
@@ -71,27 +65,22 @@ export const RunRow = ({
         </td>
       ) : null}
       <td>
-        <Link to={buildLinkToRun(run)}>
-          <Mono>{titleForRun(run)}</Mono>
-        </Link>
-      </td>
-      <td>
-        <Box flex={{direction: 'column', gap: 4}}>
-          <RunTime run={run} />
-          {isReexecution ? (
-            <div>
-              <Tag icon="cached">Re-execution</Tag>
-            </div>
-          ) : null}
-        </Box>
-      </td>
-      <td style={{position: 'relative'}}>
         <Box flex={{direction: 'column', gap: 5}}>
-          <RunTargetLink isJob={isJob} run={run} repoAddress={repoAddressGuess} />
+          <Link to={backfillId ? `/run-requests/b/${backfillId}?tab=runs` : `/runs/${run.id}`}>
+            <Mono>
+              {backfillId ? backfillId : titleForRun(run)} ({group.runs.length}{' '}
+              {group.runs.length === 1 ? 'run' : 'runs'})
+            </Mono>
+          </Link>
           <Box
             flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
-            style={{gap: '4px 8px'}}
+            style={{gap: '4px 8px', lineHeight: 0}}
           >
+            <Tag>
+              <Box flex={{direction: 'row', gap: 4}}>
+                <RunTargetLink isJob={isJob} run={run} repoAddress={repoAddressGuess} />
+              </Box>
+            </Tag>
             <RunRowTags run={run} isJob={isJob} isHovered={isHovered} onAddTag={onAddTag} />
 
             {run.status === RunStatus.QUEUED ? (
@@ -109,39 +98,51 @@ export const RunRow = ({
           </Box>
         </Box>
       </td>
-      {hideCreatedBy ? null : (
-        <td>
-          <CreatedByTagCell
-            repoAddress={repoAddressGuess}
-            tags={run.tags || []}
-            onAddTag={onAddTag}
-          />
-        </td>
-      )}
       <td>
-        <RunStatusTagWithStats status={run.status} runId={run.id} />
+        <Box flex={{direction: 'column', gap: 4}}>
+          <RunTime run={run} />
+          {isReexecution ? (
+            <div>
+              <Tag icon="cached">Re-execution</Tag>
+            </div>
+          ) : null}
+        </Box>
+      </td>
+      <td>
+        <CreatedByTagCell
+          repoAddress={repoAddressGuess}
+          tags={run.tags || []}
+          onAddTag={onAddTag}
+        />
+      </td>
+      <td>
+        {group.runs.length > 1 ? (
+          <GroupStatusTagWithStats group={group} />
+        ) : (
+          <RunStatusTagWithStats status={run.status} runId={run.id} />
+        )}
       </td>
       <td>
         <RunStateSummary run={run} />
       </td>
-      {additionalColumns}
       <td>
-        <RunActionsMenu
-          run={run}
-          onAddTag={onAddTag}
-          additionalActionsForRun={additionalActionsForRun}
-        />
+        <Box flex={{justifyContent: 'flex-end'}}>
+          {group.runs.length > 1 ? (
+            <RunGroupingActionsMenu group={group} />
+          ) : (
+            <RunActionsMenu
+              run={run}
+              onAddTag={onAddTag}
+              additionalActionsForRun={additionalActionsForRun}
+            />
+          )}
+        </Box>
       </td>
       <QueuedRunCriteriaDialog
         run={run}
         isOpen={showQueueCriteria}
         onClose={() => setShowQueueCriteria(false)}
       />
-    </Row>
+    </tr>
   );
 };
-
-const Row = styled.tr<{highlighted: boolean}>`
-  ${({highlighted}) =>
-    highlighted ? `box-shadow: inset 3px 3px #bfccd6, inset -3px -3px #bfccd6;` : null}
-`;

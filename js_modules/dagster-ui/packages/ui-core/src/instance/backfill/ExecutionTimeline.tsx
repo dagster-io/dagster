@@ -1,8 +1,9 @@
 import {Box, Colors, Spinner, useViewport} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React from 'react';
+import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
 
+import {RunRequestContext} from './BackfillAsRunRequestPage';
 import {RunStatusDot} from '../../runs/RunStatusDots';
 import {
   CONSTANTS,
@@ -142,6 +143,7 @@ export const ExecutionTimelineRow = ({
 }) => {
   const [start, end] = range;
   const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
+  const {buildLinkToRun} = useContext(RunRequestContext);
 
   const chunk = React.useMemo(() => {
     const batches: RunBatch<TimelineRun>[] = batchRunsForTimeline({
@@ -165,7 +167,7 @@ export const ExecutionTimelineRow = ({
       >
         <Box flex={{alignItems: 'center', gap: 4}}>
           <RunStatusDot status={run.status} size={12} />
-          <Link to={`/runs/${run.id}`}>{run.id.slice(0, 8)}</Link>
+          <Link to={buildLinkToRun(run)}>{run.id.slice(0, 8)}</Link>
         </Box>
         <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
       </Box>

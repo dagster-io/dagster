@@ -80,7 +80,7 @@ const RUN_STATS_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const RunStatsDetailsContainer = styled.div`
+export const RunStatsDetailsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 4px;

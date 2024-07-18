@@ -1,7 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  FontFamily,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Tag,
+} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
@@ -28,7 +36,7 @@ import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryF
 export const RunRoot = () => {
   useTrackPageView();
 
-  const {runId} = useParams<{runId: string}>();
+  const {runId, requestId} = useParams<{runId: string; requestId?: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
@@ -104,9 +112,26 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-              {runId.slice(0, 8)}
-            </Heading>
+            requestId ? (
+              <Heading>
+                <Link to="/run-requests" style={{color: Colors.textLight()}}>
+                  All runs
+                </Link>
+                {' / '}
+                <Link
+                  to={`/run-requests/b/${requestId}?tab=runs&view=list`}
+                  style={{color: Colors.textLight()}}
+                >
+                  {requestId}
+                </Link>
+                {' / '}
+                {runId.slice(0, 8)}
+              </Heading>
+            ) : (
+              <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+                {runId.slice(0, 8)}
+              </Heading>
+            )
           }
           tags={
             run ? (
@@ -193,3 +218,6 @@ const RUN_ROOT_QUERY = gql`
 
   ${RUN_PAGE_FRAGMENT}
 `;
+function useRunRootTrace() {
+  throw new Error('Function not implemented.');
+}

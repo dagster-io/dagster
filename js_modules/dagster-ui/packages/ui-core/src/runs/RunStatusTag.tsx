@@ -1,6 +1,8 @@
 import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
+import countBy from 'lodash/countBy';
 
-import {RunStats} from './RunStats';
+import {RunGrouping} from './GroupedRunsRoot';
+import {RunStats, RunStatsDetailsContainer} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
 import {assertUnreachable} from '../app/Util';
 import {RunStatus} from '../graphql/types';
@@ -127,6 +129,44 @@ export const RunStatusTagWithStats = (props: Props) => {
       usePortal
     >
       <RunStatusTag status={status} />
+    </Popover>
+  );
+};
+
+const PreferredStatuses = [
+  RunStatus.STARTED,
+  RunStatus.STARTING,
+  RunStatus.CANCELING,
+  RunStatus.QUEUED,
+];
+export const GroupStatusTagWithStats = ({group}: {group: RunGrouping}) => {
+  const byStatus = countBy(group.runs, (r) => r.status);
+  const presentStatuses = Object.keys(byStatus) as RunStatus[];
+  const displayedStatus =
+    PreferredStatuses.find((status) => presentStatuses.includes(status)) || presentStatuses[0]!;
+
+  return (
+    <Popover
+      position="bottom-left"
+      interactionKind="hover"
+      content={
+        <RunStatsDetailsContainer>
+          {Object.entries(byStatus).map(([status, count]) => (
+            <div key={status}>
+              {runStatusToString(status as RunStatus)} - {count} runs
+            </div>
+          ))}
+        </RunStatsDetailsContainer>
+      }
+      hoverOpenDelay={100}
+      usePortal
+    >
+      <Tag intent={statusToIntent(displayedStatus)}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <RunStatusIndicator status={displayedStatus} size={10} />
+          <div>{runStatusToString(displayedStatus)}</div>
+        </Box>
+      </Tag>
     </Popover>
   );
 };
