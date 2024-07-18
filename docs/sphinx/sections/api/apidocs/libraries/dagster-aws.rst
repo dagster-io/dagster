@@ -100,6 +100,8 @@ Pipes
 
 .. autoclass:: dagster_aws.pipes.PipesLambdaClient
 
+.. autoclass:: dagster_aws.pipes.PipesGlueClient
+
 Legacy
 --------
 

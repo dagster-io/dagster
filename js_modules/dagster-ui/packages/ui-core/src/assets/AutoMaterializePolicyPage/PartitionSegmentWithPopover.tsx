@@ -38,22 +38,26 @@ type AssetSusbsetWithoutTypenames = {
 
 interface Props {
   description: string;
-  status: AssetConditionEvaluationStatus.TRUE;
   subset: AssetSusbsetWithoutTypenames | null;
-  selectPartition: (partitionKey: string | null) => void;
+  selectPartition?: (partitionKey: string | null) => void;
 }
 
-export const PartitionSegmentWithPopover = ({
-  description,
-  selectPartition,
-  status,
-  subset,
-}: Props) => {
+export const PartitionSegmentWithPopover = ({description, selectPartition, subset}: Props) => {
   if (!subset) {
     return null;
   }
 
   const count = subset.subsetValue.partitionKeys?.length || 0;
+
+  const tag = (
+    <Tag intent={count > 0 ? 'success' : 'none'} icon={count > 0 ? 'check_circle' : undefined}>
+      {numberFormatter.format(count)} True
+    </Tag>
+  );
+
+  if (count === 0) {
+    return tag;
+  }
 
   return (
     <Popover
@@ -64,15 +68,13 @@ export const PartitionSegmentWithPopover = ({
       content={
         <PartitionSubsetList
           description={description}
-          status={status}
+          status={AssetConditionEvaluationStatus.TRUE}
           subset={subset}
           selectPartition={selectPartition}
         />
       }
     >
-      <Tag intent={count > 0 ? 'success' : 'none'} icon={count > 0 ? 'check_circle' : undefined}>
-        {numberFormatter.format(count)} {status.charAt(0) + status.toLowerCase().slice(1)}
-      </Tag>
+      {tag}
     </Popover>
   );
 };
@@ -81,7 +83,7 @@ interface ListProps {
   description: string;
   status?: AssetConditionEvaluationStatus;
   subset: AssetSusbsetWithoutTypenames;
-  selectPartition: (partitionKey: string | null) => void;
+  selectPartition?: (partitionKey: string | null) => void;
 }
 
 const ITEM_HEIGHT = 32;
@@ -153,7 +155,7 @@ export const PartitionSubsetList = ({description, status, subset, selectPartitio
                   <Row $height={size} $start={start} key={key}>
                     <MenuItem
                       onClick={() => {
-                        selectPartition(partitionKey);
+                        selectPartition && selectPartition(partitionKey);
                       }}
                       text={
                         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>

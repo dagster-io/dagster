@@ -751,3 +751,46 @@ def test_cancellation():
         assert not p.is_alive()
         assert pid
         assert not process_is_alive(pid)
+
+
+def test_pipes_cli_args_params_loader():
+    # let's use non-trivial message/context channels to make sure the CLI args are being used to pass important params
+
+    def script_fn():
+        from dagster_pipes import (
+            PipesCliArgsParamsLoader,
+            PipesDefaultContextLoader,
+            PipesDefaultMessageWriter,
+            open_dagster_pipes,
+        )
+
+        with open_dagster_pipes(
+            params_loader=PipesCliArgsParamsLoader(),
+            context_loader=PipesDefaultContextLoader(),
+            message_writer=PipesDefaultMessageWriter(),
+        ) as pipes:
+            # this assert will only pass if PipesCliArgsParamsLoader is working correctly
+            assert pipes.asset_key == "asset_with_pipes_cli_args_params_loader"
+
+    @asset
+    def asset_with_pipes_cli_args_params_loader(
+        context: OpExecutionContext, pipes_client: PipesSubprocessClient
+    ):
+        with temp_script(script_fn) as script_path, open_pipes_session(
+            context=context,
+            context_injector=PipesTempFileContextInjector(),  # this doesn't really matter
+            message_reader=PipesTempFileMessageReader(),  # this doesn't really matter
+        ) as session:
+            pipes_args = session.get_bootstrap_cli_arguments()
+
+            cmd = [_PYTHON_EXECUTABLE, script_path] + sum(  # noqa: RUF017
+                [list(pair) for pair in pipes_args.items()], []
+            )
+
+            return pipes_client.run(command=cmd, context=context).get_materialize_result()
+
+    result = materialize(
+        [asset_with_pipes_cli_args_params_loader],
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
+    assert result.success

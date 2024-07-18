@@ -333,14 +333,15 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
         ... on AssetConditionEvaluationRecords {
             records {
                 id
+                isLegacy
                 numRequested
                 assetKey {
                     path
                 }
                 rootUniqueId
                 evaluationNodes {
-                    description
-                    label
+                    userLabel
+                    expandedLabel
                     startTimestamp
                     endTimestamp
                     numTrue
@@ -784,6 +785,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         @asset(
             partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]),
             automation_condition=AutomationCondition.eager().with_label("blah"),
+            deps=["up"],
         )
         def A() -> None: ...
 
@@ -818,21 +820,33 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert len(records) == 1
 
         record = records[0]
-        assert record["numRequested"] == 4
+        assert not record["isLegacy"]
+        assert record["numRequested"] == 0
 
         # all nodes in the tree
-        assert len(record["evaluationNodes"]) == 16
+        assert len(record["evaluationNodes"]) == 27
 
         rootNode = record["evaluationNodes"][0]
         assert rootNode["uniqueId"] == record["rootUniqueId"]
-        assert rootNode["description"] == "All of"
-        assert rootNode["label"] == "blah"
-        assert rootNode["numTrue"] == 4
-        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b", "c", "d"}
+        assert rootNode["userLabel"] == "blah"
+        assert rootNode["expandedLabel"] == [
+            "(in_latest_time_window)",
+            "AND",
+            "(((became missing) OR (any parents updated)) SINCE ((newly_requested) OR (newly_updated)))",
+            "AND",
+            "(NOT (any parents missing))",
+            "AND",
+            "(NOT (any parents in progress))",
+            "AND",
+            "(NOT (in_progress))",
+        ]
+        assert rootNode["numTrue"] == 0
+        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == set()
         assert len(rootNode["childUniqueIds"]) == 5
 
         childNode = record["evaluationNodes"][1]
-        assert childNode["description"] == "Within latest time window"
-        assert childNode["label"] is None
+        assert childNode["userLabel"] is None
+        assert childNode["expandedLabel"] == ["in_latest_time_window"]
         assert childNode["numTrue"] == 4
+        assert set(childNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b", "c", "d"}
         assert len(childNode["childUniqueIds"]) == 0

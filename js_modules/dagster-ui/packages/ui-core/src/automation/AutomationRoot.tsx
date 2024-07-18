@@ -4,6 +4,7 @@ import {AutomationAutomaterializeRoot} from './AutomationAutomaterializeRoot';
 import {AutomationBackfillsRoot} from './AutomationBackfillsRoot';
 import {AutomationSchedulesRoot} from './AutomationSchedulesRoot';
 import {AutomationSensorsRoot} from './AutomationSensorsRoot';
+import {MergedAutomationRoot} from './MergedAutomationRoot';
 import {Route} from '../app/Route';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
@@ -24,6 +25,10 @@ export const AutomationRoot = () => {
       </Route>
       <Route path="/automation/auto-materialize" exact>
         <AutomationAutomaterializeRoot />
+      </Route>
+      {/* Hidden route. MergedAutomationRoot should become `/automation`. */}
+      <Route path="/automation/merged" exact>
+        <MergedAutomationRoot />
       </Route>
       <Route path="*" render={() => <Redirect to="/automation/schedules" />} />
     </Switch>

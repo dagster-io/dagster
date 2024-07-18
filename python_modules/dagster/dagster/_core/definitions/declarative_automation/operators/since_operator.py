@@ -25,6 +25,10 @@ class SinceCondition(AutomationCondition):
         )
 
     @property
+    def name(self) -> str:
+        return "SINCE"
+
+    @property
     def children(self) -> Sequence[AutomationCondition]:
         return [self.trigger_condition, self.reset_condition]
 

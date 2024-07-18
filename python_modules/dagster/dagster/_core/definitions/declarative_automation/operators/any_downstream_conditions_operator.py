@@ -47,6 +47,10 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
     def description(self) -> str:
         return "Any downstream conditions"
 
+    @property
+    def name(self) -> str:
+        return "ANY_DOWNSTREAM_CONDITIONS"
+
     def _get_ignored_conditions(
         self, context: AutomationContext
     ) -> AbstractSet[AutomationCondition]:

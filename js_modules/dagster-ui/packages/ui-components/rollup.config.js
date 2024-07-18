@@ -24,7 +24,7 @@ export default {
     // without pulling in the entire library.
     'components/Box': './src/components/Box.tsx',
     'components/Button': './src/components/Button.tsx',
-    'components/Colors': './src/components/Colors.tsx',
+    'components/Color': './src/components/Color.tsx',
     'components/Icon': './src/components/Icon.tsx',
   },
   output: {
@@ -54,10 +54,10 @@ export default {
     '@blueprintjs/core',
     '@blueprintjs/popover2',
     '@blueprintjs/select',
+    '@tanstack/react-virtual',
     'react',
     'react-dom',
     'react-is',
-    'react-virtualized',
     'styled-components',
   ],
 };

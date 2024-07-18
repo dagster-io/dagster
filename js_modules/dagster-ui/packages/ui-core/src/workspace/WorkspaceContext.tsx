@@ -363,24 +363,12 @@ const useVisibleRepos = (
 } => {
   const {basePath} = React.useContext(AppContext);
 
-  const [oldHiddenKeys, setOldHiddenKeys] = useStateWithStorage<string[]>(
-    HIDDEN_REPO_KEYS,
-    validateHiddenKeys,
-  );
   const [hiddenKeys, setHiddenKeys] = useStateWithStorage<string[]>(
     basePath + ':' + HIDDEN_REPO_KEYS,
     validateHiddenKeys,
   );
 
   const hiddenKeysJSON = JSON.stringify([...hiddenKeys.sort()]);
-
-  // TODO: Remove this logic eventually...
-  const migratedOldHiddenKeys = React.useRef(false);
-  if (oldHiddenKeys.length && !migratedOldHiddenKeys.current) {
-    setHiddenKeys(oldHiddenKeys);
-    setOldHiddenKeys(undefined);
-    migratedOldHiddenKeys.current = true;
-  }
 
   const toggleVisible = React.useCallback(
     (repoAddresses: RepoAddress[]) => {

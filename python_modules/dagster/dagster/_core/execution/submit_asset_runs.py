@@ -34,7 +34,7 @@ def _get_implicit_job_name_for_assets(
     for asset_key in asset_keys[1:]:
         job_names &= set(asset_graph.get_materialization_job_names(asset_key))
 
-    return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
+    return next((job_name for job_name in job_names if is_base_asset_job_name(job_name)), None)
 
 
 def _get_execution_plan_asset_keys(

@@ -306,6 +306,7 @@ export type AssetConditionEvaluationRecord = {
   evaluationId: Scalars['Int']['output'];
   evaluationNodes: Array<AutomationConditionEvaluationNode>;
   id: Scalars['ID']['output'];
+  isLegacy: Scalars['Boolean']['output'];
   numRequested: Scalars['Int']['output'];
   rootUniqueId: Scalars['String']['output'];
   runIds: Array<Scalars['String']['output']>;
@@ -693,14 +694,14 @@ export type AutomationConditionEvaluationNode = {
   __typename: 'AutomationConditionEvaluationNode';
   candidateSubset: Maybe<AssetSubset>;
   childUniqueIds: Array<Scalars['String']['output']>;
-  description: Scalars['String']['output'];
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  expandedLabel: Array<Scalars['String']['output']>;
   isPartitioned: Scalars['Boolean']['output'];
-  label: Maybe<Scalars['String']['output']>;
   numTrue: Scalars['Int']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
   trueSubset: AssetSubset;
   uniqueId: Scalars['String']['output'];
+  userLabel: Maybe<Scalars['String']['output']>;
 };
 
 export type BackfillNotFoundError = Error & {
@@ -6093,6 +6094,7 @@ export const buildAssetConditionEvaluationRecord = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '1c158e55-c1c1-43c2-9f14-8e369549e154',
+    isLegacy: overrides && overrides.hasOwnProperty('isLegacy') ? overrides.isLegacy! : true,
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2364,
     rootUniqueId:
@@ -6868,15 +6870,12 @@ export const buildAutomationConditionEvaluationNode = (
         : buildAssetSubset({}, relationshipsToOmit),
     childUniqueIds:
       overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
-    description:
-      overrides && overrides.hasOwnProperty('description')
-        ? overrides.description!
-        : 'exercitationem',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.53,
+    expandedLabel:
+      overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
     isPartitioned:
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
-    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'itaque',
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
@@ -6887,6 +6886,8 @@ export const buildAutomationConditionEvaluationNode = (
         ? ({} as AssetSubset)
         : buildAssetSubset({}, relationshipsToOmit),
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
+    userLabel:
+      overrides && overrides.hasOwnProperty('userLabel') ? overrides.userLabel! : 'dolorem',
   };
 };
 

@@ -25,7 +25,7 @@ interface Props {
   metadata: IRunMetadataDict;
 }
 
-export const LogsScrollingTableNew = (props: Props) => {
+export const LogsScrollingTable = (props: Props) => {
   const {filterStepKeys, metadata, filter, logs} = props;
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -83,6 +83,18 @@ export const LogsScrollingTableNew = (props: Props) => {
           <ListEmptyState>
             <NonIdealState icon="spinner" title="Fetching logs..." />
           </ListEmptyState>
+        </Box>
+      );
+    }
+
+    if (Object.keys(filter.levels).length === 0) {
+      return (
+        <Box margin={{top: 32}}>
+          <NonIdealState
+            icon="search"
+            title="No levels selected"
+            description="You have not selected any log levels. Choose at least one level to view logs."
+          />
         </Box>
       );
     }

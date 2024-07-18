@@ -17,7 +17,9 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {createGlobalStyle} from 'styled-components';
 
-import './blueprint.css';
+import '@blueprintjs/core/lib/css/blueprint.css';
+import '@blueprintjs/select/lib/css/blueprint-select.css';
+import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
 const GlobalStyle = createGlobalStyle`
   * {

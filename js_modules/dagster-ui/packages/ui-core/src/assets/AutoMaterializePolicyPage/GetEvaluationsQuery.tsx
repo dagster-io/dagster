@@ -62,6 +62,27 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
   ${AssetSubsetFragment}
 `;
 
+const NEW_EVALUATION_NODE_FRAGMENT = gql`
+  fragment NewEvaluationNodeFragment on AutomationConditionEvaluationNode {
+    uniqueId
+    expandedLabel
+    userLabel
+    startTimestamp
+    endTimestamp
+    numTrue
+    isPartitioned
+    childUniqueIds
+    trueSubset {
+      ...AssetSubsetFragment
+    }
+    candidateSubset {
+      ...AssetSubsetFragment
+    }
+  }
+
+  ${AssetSubsetFragment}
+`;
+
 const AssetConditionEvaluationRecordFragment = gql`
   fragment AssetConditionEvaluationRecordFragment on AssetConditionEvaluationRecord {
     id
@@ -74,6 +95,7 @@ const AssetConditionEvaluationRecordFragment = gql`
     timestamp
     startTimestamp
     endTimestamp
+    isLegacy
     evaluation {
       rootUniqueId
       evaluationNodes {
@@ -82,10 +104,15 @@ const AssetConditionEvaluationRecordFragment = gql`
         ...SpecificPartitionAssetConditionEvaluationNodeFragment
       }
     }
+    evaluationNodes {
+      ...NewEvaluationNodeFragment
+    }
   }
+
   ${UnpartitionedAssetConditionEvaluationNodeFragment}
   ${PartitionedAssetConditionEvaluationNodeFragment}
   ${SpecificPartitionAssetConditionEvaluationNodeFragment}
+  ${NEW_EVALUATION_NODE_FRAGMENT}
 `;
 
 export const GET_EVALUATIONS_QUERY = gql`
