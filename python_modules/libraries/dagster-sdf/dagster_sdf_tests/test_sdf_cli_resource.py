@@ -35,8 +35,11 @@ def test_sdf_cli(global_config_flags: List[str]) -> None:
     )
     sdf_cli_invocation = sdf.cli(["compile"])
 
+    process_args: List[str] = list(sdf_cli_invocation.process.args)  # type: ignore
+
     for i, param in enumerate(["sdf", "compile", *global_config_flags, "--environment", "dbg"]):
-        assert sdf_cli_invocation.process.args[i] == param
+        assert process_args[i] == param
+
     assert sdf_cli_invocation.is_successful()
     assert sdf_cli_invocation.process.returncode == 0
     assert sdf_cli_invocation.target_dir.joinpath(
@@ -142,8 +145,10 @@ def test_sdf_environment_configuration() -> None:
         .wait()
     )
 
+    process_args: List[str] = list(sdf_cli_invocation.process.args)  # type: ignore
+
     for i, param in enumerate(["sdf", "compile", "--environment", "dev"]):
-        assert sdf_cli_invocation.process.args[i] == param
+        assert process_args[i] == param
 
     assert sdf_cli_invocation.is_successful()
 

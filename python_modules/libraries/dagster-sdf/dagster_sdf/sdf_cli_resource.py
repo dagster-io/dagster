@@ -466,7 +466,7 @@ class SdfCliResource(ConfigurableResource):
 
     def __init__(
         self,
-        workspace_dir: str,
+        workspace_dir: Union[str, Path],
         global_config_flags: Optional[List[str]] = None,
         sdf_executable: str = SDF_EXECUTABLE,
         **kwargs,  # allow custom subclasses to add fields
@@ -510,7 +510,7 @@ class SdfCliResource(ConfigurableResource):
         self,
         args: Sequence[str],
         *,
-        target_dir: Optional[str] = None,
+        target_dir: Optional[Union[str, Path]] = None,
         environment: Optional[str] = None,
         raise_on_error: bool = True,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
