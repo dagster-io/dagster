@@ -1,3 +1,4 @@
+import functools
 import json
 import os
 from pathlib import Path
@@ -33,7 +34,7 @@ from dagster import (
     get_dagster_logger,
     op,
 )
-from dagster._annotations import deprecated_param
+from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -633,45 +634,61 @@ def load_assets_from_dbt_project(
     )
 
 
-@deprecated_param(
-    param="manifest_json", breaking_version="0.21", additional_warn_text="Use manifest instead"
-)
-@deprecated_param(
-    param="selected_unique_ids",
+# declare hidden parameter that will break at 2.0
+def hidden_until_20_param(param: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    return functools.partial(hidden_param, param=param, breaking_version="2.0")
+
+
+@hidden_param(
+    param="manifest_json",
     breaking_version="0.21",
-    additional_warn_text="Use the select parameter instead.",
+    additional_warn_text="Use manifest instead",
 )
-@deprecated_param(
+@hidden_param(
     param="dbt_resource_key",
     breaking_version="0.21",
     additional_warn_text=(
         "Use the `@dbt_assets` decorator if you need to customize your resource key."
     ),
 )
-@deprecated_param(
+@hidden_param(
     param="use_build_command",
     breaking_version="0.21",
     additional_warn_text=(
         "Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands."
     ),
 )
-@deprecated_param(
+@hidden_param(
     param="partitions_def",
     breaking_version="0.21",
     additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
 )
-@deprecated_param(
+@hidden_param(
     param="partition_key_to_vars_fn",
     breaking_version="0.21",
     additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
 )
-@deprecated_param(
+@hidden_param(
     param="runtime_metadata_fn",
     breaking_version="0.21",
     additional_warn_text=(
         "Use the `@dbt_assets` decorator if you need to customize runtime metadata."
     ),
 )
+@hidden_until_20_param(param="key_prefix")
+@hidden_until_20_param(param="source_key_prefix")
+@hidden_until_20_param(param="selected_unique_ids")
+@hidden_until_20_param(param="display_raw_sql")
+@hidden_until_20_param(param="dbt_resource_key")
+@hidden_until_20_param(param="op_name")
+@hidden_until_20_param(param="use_build_command")
+@hidden_until_20_param(param="partitions_def")
+@hidden_until_20_param(param="runtime_metadata_fn")
+@hidden_until_20_param(param="node_info_to_asset_key")
+@hidden_until_20_param(param="node_info_to_group_fn")
+@hidden_until_20_param(param="node_info_to_freshness_policy_fn")
+@hidden_until_20_param(param="node_info_to_auto_materialize_policy_fn")
+@hidden_until_20_param(param="node_info_to_definition_metadata_fn")
 def load_assets_from_dbt_manifest(
     manifest: Optional[Union[Path, Mapping[str, Any]]] = None,
     *,
@@ -679,33 +696,7 @@ def load_assets_from_dbt_manifest(
     exclude: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    # All arguments below are deprecated
-    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-    selected_unique_ids: Optional[AbstractSet[str]] = None,
-    display_raw_sql: Optional[bool] = None,
-    dbt_resource_key: str = "dbt",
-    op_name: Optional[str] = None,
-    manifest_json: Optional[Mapping[str, Any]] = None,
-    use_build_command: bool = True,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    runtime_metadata_fn: Optional[
-        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
-    ] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
-    node_info_to_group_fn: Callable[
-        [Mapping[str, Any]], Optional[str]
-    ] = default_group_from_dbt_resource_props,
-    node_info_to_freshness_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = default_freshness_policy_fn,
-    node_info_to_auto_materialize_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
-    ] = default_auto_materialize_policy_fn,
-    node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
-    ] = default_metadata_from_dbt_resource_props,
+    **kwargs,
 ) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
@@ -788,6 +779,82 @@ def load_assets_from_dbt_manifest(
             instead, provide a custom DagsterDbtTranslator that overrides node_info_to_description.
     """
     dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
+
+    only_allow_hidden_params_in_kwargs(load_assets_from_dbt_manifest, kwargs)
+
+    # Hidden args with previous declaration in comment their use
+
+    # key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = kwargs.get("key_prefix")
+
+    # source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = kwargs.get("source_key_prefix")
+
+    # selected_unique_ids: Optional[AbstractSet[str]] = None,
+    selected_unique_ids: Optional[AbstractSet[str]] = kwargs.get("selected_unique_ids")
+
+    # display_raw_sql: Optional[bool] = None,
+    display_raw_sql: Optional[bool] = kwargs.get("display_raw_sql")
+
+    # dbt_resource_key: str = "dbt",
+    dbt_resource_key: str = kwargs.get("dbt_resource_key", "dbt")
+
+    # op_name: Optional[str] = None,
+    op_name: Optional[str] = kwargs.get("op_name")
+
+    # manifest_json: Optional[Mapping[str, Any]] = None,
+    manifest_json: Optional[Mapping[str, Any]] = kwargs.get("manifest_json")
+
+    # use_build_command: bool = True,
+    use_build_command: bool = kwargs.get("use_build_command", True)
+
+    # partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition] = kwargs.get("partitions_def")
+
+    # partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = kwargs.get(
+        "partition_key_to_vars_fn"
+    )
+
+    # runtime_metadata_fn: Optional[
+    #     Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+    # ] = None,
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
+    ] = kwargs.get("runtime_metadata_fn")
+
+    # node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = kwargs.get(
+        "node_info_to_asset_key", default_asset_key_fn
+    )
+
+    # node_info_to_group_fn: Callable[
+    #     [Mapping[str, Any]], Optional[str]
+    # ] = default_group_from_dbt_resource_props,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = kwargs.get(
+        "node_info_to_group_fn", default_group_from_dbt_resource_props
+    )
+
+    # node_info_to_freshness_policy_fn: Callable[
+    #     [Mapping[str, Any]], Optional[FreshnessPolicy]
+    # ] = default_freshness_policy_fn,
+    node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]] = (
+        kwargs.get("node_info_to_freshness_policy_fn", default_freshness_policy_fn)
+    )
+
+    # node_info_to_auto_materialize_policy_fn: Callable[
+    #     [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    # ] = default_auto_materialize_policy_fn,
+    node_info_to_auto_materialize_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[AutoMaterializePolicy]
+    ] = kwargs.get("node_info_to_auto_materialize_policy_fn", default_auto_materialize_policy_fn)
+
+    # node_info_to_definition_metadata_fn: Callable[
+    #     [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
+    # ] = default_metadata_from_dbt_resource_props,
+    node_info_to_definition_metadata_fn: Callable[
+        [Mapping[str, Any]], Mapping[str, RawMetadataMapping]
+    ] = kwargs.get("node_info_to_definition_metadata_fn", default_metadata_from_dbt_resource_props)
 
     manifest = normalize_renamed_param(
         manifest,
