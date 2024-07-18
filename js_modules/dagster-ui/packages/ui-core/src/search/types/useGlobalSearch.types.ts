@@ -119,19 +119,24 @@ export type SearchSecondaryQuery = {
     | {__typename: 'PythonError'};
 };
 
-export type SearchAssetDefinitionFragment = {
-  __typename: 'AssetNode';
+export type SearchAssetFragment = {
+  __typename: 'Asset';
   id: string;
-  computeKind: string | null;
-  groupName: string;
-  owners: Array<
-    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
-  >;
-  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-  repository: {
-    __typename: 'Repository';
+  key: {__typename: 'AssetKey'; path: Array<string>};
+  definition: {
+    __typename: 'AssetNode';
     id: string;
-    name: string;
-    location: {__typename: 'RepositoryLocation'; id: string; name: string};
-  };
+    computeKind: string | null;
+    groupName: string;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    repository: {
+      __typename: 'Repository';
+      id: string;
+      name: string;
+      location: {__typename: 'RepositoryLocation'; id: string; name: string};
+    };
+  } | null;
 };

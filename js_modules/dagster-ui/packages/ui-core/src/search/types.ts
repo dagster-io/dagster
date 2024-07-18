@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 
 import {
-  SearchAssetDefinitionFragment,
+  SearchAssetFragment,
   SearchGroupFragment,
   SearchPartitionSetFragment,
   SearchPipelineFragment,
@@ -57,9 +57,9 @@ export type SearchResult = {
   tags?: DefinitionTag[];
   numResults?: number;
   repoPath?: string;
-  definition?:
+  node?:
     | null
-    | SearchAssetDefinitionFragment
+    | SearchAssetFragment
     | SearchGroupFragment
     | SearchPipelineFragment
     | SearchScheduleFragment

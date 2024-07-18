@@ -101,7 +101,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
             {
               label: groupName,
               description: manyLocations ? `Asset group in ${repoPath}` : 'Asset group',
-              definition: assetGroup,
+              node: assetGroup,
               href: workspacePath(repoName, locationName, `/asset-groups/${groupName}`),
               type: SearchResultType.AssetGroup,
             },
@@ -116,7 +116,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
               ...flat,
               {
                 label: name,
-                definition: pipelineOrJob,
+                node: pipelineOrJob,
                 description: manyLocations
                   ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
                   : isJob
@@ -134,7 +134,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allSchedules: SearchResult[] = schedules.map((schedule) => ({
           label: schedule.name,
-          definition: schedule,
+          node: schedule,
           description: manyLocations ? `Schedule in ${repoPath}` : 'Schedule',
           href: workspacePath(repoName, locationName, `/schedules/${schedule.name}`),
           type: SearchResultType.Schedule,
@@ -142,7 +142,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allSensors: SearchResult[] = sensors.map((sensor) => ({
           label: sensor.name,
-          definition: sensor,
+          node: sensor,
           description: manyLocations ? `Sensor in ${repoPath}` : 'Sensor',
           href: workspacePath(repoName, locationName, `/sensors/${sensor.name}`),
           type: SearchResultType.Sensor,
@@ -150,7 +150,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allResources: SearchResult[] = allTopLevelResourceDetails.map((resource) => ({
           label: resource.name,
-          definition: resource,
+          node: resource,
           description: manyLocations ? `Resource in ${repoPath}` : 'Resource',
           href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
           type: SearchResultType.Resource,
@@ -160,7 +160,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
           .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
           .map((partitionSet) => ({
             label: partitionSet.name,
-            definition: partitionSet,
+            node: partitionSet,
             description: manyLocations ? `Partition set in ${repoPath}` : 'Partition set',
             href: workspacePath(
               repoName,
@@ -196,20 +196,20 @@ const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}, isCa
 
   const assets: SearchResult[] = nodes
     .filter(({definition}) => definition !== null)
-    .map(({key, definition}) => ({
-      label: displayNameForAssetKey(key),
+    .map((node) => ({
+      label: displayNameForAssetKey(node.key),
       description: `Asset in ${buildRepoPathForHuman(
-        definition!.repository.name,
-        definition!.repository.location.name,
+        node.definition!.repository.name,
+        node.definition!.repository.location.name,
       )}`,
-      definition,
-      href: assetDetailsPathForKey(key),
+      node,
+      href: assetDetailsPathForKey(node.key),
       type: SearchResultType.Asset,
-      tags: definition!.tags
-        .filter(isCanonicalStorageKindTag)
+      tags: node
+        .definition!.tags.filter(isCanonicalStorageKindTag)
         .concat(
-          definition!.computeKind
-            ? buildDefinitionTag({key: 'dagster/compute_kind', value: definition!.computeKind})
+          node.definition!.computeKind
+            ? buildDefinitionTag({key: 'dagster/compute_kind', value: node.definition!.computeKind})
             : [],
         ),
     }));
@@ -578,40 +578,40 @@ export const SEARCH_SECONDARY_QUERY = gql`
       ... on AssetConnection {
         nodes {
           id
-          key {
-            path
-          }
-          definition {
-            id
-            ...SearchAssetDefinitionFragment
-          }
+          ...SearchAssetFragment
         }
       }
     }
   }
 
-  fragment SearchAssetDefinitionFragment on AssetNode {
+  fragment SearchAssetFragment on Asset {
     id
-    computeKind
-    groupName
-    owners {
-      ... on TeamAssetOwner {
-        team
-      }
-      ... on UserAssetOwner {
-        email
-      }
+    key {
+      path
     }
-    tags {
-      key
-      value
-    }
-    repository {
+    definition {
       id
-      name
-      location {
+      computeKind
+      groupName
+      owners {
+        ... on TeamAssetOwner {
+          team
+        }
+        ... on UserAssetOwner {
+          email
+        }
+      }
+      tags {
+        key
+        value
+      }
+      repository {
         id
         name
+        location {
+          id
+          name
+        }
       }
     }
   }
