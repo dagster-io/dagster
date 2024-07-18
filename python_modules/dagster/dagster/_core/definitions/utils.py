@@ -7,12 +7,14 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -411,3 +413,11 @@ def resolve_automation_condition(
         return auto_materialize_policy.to_automation_condition()
     else:
         return automation_condition
+
+
+T = TypeVar("T")
+
+
+def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
+    """Dedupe definitions by reference equality."""
+    return list({id(obj): obj for obj in objects}.values()) if objects is not None else []
