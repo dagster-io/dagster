@@ -24,6 +24,7 @@ class DepConditionWrapperCondition(AutomationCondition):
 
     dep_key: AssetKey
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -55,6 +56,7 @@ class DepCondition(AutomationCondition):
     ignore_selection: Optional[
         Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
     ] = None
+    label: Optional[str] = None
 
     @property
     @abstractmethod
@@ -104,6 +106,10 @@ class AnyDepsCondition(DepCondition):
     def base_description(self) -> str:
         return "Any"
 
+    @property
+    def name(self) -> str:
+        return "ANY_DEPS_MATCH"
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         dep_results = []
         true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
@@ -133,6 +139,10 @@ class AllDepsCondition(DepCondition):
     @property
     def base_description(self) -> str:
         return "All"
+
+    @property
+    def name(self) -> str:
+        return "ALL_DEPS_MATCH"
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         dep_results = []

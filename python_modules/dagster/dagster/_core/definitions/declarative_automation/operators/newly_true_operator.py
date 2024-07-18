@@ -13,6 +13,7 @@ from ..automation_context import AutomationContext
 @record
 class NewlyTrueCondition(AutomationCondition):
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def requires_cursor(self) -> bool:
@@ -21,6 +22,10 @@ class NewlyTrueCondition(AutomationCondition):
     @property
     def description(self) -> str:
         return "Condition newly became true."
+
+    @property
+    def name(self) -> str:
+        return "NEWLY_TRUE"
 
     @property
     def children(self) -> Sequence[AutomationCondition]:

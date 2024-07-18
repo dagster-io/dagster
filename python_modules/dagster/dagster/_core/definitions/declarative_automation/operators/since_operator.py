@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -12,6 +12,7 @@ from ..automation_context import AutomationContext
 class SinceCondition(AutomationCondition):
     trigger_condition: AutomationCondition
     reset_condition: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def requires_cursor(self) -> bool:
@@ -22,6 +23,10 @@ class SinceCondition(AutomationCondition):
         return (
             "Trigger condition has become true since the last time the reset condition became true."
         )
+
+    @property
+    def name(self) -> str:
+        return "SINCE"
 
     @property
     def children(self) -> Sequence[AutomationCondition]:

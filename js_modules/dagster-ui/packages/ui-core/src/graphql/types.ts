@@ -304,8 +304,11 @@ export type AssetConditionEvaluationRecord = {
   endTimestamp: Maybe<Scalars['Float']['output']>;
   evaluation: AssetConditionEvaluation;
   evaluationId: Scalars['Int']['output'];
+  evaluationNodes: Array<AutomationConditionEvaluationNode>;
   id: Scalars['ID']['output'];
+  isLegacy: Scalars['Boolean']['output'];
   numRequested: Scalars['Int']['output'];
+  rootUniqueId: Scalars['String']['output'];
   runIds: Array<Scalars['String']['output']>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
   timestamp: Scalars['Float']['output'];
@@ -685,6 +688,20 @@ export type AutoMaterializeRuleWithRuleEvaluations = {
   __typename: 'AutoMaterializeRuleWithRuleEvaluations';
   rule: AutoMaterializeRule;
   ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
+};
+
+export type AutomationConditionEvaluationNode = {
+  __typename: 'AutomationConditionEvaluationNode';
+  candidateSubset: Maybe<AssetSubset>;
+  childUniqueIds: Array<Scalars['String']['output']>;
+  endTimestamp: Maybe<Scalars['Float']['output']>;
+  expandedLabel: Array<Scalars['String']['output']>;
+  isPartitioned: Scalars['Boolean']['output'];
+  numTrue: Scalars['Int']['output'];
+  startTimestamp: Maybe<Scalars['Float']['output']>;
+  trueSubset: AssetSubset;
+  uniqueId: Scalars['String']['output'];
+  userLabel: Maybe<Scalars['String']['output']>;
 };
 
 export type BackfillNotFoundError = Error & {
@@ -3822,7 +3839,7 @@ export type QueryGraphOrErrorArgs = {
 
 export type QueryInstigationStateOrErrorArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
-  instigationSelector?: InputMaybe<InstigationSelector>;
+  instigationSelector: InstigationSelector;
 };
 
 export type QueryInstigationStatesOrErrorArgs = {
@@ -6071,12 +6088,19 @@ export const buildAssetConditionEvaluationRecord = (
         : buildAssetConditionEvaluation({}, relationshipsToOmit),
     evaluationId:
       overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 5501,
+    evaluationNodes:
+      overrides && overrides.hasOwnProperty('evaluationNodes') ? overrides.evaluationNodes! : [],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '1c158e55-c1c1-43c2-9f14-8e369549e154',
+    isLegacy: overrides && overrides.hasOwnProperty('isLegacy') ? overrides.isLegacy! : true,
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2364,
+    rootUniqueId:
+      overrides && overrides.hasOwnProperty('rootUniqueId')
+        ? overrides.rootUniqueId!
+        : 'voluptatibus',
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 6.66,
@@ -6827,6 +6851,43 @@ export const buildAutoMaterializeRuleWithRuleEvaluations = (
         : buildAutoMaterializeRule({}, relationshipsToOmit),
     ruleEvaluations:
       overrides && overrides.hasOwnProperty('ruleEvaluations') ? overrides.ruleEvaluations! : [],
+  };
+};
+
+export const buildAutomationConditionEvaluationNode = (
+  overrides?: Partial<AutomationConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AutomationConditionEvaluationNode'} & AutomationConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutomationConditionEvaluationNode');
+  return {
+    __typename: 'AutomationConditionEvaluationNode',
+    candidateSubset:
+      overrides && overrides.hasOwnProperty('candidateSubset')
+        ? overrides.candidateSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.53,
+    expandedLabel:
+      overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
+    isPartitioned:
+      overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
+    numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
+    trueSubset:
+      overrides && overrides.hasOwnProperty('trueSubset')
+        ? overrides.trueSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
+    userLabel:
+      overrides && overrides.hasOwnProperty('userLabel') ? overrides.userLabel! : 'dolorem',
   };
 };
 

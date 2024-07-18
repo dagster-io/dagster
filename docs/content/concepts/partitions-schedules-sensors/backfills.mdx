@@ -169,7 +169,7 @@ Backfills can also be launched using the [`backfill`](/\_apidocs/cli#dagster-pip
 Let's say we defined a date-partitioned job named `trips_update_job`. To execute the backfill for this job, we can run the `dagster job backfill` command as follows:
 
 ```bash
-$ dagster job backfill -p trips_update_job
+$ dagster job backfill -j trips_update_job
 ```
 
 This will display a list of all the partitions in the job, ask you if you want to proceed, and then launch a run for each partition.
@@ -179,11 +179,11 @@ This will display a list of all the partitions in the job, ask you if you want t
 To execute a subset of a partition set, use the `--partitions` argument and provide a comma-separated list of partition names you want to backfill:
 
 ```bash
-$ dagster job backfill -p do_stuff_partitioned --partitions 2021-04-01,2021-04-02
+$ dagster job backfill -j do_stuff_partitioned --partitions 2021-04-01,2021-04-02
 ```
 
 Alternatively, you can also specify ranges of partitions using the `--from` and `--to` arguments:
 
 ```bash
-$ dagster job backfill -p do_stuff_partitioned --from 2021-04-01 --to 2021-05-01
+$ dagster job backfill -j do_stuff_partitioned --from 2021-04-01 --to 2021-05-01
 ```

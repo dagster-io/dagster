@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import AbstractSet, Any, Mapping, Optional, Sequence
 
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -22,7 +23,12 @@ class AssetSpecModel(DagsterModel):
     tags: Mapping[str, str] = {}
 
     def to_asset_spec(self) -> AssetSpec:
-        return AssetSpec(**self.__dict__)
+        return AssetSpec(
+            **{
+                **self.__dict__,
+                "key": AssetKey.from_user_string(self.key),
+            },
+        )
 
 
 class BlueprintAssetsDefinition(Blueprint):

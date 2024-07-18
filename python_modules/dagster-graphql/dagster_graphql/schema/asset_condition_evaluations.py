@@ -149,24 +149,6 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         name = "PartitionedAssetConditionEvaluationNode"
 
     def __init__(self, evaluation: AssetConditionEvaluation):
-        def _coerce_subset(maybe_subset):
-            if not isinstance(maybe_subset, AssetSubset):
-                return None
-            elif maybe_subset.is_partitioned:
-                return GrapheneAssetSubset(maybe_subset)
-
-            # TODO: Remove on redesign (FOU-242)
-            # We create a fake partitioned asset subset out of an unpartitioned asset subset in
-            # order to allow unpartitioned rows to not error when used in the partition-focused UI.
-            if maybe_subset.size == 0:
-                value = set()
-            else:
-                value = {"None"}
-
-            return GrapheneAssetSubset(
-                AssetSubset(asset_key=maybe_subset.asset_key, value=DefaultPartitionsSubset(value))
-            )
-
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
@@ -255,14 +237,11 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
         name = "AssetConditionEvaluation"
 
     def __init__(
-        self, root_evaluation: AssetConditionEvaluation, partition_key: Optional[str] = None
+        self,
+        root_evaluation: AssetConditionEvaluation,
+        partition_key: Optional[str] = None,
     ):
-        # flatten the evaluation tree into a list of nodes
-        def _flatten(e: AssetConditionEvaluation) -> Sequence[AssetConditionEvaluation]:
-            return list(itertools.chain([e], *(_flatten(ce) for ce in e.child_evaluations)))
-
-        all_evaluations = _flatten(root_evaluation)
-
+        all_evaluations = _flatten_evaluation(root_evaluation)
         if root_evaluation.true_subset.is_partitioned:
             if partition_key is None:
                 evaluationNodes = [
@@ -286,6 +265,43 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
         )
 
 
+class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
+    uniqueId = graphene.NonNull(graphene.String)
+    userLabel = graphene.Field(graphene.String)
+    expandedLabel = non_null_list(graphene.String)
+
+    startTimestamp = graphene.Field(graphene.Float)
+    endTimestamp = graphene.Field(graphene.Float)
+
+    numTrue = graphene.NonNull(graphene.Int)
+    isPartitioned = graphene.NonNull(graphene.Boolean)
+
+    trueSubset = graphene.NonNull(GrapheneAssetSubset)
+    candidateSubset = graphene.Field(GrapheneAssetSubset)
+
+    childUniqueIds = non_null_list(graphene.String)
+
+    class Meta:
+        name = "AutomationConditionEvaluationNode"
+
+    def __init__(self, evaluation: AssetConditionEvaluation):
+        self._evaluation = evaluation
+        super().__init__(
+            uniqueId=evaluation.condition_snapshot.unique_id,
+            expandedLabel=_get_expanded_label(evaluation),
+            userLabel=evaluation.condition_snapshot.label,
+            startTimestamp=evaluation.start_timestamp,
+            endTimestamp=evaluation.end_timestamp,
+            numTrue=evaluation.true_subset.size,
+            isPartitioned=evaluation.true_subset.is_partitioned,
+            trueSubset=_coerce_subset(evaluation.true_subset),
+            candidateSubset=_coerce_subset(evaluation.candidate_subset),
+            childUniqueIds=[
+                child.condition_snapshot.unique_id for child in evaluation.child_evaluations
+            ],
+        )
+
+
 class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     evaluationId = graphene.NonNull(graphene.Int)
@@ -298,7 +314,13 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
+    isLegacy = graphene.NonNull(graphene.Boolean)
+
+    # for legacy UI
     evaluation = graphene.NonNull(GrapheneAssetConditionEvaluation)
+
+    rootUniqueId = graphene.NonNull(graphene.String)
+    evaluationNodes = non_null_list(GrapheneAutomationConditionEvaluationNode)
 
     class Meta:
         name = "AssetConditionEvaluationRecord"
@@ -309,6 +331,9 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
         partitions_def: Optional[PartitionsDefinition],
     ):
         evaluation_with_run_ids = record.get_evaluation_with_run_ids(partitions_def)
+        root_evaluation = evaluation_with_run_ids.evaluation
+
+        flattened_evaluations = _flatten_evaluation(evaluation_with_run_ids.evaluation)
 
         super().__init__(
             id=record.id,
@@ -316,10 +341,21 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
             timestamp=record.timestamp,
             runIds=evaluation_with_run_ids.run_ids,
             assetKey=GrapheneAssetKey(path=record.asset_key.path),
-            numRequested=evaluation_with_run_ids.evaluation.true_subset.size,
-            startTimestamp=evaluation_with_run_ids.evaluation.start_timestamp,
-            endTimestamp=evaluation_with_run_ids.evaluation.end_timestamp,
-            evaluation=GrapheneAssetConditionEvaluation(evaluation_with_run_ids.evaluation),
+            numRequested=root_evaluation.true_subset.size,
+            startTimestamp=root_evaluation.start_timestamp,
+            endTimestamp=root_evaluation.end_timestamp,
+            isLegacy=any(
+                # RuleConditions are the legacy wrappers around AutoMaterializeRules
+                node.condition_snapshot.class_name == "RuleCondition"
+                for node in flattened_evaluations
+            ),
+            # for legacy UI
+            evaluation=GrapheneAssetConditionEvaluation(root_evaluation),
+            # for new UI
+            rootUniqueId=root_evaluation.condition_snapshot.unique_id,
+            evaluationNodes=[
+                GrapheneAutomationConditionEvaluationNode(node) for node in flattened_evaluations
+            ],
         )
 
 
@@ -337,3 +373,46 @@ class GrapheneAssetConditionEvaluationRecordsOrError(graphene.Union):
             GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
         )
         name = "AssetConditionEvaluationRecordsOrError"
+
+
+def _flatten_evaluation(e: AssetConditionEvaluation) -> Sequence[AssetConditionEvaluation]:
+    # flattens the evaluation tree into a list of nodes
+    return list(itertools.chain([e], *(_flatten_evaluation(ce) for ce in e.child_evaluations)))
+
+
+def _coerce_subset(maybe_subset):
+    if not isinstance(maybe_subset, AssetSubset):
+        return None
+    elif maybe_subset.is_partitioned:
+        return GrapheneAssetSubset(maybe_subset)
+
+    # TODO: Remove on redesign (FOU-242)
+    # We create a fake partitioned asset subset out of an unpartitioned asset subset in
+    # order to allow unpartitioned rows to not error when used in the partition-focused UI.
+    if maybe_subset.size == 0:
+        value = set()
+    else:
+        value = {"None"}
+
+    return GrapheneAssetSubset(
+        AssetSubset(asset_key=maybe_subset.asset_key, value=DefaultPartitionsSubset(value))
+    )
+
+
+def _get_expanded_label(evaluation: AssetConditionEvaluation, use_label=False) -> Sequence[str]:
+    if use_label and evaluation.condition_snapshot.label is not None:
+        return [evaluation.condition_snapshot.label]
+    node_text = evaluation.condition_snapshot.name or evaluation.condition_snapshot.description
+    child_labels = [
+        f'({" ".join(_get_expanded_label(ce, use_label=True))})'
+        for ce in evaluation.child_evaluations
+    ]
+    if len(child_labels) == 0:
+        return [node_text]
+    elif len(child_labels) == 1:
+        return [node_text, f"{child_labels[0]}"]
+    else:
+        # intersperses node_text (e.g. AND) between each child label
+        return list(itertools.chain(*itertools.zip_longest(child_labels, [], fillvalue=node_text)))[
+            :-1
+        ]

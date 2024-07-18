@@ -119,6 +119,7 @@ class AssetDaemonScenarioState(ScenarioState):
     is_daemon: bool = False
     sensor_name: Optional[str] = None
     threadpool_executor: Optional[ThreadPoolExecutor] = None
+    request_backfills: bool = False
 
     def with_serialized_cursor(self, serialized_cursor: str) -> "AssetDaemonScenarioState":
         return dataclasses.replace(self, serialized_cursor=serialized_cursor)
@@ -152,6 +153,7 @@ class AssetDaemonScenarioState(ScenarioState):
             },
             respect_materialization_data_versions=False,
             logger=self.logger,
+            request_backfills=self.request_backfills,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)
@@ -237,6 +239,16 @@ class AssetDaemonScenarioState(ScenarioState):
                     )
                 )
             ]
+            backfill_requests = [
+                RunRequest.for_asset_graph_subset(
+                    backfill.asset_backfill_data.target_subset, tags=backfill.tags
+                )
+                for backfill in self.instance.get_backfills()
+                if backfill.tags.get("dagster/asset_evaluation_id") == str(new_cursor.evaluation_id)
+                and backfill.asset_backfill_data is not None
+            ]
+
+            new_run_requests.extend(backfill_requests)
             new_evaluations = [
                 e.get_evaluation_with_run_ids(
                     self.asset_graph.get(e.asset_key).partitions_def
@@ -246,6 +258,12 @@ class AssetDaemonScenarioState(ScenarioState):
                 ).get_auto_materialize_evaluations_for_evaluation_id(new_cursor.evaluation_id)
             ]
             return new_run_requests, new_cursor, new_evaluations
+
+    def evaluate_tick_daemon(self):
+        with freeze_time(self.current_time):
+            run_requests, cursor, _ = self._evaluate_tick_daemon()
+        new_state = self.with_serialized_cursor(serialize_value(cursor))
+        return new_state, run_requests
 
     def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":
         self.logger.critical("********************************")

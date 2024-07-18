@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -13,6 +13,7 @@ class AndAssetCondition(AutomationCondition):
     """This class represents the condition that all of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition]
+    label: Optional[str] = None
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
@@ -21,6 +22,10 @@ class AndAssetCondition(AutomationCondition):
     @property
     def description(self) -> str:
         return "All of"
+
+    @property
+    def name(self) -> str:
+        return "AND"
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
@@ -41,6 +46,7 @@ class OrAssetCondition(AutomationCondition):
     """This class represents the condition that any of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition]
+    label: Optional[str] = None
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
@@ -49,6 +55,10 @@ class OrAssetCondition(AutomationCondition):
     @property
     def description(self) -> str:
         return "Any of"
+
+    @property
+    def name(self) -> str:
+        return "OR"
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
@@ -70,10 +80,15 @@ class NotAssetCondition(AutomationCondition):
     """This class represents the condition that none of its children evaluate to true."""
 
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
         return "Not"
+
+    @property
+    def name(self) -> str:
+        return "NOT"
 
     @property
     def children(self) -> Sequence[AutomationCondition]:

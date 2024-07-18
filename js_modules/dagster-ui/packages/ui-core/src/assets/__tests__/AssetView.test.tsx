@@ -3,6 +3,9 @@ import {act, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
+import {AppTopNavRightOfLogo} from '../../app/AppTopNav/AppTopNavRightOfLogo';
+import {InjectedComponentContext} from '../../app/InjectedComponentContext';
+import {UserPreferences} from '../../app/UserSettingsDialog/UserPreferences.oss';
 import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetBaseDataProvider';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {
@@ -14,6 +17,7 @@ import {
   AssetGraphQueryVariables,
 } from '../../asset-graph/types/useAssetGraphData.types';
 import {ASSET_GRAPH_QUERY} from '../../asset-graph/useAssetGraphData';
+import {useAssetGraphExplorerFilters} from '../../asset-graph/useAssetGraphExplorerFilters.oss';
 import {
   AssetKeyInput,
   buildAssetKey,
@@ -22,7 +26,10 @@ import {
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {AssetPageHeader} from '../AssetPageHeader.oss';
 import {AssetView} from '../AssetView';
+import {AssetsGraphHeader} from '../AssetsGraphHeader.oss';
+import AssetsOverviewRoot from '../AssetsOverviewRoot.oss';
 import {
   AssetViewDefinitionNonSDA,
   AssetViewDefinitionSDA,
@@ -30,6 +37,8 @@ import {
   LatestMaterializationTimestamp,
   RootWorkspaceWithOneLocation,
 } from '../__fixtures__/AssetViewDefinition.fixtures';
+import {useAssetCatalogFiltering} from '../useAssetCatalogFiltering.oss';
+import {useAssetDefinitionFilterState} from '../useAssetDefinitionFilterState.oss';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
@@ -57,32 +66,56 @@ describe('AssetView', () => {
   const Test = ({path, assetKey}: {path: string; assetKey: AssetKeyInput}) => {
     return (
       <RecoilRoot>
-        <MockedProvider
-          mocks={[
-            ...RootWorkspaceWithOneLocation,
-            AssetViewDefinitionSDA,
-            AssetViewDefinitionNonSDA,
-            AssetViewDefinitionSourceAsset,
-            mockLiveData('sda_asset'),
-            mockLiveData('observable_source_asset'),
-            mockLiveData('non_sda_asset'),
-            buildQueryMock<AssetGraphQuery, AssetGraphQueryVariables>({
-              query: ASSET_GRAPH_QUERY,
-              variables: {},
-              data: {
-                assetNodes: [buildAssetNode()],
-              },
-            }),
-          ]}
+        <InjectedComponentContext.Provider
+          value={{
+            components: {
+              AssetPageHeader,
+              AppTopNavRightOfLogo,
+              UserPreferences,
+              AssetsOverview: AssetsOverviewRoot,
+              FallthroughRoot: null,
+              AssetsGraphHeader,
+              OverviewPageAlerts: null,
+              RunMetricsDialog: null,
+            },
+            hooks: {
+              useAssetDefinitionFilterState,
+              useAssetCatalogFiltering,
+              useAssetGraphExplorerFilters,
+            },
+          }}
         >
-          <WorkspaceProvider>
-            <AssetLiveDataProvider>
-              <MemoryRouter initialEntries={[path]}>
-                <AssetView assetKey={assetKey} headerBreadcrumbs={[]} currentPath={assetKey.path} />
-              </MemoryRouter>
-            </AssetLiveDataProvider>
-          </WorkspaceProvider>
-        </MockedProvider>
+          <MockedProvider
+            mocks={[
+              ...RootWorkspaceWithOneLocation,
+              AssetViewDefinitionSDA,
+              AssetViewDefinitionNonSDA,
+              AssetViewDefinitionSourceAsset,
+              mockLiveData('sda_asset'),
+              mockLiveData('observable_source_asset'),
+              mockLiveData('non_sda_asset'),
+              buildQueryMock<AssetGraphQuery, AssetGraphQueryVariables>({
+                query: ASSET_GRAPH_QUERY,
+                variables: {},
+                data: {
+                  assetNodes: [buildAssetNode()],
+                },
+              }),
+            ]}
+          >
+            <WorkspaceProvider>
+              <AssetLiveDataProvider>
+                <MemoryRouter initialEntries={[path]}>
+                  <AssetView
+                    assetKey={assetKey}
+                    headerBreadcrumbs={[]}
+                    currentPath={assetKey.path}
+                  />
+                </MemoryRouter>
+              </AssetLiveDataProvider>
+            </WorkspaceProvider>
+          </MockedProvider>
+        </InjectedComponentContext.Provider>
       </RecoilRoot>
     );
   };

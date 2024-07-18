@@ -59,6 +59,8 @@ class AssetConditionSnapshot(NamedTuple):
     class_name: str
     description: str
     unique_id: str
+    label: Optional[str] = None
+    name: Optional[str] = None
 
 
 @whitelist_for_serdes

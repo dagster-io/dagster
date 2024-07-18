@@ -10,7 +10,7 @@ from dagster_graphql.test.utils import (
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 INSTIGATION_QUERY = """
-query JobQuery($instigationSelector: InstigationSelector $id: String) {
+query JobQuery($instigationSelector: InstigationSelector! $id: String) {
   instigationStateOrError(instigationSelector: $instigationSelector id: $id) {
     __typename
     ... on PythonError {
@@ -70,13 +70,17 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
 
         schedule_name = "no_config_job_hourly_schedule"
         external_schedule = external_repository.get_external_schedule(schedule_name)
+        selector = infer_instigation_selector(graphql_context, schedule_name)
 
         # need to be running in order to generate a future tick
         graphql_context.instance.start_schedule(external_schedule)
         result = execute_dagster_graphql(
             graphql_context,
             INSTIGATION_QUERY,
-            variables={"id": external_schedule.get_compound_id().to_string()},
+            variables={
+                "id": external_schedule.get_compound_id().to_string(),
+                "instigationSelector": selector,
+            },
         )
 
         assert result.data
@@ -106,6 +110,20 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         external_sensor = external_repository.get_external_sensor(sensor_name)
         selector = infer_instigation_selector(graphql_context, sensor_name)
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATION_QUERY,
+            variables={
+                "id": external_sensor.get_compound_id().to_string(),
+                "instigationSelector": selector,
+            },
+        )
+
+        assert result.data
+        assert (
+            result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        ), result.data["instigationStateOrError"]
+
         # need to be running and create a sensor tick in the last 30 seconds in order to generate a
         # future tick
         graphql_context.instance.start_sensor(external_sensor)
@@ -114,7 +132,10 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             INSTIGATION_QUERY,
-            variables={"id": external_sensor.get_compound_id().to_string()},
+            variables={
+                "id": external_sensor.get_compound_id().to_string(),
+                "instigationSelector": selector,
+            },
         )
 
         assert result.data

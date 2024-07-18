@@ -16,6 +16,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._record import copy
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
@@ -59,7 +60,19 @@ class AutomationCondition(ABC):
     @property
     @abstractmethod
     def description(self) -> str:
+        """Human-readable description of when this condition is true."""
         raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def label(self) -> Optional[str]:
+        """User-provided label subjectively describing the purpose of this condition in the broader evaluation tree."""
+        raise NotImplementedError()
+
+    @property
+    def name(self) -> Optional[str]:
+        """Formal name of this specific condition, generally aligning with its static constructor."""
+        return None
 
     def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
@@ -67,6 +80,8 @@ class AutomationCondition(ABC):
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
+            label=self.label,
+            name=self.name,
         )
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
@@ -93,9 +108,20 @@ class AutomationCondition(ABC):
 
         return AutoMaterializePolicy.from_automation_condition(self)
 
+    def is_rule_condition(self):
+        from .legacy import RuleCondition
+
+        if isinstance(self, RuleCondition):
+            return True
+        return any(child.is_rule_condition() for child in self.children)
+
     @abstractmethod
     def evaluate(self, context: "AutomationContext") -> "AutomationResult":
         raise NotImplementedError()
+
+    def with_label(self, label: Optional[str]) -> "AutomationCondition":
+        """Returns a copy of this AutomationCondition with a human-readable label."""
+        return copy(self, label=label)
 
     def __and__(self, other: "AutomationCondition") -> "AndAssetCondition":
         from .operators import AndAssetCondition
@@ -267,26 +293,26 @@ class AutomationCondition(ABC):
         - None of its parent partitions are currently part of an in-progress run
         """
         with disable_dagster_warnings():
-            became_missing_or_any_deps_updated = (
-                AutomationCondition.missing().newly_true()
+            became_missing_or_any_parents_updated = (
+                AutomationCondition.missing().newly_true().with_label("became missing")
                 | AutomationCondition.any_deps_match(
                     AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
-                )
+                ).with_label("any parents updated")
             )
 
-            any_parent_missing = AutomationCondition.any_deps_match(
+            any_parents_missing = AutomationCondition.any_deps_match(
                 AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
-            )
-            any_parent_in_progress = AutomationCondition.any_deps_match(
+            ).with_label("any parents missing")
+            any_parents_in_progress = AutomationCondition.any_deps_match(
                 AutomationCondition.in_progress()
-            )
+            ).with_label("any parents in progress")
             return (
                 AutomationCondition.in_latest_time_window()
-                & became_missing_or_any_deps_updated.since(
+                & became_missing_or_any_parents_updated.since(
                     AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
                 )
-                & ~any_parent_missing
-                & ~any_parent_in_progress
+                & ~any_parents_missing
+                & ~any_parents_in_progress
                 & ~AutomationCondition.in_progress()
             )
 

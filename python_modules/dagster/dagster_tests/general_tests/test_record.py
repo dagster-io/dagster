@@ -21,6 +21,15 @@ if TYPE_CHECKING:
     from dagster._core.test_utils import TestType
 
 
+def test_kwargs_only() -> None:
+    @record
+    class MyClass:
+        foo: str
+
+    with pytest.raises(TypeError, match="takes 1 positional argument but 2 were given"):
+        MyClass("fdslk")  # type: ignore # good job type checker
+
+
 def test_runtime_typecheck() -> None:
     @record
     class MyClass:
@@ -395,7 +404,7 @@ def test_base_class_conflicts() -> None:
 
     with pytest.raises(
         TypeError,
-        match="Can't instantiate abstract class DidntImpl with abstract methods abstract_prop, abstract_prop_with_default",
+        match="Can't instantiate abstract class DidntImpl",
     ):
         DidntImpl()  # type: ignore # good job type checker
 

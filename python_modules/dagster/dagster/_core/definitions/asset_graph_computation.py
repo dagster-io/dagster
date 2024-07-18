@@ -172,7 +172,22 @@ class AssetGraphComputation(IHaveNew):
             for dep_op_handle in dep_op_handles:
                 op_selection.append(".".join(dep_op_handle.path))
 
-        return get_graph_subset(self.node_def, op_selection)
+        selected_outputs_by_op_handle: Dict[NodeHandle, Set[str]] = defaultdict(set)
+        for (
+            op_output_handle,
+            asset_or_check_keys,
+        ) in self.asset_or_check_keys_by_dep_op_output_handle.items():
+            if any(
+                key in selected_asset_keys or key in selected_asset_check_keys
+                for key in asset_or_check_keys
+            ):
+                selected_outputs_by_op_handle[op_output_handle.node_handle].add(
+                    op_output_handle.output_name
+                )
+
+        return get_graph_subset(
+            self.node_def, op_selection, selected_outputs_by_op_handle=selected_outputs_by_op_handle
+        )
 
     @cached_property
     def dep_op_handles_by_asset_or_check_key(

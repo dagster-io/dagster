@@ -962,7 +962,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def use_transitive_stale_causes(self) -> bool:
-        return True
+        return False
 
     # python logs
 
@@ -3229,4 +3229,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
     def backfill_log_storage_enabled(self) -> bool:
+        return False
+
+    def da_request_backfills(self) -> bool:
         return False

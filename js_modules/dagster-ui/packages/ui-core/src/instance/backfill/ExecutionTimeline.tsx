@@ -10,8 +10,8 @@ import {
   RunChunks,
   TimeDividers,
   TimelineRowContainer,
-  TimelineRun,
 } from '../../runs/RunTimeline';
+import {TimelineRun} from '../../runs/RunTimelineTypes';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from '../../runs/batchRunsForTimeline';
 import {mergeStatusToBackground} from '../../runs/mergeStatusToBackground';

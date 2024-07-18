@@ -322,7 +322,7 @@ export const SENSOR_TYPE_META: Record<
   },
 };
 
-const SINGLE_SENSOR_QUERY = gql`
+export const SINGLE_SENSOR_QUERY = gql`
   query SingleSensorQuery($selector: SensorSelector!) {
     sensorOrError(sensorSelector: $selector) {
       ... on Sensor {
@@ -342,6 +342,8 @@ const SINGLE_SENSOR_QUERY = gql`
         sensorState {
           id
           runningCount
+          hasStartPermission
+          hasStopPermission
           ticks(limit: 1) {
             id
             ...TickTagFragment

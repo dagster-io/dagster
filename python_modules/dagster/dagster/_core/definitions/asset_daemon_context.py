@@ -19,6 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
@@ -87,6 +88,7 @@ class AssetDaemonContext:
         respect_materialization_data_versions: bool,
         logger: logging.Logger,
         evaluation_time: Optional[datetime.datetime] = None,
+        request_backfills: bool = False,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -114,6 +116,7 @@ class AssetDaemonContext:
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
+        self._request_backfills = request_backfills
 
     @property
     def logger(self) -> logging.Logger:
@@ -171,6 +174,7 @@ class AssetDaemonContext:
             data_time_resolver=self.data_time_resolver,
             respect_materialization_data_versions=self.respect_materialization_data_versions,
             auto_materialize_run_tags=self.auto_materialize_run_tags,
+            request_backfills=self._request_backfills,
         )
         return evaluator.evaluate()
 
@@ -192,14 +196,27 @@ class AssetDaemonContext:
 
         results, to_request = self.get_asset_condition_evaluations()
 
-        run_requests = [
-            *build_run_requests(
+        if self._request_backfills:
+            run_requests = (
+                [
+                    RunRequest.for_asset_graph_subset(
+                        asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
+                            to_request, asset_graph=self.asset_graph
+                        ),
+                        tags=self.auto_materialize_run_tags,
+                    )
+                ]
+                if to_request
+                else []
+            )
+        else:
+            run_requests = build_run_requests(
                 asset_partitions=to_request,
                 asset_graph=self.asset_graph,
                 run_tags=self.auto_materialize_run_tags,
-            ),
-            *auto_observe_run_requests,
-        ]
+            )
+
+        run_requests = [*run_requests, *auto_observe_run_requests]
 
         # only record evaluation results where something changed
         updated_evaluations = []
@@ -220,7 +237,10 @@ class AssetDaemonContext:
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests
-                    for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
+                    for asset_key in cast(
+                        Sequence[AssetKey],
+                        run_request.asset_selection,  # auto-observe run requests always have asset_selection
+                    )
                 ],
                 evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
             ),

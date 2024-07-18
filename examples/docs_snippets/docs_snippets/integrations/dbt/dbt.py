@@ -53,6 +53,23 @@ def scope_troubleshooting_dbt_manifest(manifest):
     # end_troubleshooting_dbt_manifest
 
 
+def scope_compile_dbt_manifest_with_dbt_project(manifest):
+    # start_compile_dbt_manifest_with_dbt_project
+    """✅ This is recommended!"""
+    from pathlib import Path
+
+    from dagster_dbt import DbtProject
+
+    my_dbt_project = DbtProject(
+        project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+        packaged_project_dir=Path(__file__)
+        .joinpath("..", "..", "dbt-project")
+        .resolve(),
+    )
+    my_dbt_project.prepare_if_dev()
+    # end_compile_dbt_manifest_with_dbt_project
+
+
 def scope_schedule_assets_dbt_only(manifest):
     from dagster import Config, RunConfig
 
@@ -196,17 +213,17 @@ def scope_custom_asset_key_dagster_dbt_translator():
     # start_custom_asset_key_dagster_dbt_translator
     from pathlib import Path
     from dagster import AssetKey, AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
             return super().get_asset_key(dbt_resource_props).with_prefix("snowflake")
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -218,14 +235,13 @@ def scope_custom_asset_key_dagster_dbt_translator():
 def scope_fetch_row_count() -> None:
     # start_fetch_row_count
     from pathlib import Path
-    from dagster import AssetKey, AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
-    from typing import Any, Mapping
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtProject, DbtCliResource, dbt_assets
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
@@ -233,14 +249,55 @@ def scope_fetch_row_count() -> None:
     # end_fetch_row_count
 
 
+def scope_fetch_column_metadata() -> None:
+    # start_fetch_column_metadata
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtProject, DbtCliResource, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+        )
+
+    # end_fetch_column_metadata
+
+
+def scope_fetch_column_metadata_chain() -> None:
+    # start_fetch_column_metadata_chain
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtProject, DbtCliResource, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(["build"], context=context)
+            .stream()
+            .fetch_row_counts()
+            .fetch_column_metadata()
+        )
+
+    # end_fetch_column_metadata_chain
+
+
 def scope_custom_group_name_dagster_dbt_translator():
     # start_custom_group_name_dagster_dbt_translator
     from pathlib import Path
     from dagster import AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping, Optional
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_group_name(
@@ -249,7 +306,7 @@ def scope_custom_group_name_dagster_dbt_translator():
             return "snowflake"
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -262,10 +319,10 @@ def scope_custom_owners_dagster_dbt_translator():
     # start_custom_owners_dagster_dbt_translator
     from pathlib import Path
     from dagster import AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping, Optional, Sequence
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_owners(
@@ -274,7 +331,7 @@ def scope_custom_owners_dagster_dbt_translator():
             return ["owner@company.com", "team:data@company.com"]
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -288,17 +345,17 @@ def scope_custom_description_dagster_dbt_translator():
     import textwrap
     from pathlib import Path
     from dagster import AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
             return textwrap.indent(dbt_resource_props.get("raw_sql", ""), "\t")
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -311,10 +368,10 @@ def scope_custom_metadata_dagster_dbt_translator():
     # start_custom_metadata_dagster_dbt_translator
     from pathlib import Path
     from dagster import MetadataValue, AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_metadata(
@@ -325,7 +382,7 @@ def scope_custom_metadata_dagster_dbt_translator():
             }
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -338,10 +395,10 @@ def scope_custom_tags_dagster_dbt_translator():
     # start_custom_tags_dagster_dbt_translator
     from pathlib import Path
     from dagster import AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
@@ -355,7 +412,7 @@ def scope_custom_tags_dagster_dbt_translator():
             return dagster_tags
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -368,10 +425,10 @@ def scope_custom_auto_materialize_policy_dagster_dbt_translator():
     # start_custom_auto_materialize_policy_dagster_dbt_translator
     from pathlib import Path
     from dagster import AssetExecutionContext, AutoMaterializePolicy
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping, Optional
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_auto_materialize_policy(
@@ -380,7 +437,7 @@ def scope_custom_auto_materialize_policy_dagster_dbt_translator():
             return AutoMaterializePolicy.eager()
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -397,16 +454,17 @@ def scope_disable_asset_check_dagster_dbt_translator():
         DagsterDbtTranslator,
         DagsterDbtTranslatorSettings,
         DbtCliResource,
+        DbtProject,
         dbt_assets,
     )
 
-    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
     dagster_dbt_translator = DagsterDbtTranslator(
         settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
     )
 
     @dbt_assets(
-        manifest=manifest_path,
+        manifest=my_dbt_project.manifest_path,
         dagster_dbt_translator=dagster_dbt_translator,
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -420,12 +478,14 @@ def scope_config_dbt_assets():
     from pathlib import Path
 
     from dagster import AssetExecutionContext, Config
-    from dagster_dbt import DbtCliResource, dbt_assets
+    from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class MyDbtConfig(Config):
         full_refresh: bool
 
-    @dbt_assets(manifest=Path("target", "manifest.json"))
+    @dbt_assets(manifest=my_dbt_project.manifest_path)
     def my_dbt_assets(
         context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig
     ):
@@ -452,3 +512,28 @@ def scope_config_dbt_assets():
     )
 
     # end_config_dbt_job
+
+
+def scope_build_incremental_model():
+    # start_build_incremental_model
+    import json
+    from pathlib import Path
+
+    from dagster import DailyPartitionsDefinition, OpExecutionContext
+    from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+        partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+    )
+    def partitionshop_dbt_assets(context: OpExecutionContext, dbt: DbtCliResource):
+        start, end = context.partition_time_window
+
+        dbt_vars = {"min_date": start.isoformat(), "max_date": end.isoformat()}
+        dbt_build_args = ["build", "--vars", json.dumps(dbt_vars)]
+
+        yield from dbt.cli(dbt_build_args, context=context).stream()
+
+    # end_build_incremental_model

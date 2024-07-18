@@ -325,6 +325,9 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
     AssetKey(["incremental_orders"]): TableColumnLineage(
         deps_by_column={
             "order_id": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_id")],
+            "order_date": [
+                TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_date")
+            ],
         }
     ),
     AssetKey(["customers"]): TableColumnLineage(

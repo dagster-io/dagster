@@ -792,7 +792,7 @@ class JobDefinition(IHasInternalInit):
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
         try:
-            sub_graph = get_graph_subset(self.graph, op_selection)
+            sub_graph = get_graph_subset(self.graph, op_selection, selected_outputs_by_op_handle={})
 
             # if explicit config was passed the config_mapping that resolves the defaults implicitly is
             # very unlikely to work. The job will still present the default config in the Dagster UI.

@@ -19,6 +19,7 @@ The content for the site is of several types and stored in several places:
 - [**Code snippets**](#code-snippets) are embedded throughout the prose docs. All code snippets used in the docs site live (outside the `docs` folder) in `examples/docs_snippets`. This is just a regular python package, which makes it easy to test and specify dependencies for the snippets.
 - [**Screenshots**](#screenshots) are image files living in `next/public/images`, typically under a subdirectory corresponding to the page on which they appear. There's no need to manually manage the screenshots in this directory-- instead you can add a specification your screenshot to `screenshots` and run `dagster-ui-screenshot capture` to quasi-automatically generate the screenshot and place it in the appropriate subdirectory of `next/public/images`.
 - [**Navigation schema**](#navigation-schema) is a JSON file specifying the contents of the main nav for the site (found in the left sidebar). This typically needs to be updated to include a link when new prose doc is added.
+- [**Dagster University**](#dagster-university) is a separate Nextjs site containing the content for Dagster University courses. 
 
 ## Prose docs
 
@@ -132,6 +133,12 @@ Most of the site's images are screenshots of the Dagster UI. There is a semi-aut
 ## Navigation schema
 
 If you are adding a new prose page or want to update the navigation in the sidebar, update the `docs/content/_navigation.json` file. The structure is self-explanatory when looking at the sidebar.
+
+## Dagster University
+
+Refer to the Dagster University [README](https://github.com/dagster-io/dagster/tree/master/docs/dagster-university) for more info about working in this directory.
+
+---
 
 ## Troubleshooting
 

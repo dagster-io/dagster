@@ -18,6 +18,7 @@ class RuleCondition(AssetCondition):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 
     rule: AutoMaterializeRule
+    label: Optional[str] = None
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:
         # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating

@@ -26,6 +26,7 @@
     "@blueprintjs/core": "^4.20.2",
     "@blueprintjs/popover2": "1.13.12",
     "@blueprintjs/select": "^4.9.12",
+    "@tanstack/react-virtual": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-is": "^18.2.0",
@@ -36,7 +37,6 @@
     "amator": "^1.1.0",
     "codemirror": "^5.65.2",
     "deepmerge": "^4.2.2",
-    "react-virtualized": "^9.22.3",
     "yaml": "2.4.0"
   },
   "devDependencies": {

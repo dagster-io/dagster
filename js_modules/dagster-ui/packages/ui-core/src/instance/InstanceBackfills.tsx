@@ -26,8 +26,8 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {useFilters} from '../ui/Filters';
-import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {useFilters} from '../ui/BaseFilters';
+import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 const PAGE_SIZE = 10;
 

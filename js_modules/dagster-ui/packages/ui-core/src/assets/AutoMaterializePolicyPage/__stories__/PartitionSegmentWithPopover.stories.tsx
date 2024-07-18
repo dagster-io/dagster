@@ -2,7 +2,6 @@ import {Box} from '@dagster-io/ui-components';
 import faker from 'faker';
 import {useMemo} from 'react';
 
-import {AssetConditionEvaluationStatus} from '../../../graphql/types';
 import {PartitionSegmentWithPopover} from '../PartitionSegmentWithPopover';
 
 // eslint-disable-next-line import/no-default-export
@@ -33,7 +32,6 @@ export const TruePartitions = () => {
     <Box flex={{direction: 'row'}}>
       <PartitionSegmentWithPopover
         description="is_missing"
-        status={AssetConditionEvaluationStatus.TRUE}
         subset={subset}
         selectPartition={() => {}}
       />
@@ -61,7 +59,6 @@ export const FewPartitions = () => {
     <Box flex={{direction: 'row'}}>
       <PartitionSegmentWithPopover
         description="is_missing"
-        status={AssetConditionEvaluationStatus.TRUE}
         subset={subset}
         selectPartition={() => {}}
       />
