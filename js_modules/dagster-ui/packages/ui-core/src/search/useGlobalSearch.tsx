@@ -186,10 +186,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   return allEntries;
 };
 
-const secondaryDataToSearchResults = (
-  input: {data?: SearchSecondaryQuery},
-  includeAssetFilters: boolean,
-) => {
+const secondaryDataToSearchResults = (input: {data?: SearchSecondaryQuery}, isCatalog: boolean) => {
   const {data} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
     return [];
@@ -217,7 +214,7 @@ const secondaryDataToSearchResults = (
         ),
     }));
 
-  if (!includeAssetFilters) {
+  if (!isCatalog) {
     return [...assets];
   } else {
     const countsBySection = buildAssetCountBySection(nodes);
@@ -332,7 +329,7 @@ export const SEARCH_SECONDARY_DATA_VERSION = 2;
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
-export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boolean}) => {
+export const useGlobalSearch = ({isCatalog}: {isCatalog: boolean}) => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
@@ -384,26 +381,26 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
       return;
     }
     const results = primaryDataToSearchResults({data: primaryData});
-    const augmentedResults = augmentSearchResults(results);
+    const augmentedResults = augmentSearchResults(results, isCatalog);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
     primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, primaryData, augmentSearchResults]);
+  }, [consumeBufferEffect, primaryData, isCatalog, augmentSearchResults]);
 
   useEffect(() => {
     if (!secondaryData) {
       return;
     }
-    const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
-    const augmentedResults = augmentSearchResults(results);
+    const results = secondaryDataToSearchResults({data: secondaryData}, isCatalog);
+    const augmentedResults = augmentSearchResults(results, isCatalog);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData, includeAssetFilters, augmentSearchResults]);
+  }, [consumeBufferEffect, secondaryData, isCatalog, augmentSearchResults]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
