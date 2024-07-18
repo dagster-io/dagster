@@ -95,7 +95,7 @@ Open the `assets/dbt.py` file and do the following:
 
    ```python
    @dbt_assets(
-       manifest=dbt_manifest_path,
+       manifest=dbt_project.manifest_path,
        dagster_dbt_translator=CustomizedDagsterDbtTranslator()
    )
    def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -107,10 +107,9 @@ At this point, your `dbt.py` file should match the following:
 ```python
 import os
 from dagster import AssetExecutionContext, AssetKey
-from dagster_dbt import dbt_assets, DbtCliResource, DagsterDbtTranslator
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 
 from .constants import DBT_DIRECTORY
-from ..resources import dbt_resource
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
@@ -123,20 +122,12 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
             return super().get_asset_key(dbt_resource_props)
 
 
-dbt_resource.cli(["--quiet", "parse"]).wait()
-
-if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-    dbt_manifest_path = (
-        dbt_resource.cli(["--quiet", "parse"])
-        .wait()
-        .target_path.joinpath("manifest.json")
-    )
-else:
-    dbt_manifest_path = os.path.join(DBT_DIRECTORY, "target", "manifest.json")
+dbt_project = DbtProject(project_dir=DBT_DIRECTORY)
+dbt_project.prepare_if_dev()
 
 
 @dbt_assets(
-    manifest=dbt_manifest_path, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
+    manifest=dbt_project.manifest_path, dagster_dbt_translator=CustomizedDagsterDbtTranslator()
 )
 def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()

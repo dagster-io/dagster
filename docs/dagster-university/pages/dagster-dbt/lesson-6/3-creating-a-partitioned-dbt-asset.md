@@ -45,7 +45,7 @@ Previously, we used the `@dbt_assets` decorator to say _“this function produce
 
    ```python
    @dbt_assets(
-       manifest=dbt_manifest_path,
+       manifest=dbt_project.manifest_path,
        dagster_dbt_translator=CustomizedDagsterDbtTranslator()
    )
    def incremental_dbt_models(
@@ -59,7 +59,7 @@ Previously, we used the `@dbt_assets` decorator to say _“this function produce
 
    ```python
    @dbt_assets(
-       manifest=dbt_manifest_path,
+       manifest=dbt_project.manifest_path,
        dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
        select=INCREMENTAL_SELECTOR,     # select only models with INCREMENTAL_SELECTOR
        partitions_def=daily_partition   # partition those models using daily_partition
@@ -110,7 +110,7 @@ Modify the `dbt_analytics` definition to exclude the `INCREMENTAL_SELECTOR`:
 
 ```python
 @dbt_assets(
-    manifest=dbt_manifest_path,
+    manifest=dbt_project.manifest_path,
     dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
     exclude=INCREMENTAL_SELECTOR, # Add this here
 )
@@ -124,11 +124,10 @@ At this point, the `dagster_university/assets/dbt.py` file should look like this
 import os
 import json
 from dagster import AssetExecutionContext, AssetKey
-from dagster_dbt import dbt_assets, DbtCliResource, DagsterDbtTranslator
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 
 from .constants import DBT_DIRECTORY
 from ..partitions import daily_partition
-from ..resources import dbt_resource
 
 
 INCREMENTAL_SELECTOR = "config.materialized:incremental"
@@ -144,20 +143,12 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
             return super().get_asset_key(dbt_resource_props)
 
 
-dbt_resource.cli(["--quiet", "parse"]).wait()
-
-if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-    dbt_manifest_path = (
-        dbt_resource.cli(["--quiet", "parse"])
-        .wait()
-        .target_path.joinpath("manifest.json")
-    )
-else:
-    dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
+dbt_project = DbtProject(project_dir=DBT_DIRECTORY)
+dbt_project.prepare_if_dev()
 
 
 @dbt_assets(
-    manifest=dbt_manifest_path,
+    manifest=dbt_project.manifest_path,
     dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
     exclude=INCREMENTAL_SELECTOR,
 )
@@ -166,7 +157,7 @@ def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
 
 
 @dbt_assets(
-    manifest=dbt_manifest_path,
+    manifest=dbt_project.manifest_path,
     dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
     select=INCREMENTAL_SELECTOR,
     partitions_def=daily_partition,

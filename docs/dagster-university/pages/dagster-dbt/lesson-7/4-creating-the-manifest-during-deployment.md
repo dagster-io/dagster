@@ -8,7 +8,7 @@ lesson: '7'
 
 To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because we built this file by running `dbt parse` during local development. You ran this manually in Lesson 3 and improved the experience in Lesson 4. However, you'll also need to build your dbt manifest file during deployment, which will require a couple additional steps. We recommend adopting CI/CD to automate this process.
 
-Building your manifest for your production deployment will will be needed for both open source and Dagster+ deployments. In this case, Dagster+’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
+Building your manifest for your production deployment will be needed for both open source and Dagster+ deployments. In this case, Dagster+’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
 
 Since your CI/CD will be running in a fresh environment, you'll need to install dbt and run `dbt deps` before building your manifest with `dbt parse`.
 
@@ -20,14 +20,13 @@ To get our deployment working, we need to add a step to our GitHub Actions workf
 4. After this step, add the following:
     
     ```yaml
-    - name: Parse dbt project and package with Dagster project
+    - name: Prepare DBT project for deployment
       if: steps.prerun.outputs.result == 'pex-deploy'
       run: |
         pip install pip --upgrade
-        pip install dbt-duckdb
-        cd project-repo/analytics
-        dbt deps
-        dbt parse
+        cd project-repo
+        pip install . --upgrade --upgrade-strategy eager
+        dagster-dbt project prepare-and-package --file dagster_university/assets/dbt.py
       shell: bash
     ```
     
