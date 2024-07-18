@@ -1,5 +1,31 @@
 # Changelog
 
+# 1.7.14 (core) / 0.23.14 (libraries)
+
+### New
+
+- [blueprints] When specifying an asset key in `ShellCommandBlueprint`, you can now use slashes as a delimiter to generate an `AssetKey` with multiple path components.
+- [community-controbution][mlflow] The mlflow resource now has a `mlflow_run_id` attribute (Thanks Joe Percivall!)
+- [community-contribution][mlflow] The mlflow resource will now retry when it fails to fetch the mlflow run ID (Thanks Joe Percivall!)
+
+### Bugfixes
+
+- Fixed an issue introduced in the 1.7.13 release where Dagster would fail to load certain definitions when using Python 3.12.4.
+- Fixed an issue where in-progress steps would continue running after an unexpected exception caused a run to fail.
+- [dagster-dbt] Fixed an issue where column lineage was unable to be built in self-referential incremental models.
+- Fixed an issue where `dagster dev` was logging unexpectedly without the `grpcio<1.65.0` pin.
+- Fixed an issue where a `ContextVar was created in a different context` error was raised when executing an async asset.
+- [community-contribution] `multi_asset` type-checker fix from @aksestok, thanks!
+- [community-contribution][ui] Fix to use relative links for manifest/favicon files, thanks @aebrahim!
+
+### Documentation
+
+- [community-contribution] Fixed helm repo CLI command typo, thanks @fxd24!
+
+### Dagster Plus
+
+- [ui] The deployment settings yaml editor is now on a page with its own URL, instead of within a dialog.
+
 # 1.7.13 (core) / 0.23.13 (libraries)
 
 ### New
