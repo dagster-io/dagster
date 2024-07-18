@@ -1,5 +1,5 @@
 from dagster_celery_k8s import celery_k8s_job_executor
-from dagster import Definitions, in_process_executor, op, job
+from dagster import Definitions, in_process_executor, op, job, schedule, RunRequest
 
 
 @op(
@@ -16,6 +16,7 @@ from dagster import Definitions, in_process_executor, op, job
 )
 def op1():
     print(1)
+
 
 @op(
     tags={
@@ -39,8 +40,32 @@ def job1():
     op2()
 
 
+@schedule(job=job1, cron_schedule="* * * * *")
+def schedule1():
+    return RunRequest(
+        run_config={
+            "execution": {
+                "config": {
+                    "per_step_k8s_config": {
+                        "op1": {
+                            "container_config": {
+                                "resources": {
+                                    "requests": {"cpu": "888m", "memory": "888Mi"},
+                                    "limits": {"cpu": "888m", "memory": "888Mi"},
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+
 defs = Definitions(
     jobs=[job1],
+    schedules=[schedule1],
+    # executor=celery_k8s_job_executor,
     executor=celery_k8s_job_executor.configured(
         {
             "per_step_k8s_config": {
@@ -59,7 +84,7 @@ defs = Definitions(
                             "limits": {"cpu": "555m", "memory": "555Mi"},
                         }
                     }
-                }
+                },
             }
         }
     )
