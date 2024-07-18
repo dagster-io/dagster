@@ -15,7 +15,11 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, experimental_param
+from dagster._annotations import (
+    experimental_param,
+    hidden_param,
+    only_allow_hidden_params_in_kwargs,
+)
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -64,6 +68,7 @@ from .decorator_assets_definition_builder import (
 @overload
 def asset(
     compute_fn: Callable[..., Any],
+    **kwargs,
 ) -> AssetsDefinition: ...
 
 
@@ -96,10 +101,31 @@ def asset(
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
     key: Optional[CoercibleToAssetKey] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[Sequence[str]] = ...,
+    **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
+
+
+def _validate_hidden_non_argument_dep_param(
+    non_argument_deps: Any,
+) -> Optional[Union[Set[AssetKey], Set[str]]]:
+    if non_argument_deps is None:
+        return non_argument_deps
+
+    if not isinstance(non_argument_deps, set):
+        check.failed("non_arguments_deps must be a set if not None")
+
+    assert isinstance(non_argument_deps, set)
+
+    check.set_param(non_argument_deps, "non_argument_deps", of_type=(str, AssetKey))
+
+    check.invariant(
+        all(isinstance(dep, str) for dep in non_argument_deps)
+        or all(isinstance(dep, AssetKey) for dep in non_argument_deps),
+    )
+
+    return non_argument_deps
 
 
 @experimental_param(param="resource_defs")
@@ -109,8 +135,10 @@ def asset(
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
-@deprecated_param(
-    param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+@hidden_param(
+    param="non_argument_deps",
+    breaking_version="2.0.0",
+    additional_warn_text="use `deps` instead.",
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
@@ -139,11 +167,11 @@ def asset(
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
     # TODO: FOU-243
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+    **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -217,12 +245,13 @@ def asset(
             output when given the same inputs.
         check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
             execute in the decorated function after materializing the asset.
-        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
-            Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
         key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
+            Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
+            Hidden parameter not exposed in the decorator signature, but passed in kwargs.
 
     Examples:
         .. code-block:: python
@@ -234,9 +263,12 @@ def asset(
     compute_kind = check.opt_str_param(compute_kind, "compute_kind")
     required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
     upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
-        deps=deps, non_argument_deps=non_argument_deps
+        deps=deps,
+        non_argument_deps=_validate_hidden_non_argument_dep_param(kwargs.get("non_argument_deps")),
     )
     resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+
+    only_allow_hidden_params_in_kwargs(asset, kwargs)
 
     args = AssetDecoratorArgs(
         name=name,
@@ -479,8 +511,10 @@ def create_assets_def_from_fn_and_decorator_args(
 
 
 @experimental_param(param="resource_defs")
-@deprecated_param(
-    param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
+@hidden_param(
+    param="non_argument_deps",
+    breaking_version="2.0.0",
+    additional_warn_text="use `deps` instead.",
 )
 def multi_asset(
     *,
@@ -503,8 +537,7 @@ def multi_asset(
     code_version: Optional[str] = None,
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-    # deprecated
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    **kwargs: Mapping[str, Any],
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -593,6 +626,8 @@ def multi_asset(
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
+    only_allow_hidden_params_in_kwargs(multi_asset, kwargs)
+
     args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
         op_description=description,
@@ -600,7 +635,10 @@ def multi_asset(
         check_specs_by_output_name=create_check_specs_by_output_name(check_specs),
         asset_out_map=check.opt_mapping_param(outs, "outs", key_type=str, value_type=AssetOut),
         upstream_asset_deps=_deps_and_non_argument_deps_to_asset_deps(
-            deps=deps, non_argument_deps=non_argument_deps
+            deps=deps,
+            non_argument_deps=_validate_hidden_non_argument_dep_param(
+                kwargs.get("non_argument_deps")
+            ),
         ),
         asset_deps=check.opt_mapping_param(
             internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
