@@ -1,5 +1,14 @@
 import Fuse from 'fuse.js';
 
+import {
+  SearchAssetFragment,
+  SearchGroupFragment,
+  SearchPartitionSetFragment,
+  SearchPipelineFragment,
+  SearchResourceDetailFragment,
+  SearchScheduleFragment,
+  SearchSensorFragment,
+} from './types/useGlobalSearch.types';
 import {DefinitionTag} from '../graphql/types';
 
 export enum SearchResultType {
@@ -48,6 +57,15 @@ export type SearchResult = {
   tags?: DefinitionTag[];
   numResults?: number;
   repoPath?: string;
+  node?:
+    | null
+    | SearchAssetFragment
+    | SearchGroupFragment
+    | SearchPipelineFragment
+    | SearchScheduleFragment
+    | SearchSensorFragment
+    | SearchPartitionSetFragment
+    | SearchResourceDetailFragment;
 };
 
 export type ReadyResponse = {type: 'ready'};
