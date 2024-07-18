@@ -101,6 +101,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
             {
               label: groupName,
               description: manyLocations ? `Asset group in ${repoPath}` : 'Asset group',
+              node: assetGroup,
               href: workspacePath(repoName, locationName, `/asset-groups/${groupName}`),
               type: SearchResultType.AssetGroup,
             },
@@ -115,6 +116,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
               ...flat,
               {
                 label: name,
+                node: pipelineOrJob,
                 description: manyLocations
                   ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
                   : isJob
@@ -132,6 +134,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allSchedules: SearchResult[] = schedules.map((schedule) => ({
           label: schedule.name,
+          node: schedule,
           description: manyLocations ? `Schedule in ${repoPath}` : 'Schedule',
           href: workspacePath(repoName, locationName, `/schedules/${schedule.name}`),
           type: SearchResultType.Schedule,
@@ -139,6 +142,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allSensors: SearchResult[] = sensors.map((sensor) => ({
           label: sensor.name,
+          node: sensor,
           description: manyLocations ? `Sensor in ${repoPath}` : 'Sensor',
           href: workspacePath(repoName, locationName, `/sensors/${sensor.name}`),
           type: SearchResultType.Sensor,
@@ -146,6 +150,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
         const allResources: SearchResult[] = allTopLevelResourceDetails.map((resource) => ({
           label: resource.name,
+          node: resource,
           description: manyLocations ? `Resource in ${repoPath}` : 'Resource',
           href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
           type: SearchResultType.Resource,
@@ -155,6 +160,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
           .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
           .map((partitionSet) => ({
             label: partitionSet.name,
+            node: partitionSet,
             description: manyLocations ? `Partition set in ${repoPath}` : 'Partition set',
             href: workspacePath(
               repoName,
@@ -164,15 +170,14 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
             type: SearchResultType.PartitionSet,
           }));
 
-        return [
-          ...inner,
-          ...allAssetGroups,
-          ...allPipelinesAndJobs,
-          ...allSchedules,
-          ...allSensors,
-          ...allPartitionSets,
-          ...allResources,
-        ];
+        inner.push(...allAssetGroups);
+        inner.push(...allPipelinesAndJobs);
+        inner.push(...allSchedules);
+        inner.push(...allSensors);
+        inner.push(...allPartitionSets);
+        inner.push(...allResources);
+
+        return inner;
       }, [] as SearchResult[]),
     );
     return accum;
@@ -183,7 +188,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
 const secondaryDataToSearchResults = (
   input: {data?: SearchSecondaryQuery},
-  includeAssetFilters: boolean,
+  searchContext: 'global' | 'catalog',
 ) => {
   const {data} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
@@ -194,24 +199,25 @@ const secondaryDataToSearchResults = (
 
   const assets: SearchResult[] = nodes
     .filter(({definition}) => definition !== null)
-    .map(({key, definition}) => ({
-      label: displayNameForAssetKey(key),
+    .map((node) => ({
+      label: displayNameForAssetKey(node.key),
       description: `Asset in ${buildRepoPathForHuman(
-        definition!.repository.name,
-        definition!.repository.location.name,
+        node.definition!.repository.name,
+        node.definition!.repository.location.name,
       )}`,
-      href: assetDetailsPathForKey(key),
+      node,
+      href: assetDetailsPathForKey(node.key),
       type: SearchResultType.Asset,
-      tags: definition!.tags
-        .filter(isCanonicalStorageKindTag)
+      tags: node
+        .definition!.tags.filter(isCanonicalStorageKindTag)
         .concat(
-          definition!.computeKind
-            ? buildDefinitionTag({key: 'dagster/compute_kind', value: definition!.computeKind})
+          node.definition!.computeKind
+            ? buildDefinitionTag({key: 'dagster/compute_kind', value: node.definition!.computeKind})
             : [],
         ),
     }));
 
-  if (!includeAssetFilters) {
+  if (searchContext === 'global') {
     return [...assets];
   } else {
     const countsBySection = buildAssetCountBySection(nodes);
@@ -326,7 +332,7 @@ export const SEARCH_SECONDARY_DATA_VERSION = 2;
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
-export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boolean}) => {
+export const useGlobalSearch = ({searchContext}: {searchContext: 'global'}) => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
@@ -378,26 +384,26 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
       return;
     }
     const results = primaryDataToSearchResults({data: primaryData});
-    const augmentedResults = augmentSearchResults(results);
+    const augmentedResults = augmentSearchResults(results, searchContext);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
     primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, primaryData, augmentSearchResults]);
+  }, [consumeBufferEffect, primaryData, searchContext, augmentSearchResults]);
 
   useEffect(() => {
     if (!secondaryData) {
       return;
     }
-    const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
-    const augmentedResults = augmentSearchResults(results);
+    const results = secondaryDataToSearchResults({data: secondaryData}, searchContext);
+    const augmentedResults = augmentSearchResults(results, searchContext);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData, includeAssetFilters, augmentSearchResults]);
+  }, [consumeBufferEffect, secondaryData, searchContext, augmentSearchResults]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
@@ -505,29 +511,27 @@ export const SEARCH_PRIMARY_QUERY = gql`
                   name
                   assetGroups {
                     id
-                    groupName
+                    ...SearchGroupFragment
                   }
                   pipelines {
                     id
-                    isJob
-                    name
+                    ...SearchPipelineFragment
                   }
                   schedules {
                     id
-                    name
+                    ...SearchScheduleFragment
                   }
                   sensors {
                     id
-                    name
+                    ...SearchSensorFragment
                   }
                   partitionSets {
                     id
-                    name
-                    pipelineName
+                    ...SearchPartitionSetFragment
                   }
                   allTopLevelResourceDetails {
                     id
-                    name
+                    ...SearchResourceDetailFragment
                   }
                 }
               }
@@ -539,6 +543,35 @@ export const SEARCH_PRIMARY_QUERY = gql`
     }
   }
 
+  fragment SearchGroupFragment on AssetGroup {
+    id
+    groupName
+  }
+
+  fragment SearchPipelineFragment on Pipeline {
+    id
+    isJob
+    name
+  }
+
+  fragment SearchScheduleFragment on Schedule {
+    id
+    name
+  }
+  fragment SearchSensorFragment on Sensor {
+    id
+    name
+  }
+  fragment SearchPartitionSetFragment on PartitionSet {
+    id
+    name
+    pipelineName
+  }
+  fragment SearchResourceDetailFragment on ResourceDetails {
+    id
+    name
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
@@ -548,34 +581,39 @@ export const SEARCH_SECONDARY_QUERY = gql`
       ... on AssetConnection {
         nodes {
           id
-          key {
-            path
-          }
-          definition {
-            id
-            computeKind
-            groupName
-            owners {
-              ... on TeamAssetOwner {
-                team
-              }
-              ... on UserAssetOwner {
-                email
-              }
-            }
-            tags {
-              key
-              value
-            }
-            repository {
-              id
-              name
-              location {
-                id
-                name
-              }
-            }
-          }
+          ...SearchAssetFragment
+        }
+      }
+    }
+  }
+
+  fragment SearchAssetFragment on Asset {
+    id
+    key {
+      path
+    }
+    definition {
+      id
+      computeKind
+      groupName
+      owners {
+        ... on TeamAssetOwner {
+          team
+        }
+        ... on UserAssetOwner {
+          email
+        }
+      }
+      tags {
+        key
+        value
+      }
+      repository {
+        id
+        name
+        location {
+          id
+          name
         }
       }
     }
