@@ -16,10 +16,12 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
+    TimestampMetadataValue,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dateutil import parser
 from pydantic import Field, validator
 from typing_extensions import Literal, TypeVar
 
@@ -84,8 +86,17 @@ class SdfCliEventMessage:
             return
 
         table_id = self.raw_event["table"]
+        timestamp_str: str = self.raw_event["__ts"]
+        try:
+            dt = parser.parse(timestamp_str)
+            float_timestamp = dt.timestamp()
+            materialized_at = TimestampMetadataValue(float_timestamp)
+        except:
+            materialized_at = timestamp_str
+
         default_metadata = {
             "table_id": table_id,
+            "materialized_at": materialized_at,
             "Execution Duration": self.raw_event["ev_dur_ms"] / 1000,
         }
 
@@ -423,7 +434,7 @@ class SdfCliResource(ConfigurableResource):
         args: Sequence[str],
         *,
         target_dir: Optional[Path] = None,
-        environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
+        environment: Optional[str] = None,
         raise_on_error: bool = True,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
     ) -> SdfCliInvocation:
@@ -439,6 +450,9 @@ class SdfCliResource(ConfigurableResource):
             SdfCliInvocation: A invocation instance that can be used to retrieve the output of the
                 sdf CLI command.
         """
+        if not environment:
+            environment = DEFAULT_SDF_WORKSPACE_ENVIRONMENT
+
         context = (
             context.op_execution_context if isinstance(context, AssetExecutionContext) else context
         )
@@ -450,6 +464,7 @@ class SdfCliResource(ConfigurableResource):
         target_path = target_dir or self._get_unique_target_path(context=context)
         target_args = ["--target-dir", str(target_path)]
         log_level_args = ["--log-level", "info"]
+        log_form_args = ["--log-form", "nested"]
 
         output_dir = target_path.joinpath(SDF_TARGET_DIR, environment)
 
@@ -458,9 +473,10 @@ class SdfCliResource(ConfigurableResource):
 
         args = [
             self.sdf_executable,
-            *self.global_config_flags,
             *log_level_args,
+            *log_form_args,
             *args,
+            *self.global_config_flags,
             *environment_args,
             *target_args,
         ]
