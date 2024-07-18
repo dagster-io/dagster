@@ -42,8 +42,6 @@ setup(
         f"dagster{pin}",
         f"sdf-cli>=0.3.9,<{SDF_VERSION_UPPER_BOUND}",
         "orjson",
-        "pandas",
-        "pyarrow",
     ],
     zip_safe=False,
     extras_require={"test": []},

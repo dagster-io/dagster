@@ -1,4 +1,3 @@
-import copy
 import os
 import shutil
 import signal
@@ -6,28 +5,23 @@ import subprocess
 import sys
 import uuid
 from collections import abc
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Generic, Iterator, List, NamedTuple, Optional, Sequence, Union, cast
+from typing import Any, Dict, Generic, Iterator, List, Optional, Sequence, Union, cast
 
 import orjson
 from dagster import (
-    AssetCheckResult,
     AssetExecutionContext,
     AssetMaterialization,
-    AssetObservation,
     ConfigurableResource,
     OpExecutionContext,
     Output,
-    TimestampMetadataValue,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
-from dagster._utils import pushd
-from dateutil import parser
 from pydantic import Field, validator
-from typing_extensions import Final, Literal, TypeVar
+from typing_extensions import Literal, TypeVar
 
 from .asset_utils import dagster_name_fn, default_asset_key_fn
 from .constants import (
@@ -42,7 +36,6 @@ from .errors import DagsterSdfCliRuntimeError
 logger = get_dagster_logger()
 
 DAGSTER_SDF_TERMINATION_TIMEOUT_SECONDS = 2
-DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE: Final[int] = 4
 
 
 @dataclass
@@ -51,95 +44,69 @@ class SdfCliEventMessage:
 
     Args:
         raw_event (Dict[str, Any]): The raw event dictionary.
-        event_history_metadata (Dict[str, Any]): A dictionary of metadata about the
-            current event, gathered from previous historical events.
     """
 
     raw_event: Dict[str, Any]
-    event_history_metadata: InitVar[Dict[str, Any]]
 
-    def __post_init__(self, event_history_metadata: Dict[str, Any]):
-        self._event_history_metadata = event_history_metadata
-
-    def __str__(self) -> str:
-        return str(self.raw_event)
-
-    @staticmethod
-    def is_result_event(raw_event: Dict[str, Any]) -> bool:
-        return raw_event["ev"] == "cmd.do.derived" and raw_event["ev_type"] == "close"
-
-    @staticmethod
-    def is_error_event(raw_event: Dict[str, Any]) -> bool:
+    @property
+    def is_result_event(self) -> bool:
         return (
-            raw_event["ev"] == "cmd.do.derived"
-            and raw_event["ev_type"] == "close"
-            and raw_event["status"] == "failed"
+            self.raw_event["ev"] == "cmd.do.derived"
+            and self.raw_event["ev_type"] == "close"
+            and bool(self.raw_event.get("status"))
         )
 
     @public
     def to_default_asset_events(
         self,
         context: Optional[OpExecutionContext] = None,
-    ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+    ) -> Iterator[Union[Output, AssetMaterialization]]:
         """Convert an sdf CLI event to a set of corresponding Dagster events.
 
         Args:
             context (Optional[OpExecutionContext]): The execution context.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
                 - Output for refables (e.g. models)
-                - AssetCheckResult for sdf test results that are enabled as asset checks.
-                - AssetObservation for sdf test results that are not enabled as asset checks.
 
                 In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for sdf test results that are not enabled as asset checks.
-                - AssetObservation for sdf test results.
+                - AssetMaterialization for refables (e.g. models)
         """
-        if not self.is_result_event(self.raw_event):
+        if not self.is_result_event:
             return
 
-        is_success: bool = self.raw_event["status"] == "succeeded"
+        is_success = self.raw_event["status"] == "succeeded"
+        if not is_success:
+            return
 
-        table_id: str = self.raw_event["table"]
-        timestamp_str: str = self.raw_event["__ts"]
-        try:
-            dt = parser.parse(timestamp_str)
-            float_timestamp = dt.timestamp()
-            materialized_at = TimestampMetadataValue(float_timestamp)
-        except:
-            materialized_at = timestamp_str
-
+        table_id = self.raw_event["table"]
         default_metadata = {
             "table_id": table_id,
-            "materialized_at": materialized_at,
             "Execution Duration": self.raw_event["ev_dur_ms"] / 1000,
         }
 
-        has_asset_def: bool = bool(context and context.has_assets_def)
+        has_asset_def = bool(context and context.has_assets_def)
+        event = (
+            Output(
+                value=None,
+                output_name=dagster_name_fn(table_id),
+                metadata=default_metadata,
+            )
+            if has_asset_def
+            else AssetMaterialization(
+                asset_key=default_asset_key_fn(table_id),
+                metadata=default_metadata,
+            )
+        )
 
-        if is_success:
-            if has_asset_def:
-                yield Output(
-                    value=None,
-                    output_name=dagster_name_fn(table_id),
-                    metadata={
-                        **default_metadata,
-                    },
-                )
-            else:
-                yield AssetMaterialization(
-                    asset_key=default_asset_key_fn(table_id),
-                    metadata={
-                        **default_metadata,
-                    },
-                )
+        yield event
 
 
-SdfDagsterEventType = Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation]
+SdfDagsterEventType = Union[Output, AssetMaterialization]
 
 
 @dataclass
@@ -148,16 +115,12 @@ class SdfCliInvocation:
 
     Args:
         process (subprocess.Popen): The process running the sdf command.
-        information_schema (SdfInformationSchema): The information schema for sdf nodes.
-        dagster_sdf_translator (DagsterSdfTranslator): The translator for sdf nodes to Dagster assets.
-        workspace_dir (Path): The path to the sdf workspace.
         target_dir (Path): The path to the target directory.
         output_dir (Path): The path to the output directory.
         raise_on_error (bool): Whether to raise an exception if the sdf command fails.
     """
 
     process: subprocess.Popen
-    workspace_dir: Path
     target_dir: Path
     output_dir: Path
     raise_on_error: bool
@@ -165,11 +128,7 @@ class SdfCliInvocation:
     termination_timeout_seconds: float = field(
         init=False, default=DAGSTER_SDF_TERMINATION_TIMEOUT_SECONDS
     )
-    postprocessing_threadpool_num_threads: int = field(
-        init=False, default=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
-    )
     _stdout: List[str] = field(init=False, default_factory=list)
-    _error_messages: List[str] = field(init=False, default_factory=list)
 
     @classmethod
     def run(
@@ -193,7 +152,6 @@ class SdfCliInvocation:
 
         sdf_cli_invocation = cls(
             process=process,
-            workspace_dir=workspace_dir,
             target_dir=target_dir,
             output_dir=output_dir,
             raise_on_error=raise_on_error,
@@ -240,8 +198,6 @@ class SdfCliInvocation:
                 f"The sdf CLI process with command\n\n"
                 f"`{self.sdf_command}`\n\n"
                 f"failed with exit code `{self.process.returncode}`."
-                " Check the stdout in the Dagster compute logs for the full information about"
-                f" the error.{self._format_error_messages()}"
             ),
         )
 
@@ -255,29 +211,25 @@ class SdfCliInvocation:
     @public
     def stream(
         self,
-    ) -> (
-        "SdfEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "SdfEventIterator[Union[Output, AssetMaterialization]]":
         """Stream the events from the sdf CLI process and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
-                - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetCheckResult for sdf test results that are enabled as asset checks.
-                - AssetObservation for sdf test results that are not enabled as asset checks.
+                - Output for refables (e.g. models)
 
                 In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for sdf test results that are not enabled as asset checks.
-                - AssetObservation for sdf test results.
+                - AssetMaterialization for refables (e.g. models)
 
         Examples:
             .. code-block:: python
 
                 from pathlib import Path
                 from dagster_sdf import SdfCliResource, sdf_assets
+
 
                 @sdf_assets(manifest=Path("target", "manifest.json"))
                 def my_sdf_assets(context, sdf: SdfCliResource):
@@ -295,31 +247,9 @@ class SdfCliInvocation:
         Returns:
             Iterator[SdfCliEventMessage]: An iterator of events from the sdf CLI process.
         """
-        event_history_metadata_by_unique_id: Dict[str, Dict[str, Any]] = {}
-
         for log in self._stdout or self._stream_stdout():
             try:
-                raw_event: Dict[str, Any] = orjson.loads(log)
-                unique_id: Optional[str] = raw_event["table"]
-                is_result_event = SdfCliEventMessage.is_result_event(raw_event)
-                event_history_metadata: Dict[str, Any] = {}
-                if unique_id and is_result_event:
-                    event_history_metadata = copy.deepcopy(
-                        event_history_metadata_by_unique_id.get(unique_id, {})
-                    )
-
-                event = SdfCliEventMessage(
-                    raw_event=raw_event, event_history_metadata=event_history_metadata
-                )
-                # Parse the error message from the event, if it exists.
-                is_error_message = SdfCliEventMessage.is_error_event(raw_event)
-                if is_error_message and not is_result_event:
-                    self._error_messages.append(str(event))
-
-                # Re-emit the logs from sdf CLI process into stdout.
-                sys.stdout.write(str(event) + "\n")
-                sys.stdout.flush()
-                yield event
+                yield SdfCliEventMessage(raw_event=orjson.loads(log))
             except Exception:
                 # If we can't parse the log, then just emit it as a raw log.
                 sys.stdout.write(log + "\n")
@@ -384,19 +314,6 @@ class SdfCliInvocation:
 
             raise
 
-    def _format_error_messages(self) -> str:
-        """Format the error messages from the sdf CLI process."""
-        if not self._error_messages:
-            return ""
-
-        return "\n\n".join(
-            [
-                "",
-                "Errors parsed from sdf logs:",
-                *self._error_messages,
-            ]
-        )
-
     def _raise_on_error(self) -> None:
         """Ensure that the sdf CLI process has completed. If the process has not successfully
         completed, then optionally raise an error.
@@ -411,11 +328,6 @@ class SdfCliInvocation:
 # This is so that users who inspect the type of the return value of `SdfCliInvocation.stream()`
 # will be able to see the inner type of the iterator, rather than just `SdfEventIterator`.
 T = TypeVar("T", bound=SdfDagsterEventType)
-
-
-class EventHistoryMetadata(NamedTuple):
-    columns: Dict[str, Dict[str, Any]]
-    parents: Dict[str, Dict[str, Any]]
 
 
 class SdfEventIterator(Generic[T], abc.Iterator):
@@ -457,7 +369,7 @@ class SdfCliResource(ConfigurableResource):
     )
     global_config_flags: List[str] = Field(
         default=[],
-        description=("A list of global flags configuration to pass to the sdf CLI" " invocation."),
+        description="A list of global flags configuration to pass to the sdf CLI invocation.",
     )
     sdf_executable: str = Field(
         default=SDF_EXECUTABLE,
@@ -510,8 +422,8 @@ class SdfCliResource(ConfigurableResource):
         self,
         args: Sequence[str],
         *,
-        target_dir: Optional[Union[str, Path]] = None,
-        environment: Optional[str] = None,
+        target_dir: Optional[Path] = None,
+        environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
         raise_on_error: bool = True,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
     ) -> SdfCliInvocation:
@@ -530,44 +442,38 @@ class SdfCliResource(ConfigurableResource):
         context = (
             context.op_execution_context if isinstance(context, AssetExecutionContext) else context
         )
-        if target_dir:
-            unique_target_path = Path(target_dir)
-        else:
-            unique_target_path = self._get_unique_target_path(context=context)
-        env = {
-            # Pass the current environment variables to the sdf CLI invocation.
-            **os.environ.copy()
-        }
-        # TODO: verify that args does not have any selection flags if the context and manifest
-        # are passed to this function.
-        environment = environment or DEFAULT_SDF_WORKSPACE_ENVIRONMENT
-        environment_args: List[str] = ["--environment", environment]
-        target_args: List[str] = ["--target-dir", str(unique_target_path)]
 
-        output_dir = unique_target_path.joinpath(SDF_TARGET_DIR, environment)
+        # Pass the current environment variables to the sdf CLI invocation.
+        env = os.environ.copy()
+
+        environment_args = ["--environment", environment]
+        target_path = target_dir or self._get_unique_target_path(context=context)
+        target_args = ["--target-dir", str(target_path)]
+        log_level_args = ["--log-level", "info"]
+
+        output_dir = target_path.joinpath(SDF_TARGET_DIR, environment)
 
         # Ensure that the target_dir exists
-        unique_target_path.mkdir(parents=True, exist_ok=True)
+        target_path.mkdir(parents=True, exist_ok=True)
 
         args = [
             self.sdf_executable,
-            *args,
             *self.global_config_flags,
+            *log_level_args,
+            *args,
             *environment_args,
             *target_args,
         ]
-        workspace_dir = Path(self.workspace_dir)
 
-        with pushd(self.workspace_dir):
-            return SdfCliInvocation.run(
-                args=args,
-                env=env,
-                workspace_dir=workspace_dir,
-                target_dir=unique_target_path,
-                output_dir=output_dir,
-                raise_on_error=raise_on_error,
-                context=context,
-            )
+        return SdfCliInvocation.run(
+            args=args,
+            env=env,
+            workspace_dir=Path(self.workspace_dir),
+            target_dir=target_path,
+            output_dir=output_dir,
+            raise_on_error=raise_on_error,
+            context=context,
+        )
 
     @classmethod
     def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:

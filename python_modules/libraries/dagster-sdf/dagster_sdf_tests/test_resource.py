@@ -9,37 +9,38 @@ from dagster import In, Nothing, Out, job, op
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster_sdf.constants import SDF_DAGSTER_OUTPUT_DIR
-from dagster_sdf.sdf_cli_resource import SdfCliResource
+from dagster_sdf.resource import SdfCliResource
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from .sdf_workspaces import lineage_path, moms_flower_shop_path
+from .sdf_workspaces import moms_flower_shop_path
 
 
-@pytest.fixture(name="sdf_moms_flower_shop", scope="module")
-def sdf_moms_flower_shop_fixture() -> SdfCliResource:
+@pytest.fixture(name="sdf", scope="module")
+def sdf_fixture() -> SdfCliResource:
     return SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
 
 
-@pytest.fixture(name="sdf_lineage", scope="module")
-def sdf_lineage_fixture() -> SdfCliResource:
-    return SdfCliResource(workspace_dir=os.fspath(lineage_path))
-
-
-@pytest.mark.parametrize(
-    "global_config_flags", [["--show=none", "--log-level=info", "--log-form=nested"]]
-)
+@pytest.mark.parametrize("global_config_flags", [["--log-form=nested"]])
 def test_sdf_cli(global_config_flags: List[str]) -> None:
+    expected_sdf_cli_args = [
+        "sdf",
+        *global_config_flags,
+        "--log-level",
+        "info",
+        "compile",
+        "--environment",
+        "dbg",
+        "--target-dir",
+    ]
+
     sdf = SdfCliResource(
         workspace_dir=os.fspath(moms_flower_shop_path), global_config_flags=global_config_flags
     )
     sdf_cli_invocation = sdf.cli(["compile"])
+    *_, target_dir = sdf_cli_invocation.process.args  # type: ignore
 
-    process_args: List[str] = list(sdf_cli_invocation.process.args)  # type: ignore
-
-    for i, param in enumerate(["sdf", "compile", *global_config_flags, "--environment", "dbg"]):
-        assert process_args[i] == param
-
+    assert sdf_cli_invocation.process.args == [*expected_sdf_cli_args, target_dir]
     assert sdf_cli_invocation.is_successful()
     assert sdf_cli_invocation.process.returncode == 0
     assert sdf_cli_invocation.target_dir.joinpath(
@@ -78,9 +79,9 @@ def test_sdf_cli_workspace_dir_path() -> None:
 def test_sdf_cli_subprocess_cleanup(
     mocker: MockerFixture,
     caplog: pytest.LogCaptureFixture,
-    sdf_moms_flower_shop: SdfCliResource,
+    sdf: SdfCliResource,
 ) -> None:
-    sdf_cli_invocation_1 = sdf_moms_flower_shop.cli(["run"])
+    sdf_cli_invocation_1 = sdf.cli(["run"])
 
     assert sdf_cli_invocation_1.process.returncode is None
 
@@ -95,17 +96,17 @@ def test_sdf_cli_subprocess_cleanup(
     assert sdf_cli_invocation_1.process.returncode < 0
 
 
-def test_sdf_cli_get_artifact(sdf_moms_flower_shop: SdfCliResource) -> None:
-    sdf_cli_invocation_1 = sdf_moms_flower_shop.cli(["compile"]).wait()
-    sdf_cli_invocation_2 = sdf_moms_flower_shop.cli(["run"]).wait()
+def test_sdf_cli_get_artifact(sdf: SdfCliResource) -> None:
+    sdf_cli_invocation_1 = sdf.cli(["compile"]).wait()
+    sdf_cli_invocation_2 = sdf.cli(["run"]).wait()
 
     # `sdf compile` produces a makefile-compile.json
-    makefile_compile = sdf_cli_invocation_1.get_artifact("makefile-compile.json")
-    assert makefile_compile
+    makefile_compile_json = sdf_cli_invocation_1.get_artifact("makefile-compile.json")
+    assert makefile_compile_json
 
     # `sdf compile` produces a makefile-run.json
-    makefile_run = sdf_cli_invocation_2.get_artifact("makefile-run.json")
-    assert makefile_run
+    makefile_run_json = sdf_cli_invocation_2.get_artifact("makefile-run.json")
+    assert makefile_run_json
 
     # Artifacts are stored in separate paths by manipulating SDF_TARGET_PATH.
     # By default, they are stored in the `target` directory of the SDF workspace.
@@ -115,18 +116,16 @@ def test_sdf_cli_get_artifact(sdf_moms_flower_shop: SdfCliResource) -> None:
 
     # As a result, their contents should be different, and newer artifacts
     # should not overwrite older ones.
-    assert makefile_compile != makefile_run
+    assert makefile_compile_json != makefile_run_json
 
 
-def test_sdf_cli_target_dir(tmp_path: Path, sdf_moms_flower_shop: SdfCliResource) -> None:
-    sdf_cli_invocation_1 = sdf_moms_flower_shop.cli(["compile"], target_dir=tmp_path).wait()
+def test_sdf_cli_target_dir(tmp_path: Path, sdf: SdfCliResource) -> None:
+    sdf_cli_invocation_1 = sdf.cli(["compile"], target_dir=tmp_path).wait()
     manifest_st_mtime_1 = (
         sdf_cli_invocation_1.output_dir.joinpath("makefile-compile.json").stat().st_mtime
     )
 
-    sdf_cli_invocation_2 = sdf_moms_flower_shop.cli(
-        ["compile"], target_dir=sdf_cli_invocation_1.target_dir
-    ).wait()
+    sdf_cli_invocation_2 = sdf.cli(["compile"], target_dir=sdf_cli_invocation_1.target_dir).wait()
     manifest_st_mtime_2 = (
         sdf_cli_invocation_2.output_dir.joinpath("makefile-compile.json").stat().st_mtime
     )
@@ -138,22 +137,25 @@ def test_sdf_cli_target_dir(tmp_path: Path, sdf_moms_flower_shop: SdfCliResource
     assert manifest_st_mtime_1 == manifest_st_mtime_2
 
 
-def test_sdf_environment_configuration() -> None:
-    sdf_cli_invocation = (
-        SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
-        .cli(["compile"], environment="dev")
-        .wait()
-    )
+def test_sdf_environment_configuration(sdf: SdfCliResource) -> None:
+    expected_sdf_cli_args = [
+        "sdf",
+        "--log-level",
+        "info",
+        "compile",
+        "--environment",
+        "dev",
+        "--target-dir",
+    ]
 
-    process_args: List[str] = list(sdf_cli_invocation.process.args)  # type: ignore
+    sdf_cli_invocation = sdf.cli(["compile"], environment="dev").wait()
+    *_, target_dir = list(sdf_cli_invocation.process.args)  # type: ignore
 
-    for i, param in enumerate(["sdf", "compile", "--environment", "dev"]):
-        assert process_args[i] == param
-
+    assert sdf_cli_invocation.process.args == [*expected_sdf_cli_args, target_dir]
     assert sdf_cli_invocation.is_successful()
 
 
-def test_sdf_cli_op_execution(sdf_moms_flower_shop: SdfCliResource) -> None:
+def test_sdf_cli_op_execution(sdf: SdfCliResource) -> None:
     @op(out={})
     def my_sdf_op_yield_events(context: OpExecutionContext, sdf: SdfCliResource):
         yield from sdf.cli(["run"], context=context).stream()
@@ -170,7 +172,7 @@ def test_sdf_cli_op_execution(sdf_moms_flower_shop: SdfCliResource) -> None:
         my_sdf_op_yield_events()
         my_downstream_op(depends_on=my_sdf_op_yield_events_with_downstream())
 
-    result = my_sdf_job_yield_events.execute_in_process(resources={"sdf": sdf_moms_flower_shop})
+    result = my_sdf_job_yield_events.execute_in_process(resources={"sdf": sdf})
     assert result.success
 
 
@@ -184,3 +186,24 @@ def test_custom_subclass():
         workspace_dir=os.fspath(moms_flower_shop_path), custom_field="custom_value"
     )
     assert isinstance(custom, SdfCliResource)
+
+
+def test_metadata(sdf: SdfCliResource) -> None:
+    @op(out={})
+    def my_sdf_op_yield_events(context: OpExecutionContext, sdf: SdfCliResource):
+        yield from sdf.cli(["run"], context=context).stream()
+
+    @job
+    def my_sdf_job_yield_events():
+        my_sdf_op_yield_events()
+
+    result = my_sdf_job_yield_events.execute_in_process(resources={"sdf": sdf})
+    assert result.success
+
+    materialization_events = result.get_asset_materialization_events()
+    assert len(materialization_events) == 12
+
+    for event in materialization_events:
+        metadata = event.materialization.metadata
+        assert metadata["table_id"]
+        assert metadata["Execution Duration"]
