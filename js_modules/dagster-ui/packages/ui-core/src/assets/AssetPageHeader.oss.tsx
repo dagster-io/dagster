@@ -21,6 +21,7 @@ type Props = Partial<React.ComponentProps<typeof PageHeader>> & {
   assetKey: {path: string[]};
   headerBreadcrumbs: BreadcrumbProps[];
   Title?: ({children}: {children: React.ReactNode}) => React.ReactNode;
+  view: 'asset' | 'catalog';
 };
 
 const defaultTitleComponent = ({children}: {children: React.ReactNode}) => children;
@@ -29,6 +30,7 @@ export const AssetPageHeader = ({
   assetKey,
   headerBreadcrumbs,
   Title = defaultTitleComponent,
+  view,
   ...extra
 }: Props) => {
   const copy = useCopyToClipboard();
