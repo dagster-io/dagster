@@ -1,4 +1,4 @@
-from dagster import Field, Float, Noneable, StringSource
+from dagster import Field, Float, Noneable, StringSource, Any
 from dagster._core.remote_representation import IN_PROCESS_NAME
 from dagster._utils.merger import merge_dicts
 from dagster_celery.executor import CELERY_CONFIG
@@ -52,6 +52,9 @@ def celery_k8s_executor_config():
                 f" Defaults to {DEFAULT_WAIT_TIMEOUT} seconds."
             ),
         ),
+        "per_step_k8s_config": Field(
+            Any, is_required=False, default_value={}, description="Per op k8s configuration overrides."
+        )
     }
 
     cfg = merge_dicts(CELERY_CONFIG, job_config)
