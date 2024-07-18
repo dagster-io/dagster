@@ -17,10 +17,26 @@ from dagster import Definitions, in_process_executor, op, job
 def op1():
     print(1)
 
+@op(
+    tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "233m", "memory": "233Mi"},
+                    "limits": {"cpu": "233m", "memory": "233Mi"},
+                }
+            }
+        }
+    }
+)
+def op2():
+    print(1)
+
 
 @job
 def job1():
     op1()
+    op2()
 
 
 defs = Definitions(
@@ -31,8 +47,16 @@ defs = Definitions(
                 "op1": {
                     "container_config": {
                         "resources": {
-                            "requests": {"cpu": "77m", "memory": "77Mi"},
-                            "limits": {"cpu": "88m", "memory": "88Mi"},
+                            "requests": {"cpu": "777m", "memory": "777Mi"},
+                            "limits": {"cpu": "888m", "memory": "888Mi"},
+                        }
+                    }
+                },
+                "op2": {
+                    "container_config": {
+                        "resources": {
+                            "requests": {"cpu": "555m", "memory": "555Mi"},
+                            "limits": {"cpu": "555m", "memory": "555Mi"},
                         }
                     }
                 }
