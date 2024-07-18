@@ -65,3 +65,14 @@ These APIs provide the ability to express column schemas (`TableSchema`), rows/r
 .. autoclass:: TableColumnLineage
 
 .. autoclass:: TableColumnDep
+
+Code references
+^^^^^^^^^^^^^^^
+
+The following functions are used to attach source code references to your assets.
+For more information, refer to the `Linking to asset definition code with code references </guides/dagster/code-references>`_ guide.
+
+
+.. autofunction:: with_source_code_references
+
+.. autofunction:: link_code_references_to_git
