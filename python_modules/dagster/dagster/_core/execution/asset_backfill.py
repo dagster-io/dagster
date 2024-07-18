@@ -1099,10 +1099,26 @@ def execute_asset_backfill_iteration(
 
         yield None
 
+        waiting_for_runs_to_finish_after_cancelation = False
         if runs_to_cancel_in_iteration:
             for run_id in runs_to_cancel_in_iteration:
                 instance.run_coordinator.cancel_run(run_id)
                 yield None
+        else:
+            # Check at the beginning of the tick whether there are any runs that we are still
+            # waiting to move into a terminal state. If there are none and the backfill data is
+            # still missing partitions at the end of the tick, that indicates a framework problem.
+            # (It's important that we check for these runs before updating the backfill data -
+            # if we did them in the reverse order, a run that finishes between the two checks
+            # might not be incorporated into the backfill data, causing us to incorrectly decide
+            # there was a framework error.
+            run_waiting_to_cancel = instance.get_run_ids(
+                RunsFilter(
+                    tags={BACKFILL_ID_TAG: backfill.backfill_id}, statuses=IN_PROGRESS_RUN_STATUSES
+                ),
+                limit=1,
+            )
+            waiting_for_runs_to_finish_after_cancelation = len(run_waiting_to_cancel) > 0
 
         # Update the asset backfill data to contain the newly materialized/failed partitions.
         updated_asset_backfill_data = None
@@ -1139,17 +1155,15 @@ def execute_asset_backfill_iteration(
 
         instance.update_backfill(updated_backfill)
 
-        if len(runs_to_cancel_in_iteration) == 0 and not all_partitions_marked_completed:
-            in_progress_run_ids = instance.get_run_ids(
-                RunsFilter(
-                    tags={BACKFILL_ID_TAG: backfill.backfill_id}, statuses=IN_PROGRESS_RUN_STATUSES
-                )
+        if (
+            len(runs_to_cancel_in_iteration) == 0
+            and not all_partitions_marked_completed
+            and not waiting_for_runs_to_finish_after_cancelation
+        ):
+            check.failed(
+                "All runs have completed, but not all requested partitions have been marked as materialized or failed. "
+                "This is likely a system error. Please report this issue to the Dagster team."
             )
-            if len(in_progress_run_ids) == 0:
-                check.failed(
-                    "All runs have completed, but not all requested partitions have been marked as materialized or failed. "
-                    "This is likely a system error. Please report this issue to the Dagster team."
-                )
 
         logger.info(
             f"Asset backfill {backfill.backfill_id} completed cancellation iteration with status {updated_backfill.status}."
