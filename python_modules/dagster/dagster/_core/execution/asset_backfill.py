@@ -1125,7 +1125,7 @@ def execute_asset_backfill_iteration(
         logger.debug(
             f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
         )
-    elif backfill.status == BulkActionStatus.CANCELING:
+    elif backfill.status == BulkActionStatus.CANCELED:
         # The backfill was forcibly canceled, skip iteration
         pass
     else:
