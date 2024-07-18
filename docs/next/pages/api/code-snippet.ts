@@ -1,13 +1,39 @@
+/**
+ * Code Snippet API
+ *
+ * This API route allows retrieval and manipulation of code snippets from files.
+ * It supports various parameters to extract specific portions of a file and format the output.
+ *
+ * Endpoint: /api/code-snippet
+ *
+ * Query Parameters:
+ * - file (required): Path to the file relative to the DOCS_SNIPPET directory
+ * - startafter (optional): Start extracting content after this string is found
+ * - endbefore (optional): Stop extracting content when this string is found
+ * - lines (optional): Specify which lines to include (e.g., "1-3" or "1,3,5-7")
+ * - dedent (optional): Number of spaces to remove from the start of each line
+ * - trim (optional): If "false", don't trim whitespace from start and end of the snippet
+ *
+ * Examples:
+ * 1. Get entire file:
+ *    /api/code-snippet?file=concepts/assets/asset_group_argument.py
+ *
+ * 2. Get specific lines after a marker:
+ *    /api/code-snippet?file=concepts/assets/asset_group_argument.py&startafter=%23%20start_example&lines=4-6
+ *
+ * 3. Get content between markers, with formatting:
+ *    /api/code-snippet?file=concepts/assets/asset_group_argument.py&startafter=%23%20start_example&endbefore=%23%20end_example&lines=4-6&dedent=4&trim=true
+ *
+ * Note: All string parameters should be URL-encoded when used in the query string.
+ */
 import fs from 'fs/promises';
 import path from 'path';
 
 import {NextApiRequest, NextApiResponse} from 'next';
 
-
 const DOCS_SNIPPET = path.join(process.cwd(), 'public', 'docs_snippets', 'docs_snippets');
 
 console.log('DOCS_SNIPPET path:', DOCS_SNIPPET);
-
 
 const limitSnippetLines = (
   content: string,
