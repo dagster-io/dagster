@@ -65,3 +65,12 @@ These APIs provide the ability to express column schemas (`TableSchema`), rows/r
 .. autoclass:: TableColumnLineage
 
 .. autoclass:: TableColumnDep
+
+Metadata functions
+^^^^^^^^^^^^^^^^^^
+
+These APIs are used to attach additional metadata to certain objects in the Dagster ecosystem.
+
+.. autofunction:: with_source_code_references
+
+.. autofunction:: link_code_references_to_git
