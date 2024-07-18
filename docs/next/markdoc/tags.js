@@ -138,11 +138,12 @@ export const codeSnippet = {
   render: CodeSnippet,
   selfClosing: true,
   attributes: {
-    file: {
-      type: String,
-    },
-    lang: {
-      type: String,
-    },
+    file: {type: String, required: true},
+    lang: {type: String, required: true},
+    lines: {type: String},
+    startafter: {type: String},
+    endbefore: {type: String},
+    dedent: {type: Number},
+    trim: {type: Boolean, default: true},
   },
 };
