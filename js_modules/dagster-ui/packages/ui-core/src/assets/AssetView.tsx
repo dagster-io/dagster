@@ -298,6 +298,7 @@ export const AssetView = ({
       style={{height: '100%', width: '100%', overflowY: 'auto'}}
     >
       <AssetPageHeader
+        view="asset"
         assetKey={assetKey}
         headerBreadcrumbs={headerBreadcrumbs}
         tags={
