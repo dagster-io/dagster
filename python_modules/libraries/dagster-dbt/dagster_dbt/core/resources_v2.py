@@ -1847,7 +1847,7 @@ class DbtCliResource(ConfigurableResource):
         ):
             context.log.warn(
                 "Fetching column metadata using `log_column_level_metadata` macro is deprecated and will be"
-                " removed in Dagster 1.9. Use the `fetch_column_metadata` method in your asset definition"
+                " removed in dagster-dbt 0.24.0. Use the `fetch_column_metadata` method in your asset definition"
                 " to fetch column metadata instead."
             )
 
