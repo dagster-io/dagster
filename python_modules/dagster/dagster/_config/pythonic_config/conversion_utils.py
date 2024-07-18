@@ -1,10 +1,13 @@
 import inspect
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Type, TypeVar, Union
+from typing import Any, Dict, List, Literal, Mapping, Optional, Type, TypeVar, Union
 
 from typing_extensions import Annotated, get_args, get_origin
 
-from dagster import Enum as DagsterEnum
+from dagster import (
+    Enum as DagsterEnum,
+    EnumValue as DagsterEnumValue,
+)
 from dagster._config.config_type import Array, ConfigType, Noneable
 from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
@@ -104,6 +107,9 @@ def _convert_pydantic_field(
 
     if pydantic_field.discriminator:
         return _convert_pydantic_discriminated_union_field(pydantic_field)
+
+    if get_origin(pydantic_field.annotation) == Literal:
+        return _convert_typing_literal_field(pydantic_field)
 
     field_type = pydantic_field.annotation
     if safe_is_subclass(field_type, Config):
@@ -271,6 +277,45 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
     # We then nest the union fields under a Selector. The keys for the selector
     # are the various discriminator values
     return Field(config=Selector(fields=dagster_config_field_mapping))
+
+
+def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
+    """Builds a Enum config field from a Pydantic field which is a Literal type.
+
+    For example:
+
+    class ConfigWithLiteral(Config):
+        pet: Literal["cat", "dog"]
+
+    Becomes:
+
+    Shape({
+      "pet": Enum(["cat", "dog"])
+      })
+    })
+    """
+    field_type = pydantic_field.annotation
+
+    if not get_origin(field_type) == Literal:
+        raise DagsterInvalidDefinitionError("Must be a Literal type.")
+
+    sub_fields = get_args(field_type)
+
+    default_to_pass = (
+        pydantic_field.default
+        if pydantic_field.default is not PydanticUndefined
+        else FIELD_NO_DEFAULT_PROVIDED
+    )
+
+    return Field(
+        config=DagsterEnum(
+            str(str(field_type).lstrip("typing.")),
+            list(map(DagsterEnumValue, sub_fields)),
+        ),
+        description=pydantic_field.description,
+        is_required=pydantic_field.is_required() and not is_closed_python_optional_type(field_type),
+        default_value=default_to_pass,
+    )
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
