@@ -392,7 +392,6 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         user_defined_k8s_config = UserDefinedDagsterK8sConfig.from_dict(
             deep_merge_dicts(user_defined_k8s_config.to_dict(), per_op_override)
         )
-        raise ValueError(user_defined_k8s_config.to_dict())
         job = construct_dagster_k8s_job(
             job_config,
             args,
