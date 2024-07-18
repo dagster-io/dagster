@@ -33,6 +33,7 @@ import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
 import calendar from '../icon-svgs/calendar.svg';
 import cancel from '../icon-svgs/cancel.svg';
+import catalog from '../icon-svgs/catalog.svg';
 import changes_present from '../icon-svgs/changes-present.svg';
 import chat_support from '../icon-svgs/chat-support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
@@ -289,6 +290,7 @@ export const Icons = {
   bar_chart,
   bolt,
   cached,
+  catalog,
   cancel,
   check_circle,
   checklist,

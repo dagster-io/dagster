@@ -34,16 +34,14 @@ export const FilterTag = ({
   onRemove?: () => void;
   theme?: 'default' | 'cyan';
 }) => {
-  const {color, fillColor, textColor} = useMemo(() => {
+  const {fillColor, textColor} = useMemo(() => {
     if (theme === 'default') {
       return {
-        color: Colors.linkDefault(),
         fillColor: Colors.backgroundBlue(),
         textColor: Colors.linkDefault(),
       };
     } else {
       return {
-        color: Colors.accentCyan(),
         fillColor: Colors.backgroundCyan(),
         textColor: Colors.textCyan(),
       };
@@ -52,11 +50,11 @@ export const FilterTag = ({
   return (
     <div>
       <BaseTag
-        icon={iconName ? <Icon name={iconName} color={color} /> : undefined}
+        icon={iconName ? <Icon name={iconName} color={textColor} /> : undefined}
         rightIcon={
           onRemove ? (
             <div onClick={onRemove} style={{cursor: 'pointer'}} tabIndex={0}>
-              <Icon name="close" color={Colors.linkDefault()} />
+              <Icon name="close" color={textColor} />
             </div>
           ) : null
         }

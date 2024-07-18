@@ -6,6 +6,7 @@ import {FallthroughRoot} from './FallthroughRoot.oss';
 import type {UserPreferences} from './UserSettingsDialog/UserPreferences.oss';
 import {assertUnreachable} from './Util';
 import {useAssetGraphExplorerFilters} from '../asset-graph/useAssetGraphExplorerFilters.oss';
+import {AssetCatalogTableBottomActionBar} from '../assets/AssetCatalogTableBottomActionBar.oss';
 import {AssetPageHeader} from '../assets/AssetPageHeader.oss';
 import {AssetsGraphHeader} from '../assets/AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '../assets/AssetsOverviewRoot.oss';
@@ -35,6 +36,9 @@ type InjectedComponentContextType = {
     onClose: () => void;
   }> | null;
   AssetPageHeader: AComponentFromComponent<typeof AssetPageHeader>;
+  AssetCatalogTableBottomActionBar: AComponentFromComponent<
+    typeof AssetCatalogTableBottomActionBar
+  >;
 };
 
 type InjectedHookContextType = {

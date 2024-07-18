@@ -1,13 +1,13 @@
-import {Box} from '@dagster-io/ui-components';
 import React, {useContext, useEffect, useState} from 'react';
 
+import {AssetGraphFilterBar} from './AssetGraphFilterBar';
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {AssetFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
-import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/BaseFilters/useFilter';
+import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
@@ -206,33 +206,18 @@ export function useAssetGraphExplorerFilters({
   filters.push(tagsFilter);
   filters.push(ownerFilter);
   const {button, activeFiltersJsx} = useFilters({filters});
-  if (!filters.length) {
-    return {button: null, activeFiltersJsx: null};
-  }
 
   return {
     computeKindTagsFilter: kindTagsFilter,
     storageKindTagsFilter,
-    button,
-    filterBar:
-      activeFiltersJsx.length || explorerPath ? (
-        <Box padding={{vertical: 8, horizontal: 12}} flex={{gap: 12}}>
-          {' '}
-          {activeFiltersJsx}
-          {explorerPath ? (
-            <FilterTag
-              label={
-                <Box flex={{direction: 'row', alignItems: 'center'}}>
-                  Asset selection is&nbsp;
-                  <FilterTagHighlightedText tooltipText={explorerPath}>
-                    {explorerPath}
-                  </FilterTagHighlightedText>
-                </Box>
-              }
-              onRemove={clearExplorerPath}
-            />
-          ) : null}
-        </Box>
-      ) : null,
+    button: filters.length ? button : null,
+    activeFiltersJsx,
+    filterBar: (
+      <AssetGraphFilterBar
+        activeFiltersJsx={activeFiltersJsx}
+        explorerPath={explorerPath}
+        clearExplorerPath={clearExplorerPath}
+      />
+    ),
   };
 }

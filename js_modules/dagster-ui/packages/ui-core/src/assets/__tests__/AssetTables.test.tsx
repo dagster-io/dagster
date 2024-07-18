@@ -67,6 +67,7 @@ describe('AssetTable', () => {
                     AssetsGraphHeader,
                     OverviewPageAlerts: null,
                     RunMetricsDialog: null,
+                    AssetCatalogTableBottomActionBar: () => null,
                   },
                   hooks: {
                     useAssetDefinitionFilterState,
