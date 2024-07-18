@@ -332,7 +332,7 @@ export const SEARCH_SECONDARY_DATA_VERSION = 2;
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
-export const useGlobalSearch = ({searchContext}: {searchContext: 'global'}) => {
+export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'catalog'}) => {
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
