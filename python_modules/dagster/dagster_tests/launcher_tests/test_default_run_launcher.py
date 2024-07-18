@@ -473,6 +473,9 @@ def test_terminated_run(
     terminated_run = instance.get_run_by_id(run_id)
     assert terminated_run and terminated_run.status == DagsterRunStatus.CANCELED
 
+    # termination is a no-op once run is finished
+    assert not launcher.terminate(run_id)
+
     poll_for_event(
         instance,
         run_id,
