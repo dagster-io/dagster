@@ -58,6 +58,7 @@ export const AssetsOverviewRoot = ({
     return (
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <AssetPageHeader
+          view="catalog"
           assetKey={assetKey}
           headerBreadcrumbs={headerBreadcrumbs}
           right={
