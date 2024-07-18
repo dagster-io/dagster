@@ -559,9 +559,8 @@ def test_column_lineage(
     )
 
     # Check that the warning is printed only when using log_column_level_metadata
-    assert ("`log_column_level_metadata` macro is deprecated" in capsys.readouterr().err) == (
-        not use_async_fetch_column_schema
-    )
+    if not use_async_fetch_column_schema:
+        assert "`log_column_level_metadata` macro is deprecated" in capsys.readouterr().err
 
     column_lineage_by_asset_key = {
         event.materialization.asset_key: TableMetadataSet.extract(

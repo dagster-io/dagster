@@ -33,6 +33,7 @@ from typing import (
 
 import dateutil.parser
 import orjson
+import yaml
 from dagster import (
     AssetCheckKey,
     AssetCheckResult,
@@ -52,6 +53,7 @@ from dagster import (
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils import pushd
 from dagster._utils.warnings import disable_dagster_warnings
@@ -114,6 +116,8 @@ DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
 DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 
 DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE: Final[int] = 4
+
+DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
 
 
 def _get_dbt_target_path() -> Path:
@@ -619,8 +623,6 @@ class DbtCliInvocation:
         Returns:
             Iterator[DbtCliEventMessage]: An iterator of events from the dbt CLI process.
         """
-        has_emitted_metadata_warning = False
-
         event_history_metadata_by_unique_id: Dict[str, Dict[str, Any]] = {}
 
         for raw_event in self._stdout or self._stream_stdout():
@@ -642,13 +644,6 @@ class DbtCliInvocation:
             event = DbtCliEventMessage(
                 raw_event=raw_event, event_history_metadata=event_history_metadata
             )
-            if event.has_column_lineage_metadata and not has_emitted_metadata_warning:
-                logger.warning(
-                    "Fetching column metadata using `log_column_level_metadata` macro is deprecated and will be"
-                    " removed in Dagster 1.9. Use the `fetch_column_metadata` method in your asset definition"
-                    " to fetch column metadata instead."
-                )
-                has_emitted_metadata_warning = True
 
             # Attempt to parse the column level metadata from the event message.
             # If it exists, save it as historical metadata to attach to the NodeFinished event.
@@ -1217,6 +1212,14 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             _threadpool_wrap_map_fn(),
             dbt_cli_invocation=self._dbt_cli_invocation,
         )
+
+
+def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
+    """Checks whether any package in the passed yaml file is the Dagster dbt package."""
+    packages = cast(
+        List[Dict[str, Any]], yaml.safe_load(packages_file.read_text()).get("packages", [])
+    )
+    return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
 
 
 class DbtCliResource(ConfigurableResource):
@@ -1832,6 +1835,20 @@ class DbtCliResource(ConfigurableResource):
                 raise_on_error=raise_on_error,
                 context=context,
                 adapter=adapter,
+            )
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        packages_yaml = Path(self.project_dir).joinpath("packages.yml")
+        dependencies_yaml = Path(self.project_dir).joinpath("dependencies.yml")
+
+        if context.log and (
+            (packages_yaml.exists() and _dbt_packages_has_dagster_dbt(packages_yaml))
+            or (dependencies_yaml.exists() and _dbt_packages_has_dagster_dbt(dependencies_yaml))
+        ):
+            context.log.warn(
+                "Fetching column metadata using `log_column_level_metadata` macro is deprecated and will be"
+                " removed in Dagster 1.9. Use the `fetch_column_metadata` method in your asset definition"
+                " to fetch column metadata instead."
             )
 
 
