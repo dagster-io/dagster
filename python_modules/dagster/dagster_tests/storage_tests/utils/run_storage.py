@@ -8,6 +8,7 @@ from typing import Optional
 import pytest
 from dagster import _seven, job, op
 from dagster._core.definitions import GraphDefinition
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
@@ -1200,6 +1201,7 @@ class TestRunStorage:
             storage.get_run_group(make_new_run_id())
 
     def test_partition_status(self, storage: RunStorage):
+        partitions_def = StaticPartitionsDefinition(["one", "two", "three"])
         one = TestRunStorage.build_run(
             run_id=make_new_run_id(),
             job_name="foo_job",
@@ -1254,7 +1256,8 @@ class TestRunStorage:
             runs_filter=RunsFilter(
                 job_name="foo_job",
                 tags={PARTITION_SET_TAG: "foo_set"},
-            )
+            ),
+            partitions_def=partitions_def,
         )
         assert len(partition_data) == 3
         assert {_.partition for _ in partition_data} == {"one", "two", "three"}

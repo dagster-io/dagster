@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple,
 
 from typing_extensions import TypedDict
 
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
@@ -324,7 +325,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         return False
 
     @abstractmethod
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
+    def get_run_partition_data(
+        self, runs_filter: RunsFilter, partitions_def: PartitionsDefinition
+    ) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
 
     def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:

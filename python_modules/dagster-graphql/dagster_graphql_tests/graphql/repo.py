@@ -457,6 +457,7 @@ def integers_asset(context: AssetExecutionContext):
 
 integers_asset_job = define_asset_job("integers_asset_job", selection=[integers_asset])
 
+
 alpha_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
 
 
@@ -467,6 +468,14 @@ def no_config_job():
         return "Hello"
 
     return_hello()
+
+
+@asset(partitions_def=alpha_partitions)
+def alphabet_asset(context: AssetExecutionContext):
+    return {k: k for k in context.partition_keys}
+
+
+alphabet_asset_job = define_asset_job("alphabet_asset_job", selection=[alphabet_asset])
 
 
 @job
@@ -1947,6 +1956,7 @@ def define_asset_jobs() -> Sequence[UnresolvedAssetJobDefinition]:
         hanging_job,
         hanging_partition_asset_job,
         integers_asset_job,
+        alphabet_asset_job,
         output_then_hang_job,
         multi_partitions_fail_job,
         multi_partitions_job,
@@ -2034,6 +2044,7 @@ def define_assets():
         fresh_diamond_right,
         fresh_diamond_bottom,
         integers_asset,
+        alphabet_asset,
         upstream_daily_partitioned_asset,
         downstream_weekly_partitioned_asset,
         unpartitioned_upstream_of_partitioned,

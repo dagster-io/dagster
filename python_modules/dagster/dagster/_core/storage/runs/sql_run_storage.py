@@ -26,6 +26,8 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
@@ -54,6 +56,8 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -667,7 +671,7 @@ class SqlRunStorage(RunStorage):
             else None
         )
 
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
+    def old_get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
             query = self._runs_query(
                 filters=runs_filter,
@@ -709,6 +713,47 @@ class SqlRunStorage(RunStorage):
                 )
 
             return list(_partition_data_by_partition.values())
+
+    def get_run_partition_data(
+        self, runs_filter: RunsFilter, partitions_def: PartitionsDefinition
+    ) -> Sequence[RunPartitionData]:
+        # not sure about changing the signature here, not sure what our gurantees are about the interface changing
+        records = self.get_run_records(runs_filter)
+        # dedup by partition
+        _partition_data_by_partition = {}
+        for record in records:
+            if record.dagster_run.tags.get(ASSET_PARTITION_RANGE_START_TAG) is None:
+                partition = record.dagster_run.tags.get(PARTITION_NAME_TAG)
+                if not partition or partition in _partition_data_by_partition:
+                    continue
+
+                _partition_data_by_partition[partition] = RunPartitionData(
+                    run_id=record.dagster_run.run_id,
+                    partition=partition,
+                    status=record.dagster_run.status,
+                    start_time=record.start_time,
+                    end_time=record.end_time,
+                )
+
+            else:
+                for key in partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(
+                        start=record.dagster_run.tags[ASSET_PARTITION_RANGE_START_TAG],
+                        end=record.dagster_run.tags[ASSET_PARTITION_RANGE_END_TAG],
+                    ),
+                    self.instance, # NOPE
+                ):
+                    if key in _partition_data_by_partition:
+                        continue
+                    _partition_data_by_partition[key] = RunPartitionData(
+                        run_id=record.dagster_run.run_id,
+                        partition=key,
+                        status=record.dagster_run.status,
+                        start_time=record.start_time,
+                        end_time=record.end_time,
+                    )
+
+        return list(_partition_data_by_partition.values())
 
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str

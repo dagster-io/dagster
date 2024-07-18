@@ -7,6 +7,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
@@ -324,8 +325,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         return self._storage.run_storage.update_backfill(partition_backfill)
 
-    def get_run_partition_data(self, runs_filter: "RunsFilter") -> Sequence["RunPartitionData"]:
-        return self._storage.run_storage.get_run_partition_data(runs_filter)
+    def get_run_partition_data(
+        self, runs_filter: "RunsFilter", partitions_def: PartitionsDefinition
+    ) -> Sequence["RunPartitionData"]:
+        return self._storage.run_storage.get_run_partition_data(runs_filter, partitions_def)
 
     def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
         return self._storage.run_storage.get_cursor_values(keys)

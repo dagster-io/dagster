@@ -226,7 +226,8 @@ def get_partition_set_partition_statuses(
                 PARTITION_SET_TAG: partition_set_name,
                 REPOSITORY_LABEL_TAG: repository_handle.get_external_origin().get_label(),
             },
-        )
+        ),
+        partitions_def=external_partition_set.get_partitions_definition(),
     )
 
     return partition_statuses_from_run_partition_data(

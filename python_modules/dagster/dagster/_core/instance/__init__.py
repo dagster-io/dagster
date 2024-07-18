@@ -1845,9 +1845,11 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
     @traced
-    def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
+    def get_run_partition_data(
+        self, runs_filter: RunsFilter, partitions_def: "PartitionsDefinition"
+    ) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
-        return self._run_storage.get_run_partition_data(runs_filter)
+        return self._run_storage.get_run_partition_data(runs_filter, partitions_def)
 
     def wipe(self) -> None:
         self._run_storage.wipe()

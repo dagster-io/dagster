@@ -24,6 +24,7 @@ from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunR
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    PARTITION_NAME_TAG,
     TagType,
     get_tag_type,
 )
@@ -344,7 +345,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         return self._records
 
-    def _get_partition_run_data(self, graphene_info: ResolveInfo) -> Sequence[RunPartitionData]:
+    def _old_get_partition_run_data(self, graphene_info: ResolveInfo) -> Sequence[RunPartitionData]:
         if self._partition_run_data is not None:
             return self._partition_run_data
 
@@ -369,6 +370,22 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         return self._partition_run_data
 
+    def _get_partition_run_data(self, graphene_info: ResolveInfo) -> Sequence[RunPartitionData]:
+        if self._partition_run_data is not None:
+            return self._partition_run_data
+
+        partition_set = self._get_partition_set(graphene_info)
+        partitions_def = partition_set.get_partitions_definition()
+        self._partition_run_data = (
+            graphene_info.context.instance.run_storage.get_run_partition_data(
+                runs_filter=RunsFilter(
+                    tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id)
+                ),
+                partitions_def=partitions_def,
+            )
+        )
+        return self._partition_run_data
+
     def _get_partition_run_data_for_ranged_job_backfill(
         self, instance: DagsterInstance, partition_set: ExternalPartitionSet
     ) -> Sequence[RunPartitionData]:
@@ -376,23 +393,43 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         records = instance.get_run_records(
             RunsFilter(tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id))
         )
-        return [
-            RunPartitionData(
-                run_id=record.dagster_run.run_id,
-                partition=key,
-                status=record.dagster_run.status,
-                start_time=record.start_time,
-                end_time=record.end_time,
-            )
-            for record in records
-            for key in partitions_def.get_partition_keys_in_range(
-                PartitionKeyRange(
-                    start=record.dagster_run.tags[ASSET_PARTITION_RANGE_START_TAG],
-                    end=record.dagster_run.tags[ASSET_PARTITION_RANGE_END_TAG],
-                ),
-                instance,
-            )
-        ]
+        partition_data = []
+        for record in records:
+            if record.dagster_run.tags.get(ASSET_PARTITION_RANGE_START_TAG) is None:
+                partition = record.dagster_run.tags.get(PARTITION_NAME_TAG)
+                if not partition:
+                    continue
+
+                partition_data.append(
+                    RunPartitionData(
+                        run_id=record.dagster_run.run_id,
+                        partition=partition,
+                        status=record.dagster_run.status,
+                        start_time=record.start_time,
+                        end_time=record.end_time,
+                    )
+                )
+            else:
+                partition_data.extend(
+                    [
+                        RunPartitionData(
+                            run_id=record.dagster_run.run_id,
+                            partition=key,
+                            status=record.dagster_run.status,
+                            start_time=record.start_time,
+                            end_time=record.end_time,
+                        )
+                        for key in partitions_def.get_partition_keys_in_range(
+                            PartitionKeyRange(
+                                start=record.dagster_run.tags[ASSET_PARTITION_RANGE_START_TAG],
+                                end=record.dagster_run.tags[ASSET_PARTITION_RANGE_END_TAG],
+                            ),
+                            instance,
+                        )
+                    ]
+                )
+
+        return partition_data
 
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
         from .pipelines.pipeline import GrapheneRun
