@@ -113,7 +113,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const [didLoadStatusData, setDidLoadStatusData] = useState(false);
 
   const [locationEntriesData, setLocationEntriesData] = React.useState<
-    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
+    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment | undefined>
   >({});
 
   const getCachedData = useGetCachedData();
@@ -265,7 +265,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     () =>
       Object.values(locationEntriesData).filter(
         (entry): entry is WorkspaceLocationNodeFragment =>
-          entry && entry.__typename === 'WorkspaceLocationEntry',
+          !!entry && entry.__typename === 'WorkspaceLocationEntry',
       ),
     [locationEntriesData],
   );
