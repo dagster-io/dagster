@@ -756,7 +756,7 @@ class JobDefinition(IHasInternalInit):
         if asset_selection or asset_check_selection:
             return self._get_job_def_for_asset_selection(
                 AssetSelectionData(
-                    asset_selection=asset_selection,
+                    asset_selection=asset_selection or set(),
                     asset_check_selection=asset_check_selection,
                     parent_job_def=self,
                 )
