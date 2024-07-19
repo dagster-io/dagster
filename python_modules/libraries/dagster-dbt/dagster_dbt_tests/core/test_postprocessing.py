@@ -1,3 +1,4 @@
+import json
 import os
 from decimal import Decimal
 from typing import Any, Dict, cast
@@ -137,6 +138,73 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
         # staging tables are views, so we don't attempt to get row counts for them
         if "stg" not in asset_key.path[-1]
     ), str(metadata_by_asset_key)
+
+
+@pytest.mark.parametrize(
+    "target, manifest_fixture_name",
+    [
+        pytest.param(None, "test_jaffle_shop_manifest_standalone_duckdb_dbfile", id="duckdb"),
+        pytest.param(
+            "snowflake",
+            "test_jaffle_shop_manifest_snowflake",
+            marks=pytest.mark.snowflake,
+            id="snowflake",
+        ),
+        pytest.param(
+            "bigquery",
+            "test_jaffle_shop_manifest_bigquery",
+            marks=pytest.mark.bigquery,
+            id="bigquery",
+        ),
+    ],
+)
+def test_row_count_does_not_obscure_errors(
+    request: pytest.FixtureRequest, target: str, manifest_fixture_name: str
+) -> None:
+    manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
+    # Test that row count fetching does not obscure other errors in the dbt run
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(
+                ["build", "--vars", json.dumps({"break_customer_build": "true"})],
+                context=context,
+            ).stream()
+        )
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target=target)
+        },
+        raise_on_error=False,
+    )
+    assert not result.success
+    assert len(result.get_asset_materialization_events()) == 7
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets_row_count(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(
+                ["build", "--vars", json.dumps({"break_customer_build": "true"})], context=context
+            )
+            .stream()
+            .fetch_row_counts()
+        )
+
+    result = materialize(
+        [my_dbt_assets_row_count],
+        resources={
+            "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target=target)
+        },
+        raise_on_error=True,
+    )
+
+    assert not result.success
+    # Right now, duckdb fully processes all models before starting to fetch row counts -
+    # so no materializations will be emitted before the error fires. We should probably adjust this.
+    assert len(result.get_asset_materialization_events()) == 0 if target == "duckdb" else 7
 
 
 def test_row_count_err(
