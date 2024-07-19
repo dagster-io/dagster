@@ -757,13 +757,14 @@ class SqlRunStorage(RunStorage):
 
     def get_mega_runs(
         self,
-        cursor: Optional[str] = None,
+        cursor: Optional[Tuple[str, str]] = None,
         limit: Optional[int] = None,
         # ascending: bool = False, # need to implement ascending for backfills before enabling this
     ) -> Sequence[MegaRun]:
+        """cursor: Tuple of (run_id, backfill_id)."""
         # get limit of backfills and of runs that are not part of backfills
-        backfills = self.get_backfills(limit=limit)
-        runs = self._fetch_single_runs(cursor, limit)
+        backfills = self.get_backfills(cursor=cursor[1] if cursor else cursor, limit=limit)
+        runs = self._fetch_single_runs(cursor=cursor[0] if cursor else cursor, limit=limit)
 
         # order runs and backfills by create_time? typically we sort by storage id but that won't work here since
         # they are different tables
