@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    TypedDict,
     Union,
 )
 
@@ -28,7 +27,7 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._record import record
+from dagster._record import IHaveNew, record_custom
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition, SourceAsset
@@ -254,7 +253,7 @@ def _create_repository_using_definitions_args(
     resources: Optional[Mapping[str, Any]] = None,
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
-    asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+    asset_checks: Optional[Iterable[AssetsDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     # First, dedupe all definition types.
     sensors = dedupe_object_refs(sensors)
@@ -324,21 +323,8 @@ class BindResourcesToJobs(list):
     """
 
 
-class DefinitionsArgs(TypedDict):
-    assets: Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]
-    schedules: Optional[
-        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
-    ]
-    sensors: Optional[Iterable[SensorDefinition]]
-    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]]
-    resources: Optional[Mapping[str, Any]]
-    executor: Optional[Union[ExecutorDefinition, Executor]]
-    loggers: Optional[Mapping[str, LoggerDefinition]]
-    asset_checks: Optional[Iterable[AssetChecksDefinition]]
-
-
-@record
-class Definitions:
+@record_custom
+class Definitions(IHaveNew):
     """A set of definitions explicitly available and loadable by Dagster tools.
 
     Parameters:
@@ -441,7 +427,34 @@ class Definitions:
     # There's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
     # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
-    asset_checks: Optional[Iterable[AssetChecksDefinition]] = None
+    asset_checks: Optional[Iterable[AssetsDefinition]] = None
+
+    def __new__(
+        cls,
+        assets: Optional[
+            Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+        ] = None,
+        schedules: Optional[
+            Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+        ] = None,
+        sensors: Optional[Iterable[SensorDefinition]] = None,
+        jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
+        resources: Optional[Mapping[str, Any]] = None,
+        executor: Optional[Union[ExecutorDefinition, Executor]] = None,
+        loggers: Optional[Mapping[str, LoggerDefinition]] = None,
+        asset_checks: Optional[Iterable[AssetsDefinition]] = None,
+    ):
+        return super().__new__(
+            cls,
+            assets=assets,
+            schedules=schedules,
+            sensors=sensors,
+            jobs=jobs,
+            resources=resources,
+            executor=executor,
+            loggers=loggers,
+            asset_checks=asset_checks,
+        )
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
