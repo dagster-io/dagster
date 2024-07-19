@@ -26,6 +26,7 @@ import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
 from dagster._core.utils import is_valid_email
+from dagster._utils.warnings import deprecation_warning
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -406,6 +407,11 @@ def resolve_automation_condition(
     auto_materialize_policy: Optional["AutoMaterializePolicy"],
 ) -> Optional["AutomationCondition"]:
     if auto_materialize_policy is not None:
+        deprecation_warning(
+            "Parameter `auto_materialize_policy`",
+            "1.9",
+            additional_warn_text="Use `automation_condition` instead.",
+        )
         if automation_condition is not None:
             raise DagsterInvariantViolationError(
                 "Cannot supply both `automation_condition` and `auto_materialize_policy`"

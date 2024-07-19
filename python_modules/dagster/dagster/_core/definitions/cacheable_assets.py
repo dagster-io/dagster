@@ -357,12 +357,20 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             if self._prefix_for_all_assets
             else self._input_asset_key_replacements
         )
+        if isinstance(self._auto_materialize_policy, dict):
+            automation_condition = {
+                k: v.to_automation_condition() for k, v in self._auto_materialize_policy.items()
+            }
+        elif isinstance(self._auto_materialize_policy, AutoMaterializePolicy):
+            automation_condition = self._auto_materialize_policy.to_automation_condition()
+        else:
+            automation_condition = None
         return assets_def.with_attributes(
             output_asset_key_replacements=output_asset_key_replacements,
             input_asset_key_replacements=input_asset_key_replacements,
             group_names_by_key=group_names_by_key,
             freshness_policy=self._freshness_policy,
-            auto_materialize_policy=self._auto_materialize_policy,
+            automation_condition=automation_condition,
             backfill_policy=self._backfill_policy,
         )
 

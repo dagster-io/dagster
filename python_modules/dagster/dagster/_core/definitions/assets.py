@@ -1177,8 +1177,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
-        auto_materialize_policy: Optional[
-            Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
+        automation_condition: Optional[
+            Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
     ) -> "AssetsDefinition":
@@ -1203,14 +1203,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 if old_value and old_value != default_value and attr_name in replace_dict:
                     conflicts_by_attr_name[attr_name].add(key)
 
-            if isinstance(auto_materialize_policy, dict):
-                automation_condition = {
-                    k: v.to_automation_condition() for k, v in auto_materialize_policy.items()
-                }
-            elif isinstance(auto_materialize_policy, AutoMaterializePolicy):
-                automation_condition = auto_materialize_policy.to_automation_condition()
-            else:
-                automation_condition = None
             update_replace_dict_and_conflicts(
                 new_value=automation_condition, attr_name="automation_condition"
             )

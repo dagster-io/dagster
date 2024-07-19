@@ -713,7 +713,11 @@ def with_auto_materialize_policy(
     """
     ret = []
     for assets_def in assets_defs:
-        ret.append(assets_def.with_attributes(auto_materialize_policy=auto_materialize_policy))
+        ret.append(
+            assets_def.with_attributes(
+                automation_condition=auto_materialize_policy.to_automation_condition()
+            )
+        )
     return ret
 
 
@@ -734,14 +738,14 @@ def with_implicit_auto_materialize_policies(
             targeted_keys = (
                 assets_def.keys & targeted_assets if targeted_assets else assets_def.keys
             )
-            auto_materialize_policies_by_key = {}
+            automation_conditions_by_key = {}
             for key in targeted_keys:
                 policy = get_implicit_auto_materialize_policy(key, asset_graph)
                 if policy:
-                    auto_materialize_policies_by_key[key] = policy
+                    automation_conditions_by_key[key] = policy.to_automation_condition()
 
             ret.append(
-                assets_def.with_attributes(auto_materialize_policy=auto_materialize_policies_by_key)
+                assets_def.with_attributes(automation_condition=automation_conditions_by_key)
             )
         else:
             ret.append(assets_def)
