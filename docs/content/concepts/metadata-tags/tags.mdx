@@ -53,7 +53,7 @@ Tag values must:
 
 ### Assets
 
-Tags are useful for organizing assets non-hierarchical ways. Unlike [asset groups](/concepts/assets/software-defined-assets#grouping-assets), where each asset belongs to a single group, each asset can have many tags. For example:
+Tags are useful for organizing assets in non-hierarchical ways. Unlike [asset groups](/concepts/assets/software-defined-assets#grouping-assets), where each asset belongs to a single group, each asset can have many tags. For example:
 
 ```python file=/concepts/metadata-tags/tags.py startafter=start_asset_tags endbefore=end_asset_tags
 @asset(tags={"domain": "marketing", "pii": "true"})
@@ -61,6 +61,14 @@ def leads(): ...
 ```
 
 Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, <PyObject object="AssetOut" />, and <PyObject object="graph_asset" decorator />.
+
+#### Standard asset tags reference
+
+The following table holds standard asset tag keys defined by Dagster. The `dagster` prefix indicates that the Dagster package takes responsibility for defining the meaning of these tags.
+
+| Key                    | Description                                                       |
+| ---------------------- | ----------------------------------------------------------------- |
+| `dagster/storage_kind` | The technology used to store the asset, e.g. "snowflake" or "s3". |
 
 ### Jobs
 
