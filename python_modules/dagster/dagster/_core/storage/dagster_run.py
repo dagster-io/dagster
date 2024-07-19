@@ -51,7 +51,7 @@ class DagsterRunStatus(Enum):
     # Runs waiting to be launched by the Dagster Daemon.
     QUEUED = "QUEUED"
 
-    # Runs that have been launched, but execution has not yet started."""
+    # Runs in the brief window between creating the run and launching or enqueueing it.
     NOT_STARTED = "NOT_STARTED"
 
     # Runs that are managed outside of the Dagster control plane.
