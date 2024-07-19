@@ -5,10 +5,11 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._model import DagsterModel
 
-from dagster_blueprints.blueprint import Blueprint, BlueprintDefinitions
+from dagster_blueprints.blueprint import Blueprint
 
 
 class AssetSpecModel(DagsterModel):
@@ -36,7 +37,7 @@ class BlueprintAssetsDefinition(Blueprint):
 
     assets: Sequence[AssetSpecModel]
 
-    def build_defs(self) -> BlueprintDefinitions:
+    def build_defs(self) -> Definitions:
         specs = [spec_model.to_asset_spec() for spec_model in self.assets]
 
         @multi_asset(
@@ -47,7 +48,7 @@ class BlueprintAssetsDefinition(Blueprint):
         def _assets(context: AssetExecutionContext):
             return self.materialize(context=context)
 
-        return BlueprintDefinitions(assets=[_assets])
+        return Definitions(assets=[_assets])
 
     @staticmethod
     def get_required_resource_keys() -> AbstractSet[str]:

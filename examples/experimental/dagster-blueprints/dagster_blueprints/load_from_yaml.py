@@ -1,30 +1,27 @@
 from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional, Sequence, Type, Union, cast
 
-from dagster import (
-    Definitions,
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
 from dagster._model.pydantic_compat_layer import json_schema_from_type
+from dagster._record import copy
 from dagster._utils.pydantic_yaml import (
     parse_yaml_file_to_pydantic,
     parse_yaml_file_to_pydantic_sequence,
 )
 from typing_extensions import get_args, get_origin
 
-from .blueprint import Blueprint, BlueprintDefinitions
+from .blueprint import Blueprint
 
 
-def _attach_code_references_to_definitions(
-    blueprint: Blueprint, defs: BlueprintDefinitions
-) -> BlueprintDefinitions:
+def _attach_code_references_to_definitions(blueprint: Blueprint, defs: Definitions) -> Definitions:
     """Attaches code reference metadata pointing to the specified file path to all assets in the
     output blueprint definitions.
     """
@@ -73,7 +70,7 @@ def _attach_code_references_to_definitions(
                 lambda spec: spec._replace(metadata=new_metadata_by_key[spec.key])
             )
         )
-    return defs._replace(assets=new_assets_defs)
+    return copy(defs, assets=new_assets_defs)
 
 
 def load_defs_from_yaml(
@@ -139,10 +136,7 @@ def load_defs_from_yaml(
         for blueprint in blueprints
     ]
 
-    return BlueprintDefinitions.merge(
-        *def_sets_with_code_references, BlueprintDefinitions(resources=resources or {})
-    ).to_definitions()
-    return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions()
+    return Definitions.merge(*def_sets_with_code_references, Definitions(resources=resources or {}))
 
 
 class YamlBlueprintsLoader(NamedTuple):
