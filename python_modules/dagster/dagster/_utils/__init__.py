@@ -18,6 +18,7 @@ import time
 import uuid
 from datetime import timezone
 from enum import Enum
+from pathlib import Path
 from signal import Signals
 from typing import (
     TYPE_CHECKING,
@@ -166,7 +167,7 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
-    return os.path.join(os.path.dirname(dunderfile), relative_path)
+    return os.fspath(Path(dunderfile, "..", relative_path).resolve())
 
 
 def script_relative_path(file_path: str) -> str:
