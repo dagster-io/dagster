@@ -3,52 +3,7 @@ title: Authoring Component Examples
 description: This page shows off what each of the components we're using in our docs looks like.
 ---
 
-# Testing Code Snippet
 
-### Basic File Retrieval
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" /%}
-
-### Specific Line Range
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" /%}
-
-### Multiple Line Ranges
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="1-5,10-15" /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="1-5,10-15" /%}
-
-### Start After a Specific String
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" /%}
-
-### End Before a Specific String
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" endbefore="# end_example" /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" endbefore="# end_example" /%}
-
-### Combine Start and End
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" endbefore="# end_example" /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" endbefore="# end_example" /%}
-
-### Dedenting
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" dedent=4 /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" dedent=4 /%}
-
-### Disable Trimming
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" trim=false /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" trim=false /%}
-
-### Combining Multiple Parameters
-`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" startafter="# start_example" dedent=4 trim=true /%}`
-
-{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" startafter="# start_example" dedent=4 trim=true /%}
 
 This page contains examples of all of the native Markdoc node and the custom markdoc tags that we are using in our docs.
 
@@ -407,3 +362,72 @@ They work like this:
   {% articleListItem title="Asset checks" href="/concepts/assets/asset-checks" /%}
   {% articleListItem title="External assets (Experimental)" href="/concepts/assets/external-assets" /%}
 {% /articleList %}
+
+## CodeSnippets : Block
+
+The `CodeSnippet` component allows you to easily include code snippets from your project files into your documentation. Here are various ways to use it, along with examples:
+
+### Basic File Retrieval
+This example shows how to include an entire file as a code snippet. It's useful when you want to showcase a complete file without any modifications.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" /%}
+
+### Specific Line Range
+You can specify exact lines to include from a file. This is helpful when you want to focus on a particular section of code without showing the entire file.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" /%}
+
+### Multiple Line Ranges
+For more complex scenarios, you can include multiple, non-contiguous line ranges. This allows you to showcase different parts of a file while skipping irrelevant sections.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="1-5,10-15" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="1-5,10-15" /%}
+
+### Start After a Specific String
+This option lets you start the snippet after a specific string in the file. It's useful for beginning your snippet at a particular point, like after a comment or function definition.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" /%}
+
+### End Before a Specific String
+Similar to `startafter`, this option lets you end the snippet before a specific string. It's helpful for showing code up to a certain point.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" endbefore="# end_example" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" endbefore="# end_example" /%}
+
+### Combine Start and End
+You can use both `startafter` and `endbefore` to extract a specific section of code between two markers. This is great for showcasing a particular function or code block.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" endbefore="# end_example" /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" startafter="# start_example" endbefore="# end_example" /%}
+
+### Dedenting
+The `dedent` option allows you to remove a specified number of leading spaces from each line. This is useful for adjusting the indentation of your snippet to match your documentation's formatting.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" dedent=4 /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" dedent=4 /%}
+
+### Disable Trimming
+By default, the component trims whitespace from the beginning and end of the snippet. You can disable this behavior if you need to preserve exact whitespace.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" trim=false /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" trim=false /%}
+
+### Combining Multiple Parameters
+You can combine multiple parameters for fine-grained control over your snippets. This example shows how to select specific lines, start after a marker, dedent, and trim the result.
+
+`{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" startafter="# start_example" dedent=4 trim=true /%}`
+
+{% codeSnippet file="concepts/assets/asset_group_argument.py" lang="python" lines="5-15" startafter="# start_example" dedent=4 trim=true /%}
+
+By using these options, you can flexibly include and format code snippets to best suit your needs.
