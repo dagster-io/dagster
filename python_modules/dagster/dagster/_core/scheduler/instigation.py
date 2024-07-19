@@ -21,6 +21,7 @@ from dagster._core.definitions.run_request import (
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.events.log import EventLogEntry
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.errors import DeserializationError
@@ -339,6 +340,12 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     def with_origin_run(self, origin_run_id: str) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_origin_run(origin_run_id))
 
+    def with_asset_events(
+        self,
+        asset_events: Sequence[EventLogEntry],
+    ) -> "InstigatorTick":
+        return self._replace(tick_data=self.tick_data._replace(asset_events=asset_events))
+
     def with_log_key(self, log_key: Sequence[str]) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_log_key(log_key))
 
@@ -526,6 +533,10 @@ class TickData(
             ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
+            (
+                "asset_events",
+                Optional[Sequence[EventLogEntry]],
+            ),
         ],
     )
 ):
@@ -584,6 +595,7 @@ class TickData(
         run_requests: Optional[Sequence[RunRequest]] = None,
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
+        asset_events: Optional[Sequence[EventLogEntry]] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -612,6 +624,11 @@ class TickData(
             run_requests=check.opt_sequence_param(run_requests, "run_requests"),
             auto_materialize_evaluation_id=auto_materialize_evaluation_id,
             reserved_run_ids=check.opt_sequence_param(reserved_run_ids, "reserved_run_ids"),
+            asset_events=check.opt_list_param(
+                obj=asset_events,
+                param_name="asset_events",
+                of_type=EventLogEntry,
+            ),
         )
 
     def with_status(
