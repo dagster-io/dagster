@@ -1286,11 +1286,11 @@ def test_multi_asset_with_bare_resource():
 
 @ignore_warning("Class `AutoMaterializePolicy` is experimental")
 @ignore_warning("Class `MaterializeOnRequiredForFreshnessRule` is deprecated")
-@ignore_warning("Static method `AutomationCondition.cron` is experimental")
+@ignore_warning("Static method `AutomationCondition.on_cron` is experimental")
 @ignore_warning("Static method `AutomationCondition.eager` is experimental")
 @ignore_warning("Function `AutoMaterializePolicy.lazy` is deprecated")
 def test_multi_asset_with_automation_conditions():
-    ac2 = AutomationCondition.cron("@daily")
+    ac2 = AutomationCondition.on_cron("@daily")
     ac3 = AutomationCondition.eager()
 
     @multi_asset(
