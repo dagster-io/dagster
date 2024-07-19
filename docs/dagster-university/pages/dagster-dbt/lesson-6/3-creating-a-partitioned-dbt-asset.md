@@ -121,16 +121,20 @@ def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
 At this point, the `dagster_university/assets/dbt.py` file should look like this:
 
 ```python
-import os
 import json
+from pathlib import Path
+
 from dagster import AssetExecutionContext, AssetKey
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 
-from .constants import DBT_DIRECTORY
 from ..partitions import daily_partition
 
-
 INCREMENTAL_SELECTOR = "config.materialized:incremental"
+
+dbt_project = DbtProject(
+   project_dir=Path(__file__).joinpath("..", "..", "..", "analytics").resolve(),
+)
+dbt_project.prepare_if_dev()
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
@@ -141,10 +145,6 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
             return AssetKey(f"taxi_{name}")
         else:
             return super().get_asset_key(dbt_resource_props)
-
-
-dbt_project = DbtProject(project_dir=DBT_DIRECTORY)
-dbt_project.prepare_if_dev()
 
 
 @dbt_assets(
