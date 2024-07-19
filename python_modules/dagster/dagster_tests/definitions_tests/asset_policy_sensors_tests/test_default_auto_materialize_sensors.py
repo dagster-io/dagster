@@ -83,13 +83,13 @@ defs_without_observables = Definitions(
 
 @pytest.fixture
 def instance_with_auto_materialize_sensors():
-    with instance_for_test({"auto_materialize": {"use_sensors": True}}) as the_instance:
+    with instance_for_test() as the_instance:
         yield the_instance
 
 
 @pytest.fixture
 def instance_without_auto_materialize_sensors():
-    with instance_for_test() as the_instance:
+    with instance_for_test({"auto_materialize": {"use_sensors": False}}) as the_instance:
         yield the_instance
 
 
