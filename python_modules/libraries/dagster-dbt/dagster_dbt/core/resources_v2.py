@@ -91,7 +91,7 @@ from ..dbt_manifest import DbtManifestParam, validate_manifest
 from ..dbt_project import DbtProject
 from ..errors import DagsterDbtCliRuntimeError
 from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
-from .utils import imap
+from .utils import exhaust_iterator_and_yield_results_with_exception, imap
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
 
@@ -1191,7 +1191,8 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             from dbt.adapters.duckdb import DuckDBAdapter
 
             if isinstance(self._dbt_cli_invocation.adapter, DuckDBAdapter):
-                event_stream = iter(list(self))
+                event_stream = exhaust_iterator_and_yield_results_with_exception(self)
+
         except ImportError:
             pass
 

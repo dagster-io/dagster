@@ -357,3 +357,29 @@ def imap(
                 work_queue.popleft()
             except TimeoutError:
                 pass
+
+    # Ensure any exceptions from the enqueuing task processing the iterator are raised,
+    # after all work items have been processed.
+    exc = enqueuing_task.exception()
+    if exc:
+        raise exc
+
+
+def exhaust_iterator_and_yield_results_with_exception(iterable: Iterator[T]) -> Iterator[T]:
+    """Fully exhausts an iterator and then yield its results. If the iterator raises an exception,
+    raise that exception at the position in the iterator where it was originally raised.
+
+    This is useful if we want to exhaust an iterator, but don't want to discard the elements
+    that were yielded before the exception was raised.
+    """
+    results = []
+    caught_exception = None
+    try:
+        for result in iterable:
+            results.append(result)
+    except Exception as e:
+        caught_exception = e
+
+    yield from results
+    if caught_exception:
+        raise caught_exception
