@@ -12,7 +12,7 @@ def scope_compile_dbt_manifest(manifest):
     from dagster_dbt import DbtCliResource
 
     dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+    dbt = DbtCliResource(project_dir=dbt_project_dir)
 
     # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
     # Otherwise, we expect a manifest to be present in the project's target directory.
@@ -33,13 +33,12 @@ def scope_compile_dbt_manifest(manifest):
 def scope_troubleshooting_dbt_manifest(manifest):
     # start_troubleshooting_dbt_manifest
     """❌ This is not recommended."""
-    import os
     from pathlib import Path
 
     from dagster_dbt import DbtCliResource
 
     dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+    dbt = DbtCliResource(project_dir=dbt_project_dir)
 
     # A manifest will always be created at runtime.
     dbt_manifest_path = (

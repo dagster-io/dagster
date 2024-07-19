@@ -2,8 +2,6 @@
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 {% else -%}
-import os
-
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 {% endif %}
@@ -22,7 +20,7 @@ defs = Definitions(
         {% if use_dbt_project -%}
         "dbt": DbtCliResource(project_dir={{ dbt_project_name }}),
         {%- else -%}
-        "dbt": DbtCliResource(project_dir=os.fspath(dbt_project_dir)),
+        "dbt": DbtCliResource(project_dir=dbt_project_dir),
         {%- endif %}
     },
 )

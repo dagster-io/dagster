@@ -1356,23 +1356,26 @@ class DbtCliResource(ConfigurableResource):
 
     def __init__(
         self,
-        project_dir: Union[str, DbtProject],
+        project_dir: Union[str, Path, DbtProject],
         global_config_flags: Optional[List[str]] = None,
-        profiles_dir: Optional[str] = None,
+        profiles_dir: Optional[Union[str, Path]] = None,
         profile: Optional[str] = None,
         target: Optional[str] = None,
-        dbt_executable: str = DBT_EXECUTABLE,
-        state_path: Optional[str] = None,
+        dbt_executable: Union[str, Path] = DBT_EXECUTABLE,
+        state_path: Optional[Union[str, Path]] = None,
         **kwargs,  # allow custom subclasses to add fields
     ):
         if isinstance(project_dir, DbtProject):
             if not state_path and project_dir.state_path:
-                state_path = os.fspath(project_dir.state_path)
+                state_path = project_dir.state_path
 
             if not target and project_dir.target:
                 target = project_dir.target
 
-            project_dir = os.fspath(project_dir.project_dir)
+            project_dir = project_dir.project_dir
+
+        project_dir = os.fspath(project_dir)
+        state_path = state_path and os.fspath(state_path)
 
         # static typing doesn't understand whats going on here, thinks these fields dont exist
         super().__init__(

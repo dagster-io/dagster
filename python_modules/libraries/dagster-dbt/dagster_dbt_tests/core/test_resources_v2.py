@@ -63,7 +63,7 @@ def test_dbt_cli_executable() -> None:
     assert (
         DbtCliResource(
             project_dir=os.fspath(test_jaffle_shop_path),
-            dbt_executable=Path(dbt_executable),  # type: ignore
+            dbt_executable=Path(dbt_executable),
         )
         .cli(["parse"])
         .is_successful()
@@ -75,7 +75,7 @@ def test_dbt_cli_executable() -> None:
 
 
 def test_dbt_cli_project_dir_path() -> None:
-    dbt = DbtCliResource(project_dir=test_jaffle_shop_path)  # type: ignore
+    dbt = DbtCliResource(project_dir=test_jaffle_shop_path)
 
     assert Path(dbt.project_dir).is_absolute()
     assert dbt.cli(["parse"]).is_successful()
@@ -234,7 +234,7 @@ def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
     assert (
         DbtCliResource(
             project_dir=os.fspath(test_jaffle_shop_path),
-            profiles_dir=profiles_dir,  # type: ignore
+            profiles_dir=profiles_dir,
         )
         .cli(["parse"])
         .is_successful()

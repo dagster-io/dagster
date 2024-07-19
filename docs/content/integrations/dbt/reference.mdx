@@ -136,13 +136,12 @@ Creating the manifest at runtime in production is known to cause issues and is n
 
 ```python startafter=start_troubleshooting_dbt_manifest endbefore=end_troubleshooting_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
 """❌ This is not recommended."""
-import os
 from pathlib import Path
 
 from dagster_dbt import DbtCliResource
 
 dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+dbt = DbtCliResource(project_dir=dbt_project_dir)
 
 # A manifest will always be created at runtime.
 dbt_manifest_path = (
@@ -167,7 +166,7 @@ from pathlib import Path
 from dagster_dbt import DbtCliResource
 
 dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+dbt = DbtCliResource(project_dir=dbt_project_dir)
 
 # If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
 # Otherwise, we expect a manifest to be present in the project's target directory.
