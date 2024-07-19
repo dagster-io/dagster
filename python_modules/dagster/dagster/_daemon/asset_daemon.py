@@ -69,6 +69,7 @@ _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
 _PRE_SENSOR_ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 _MIGRATED_CURSOR_TO_SENSORS_KEY = "MIGRATED_CURSOR_TO_SENSORS"
+_MIGRATED_SENSOR_NAMES_KEY = "MIGRATED_SENSOR_NAMES_KEY"
 
 
 EVALUATIONS_TTL_DAYS = 30
@@ -85,16 +86,30 @@ _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME = "asset_daemon"
 MIN_INTERVAL_LOOP_SECONDS = 5
 
 
-def get_has_migrated_to_sensors(instance: DagsterInstance) -> bool:
+def _get_has_migrated(instance: DagsterInstance, migration_key: str) -> bool:
     return bool(
-        instance.daemon_cursor_storage.get_cursor_values({_MIGRATED_CURSOR_TO_SENSORS_KEY}).get(
-            _MIGRATED_CURSOR_TO_SENSORS_KEY
-        )
+        instance.daemon_cursor_storage.get_cursor_values({migration_key}).get(migration_key)
     )
 
 
-def set_has_migrated_to_sensors(instance: DagsterInstance):
-    instance.daemon_cursor_storage.set_cursor_values({_MIGRATED_CURSOR_TO_SENSORS_KEY: "1"})
+def _set_has_migrated(instance: DagsterInstance, migration_key: str) -> None:
+    instance.daemon_cursor_storage.set_cursor_values({migration_key: "1"})
+
+
+def get_has_migrated_to_sensors(instance: DagsterInstance) -> bool:
+    return _get_has_migrated(instance, _MIGRATED_CURSOR_TO_SENSORS_KEY)
+
+
+def set_has_migrated_to_sensors(instance: DagsterInstance) -> None:
+    _set_has_migrated(instance, _MIGRATED_CURSOR_TO_SENSORS_KEY)
+
+
+def get_has_migrated_sensor_names(instance: DagsterInstance) -> bool:
+    return _get_has_migrated(instance, _MIGRATED_SENSOR_NAMES_KEY)
+
+
+def set_has_migrated_sensor_names(instance: DagsterInstance) -> None:
+    _set_has_migrated(instance, _MIGRATED_SENSOR_NAMES_KEY)
 
 
 def get_auto_materialize_paused(instance: DagsterInstance) -> bool:
@@ -317,7 +332,7 @@ class AssetDaemon(DagsterDaemon):
         self._pre_sensor_interval_seconds = pre_sensor_interval_seconds
         self._last_pre_sensor_submit_time = None
 
-        self._checked_migration_to_sensors = False
+        self._checked_migrations = False
 
         self._settings = settings
 
@@ -487,7 +502,7 @@ class AssetDaemon(DagsterDaemon):
                 )
             }
 
-            if not self._checked_migration_to_sensors:
+            if not self._checked_migrations:
                 if not get_has_migrated_to_sensors(instance):
                     # Do a one-time migration to create the cursors for each sensor, based on the
                     # existing cursor for the legacy AMP tick
@@ -509,8 +524,18 @@ class AssetDaemon(DagsterDaemon):
                         )
 
                     set_has_migrated_to_sensors(instance)
+                if not get_has_migrated_sensor_names(instance):
+                    # Do a one-time migration to copy state from sensors with the legacy default
+                    # name to the new default name
+                    self._logger.info(
+                        "Renaming any states corresponding to the legacy default name"
+                    )
+                    all_auto_materialize_states = self._copy_default_auto_materialize_sensor_states(
+                        instance, all_auto_materialize_states
+                    )
+                    set_has_migrated_sensor_names(instance)
 
-                self._checked_migration_to_sensors = True
+                self._checked_migrations = True
 
             for sensor, repo in eligible_sensors_and_repos:
                 selector_id = sensor.selector_id
@@ -626,6 +651,38 @@ class AssetDaemon(DagsterDaemon):
 
         return result
 
+    def _copy_default_auto_materialize_sensor_states(
+        self,
+        instance: DagsterInstance,
+        all_auto_materialize_states: Mapping[str, InstigatorState],
+    ) -> Mapping[str, InstigatorState]:
+        """Searches for sensors named `default_auto_materialize_sensor` and copies their state
+        to a sensor in the same repository named `default_automation_condition_sensor`.
+        """
+        result = dict(all_auto_materialize_states)
+
+        for instigator_state in all_auto_materialize_states.values():
+            # only migrate instigators with the name "default_auto_materialize_sensor"
+            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor":
+                continue
+            new_sensor_origin = instigator_state.origin._replace(
+                instigator_name="default_automation_condition_sensor"
+            )
+            new_auto_materialize_state = InstigatorState(
+                new_sensor_origin,
+                InstigatorType.SENSOR,
+                instigator_state.status,
+                instigator_state.instigator_data,
+            )
+            new_sensor_selector_id = new_sensor_origin.get_selector().get_id()
+            result[new_sensor_selector_id] = new_auto_materialize_state
+            if all_auto_materialize_states.get(new_sensor_selector_id):
+                instance.update_instigator_state(new_auto_materialize_state)
+            else:
+                instance.add_instigator_state(new_auto_materialize_state)
+
+        return result
+
     def _process_auto_materialize_tick(
         self,
         workspace_process_context: IWorkspaceProcessContext,
@@ -669,6 +726,7 @@ class AssetDaemon(DagsterDaemon):
                 mark_sensor_state_for_tick(
                     instance, sensor, auto_materialize_instigator_state, evaluation_time
                 )
+
         else:
             auto_materialize_instigator_state = None
 
