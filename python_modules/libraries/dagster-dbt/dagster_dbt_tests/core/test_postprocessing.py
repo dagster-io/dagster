@@ -204,6 +204,17 @@ def test_row_count_does_not_obscure_errors(
     assert not result.success
     assert len(result.get_asset_materialization_events()) == 7
 
+    metadata_by_asset_key = {
+        check.not_none(event.asset_key): event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+    }
+    assert all(
+        "dagster/row_count" in metadata
+        for asset_key, metadata in metadata_by_asset_key.items()
+        # staging tables are views, so we don't attempt to get row counts for them
+        if "stg" not in asset_key.path[-1]
+    ), str(metadata_by_asset_key)
+
 
 def test_row_count_err(
     test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
