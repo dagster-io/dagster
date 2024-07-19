@@ -33,18 +33,19 @@ export type SingleBackfillQuery = {
     | {
         __typename: 'PartitionBackfill';
         id: string;
-        partitionStatuses: {
-          __typename: 'PartitionStatuses';
-          results: Array<{
-            __typename: 'PartitionStatus';
-            id: string;
-            partitionName: string;
-            runId: string | null;
-            runStatus: Types.RunStatus | null;
-          }>;
-        } | null;
+        unfinishedRuns: Array<{
+          __typename: 'Run';
+          id: string;
+          runId: string;
+          status: Types.RunStatus;
+        }>;
       }
     | {__typename: 'PythonError'};
 };
 
-
+export type UnfinishedRunsForBackfillFragment = {
+  __typename: 'Run';
+  id: string;
+  runId: string;
+  status: Types.RunStatus;
+};

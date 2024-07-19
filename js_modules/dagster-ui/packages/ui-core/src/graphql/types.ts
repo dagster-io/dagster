@@ -3092,7 +3092,6 @@ export type PartitionBackfill = {
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Maybe<Scalars['String']['output']>;
   partitionStatusCounts: Array<PartitionStatusCounts>;
-  partitionStatuses: Maybe<PartitionStatuses>;
   partitionsTargetedForAssetKey: Maybe<AssetBackfillTargetPartitions>;
   reexecutionSteps: Maybe<Array<Scalars['String']['output']>>;
   runs: Array<Run>;
@@ -10741,12 +10740,6 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('partitionStatusCounts')
         ? overrides.partitionStatusCounts!
         : [],
-    partitionStatuses:
-      overrides && overrides.hasOwnProperty('partitionStatuses')
-        ? overrides.partitionStatuses!
-        : relationshipsToOmit.has('PartitionStatuses')
-        ? ({} as PartitionStatuses)
-        : buildPartitionStatuses({}, relationshipsToOmit),
     partitionsTargetedForAssetKey:
       overrides && overrides.hasOwnProperty('partitionsTargetedForAssetKey')
         ? overrides.partitionsTargetedForAssetKey!

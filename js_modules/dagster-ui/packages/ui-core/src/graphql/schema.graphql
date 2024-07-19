@@ -2777,7 +2777,6 @@ type PartitionBackfill {
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
-  partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
   partitionsTargetedForAssetKey(assetKey: AssetKeyInput): AssetBackfillTargetPartitions
   isAssetBackfill: Boolean!

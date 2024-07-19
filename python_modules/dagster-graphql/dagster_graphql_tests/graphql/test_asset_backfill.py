@@ -63,12 +63,11 @@ SINGLE_BACKFILL_QUERY = """
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
-        partitionStatuses {
+        unfinishedRuns {
           results {
             id
-            partitionName
             runId
-            runStatus
+            status
           }
         }
       }

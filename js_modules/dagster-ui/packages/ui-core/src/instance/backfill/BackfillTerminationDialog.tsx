@@ -39,15 +39,15 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }
-    const unfinishedPartitions = data.partitionBackfillOrError.partitionStatuses?.results.filter(
-      (partition) =>
-        partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
+    const unfinishedRuns = data.partitionBackfillOrError.unfinishedRuns?.filter(
+      (run) =>
+        run.status && run.runId && cancelableStatuses.has(run.status),
     );
     return (
-      unfinishedPartitions?.reduce(
-        (accum, partition) => {
-          if (partition && partition.runId) {
-            accum[partition.runId] = true;
+      unfinishedRuns?.reduce(
+        (accum, run) => {
+          if (run && run.runId) {
+            accum[run.runId] = true;
           }
           return accum;
         },

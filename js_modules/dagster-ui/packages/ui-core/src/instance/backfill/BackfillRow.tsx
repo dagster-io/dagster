@@ -22,7 +22,7 @@ import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
-import {inProgressStatuses} from '../../runs/RunStatuses';
+import {doneStatuses, inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
@@ -337,11 +337,11 @@ export const BackfillStatusTag = ({
       if (!counts) {
         return <div style={{color: Colors.textLight()}}>None</div>;
       }
-      if (counts[RunStatus.SUCCESS] === backfill.partitionNames.length) {
-        return <Tag intent="success">Completed</Tag>;
-      }
       if (Array.from(inProgressStatuses).some((status) => counts[status])) {
         return <Tag intent="primary">In progress</Tag>;
+      }
+      if (Object.keys(counts).every((status) => doneStatuses.has(status as RunStatus))) {
+        return <Tag intent="success">Completed</Tag>;
       }
       return <Tag intent="warning">Incomplete</Tag>;
     case BulkActionStatus.CANCELING:
@@ -383,19 +383,16 @@ export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         id
-        partitionStatuses {
-          ...PartitionStatusesForBackfill
+        unfinishedRuns {
+          ...UnfinishedRunsForBackfill
         }
       }
     }
   }
 
-  fragment PartitionStatusesForBackfill on PartitionStatuses {
-    results {
-      id
-      partitionName
-      runId
-      runStatus
-    }
+  fragment UnfinishedRunsForBackfill on Run {
+    id
+    runId
+    status
   }
 `;
