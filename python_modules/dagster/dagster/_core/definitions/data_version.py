@@ -751,6 +751,8 @@ class CachingStaleStatusResolver:
 
     def _exceeds_self_partition_limit(self, asset_key: "AssetKey") -> bool:
         return (
-            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions()
+            check.not_none(self.asset_graph.get(asset_key).partitions_def).get_num_partitions(
+                dynamic_partitions_store=self._instance
+            )
             >= SKIP_PARTITION_DATA_VERSION_SELF_DEPENDENCY_THRESHOLD
         )
