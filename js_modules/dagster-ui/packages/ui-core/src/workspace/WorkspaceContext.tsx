@@ -265,7 +265,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     () =>
       Object.values(locationEntriesData).filter(
         (entry): entry is WorkspaceLocationNodeFragment =>
-          entry.__typename === 'WorkspaceLocationEntry',
+          entry && entry.__typename === 'WorkspaceLocationEntry',
       ),
     [locationEntriesData],
   );
