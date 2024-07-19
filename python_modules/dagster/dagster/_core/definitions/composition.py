@@ -52,7 +52,6 @@ from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 from .utils import NormalizedTags, check_valid_name, normalize_tags
-from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -625,7 +624,6 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
-        version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ) -> "JobDefinition":
@@ -652,7 +650,6 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             executor_def=executor_def,
             hooks=job_hooks,
             op_retry_policy=op_retry_policy,
-            version_strategy=version_strategy,
             partitions_def=partitions_def,
             input_values=input_values,
         )

@@ -12,7 +12,6 @@ from dagster import (
     Out,
     Output,
     StaticPartitionsDefinition,
-    VersionStrategy,
     asset,
     graph,
     job,
@@ -23,7 +22,6 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.test_utils import instance_for_test
 from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
 
@@ -125,33 +123,6 @@ def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
     assert result.output_for_node("return_two_outputs", "foobar") == 10
 
     assert len(list(mock_s3_bucket.objects.all())) == 2
-
-
-def test_memoization_s3_io_manager(mock_s3_bucket):
-    class BasicVersionStrategy(VersionStrategy):
-        def get_op_version(self, _):
-            return "foo"
-
-    @op
-    def basic():
-        return "foo"
-
-    @job(
-        resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_test_resource},
-        version_strategy=BasicVersionStrategy(),
-    )
-    def memoized():
-        basic()
-
-    run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
-    with instance_for_test() as instance:
-        result = memoized.execute_in_process(run_config=run_config, instance=instance)
-        assert result.success
-        assert result.output_for_node("basic") == "foo"
-
-        result = memoized.execute_in_process(run_config=run_config, instance=instance)
-        assert result.success
-        assert len(result.all_node_events) == 0
 
 
 def define_assets_job(bucket):
