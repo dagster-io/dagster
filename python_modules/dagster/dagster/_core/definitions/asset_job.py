@@ -253,7 +253,7 @@ def build_asset_job(
             metadata=original_job.metadata,
             logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
-            op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
+            op_retry_policy=original_job.op_retry_policy,
             version_strategy=original_job.version_strategy,
         )
 
