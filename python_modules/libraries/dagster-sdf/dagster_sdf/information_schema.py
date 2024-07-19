@@ -34,8 +34,6 @@ class LazyDataFrameDict:
         self,
         information_schema_dir: Path,
     ):
-        if isinstance(information_schema_dir, str):
-            information_schema_dir = Path(information_schema_dir)
         self.information_schema_dir = information_schema_dir
         self.data = {}
         self.loaded = {}
