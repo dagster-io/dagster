@@ -162,8 +162,9 @@ def test_row_count_does_not_obscure_errors(
     request: pytest.FixtureRequest, target: str, manifest_fixture_name: str
 ) -> None:
     manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
-    # Test that row count fetching does not obscure other errors in the dbt run
 
+    # Test that row count fetching does not obscure other errors in the dbt run
+    # First, run dbt without any row count fetching, and ensure that it fails
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from (
@@ -183,6 +184,8 @@ def test_row_count_does_not_obscure_errors(
     assert not result.success
     assert len(result.get_asset_materialization_events()) == 7
 
+    # Next, run the exact same dbt run, but with row count fetching enabled
+    # And ensure it fails in the same way
     @dbt_assets(manifest=manifest)
     def my_dbt_assets_row_count(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from (
