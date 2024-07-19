@@ -26,6 +26,7 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
@@ -54,6 +55,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -71,6 +73,7 @@ from ..dagster_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
+    MegaRun,
     RunPartitionData,
     RunRecord,
     RunsFilter,
@@ -732,6 +735,71 @@ class SqlRunStorage(RunStorage):
             )
             rows = self.fetchall(query)
             return self._rows_to_runs(rows)
+
+    def _fetch_single_runs(
+        self, cursor: Optional[str], limit: Optional[int]
+    ) -> Sequence[RunRecord]:
+        if limit is None:
+            new_runs = self.get_run_records(cursor=cursor)
+            return [run for run in new_runs if run.dagster_run.tags.get(BACKFILL_ID_TAG) is None]
+
+        runs = []
+        while len(runs) < limit:
+            new_runs = self.get_run_records(limit=limit, cursor=cursor)
+            if len(new_runs) == 0:
+                return runs
+            cursor = new_runs[-1].run_id
+            runs.extend(
+                [run for run in new_runs if run.dagster_run.tags.get(BACKFILL_ID_TAG) is None]
+            )
+
+        return runs[:limit]
+
+    def get_mega_runs(
+        self,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        # ascending: bool = False, # need to implement ascending for backfills before enabling this
+    ) -> Sequence[MegaRun]:
+        # get limit of backfills and of runs that are not part of backfills
+        backfills = self.get_backfills(limit=limit)
+        runs = self._fetch_single_runs(cursor, limit)
+
+        # order runs and backfills by create_time? typically we sort by storage id but that won't work here since
+        # they are different tables
+        all_mega_runs = sorted(
+            backfills + runs,
+            key=lambda x: x.create_timestamp if isinstance(x, RunRecord) else x.backfill_timestamp,
+        )
+        if limit:
+            all_mega_runs = all_mega_runs[:limit]
+
+        # turn each run/backfill into a MegaRun and return
+        mega_runs = []
+
+        for mega_run in mega_runs:
+            if isinstance(mega_run, RunRecord):
+                target = (
+                    mega_run.dagster_run.job_name
+                    if not is_base_asset_job_name(mega_run.dagster_run.job_name)
+                    else mega_run.dagster_job.asset_selection
+                    + mega_run.dagster_job.asset_check_selection
+                )
+                mega_runs.append(
+                    MegaRun(
+                        run_id=mega_run.dagster_run.run_id,
+                        status=mega_run.dagster_run.status,
+                        create_timestamp=mega_run.create_timestamp,
+                        start_time=mega_run.start_time,
+                        end_time=mega_run.end_time,
+                        target=target,
+                        launched_by=mega_run.dagster_run.tags.get("dagster/launched_by", "unknown"),
+                    )
+                )
+            else:
+                mega_runs.append(
+                    MegaRun(backfill=mega_run, backfill_timestamp=mega_run.backfill_timestamp)
+                )
 
     # Tracking data migrations over secondary indexes
 
