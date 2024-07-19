@@ -62,9 +62,7 @@ def test_bind_resource_to_job_at_defn_time_err() -> None:
         DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
-        Definitions(
-            jobs=[hello_world_job],
-        )
+        Definitions.validate_loadable(Definitions(jobs=[hello_world_job]))
 
 
 def test_bind_resource_to_job_at_defn_time() -> None:
@@ -193,9 +191,7 @@ def test_bind_resource_to_job_with_job_config() -> None:
         DagsterInvalidDefinitionError,
         match="resource with key 'writer' required by op 'hello_world_op' was not provided",
     ):
-        Definitions(
-            jobs=[hello_world_job],
-        )
+        Definitions.validate_loadable(Definitions(jobs=[hello_world_job]))
 
 
 def test_bind_resource_to_job_at_defn_time_override() -> None:

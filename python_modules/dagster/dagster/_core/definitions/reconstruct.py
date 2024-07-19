@@ -709,7 +709,7 @@ def repository_def_from_target_def(
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
-        target = target.get_inner_repository_for_loading_process()
+        target = target.get_inner_repository()
 
     # special case - we can wrap a single job in a repository
     if isinstance(target, (JobDefinition, GraphDefinition)):

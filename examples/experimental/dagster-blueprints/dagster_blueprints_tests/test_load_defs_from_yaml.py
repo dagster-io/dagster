@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Literal, Sequence, Union
 
 import pytest
-from dagster import AssetKey, asset, job
+from dagster import AssetKey, Definitions, asset, job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
@@ -227,9 +227,11 @@ def test_additional_resources() -> None:
         DagsterInvalidDefinitionError,
         match="resource with key 'some_resource' required by op 'asset1' was not provided",
     ):
-        load_defs_from_yaml(
-            path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
-            per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
+        Definitions.validate_loadable(
+            load_defs_from_yaml(
+                path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+                per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
+            )
         )
 
     defs = load_defs_from_yaml(
@@ -246,10 +248,12 @@ def test_yaml_blueprints_loader_additional_resources() -> None:
         DagsterInvalidDefinitionError,
         match="resource with key 'some_resource' required by op 'asset1' was not provided",
     ):
-        YamlBlueprintsLoader(
-            path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
-            per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
-        ).load_defs()
+        Definitions.validate_loadable(
+            YamlBlueprintsLoader(
+                path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+                per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
+            ).load_defs()
+        )
 
     defs = YamlBlueprintsLoader(
         path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
