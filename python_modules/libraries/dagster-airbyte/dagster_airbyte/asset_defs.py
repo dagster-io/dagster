@@ -33,6 +33,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
+from dagster._annotations import deprecated
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -926,6 +927,10 @@ def load_assets_from_airbyte_instance(
     )
 
 
+@deprecated(
+    breaking_version="1.9",
+    additional_warn_text="The Airbyte Octavia CLI has been deprecated. Consider using load_assets_from_airbyte_instance instead.",
+)
 def load_assets_from_airbyte_project(
     project_dir: str,
     workspace_id: Optional[str] = None,
