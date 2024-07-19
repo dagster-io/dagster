@@ -778,6 +778,8 @@ class SqlRunStorage(RunStorage):
         mega_runs = []
 
         for mega_run in mega_runs:
+            # could make these conversions from_run_record and from_backfill methods on MegaRun
+            # or to_mega_run method on RunRecord and PartitionBackfill
             if isinstance(mega_run, RunRecord):
                 target = (
                     mega_run.dagster_run.job_name
@@ -793,13 +795,28 @@ class SqlRunStorage(RunStorage):
                         start_time=mega_run.start_time,
                         end_time=mega_run.end_time,
                         target=target,
-                        launched_by=mega_run.dagster_run.tags.get("dagster/launched_by", "unknown"),
+                        tags=mega_run.dagster_run.tags,
                     )
                 )
             else:
-                mega_runs.append(
-                    MegaRun(backfill=mega_run, backfill_timestamp=mega_run.backfill_timestamp)
+                backfill_runs = self.get_run_records(
+                    runs_filter=RunsFilter.for_backfill(mega_run.backfill_id)
                 )
+                max_end_time = 0
+                for run in backfill_runs:
+                    max_end_time = max(run.end_time or 0, max_end_time)
+                mega_runs.append(
+                    MegaRun(
+                        run_id=mega_run.backfill_id,
+                        status=mega_run.status.to_dagster_run_status(),
+                        create_timestamp=datetime_from_timestamp(mega_run.backfill_timestamp),
+                        start_time=mega_run.backfill_timestamp,
+                        end_time=None if max_end_time == 0 else max_end_time,
+                        tags=mega_run.tags,
+                    )
+                )
+
+        return mega_runs
 
     # Tracking data migrations over secondary indexes
 

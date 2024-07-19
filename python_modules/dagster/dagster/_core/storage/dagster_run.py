@@ -586,10 +586,10 @@ class MegaRun:
     run_id: str
     status: DagsterRunStatus
     create_timestamp: datetime
-    start_time: datetime
-    end_time: datetime
+    start_time: Optional[float]
+    end_time: Optional[float]
     target: Union[str, AbstractSet[Union[AssetKey, AssetCheckKey]]]
-    launched_by: str
+    tags: Mapping[str, str]
 
 
 class RunRecord(
