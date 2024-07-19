@@ -26,14 +26,33 @@
  *
  * Note: All string parameters should be URL-encoded when used in the query string.
  */
+
 import fs from 'fs/promises';
 import path from 'path';
 
 import {NextApiRequest, NextApiResponse} from 'next';
 
-const DOCS_SNIPPET = path.join(process.cwd(), 'public', 'docs_snippets', 'docs_snippets');
+// This makes sure the code snippets feature works in both development and production
+const getSnippetsPath = async () => {
+  const devPath = path.join(process.cwd(), '..', '..', 'examples', 'docs_snippets', 'docs_snippets');
+  try {
+    await fs.access(devPath);
+    console.log('Using development snippets path:', devPath);
+    return devPath;
+  } catch (error) {
+    const prodPath = path.join(process.cwd(), 'public', 'docs_snippets', 'docs_snippets');
+    console.log('Using production snippets path:', prodPath);
+    return prodPath;
+  }
+};
 
-console.log('DOCS_SNIPPET path:', DOCS_SNIPPET);
+let DOCS_SNIPPET: string;
+
+const initializeSnippetsPath = async () => {
+  DOCS_SNIPPET = await getSnippetsPath();
+};
+
+initializeSnippetsPath();
 
 const limitSnippetLines = (
   content: string,
@@ -44,12 +63,12 @@ const limitSnippetLines = (
 ): string => {
   console.log('limitSnippetLines input:', { 
     contentLength: content.length, 
-    lines, 
-    dedent, 
-    startafter, 
-    endbefore 
+    lines,
+    dedent,
+    startafter,
+    endbefore,
   });
-  
+
   let result = content;
 
   if (startafter) {
@@ -99,8 +118,13 @@ const limitSnippetLines = (
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+if (!DOCS_SNIPPET) {
+    await initializeSnippetsPath();
+  }
+
   const { file, lines, startafter, endbefore, dedent, trim } = req.query;
 
+  console.log('Snippets path:', DOCS_SNIPPET);
   console.log('Received query parameters:', req.query);
 
   if (typeof file !== 'string') {
@@ -122,7 +146,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('File content is not a string');
     }
 
-    console.log('Before limitSnippetLines:', { contentLength: content.length });
+    console.log('Before limitSnippetLines:', {contentLength: content.length});
     content = limitSnippetLines(
       content,
       lines as string,
@@ -130,7 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       startafter as string,
       endbefore as string,
     );
-    console.log('After limitSnippetLines:', { contentLength: content.length });
+    console.log('After limitSnippetLines:', {contentLength: content.length});
 
     // Remove pragmas
     if (content) {
@@ -152,10 +176,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(200).send(content);
   } catch (error) {
     console.error('Error reading or processing file:', error);
-    res.status(500).json({ 
-      error: 'Failed to read or process file', 
+    res.status(500).json({
+      error: 'Failed to read or process file',
       details: error.message,
-      stack: error.stack 
+      stack: error.stack,
     });
   }
 }

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "PORT=3001 next-remote-watch ../content",
+    "dev": "NEXT_PUBLIC_ENV=development PORT=3001 next-remote-watch ../content",
     "build": "next build",
     "build-master": "VERSIONING_DISABLED=true next build",
     "start": "next start",
