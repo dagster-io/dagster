@@ -103,7 +103,7 @@ Refer to the `Auto-materialize policies </concepts/assets/asset-auto-execution>`
 
 .. autoclass:: AutoMaterializeRule
 
-.. autoclass:: AutoMaterializeSensorDefinition
+.. autoclass:: AutomationConditionSensorDefinition
 
 .. autoclass:: AutomationCondition
 

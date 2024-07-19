@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import ExternalRepository
@@ -181,7 +181,7 @@ def test_no_default_auto_materialize_sensors(instance_without_auto_materialize_s
 
 
 def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_materialize_sensors):
-    auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         asset_selection=[auto_materialize_asset, auto_observe_asset],
     )
@@ -247,7 +247,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
 
 
 def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
-    auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         asset_selection=[
             auto_materialize_asset,

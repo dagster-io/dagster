@@ -52,7 +52,7 @@ from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinit
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
@@ -660,7 +660,7 @@ class SensorSnap(
             asset_selection=serializable_asset_selection,
             run_tags=(
                 sensor_def.run_tags
-                if isinstance(sensor_def, AutoMaterializeSensorDefinition)
+                if isinstance(sensor_def, AutomationConditionSensorDefinition)
                 else None
             ),
         )
