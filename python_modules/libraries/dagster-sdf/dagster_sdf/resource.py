@@ -391,6 +391,21 @@ class SdfCliResource(ConfigurableResource):
             **kwargs,
         )
 
+    @validator("workspace_dir", pre=True)
+    def convert_path_to_str(cls, v: Any) -> Any:
+        """Validate that the path is converted to a string."""
+        if isinstance(v, Path):
+            resolved_path = cls._validate_absolute_path_exists(v)
+
+            absolute_path = Path(v).absolute()
+            try:
+                resolved_path = absolute_path.resolve(strict=True)
+            except FileNotFoundError:
+                raise ValueError(f"The absolute path of '{v}' ('{absolute_path}') does not exist")
+            return os.fspath(resolved_path)
+
+        return v
+
     @validator("workspace_dir")
     def validate_workspace_dir(cls, project_dir: str) -> str:
         resolved_workspace_dir = cls._validate_absolute_path_exists(project_dir)
@@ -431,6 +446,8 @@ class SdfCliResource(ConfigurableResource):
 
         Args:
             args (Sequence[str]): The sdf CLI command to execute.
+            target_dir (Optional[Path]): The path to the target directory.
+            environment (str): The environment to use. Defaults to "dbg".
             raise_on_error (bool): Whether to raise an exception if the sdf CLI command fails.
             context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context from within `@sdf_assets`.
                 If an AssetExecutionContext is passed, its underlying OpExecutionContext will be used.
