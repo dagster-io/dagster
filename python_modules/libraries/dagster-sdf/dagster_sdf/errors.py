@@ -9,7 +9,3 @@ class DagsterSdfError(Failure, ABC):
 
 class DagsterSdfCliRuntimeError(DagsterSdfError, ABC):
     """Represents an error while executing an sdf CLI command."""
-
-
-class DagsterSdfInformationSchemaNotFoundError(DagsterSdfError):
-    """Error when we expect the sdf information schema to have been generated already but it is absent."""

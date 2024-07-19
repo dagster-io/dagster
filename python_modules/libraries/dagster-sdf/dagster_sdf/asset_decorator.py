@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Any, Callable, Mapping, Optional, Set, Union
+from typing import Any, Callable, Mapping, Optional, Set
 
 from dagster import (
     AssetsDefinition,
@@ -10,15 +9,12 @@ from dagster import (
     multi_asset,
 )
 
-from .constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT
 from .information_schema import SdfInformationSchema
 
 
 def sdf_assets(
     *,
-    workspace_dir: Union[Path, str],
-    target_dir: Union[Path, str],
-    environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
+    information_schema: SdfInformationSchema,
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -27,16 +23,9 @@ def sdf_assets(
     required_resource_keys: Optional[Set[str]] = None,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
-    information_schema = SdfInformationSchema(
-        workspace_dir=workspace_dir, target_dir=target_dir, environment=environment
-    )
-    outs, internal_asset_deps = information_schema.get_outs_and_internal_deps(
+    outs, internal_asset_deps = information_schema.build_sdf_multi_asset_args(
         io_manager_key=io_manager_key
     )
-
-    resolved_op_tags = {
-        **(op_tags if op_tags else {}),
-    }
 
     if (
         partitions_def
@@ -49,13 +38,11 @@ def sdf_assets(
         outs=outs,
         name=name,
         internal_asset_deps=internal_asset_deps,
-        deps=[],
         required_resource_keys=required_resource_keys,
-        compute_kind="sdf",  # Purely cosmetic
+        compute_kind="sdf",
         partitions_def=partitions_def,
         can_subset=True,
-        op_tags=resolved_op_tags,
-        check_specs=[],
+        op_tags=op_tags,
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
     )

@@ -16,12 +16,10 @@ from dagster import (
     ConfigurableResource,
     OpExecutionContext,
     Output,
-    TimestampMetadataValue,
     get_dagster_logger,
 )
 from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
-from dateutil import parser
 from pydantic import Field, validator
 from typing_extensions import Literal, TypeVar
 
@@ -86,17 +84,8 @@ class SdfCliEventMessage:
             return
 
         table_id = self.raw_event["table"]
-        timestamp_str: str = self.raw_event["__ts"]
-        try:
-            dt = parser.parse(timestamp_str)
-            float_timestamp = dt.timestamp()
-            materialized_at = TimestampMetadataValue(float_timestamp)
-        except:
-            materialized_at = timestamp_str
-
         default_metadata = {
             "table_id": table_id,
-            "materialized_at": materialized_at,
             "Execution Duration": self.raw_event["ev_dur_ms"] / 1000,
         }
 
@@ -402,6 +391,21 @@ class SdfCliResource(ConfigurableResource):
             **kwargs,
         )
 
+    @validator("workspace_dir", pre=True)
+    def convert_path_to_str(cls, v: Any) -> Any:
+        """Validate that the path is converted to a string."""
+        if isinstance(v, Path):
+            resolved_path = cls._validate_absolute_path_exists(v)
+
+            absolute_path = Path(v).absolute()
+            try:
+                resolved_path = absolute_path.resolve(strict=True)
+            except FileNotFoundError:
+                raise ValueError(f"The absolute path of '{v}' ('{absolute_path}') does not exist")
+            return os.fspath(resolved_path)
+
+        return v
+
     @validator("workspace_dir")
     def validate_workspace_dir(cls, project_dir: str) -> str:
         resolved_workspace_dir = cls._validate_absolute_path_exists(project_dir)
@@ -434,7 +438,7 @@ class SdfCliResource(ConfigurableResource):
         args: Sequence[str],
         *,
         target_dir: Optional[Path] = None,
-        environment: Optional[str] = None,
+        environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
         raise_on_error: bool = True,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
     ) -> SdfCliInvocation:
@@ -442,6 +446,8 @@ class SdfCliResource(ConfigurableResource):
 
         Args:
             args (Sequence[str]): The sdf CLI command to execute.
+            target_dir (Optional[Path]): The path to the target directory.
+            environment (str): The environment to use. Defaults to "dbg".
             raise_on_error (bool): Whether to raise an exception if the sdf CLI command fails.
             context (Optional[Union[OpExecutionContext, AssetExecutionContext]]): The execution context from within `@sdf_assets`.
                 If an AssetExecutionContext is passed, its underlying OpExecutionContext will be used.
@@ -450,9 +456,6 @@ class SdfCliResource(ConfigurableResource):
             SdfCliInvocation: A invocation instance that can be used to retrieve the output of the
                 sdf CLI command.
         """
-        if not environment:
-            environment = DEFAULT_SDF_WORKSPACE_ENVIRONMENT
-
         context = (
             context.op_execution_context if isinstance(context, AssetExecutionContext) else context
         )
@@ -464,7 +467,6 @@ class SdfCliResource(ConfigurableResource):
         target_path = target_dir or self._get_unique_target_path(context=context)
         target_args = ["--target-dir", str(target_path)]
         log_level_args = ["--log-level", "info"]
-        show_args = ["--show", "none"]
 
         output_dir = target_path.joinpath(SDF_TARGET_DIR, environment)
 
@@ -476,7 +478,6 @@ class SdfCliResource(ConfigurableResource):
             *self.global_config_flags,
             *log_level_args,
             *args,
-            *show_args,
             *environment_args,
             *target_args,
         ]

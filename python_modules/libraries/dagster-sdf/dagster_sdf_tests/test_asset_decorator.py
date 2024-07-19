@@ -1,63 +1,63 @@
-import os
 from pathlib import Path
 
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    _check as check,
-    materialize,
-)
+from dagster import AssetExecutionContext, AssetKey, materialize
 from dagster_sdf.asset_decorator import sdf_assets
+from dagster_sdf.information_schema import SdfInformationSchema
 from dagster_sdf.resource import SdfCliResource
 
-from .sdf_workspaces import lineage_path, moms_flower_shop_path
+from .sdf_workspaces import moms_flower_shop_path
 
 
-def test_decorator_arguments(lineage_target_dir: Path) -> None:
-    @sdf_assets(workspace_dir=lineage_path, target_dir=lineage_target_dir)
-    def my_sdf_assets(): ...
+def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
+    @sdf_assets(information_schema=SdfInformationSchema(target_dir=moms_flower_shop_target_dir))
+    def my_flower_shop_assets(): ...
 
-    assert my_sdf_assets.keys == {
-        AssetKey(key)
-        for key in {
-            ("lineage", "pub", "source"),
-            ("lineage", "pub", "sink"),
-            ("lineage", "pub", "knis"),
-            ("lineage", "pub", "middle"),
-        }
+    assert my_flower_shop_assets.asset_deps == {
+        AssetKey(["moms_flower_shop", "raw", "raw_addresses"]): set(),
+        AssetKey(["moms_flower_shop", "raw", "raw_customers"]): set(),
+        AssetKey(["moms_flower_shop", "raw", "raw_inapp_events"]): set(),
+        AssetKey(["moms_flower_shop", "raw", "raw_marketing_campaign_events"]): set(),
+        AssetKey(["moms_flower_shop", "staging", "app_installs"]): {
+            AssetKey(["moms_flower_shop", "staging", "inapp_events"]),
+            AssetKey(["moms_flower_shop", "raw", "raw_marketing_campaign_events"]),
+        },
+        AssetKey(["moms_flower_shop", "staging", "app_installs_v2"]): {
+            AssetKey(["moms_flower_shop", "staging", "inapp_events"]),
+            AssetKey(["moms_flower_shop", "raw", "raw_marketing_campaign_events"]),
+        },
+        AssetKey(["moms_flower_shop", "staging", "customers"]): {
+            AssetKey(["moms_flower_shop", "raw", "raw_addresses"]),
+            AssetKey(["moms_flower_shop", "staging", "app_installs_v2"]),
+            AssetKey(["moms_flower_shop", "raw", "raw_customers"]),
+        },
+        AssetKey(["moms_flower_shop", "staging", "inapp_events"]): {
+            AssetKey(["moms_flower_shop", "raw", "raw_inapp_events"])
+        },
+        AssetKey(["moms_flower_shop", "staging", "marketing_campaigns"]): {
+            AssetKey(["moms_flower_shop", "raw", "raw_marketing_campaign_events"])
+        },
+        AssetKey(["moms_flower_shop", "staging", "stg_installs_per_campaign"]): {
+            AssetKey(["moms_flower_shop", "staging", "app_installs_v2"])
+        },
+        AssetKey(["moms_flower_shop", "analytics", "agg_installs_and_campaigns"]): {
+            AssetKey(["moms_flower_shop", "staging", "app_installs_v2"])
+        },
+        AssetKey(["moms_flower_shop", "analytics", "dim_marketing_campaigns"]): {
+            AssetKey(["moms_flower_shop", "staging", "marketing_campaigns"]),
+            AssetKey(["moms_flower_shop", "staging", "stg_installs_per_campaign"]),
+        },
     }
 
 
-def test_sdf_with_materialize(lineage_target_dir: Path, moms_flower_shop_target_dir: Path) -> None:
-    for workspace_dir, target_dir in [
-        (lineage_path, lineage_target_dir),
-        (moms_flower_shop_path, moms_flower_shop_target_dir),
-    ]:
+def test_sdf_with_materialize(moms_flower_shop_target_dir: Path) -> None:
+    @sdf_assets(information_schema=SdfInformationSchema(target_dir=moms_flower_shop_target_dir))
+    def my_sdf_assets(context: AssetExecutionContext, sdf: SdfCliResource):
+        yield from sdf.cli(["run"], context=context).stream()
 
-        @sdf_assets(workspace_dir=workspace_dir, target_dir=target_dir)
-        def my_sdf_assets(context: AssetExecutionContext, sdf: SdfCliResource):
-            yield from sdf.cli(["run"], target_dir=target_dir, context=context).stream()
+    result = materialize(
+        [my_sdf_assets],
+        resources={"sdf": SdfCliResource(workspace_dir=moms_flower_shop_path)},
+    )
 
-        result = materialize(
-            [my_sdf_assets],
-            resources={
-                "sdf": SdfCliResource(
-                    workspace_dir=os.fspath(workspace_dir),
-                    global_config_flags=["--log-form=nested"],
-                )
-            },
-        )
-        assert result.success
-
-        # Assert that get_asset_materialization_events() is not empty
-        assert result.get_asset_materialization_events()
-
-        metadata_by_asset_key = {
-            check.not_none(event.asset_key): event.materialization.metadata
-            for event in result.get_asset_materialization_events()
-        }
-
-        # Validate that we have a materialized_at time for all models which are not views
-        assert all(
-            "materialized_at" in metadata for _, metadata in metadata_by_asset_key.items()
-        ), str(metadata_by_asset_key)
+    assert result.success
+    assert result.get_asset_materialization_events()
