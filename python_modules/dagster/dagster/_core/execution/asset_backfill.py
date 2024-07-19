@@ -39,7 +39,10 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterAssetBackfillDataLoadError,
@@ -1323,12 +1326,15 @@ def _partition_subset_str(
     partitions_def: PartitionsDefinition,
     instance: DynamicPartitionsStore,
 ):
-    return ",".join(
-        f"{partition_range.start} -> {partition_range.end}"
-        for partition_range in partition_subset.get_partition_key_ranges(
-            partitions_def=partitions_def, dynamic_partitions_store=instance
+    if isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
+        return ", ".join(
+            f"{partition_range.start} -> {partition_range.end}"
+            for partition_range in partition_subset.get_partition_key_ranges(
+                partitions_def=partitions_def, dynamic_partitions_store=instance
+            )
         )
-    )
+
+    return ", ".join(partition_subset.get_partition_keys())
 
 
 def _asset_subsets_iter_to_str(
