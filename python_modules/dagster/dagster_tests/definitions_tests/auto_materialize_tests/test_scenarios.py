@@ -3,7 +3,6 @@ import pytest
 from .updated_scenarios.asset_daemon_scenario import AssetDaemonScenario
 from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.cron_scenarios import cron_scenarios
-from .updated_scenarios.custom_condition_scenarios import custom_condition_scenarios
 from .updated_scenarios.freshness_policy_scenarios import freshness_policy_scenarios
 from .updated_scenarios.latest_materialization_run_tag_scenarios import (
     latest_materialization_run_tag_scenarios,
@@ -16,7 +15,6 @@ all_scenarios = (
     + freshness_policy_scenarios
     + partition_scenarios
     + latest_materialization_run_tag_scenarios
-    + custom_condition_scenarios
 )
 
 

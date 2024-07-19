@@ -10,7 +10,7 @@ from ..scenario_specs import (
     time_partitions_start_datetime,
     two_partitions_def,
 )
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 
 def test_in_latest_time_window_unpartitioned() -> None:
