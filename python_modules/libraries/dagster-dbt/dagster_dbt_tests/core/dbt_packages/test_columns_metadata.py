@@ -533,8 +533,18 @@ def test_column_lineage(
     asset_key_selection: Optional[AssetKey],
     use_async_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
+    mocker: MockFixture,
     capsys,
 ) -> None:
+    # Patch get_relation_from_adapter so that we can track how often
+    # relations are queried from the adapter vs cached
+    from dagster_dbt.core.resources_v2 import _get_relation_from_adapter
+
+    get_relation_from_adapter = mocker.patch(
+        "dagster_dbt.core.resources_v2._get_relation_from_adapter",
+        side_effect=_get_relation_from_adapter,
+    )
+
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(not use_async_fetch_column_schema).lower())
     # Simulate the parsing of the SQL into a different dialect.
     assert Dialect.get_or_raise(sql_dialect)
@@ -580,6 +590,17 @@ def test_column_lineage(
     assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
         str(column_lineage_by_asset_key) + "\n\n" + str(expected_column_lineage_by_asset_key)
     )
+
+    # Ensure we cache relation metadata fetches
+    if use_async_fetch_column_schema:
+        relation_keys_passed = [
+            call.kwargs["relation_key"] for call in get_relation_from_adapter.call_args_list
+        ]
+        # We may query the same relation multiple times if they initiate at around the same time.
+        # Still, the total number of unique relations queried should be a lot lower than the total
+        # number of instances where we get column metadata (around 33 instead of 60+)
+        REPEAT_QUERIES_PADDING = 10
+        assert len(relation_keys_passed) <= len(set(relation_keys_passed)) + REPEAT_QUERIES_PADDING
 
 
 @pytest.mark.parametrize(
