@@ -32,9 +32,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_context import (
         AutomationContext,
     )
-    from dagster._core.definitions.declarative_automation.legacy.asset_condition import (
-        AssetCondition,
-    )
+    from dagster._core.definitions.declarative_automation.legacy import RuleCondition
 
 
 class AutoMaterializeRule(ABC):
@@ -63,7 +61,7 @@ class AutoMaterializeRule(ABC):
         """
         ...
 
-    def to_asset_condition(self) -> "AssetCondition":
+    def to_asset_condition(self) -> "RuleCondition":
         """Converts this AutoMaterializeRule into an AssetCondition."""
         from .declarative_automation.legacy.rule_condition import RuleCondition
 

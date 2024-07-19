@@ -6,7 +6,7 @@ import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluationWithRunIds,
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.storage.config import MySqlStorageConfig, mysql_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
@@ -174,7 +174,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     ):
         if not asset_evaluations:
             return

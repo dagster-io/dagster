@@ -18,8 +18,8 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
     AssetSubsetWithMetadata,
+    AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -112,7 +112,7 @@ class AssetDaemonScenarioState(ScenarioState):
 
     run_requests: Sequence[RunRequest] = field(default_factory=list)
     serialized_cursor: str = field(default=serialize_value(AssetDaemonCursor.empty(0)))
-    evaluations: Sequence[AssetConditionEvaluation] = field(default_factory=list)
+    evaluations: Sequence[AutomationConditionEvaluation] = field(default_factory=list)
     tick_index: int = 1
 
     # set by scenario runner
@@ -126,7 +126,7 @@ class AssetDaemonScenarioState(ScenarioState):
 
     def _evaluate_tick_fast(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
         try:
             cursor = deserialize_value(self.serialized_cursor, AssetDaemonCursor)
         except DeserializationError:
@@ -157,7 +157,7 @@ class AssetDaemonScenarioState(ScenarioState):
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)
-        check.is_list(new_evaluations, of_type=AssetConditionEvaluation)
+        check.is_list(new_evaluations, of_type=AutomationConditionEvaluation)
 
         # make sure these run requests are available on the instance
         for request in new_run_requests:
@@ -175,7 +175,7 @@ class AssetDaemonScenarioState(ScenarioState):
     ) -> Tuple[
         Sequence[RunRequest],
         AssetDaemonCursor,
-        Sequence[AssetConditionEvaluation],
+        Sequence[AutomationConditionEvaluation],
     ]:
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
@@ -372,7 +372,7 @@ class AssetDaemonScenarioState(ScenarioState):
         return self
 
     def _assert_evaluation_daemon(
-        self, key: AssetKey, actual_evaluation: AssetConditionEvaluation
+        self, key: AssetKey, actual_evaluation: AutomationConditionEvaluation
     ) -> None:
         """Additional assertions for daemon mode. Checks that the evaluation for the given asset
         contains the expected run ids.
@@ -435,8 +435,8 @@ class AssetDaemonScenarioState(ScenarioState):
             assert actual_evaluation.true_subset.size == num_requested
 
         def get_leaf_evaluations(
-            e: AssetConditionEvaluation,
-        ) -> Sequence[AssetConditionEvaluation]:
+            e: AutomationConditionEvaluation,
+        ) -> Sequence[AutomationConditionEvaluation]:
             if len(e.child_evaluations) == 0:
                 return [e]
             leaf_evals = []

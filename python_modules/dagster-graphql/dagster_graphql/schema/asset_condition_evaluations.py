@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Union
 import graphene
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
+    AutomationConditionEvaluation,
 )
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
@@ -97,7 +97,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     class Meta:
         name = "UnpartitionedAssetConditionEvaluationNode"
 
-    def __init__(self, evaluation: AssetConditionEvaluation):
+    def __init__(self, evaluation: AutomationConditionEvaluation):
         self._evaluation = evaluation
         if evaluation.true_subset.size > 0:
             status = AssetConditionEvaluationStatus.TRUE
@@ -148,7 +148,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     class Meta:
         name = "PartitionedAssetConditionEvaluationNode"
 
-    def __init__(self, evaluation: AssetConditionEvaluation):
+    def __init__(self, evaluation: AutomationConditionEvaluation):
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
@@ -175,7 +175,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
     class Meta:
         name = "SpecificPartitionAssetConditionEvaluationNode"
 
-    def __init__(self, evaluation: AssetConditionEvaluation, partition_key: str):
+    def __init__(self, evaluation: AutomationConditionEvaluation, partition_key: str):
         self._evaluation = evaluation
         self._partition_key = partition_key
 
@@ -238,7 +238,7 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
 
     def __init__(
         self,
-        root_evaluation: AssetConditionEvaluation,
+        root_evaluation: AutomationConditionEvaluation,
         partition_key: Optional[str] = None,
     ):
         all_evaluations = _flatten_evaluation(root_evaluation)
@@ -284,7 +284,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     class Meta:
         name = "AutomationConditionEvaluationNode"
 
-    def __init__(self, evaluation: AssetConditionEvaluation):
+    def __init__(self, evaluation: AutomationConditionEvaluation):
         self._evaluation = evaluation
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
@@ -375,7 +375,9 @@ class GrapheneAssetConditionEvaluationRecordsOrError(graphene.Union):
         name = "AssetConditionEvaluationRecordsOrError"
 
 
-def _flatten_evaluation(e: AssetConditionEvaluation) -> Sequence[AssetConditionEvaluation]:
+def _flatten_evaluation(
+    e: AutomationConditionEvaluation,
+) -> Sequence[AutomationConditionEvaluation]:
     # flattens the evaluation tree into a list of nodes
     return list(itertools.chain([e], *(_flatten_evaluation(ce) for ce in e.child_evaluations)))
 
@@ -399,7 +401,9 @@ def _coerce_subset(maybe_subset):
     )
 
 
-def _get_expanded_label(evaluation: AssetConditionEvaluation, use_label=False) -> Sequence[str]:
+def _get_expanded_label(
+    evaluation: AutomationConditionEvaluation, use_label=False
+) -> Sequence[str]:
     if use_label and evaluation.condition_snapshot.label is not None:
         return [evaluation.condition_snapshot.label]
     node_text = evaluation.condition_snapshot.name or evaluation.condition_snapshot.description

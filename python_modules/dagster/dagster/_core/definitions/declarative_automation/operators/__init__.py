@@ -2,9 +2,9 @@ from .any_downstream_conditions_operator import (
     AnyDownstreamConditionsCondition as AnyDownstreamConditionsCondition,
 )
 from .boolean_operators import (
-    AndAssetCondition as AndAssetCondition,
-    NotAssetCondition as NotAssetCondition,
-    OrAssetCondition as OrAssetCondition,
+    AndAutomationCondition as AndAutomationCondition,
+    NotAutomationCondition as NotAutomationCondition,
+    OrAutomationCondition as OrAutomationCondition,
 )
 from .dep_operators import (
     AllDepsCondition as AllDepsCondition,

@@ -5,8 +5,8 @@ from dagster import PartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
 from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
     AssetSubsetWithMetadata,
+    AutomationConditionEvaluation,
 )
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
@@ -145,7 +145,7 @@ def create_graphene_auto_materialize_rule_evaluation(
 
 
 def _create_rules_with_rule_evaluations_for_decision_type(
-    evaluation: AssetConditionEvaluation, decision_type: AutoMaterializeDecisionType
+    evaluation: AutomationConditionEvaluation, decision_type: AutoMaterializeDecisionType
 ) -> Tuple[
     Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
 ]:
@@ -188,7 +188,7 @@ def _create_rules_with_rule_evaluations_for_decision_type(
 
 
 def create_graphene_auto_materialize_rules_with_rule_evaluations(
-    evaluation: AssetConditionEvaluation,
+    evaluation: AutomationConditionEvaluation,
 ) -> Tuple[
     Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
 ]:

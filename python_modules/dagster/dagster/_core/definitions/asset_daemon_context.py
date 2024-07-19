@@ -36,7 +36,7 @@ from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
-from .declarative_automation.serialized_objects import AssetConditionEvaluation
+from .declarative_automation.serialized_objects import AutomationConditionEvaluation
 from .partition import PartitionsDefinition, ScheduleType
 
 if TYPE_CHECKING:
@@ -180,7 +180,7 @@ class AssetDaemonContext:
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
         observe_request_timestamp = get_current_timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
