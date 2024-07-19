@@ -77,7 +77,19 @@ From here, you can:
   - [Create alerts](/dagster-plus/managing-deployments/alerts) based on asset check results
   - Use [Insights' asset materialization metadata](/dagster-plus/insights/asset-metadata) to track asset check results over time
 
-### Limitations
+## Built-in asset checks
+
+In addition to asset checks defined using custom Python code and asset checks imported from external systems like dbt, Dagster provides several utility methods for defining common kinds of asset checks.
+
+| API | Description |
+| - | - |
+| <PyObject object="build_metadata_bounds_checks" /> | Builds asset checks that pass if numeric metadata value falls within a particular range. |
+| <PyObject object="build_column_schema_change_checks" /> | Builds asset checks that pass if an asset's columns are the same, compared with its prior materialization. |
+| <PyObject object="build_last_update_freshness_checks" /> | Builds asset checks that pass if not too much time has elapsed since the latest time an asset was updated. |
+| <PyObject object="build_time_partition_freshness_checks" /> | Builds asset checks that pass if an asset's most recent partition has been materialized before a deadline. |
+
+
+## Limitations
 
 - **Dagster's UI is tested with a maximum of 1,000 checks per asset.** It's designed with the expectation that most assets will have fewer than 50 checks. If you have a use case that doesn't fit these limits, reach out to Dagster support to discuss.
 
