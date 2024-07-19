@@ -20,18 +20,18 @@ Navigate to the `dagster_university/resources/__init__.py`, which is where other
 ```python
 from dagster_dbt import DbtCliResource
 
-from ..assets.constants import DBT_DIRECTORY
+from ..assets.dbt import dbt_project
 # the import lines go at the top of the file
 
 # this can be defined anywhere below the imports
 dbt_resource = DbtCliResource(
-    project_dir=DBT_DIRECTORY,
+    project_dir=dbt_project,
 )
 ```
 
 The code above:
 
 1. Imports the `DbtCliResource` from the `dagster_dbt` package that we installed earlier
-2. Imports the `DBT_DIRECTORY` constant we just defined
+2. Imports the `dbt_project` representation we just defined
 3. Instantiates a new `DbtCliResource` under the variable name `dbt_resource`
-4. Tells the resource that the dbt project to execute is found at `DBT_DIRECTORY`
+4. Tells the resource that the dbt project to execute is the `dbt_project`
