@@ -84,6 +84,7 @@ from dagster import (
     static_partitioned_config,
     usable_as_dagster_type,
 )
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutomationConditionSensorDefinition,
@@ -1231,6 +1232,21 @@ def define_sensors():
         asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
     )
 
+    @sensor(job_name="no_config_job")
+    def asset_event_reporting_sensor(context) -> SensorResult:
+        return SensorResult(
+            asset_events=[
+                AssetMaterialization("asset_one"),
+                AssetObservation("asset_two"),
+                AssetCheckEvaluation(
+                    passed=False,
+                    asset_key=AssetKey("asset_three"),
+                    check_name="my_check",
+                    metadata={},
+                ),
+            ]
+        )
+
     return [
         always_no_config_sensor,
         always_error_sensor,
@@ -1250,6 +1266,7 @@ def define_sensors():
         auto_materialize_sensor,
         every_asset_sensor,
         invalid_asset_selection_error,
+        asset_event_reporting_sensor,
     ]
 
 

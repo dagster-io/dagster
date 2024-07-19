@@ -1,17 +1,28 @@
+import logging
 import sys
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.events import (
+    AssetObservationData,
+    DagsterEvent,
+    DagsterEventType,
+    StepMaterializationData,
+)
+from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
@@ -27,7 +38,13 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
+from dagster_graphql.implementation.events import from_dagster_event_record
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.logs.events import (
+    GrapheneAssetCheckEvaluationEvent,
+    GrapheneMaterializationEvent,
+    GrapheneObservationEvent,
+)
 
 from ..implementation.fetch_instigators import get_tick_log_events
 from ..implementation.fetch_schedules import get_schedule_next_tick
@@ -232,6 +249,76 @@ class GrapheneRequestedMaterializationsForAsset(graphene.ObjectType):
         name = "RequestedMaterializationsForAsset"
 
 
+class GrapheneTickAssetEvent(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneObservationEvent,
+            GrapheneMaterializationEvent,
+            GrapheneAssetCheckEvaluationEvent,
+        )
+        name = "TickAssetEvent"
+
+
+def _build_event_log_entry_from_event(
+    event: Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation], timestamp: float
+) -> Union[
+    GrapheneMaterializationEvent, GrapheneObservationEvent, GrapheneAssetCheckEvaluationEvent
+]:
+    if isinstance(event, AssetMaterialization):
+        # We want to re-use the existing event Graphene classes, so
+        # we construct dummy EventLogEntry objects
+        entry = EventLogEntry(
+            step_key=None,
+            job_name=RUNLESS_JOB_NAME,
+            run_id=RUNLESS_RUN_ID,
+            timestamp=timestamp,
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_MATERIALIZATION.value,
+                event_specific_data=StepMaterializationData(event),
+                job_name=RUNLESS_JOB_NAME,
+            ),
+            error_info=None,
+            # User message of "" is default for
+            # reported Dagster events
+            user_message="",
+            level=logging.INFO,
+        )
+    elif isinstance(event, AssetObservation):
+        entry = EventLogEntry(
+            step_key=None,
+            job_name=RUNLESS_JOB_NAME,
+            run_id=RUNLESS_RUN_ID,
+            timestamp=timestamp,
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_OBSERVATION.value,
+                event_specific_data=AssetObservationData(event),
+                job_name=RUNLESS_JOB_NAME,
+            ),
+            error_info=None,
+            user_message="",
+            level=logging.INFO,
+        )
+    elif isinstance(event, AssetCheckEvaluation):
+        entry = EventLogEntry(
+            step_key=None,
+            job_name=RUNLESS_JOB_NAME,
+            run_id=RUNLESS_RUN_ID,
+            timestamp=timestamp,
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                event_specific_data=event,
+                job_name=RUNLESS_JOB_NAME,
+            ),
+            error_info=None,
+            user_message="",
+            level=logging.INFO,
+        )
+    else:
+        raise check.assert_never("Unexpected event type", event)
+
+    return from_dagster_event_record(event_record=entry, pipeline_name=RUNLESS_JOB_NAME)
+
+
 class GrapheneInstigationTick(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     tickId = graphene.NonNull(graphene.ID)
@@ -253,13 +340,13 @@ class GrapheneInstigationTick(graphene.ObjectType):
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.Int)
     instigationType = graphene.NonNull(GrapheneInstigationType)
+    assetEvents = non_null_list(GrapheneTickAssetEvent)
 
     class Meta:
         name = "InstigationTick"
 
     def __init__(self, tick: InstigatorTick):
         self._tick = check.inst_param(tick, "tick", InstigatorTick)
-
         super().__init__(
             status=tick.status.value,
             timestamp=tick.timestamp,
@@ -320,6 +407,14 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
     def resolve_requestedAssetMaterializationCount(self, _):
         return self._tick.requested_asset_materialization_count
+
+    def resolve_assetEvents(
+        self, _
+    ) -> List[Union[GrapheneObservationEvent, GrapheneMaterializationEvent]]:
+        return [
+            _build_event_log_entry_from_event(event, self._tick.timestamp)
+            for event in self._tick.tick_data.asset_events or []
+        ]
 
 
 class GrapheneDryRunInstigationTick(graphene.ObjectType):
