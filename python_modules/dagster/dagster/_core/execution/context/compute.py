@@ -2,19 +2,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
 from inspect import _empty as EmptyAnnotation
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -623,22 +611,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @property
     def selected_output_names(self) -> AbstractSet[str]:
         """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
-        # map selected asset keys to the output names they correspond to
-        selected_asset_keys = self.selected_asset_keys
-        selected_outputs: Set[str] = set()
-        for output_name in self.op.output_dict.keys():
-            asset_key = self.job_def.asset_layer.asset_key_for_output(self.node_handle, output_name)
-            if any(  #  For graph-backed assets, check if a downstream asset is selected
-                [
-                    downstream_asset_key in selected_asset_keys
-                    for downstream_asset_key in self.job_def.asset_layer.downstream_dep_assets(
-                        self.node_handle, output_name
-                    )
-                ]
-            ) or (asset_key in selected_asset_keys):
-                selected_outputs.add(output_name)
-
-        return selected_outputs
+        return self._step_execution_context.selected_output_names
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:

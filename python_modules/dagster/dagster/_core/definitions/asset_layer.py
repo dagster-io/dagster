@@ -5,8 +5,8 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 from ..errors import DagsterInvariantViolationError
+from .asset_key import AssetKey, AssetKeyOrCheckKey
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
-from .events import AssetKey
 from .graph_definition import GraphDefinition
 
 if TYPE_CHECKING:
@@ -213,7 +213,9 @@ class AssetLayer(NamedTuple):
             # Can end up here when a non-asset job has an asset as an input
             return None
 
-    def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
+    def downstream_dep_assets_and_checks(
+        self, node_handle: NodeHandle, output_name: str
+    ) -> Set[AssetKeyOrCheckKey]:
         """Given the node handle of an op within a graph-backed asset and an output name,
         returns the asset keys dependent on that output.
 
@@ -251,7 +253,6 @@ class AssetLayer(NamedTuple):
             ).asset_or_check_keys_by_dep_op_output_handle[
                 NodeOutputHandle(node_handle=node_handle.pop(), output_name=output_name)
             ]
-            if isinstance(key, AssetKey)
         }
 
     def upstream_dep_op_handles(self, asset_key: AssetKey) -> AbstractSet[NodeHandle]:

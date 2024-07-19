@@ -23,6 +23,7 @@ from dagster import (
     In,
     Nothing,
     Out,
+    Output,
     StaticPartitionMapping,
     _seven,
     asset,
@@ -224,9 +225,16 @@ def baz():
     return 10
 
 
-@op(ins={"in1": In(Nothing), "in2": In(Nothing)}, out={"out1": Out(), "out2": Out()})
-def reusable():
-    return 1, 2
+@op(
+    ins={"in1": In(Nothing), "in2": In(Nothing)},
+    out={"out1": Out(is_required=False), "out2": Out(is_required=False)},
+)
+def reusable(context):
+    selected_output_names = context.selected_output_names
+    if "out1" in selected_output_names:
+        yield Output(1, "out1")
+    if "out2" in selected_output_names:
+        yield Output(2, "out2")
 
 
 ab1 = AssetsDefinition(

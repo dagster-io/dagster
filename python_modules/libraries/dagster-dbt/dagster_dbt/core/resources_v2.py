@@ -2028,20 +2028,24 @@ def get_dbt_resource_names_for_output_names(
     dbt_resource_props_by_output_name: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> Sequence[str]:
+    dbt_resource_props_gen = (
+        dbt_resource_props_by_output_name[output_name]
+        for output_name in output_names
+        # output names corresponding to asset checks won't be in this dict
+        if output_name in dbt_resource_props_by_output_name
+    )
+
     # Explicitly select a dbt resource by its file name.
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-method
     if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
         return [
-            Path(dbt_resource_props_by_output_name[output_name]["original_file_path"]).stem
-            for output_name in output_names
+            Path(dbt_resource_props["original_file_path"]).stem
+            for dbt_resource_props in dbt_resource_props_gen
         ]
 
     # Explictly select a dbt resource by its fully qualified name (FQN).
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-    return [
-        ".".join(dbt_resource_props_by_output_name[output_name]["fqn"])
-        for output_name in output_names
-    ]
+    return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
 
 
 def get_dbt_test_names_for_asset_checks(

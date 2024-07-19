@@ -2436,46 +2436,6 @@ def test_build_subset_job_errors(job_selection, use_multi, expected_error):
         Definitions(assets=assets, jobs=[asset_job])
 
 
-def test_subset_does_not_respect_context():
-    @asset
-    def start():
-        return 1
-
-    @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()}, can_subset=True)
-    def abc(start):
-        # this asset declares that it can subset its computation but will always produce all outputs
-        yield Output(1 + start, "a")
-        yield Output(2 + start, "b")
-        yield Output(3 + start, "c")
-
-    @asset
-    def final(c):
-        return c + 1
-
-    defs = Definitions(
-        [start, abc, final], jobs=[define_asset_job("subset_job", selection=["*final"])]
-    )
-    job = defs.get_job_def("subset_job")
-
-    # these are the keys specified by the selection *final
-    specified_keys = {AssetKey("start"), AssetKey("c"), AssetKey("final")}
-
-    with instance_for_test() as instance:
-        result = job.execute_in_process(instance=instance)
-        planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_records_for_run(
-                run_id=result.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-            ).records
-        }
-
-    # should only plan on creating keys start, c, final
-    assert planned_asset_keys == specified_keys
-
-    # should still emit asset materializations if we generate these outputs
-    assert _all_asset_keys(result) == specified_keys | {AssetKey("a"), AssetKey("b")}
-
-
 @pytest.mark.parametrize(
     "job_selection,expected_assets",
     [

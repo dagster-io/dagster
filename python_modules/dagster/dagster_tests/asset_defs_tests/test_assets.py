@@ -1021,7 +1021,19 @@ def test_graph_backed_asset_subset():
         assert set(step_keys) == set(["my_graph.foo", "my_graph.bar_1"])
 
 
-def test_graph_backed_asset_partial_output_selection():
+def test_multi_asset_output_unselected_asset():
+    @multi_asset(outs={"one": AssetOut(), "two": AssetOut()}, can_subset=True)
+    def assets():
+        return 1, 2
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Core compute for op "assets" returned an output "two" that is not selected.',
+    ):
+        materialize([assets], selection=[AssetKey("one")])
+
+
+def test_graph_asset_output_unselected_asset():
     @op(out={"a": Out(), "b": Out()})
     def foo():
         return 1, 2
@@ -1031,21 +1043,39 @@ def test_graph_backed_asset_partial_output_selection():
         one, two = foo()
         return one, two
 
-    with instance_for_test() as instance:
-        result = materialize(
-            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
-            instance=instance,
-            selection=[AssetKey("one")],
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Core compute for op "graph_asset.foo" returned an output "b" that is not selected.',
+    ):
+        materialize(
+            [AssetsDefinition.from_graph(graph_asset, can_subset=True)], selection=[AssetKey("one")]
         )
-        assert (
-            get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            == 1
-        )
-        # This test will yield two materialization events, for assets "one" and "two". This is
-        # because the "foo" op will still be executed, even though we only selected "one".
-        assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
-        step_keys = get_step_keys_from_run(instance, result.run_id)
-        assert set(step_keys) == set(["graph_asset.foo"])
+
+
+def test_multi_asset_materialize_result_unselected_asset():
+    @multi_asset(specs=[AssetSpec("one"), AssetSpec("two")], can_subset=True)
+    def assets():
+        yield MaterializeResult(asset_key=("one"))
+        yield MaterializeResult(asset_key=("two"))
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Asset key two not found in AssetsDefinition"
+    ):
+        materialize([assets], selection=[AssetKey("one")])
+
+
+def test_multi_asset_materialize_result_unselected_asset_and_nothing():
+    @multi_asset(
+        outs={"one": AssetOut(), "two": AssetOut(dagster_type=Nothing)},
+        can_subset=True,
+    )
+    def assets():
+        yield Output(None, output_name="one")
+
+    result = materialize([assets], selection=[AssetKey("one")])
+    materializations = result.asset_materializations_for_node("assets")
+    assert len(materializations) == 1
+    assert materializations[0].asset_key == AssetKey("one")
 
 
 def test_input_subsetting_graph_backed_asset():
@@ -1209,13 +1239,14 @@ def test_graph_backed_asset_subset_two_routes():
     selected.
     """
 
-    @op(out={"out1": Out(), "out2": Out()})
-    def op1():
-        yield Output(None, output_name="out1")
-        yield Output(None, output_name="out2")
+    @op(out={"out1": Out(is_required=False), "out2": Out(is_required=False)})
+    def op1(context):
+        for output_name in context.selected_output_names:
+            yield Output(None, output_name=output_name)
 
-    @op
-    def op2(in1, in2) -> None: ...
+    @op(ins={"in1": In(Nothing), "in2": In(Nothing)})
+    def op2(context) -> None:
+        assert context.asset_key_for_input("in1") == AssetKey("asset1")
 
     @graph_multi_asset(
         outs={
@@ -1226,7 +1257,7 @@ def test_graph_backed_asset_subset_two_routes():
     )
     def assets():
         op1_out1, op1_out2 = op1()
-        return op1_out1, op2(op1_out1, op1_out2)
+        return op1_out1, op2(in1=op1_out1, in2=op1_out2)
 
     result = materialize([assets], selection=["asset2"])
     assert result.success
@@ -1234,7 +1265,7 @@ def test_graph_backed_asset_subset_two_routes():
         event.event_specific_data.materialization.asset_key
         for event in result.get_asset_materialization_events()
     ]
-    assert materialized_assets == [AssetKey("asset1"), AssetKey("asset2")]
+    assert materialized_assets == [AssetKey("asset2")]
 
 
 def test_graph_backed_asset_subset_two_routes_yield_only_selected():
@@ -1243,7 +1274,8 @@ def test_graph_backed_asset_subset_two_routes_yield_only_selected():
         yield Output(None, output_name="out2")
 
     @op(ins={"in1": In(Nothing), "in2": In(Nothing)})
-    def op2() -> None: ...
+    def op2(context) -> None:
+        assert context.asset_key_for_input("in1") == AssetKey("asset1")
 
     @graph_multi_asset(
         outs={
