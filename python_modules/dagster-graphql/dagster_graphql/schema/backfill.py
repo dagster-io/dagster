@@ -29,10 +29,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.permissions import Permissions
 
-from ..implementation.fetch_partition_sets import (
-    partition_status_counts_from_run_partition_data,
-    partition_statuses_from_run_partition_data,
-)
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GrapheneError,
@@ -271,9 +267,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
-    partitionStatuses = graphene.Field(
-        "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
-    )
     partitionStatusCounts = non_null_list(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
     )
@@ -450,22 +443,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             external_partition_set=partition_set,
         )
 
-    def resolve_partitionStatuses(self, graphene_info: ResolveInfo):
-        if self._backfill_job.is_asset_backfill:
-            return None
-
-        partition_set_origin = self._backfill_job.partition_set_origin
-        partition_set_name = (
-            partition_set_origin.partition_set_name if partition_set_origin else None
-        )
-        partition_run_data = self._get_partition_run_data(graphene_info)
-        return partition_statuses_from_run_partition_data(
-            partition_set_name,
-            partition_run_data,
-            check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
-            backfill_id=self._backfill_job.backfill_id,
-        )
-
     def resolve_partitionStatusCounts(
         self, graphene_info: ResolveInfo
     ) -> Sequence["GraphenePartitionStatusCounts"]:
@@ -475,11 +452,19 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if self._backfill_job.is_asset_backfill:
             return []
         else:
-            partition_run_data = self._get_partition_run_data(graphene_info)
-            return partition_status_counts_from_run_partition_data(
-                partition_run_data,
-                check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
+            from ..schema.partition_sets import GraphenePartitionStatusCounts
+
+            count_by_status = graphene_info.context.instance.run_storage.get_run_status_counts(
+                runs_filter=RunsFilter(
+                    tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id)
+                )
             )
+            # main difference is that this will not make NOT_STARTED status entries for any missing partition names...
+            # but the NOT_STARTED status count isn't used anywher as far as i can tell
+            return [
+                GraphenePartitionStatusCounts(runStatus=k.value, count=v)
+                for k, v in count_by_status.items()
+            ]
 
     def resolve_isAssetBackfill(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_asset_backfill

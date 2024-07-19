@@ -47,13 +47,4 @@ export type SingleBackfillQuery = {
     | {__typename: 'PythonError'};
 };
 
-export type PartitionStatusesForBackfillFragment = {
-  __typename: 'PartitionStatuses';
-  results: Array<{
-    __typename: 'PartitionStatus';
-    id: string;
-    partitionName: string;
-    runId: string | null;
-    runStatus: Types.RunStatus | null;
-  }>;
-};
+

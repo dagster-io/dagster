@@ -667,6 +667,19 @@ class SqlRunStorage(RunStorage):
             else None
         )
 
+    def get_run_status_counts(self, runs_filter: RunsFilter) -> Mapping[DagsterRunStatus, int]:
+        query = self._runs_query(
+            filters=runs_filter,
+            columns=["run_id", "status"],
+        )
+        rows = self.fetchall(query)
+        counts = {}
+        for row in rows:
+            status = DagsterRunStatus[row["status"]]
+            counts[status] = counts.get(status, 0) + 1
+
+        return counts
+
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
             query = self._runs_query(
