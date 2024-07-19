@@ -10,7 +10,7 @@ import {
   CancelBackfillMutationVariables,
 } from './types/BackfillTerminationDialog.types';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
-import {BulkActionStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 import {cancelableStatuses} from '../../runs/RunStatuses';
 import {TerminationDialog} from '../../runs/TerminationDialog';
 
@@ -73,7 +73,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
       <Dialog
         isOpen={
           !!backfill &&
-          backfill.status !== BulkActionStatus.CANCELED &&
+          backfill.status !== RunStatus.CANCELED &&
           (backfill.isAssetBackfill || !!numUnscheduled)
         }
         title="Cancel backfill"
@@ -108,7 +108,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
         <TerminationDialog
           isOpen={
             !!backfill &&
-            (!numUnscheduled || backfill.status !== 'REQUESTED') &&
+            (!numUnscheduled || backfill.status !== 'STARTED') &&
             !!Object.keys(unfinishedMap).length
           }
           onClose={onClose}

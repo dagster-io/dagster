@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple,
 from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 from dagster._core.storage.dagster_run import (
     DagsterRun,
+    DagsterRunStatus,
     JobBucket,
     RunPartitionData,
     RunRecord,
@@ -370,7 +371,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_backfills(
         self,
-        status: Optional[BulkActionStatus] = None,
+        status: Optional[DagsterRunStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[PartitionBackfill]:

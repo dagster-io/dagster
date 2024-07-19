@@ -309,7 +309,7 @@ class AssetReconciliationScenario(
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",
-                    status=BulkActionStatus.REQUESTED,
+                    status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
                     from_failure=False,
                     tags={},
                     backfill_timestamp=test_time.timestamp(),

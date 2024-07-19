@@ -19,7 +19,7 @@ import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
@@ -398,9 +398,9 @@ export const BackfillStatusTag = ({
   }
 
   switch (backfill.status) {
-    case BulkActionStatus.REQUESTED:
+    case RunStatus.STARTED:
       return <Tag>In progress</Tag>;
-    case BulkActionStatus.FAILED:
+    case RunStatus.FAILURE:
       return (
         <Box margin={{bottom: 12}}>
           <TagButton
@@ -413,7 +413,7 @@ export const BackfillStatusTag = ({
           </TagButton>
         </Box>
       );
-    case BulkActionStatus.COMPLETED:
+    case RunStatus.SUCCESS:
       if (backfill.partitionNames === null) {
         return <Tag intent="success">Completed</Tag>;
       }
@@ -427,9 +427,9 @@ export const BackfillStatusTag = ({
         return <Tag intent="primary">In progress</Tag>;
       }
       return <Tag intent="warning">Incomplete</Tag>;
-    case BulkActionStatus.CANCELING:
+    case RunStatus.CANCELING:
       return <Tag>Canceling</Tag>;
-    case BulkActionStatus.CANCELED:
+    case RunStatus.CANCELED:
       return <Tag>Canceled</Tag>;
   }
   return <span />;

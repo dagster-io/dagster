@@ -5,7 +5,7 @@ import * as Types from '../../../graphql/types';
 export type BackfillTableFragment = {
   __typename: 'PartitionBackfill';
   id: string;
-  status: Types.BulkActionStatus;
+  status: Types.RunStatus;
   isAssetBackfill: boolean;
   isValidSerialization: boolean;
   partitionNames: Array<string> | null;

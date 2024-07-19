@@ -18,30 +18,30 @@ import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/B
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {showSharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 
 export function backfillCanCancelSubmission(backfill: {
   hasCancelPermission: boolean;
   isAssetBackfill: boolean;
-  status: BulkActionStatus;
+  status: RunStatus;
   numCancelable: number;
 }) {
   return (
     backfill.hasCancelPermission &&
-    ((backfill.isAssetBackfill && backfill.status === BulkActionStatus.REQUESTED) ||
+    ((backfill.isAssetBackfill && backfill.status === RunStatus.STARTED) ||
       backfill.numCancelable > 0)
   );
 }
 
 export function backfillCanResume(backfill: {
   hasResumePermission: boolean;
-  status: BulkActionStatus;
+  status: RunStatus;
   partitionSet: {__typename: 'PartitionSet'} | null;
 }) {
   return !!(
     backfill.hasResumePermission &&
-    backfill.status === BulkActionStatus.FAILED &&
+    backfill.status === RunStatus.FAILURE &&
     backfill.partitionSet
   );
 }

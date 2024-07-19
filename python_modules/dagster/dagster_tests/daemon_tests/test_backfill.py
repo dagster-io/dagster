@@ -539,12 +539,14 @@ def test_canceled_backfill(
     next(iterator)
     assert instance.get_runs_count() == 1
     backfill = instance.get_backfills()[0]
-    assert backfill.status == BulkActionStatus.REQUESTED
-    instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
+    instance.update_backfill(
+        backfill.with_status(BulkActionStatus.CANCELED.to_dagster_run_status())
+    )
     list(iterator)
     backfill = instance.get_backfill(backfill.backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.CANCELED
+    assert backfill.status == BulkActionStatus.CANCELED.to_dagster_run_status()
     assert instance.get_runs_count() == 1
 
 
@@ -561,7 +563,7 @@ def test_failure_backfill(
         PartitionBackfill(
             backfill_id="shouldfail",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
@@ -610,7 +612,7 @@ def test_failure_backfill(
         PartitionBackfill(
             backfill_id="fromfailure",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=True,
             reexecution_steps=None,
@@ -665,7 +667,7 @@ def test_partial_backfill(
         PartitionBackfill(
             backfill_id="full",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
@@ -712,7 +714,7 @@ def test_partial_backfill(
         PartitionBackfill(
             backfill_id="partial",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=["step_one"],
@@ -755,7 +757,7 @@ def test_large_backfill(
         PartitionBackfill(
             backfill_id="simple",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
@@ -776,7 +778,7 @@ def test_unloadable_backfill(instance, workspace_context):
         PartitionBackfill(
             backfill_id="simple",
             partition_set_origin=unloadable_origin,
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one", "two", "three"],
             from_failure=False,
             reexecution_steps=None,
@@ -790,7 +792,7 @@ def test_unloadable_backfill(instance, workspace_context):
 
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill("simple")
-    assert backfill.status == BulkActionStatus.FAILED
+    assert backfill.status == BulkActionStatus.FAILED.to_dagster_run_status()
     assert isinstance(backfill.error, SerializableErrorInfo)
 
 
@@ -808,7 +810,7 @@ def test_unloadable_asset_backfill(instance, workspace_context):
 
     backfill = PartitionBackfill(
         backfill_id=backfill_id,
-        status=BulkActionStatus.REQUESTED,
+        status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
         from_failure=False,
         tags={},
         backfill_timestamp=get_current_timestamp(),
@@ -823,7 +825,7 @@ def test_unloadable_asset_backfill(instance, workspace_context):
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
@@ -831,7 +833,7 @@ def test_unloadable_asset_backfill(instance, workspace_context):
     backfill = instance.get_backfill("simple_fan_out_backfill")
 
     # No retries because of the nature of the error
-    assert backfill.status == BulkActionStatus.FAILED
+    assert backfill.status == BulkActionStatus.FAILED.to_dagster_run_status()
     assert backfill.failure_count == 1
     assert isinstance(backfill.error, SerializableErrorInfo)
 
@@ -859,7 +861,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     # The following backfill iteration will attempt to submit run requests for asset_f's two partitions.
     # The first call to _get_job_execution_data_from_run_request will succeed, but the second call will
@@ -894,7 +896,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             assert updated_backfill.asset_backfill_data
 
             # Requested with failure_count 1 because it will retry
-            assert updated_backfill.status == BulkActionStatus.REQUESTED
+            assert updated_backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
             assert updated_backfill.failure_count == 1
 
             errors = [
@@ -909,7 +911,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             assert len(errors) == 1
 
             updated_backfill = instance.get_backfill(backfill_id)
-            assert updated_backfill.status == BulkActionStatus.REQUESTED
+            assert updated_backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
             assert updated_backfill.failure_count == 2
 
             # Fails once it exceeds DAGSTER_MAX_ASSET_BACKFILL_RETRIES retries
@@ -925,7 +927,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             assert len(errors) == 1
 
             updated_backfill = instance.get_backfill(backfill_id)
-            assert updated_backfill.status == BulkActionStatus.FAILED
+            assert updated_backfill.status == BulkActionStatus.FAILED.to_dagster_run_status()
             assert updated_backfill.failure_count == 3
 
 
@@ -960,7 +962,7 @@ def test_unloadable_backfill_retry(
         )
         assert instance.get_runs_count() == 0
         backfill = instance.get_backfill("retry_backfill")
-        assert backfill.status == BulkActionStatus.REQUESTED
+        assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
         # retries, still not loadable
         list(
@@ -970,7 +972,7 @@ def test_unloadable_backfill_retry(
         )
         assert instance.get_runs_count() == 0
         backfill = instance.get_backfill("retry_backfill")
-        assert backfill.status == BulkActionStatus.REQUESTED
+        assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
         # continues once the code location is loadable again
         list(
@@ -994,7 +996,7 @@ def test_backfill_from_partitioned_job(
         PartitionBackfill(
             backfill_id="partition_schedule_from_job",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=partition_keys[:3],
             from_failure=False,
             reexecution_steps=None,
@@ -1029,7 +1031,7 @@ def test_backfill_with_asset_selection(
         PartitionBackfill(
             backfill_id="backfill_with_asset_selection",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=partition_keys,
             from_failure=False,
             reexecution_steps=None,
@@ -1086,7 +1088,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill("backfill_with_multiple_assets_selected")
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     assert all(
         not error
@@ -1151,7 +1153,7 @@ def test_pure_asset_backfill(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 3
@@ -1171,7 +1173,7 @@ def test_pure_asset_backfill(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED.to_dagster_run_status()
 
 
 def test_backfill_from_failure_for_subselection(
@@ -1199,7 +1201,7 @@ def test_backfill_from_failure_for_subselection(
         PartitionBackfill(
             backfill_id="fromfailure",
             partition_set_origin=external_partition_set.get_external_origin(),
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["one"],
             from_failure=True,
             reexecution_steps=None,
@@ -1241,7 +1243,7 @@ def test_asset_backfill_cancellation(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     assert all(
         not error
@@ -1257,7 +1259,9 @@ def test_asset_backfill_cancellation(
     assert run.asset_selection == {AssetKey(["asset_a"])}
 
     wait_for_all_runs_to_start(instance, timeout=30)
-    instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
+    instance.update_backfill(
+        backfill.with_status(BulkActionStatus.CANCELING.to_dagster_run_status())
+    )
     wait_for_all_runs_to_finish(instance, timeout=30)
 
     assert all(
@@ -1271,7 +1275,7 @@ def test_asset_backfill_cancellation(
 
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.CANCELED
+    assert backfill.status == BulkActionStatus.CANCELED.to_dagster_run_status()
     assert instance.get_runs_count() == 1  # Assert that additional runs are not created
 
 
@@ -1306,7 +1310,7 @@ def test_asset_backfill_submit_runs_in_chunks(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     assert all(
         not error
@@ -1356,11 +1360,11 @@ def test_asset_backfill_mid_iteration_cancel(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     def _override_backfill_cancellation(backfill: PartitionBackfill):
         instance._run_storage.update_backfill(  # noqa: SLF001
-            backfill.with_status(BulkActionStatus.CANCELING)
+            backfill.with_status(BulkActionStatus.CANCELING.to_dagster_run_status())
         )
 
     # After submitting the first chunk, update the backfill to be CANCELING
@@ -1419,7 +1423,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
         all_partitions=False,
         title=None,
         description=None,
-    ).with_status(BulkActionStatus.CANCELING)
+    ).with_status(BulkActionStatus.CANCELING.to_dagster_run_status())
     instance.add_backfill(
         # Add some partitions in a "requested" state to mock that certain partitions are hanging
         backfill.with_asset_backfill_data(
@@ -1432,7 +1436,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
     )
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.CANCELING
+    assert backfill.status == BulkActionStatus.CANCELING.to_dagster_run_status()
 
     override_get_backfill_num_calls = 0
 
@@ -1441,7 +1445,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
         if override_get_backfill_num_calls == 1:
             # Mark backfill as canceled during the middle of the cancellation iteration
             override_get_backfill_num_calls += 1
-            return backfill.with_status(BulkActionStatus.CANCELED)
+            return backfill.with_status(BulkActionStatus.CANCELED.to_dagster_run_status())
         else:
             override_get_backfill_num_calls += 1
             return backfill
@@ -1466,7 +1470,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
     updated_backfill = instance.get_backfill(backfill_id)
     assert updated_backfill
     # Assert that the backfill was indeed marked as canceled
-    assert updated_backfill.status == BulkActionStatus.CANCELED
+    assert updated_backfill.status == BulkActionStatus.CANCELED.to_dagster_run_status()
 
 
 def test_asset_backfill_mid_iteration_code_location_unreachable_error(
@@ -1496,7 +1500,7 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     assert backfill.failure_count == 0
 
     assert all(
@@ -1628,7 +1632,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_no_runs_
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     # The following backfill iteration will attempt to submit run requests for asset_a's partition.
     # The call will raise a DagsterUserCodeUnreachableError and no runs will be submitted
@@ -1716,7 +1720,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     # The following backfill iteration will attempt to submit run requests for asset_f's two partitions.
     # The first call to _get_job_execution_data_from_run_request will succeed, but the second call will
@@ -1819,7 +1823,7 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     assert all(
         not error
@@ -1855,7 +1859,9 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
             updated_backfill.asset_backfill_data._replace(materialized_subset=AssetGraphSubset()),
             dynamic_partitions_store=instance,
             asset_graph=asset_graph,
-        ).with_status(BulkActionStatus.CANCELING)
+        )
+        .with_status(BulkActionStatus.CANCELING)
+        .to_dagster_run_status()
     )
 
     errors = list(
@@ -1880,7 +1886,7 @@ def _get_abcd_job_backfill(external_repo: ExternalRepository, job_name: str) -> 
     return PartitionBackfill(
         backfill_id="simple",
         partition_set_origin=external_partition_set.get_external_origin(),
-        status=BulkActionStatus.REQUESTED,
+        status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
         partition_names=["a", "b", "c", "d"],
         from_failure=False,
         reexecution_steps=None,
@@ -1979,7 +1985,7 @@ def test_asset_backfill_with_single_run_backfill_policy(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     assert backfill.asset_selection == [asset_with_single_run_backfill_policy.key]
 
     assert all(
@@ -2022,7 +2028,7 @@ def test_asset_backfill_from_asset_graph_subset_with_single_run_backfill_policy(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     assert backfill.asset_selection == [asset_with_single_run_backfill_policy.key]
 
     assert all(
@@ -2063,7 +2069,7 @@ def test_asset_backfill_with_multi_run_backfill_policy(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     assert all(
         not error
@@ -2357,8 +2363,7 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
-
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     assert all(
         not error
         for error in list(
@@ -2406,7 +2411,7 @@ def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     with mock.patch(
         "dagster._core.workspace.workspace.IWorkspace.asset_graph",
         new_callable=mock.PropertyMock,
@@ -2473,7 +2478,7 @@ def test_backfill_with_title_and_description(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill("backfill_with_title")
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
     assert backfill.title == "Custom title"
     assert backfill.description == "this backfill is fancy"
 
@@ -2556,7 +2561,7 @@ def test_asset_backfill_logs(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 3
@@ -2587,7 +2592,7 @@ def test_asset_backfill_logs(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED.to_dagster_run_status()
 
     # set num_lines high so we know we get all of the remaining logs
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
@@ -2637,7 +2642,7 @@ def test_asset_backfill_from_asset_graph_subset(
     assert instance.get_runs_count() == 0
     backfill = instance.get_backfill("backfill_from_asset_graph_subset")
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 3
@@ -2657,7 +2662,7 @@ def test_asset_backfill_from_asset_graph_subset(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_from_asset_graph_subset")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED.to_dagster_run_status()
 
 
 def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
@@ -2701,7 +2706,7 @@ def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
         "backfill_from_asset_graph_subset_with_static_and_time_partitions"
     )
     assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.status == BulkActionStatus.REQUESTED.to_dagster_run_status()
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 8
@@ -2723,4 +2728,4 @@ def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
         "backfill_from_asset_graph_subset_with_static_and_time_partitions"
     )
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED.to_dagster_run_status()

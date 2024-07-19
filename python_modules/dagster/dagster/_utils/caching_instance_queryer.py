@@ -527,11 +527,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
         an active asset backfill.
         """
-        from dagster._core.execution.backfill import BulkActionStatus
+        from dagster._core.storage.dagster_run import DagsterRunStatus
 
         asset_backfills = [
             backfill
-            for backfill in self.instance.get_backfills(status=BulkActionStatus.REQUESTED)
+            for backfill in self.instance.get_backfills(status=DagsterRunStatus.STARTED)
             if backfill.is_asset_backfill
         ]
 

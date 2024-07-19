@@ -38,7 +38,7 @@ from dagster._core.events import (
     DagsterEventType,
     RunFailureReason,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
@@ -849,11 +849,11 @@ class SqlRunStorage(RunStorage):
 
     def get_backfills(
         self,
-        status: Optional[BulkActionStatus] = None,
+        status: Optional[DagsterRunStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[PartitionBackfill]:
-        check.opt_inst_param(status, "status", BulkActionStatus)
+        check.opt_inst_param(status, "status", DagsterRunStatus)
         query = db_select([BulkActionsTable.c.body])
         if status:
             query = query.where(BulkActionsTable.c.status == status.value)

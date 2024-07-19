@@ -4,10 +4,10 @@ import styled from 'styled-components';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
-import {BulkActionStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 
 type BackfillState = {
-  status: BulkActionStatus;
+  status: RunStatus;
   error: PythonErrorFragment | null;
 };
 
@@ -28,16 +28,16 @@ export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) 
   }
 
   switch (status) {
-    case BulkActionStatus.REQUESTED:
+    case RunStatus.STARTED:
       return <Tag>In progress</Tag>;
 
-    case BulkActionStatus.CANCELING:
+    case RunStatus.CANCELING:
       return errorState('Canceling');
-    case BulkActionStatus.CANCELED:
+    case RunStatus.CANCELED:
       return errorState('Canceled');
-    case BulkActionStatus.FAILED:
+    case RunStatus.FAILURE:
       return errorState('Failed');
-    case BulkActionStatus.COMPLETED:
+    case RunStatus.SUCCESS:
       return <Tag intent="success">Completed</Tag>;
     default:
       return <Tag>{status}</Tag>;

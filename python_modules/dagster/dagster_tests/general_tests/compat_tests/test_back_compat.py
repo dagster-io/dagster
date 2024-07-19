@@ -975,7 +975,7 @@ def test_add_bulk_actions_columns():
                 PartitionBackfill(
                     backfill_id="simple",
                     partition_set_origin=external_origin,
-                    status=BulkActionStatus.REQUESTED,
+                    status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
                     partition_names=["one", "two", "three"],
                     from_failure=False,
                     reexecution_steps=None,

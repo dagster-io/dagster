@@ -29,7 +29,7 @@ from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
-from .backfill import BulkActionStatus, PartitionBackfill
+from .backfill import PartitionBackfill
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -56,7 +56,7 @@ def execute_job_backfill_iteration(
 
     has_more = True
     while has_more:
-        if backfill.status != BulkActionStatus.REQUESTED:
+        if backfill.status != DagsterRunStatus.STARTED:
             break
 
         chunk, checkpoint, has_more = _get_partitions_chunk(
@@ -78,7 +78,7 @@ def execute_job_backfill_iteration(
                 yield None
                 # before submitting, refetch the backfill job to check for status changes
                 backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
-                if backfill.status != BulkActionStatus.REQUESTED:
+                if backfill.status != DagsterRunStatus.STARTED:
                     return
 
         check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
@@ -95,7 +95,7 @@ def execute_job_backfill_iteration(
                 f"Backfill completed for {backfill.backfill_id} for"
                 f" {len(partition_names)} partitions"
             )
-            instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+            instance.update_backfill(backfill.with_status(DagsterRunStatus.SUCCESS))
             yield None
 
 

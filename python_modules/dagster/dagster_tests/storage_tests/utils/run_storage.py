@@ -1321,7 +1321,7 @@ class TestRunStorage:
         one = PartitionBackfill(
             "one",
             partition_set_origin=origin,
-            status=BulkActionStatus.REQUESTED,
+            status=BulkActionStatus.REQUESTED.to_dagster_run_status(),
             partition_names=["a", "b", "c"],
             from_failure=False,
             tags={},
@@ -1329,13 +1329,21 @@ class TestRunStorage:
         )
         storage.add_backfill(one)
         assert len(storage.get_backfills()) == 1
-        assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 1
+        assert (
+            len(storage.get_backfills(status=BulkActionStatus.REQUESTED.to_dagster_run_status()))
+            == 1
+        )
         backfill = storage.get_backfill(one.backfill_id)
         assert backfill == one
 
-        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
+        storage.update_backfill(
+            one.with_status(status=BulkActionStatus.COMPLETED.to_dagster_run_status())
+        )
         assert len(storage.get_backfills()) == 1
-        assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
+        assert (
+            len(storage.get_backfills(status=BulkActionStatus.REQUESTED.to_dagster_run_status()))
+            == 0
+        )
 
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)

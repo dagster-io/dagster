@@ -13,7 +13,7 @@ export type BackfillStatusesByAssetQuery = {
     | {
         __typename: 'PartitionBackfill';
         id: string;
-        status: Types.BulkActionStatus;
+        status: Types.RunStatus;
         timestamp: number;
         endTimestamp: number | null;
         numPartitions: number | null;
@@ -83,7 +83,7 @@ export type BackfillStatusesByAssetQuery = {
 export type BackfillDetailsBackfillFragment = {
   __typename: 'PartitionBackfill';
   id: string;
-  status: Types.BulkActionStatus;
+  status: Types.RunStatus;
   timestamp: number;
   endTimestamp: number | null;
   numPartitions: number | null;
