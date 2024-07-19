@@ -198,13 +198,11 @@ def test_row_count_does_not_obscure_errors(
         resources={
             "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target=target)
         },
-        raise_on_error=True,
+        raise_on_error=False,
     )
 
     assert not result.success
-    # Right now, duckdb fully processes all models before starting to fetch row counts -
-    # so no materializations will be emitted before the error fires. We should probably adjust this.
-    assert len(result.get_asset_materialization_events()) == 0 if target == "duckdb" else 7
+    assert len(result.get_asset_materialization_events()) == 7
 
 
 def test_row_count_err(
