@@ -29,12 +29,10 @@ from .dbt_projects import (
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_collection_modifyitems(items: List[pytest.Item]) -> Iterator[None]:
-    """Mark tests in the `cloud` and `legacy` directories. Mark other tests as `core`."""
+    """Mark tests in the `cloud` directories. Mark other tests as `core`."""
     for item in items:
         if "cloud" in item.path.parts:
             item.add_marker(pytest.mark.cloud)
-        elif "legacy" in item.path.parts:
-            item.add_marker(pytest.mark.legacy)
         else:
             item.add_marker(pytest.mark.core)
 

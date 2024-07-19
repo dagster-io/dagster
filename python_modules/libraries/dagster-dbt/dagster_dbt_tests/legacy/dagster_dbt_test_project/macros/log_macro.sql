@@ -1,1 +1,0 @@
-{% macro log_macro(msg) %} {{ log("Log macro: " ~ msg, True) }} {% endmacro %}
