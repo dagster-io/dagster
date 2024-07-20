@@ -7,7 +7,7 @@ The foundational unit of computation in Dagster.
 
 -----
 
-Defining ops
+Op Definition
 ------------
 .. autodecorator:: op
 
@@ -42,10 +42,9 @@ Execution
 Events
 ------
 
-The objects that can be yielded by the body of ops' compute functions to communicate with the
-Dagster framework.
+Objects that ops' compute functions can yield to communicate with the Dagster framework.
 
-(Note that :py:class:`Failure` and :py:class:`RetryRequested` are intended to be raised from ops rather than yielded.)
+(Note: raise :py:class:`Failure` and :py:class:`RetryRequested` from ops rather than yielding them.)
 
 Event types
 ^^^^^^^^^^^

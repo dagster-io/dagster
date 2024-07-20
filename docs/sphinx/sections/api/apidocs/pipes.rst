@@ -7,7 +7,7 @@ Dagster Pipes
 
 For a detailed look at the Pipes process, including how to customize it, refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__.
 
-**Looking to write code in an external process?** Refer to the API reference for the separately-installed `dagster-pipes </_apidocs/libraries/dagster-pipes>`_ library. 
+**Looking to write code in an external process?** Refer to the API reference for the standalone `dagster-pipes </_apidocs/libraries/dagster-pipes>`_ library. 
 
 ----
 
@@ -36,14 +36,14 @@ Clients
 Advanced
 --------
 
-Most Pipes users won't need to use the APIs in the following sections unless they are customizing the Pipes protocol.
+Most Pipes users won't need to use the APIs in the following sections unless they're customizing the Pipes protocol.
 
 Refer to the `Dagster Pipes details and customization guide </concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms>`__ for more information.
 
 Context injectors
 ^^^^^^^^^^^^^^^^^
 
-Context injectors write context payloads to an externally accessible location and yield a set of parameters encoding the location for inclusion in the bootstrap payload.
+Context injectors write context payloads to an external location and yield a set of parameters encoding the location for inclusion in the bootstrap payload.
 
 .. autoclass:: PipesContextInjector
 
@@ -58,7 +58,7 @@ Context injectors write context payloads to an externally accessible location an
 Message readers
 ^^^^^^^^^^^^^^^
 
-Message readers read messages (and optionally log files) from an externally accessible location and yield a set of parameters encoding the location in the bootstrap payload. 
+Message readers read messages and, optionally, log files from an external location and yield a set of parameters encoding the location in the bootstrap payload. 
 
 .. autoclass:: PipesMessageReader
 

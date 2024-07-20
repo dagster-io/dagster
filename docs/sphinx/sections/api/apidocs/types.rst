@@ -3,7 +3,7 @@ Types
 
 .. currentmodule:: dagster
 
-Dagster includes facilities for typing the input and output values of ops ("runtime" types).
+Dagster includes facilities for typing the input and output values of ops, also known as "runtime" types.
 
 .. _builtin:
 
@@ -49,8 +49,8 @@ Built-in types
             done(wait_int())
 
 
-Making New Types
-----------------
+New Type Definition
+---------------------
 
 .. autoclass:: DagsterType
 
@@ -66,7 +66,7 @@ Making New Types
 
 .. autofunction:: make_python_type_usable_as_dagster_type
 
-Testing Types
-^^^^^^^^^^^^^
+Type Testing
+------------
 
 .. autofunction:: check_dagster_type

@@ -15,7 +15,7 @@ Logging from an @op
 
 .. autoclass:: DagsterLogManager
 
-Defining custom loggers
+Custom loggers
 -----------------------
 .. currentmodule:: dagster
 

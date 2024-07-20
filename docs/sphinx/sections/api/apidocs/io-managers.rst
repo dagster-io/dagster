@@ -44,7 +44,7 @@ Built-in IO Managers
   :annotation: IOManagerDefinition
 
 
-The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers.
+The ``UPathIOManager`` defines filesystem-based IO Managers.
 
 .. autoclass:: UPathIOManager
 

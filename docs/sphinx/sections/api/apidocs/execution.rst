@@ -4,15 +4,15 @@ Execution
 =========
 
 
-Materializing Assets
+Asset Materialization
 --------------------
 
 .. autofunction:: materialize
 
 .. autofunction:: materialize_to_memory
 
-Executing Jobs
---------------
+Job Execution
+-------------
 
 .. autoclass:: JobDefinition
   :noindex:
@@ -25,7 +25,7 @@ Executing Jobs
 
 .. autofunction:: instance_for_test
 
-Executing Graphs
+Graph Execution
 ----------------
 
 .. autoclass:: GraphDefinition

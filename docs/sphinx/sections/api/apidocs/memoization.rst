@@ -1,7 +1,7 @@
 Job-Level Versioning and Memoization (Deprecated)
 =================================================
 
-Dagster has deprecated functionality that allows for job-level code versioning and memoization of previous op outputs based upon that versioning.
+Dagster has deprecated functionality for job-level code versioning and memoization of previous op outputs based upon that versioning.
 
 This is currently deprecated in favor of `asset versioning </concepts/assets/software-defined-assets#asset-code-versions>`_.
 

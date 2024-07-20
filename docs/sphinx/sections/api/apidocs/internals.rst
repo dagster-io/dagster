@@ -3,7 +3,7 @@ Internals
 
 .. currentmodule:: dagster
 
-Note that APIs imported from Dagster submodules are not considered stable, and are potentially subject to change in the future.
+Note that APIs imported from Dagster submodules aren't considered stable, and are subject to change in the future.
 
 If you find yourself consulting these docs because you are writing custom components and plug-ins,
 please get in touch with the core team `on our Slack <https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU>`_.
