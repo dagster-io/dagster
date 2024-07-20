@@ -1,0 +1,14 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "key": {
+      "title": "Key",
+      "type": "string"
+    }
+  },
+  "required": [
+    "key"
+  ],
+  "title": "SimpleAssetBlueprint",
+  "type": "object"
+}
