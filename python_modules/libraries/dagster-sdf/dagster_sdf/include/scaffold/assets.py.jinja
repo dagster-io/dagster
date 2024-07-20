@@ -1,0 +1,13 @@
+from dagster import AssetExecutionContext
+from dagster_sdf.asset_decorator import sdf_assets
+from dagster_sdf.resource import SdfCliResource
+from dagster_sdf.information_schema import SdfInformationSchema
+from .constants import sdf_workspace_dir
+
+target_dir = sdf_workspace_dir.joinpath("sdf_dagster_out")
+environment = "dbg"
+information_schema = SdfInformationSchema(target_dir=target_dir, environment=environment)
+
+@sdf_assets(information_schema=information_schema)
+def {{ sdf_assets_name }}(context: AssetExecutionContext, sdf: SdfCliResource):
+    yield from sdf.cli(["run", "--no-cache"], target_dir=target_dir, environment=environment, context=context).stream()

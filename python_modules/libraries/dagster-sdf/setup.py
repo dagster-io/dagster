@@ -37,6 +37,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_sdf_tests*"]),
+    include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
@@ -44,6 +45,11 @@ setup(
         "orjson",
         "polars",
     ],
+    entry_points={
+        "console_scripts": [
+            "dagster-sdf = dagster_sdf.cli.app:app",
+        ]
+    },
     zip_safe=False,
     extras_require={"test": []},
 )
