@@ -8,8 +8,8 @@ Precedence order:
 3. Then goes tag "dagster-k8s/config" from op.
 """
 
+from dagster import Definitions, RunRequest, job, op, schedule
 from dagster_celery_k8s import celery_k8s_job_executor
-from dagster import Definitions, in_process_executor, op, job, schedule, RunRequest
 
 
 @op(
