@@ -40,7 +40,7 @@ class AndAutomationCondition(AutomationCondition):
         return AutomationResult.create_from_children(context, true_slice, child_results)
 
 
-@whitelist_for_serdes(old_storage_names={"OrAutomationCondition"})
+@whitelist_for_serdes(old_storage_names={"OrAssetCondition"})
 @record
 class OrAutomationCondition(AutomationCondition):
     """This class represents the condition that any of its children evaluate to true."""
