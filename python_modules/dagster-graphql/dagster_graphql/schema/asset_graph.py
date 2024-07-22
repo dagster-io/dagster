@@ -1348,6 +1348,23 @@ class GrapheneAssetGroup(graphene.ObjectType):
         name = "AssetGroup"
 
 
+class GrapheneCodeLocation(graphene.ObjectType):
+    class Meta:
+        name = "CodeLocation"
+
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+
+
+class GrapheneDefinitionGroup(graphene.ObjectType):
+    class Meta:
+        name = "DefinitionGroup"
+
+    groupName = graphene.NonNull(graphene.String)
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+
+
 class GrapheneAssetNodeOrError(graphene.Union):
     class Meta:
         types = (GrapheneAssetNode, GrapheneAssetNotFoundError)
