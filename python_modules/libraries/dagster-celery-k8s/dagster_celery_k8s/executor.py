@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 import time
-from functools import partial
 from typing import Any, Mapping, Optional
 
 import kubernetes
@@ -191,11 +190,7 @@ class CeleryK8sJobExecutor(Executor):
         from dagster_celery.core_execution_loop import core_celery_execution_loop
 
         return core_celery_execution_loop(
-            plan_context,
-            execution_plan,
-            step_execution_fn=partial(
-                _submit_task_k8s_job, per_step_k8s_config=self.per_step_k8s_config
-            ),
+            plan_context, execution_plan, step_execution_fn=_submit_task_k8s_job
         )
 
     def app_args(self):
@@ -208,9 +203,7 @@ class CeleryK8sJobExecutor(Executor):
         }
 
 
-def _submit_task_k8s_job(
-    app, plan_context, step, queue, priority, known_state, per_step_k8s_config: PerStepK8sConfigT
-):
+def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
     job_origin = plan_context.reconstructable_job.get_python_origin()
@@ -239,7 +232,7 @@ def _submit_task_k8s_job(
         job_config_dict=job_config.to_dict(),
         job_namespace=plan_context.executor.job_namespace,
         user_defined_k8s_config_dict=user_defined_k8s_config.to_dict(),
-        per_step_k8s_config=per_step_k8s_config,
+        per_step_k8s_config=plan_context.executor.per_step_k8s_config,
         load_incluster_config=plan_context.executor.load_incluster_config,
         job_wait_timeout=plan_context.executor.job_wait_timeout,
         kubeconfig_file=plan_context.executor.kubeconfig_file,
