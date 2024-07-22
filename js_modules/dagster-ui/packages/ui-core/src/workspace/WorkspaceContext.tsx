@@ -113,7 +113,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const [didLoadStatusData, setDidLoadStatusData] = useState(false);
 
   const [locationEntriesData, setLocationEntriesData] = React.useState<
-    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment | undefined>
+    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
   >({});
 
   const getCachedData = useGetCachedData();
