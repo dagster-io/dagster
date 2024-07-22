@@ -302,6 +302,9 @@ const fuseOptions = {
   threshold: 0.3,
   useExtendedSearch: true,
   includeMatches: true,
+
+  // Allow searching to continue to the end of the string.
+  ignoreLocation: true,
 };
 
 const EMPTY_RESPONSE = {queryString: '', results: []};
