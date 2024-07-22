@@ -140,7 +140,7 @@ export const BackfillRowContent = ({
     statusQueryResult?.loading ? (
       <div style={{color: Colors.textLight()}}>Loading</div>
     ) : (
-      <BackfillStatusTag backfill={backfill} counts={counts} />
+      <BackfillStatusTag backfill={backfill} />
     );
 
   const renderRunStatus = () => {
@@ -388,51 +388,10 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
 
 export const BackfillStatusTag = ({
   backfill,
-  counts,
 }: {
   backfill: BackfillTableFragment;
-  counts: {[status: string]: number} | null;
 }) => {
-  if (backfill.isAssetBackfill) {
-    return <BackfillStatusTagForPage backfill={backfill} />;
-  }
-
-  switch (backfill.status) {
-    case BulkActionStatus.REQUESTED:
-      return <Tag>In progress</Tag>;
-    case BulkActionStatus.FAILED:
-      return (
-        <Box margin={{bottom: 12}}>
-          <TagButton
-            onClick={() =>
-              backfill.error &&
-              showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-            }
-          >
-            <Tag intent="danger">Failed</Tag>
-          </TagButton>
-        </Box>
-      );
-    case BulkActionStatus.COMPLETED:
-      if (backfill.partitionNames === null) {
-        return <Tag intent="success">Completed</Tag>;
-      }
-      if (!counts) {
-        return <div style={{color: Colors.textLight()}}>None</div>;
-      }
-      if (counts[RunStatus.SUCCESS] === backfill.partitionNames.length) {
-        return <Tag intent="success">Completed</Tag>;
-      }
-      if (Array.from(inProgressStatuses).some((status) => counts[status])) {
-        return <Tag intent="primary">In progress</Tag>;
-      }
-      return <Tag intent="warning">Incomplete</Tag>;
-    case BulkActionStatus.CANCELING:
-      return <Tag>Canceling</Tag>;
-    case BulkActionStatus.CANCELED:
-      return <Tag>Canceled</Tag>;
-  }
-  return <span />;
+  return <BackfillStatusTagForPage backfill={backfill} />;
 };
 
 const TagButton = styled.button`
