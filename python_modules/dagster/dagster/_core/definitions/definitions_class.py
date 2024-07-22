@@ -648,12 +648,17 @@ class Definitions:
         """
         defs.get_inner_repository()
 
+    @public
+    @experimental
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":
         """Merges multiple Definitions objects into a single Definitions object.
 
         The returned Definitions object has the union of all the definitions in the input
         Definitions objects.
+
+        Raises an error if the Definitions objects to be merged contain conflicting values for the
+        same resource key or logger key, or if they have different executors defined.
 
         Returns:
             Definitions: The merged definitions.
