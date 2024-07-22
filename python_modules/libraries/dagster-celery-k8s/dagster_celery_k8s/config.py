@@ -1,9 +1,10 @@
-from dagster import Field, Float, Noneable, StringSource, Any
+from dagster import Field, Float, Map, Noneable, StringSource
 from dagster._core.remote_representation import IN_PROCESS_NAME
 from dagster._utils.merger import merge_dicts
 from dagster_celery.executor import CELERY_CONFIG
 from dagster_k8s import DagsterK8sJobConfig
 from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
+from dagster_k8s.job import USER_DEFINED_K8S_CONFIG_SCHEMA
 
 CELERY_K8S_CONFIG_KEY = "celery-k8s"
 
@@ -53,8 +54,11 @@ def celery_k8s_executor_config():
             ),
         ),
         "per_step_k8s_config": Field(
-            Any, is_required=False, default_value={}, description="Per op k8s configuration overrides."
-        )
+            Map(str, USER_DEFINED_K8S_CONFIG_SCHEMA, key_label_name="step_name"),
+            is_required=False,
+            default_value={},
+            description="Per op k8s configuration overrides.",
+        ),
     }
 
     cfg = merge_dicts(CELERY_CONFIG, job_config)
