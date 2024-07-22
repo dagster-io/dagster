@@ -1361,7 +1361,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions will be
-            midnight the sonnest first of the month following start_date. Can provide in either a
+            midnight the soonest first of the month following start_date. Can provide in either a
             datetime or string format.
         end_date (Union[datetime.datetime, str, None]): The last date(excluding) in the set of partitions.
             Default is None. Can provide in either a datetime or string format.
@@ -1443,7 +1443,7 @@ def monthly_partitioned_config(
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions will be
-            midnight the sonnest first of the month following start_date. Can provide in either a
+            midnight the soonest first of the month following start_date. Can provide in either a
             datetime or string format.
         minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
             to 0.
