@@ -6,10 +6,6 @@ import styled from 'styled-components';
 
 import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {
-  SingleBackfillCountsQuery,
-  SingleBackfillCountsQueryVariables,
-} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
