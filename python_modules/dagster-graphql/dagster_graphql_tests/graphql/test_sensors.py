@@ -453,6 +453,52 @@ query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickSt
 }
 """
 
+
+GET_TICKS_WITH_ASSET_EVENTS_QUERY = """
+query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!]) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensor {
+      id
+      sensorState {
+        id
+        ticks(statuses: $statuses) {
+          id
+          tickId
+          status
+          timestamp
+          assetEvents {
+            __typename
+            ... on MaterializationEvent {
+              assetKey {
+                path
+              }
+              timestamp
+            }
+            ... on ObservationEvent {
+              assetKey {
+                path
+              }
+              timestamp
+            }
+            ... on AssetCheckEvaluationEvent {
+              assetKey {
+                path
+              }
+              timestamp
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 GET_TICK_LOGS_QUERY = """
 query TickLogsQuery($sensorSelector: SensorSelector!) {
   sensorOrError(sensorSelector: $sensorSelector) {
@@ -1533,3 +1579,46 @@ def test_invalid_sensor_asset_selection(graphql_context):
         "no AssetsDefinition objects supply these keys"
         in result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["message"]
     )
+
+
+def test_asset_events_from_sensor(graphql_context: WorkspaceRequestContext) -> None:
+    external_repository = graphql_context.get_code_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+
+    sensor_name = "asset_event_reporting_sensor"
+    external_sensor = external_repository.get_external_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    # turn the sensor on
+    graphql_context.instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+        )
+    )
+
+    now = datetime.datetime.now(tz=get_timezone("US/Central"))
+    with freeze_time(now):
+        _create_tick(graphql_context)  # create a success tick
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICKS_WITH_ASSET_EVENTS_QUERY,
+        variables={"sensorSelector": sensor_selector},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    tick = result.data["sensorOrError"]["sensorState"]["ticks"][0]
+
+    assert len(tick["assetEvents"]) == 3
+
+    event_1 = tick["assetEvents"][0]
+    assert event_1["assetKey"]["path"] == ["asset_one"]
+    assert event_1["__typename"] == "MaterializationEvent"
+
+    event_2 = tick["assetEvents"][1]
+    assert event_2["assetKey"]["path"] == ["asset_two"]
+    assert event_2["__typename"] == "ObservationEvent"
+
+    event_3 = tick["assetEvents"][2]
+    assert event_3["assetKey"]["path"] == ["asset_three"]
+    assert event_3["__typename"] == "AssetCheckEvaluationEvent"

@@ -1284,6 +1284,7 @@ type AssetCheckEvaluationEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  assetKey: AssetKey
   evaluation: AssetCheckEvaluation!
 }
 
@@ -2540,6 +2541,7 @@ type InstigationTick {
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
   autoMaterializeAssetEvaluationId: Int
   instigationType: InstigationType!
+  assetEvents: [TickAssetEvent!]!
 }
 
 type InstigationEventConnection {
@@ -2565,6 +2567,8 @@ type RequestedMaterializationsForAsset {
   assetKey: AssetKey!
   partitionKeys: [String!]!
 }
+
+union TickAssetEvent = ObservationEvent | MaterializationEvent | AssetCheckEvaluationEvent
 
 type ScheduleData {
   cronSchedule: String!

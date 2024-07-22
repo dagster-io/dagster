@@ -196,6 +196,7 @@ export type AssetCheckEvaluation = {
 export type AssetCheckEvaluationEvent = MessageEvent &
   StepEvent & {
     __typename: 'AssetCheckEvaluationEvent';
+    assetKey: Maybe<AssetKey>;
     evaluation: AssetCheckEvaluation;
     eventType: Maybe<DagsterEventType>;
     level: LogLevel;
@@ -2006,6 +2007,7 @@ export enum InstigationStatus {
 
 export type InstigationTick = {
   __typename: 'InstigationTick';
+  assetEvents: Array<TickAssetEvent>;
   autoMaterializeAssetEvaluationId: Maybe<Scalars['Int']['output']>;
   cursor: Maybe<Scalars['String']['output']>;
   dynamicPartitionsRequestResults: Array<DynamicPartitionsRequestResult>;
@@ -5391,6 +5393,8 @@ export type TextRuleEvaluationData = {
   text: Maybe<Scalars['String']['output']>;
 };
 
+export type TickAssetEvent = AssetCheckEvaluationEvent | MaterializationEvent | ObservationEvent;
+
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
   cursor: Maybe<Scalars['String']['output']>;
@@ -5875,6 +5879,12 @@ export const buildAssetCheckEvaluationEvent = (
   relationshipsToOmit.add('AssetCheckEvaluationEvent');
   return {
     __typename: 'AssetCheckEvaluationEvent',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     evaluation:
       overrides && overrides.hasOwnProperty('evaluation')
         ? overrides.evaluation!
@@ -8949,6 +8959,7 @@ export const buildInstigationTick = (
   relationshipsToOmit.add('InstigationTick');
   return {
     __typename: 'InstigationTick',
+    assetEvents: overrides && overrides.hasOwnProperty('assetEvents') ? overrides.assetEvents! : [],
     autoMaterializeAssetEvaluationId:
       overrides && overrides.hasOwnProperty('autoMaterializeAssetEvaluationId')
         ? overrides.autoMaterializeAssetEvaluationId!

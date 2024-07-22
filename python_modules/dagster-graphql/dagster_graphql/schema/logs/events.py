@@ -542,6 +542,7 @@ class GrapheneAssetCheckEvaluationEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "AssetCheckEvaluationEvent"
 
+    assetKey = graphene.Field(GrapheneAssetKey)
     evaluation = graphene.NonNull(GrapheneAssetCheckEvaluation)
 
 
