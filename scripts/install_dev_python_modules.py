@@ -16,12 +16,18 @@ parser.add_argument(
     help="Additional packages (with optional version reqs) to pass to `pip install`",
 )
 parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
+parser.add_argument(
+    "--system",
+    action="store_true",
+    help="Install the packages into the system Python. Should only be used in Dockferfiles or CI/CD.",
+)
 
 
 def main(
     quiet: bool,
     extra_packages: List[str],
     include_prebuilt_grpcio_wheel: Optional[bool],
+    system: Optional[bool],
 ) -> None:
     """Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -138,21 +144,13 @@ def main(
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
-    cmd = ["uv", "pip", "install"] + install_targets
+    cmd = ["uv", "pip", "install"] + (["--system"] if system else []) + install_targets
 
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')
 
-    p = subprocess.Popen(
-        " ".join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
-    )
     print(" ".join(cmd))
-    while True:
-        output = p.stdout.readline()  # type: ignore
-        if p.poll() is not None:
-            break
-        if output:
-            print(output.decode("utf-8").strip())
+    subprocess.run(cmd, check=True)
 
 
 if __name__ == "__main__":
@@ -161,4 +159,5 @@ if __name__ == "__main__":
         quiet=args.quiet,
         extra_packages=args.packages,
         include_prebuilt_grpcio_wheel=args.include_prebuilt_grpcio_wheel,
+        system=args.system,
     )
