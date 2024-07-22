@@ -199,20 +199,24 @@ def _seed_runs(
 
 def _get_run_stats(partition_status_counts):
     # TestDaemonPartitionBackfill::test_backfill_run_stats[sqlite_with_default_run_launcher_managed_grpc_env]
-    statuses = {}
-    for status_dict in partition_status_counts:
-        statuses[status_dict["runStatus"].lower()] = status_dict["count"]
-
-    # partition_status_counts doesn't include statuses with 0 counts, so fill those in
-    statuses = {
-        "queued": statuses.get("queued", 0),
-        "started": statuses.get("started", 0),
-        "success": statuses.get("success", 0),
-        "failure": statuses.get("failure", 0),
-        "canceled": statuses.get("canceled", 0),
+    return {
+        "total": len(partition_status_counts),
+        "queued": len(
+            [status for status in partition_status_counts if status["runStatus"] == "QUEUED"]
+        ),
+        "started": len(
+            [status for status in partition_status_counts if status["runStatus"] == "STARTED"]
+        ),
+        "success": len(
+            [status for status in partition_status_counts if status["runStatus"] == "SUCCESS"]
+        ),
+        "failure": len(
+            [status for status in partition_status_counts if status["runStatus"] == "FAILURE"]
+        ),
+        "canceled": len(
+            [status for status in partition_status_counts if status["runStatus"] == "CANCELED"]
+        ),
     }
-    statuses["total"] = sum(statuses.values())
-    return statuses
 
 
 def _execute_asset_backfill_iteration_no_side_effects(
