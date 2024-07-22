@@ -33,7 +33,6 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, split_run_requests
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
@@ -123,11 +122,14 @@ class SensorLaunchContext(AbstractContextManager):
         ]
 
     def update_state(self, status: TickStatus, **kwargs: object):
+        from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+        from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
         cursor = cast(Optional[str], kwargs.get("cursor"))
         origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))
         asset_events = cast(
-            Sequence[EventLogEntry],
+            Optional[Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]],
             kwargs.get("asset_events"),
         )
         if "skip_reason" in kwargs:
@@ -640,10 +642,9 @@ def _evaluate_sensor(
     if sensor_runtime_data.log_key:
         context.add_log_key(sensor_runtime_data.log_key)
 
-    entries = []
     for asset_event in sensor_runtime_data.asset_events:
-        entries.append(instance.report_runless_asset_event(asset_event))
-    context.update_state(TickStatus.SKIPPED, asset_events=entries)
+        instance.report_runless_asset_event(asset_event)
+    context.update_state(TickStatus.SKIPPED, asset_events=sensor_runtime_data.asset_events)
 
     if sensor_runtime_data.dynamic_partitions_requests:
         _handle_dynamic_partitions_requests(

@@ -3455,12 +3455,11 @@ def test_asset_event_reporting_sensor(
 
         assert tick.tick_data.asset_events and len(tick.tick_data.asset_events) == 1
         asset_event = tick.tick_data.asset_events[0]
-        assert asset_event.dagster_event
-        assert asset_event.dagster_event.asset_key == AssetKey(["asset_one"])
+        assert asset_event.asset_key == AssetKey(["asset_one"])
 
         last_materialization = instance.get_latest_materialization_event(AssetKey(["asset_one"]))
         assert last_materialization
-        assert last_materialization.timestamp == asset_event.timestamp
+        assert last_materialization.asset_materialization == asset_event
 
 
 def _get_last_tick(instance, sensor):

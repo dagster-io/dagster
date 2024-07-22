@@ -5,13 +5,19 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import (
+    AssetKey,
+    AssetKeyPartitionKey,
+    AssetMaterialization,
+    AssetObservation,
+)
 from dagster._core.definitions.partition import PartitionsDefinition
 
 # re-export
@@ -21,7 +27,6 @@ from dagster._core.definitions.run_request import (
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.errors import DeserializationError
@@ -342,7 +347,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_asset_events(
         self,
-        asset_events: Sequence[EventLogEntry],
+        asset_events: Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
     ) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data._replace(asset_events=asset_events))
 
@@ -535,7 +540,9 @@ class TickData(
             ("reserved_run_ids", Optional[Sequence[str]]),
             (
                 "asset_events",
-                Optional[Sequence[EventLogEntry]],
+                Optional[
+                    Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+                ],
             ),
         ],
     )
@@ -595,7 +602,9 @@ class TickData(
         run_requests: Optional[Sequence[RunRequest]] = None,
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
-        asset_events: Optional[Sequence[EventLogEntry]] = None,
+        asset_events: Optional[
+            Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
+        ] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -627,7 +636,7 @@ class TickData(
             asset_events=check.opt_list_param(
                 obj=asset_events,
                 param_name="asset_events",
-                of_type=EventLogEntry,
+                of_type=(AssetMaterialization, AssetObservation, AssetCheckEvaluation),
             ),
         )
 
