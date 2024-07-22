@@ -6,9 +6,9 @@ import pytest
 from dagster import StaticPartitionsDefinition
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionSnapshot,
     AssetSubsetWithMetadata,
+    AutomationConditionEvaluation,
+    AutomationConditionSnapshot,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -735,7 +735,7 @@ class TestScheduleStorage:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
-        condition_snapshot = AssetConditionSnapshot(
+        condition_snapshot = AutomationConditionSnapshot(
             class_name="foo", description="bar", unique_id=""
         )
 
@@ -743,7 +743,7 @@ class TestScheduleStorage:
             storage.add_auto_materialize_asset_evaluations(
                 evaluation_id=10,
                 asset_evaluations=[
-                    AssetConditionEvaluation(
+                    AutomationConditionEvaluation(
                         condition_snapshot=condition_snapshot,
                         true_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
                         candidate_subset=AssetSubset(asset_key=AssetKey("asset_one"), value=False),
@@ -752,7 +752,7 @@ class TestScheduleStorage:
                         subsets_with_metadata=[],
                         child_evaluations=[],
                     ).with_run_ids(set()),
-                    AssetConditionEvaluation(
+                    AutomationConditionEvaluation(
                         condition_snapshot=condition_snapshot,
                         true_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
                         candidate_subset=AssetSubset(asset_key=AssetKey("asset_two"), value=True),
@@ -807,7 +807,7 @@ class TestScheduleStorage:
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[
-                AssetConditionEvaluation(
+                AutomationConditionEvaluation(
                     condition_snapshot=condition_snapshot,
                     start_timestamp=0,
                     end_timestamp=1,
@@ -840,8 +840,8 @@ class TestScheduleStorage:
 
         # add a mix of keys - one that already is using the unique index and one that is not
 
-        eval_one = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot(
+        eval_one = AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionSnapshot(
                 class_name="foo", description="bar", unique_id=""
             ),
             start_timestamp=0,
@@ -852,8 +852,8 @@ class TestScheduleStorage:
             child_evaluations=[],
         ).with_run_ids(set())
 
-        eval_asset_three = AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot(
+        eval_asset_three = AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionSnapshot(
                 class_name="foo", description="bar", unique_id=""
             ),
             start_timestamp=0,
@@ -905,8 +905,8 @@ class TestScheduleStorage:
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
-                AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot(
+                AutomationConditionEvaluation(
+                    condition_snapshot=AutomationConditionSnapshot(
                         class_name="foo", description="bar", unique_id=""
                     ),
                     start_timestamp=0,
@@ -941,8 +941,8 @@ class TestScheduleStorage:
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
             asset_evaluations=[
-                AssetConditionEvaluation(
-                    condition_snapshot=AssetConditionSnapshot(
+                AutomationConditionEvaluation(
+                    condition_snapshot=AutomationConditionSnapshot(
                         class_name="foo", description="bar", unique_id=""
                     ),
                     start_timestamp=0,

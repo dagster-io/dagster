@@ -21,19 +21,19 @@ from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
     from .declarative_automation.serialized_objects import (
-        AssetConditionEvaluationState,
-        AssetConditionSnapshot,
         AutomationConditionCursor,
+        AutomationConditionEvaluationState,
+        AutomationConditionSnapshot,
     )
 
 
-@whitelist_for_serdes
-class AssetConditionCursorExtras(NamedTuple):
-    """Represents additional state that may be optionally saved by an AssetCondition between
+@whitelist_for_serdes(old_storage_names={"AssetConditionCursorExtras"})
+class AutomationConditionCursorExtras(NamedTuple):
+    """Represents additional state that may be optionally saved by an AutomationCondition between
     evaluations.
     """
 
-    condition_snapshot: "AssetConditionSnapshot"
+    condition_snapshot: "AutomationConditionSnapshot"
     extras: Mapping[str, PackableValue]
 
 
@@ -68,7 +68,7 @@ class AssetDaemonCursor:
 
     Attributes:
         evaluation_id (int): The ID of the evaluation that produced this cursor.
-        previous_evaluation_state (Sequence[AssetConditionEvaluationState]): (DEPRECATED) The
+        previous_evaluation_state (Sequence[AutomationConditionEvaluationState]): (DEPRECATED) The
             evaluation info recorded for each asset on the previous tick.
         previous_cursors (Sequence[AutomationConditionCursor]): The cursor objects for each asset
             recorded on the previous tick.
@@ -77,7 +77,7 @@ class AssetDaemonCursor:
     evaluation_id: int
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
-    previous_evaluation_state: Optional[Sequence["AssetConditionEvaluationState"]]
+    previous_evaluation_state: Optional[Sequence["AutomationConditionEvaluationState"]]
     previous_condition_cursors: Optional[Sequence["AutomationConditionCursor"]] = None
 
     @staticmethod
@@ -97,7 +97,7 @@ class AssetDaemonCursor:
         )
 
         if self.previous_condition_cursors is None:
-            # automatically convert AssetConditionEvaluationState objects to AutomationConditionCursor
+            # automatically convert AutomationConditionEvaluationState objects to AutomationConditionCursor
             return {
                 evaluation_state.asset_key: AutomationConditionCursor.backcompat_from_evaluation_state(
                     evaluation_state

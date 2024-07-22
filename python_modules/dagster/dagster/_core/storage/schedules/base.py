@@ -3,7 +3,7 @@ from typing import Mapping, Optional, Sequence, Set
 
 from dagster import AssetKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluationWithRunIds,
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
@@ -156,7 +156,9 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abc.abstractmethod
     def add_auto_materialize_asset_evaluations(
-        self, evaluation_id: int, asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds]
+        self,
+        evaluation_id: int,
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     ) -> None:
         """Add asset policy evaluations to storage."""
 

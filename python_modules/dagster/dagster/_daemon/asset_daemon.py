@@ -20,7 +20,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
+    AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
@@ -1131,7 +1131,7 @@ def invoke_sensor_for_evaluation(
     stored_cursor: AssetDaemonCursor,
     tick: InstigatorTick,
     asset_graph: RemoteAssetGraph,
-) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
     sensor_origin = sensor.get_external_origin()
     request_ctx = workspace_process_context.create_request_context()
     code_loc = request_ctx.get_code_location(sensor_origin.location_name)

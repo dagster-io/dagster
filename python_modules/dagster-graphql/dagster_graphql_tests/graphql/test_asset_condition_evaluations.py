@@ -10,9 +10,9 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionEvaluationWithRunIds,
-    AssetConditionSnapshot,
+    AutomationConditionEvaluation,
+    AutomationConditionEvaluationWithRunIds,
+    AutomationConditionSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
@@ -550,10 +550,10 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         partitions_def: PartitionsDefinition,
         true_partition_keys: Sequence[str],
         candidate_partition_keys: Optional[Sequence[str]] = None,
-        child_evaluations: Optional[Sequence[AssetConditionEvaluation]] = None,
-    ) -> AssetConditionEvaluation:
-        return AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot(
+        child_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
+    ) -> AutomationConditionEvaluation:
+        return AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionSnapshot(
                 class_name="...",
                 description=description,
                 unique_id=str(random.randint(0, 100000000)),
@@ -647,7 +647,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         ).add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
-                AssetConditionEvaluationWithRunIds(
+                AutomationConditionEvaluationWithRunIds(
                     evaluation=evaluation, run_ids=frozenset({"runid1", "runid2"})
                 )
             ],
@@ -771,7 +771,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         ).add_auto_materialize_asset_evaluations(
             evaluation_id=10,
             asset_evaluations=[
-                AssetConditionEvaluationWithRunIds(
+                AutomationConditionEvaluationWithRunIds(
                     evaluation=result.results[0].serializable_evaluation,
                     run_ids=frozenset({"runid1"}),
                 )

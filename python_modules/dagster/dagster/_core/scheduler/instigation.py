@@ -9,7 +9,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluationWithRunIds,
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -768,12 +768,12 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
 
     def get_evaluation_with_run_ids(
         self, partitions_def: Optional[PartitionsDefinition]
-    ) -> AssetConditionEvaluationWithRunIds:
+    ) -> AutomationConditionEvaluationWithRunIds:
         try:
-            # If this was serialized as an AssetConditionEvaluationWithRunIds, we can deserialize
+            # If this was serialized as an AutomationConditionEvaluationWithRunIds, we can deserialize
             # this directly
             return deserialize_value(
-                self.serialized_evaluation_body, AssetConditionEvaluationWithRunIds
+                self.serialized_evaluation_body, AutomationConditionEvaluationWithRunIds
             )
         except DeserializationError:
             # If this is a legacy AutoMaterializeAssetEvaluation, we need to pass in the partitions

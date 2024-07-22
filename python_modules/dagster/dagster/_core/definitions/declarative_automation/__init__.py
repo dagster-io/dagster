@@ -11,11 +11,11 @@ from .operands import (
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,
-    AndAssetCondition as AndAssetCondition,
+    AndAutomationCondition as AndAutomationCondition,
     AnyDepsCondition as AnyDepsCondition,
     AnyDownstreamConditionsCondition as AnyDownstreamConditionsCondition,
     NewlyTrueCondition as NewlyTrueCondition,
-    NotAssetCondition as NotAssetCondition,
-    OrAssetCondition as OrAssetCondition,
+    NotAutomationCondition as NotAutomationCondition,
+    OrAutomationCondition as OrAutomationCondition,
     SinceCondition as SinceCondition,
 )

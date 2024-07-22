@@ -7,11 +7,11 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, Temporal
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionSnapshot,
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
+    AutomationConditionEvaluation,
     AutomationConditionNodeCursor,
+    AutomationConditionSnapshot,
     get_serializable_candidate_subset,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -38,12 +38,12 @@ if TYPE_CHECKING:
     )
     from .operators import (
         AllDepsCondition,
-        AndAssetCondition,
+        AndAutomationCondition,
         AnyDepsCondition,
         AnyDownstreamConditionsCondition,
         NewlyTrueCondition,
-        NotAssetCondition,
-        OrAssetCondition,
+        NotAutomationCondition,
+        OrAutomationCondition,
         SinceCondition,
     )
 
@@ -74,9 +74,9 @@ class AutomationCondition(ABC):
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return None
 
-    def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
+    def get_snapshot(self, unique_id: str) -> AutomationConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
-        return AssetConditionSnapshot(
+        return AutomationConditionSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
@@ -123,26 +123,26 @@ class AutomationCondition(ABC):
         """Returns a copy of this AutomationCondition with a human-readable label."""
         return copy(self, label=label)
 
-    def __and__(self, other: "AutomationCondition") -> "AndAssetCondition":
-        from .operators import AndAssetCondition
+    def __and__(self, other: "AutomationCondition") -> "AndAutomationCondition":
+        from .operators import AndAutomationCondition
 
-        # group AndAssetConditions together
-        if isinstance(self, AndAssetCondition):
-            return AndAssetCondition(operands=[*self.operands, other])
-        return AndAssetCondition(operands=[self, other])
+        # group AndAutomationConditions together
+        if isinstance(self, AndAutomationCondition):
+            return AndAutomationCondition(operands=[*self.operands, other])
+        return AndAutomationCondition(operands=[self, other])
 
-    def __or__(self, other: "AutomationCondition") -> "OrAssetCondition":
-        from .operators import OrAssetCondition
+    def __or__(self, other: "AutomationCondition") -> "OrAutomationCondition":
+        from .operators import OrAutomationCondition
 
-        # group OrAssetConditions together
-        if isinstance(self, OrAssetCondition):
-            return OrAssetCondition(operands=[*self.operands, other])
-        return OrAssetCondition(operands=[self, other])
+        # group OrAutomationConditions together
+        if isinstance(self, OrAutomationCondition):
+            return OrAutomationCondition(operands=[*self.operands, other])
+        return OrAutomationCondition(operands=[self, other])
 
-    def __invert__(self) -> "NotAssetCondition":
-        from .operators import NotAssetCondition
+    def __invert__(self) -> "NotAutomationCondition":
+        from .operators import NotAutomationCondition
 
-        return NotAssetCondition(operand=self)
+        return NotAutomationCondition(operand=self)
 
     def since(self, reset_condition: "AutomationCondition") -> "SinceCondition":
         """Returns a AutomationCondition that is true if this condition has become true since the
@@ -372,7 +372,7 @@ class AutomationResult(NamedTuple):
     child_results: Sequence["AutomationResult"]
 
     node_cursor: Optional[AutomationConditionNodeCursor]
-    serializable_evaluation: AssetConditionEvaluation
+    serializable_evaluation: AutomationConditionEvaluation
 
     extra_state: Any
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
@@ -441,7 +441,7 @@ class AutomationResult(NamedTuple):
         child_results: Sequence["AutomationResult"],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "AutomationResult":
-        """Returns a new AssetConditionEvaluation from the given child results."""
+        """Returns a new AutomationResult from the given child results."""
         return AutomationResult._create(
             context=context,
             true_slice=true_slice,
@@ -457,7 +457,7 @@ class AutomationResult(NamedTuple):
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "AutomationResult":
-        """Returns a new AssetConditionEvaluation from the given parameters."""
+        """Returns a new AutomationResult from the given parameters."""
         return AutomationResult._create(
             context=context,
             true_slice=true_slice,
@@ -506,8 +506,8 @@ def _create_serializable_evaluation(
     start_timestamp: float,
     end_timestamp: float,
     child_results: Sequence[AutomationResult],
-) -> AssetConditionEvaluation:
-    return AssetConditionEvaluation(
+) -> AutomationConditionEvaluation:
+    return AutomationConditionEvaluation(
         condition_snapshot=context.condition.get_snapshot(context.condition_unique_id),
         true_subset=true_slice.convert_to_valid_asset_subset(),
         candidate_subset=get_serializable_candidate_subset(

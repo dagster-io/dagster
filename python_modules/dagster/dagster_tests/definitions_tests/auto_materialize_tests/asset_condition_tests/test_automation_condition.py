@@ -10,7 +10,7 @@ from ..scenario_specs import (
     one_asset,
     time_partitions_start_datetime,
 )
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
@@ -67,7 +67,7 @@ def test_missing_time_partitioned() -> None:
 
 
 def test_serialize_definitions_with_asset_condition() -> None:
-    amp = AutoMaterializePolicy.from_asset_condition(
+    amp = AutoMaterializePolicy.from_automation_condition(
         AutomationCondition.eager()
         & ~AutomationCondition.newly_updated().since(
             AutomationCondition.cron_tick_passed(cron_schedule="0 * * * *", cron_timezone="UTC")

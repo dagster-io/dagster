@@ -10,7 +10,7 @@ from dagster import (
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
-    AndAssetCondition,
+    AndAutomationCondition,
 )
 
 
@@ -110,7 +110,7 @@ def test_multiple_downstreams_nested() -> None:
     res1 = a_result.child_results[0]
     assert res1.condition.description == "b"
     res1_and = res1.child_results[0]
-    assert isinstance(res1_and.condition, AndAssetCondition)
+    assert isinstance(res1_and.condition, AndAutomationCondition)
     res1_1 = res1_and.child_results[0].child_results[0]
     assert res1_1.condition.description == "d"
     assert res1_1.child_results[0].condition == cond3

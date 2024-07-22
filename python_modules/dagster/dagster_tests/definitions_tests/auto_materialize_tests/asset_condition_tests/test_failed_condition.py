@@ -4,7 +4,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 
 def test_failed_unpartitioned() -> None:

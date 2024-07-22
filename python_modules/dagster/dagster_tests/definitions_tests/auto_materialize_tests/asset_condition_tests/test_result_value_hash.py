@@ -9,7 +9,7 @@ from dagster import (
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
 from ..scenario_specs import ScenarioSpec
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 one_parent = ScenarioSpec(asset_specs=[AssetSpec("A"), AssetSpec("downstream", deps=["A"])])
 two_parents = ScenarioSpec(
@@ -26,24 +26,24 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
     [
         # cron condition returns a unique value hash if parents change, if schedule changes, if the
         # partitions def changes, or if an asset is materialized
-        ("b965fde7adb65aefeaceccb72d1924f7", SC.on_cron("0 * * * *"), one_parent, False),
-        ("455fa56d35fd9ae07bc9ee891ea109d7", SC.on_cron("0 * * * *"), one_parent, True),
-        ("e038e2ffef6417fe048dbdb927b56fdf", SC.on_cron("0 0 * * *"), one_parent, False),
-        ("80742dcd71a359a366d8312dfa283ffb", SC.on_cron("0 * * * *"), one_parent_daily, False),
-        ("0179e633e3c1aac0d7af0dd3a3889f1a", SC.on_cron("0 * * * *"), two_parents, False),
-        ("72bf7d1e533896a459ea3f46d30540d6", SC.on_cron("0 * * * *"), two_parents_daily, False),
+        ("fef5f314d057e979611619c76650738c", SC.on_cron("0 * * * *"), one_parent, False),
+        ("f49a6cd10a479600a20ed6a41cf69627", SC.on_cron("0 * * * *"), one_parent, True),
+        ("e76a776ed851d4bef5aed673dd8ba69e", SC.on_cron("0 0 * * *"), one_parent, False),
+        ("8f92e3b53d480c17b522a87c19478044", SC.on_cron("0 * * * *"), one_parent_daily, False),
+        ("dba479aa2c6203e2dca54cdda01bad15", SC.on_cron("0 * * * *"), two_parents, False),
+        ("154fdbc5930cea107a128e3a0df5dc97", SC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
-        ("b60a8bd378adc06d0f6b20d521e64a86", SC.eager(), one_parent, False),
-        ("c8d5928ae9965d3dc4c271b20121680d", SC.eager(), one_parent, True),
-        ("ea699de7aef5356433e435dcaf4ab51e", SC.eager(), one_parent_daily, False),
-        ("2819ba2e50803da9f146fd034e0df412", SC.eager(), two_parents, False),
-        ("5f94b12ce4e5c9c424b9f37335d8cb82", SC.eager(), two_parents_daily, False),
+        ("8d1dc13e39337b2cc43c711930893a36", SC.eager(), one_parent, False),
+        ("a111331589fc2766a34bacab88639ff5", SC.eager(), one_parent, True),
+        ("a41576711e61908a321bf8fc4f7d1261", SC.eager(), one_parent_daily, False),
+        ("a4dbf8969ab764eb07fb666688dafe1b", SC.eager(), two_parents, False),
+        ("ceff99f39c4db7381d8da4622421fde2", SC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
-        ("651bece3ee8bb50d1616924f0a65f3fd", SC.missing(), one_parent, False),
-        ("651bece3ee8bb50d1616924f0a65f3fd", SC.missing(), one_parent, True),
-        ("651bece3ee8bb50d1616924f0a65f3fd", SC.missing(), two_parents, False),
-        ("ba2310926ab693fc05f1fc48a5b6e537", SC.missing(), two_parents_daily, False),
-        ("ba2310926ab693fc05f1fc48a5b6e537", SC.missing(), one_parent_daily, False),
+        ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), one_parent, False),
+        ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), one_parent, True),
+        ("5c24ffc21af9983a4917b91290de8f5d", SC.missing(), two_parents, False),
+        ("c722c1abf97c5f5fe13b2f6fc00af739", SC.missing(), two_parents_daily, False),
+        ("c722c1abf97c5f5fe13b2f6fc00af739", SC.missing(), one_parent_daily, False),
     ],
 )
 def test_value_hash(
