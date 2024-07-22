@@ -24,7 +24,6 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.merger import deep_merge_dicts
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
@@ -37,6 +36,7 @@ from dagster_k8s.client import (
     DagsterK8sUnrecoverableAPIError,
     DagsterKubernetesClient,
 )
+from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
     UserDefinedDagsterK8sConfig,
     get_k8s_job_name,
@@ -381,10 +381,16 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 dagster_run.external_job_origin.repository_origin.code_location_origin.location_name
             )
         per_op_override = per_step_k8s_config.get(step_key, {})
-        # NOTE per_op_override will take precedence
-        user_defined_k8s_config = UserDefinedDagsterK8sConfig.from_dict(
-            deep_merge_dicts(user_defined_k8s_config.to_dict(), per_op_override)
+
+        tag_container_context = K8sContainerContext(run_k8s_config=user_defined_k8s_config)
+        executor_config_container_context = K8sContainerContext(
+            run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(per_op_override)
         )
+        merged_user_defined_k8s_config = tag_container_context.merge(
+            executor_config_container_context
+        ).run_k8s_config
+        user_defined_k8s_config = merged_user_defined_k8s_config
+
         job = construct_dagster_k8s_job(
             job_config,
             args,
