@@ -26,6 +26,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._record import record
 from dagster._utils import check
 
 if TYPE_CHECKING:
@@ -78,16 +79,8 @@ class OpSelectionData(
         )
 
 
-class AssetSelectionData(
-    NamedTuple(
-        "_AssetSelectionData",
-        [
-            ("asset_selection", AbstractSet[AssetKey]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
-            ("parent_job_def", "JobDefinition"),
-        ],
-    )
-):
+@record
+class AssetSelectionData:
     """The data about asset selection.
 
     Attributes:
@@ -96,20 +89,9 @@ class AssetSelectionData(
             pipeline snapshot lineage.
     """
 
-    def __new__(
-        cls,
-        asset_selection: Optional[AbstractSet[AssetKey]],
-        asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
-        parent_job_def: "JobDefinition",
-    ):
-        from dagster._core.definitions.job_definition import JobDefinition
-
-        return super(AssetSelectionData, cls).__new__(
-            cls,
-            asset_selection=check.opt_set_param(asset_selection, "asset_selection", AssetKey),
-            asset_check_selection=asset_check_selection,
-            parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
-        )
+    asset_selection: AbstractSet[AssetKey]
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]]
+    parent_job_def: "JobDefinition"
 
 
 def generate_asset_dep_graph(
