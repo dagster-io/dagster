@@ -246,7 +246,6 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = ...,
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
     kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Callable[[T_Type], T_Type]: ...
 
@@ -261,7 +260,6 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
-    is_pickleable: bool = True,
     kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorator to whitelist an object (NamedTuple / dataclass / pydantic model) or
@@ -321,7 +319,6 @@ def whitelist_for_serdes(
         check.class_param(__cls, "__cls")
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP,
-            is_pickleable=is_pickleable,
         )(__cls)
     else:  # decorator passed params
         check.opt_class_param(serializer, "serializer", superclass=Serializer)
@@ -335,7 +332,6 @@ def whitelist_for_serdes(
             old_fields=old_fields,
             skip_when_empty_fields=skip_when_empty_fields,
             field_serializers=field_serializers,
-            is_pickleable=is_pickleable,
             kwargs_fields=kwargs_fields,
         )
 
@@ -350,7 +346,6 @@ def _whitelist_for_serdes(
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
     kwargs_fields: Optional[AbstractSet[str]] = None,
-    is_pickleable: bool = True,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if issubclass(klass, Enum) and (
@@ -369,7 +364,6 @@ def _whitelist_for_serdes(
         ):
             _check_serdes_tuple_class_invariants(
                 klass,
-                is_pickleable=is_pickleable,
                 kwargs_fields=kwargs_fields,
             )
 
@@ -1234,7 +1228,6 @@ def _unpack_value(
 
 def _check_serdes_tuple_class_invariants(
     klass: Type[NamedTuple],
-    is_pickleable: bool,
     kwargs_fields: Optional[AbstractSet[str]],
 ) -> None:
     # can skip validation on @record generated new
@@ -1286,7 +1279,7 @@ def _check_serdes_tuple_class_invariants(
 
                 raise SerdesUsageError(_with_header(error_msg))
 
-        if is_pickleable and not is_record(klass):
+        if not is_record(klass):
             # non @record NamedTuples get pickled via ordinal args, so ensure ordering
             value_param = value_params[index]
             if value_param.name != field:
