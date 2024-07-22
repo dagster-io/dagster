@@ -138,6 +138,9 @@ class SdfInformationSchema(IHaveNew):
         check.inst_param(target_dir, "target_dir", (str, Path))
         check.str_param(environment, "environment")
 
+        workspace_dir = Path(workspace_dir)
+        target_dir = Path(target_dir)
+
         if information_schema_preparer:
             information_schema_preparer.on_load(
                 workspace_dir=workspace_dir, target_dir=target_dir, environment=environment
