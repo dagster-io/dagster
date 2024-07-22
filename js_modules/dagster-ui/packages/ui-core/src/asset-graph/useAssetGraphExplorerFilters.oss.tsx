@@ -94,7 +94,7 @@ export function useAssetGraphExplorerFilters({
   const allAssetGroups = useAssetGroupsForAssets(nodes);
 
   const groupsFilter = useAssetGroupFilter({
-    assetGroups: selectAllFilters.includes('groups') ? allAssetGroups : groups,
+    assetGroups: selectAllFilters?.includes('groups') ? allAssetGroups : groups,
     allAssetGroups,
     setGroups,
   });
@@ -103,7 +103,7 @@ export function useAssetGraphExplorerFilters({
 
   const kindTagsFilter = useComputeKindTagFilter({
     allComputeKindTags,
-    computeKindTags: selectAllFilters.includes('computeKindTags')
+    computeKindTags: selectAllFilters?.includes('computeKindTags')
       ? allComputeKindTags
       : computeKindTags,
     setComputeKindTags,
@@ -114,13 +114,13 @@ export function useAssetGraphExplorerFilters({
 
   const tagsFilter = useAssetTagFilter({
     allAssetTags: allNonStorageKindTags,
-    tags: selectAllFilters.includes('tags') ? allAssetTags : tags,
+    tags: selectAllFilters?.includes('tags') ? allAssetTags : tags,
     setTags: setAssetTags,
   });
 
   const storageKindTagsFilter = useStorageKindFilter({
     allAssetStorageKindTags: allStorageKindTags,
-    storageKindTags: selectAllFilters.includes('storageKindTags')
+    storageKindTags: selectAllFilters?.includes('storageKindTags')
       ? allStorageKindTags
       : storageKindTags,
     setStorageKindTags,
@@ -129,7 +129,7 @@ export function useAssetGraphExplorerFilters({
   const allAssetOwners = useAssetOwnersForAssets(nodes);
   const ownerFilter = useAssetOwnerFilter({
     allAssetOwners,
-    owners: selectAllFilters.includes('owners') ? allAssetOwners : owners,
+    owners: selectAllFilters?.includes('owners') ? allAssetOwners : owners,
     setOwners,
   });
 
@@ -160,11 +160,11 @@ export function useAssetGraphExplorerFilters({
         return;
       }
       if ((activeItems?.length ?? 0) !== allItems.length) {
-        if (selectAllFilters.includes(key)) {
+        if (selectAllFilters?.includes(key)) {
           didChange = true;
           nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
         }
-      } else if (activeItems?.length && !selectAllFilters.includes(key)) {
+      } else if (activeItems?.length && !selectAllFilters?.includes(key)) {
         didChange = true;
         nextAllFilters.push(key);
       }
