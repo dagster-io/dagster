@@ -656,7 +656,7 @@ def _fetch_column_metadata(
         }
 
 
-def _fetch_row_count_metadata(ctx: DbtAttachMetadataContext) -> Optional[Dict[str, Any]]:
+def _fetch_row_count_metadata(ctx: DbtAttachMetadataContext) -> Optional[Mapping[str, Any]]:
     """Threaded task which fetches row counts for materialized dbt models in a dbt run
     once they are built, and attaches the row count as metadata to the event.
     """
@@ -766,7 +766,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     @experimental
     def attach_metadata(
         self,
-        fn: Callable[[DbtAttachMetadataContext], Optional[Dict[str, Any]]],
+        fn: Callable[[DbtAttachMetadataContext], Optional[Mapping[str, Any]]],
     ) -> "DbtEventIterator[DbtDagsterEventType]":
         """Runs a threaded task to attach metadata to each event in the iterator.
 
