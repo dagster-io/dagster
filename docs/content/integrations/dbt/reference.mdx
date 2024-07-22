@@ -805,7 +805,7 @@ Dagster supports fetching additional metadata at dbt execution time to attach as
 
 Dagster can automatically fetch [row counts](/concepts/metadata-tags/asset-metadata/table-metadata#attaching-row-count) for dbt-generated tables and emit them as [materialization metadata](/concepts/metadata-tags/asset-metadata) to be displayed in the Dagster UI.
 
-Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_row_counts" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_row_counts()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.resources_v2" /> returned by the `stream()` dbt CLI call:
+Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_row_counts" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_row_counts()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.dbt_cli_invocation" /> returned by the `stream()` dbt CLI call:
 
 ```python startafter=start_fetch_row_count endbefore=end_fetch_row_count file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
@@ -839,7 +839,7 @@ Dagster allows you to emit column-level metadata, like [column schema](/concepts
 
 With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
 
-Column-level metadata is fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_column_metadata" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_column_metadata()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.resources_v2" /> returned by the `stream()` dbt CLI call:
+Column-level metadata is fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_column_metadata" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_column_metadata()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.dbt_cli_invocation" /> returned by the `stream()` dbt CLI call:
 
 ```python startafter=start_fetch_column_metadata endbefore=end_fetch_column_metadata file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
@@ -859,7 +859,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Composing metadata fetching methods
 
-Metadata fetching methods such as <PyObject object="fetch_column_metadata" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_column_metadata()" /> can be chained with other metadata fetching methods like <PyObject object="fetch_row_counts" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_row_counts()" />:
+Metadata fetching methods such as <PyObject object="fetch_column_metadata" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_column_metadata()" /> can be chained with other metadata fetching methods like <PyObject object="fetch_row_counts" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_row_counts()" />:
 
 ```python startafter=start_fetch_column_metadata_chain endbefore=end_fetch_column_metadata_chain file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
