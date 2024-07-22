@@ -35,7 +35,7 @@ const defaultState: AssetFilterState = {
     computeKindTags: [],
     groups: [],
     owners: [],
-    repos: [],
+    codeLocations: [],
     selectAllFilters: [],
     tags: [],
     storageKindTags: [],
@@ -46,7 +46,7 @@ const defaultState: AssetFilterState = {
   setFilters: () => {},
   setGroups: () => {},
   setOwners: () => {},
-  setRepos: () => {},
+  setCodeLocations: () => {},
   setSelectAllFilters: () => {},
   filterFn: () => true,
   setStorageKindTags: () => {},
@@ -68,7 +68,7 @@ export function useAssetGraphExplorerFilters({
     filters: {
       changedInBranch,
       computeKindTags,
-      repos,
+      codeLocations,
       owners,
       groups,
       tags,
@@ -80,12 +80,14 @@ export function useAssetGraphExplorerFilters({
     setComputeKindTags,
     setGroups,
     setOwners,
-    setRepos,
+    setCodeLocations,
     setSelectAllFilters,
     setStorageKindTags,
   } = assetFilterState || defaultState;
 
-  const reposFilter = useCodeLocationFilter(repos ? {repos, setRepos} : undefined);
+  const reposFilter = useCodeLocationFilter(
+    codeLocations ? {codeLocations, setCodeLocations} : undefined,
+  );
 
   const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
 
@@ -152,7 +154,7 @@ export function useAssetGraphExplorerFilters({
       ['computeKindTags', computeKindTags, allComputeKindTags] as const,
       ['groups', groups, allAssetGroups] as const,
       ['changedInBranch', changedInBranch, Object.values(ChangeReason)] as const,
-      ['repos', repos, allRepos] as const,
+      ['codeLocations', codeLocations, allRepos] as const,
     ].forEach(([key, activeItems, allItems]) => {
       if (!allItems.length) {
         return;
@@ -184,7 +186,7 @@ export function useAssetGraphExplorerFilters({
     groups,
     allAssetGroups,
     changedInBranch,
-    repos,
+    codeLocations,
     allRepos,
     didWaitAfterLoading,
   ]);

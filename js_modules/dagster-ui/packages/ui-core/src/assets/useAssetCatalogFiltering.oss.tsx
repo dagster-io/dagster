@@ -38,7 +38,7 @@ export function useAssetCatalogFiltering(
     setComputeKindTags,
     setGroups,
     setOwners,
-    setRepos,
+    setCodeLocations,
     setStorageKindTags,
   } = useAssetDefinitionFilterState();
 
@@ -109,7 +109,10 @@ export function useAssetCatalogFiltering(
   }
   const {allRepos} = React.useContext(WorkspaceContext);
 
-  const reposFilter = useCodeLocationFilter({repos: filters.repos, setRepos});
+  const reposFilter = useCodeLocationFilter({
+    codeLocations: filters.codeLocations,
+    setCodeLocations,
+  });
   if (allRepos.length > 1) {
     uiFilters.unshift(reposFilter);
   }
@@ -132,7 +135,7 @@ export function useAssetCatalogFiltering(
     filters.storageKindTags?.length ||
     filters.groups?.length ||
     filters.owners?.length ||
-    filters.repos?.length
+    filters.codeLocations?.length
   );
 
   return {
