@@ -1,3 +1,0 @@
-run_retries:
-  enabled: false
-  max_retries: 1
