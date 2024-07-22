@@ -103,7 +103,7 @@ def execute_job_backfill_iteration(
             for run in backfill_runs:
                 if run.status not in FINISHED_STATUSES:
                     logger.info(
-                        f"Backfill {backfill.backfill_id} has in progress runs. Status will be updated when all runs are finished."
+                        f"Backfill {backfill.backfill_id} has in-progress runs. Status will be updated when all runs are finished."
                     )
                     return
             partition_names = cast(Sequence[str], backfill.partition_names)
@@ -189,7 +189,7 @@ def _get_partitions_chunk(
     partition_names = partition_names[initial_checkpoint:]
     if len(partition_names) == 0:
         # no more partitions to submit, return early
-        return [], initial_checkpoint, False
+        return [], checkpoint or "", False
 
     backfill_policy = partition_set.backfill_policy
     if backfill_policy and backfill_policy.max_partitions_per_run != 1:
