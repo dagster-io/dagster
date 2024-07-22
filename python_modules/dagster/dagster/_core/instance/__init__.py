@@ -2485,7 +2485,7 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_event: "DagsterEvent",
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
-    ) -> "EventLogEntry":
+    ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
 
@@ -2500,7 +2500,6 @@ class DagsterInstance(DynamicPartitionsStore):
             dagster_event=dagster_event,
         )
         self.handle_new_event(event_record)
-        return event_record
 
     def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
         from dagster._core.events import DagsterEvent, DagsterEventType
