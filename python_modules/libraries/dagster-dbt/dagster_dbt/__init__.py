@@ -19,6 +19,7 @@ from .cloud import (
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
 from .core.resource import (
+    DbtAttachMetadataContext as DbtAttachMetadataContext,
     DbtCliEventMessage as DbtCliEventMessage,
     DbtCliInvocation as DbtCliInvocation,
     DbtCliResource as DbtCliResource,

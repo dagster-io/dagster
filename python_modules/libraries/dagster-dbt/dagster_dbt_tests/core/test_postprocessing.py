@@ -15,6 +15,7 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue, Tab
 from dagster._core.definitions.metadata.table import TableRecord
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resource import (
+    DbtAttachMetadataContext,
     DbtCliInvocation,
     DbtCliResource,
     DbtDagsterEventType,
@@ -252,20 +253,15 @@ def test_row_count_err(
 def test_attach_metadata(
     test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
 ) -> None:
-    def _summarize(
-        invocation: DbtCliInvocation,
-        event: DbtDagsterEventType,
-    ):
+    def _summarize(event: DbtDagsterEventType, ctx: DbtAttachMetadataContext):
         if not isinstance(event, (AssetMaterialization, Output)):
             return None
 
-        dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
-        table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+        dbt_resource_props = _get_dbt_resource_props_from_event(ctx.invocation, event)
 
-        assert invocation.adapter
-        with invocation.adapter.connection_named(f"row_count_{dbt_resource_props['unique_id']}"):
-            query_result = invocation.adapter.execute(
-                f"SUMMARIZE {table_str}",
+        with ctx.adapter.connection_named(f"row_count_{dbt_resource_props['unique_id']}"):
+            query_result = ctx.adapter.execute(
+                f"SUMMARIZE {ctx.relation_name}",
                 fetch=True,
             )
 
@@ -280,7 +276,7 @@ def test_attach_metadata(
 
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()._attach_metadata(_summarize)  # noqa: SLF001
+        yield from dbt.cli(["build"], context=context).stream().attach_metadata(_summarize)
 
     result = materialize(
         [my_dbt_assets],
