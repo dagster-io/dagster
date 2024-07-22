@@ -2,8 +2,8 @@ import logging
 import os
 import sys
 import time
-import typing as tp
 from functools import partial
+from typing import Any, Mapping, Optional
 
 import kubernetes
 from dagster import (
@@ -48,7 +48,7 @@ from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 from .launcher import CeleryK8sRunLauncher
 
 # {"op1": {"container_config": ..., ...}, "op2": ...}
-PerStepK8sConfigT = tp.Mapping[str, tp.Mapping[str, tp.Any]]
+PerStepK8sConfigT = Mapping[str, Mapping[str, Any]]
 
 
 @executor(
@@ -285,7 +285,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         job_namespace,
         load_incluster_config,
         job_wait_timeout,
-        per_step_k8s_config: tp.Optional[PerStepK8sConfigT] = None,
+        per_step_k8s_config: Optional[PerStepK8sConfigT] = None,
         user_defined_k8s_config_dict=None,
         kubeconfig_file=None,
     ):
