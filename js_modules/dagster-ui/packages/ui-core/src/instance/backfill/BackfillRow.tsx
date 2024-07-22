@@ -27,6 +27,7 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
+import { cancelableStatuses } from '../../runs/RunStatuses';
 
 interface BackfillRowProps {
   backfill: BackfillTableFragment;
@@ -43,7 +44,7 @@ export const BackfillRow = (props: BackfillRowProps) => {
     props.backfill.isAssetBackfill;
 
   if (statusUnsupported) {
-    return <BackfillRowContent {...props} counts={null} statusQueryResult={null} />;
+    return <BackfillRowContent {...props} cancelable_counts={null} statusQueryResult={null} />;
   }
   return (
     <BackfillRowLoader backfillId={props.backfill.id}>
@@ -53,7 +54,7 @@ export const BackfillRow = (props: BackfillRowProps) => {
 };
 
 interface LoadResult {
-  counts: {[runStatus: string]: number} | null;
+  cancelable_counts: {[runStatus: string]: number} | null;
   statusQueryResult: QueryResult<any, any> | null;
 }
 
@@ -63,35 +64,34 @@ export const BackfillRowLoader = (props: {
 }) => {
   const {backfillId} = props;
 
-  const statusCounts = useLazyQuery<SingleBackfillCountsQuery, SingleBackfillCountsQueryVariables>(
-    SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
+  const cancelableRuns = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
+    SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
     {
-      variables: {backfillId},
+      variables: {
+        backfillId: {backfillId},
+      },
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(statusCounts[1], 'SingleBackfillCountsQuery');
+  useBlockTraceOnQueryResult(cancelableRuns[1], 'SingleBackfillQuery');
 
-  // Note: We switch queries based on how many partitions there are to display,
-  // because the detail is nice for small backfills but breaks for 100k+ partitions.
-  //
-  const [statusQueryFn, statusQueryResult] = statusCounts;
+  const [statusQueryFn, statusQueryResult] = cancelableRuns;
 
   useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
   const {data} = statusQueryResult;
-  const {counts} = React.useMemo(() => {
+  const {cancelable_counts} = React.useMemo(() => {
     if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
-      return {counts: null};
+      return {cancelable_counts: null};
     }
-    const counts = Object.fromEntries(
-      data.partitionBackfillOrError.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
+    const cancelable_counts = Object.fromEntries(Array.from(cancelableStatuses).map((status) => [status.toString(), data.partitionBackfillOrError.cancelableRuns.filter((run) => run.status === status).length])
     );
-    return {counts};
+    return {cancelable_counts};
+
   }, [data]);
 
-  return props.children({counts, statusQueryResult});
+  return props.children({cancelable_counts, statusQueryResult});
 };
 
 export const BackfillRowContent = ({
@@ -100,7 +100,7 @@ export const BackfillRowContent = ({
   showBackfillTarget,
   onShowPartitionsRequested,
   refetch,
-  counts,
+  cancelable_counts,
   statusQueryResult,
 }: BackfillRowProps & LoadResult) => {
   const repoAddress = backfill.partitionSet
@@ -159,7 +159,7 @@ export const BackfillRowContent = ({
       <td>
         <BackfillActionsMenu
           backfill={backfill}
-          canCancelRuns={backfillCanCancelRuns(backfill, counts)}
+          canCancelRuns={backfillCanCancelRuns(backfill, cancelable_counts)}
           refetch={refetch}
         />
       </td>
@@ -312,38 +312,18 @@ const TagButton = styled.button`
   }
 `;
 
-export const SINGLE_BACKFILL_STATUS_COUNTS_QUERY = gql`
-  query SingleBackfillCountsQuery($backfillId: String!) {
-    partitionBackfillOrError(backfillId: $backfillId) {
-      ... on PartitionBackfill {
-        id
-        partitionStatusCounts {
-          runStatus
-          count
-        }
-      }
-    }
-  }
-`;
 
-export const SINGLE_BACKFILL_STATUS_DETAILS_QUERY = gql`
+export const SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         id
-        partitionStatuses {
-          ...PartitionStatusesForBackfill
+        cancelableRuns {
+          id
+          runId
+          status
         }
       }
-    }
-  }
-
-  fragment PartitionStatusesForBackfill on PartitionStatuses {
-    results {
-      id
-      partitionName
-      runId
-      runStatus
     }
   }
 `;

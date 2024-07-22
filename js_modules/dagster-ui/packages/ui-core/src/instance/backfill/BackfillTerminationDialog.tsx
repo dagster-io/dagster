@@ -2,7 +2,7 @@ import {gql, useMutation, useQuery} from '@apollo/client';
 import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
-import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
+import {SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY} from './BackfillRow';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {
   BackfillTerminationDialogBackfillFragment,
@@ -25,7 +25,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     CANCEL_BACKFILL_MUTATION,
   );
   const {data} = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
+    SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
     {
       variables: {
         backfillId: backfill?.id || '',
@@ -39,15 +39,11 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }
-    const unfinishedPartitions = data.partitionBackfillOrError.partitionStatuses?.results.filter(
-      (partition) =>
-        partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
-    );
     return (
-      unfinishedPartitions?.reduce(
-        (accum, partition) => {
-          if (partition && partition.runId) {
-            accum[partition.runId] = true;
+      data.partitionBackfillOrError.cancelableRuns?.reduce(
+        (accum, run) => {
+          if (run && run.runId) {
+            accum[run.runId] = true;
           }
           return accum;
         },
