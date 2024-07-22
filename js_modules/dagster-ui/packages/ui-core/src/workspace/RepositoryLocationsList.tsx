@@ -4,8 +4,8 @@ import {useRef} from 'react';
 
 import {
   CodeLocationRowType,
-  VirtualizedCodeLocationErrorRow,
   VirtualizedCodeLocationHeader,
+  VirtualizedCodeLocationRepositoryRow,
   VirtualizedCodeLocationRow,
 } from './VirtualizedCodeLocationRow';
 import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
@@ -73,22 +73,23 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
         <DynamicRowContainer $start={items[0]?.start ?? 0}>
           {items.map(({index, key}) => {
             const row: CodeLocationRowType = codeLocations[index]!;
-            if (row.type === 'error') {
+            if (row.type === 'location') {
               return (
-                <VirtualizedCodeLocationErrorRow
+                <VirtualizedCodeLocationRow
                   key={key}
                   index={index}
-                  locationNode={row.node}
+                  locationEntry={row.locationEntry}
+                  locationStatus={row.locationStatus}
                   ref={virtualizer.measureElement}
                 />
               );
             }
-
             return (
-              <VirtualizedCodeLocationRow
+              <VirtualizedCodeLocationRepositoryRow
                 key={key}
                 index={index}
-                codeLocation={row.codeLocation}
+                locationStatus={row.locationStatus}
+                locationEntry={row.locationEntry}
                 repository={row.repository}
                 ref={virtualizer.measureElement}
               />

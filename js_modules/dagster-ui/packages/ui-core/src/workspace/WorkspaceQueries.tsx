@@ -131,12 +131,16 @@ export const CODE_LOCATION_STATUS_QUERY = gql`
     locationStatusesOrError {
       ... on WorkspaceLocationStatusEntries {
         entries {
-          id
-          name
-          loadStatus
-          updateTimestamp
+          ...LocationStatusEntryFragment
         }
       }
     }
+  }
+
+  fragment LocationStatusEntryFragment on WorkspaceLocationStatusEntry {
+    id
+    name
+    loadStatus
+    updateTimestamp
   }
 `;
