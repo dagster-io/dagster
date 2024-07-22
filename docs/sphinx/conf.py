@@ -68,6 +68,7 @@ paths = [
     "../../python_modules/libraries/dagster-polars",
     "../../python_modules/libraries/dagster-pyspark",
     "../../python_modules/libraries/dagster-databricks",
+    "../../python_modules/libraries/dagster-databricks-pipes",
     "../../python_modules/libraries/dagster-duckdb",
     "../../python_modules/libraries/dagster-duckdb-pandas",
     "../../python_modules/libraries/dagster-duckdb-polars",
