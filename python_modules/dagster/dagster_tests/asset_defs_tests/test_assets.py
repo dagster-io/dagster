@@ -1579,7 +1579,7 @@ def test_graph_backed_asset_reused():
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
             step_keys = get_step_keys_from_run(instance, result.run_id)
-            assert set(step_keys) == set(["graph_asset.foo", "duplicate_one_downstream"])
+            assert set(step_keys) == set(["graph_asset_2.foo", "duplicate_one_downstream"])
 
 
 def test_self_dependency():

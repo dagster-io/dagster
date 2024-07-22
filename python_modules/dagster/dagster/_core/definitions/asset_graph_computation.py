@@ -85,8 +85,9 @@ class AssetGraphComputation(IHaveNew):
         for output_name, key in itertools.chain(
             self.keys_by_output_name.items(), self.check_keys_by_output_name.items()
         ):
-            output_def, node_handle = self.full_node_def.resolve_output_to_origin(output_name, None)
-            result[NodeOutputHandle(node_handle=node_handle, output_name=output_def.name)] = key
+            if key in self.selected_asset_keys or key in self.selected_asset_check_keys:
+                output_def, node_handle = self.node_def.resolve_output_to_origin(output_name, None)
+                result[NodeOutputHandle(node_handle=node_handle, output_name=output_def.name)] = key
 
         return result
 
@@ -214,13 +215,13 @@ class AssetGraphComputation(IHaveNew):
         path directly correspond to other assets.
         """
         asset_or_check_keys_by_op_output_handle = self.asset_or_check_keys_by_op_output_handle
-        if not isinstance(self.full_node_def, GraphDefinition):
+        if not isinstance(self.node_def, GraphDefinition):
             return {
                 key: {op_output_handle}
                 for key, op_output_handle in asset_or_check_keys_by_op_output_handle.items()
             }
 
-        op_output_graph = OpOutputHandleGraph.from_graph(self.full_node_def)
+        op_output_graph = OpOutputHandleGraph.from_graph(self.node_def)
         reverse_toposorted_op_outputs_handles = [
             *reversed(toposort_flatten(op_output_graph.upstream)),
             *(op_output_graph.op_output_handles - op_output_graph.upstream.keys()),
