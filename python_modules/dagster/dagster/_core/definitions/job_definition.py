@@ -429,6 +429,10 @@ class JobDefinition(IHasInternalInit):
     def top_level_node_defs(self) -> Sequence[NodeDefinition]:
         return self._current_level_node_defs
 
+    @property
+    def op_retry_policy(self) -> Optional[RetryPolicy]:
+        return self._op_retry_policy
+
     def node_def_named(self, name: str) -> NodeDefinition:
         check.str_param(name, "name")
 
