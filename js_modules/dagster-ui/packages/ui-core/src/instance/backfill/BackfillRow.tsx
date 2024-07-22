@@ -6,6 +6,10 @@ import styled from 'styled-components';
 
 import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
+import {
+  SingleBackfillQuery,
+  SingleBackfillQueryVariables,
+} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
@@ -63,9 +67,7 @@ export const BackfillRowLoader = (props: {
   const cancelableRuns = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
     SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
     {
-      variables: {
-        backfillId: {backfillId},
-      },
+      variables: {backfillId},
       notifyOnNetworkStatusChange: true,
     },
   );
@@ -81,9 +83,12 @@ export const BackfillRowLoader = (props: {
     if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {cancelable_counts: null};
     }
-    const cancelable_counts = Object.fromEntries(Array.from(cancelableStatuses).map((status) => [status.toString(), data.partitionBackfillOrError.cancelableRuns.filter((run) => run.status === status).length])
-    );
-    return {cancelable_counts};
+    if ('cancelableRuns' in data.partitionBackfillOrError) {
+      const cancelable_counts = Object.fromEntries(Array.from(cancelableStatuses).map((status) => [status.toString(), data.partitionBackfillOrError.cancelableRuns.filter((run) => run.status === status).length])
+      );
+      return {cancelable_counts};
+    };
+    return {cancelable_counts: null};
 
   }, [data]);
 
