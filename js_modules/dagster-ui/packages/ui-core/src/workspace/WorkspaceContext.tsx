@@ -113,7 +113,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const [didLoadStatusData, setDidLoadStatusData] = useState(false);
 
   const [locationEntriesData, setLocationEntriesData] = React.useState<
-    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment | undefined>
+    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
   >({});
 
   const getCachedData = useGetCachedData();
@@ -184,11 +184,13 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         bypassCache: true,
       });
       const entry = locationData.data?.workspaceLocationEntryOrError;
-      setLocationEntriesData((locationsData) =>
-        Object.assign({}, locationsData, {
-          [name]: entry,
-        }),
-      );
+      if (entry) {
+        setLocationEntriesData((locationsData) =>
+          Object.assign({}, locationsData, {
+            [name]: entry,
+          }),
+        );
+      }
       return locationData;
     },
     [client, getData, localCacheIdPrefix],
@@ -236,11 +238,11 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       Array.from(
         new Set([
           ...Object.values(prevLocationStatuses.current).filter(
-            (loc) => !locationStatuses[loc.name],
+            (loc) => loc && !locationStatuses[loc.name],
           ),
           ...Object.values(locationEntriesData).filter(
             (loc): loc is WorkspaceLocationNodeFragment =>
-              loc?.__typename === 'WorkspaceLocationEntry' && !locationStatuses[loc.name],
+              loc && loc?.__typename === 'WorkspaceLocationEntry' && !locationStatuses[loc.name],
           ),
         ]),
       ),
