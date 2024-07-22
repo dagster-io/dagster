@@ -12,7 +12,7 @@ from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
 from dagster_dbt.asset_utils import build_dbt_asset_selection
-from dagster_dbt.core.resources_v2 import PARTIAL_PARSE_FILE_NAME, DbtCliResource
+from dagster_dbt.core.resource import PARTIAL_PARSE_FILE_NAME, DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError

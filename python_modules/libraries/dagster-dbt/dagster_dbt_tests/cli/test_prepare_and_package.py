@@ -9,7 +9,7 @@ import pytest
 import yaml
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dbt_project import DbtProject
 from typer.testing import CliRunner
 

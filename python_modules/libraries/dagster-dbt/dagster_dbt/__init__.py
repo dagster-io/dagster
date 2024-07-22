@@ -18,7 +18,7 @@ from .cloud import (
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
-from .core import (
+from .core.resource import (
     DbtCliEventMessage as DbtCliEventMessage,
     DbtCliInvocation as DbtCliInvocation,
     DbtCliResource as DbtCliResource,

@@ -16,7 +16,7 @@ from dagster import (
     materialize,
 )
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from ..dbt_projects import test_asset_checks_path, test_dbt_alias_path

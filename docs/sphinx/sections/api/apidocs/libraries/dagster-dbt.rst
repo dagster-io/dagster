@@ -65,7 +65,7 @@ CLI Resource
 
 .. autoclass:: DbtCliInvocation
 
-.. autoclass:: dagster_dbt.core.resources_v2.DbtEventIterator
+.. autoclass:: dagster_dbt.core.resource.DbtEventIterator
 
 .. autoclass:: DbtCliEventMessage
 
