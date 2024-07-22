@@ -235,19 +235,3 @@ def test_engine_error(instance: DagsterInstance, tempdir: str):
                 },
                 instance=instance,
             )
-
-
-def test_memoization_celery_executor(instance, dagster_celery_worker):
-    with execute_job_on_celery(
-        "bar_job",
-        instance=instance,
-    ) as result:
-        assert result.success
-        assert result.output_for_node("bar_solid") == "bar"
-
-    with execute_job_on_celery(
-        "bar_job",
-        instance=instance,
-    ) as result:
-        assert result.success
-        assert len(result.all_node_events) == 0

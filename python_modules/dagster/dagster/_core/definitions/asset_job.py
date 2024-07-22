@@ -254,7 +254,6 @@ def build_asset_job(
             logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job.op_retry_policy,
-            version_strategy=original_job.version_strategy,
         )
 
     return graph.to_job(

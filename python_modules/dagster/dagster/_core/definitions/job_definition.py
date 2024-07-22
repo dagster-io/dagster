@@ -20,7 +20,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental_param, public
+from dagster._annotations import deprecated, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
@@ -52,7 +52,6 @@ from dagster._core.storage.io_manager import (
     dagster_maintained_io_manager,
     io_manager,
 )
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
@@ -70,7 +69,6 @@ from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
 from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
-from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
@@ -87,7 +85,6 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
-@experimental_param(param="version_strategy")
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
@@ -103,7 +100,6 @@ class JobDefinition(IHasInternalInit):
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
-    _version_strategy: VersionStrategy
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
 
@@ -124,7 +120,6 @@ class JobDefinition(IHasInternalInit):
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
-        version_strategy: Optional[VersionStrategy] = None,
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
@@ -170,9 +165,6 @@ class JobDefinition(IHasInternalInit):
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs")
         self._op_retry_policy = check.opt_inst_param(
             op_retry_policy, "op_retry_policy", RetryPolicy
-        )
-        self.version_strategy = check.opt_inst_param(
-            version_strategy, "version_strategy", VersionStrategy
         )
 
         _subset_selection_data = check.opt_inst_param(
@@ -259,7 +251,6 @@ class JobDefinition(IHasInternalInit):
         metadata: Optional[Mapping[str, RawMetadataValue]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],
-        version_strategy: Optional[VersionStrategy],
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
         asset_layer: Optional[AssetLayer],
         input_values: Optional[Mapping[str, object]],
@@ -278,7 +269,6 @@ class JobDefinition(IHasInternalInit):
             metadata=metadata,
             hook_defs=hook_defs,
             op_retry_policy=op_retry_policy,
-            version_strategy=version_strategy,
             _subset_selection_data=_subset_selection_data,
             asset_layer=asset_layer,
             input_values=input_values,
@@ -479,16 +469,6 @@ class JobDefinition(IHasInternalInit):
     def describe_target(self) -> str:
         return f"job '{self.name}'"
 
-    def is_using_memoization(self, run_tags: Mapping[str, str]) -> bool:
-        tags = merge_dicts(self.tags, run_tags)
-        # If someone provides a false value for memoized run tag, then they are intentionally
-        # switching off memoization.
-        if tags.get(MEMOIZED_RUN_TAG) == "false":
-            return False
-        return (
-            MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
-        ) or self.version_strategy is not None
-
     def get_required_resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return {
             resource_key: resource
@@ -678,7 +658,6 @@ class JobDefinition(IHasInternalInit):
             config=self.config_mapping or self.partitioned_config or self.run_config,
             tags=self.tags,
             op_retry_policy=self._op_retry_policy,
-            version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
             description=self.description,
@@ -959,7 +938,6 @@ class JobDefinition(IHasInternalInit):
             metadata=self._metadata,
             hook_defs=self.hook_defs,
             op_retry_policy=self._op_retry_policy,
-            version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
@@ -1016,10 +994,7 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDe
     """
     from dagster._core.storage.mem_io_manager import mem_io_manager
 
-    if (
-        resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]
-        and job.version_strategy is None
-    ):
+    if resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]:
         updated_resources = dict(resources)
         updated_resources[DEFAULT_IO_MANAGER_KEY] = mem_io_manager
         return updated_resources

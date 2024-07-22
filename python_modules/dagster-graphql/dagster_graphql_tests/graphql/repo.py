@@ -52,7 +52,6 @@ from dagster import (
     ScheduleDefinition,
     SensorResult,
     SourceAsset,
-    SourceHashVersionStrategy,
     StaticPartitionsDefinition,
     String,
     TableColumn,
@@ -1387,11 +1386,6 @@ def hanging_graph():
 hanging_graph_asset = AssetsDefinition.from_graph(hanging_graph)
 
 
-@job(version_strategy=SourceHashVersionStrategy())
-def memoization_job():
-    my_op()
-
-
 @asset(io_manager_key="dummy_io_manager")
 def downstream_asset(hanging_graph):
     return 1
@@ -1988,7 +1982,6 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         job_with_list,
         loggers_job,
         materialization_job,
-        memoization_job,
         more_complicated_config,
         more_complicated_nested_config,
         multi_asset_job,

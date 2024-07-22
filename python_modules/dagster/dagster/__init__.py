@@ -435,12 +435,6 @@ from dagster._core.definitions.utils import (
     config_from_pkg_resources as config_from_pkg_resources,
     config_from_yaml_strings as config_from_yaml_strings,
 )
-from dagster._core.definitions.version_strategy import (
-    OpVersionContext as OpVersionContext,
-    ResourceVersionContext as ResourceVersionContext,
-    SourceHashVersionStrategy as SourceHashVersionStrategy,
-    VersionStrategy as VersionStrategy,
-)
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError as DagsterConfigMappingFunctionError,
     DagsterError as DagsterError,
@@ -588,14 +582,10 @@ from dagster._core.storage.mem_io_manager import (
     InMemoryIOManager as InMemoryIOManager,
     mem_io_manager as mem_io_manager,
 )
-from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
 from dagster._core.storage.partition_status_cache import (
     AssetPartitionStatus as AssetPartitionStatus,
 )
-from dagster._core.storage.tags import (
-    MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG,
-    MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG,
-)
+from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG as MAX_RUNTIME_SECONDS_TAG
 from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
 from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,
