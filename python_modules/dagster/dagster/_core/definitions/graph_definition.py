@@ -29,6 +29,7 @@ from dagster._core.definitions.dependency import (
     DependencyMapping,
     DependencyStructure,
     GraphNode,
+    IDependencyDefinition,
     Node,
     NodeHandle,
     NodeInput,
@@ -54,7 +55,7 @@ from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.output import OutputDefinition, OutputMapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.definitions.utils import NormalizedTags
+from dagster._core.definitions.utils import NormalizedTags, make_alias_if_collision
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.types.dagster_type import (
@@ -559,6 +560,8 @@ class GraphDefinition(NodeDefinition):
     def copy(
         self,
         name: Optional[str] = None,
+        node_defs: Optional[Sequence[NodeDefinition]] = None,
+        dependencies: Optional[DependencyMapping[NodeInvocation]] = None,
         description: Optional[str] = None,
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
@@ -567,8 +570,8 @@ class GraphDefinition(NodeDefinition):
         input_assets: Optional[Mapping[str, Mapping[str, "AssetsDefinition"]]] = None,
     ) -> Self:
         return self.__class__(
-            node_defs=self.node_defs,
-            dependencies=self.dependencies,
+            node_defs=node_defs or self.node_defs,
+            dependencies=dependencies or self.dependencies,
             name=name or self.name,
             description=description or self.description,
             input_mappings=input_mappings or self._input_mappings,
@@ -975,6 +978,99 @@ class GraphDefinition(NodeDefinition):
 
         return result
 
+    def with_inner_inputs_mapped_to_outer(
+        self, input_handles: AbstractSet[NodeInputHandle], prefix: Optional[NodeHandle]
+    ) -> Tuple["GraphDefinition", Mapping[NodeInputHandle, str]]:
+        """Create a new graph with the inner inputs mapped to new outer inputs.
+
+        Args:
+            input_handles: Input handles within the graph that are not mapped to inputs within their
+                immediate parent graph.
+
+        Returns:
+            A tuple of the new graph with the inner inputs mapped to new outer inputs, and a mapping
+            from inner input handles to the outer input names.
+        """
+        all_input_names = set(self.input_dict.keys())
+        new_input_mappings: List[InputMapping] = []
+        outer_inputs_by_inner_input_handle: Dict[NodeInputHandle, str] = {}
+        node_defs_by_name: Mapping[str, NodeDefinition] = {}
+        dependencies: Dict[NodeInvocation, Mapping[str, IDependencyDefinition]] = {}
+
+        invocations_by_name = {
+            invocation.alias or invocation.name: invocation
+            for invocation in self.dependencies.keys()
+        }
+
+        for node in sorted(self.nodes, key=lambda node: node.name):
+            for node_input in sorted(
+                node.inputs(), key=lambda node_input: node_input.input_def.name
+            ):
+                input_handle = node_input.to_handle(prefix)
+                if input_handle in input_handles:
+                    outer_input_name = make_alias_if_collision(
+                        node_input.input_name, all_input_names
+                    )
+                    all_input_names.add(outer_input_name)
+                    outer_inputs_by_inner_input_handle[input_handle] = outer_input_name
+                    new_input_mapping = InputMapping(
+                        graph_input_name=outer_input_name,
+                        mapped_node_name=node_input.node_name,
+                        mapped_node_input_name=node_input.input_name,
+                    )
+                    new_input_mappings.append(new_input_mapping)
+
+            # recurse
+            invocation = invocations_by_name[node.name]
+            if isinstance(node.definition, GraphDefinition):
+                sub_graph_def, sub_new_mappings = node.definition.with_inner_inputs_mapped_to_outer(
+                    input_handles, NodeHandle(node.name, parent=prefix)
+                )
+                if (
+                    sub_graph_def.name in node_defs_by_name
+                    and sub_graph_def != node_defs_by_name[sub_graph_def.name]
+                ):
+                    replacement_def_name = make_alias_if_collision(
+                        sub_graph_def.name, node_defs_by_name.keys()
+                    )
+                    sub_graph_def = sub_graph_def.copy(name=replacement_def_name)
+                    replacement_invocation = invocation._replace(name=replacement_def_name)
+                    check.invariant(
+                        replacement_invocation.resolved_name == invocation.resolved_name
+                    )
+                    dependencies[replacement_invocation] = self.dependencies[invocation]
+                else:
+                    dependencies[invocation] = self.dependencies[invocation]
+
+                node_defs_by_name[sub_graph_def.name] = sub_graph_def
+
+                for input_handle, sub_graph_input_name in sub_new_mappings.items():
+                    outer_input_name = make_alias_if_collision(
+                        sub_graph_input_name, all_input_names
+                    )
+                    all_input_names.add(outer_input_name)
+                    outer_inputs_by_inner_input_handle[input_handle] = outer_input_name
+                    new_input_mappings.append(
+                        InputMapping(
+                            graph_input_name=outer_input_name,
+                            mapped_node_name=node.name,
+                            mapped_node_input_name=sub_graph_input_name,
+                        )
+                    )
+
+            else:
+                node_defs_by_name[node.definition.name] = node.definition
+                dependencies[invocation] = self.dependencies[invocation]
+
+        if not new_input_mappings:
+            return self, {}
+        else:
+            return self.copy(
+                node_defs=list(node_defs_by_name.values()),
+                dependencies=dependencies,
+                input_mappings=[*self.input_mappings, *new_input_mappings],
+            ), outer_inputs_by_inner_input_handle
+
 
 class SubselectedGraphDefinition(GraphDefinition):
     """Defines a subselected graph.
@@ -1000,14 +1096,10 @@ class SubselectedGraphDefinition(GraphDefinition):
 
     def __init__(
         self,
+        name: str,
         parent_graph_def: GraphDefinition,
         node_defs: Optional[Sequence[NodeDefinition]],
-        dependencies: Optional[
-            Union[
-                DependencyMapping[str],
-                DependencyMapping[NodeInvocation],
-            ]
-        ],
+        dependencies: Optional[Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]],
         input_mappings: Optional[Sequence[InputMapping]],
         output_mappings: Optional[Sequence[OutputMapping]],
     ):
@@ -1015,7 +1107,7 @@ class SubselectedGraphDefinition(GraphDefinition):
             parent_graph_def, "parent_graph_def", GraphDefinition
         )
         super(SubselectedGraphDefinition, self).__init__(
-            name=parent_graph_def.name,  # should we create special name for subselected graphs
+            name=name,
             node_defs=node_defs,
             dependencies=dependencies,
             input_mappings=input_mappings,
@@ -1034,6 +1126,32 @@ class SubselectedGraphDefinition(GraphDefinition):
     @property
     def is_subselected(self) -> bool:
         return True
+
+    def copy(
+        self,
+        name: Optional[str] = None,
+        node_defs: Optional[Sequence[NodeDefinition]] = None,
+        dependencies: Optional[DependencyMapping[NodeInvocation]] = None,
+        input_mappings: Optional[Sequence[InputMapping]] = None,
+        output_mappings: Optional[Sequence[OutputMapping]] = None,
+        # Have to include them because they appear in superclass copy, but not supported
+        description: Optional[str] = None,
+        config: Optional[ConfigMapping] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        input_assets: Optional[Mapping[str, Mapping[str, "AssetsDefinition"]]] = None,
+    ) -> Self:
+        check.param_invariant(description is None, "description")
+        check.param_invariant(input_assets is None, "input_assets")
+        check.param_invariant(tags is None, "tags")
+        check.param_invariant(config is None, "config`")
+        return self.__class__(
+            parent_graph_def=self.parent_graph_def,
+            node_defs=node_defs or self.node_defs,
+            dependencies=dependencies or self.dependencies,
+            name=name or self.name,
+            input_mappings=input_mappings or self._input_mappings,
+            output_mappings=output_mappings or self._output_mappings,
+        )
 
 
 def _validate_in_mappings(

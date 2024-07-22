@@ -220,6 +220,7 @@ def _get_graph_subset(
     ]
 
     return SubselectedGraphDefinition(
+        name=graph.name,
         parent_graph_def=graph,
         dependencies=subgraph_deps,
         node_defs=list(subgraph_nodes.values()),

@@ -462,15 +462,6 @@ class PlanExecutionContext(IPlanContext):
         )
 
 
-def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) -> bool:
-    """Whether this step is aware of the asset graph definition layer inferred by presence of asset info on outputs."""
-    for output in step.step_outputs:
-        asset_key = job_def.asset_layer.asset_key_for_output(step.node_handle, output.name)
-        if asset_key is not None:
-            return True
-    return False
-
-
 class StepExecutionContext(PlanExecutionContext, IStepContext):
     """Context for the execution of a step. Users should not instantiate this class directly.
 
@@ -888,7 +879,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         note: ops can materialize assets as well.
         """
-        return is_step_in_asset_graph_layer(self.step, self.job_def)
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        return assets_def is not None and bool(assets_def.node_keys_by_output_name)
 
     @property
     def is_in_graph_asset(self) -> bool:
@@ -904,10 +896,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def is_asset_check_step(self) -> bool:
         """Whether this step corresponds to at least one asset check."""
-        return any(
-            self.job_def.asset_layer.asset_check_key_for_output(self.node_handle, output.name)
-            for output in self.step.step_outputs
-        )
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        return assets_def is not None and bool(assets_def.node_check_specs_by_output_name)
 
     def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
         return self._data_version_cache.set_data_version(asset_key, data_version)

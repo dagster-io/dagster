@@ -307,7 +307,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             group_name = normalize_group_name(spec.group_name)
 
             if self._computation is not None:
-                output_def, _ = self._computation.full_node_def.resolve_output_to_origin(
+                output_def, _ = self._computation.node_def.resolve_output_to_origin(
                     self._computation.output_names_by_key[spec.key], None
                 )
                 node_def_description = self._computation.node_def.description
@@ -1325,7 +1325,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 "node_def": subsetted_computation.node_def,
                 "selected_asset_keys": subsetted_computation.selected_asset_keys,
                 "selected_asset_check_keys": subsetted_computation.selected_asset_check_keys,
+                "keys_by_input_name": {
+                    **self.node_keys_by_input_name,
+                    **subsetted_computation.keys_by_input_name,
+                },
                 "is_subset": True,
+                "specs": [spec for spec in self.specs if spec.key in selected_asset_keys],
             }
         )
 

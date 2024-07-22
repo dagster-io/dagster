@@ -65,7 +65,7 @@ class AssetLayer(NamedTuple):
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
             computation = check.not_none(assets_def.computation)
             node_def = computation.node_def
-            for input_name, input_asset_key in assets_def.keys_by_input_name.items():
+            for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
                 input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
                 asset_key_by_input[input_handle] = input_asset_key
                 # resolve graph input to list of op inputs that consume it
