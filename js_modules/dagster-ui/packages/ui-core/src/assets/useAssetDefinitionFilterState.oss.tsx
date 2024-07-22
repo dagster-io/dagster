@@ -27,7 +27,7 @@ export type AssetFilterBaseType = {
   groups: AssetGroupSelector[];
   computeKindTags: string[];
   storageKindTags: DefinitionTag[];
-  changedInBranch: ChangeReason[];
+  changedInBranch?: ChangeReason[];
   owners: AssetOwner[];
   tags: DefinitionTag[];
   codeLocations: RepoAddress[];

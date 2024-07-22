@@ -159,12 +159,12 @@ export function useAssetGraphExplorerFilters({
       if (!allItems.length) {
         return;
       }
-      if (activeItems.length !== allItems.length) {
+      if ((activeItems?.length ?? 0) !== allItems.length) {
         if (selectAllFilters.includes(key)) {
           didChange = true;
           nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
         }
-      } else if (activeItems.length && !selectAllFilters.includes(key)) {
+      } else if (activeItems?.length && !selectAllFilters.includes(key)) {
         didChange = true;
         nextAllFilters.push(key);
       }
