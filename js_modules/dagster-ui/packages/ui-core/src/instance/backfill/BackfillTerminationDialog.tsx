@@ -11,7 +11,6 @@ import {
 } from './types/BackfillTerminationDialog.types';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {BulkActionStatus} from '../../graphql/types';
-import {cancelableStatuses} from '../../runs/RunStatuses';
 import {TerminationDialog} from '../../runs/TerminationDialog';
 
 interface Props {

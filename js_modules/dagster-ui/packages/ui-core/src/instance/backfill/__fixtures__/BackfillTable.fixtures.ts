@@ -7,17 +7,12 @@ import {
   buildErrorChainLink,
   buildPartitionBackfill,
   buildPartitionSet,
-  buildPartitionStatus,
-  buildPartitionStatusCounts,
-  buildPartitionStatuses,
   buildPythonError,
   buildRepositoryOrigin,
   buildRun,
 } from '../../../graphql/types';
 import {DagsterTag} from '../../../runs/RunTag';
-import {
-  SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
-} from '../BackfillRow';
+import {SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY} from '../BackfillRow';
 import {SingleBackfillQuery} from '../types/BackfillRow.types';
 import {BackfillTableFragment} from '../types/BackfillTable.types';
 
@@ -245,7 +240,9 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
       partitionBackfillOrError: buildPartitionBackfill({
         id: 'pqdiepuf',
         isAssetBackfill: true,
-        cancelableRuns: [buildRun({runId: '1baeadb4-7e7d-47e5-aeac-8a5f921cf27c', status: RunStatus.QUEUED})],
+        cancelableRuns: [
+          buildRun({runId: '1baeadb4-7e7d-47e5-aeac-8a5f921cf27c', status: RunStatus.QUEUED}),
+        ],
       }),
     },
   },

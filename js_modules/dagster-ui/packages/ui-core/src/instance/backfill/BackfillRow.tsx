@@ -6,10 +6,7 @@ import styled from 'styled-components';
 
 import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {
-  SingleBackfillQuery,
-  SingleBackfillQueryVariables,
-} from './types/BackfillRow.types';
+import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
@@ -27,7 +24,6 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
-import { cancelableStatuses } from '../../runs/RunStatuses';
 
 interface BackfillRowProps {
   backfill: BackfillTableFragment;
@@ -44,7 +40,7 @@ export const BackfillRow = (props: BackfillRowProps) => {
     props.backfill.isAssetBackfill;
 
   if (statusUnsupported) {
-    return <BackfillRowContent {...props} cancelable_counts={null} statusQueryResult={null} />;
+    return <BackfillRowContent {...props} hasCancelableRuns={false} statusQueryResult={null} />;
   }
   return (
     <BackfillRowLoader backfillId={props.backfill.id}>
@@ -54,7 +50,7 @@ export const BackfillRow = (props: BackfillRowProps) => {
 };
 
 interface LoadResult {
-  cancelable_counts: {[runStatus: string]: number} | null;
+  hasCancelableRuns: boolean;
   statusQueryResult: QueryResult<any, any> | null;
 }
 
@@ -79,20 +75,16 @@ export const BackfillRowLoader = (props: {
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
   const {data} = statusQueryResult;
-  const {cancelable_counts} = React.useMemo(() => {
-    if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
-      return {cancelable_counts: null};
+  const {hasCancelableRuns} = React.useMemo(() => {
+    if (data?.partitionBackfillOrError.__typename === 'PartitionBackfill') {
+      if ('partitionBackfill' in data.partitionBackfillOrError) {
+        return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
+      }
     }
-    if ('cancelableRuns' in data.partitionBackfillOrError) {
-      const cancelable_counts = Object.fromEntries(Array.from(cancelableStatuses).map((status) => [status.toString(), data.partitionBackfillOrError.cancelableRuns.filter((run) => run.status === status).length])
-      );
-      return {cancelable_counts};
-    };
-    return {cancelable_counts: null};
-
+    return {hasCancelableRuns: false};
   }, [data]);
 
-  return props.children({cancelable_counts, statusQueryResult});
+  return props.children({hasCancelableRuns, statusQueryResult});
 };
 
 export const BackfillRowContent = ({
@@ -101,7 +93,7 @@ export const BackfillRowContent = ({
   showBackfillTarget,
   onShowPartitionsRequested,
   refetch,
-  cancelable_counts,
+  hasCancelableRuns,
   statusQueryResult,
 }: BackfillRowProps & LoadResult) => {
   const repoAddress = backfill.partitionSet
@@ -160,7 +152,7 @@ export const BackfillRowContent = ({
       <td>
         <BackfillActionsMenu
           backfill={backfill}
-          canCancelRuns={backfillCanCancelRuns(backfill, cancelable_counts)}
+          canCancelRuns={backfillCanCancelRuns(backfill, hasCancelableRuns)}
           refetch={refetch}
         />
       </td>
@@ -312,7 +304,6 @@ const TagButton = styled.button`
     outline: none;
   }
 `;
-
 
 export const SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
