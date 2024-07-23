@@ -87,7 +87,7 @@ def _namedtuple_record_transform(
             eval_ctx,
             1 if with_new else 0,
         )
-        base.__new__ = jit_checked_new  # type: ignore
+        base.__new__ = jit_checked_new
 
     elif defaults:
         # allow arbitrary ordering of default values by generating a kwarg only __new__ impl
