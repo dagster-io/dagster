@@ -1595,43 +1595,35 @@ def _get_failed_asset_partitions(
     result: List[AssetKeyPartitionKey] = []
 
     for run in runs:
+        planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
+            run_id=run.run_id
+        )
+        completed_asset_keys = instance_queryer.get_current_materializations_for_run(
+            run_id=run.run_id
+        )
+        failed_asset_keys = planned_asset_keys - completed_asset_keys
+
         if (
             run.tags.get(ASSET_PARTITION_RANGE_START_TAG)
             and run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
             and run.tags.get(PARTITION_NAME_TAG) is None
         ):
-            # it was a chunked backfill run previously, so we need to reconstruct the partition keys
-            planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
-                run_id=run.run_id
+            # reconstruct the partition keys from a chunked backfill run
+            partition_range = PartitionKeyRange(
+                start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
+                end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
             )
-            completed_asset_keys = instance_queryer.get_current_materializations_for_run(
-                run_id=run.run_id
-            )
-            failed_asset_keys = planned_asset_keys - completed_asset_keys
-
-            if failed_asset_keys:
-                partition_range = PartitionKeyRange(
-                    start=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_START_TAG)),
-                    end=check.not_none(run.tags.get(ASSET_PARTITION_RANGE_END_TAG)),
-                )
-                for asset_key in failed_asset_keys:
-                    result.extend(
-                        asset_graph.get_partitions_in_range(
-                            asset_key, partition_range, instance_queryer
-                        )
+            for asset_key in failed_asset_keys:
+                result.extend(
+                    asset_graph.get_partitions_in_range(
+                        asset_key, partition_range, instance_queryer
                     )
+                )
         else:
             # a regular backfill run that run on a single partition
             partition_key = run.tags.get(PARTITION_NAME_TAG)
-            planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
-                run_id=run.run_id
-            )
-            completed_asset_keys = instance_queryer.get_current_materializations_for_run(
-                run_id=run.run_id
-            )
             result.extend(
-                AssetKeyPartitionKey(asset_key, partition_key)
-                for asset_key in planned_asset_keys - completed_asset_keys
+                AssetKeyPartitionKey(asset_key, partition_key) for asset_key in failed_asset_keys
             )
 
     return result
