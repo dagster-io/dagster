@@ -28,7 +28,7 @@ def upgrade():
             unique=False,
             postgresql_concurrently=True,
             mysql_length={
-                "pipeline_name": 512,
+                "run_id": 255
             },
         )
 
