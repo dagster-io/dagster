@@ -253,6 +253,12 @@ class SqlRunStorage(RunStorage):
 
         return query
 
+    def _add_filters_to_table(self, table: db.Table, filters: RunsFilter) -> db.Table:
+        if filters.tags:
+            table = self._apply_tags_table_filters(table, filters.tags)
+
+        return table
+
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
 
@@ -282,9 +288,6 @@ class SqlRunStorage(RunStorage):
         if filters.created_before:
             query = query.where(RunsTable.c.create_timestamp < filters.created_before)
 
-        if filters.tags:
-            query = self._apply_tags_table_filters(query, filters.tags)
-
         return query
 
     def _runs_query(
@@ -307,7 +310,7 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        table = RunsTable
+        table = self._add_filters_to_table(RunsTable, filters)
         base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
             table
         )
@@ -315,13 +318,13 @@ class SqlRunStorage(RunStorage):
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
     def _apply_tags_table_filters(
-        self, query: SqlAlchemyQuery, tags: Mapping[str, Union[str, Sequence[str]]]
+        self, table: db.Table, tags: Mapping[str, Union[str, Sequence[str]]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
         for i, (key, value) in enumerate(tags.items()):
             run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
 
-            query = query.join(
+            table = table.join(
                 run_tags_alias,
                 db.and_(
                     RunsTable.c.run_id == run_tags_alias.c.run_id,
@@ -332,7 +335,7 @@ class SqlRunStorage(RunStorage):
                 ),
             )
 
-        return query
+        return table
 
     def get_runs(
         self,
