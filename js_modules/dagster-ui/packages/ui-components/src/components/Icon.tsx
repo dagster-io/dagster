@@ -81,6 +81,7 @@ import folder_open from '../icon-svgs/folder_open.svg';
 import forum from '../icon-svgs/forum.svg';
 import gantt_flat from '../icon-svgs/gantt_flat.svg';
 import gantt_waterfall from '../icon-svgs/gantt_waterfall.svg';
+import git_commit from '../icon-svgs/git_commit.svg';
 import github from '../icon-svgs/github.svg';
 import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
@@ -258,6 +259,7 @@ export const Icons = {
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
+  git_commit,
   gitlab,
   globe,
   graduation_cap,
