@@ -41,6 +41,7 @@ from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
+    TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.timestamp import TimestampWithTimezone
@@ -1064,30 +1065,17 @@ def execute_asset_backfill_iteration(
         logger.info(
             f"Asset backfill {updated_backfill.backfill_id} completed iteration with status {updated_backfill.status}."
         )
-        # logger.info(
-        #     "Backfill iteration summary:\n"
-        #     f"**Assets materialized since last iteration:**\n {_asset_key_partition_key_iter_to_str(new_materialized_partitions.iterate_asset_partitions()) if new_materialized_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        #     f"**Assets failed since last iteration and their downstream assets:**\n {_asset_key_partition_key_iter_to_str(new_failed_partitions.iterate_asset_partitions()) if new_failed_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        #     f"**Assets requested by this iteration:**\n {_asset_key_partition_key_iter_to_str(new_requested_partitions.iterate_asset_partitions()) if new_requested_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        # )
         logger.info(
             "Backfill iteration summary:\n"
-            f"**Assets materialized since last iteration:**\n{_asset_subsets_iter_to_str(new_materialized_partitions, asset_graph, instance_queryer) if new_materialized_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets failed since last iteration and their downstream assets:**\n{_asset_subsets_iter_to_str(new_failed_partitions, asset_graph, instance_queryer) if new_failed_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets requested by this iteration:**\n{_asset_subsets_iter_to_str(new_requested_partitions, asset_graph, instance_queryer) if new_requested_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets materialized since last iteration:**\n{_asset_subsets_iter_to_str(new_materialized_partitions, asset_graph) if new_materialized_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets failed since last iteration and their downstream assets:**\n{_asset_subsets_iter_to_str(new_failed_partitions, asset_graph) if new_failed_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets requested by this iteration:**\n{_asset_subsets_iter_to_str(new_requested_partitions, asset_graph) if new_requested_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
         )
-
-        # logger.info(
-        #     "Overall backfill status:\n"
-        #     f"**Materialized assets:**\n {_asset_key_partition_key_iter_to_str(updated_backfill_data.materialized_subset.iterate_asset_partitions()) if updated_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        #     f"**Failed assets and their downstream assets:**\n {_asset_key_partition_key_iter_to_str(updated_backfill_data.failed_and_downstream_subset.iterate_asset_partitions()) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        #     f"**Assets requested or in progress:**\n {_asset_key_partition_key_iter_to_str(updated_backfill_in_progress.iterate_asset_partitions()) if updated_backfill_in_progress.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-        # )
         logger.info(
             "Overall backfill status:\n"
-            f"**Materialized assets:**\n{_asset_subsets_iter_to_str(updated_backfill_data.materialized_subset, asset_graph, instance_queryer) if updated_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Failed assets and their downstream assets:**\n{_asset_subsets_iter_to_str(updated_backfill_data.failed_and_downstream_subset, asset_graph, instance_queryer) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets requested or in progress:**\n{_asset_subsets_iter_to_str(updated_backfill_in_progress, asset_graph, instance_queryer) if updated_backfill_in_progress.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Materialized assets:**\n{_asset_subsets_iter_to_str(updated_backfill_data.materialized_subset, asset_graph) if updated_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Failed assets and their downstream assets:**\n{_asset_subsets_iter_to_str(updated_backfill_data.failed_and_downstream_subset, asset_graph) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets requested or in progress:**\n{_asset_subsets_iter_to_str(updated_backfill_in_progress, asset_graph) if updated_backfill_in_progress.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
         )
         logger.debug(
             f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
@@ -1303,35 +1291,16 @@ def _get_next_latest_storage_id(instance_queryer: CachingInstanceQueryer) -> int
     return max(next_latest_storage_id - cursor_offset, 0)
 
 
-def _asset_key_partition_key_iter_to_str(
-    asset_key_partition_keys: Iterable[AssetKeyPartitionKey],
-) -> str:
-    partition_keys_by_asset_key: Dict[AssetKey, List[str]] = {}
-    for asset_key_partition_key in asset_key_partition_keys:
-        partition_keys_by_asset_key.setdefault(asset_key_partition_key.asset_key, [])
-        if asset_key_partition_key.partition_key is not None:
-            partition_keys_by_asset_key[asset_key_partition_key.asset_key].append(
-                asset_key_partition_key.partition_key
-            )
-    return "\n".join(
-        f"- {asset_key.to_user_string()}: {{{', '.join(partition_keys)}}}"
-        if len(partition_keys) > 0
-        else f"- {asset_key.to_user_string()}"
-        for asset_key, partition_keys in partition_keys_by_asset_key.items()
-    )
-
-
 def _partition_subset_str(
     partition_subset: PartitionsSubset,
     partitions_def: PartitionsDefinition,
-    instance: DynamicPartitionsStore,
 ):
-    if isinstance(partition_subset, BaseTimeWindowPartitionsSubset):
+    if isinstance(partition_subset, BaseTimeWindowPartitionsSubset) and isinstance(
+        partitions_def, TimeWindowPartitionsDefinition
+    ):
         return ", ".join(
-            f"{partition_range.start} -> {partition_range.end}"
-            for partition_range in partition_subset.get_partition_key_ranges(
-                partitions_def=partitions_def, dynamic_partitions_store=instance
-            )
+            f" {type(partition_subset)} {type(partitions_def)} {partitions_def.get_num_partitions_in_window(time_window.to_public_time_window())} partitions: {time_window.start} -> {time_window.end}"
+            for time_window in partition_subset.included_time_windows
         )
 
     return ", ".join(partition_subset.get_partition_keys())
@@ -1340,16 +1309,13 @@ def _partition_subset_str(
 def _asset_subsets_iter_to_str(
     asset_graph_subset: AssetGraphSubset,
     asset_graph: BaseAssetGraph,
-    instance: DynamicPartitionsStore,
 ) -> str:
     return_str = ""
     asset_subsets = asset_graph_subset.iterate_asset_subsets(asset_graph)
     for subset in asset_subsets:
         if subset.is_partitioned:
             partitions_def = asset_graph.get(subset.asset_key).partitions_def
-            partition_ranges_str = _partition_subset_str(
-                subset.subset_value, partitions_def, instance
-            )
+            partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
             return_str += f"- {subset.asset_key.to_user_string()}: {{{partition_ranges_str}}}\n"
         else:
             return_str += f"- {subset.asset_key.to_user_string()}\n"
@@ -1381,11 +1347,8 @@ def execute_asset_backfill_iteration_inner(
         )
         target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
         initial_candidates.update(target_roots)
-        # logger.info(
-        #     f"Root assets that have not yet been requested:\n {_asset_key_partition_key_iter_to_str(target_roots)}"
-        # )
         logger.info(
-            f"Root assets that have not yet been requested:\n {_asset_subsets_iter_to_str(AssetGraphSubset.from_asset_partition_set(set(target_roots), asset_graph), asset_graph, instance_queryer)}"
+            f"Root assets that have not yet been requested:\n {_asset_subsets_iter_to_str(AssetGraphSubset.from_asset_partition_set(set(target_roots), asset_graph), asset_graph)}"
         )
 
         yield None
@@ -1417,13 +1380,8 @@ def execute_asset_backfill_iteration_inner(
         materialized_since_last_tick = (
             updated_materialized_subset - asset_backfill_data.materialized_subset
         )
-        # logger.info(
-        #     f"Assets materialized since last tick:\n {_asset_key_partition_key_iter_to_str(materialized_since_last_tick.iterate_asset_partitions())}"
-        #     if materialized_since_last_tick
-        #     else "No relevant assets materialized since last tick."
-        # )
         logger.info(
-            f"Assets materialized since last tick:\n {_asset_subsets_iter_to_str(materialized_since_last_tick, asset_graph, instance_queryer)}"
+            f"Assets materialized since last tick:\n {_asset_subsets_iter_to_str(materialized_since_last_tick, asset_graph)}"
             if materialized_since_last_tick
             else "No relevant assets materialized since last tick."
         )
@@ -1472,13 +1430,8 @@ def execute_asset_backfill_iteration_inner(
         )
     )
 
-    # logger.info(
-    #     f"Asset partitions to request:\n {_asset_key_partition_key_iter_to_str(asset_partitions_to_request)}"
-    #     if asset_partitions_to_request
-    #     else "No asset partitions to request."
-    # )
     logger.info(
-        f"Asset partitions to request:\n {_asset_subsets_iter_to_str(AssetGraphSubset.from_asset_partition_set(asset_partitions_to_request, asset_graph), asset_graph, instance_queryer)}"
+        f"Asset partitions to request:\n {_asset_subsets_iter_to_str(AssetGraphSubset.from_asset_partition_set(asset_partitions_to_request, asset_graph), asset_graph)}"
         if asset_partitions_to_request
         else "No asset partitions to request."
     )
