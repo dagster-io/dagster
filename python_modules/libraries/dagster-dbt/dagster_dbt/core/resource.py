@@ -811,8 +811,29 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
+        """Wraps a dagster-dbt invocation to associate each Snowflake query with the produced
+        asset materializations. For more information, see the documentation for
+        `dagster_cloud.dagster_insights.dbt_with_snowflake_insights`.
+
+        Args:
+            skip_config_check (bool): If true, skips the check that the dbt project config is set up
+                correctly. Defaults to False.
+            record_observation_usage (bool): If True, associates the usage associated with
+                asset observations with that asset. Default is True.
+
+        **Example:**
+
+        .. code-block:: python
+
+            @dbt_assets(manifest=DBT_MANIFEST_PATH)
+            def jaffle_shop_dbt_assets(
+                context: AssetExecutionContext,
+                dbt: DbtCliResource,
+            ):
+                yield from dbt.cli(["build"], context=context).stream().with_snowflake_insights()
+        """
         try:
-            from dagster_cloud.dagster_insights.snowflake import dbt_with_snowflake_insights
+            from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
         except ImportError as e:
             raise DagsterInvalidPropertyError(
                 "The `dagster_cloud` library is required to use the `with_snowflake_insights`"
