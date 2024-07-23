@@ -336,17 +336,6 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             dynamic_partitions_store=self.instance,
         )
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
-    @public
-    @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The range of partition keys for the current run.
-
-        If run is for a single partition key, return a `PartitionKeyRange` with the same start and
-        end. Raises an error if the current run is not a partitioned run.
-        """
-        return self.partition_key_range
-
     @public
     @property
     def has_partition_key_range(self) -> bool:
@@ -1286,6 +1275,21 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         if ctx is None:
             raise DagsterInvariantViolationError("No current OpExecutionContext in scope.")
         return ctx.op_execution_context
+
+
+@deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
+@public
+@property
+def asset_partition_key_range(self) -> PartitionKeyRange:
+    """The range of partition keys for the current run.
+
+    If run is for a single partition key, return a `PartitionKeyRange` with the same start and
+    end. Raises an error if the current run is not a partitioned run.
+    """
+    return self.partition_key_range
+
+
+OpExecutionContext.asset_partition_key_range = asset_partition_key_range
 
 
 ###############################
