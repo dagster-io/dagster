@@ -162,7 +162,15 @@ export function filterAssetDefinition(
       return false;
     }
     const nodeGroup = buildAssetGroupSelector({definition: {groupName, repository}});
-    if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
+    if (
+      !filters.groups.some((g) => {
+        return (
+          g.groupName === nodeGroup?.groupName &&
+          g.repositoryLocationName === nodeGroup.repositoryLocationName &&
+          g.repositoryName === nodeGroup.repositoryName
+        );
+      })
+    ) {
       return false;
     }
   }
