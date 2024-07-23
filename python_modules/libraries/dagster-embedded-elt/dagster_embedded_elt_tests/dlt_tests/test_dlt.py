@@ -67,7 +67,7 @@ def test_multi_asset_names_do_not_conflict(dlt_pipeline: Pipeline) -> None:
         dlt_source=pipeline(),
         dlt_pipeline=dlt_pipeline,
         name="multi_asset_name2",
-        dlt_dagster_translator=CustomDagsterDltTranslator(),
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
     )
     def assets2():
         pass
@@ -87,7 +87,7 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
     @dlt_assets(
         dlt_source=pipeline(),
         dlt_pipeline=dlt_pipeline,
-        dlt_dagster_translator=CustomDagsterDltTranslator(),
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
     )
     def assets():
         pass
@@ -240,7 +240,7 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
     @dlt_assets(
         dlt_source=pipeline(),
         dlt_pipeline=dlt_pipeline,
-        dlt_dagster_translator=CustomDagsterDltTranslator(),
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
     )
     def example_pipeline_assets(
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
