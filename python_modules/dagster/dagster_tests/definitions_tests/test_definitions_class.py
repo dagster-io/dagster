@@ -836,16 +836,16 @@ def test_merge():
     )
 
     merged = Definitions.merge(defs1, defs2)
-    assert merged.original_args == {
-        "assets": [asset1, asset2],
-        "jobs": [job1, job2],
-        "schedules": [schedule1, schedule2],
-        "sensors": [sensor1, sensor2],
-        "resources": {"resource1": resource1, "resource2": resource2},
-        "loggers": {"logger1": logger1, "logger2": logger2},
-        "executor": in_process_executor,
-        "asset_checks": [],
-    }
+    assert merged == Definitions(
+        assets=[asset1, asset2],
+        jobs=[job1, job2],
+        schedules=[schedule1, schedule2],
+        sensors=[sensor1, sensor2],
+        resources={"resource1": resource1, "resource2": resource2},
+        loggers={"logger1": logger1, "logger2": logger2},
+        executor=in_process_executor,
+        asset_checks=[],
+    )
 
 
 def test_resource_conflict_on_merge():
@@ -1022,8 +1022,8 @@ def test_definitions_dedupe_reference_equality():
     assert len(list(underlying_repo.schedule_defs)) == 1
 
     # properties on the definitions object do not dedupe
-    assert len(defs.original_args["assets"]) == 2
-    assert len(defs.original_args["asset_checks"]) == 2
-    assert len(defs.original_args["jobs"]) == 2
-    assert len(defs.original_args["sensors"]) == 2
-    assert len(defs.original_args["schedules"]) == 2
+    assert len(defs.assets) == 2
+    assert len(defs.asset_checks) == 2
+    assert len(defs.jobs) == 2
+    assert len(defs.sensors) == 2
+    assert len(defs.schedules) == 2
