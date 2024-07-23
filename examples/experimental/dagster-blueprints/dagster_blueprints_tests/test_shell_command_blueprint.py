@@ -6,13 +6,12 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Iterator, cast
 
-from dagster import AssetKey, AssetsDefinition, MarkdownMetadataValue, materialize
+from dagster import AssetKey, AssetsDefinition, Definitions, MarkdownMetadataValue, materialize
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster_blueprints.blueprint import BlueprintDefinitions
 from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
 from dagster_blueprints.shell_command_blueprint import ShellCommandBlueprint
 
@@ -32,7 +31,7 @@ def test_single_asset_shell_command_blueprint() -> None:
         assets=[AssetSpecModel(key="asset1")], command=["echo", '"hello"']
     )
     defs = single_asset_blueprint.build_defs()
-    asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+    asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert asset1.key == AssetKey("asset1")
     assert materialize(
         [asset1], resources={"pipes_subprocess_client": PipesSubprocessClient()}
@@ -44,7 +43,7 @@ def test_single_asset_shell_command_blueprint_key_prefix() -> None:
         assets=[AssetSpecModel(key="prefix/asset1")], command=["echo", '"hello"']
     )
     defs = single_asset_blueprint.build_defs()
-    asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+    asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert asset1.key == AssetKey(["prefix", "asset1"])
 
 
@@ -53,7 +52,7 @@ def test_single_asset_shell_command_blueprint_str_command() -> None:
         assets=[AssetSpecModel(key="asset1")], command='echo "hello world"'
     )
     defs = single_asset_blueprint.build_defs()
-    asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+    asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert asset1.key == AssetKey("asset1")
     assert materialize(
         [asset1], resources={"pipes_subprocess_client": PipesSubprocessClient()}
@@ -79,7 +78,7 @@ def test_single_asset_shell_command_blueprint_pipes(capsys) -> None:
             extras=extras,
         )
         defs = single_asset_blueprint.build_defs()
-        asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+        asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
 
         result = materialize(
             [asset1],
@@ -103,7 +102,7 @@ def test_multi_asset_shell_command_blueprint() -> None:
         command=["echo", '"hello"'],
     )
     defs = multi_asset_blueprint.build_defs()
-    assets = cast(AssetsDefinition, next(iter(defs.assets)))
+    assets = cast(AssetsDefinition, next(iter(defs.assets or [])))
     assert assets.keys == {AssetKey("asset1"), AssetKey("asset2")}
     assert materialize(
         [assets], resources={"pipes_subprocess_client": PipesSubprocessClient()}
@@ -126,7 +125,7 @@ def test_multi_asset_shell_command_blueprint_pipes(capsys) -> None:
         )
 
         defs = multi_asset_blueprint.build_defs()
-        assets = cast(AssetsDefinition, next(iter(defs.assets)))
+        assets = cast(AssetsDefinition, next(iter(defs.assets or [])))
 
         result = materialize(
             [assets],
@@ -152,13 +151,14 @@ def test_op_name_collisions() -> None:
         assets=[AssetSpecModel(key="asset2")], command=["echo", '"hello"']
     )
     resources = {"pipes_subprocess_client": PipesSubprocessClient()}
-    blueprint_defs = BlueprintDefinitions.merge(
+    blueprint_defs = Definitions.merge(
         single_asset_blueprint1.build_defs(),
         single_asset_blueprint2.build_defs(),
-        BlueprintDefinitions(resources=resources),
+        Definitions(resources=resources),
     )
-    blueprint_defs.to_definitions()
+    Definitions.validate_loadable(blueprint_defs)
 
     materialize(
-        [cast(AssetsDefinition, asset) for asset in blueprint_defs.assets], resources=resources
+        [cast(AssetsDefinition, asset) for asset in (blueprint_defs.assets or [])],
+        resources=resources,
     )

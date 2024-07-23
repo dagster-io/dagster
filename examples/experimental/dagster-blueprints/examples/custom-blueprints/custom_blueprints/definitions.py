@@ -3,9 +3,9 @@ from pathlib import Path
 from subprocess import Popen
 from typing import Literal
 
-from dagster import asset
+from dagster import Definitions, asset
 from dagster_blueprints import YamlBlueprintsLoader
-from dagster_blueprints.blueprint import Blueprint, BlueprintDefinitions
+from dagster_blueprints.blueprint import Blueprint
 
 
 def local_csv_to_snowflake(table_name: str, csv_path: Path) -> None:
@@ -32,12 +32,12 @@ class CurlCsvSnowflakeAssetBlueprint(Blueprint):
     csv_url: str
     table_name: str
 
-    def build_defs(self) -> BlueprintDefinitions:
+    def build_defs(self) -> Definitions:
         @asset(key=self.table_name)
         def _asset():
             curl_csv_to_snowflake(table_name=self.table_name, csv_url=self.csv_url)
 
-        return BlueprintDefinitions(assets=[_asset])
+        return Definitions(assets=[_asset])
 
 
 loader = YamlBlueprintsLoader(

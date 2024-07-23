@@ -12,11 +12,7 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
-from dagster_blueprints.blueprint import (
-    Blueprint,
-    BlueprintDefinitions,
-    DagsterBuildDefinitionsFromConfigError,
-)
+from dagster_blueprints.blueprint import Blueprint, DagsterBuildDefinitionsFromConfigError
 from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from pydantic import ValidationError
 
@@ -24,21 +20,21 @@ from pydantic import ValidationError
 class SimpleAssetBlueprint(Blueprint):
     key: str
 
-    def build_defs(self) -> BlueprintDefinitions:
+    def build_defs(self) -> Definitions:
         @asset(key=self.key)
         def _asset(): ...
 
-        return BlueprintDefinitions(assets=[_asset])
+        return Definitions(assets=[_asset])
 
 
 class SimpleJobBlueprint(Blueprint):
     job_name: str
 
-    def build_defs(self) -> BlueprintDefinitions:
+    def build_defs(self) -> Definitions:
         @job(name=self.job_name)
         def _job(): ...
 
-        return BlueprintDefinitions(jobs=[_job])
+        return Definitions(jobs=[_job])
 
 
 def test_single_file_single_blueprint() -> None:
@@ -109,7 +105,7 @@ def test_build_defs_returns_none() -> None:
             per_file_blueprint_type=ReturnsNoneAssetBlueprint,
         )
 
-    assert "Object None is not a BlueprintDefinitions" in str(e.value.__cause__)
+    assert "Object None is not a Definitions" in str(e.value.__cause__)
 
 
 def test_build_defs_raises_error() -> None:
@@ -171,18 +167,18 @@ def test_single_file_union_of_blueprints_discriminated_union() -> None:
         type: Literal["type1"]
         key: str
 
-        def build_defs(self) -> BlueprintDefinitions:
+        def build_defs(self) -> Definitions:
             assert False, "shouldn't get here"
 
     class SameFieldsAssetBlueprint2(Blueprint):
         type: Literal["type2"]
         key: str
 
-        def build_defs(self) -> BlueprintDefinitions:
+        def build_defs(self) -> Definitions:
             @asset(key=self.key)
             def _asset(): ...
 
-            return BlueprintDefinitions(assets=[_asset])
+            return Definitions(assets=[_asset])
 
     defs = load_defs_from_yaml(
         path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_type.yaml",
@@ -194,11 +190,11 @@ def test_single_file_union_of_blueprints_discriminated_union() -> None:
 class SourceFileNameAssetBlueprint(Blueprint):
     key: str
 
-    def build_defs(self) -> BlueprintDefinitions:
+    def build_defs(self) -> Definitions:
         @asset(key=self.key, metadata={"source_file_name": self.source_file_name})
         def _asset(): ...
 
-        return BlueprintDefinitions(assets=[_asset])
+        return Definitions(assets=[_asset])
 
 
 def test_source_file_name() -> None:
@@ -215,11 +211,11 @@ def test_source_file_name() -> None:
 class SimpleAssetBlueprintNeedsResource(Blueprint):
     key: str
 
-    def build_defs(self) -> BlueprintDefinitions:
+    def build_defs(self) -> Definitions:
         @asset(key=self.key, required_resource_keys={"some_resource"})
         def _asset(): ...
 
-        return BlueprintDefinitions(assets=[_asset])
+        return Definitions(assets=[_asset])
 
 
 def test_additional_resources() -> None:
