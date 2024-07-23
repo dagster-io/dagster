@@ -7,13 +7,13 @@ title: "Approaches to writing integrations"
 There are many approaches to writing integrations in Dagster. The choice of approach depends on the specific requirements of the integration, the level of control needed, and the complexity of the external system being integrated. By reviewing the pros and cons of each approach, it is possible to make an informed decision on the best method for a specific use case. The following are typical approaches that align with Dagster's best practices.
 
 - Resource providers
-- Builder methods
+- Factory methods
 - Multi-Asset decorators
 - Pipes protocol
 
 ## Resource providers
 
-One of the most fundamental features that can be implemented in an integration is a resource object to interface with an external service. For example, the `dagster-snowflake` integration provides a custom `SnowflakeResource` that is a wrapper around the Snowflake `connector` object.
+One of the most fundamental features that can be implemented in an integration is a resource object to interface with an external service. For example, the `dagster-snowflake` integration provides a custom [SnowflakeResource](https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-snowflake/dagster_snowflake/resources.py) that is a wrapper around the Snowflake `connector` object.
 
 ### Pros
 
@@ -24,11 +24,41 @@ One of the most fundamental features that can be implemented in an integration i
 
 - **Limited abstraction** While the resource can be re-used throughout the codebase, it does not provide any higher level abstraction to assets or jobs.
 
-### Tutorial
+### Guide
 
-<Note>A tutorial for writing a resource-based integration is coming soon!</Note>
+<Note>A guide for writing a resource based integration is coming soon!</Note>
 
-## Builder methods
+## Factory methods
+
+The factory pattern is used for creating multiple similar objects based on a set of specifications. This is often useful in the data engineering when you have similar processing that will operate on multiple objects with varying parameters.
+
+For example, imagine you would like to perform an operation on a set of tables in a database. You could construct a factory method that takes in a table specification, resulting in a list of assets.
+
+```python
+from dagster import Definitions, asset
+
+parameters = [
+    {"name": "asset1", "table": "users"},
+    {"name": "asset2", "table": "orders"},
+]
+
+
+def process_table(table_name: str) -> None:
+    pass
+
+
+def build_asset(params):
+    @asset(name=params["name"])
+    def _asset():
+        process_table(params["table"])
+
+    return _asset
+
+
+assets = [build_asset(params) for params in parameters]
+
+defs = Definitions(assets=assets)
+```
 
 ### Pros
 
@@ -41,11 +71,15 @@ One of the most fundamental features that can be implemented in an integration i
 - **Complexity:** Can be more complex to set up compared to other methods.
 - **Boilerplate code:** May require more boilerplate code to define assets, resources, and jobs.
 
-### Tutorial
+### Guide
 
-<Note>A tutorial for writing a builder method integration is coming soon!</Note>
+<Note>
+  A guide for writing a factory method based integrations is coming soon!
+</Note>
 
 ## Multi-asset decorators
+
+In the scenario where a single API call or configuration can result in multiple assets, with a shared runtime or dependencies, one may consider creating a multi-asset decorator. Example implementations of this approach include [dbt](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt), [dlt](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt/dagster_embedded_elt/dlt), and [Sling](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt/dagster_embedded_elt/sling).
 
 ### Pros
 
@@ -58,11 +92,10 @@ One of the most fundamental features that can be implemented in an integration i
 - **Less granular control:** May not provide as much fine-grained control as defining individual assets.
 - **Complexity in debugging:** Debugging issues can be more challenging when multiple assets are defined in a single function.
 
-### Tutorial
+### Guide
 
 <Note>
-  A tutorial for writing a multi-asset decorator based integration is coming
-  soon!
+  A guide for writing a multi-asset decorator based integration is coming soon!
 </Note>
 
 ## Pipes protocol
@@ -78,6 +111,6 @@ One of the most fundamental features that can be implemented in an integration i
 - **Complexity:** Can be complex to set up and configure.
 - **Overhead:** May introduce additional overhead for managing external environments.
 
-### Tutorial
+### Guide
 
-<Note>A tutorial for writing a pipes based integration is coming soon!</Note>
+<Note>A guide for writing a pipes based integration is coming soon!</Note>
