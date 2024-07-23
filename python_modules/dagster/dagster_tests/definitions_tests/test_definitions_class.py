@@ -850,13 +850,21 @@ def test_merge():
 
 def test_resource_conflict_on_merge():
     defs1 = Definitions(resources={"resource1": 4})
-    defs2 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 5})
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a resource with key 'resource1'",
+        match="Definitions objects 0 and 1 have different resources with same key 'resource1'",
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_resource_conflict_on_merge_same_value():
+    defs1 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 4})
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.resources == {"resource1": 4}
 
 
 def test_logger_conflict_on_merge():
@@ -864,14 +872,30 @@ def test_logger_conflict_on_merge():
     def logger1(_):
         raise Exception("not executed")
 
+    @logger
+    def logger2(_):
+        raise Exception("also not executed")
+
     defs1 = Definitions(loggers={"logger1": logger1})
-    defs2 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger2})
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a logger with key 'logger1'",
+        match="Definitions objects 0 and 1 have different loggers with same key 'logger1'",
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_logger_conflict_on_merge_same_vlaue():
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger1})
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.loggers == {"logger1": logger1}
 
 
 def test_executor_conflict_on_merge():
@@ -882,6 +906,13 @@ def test_executor_conflict_on_merge():
         DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_executor_conflict_on_merge_same_value():
+    defs1 = Definitions(executor=in_process_executor)
+    defs2 = Definitions(executor=in_process_executor)
+
+    assert Definitions.merge(defs1, defs2).executor == in_process_executor
 
 
 def test_get_all_asset_specs():

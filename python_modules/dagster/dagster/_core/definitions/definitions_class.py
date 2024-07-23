@@ -662,25 +662,25 @@ class Definitions(IHaveNew):
             jobs.extend(def_set.jobs or [])
 
             for resource_key, resource_value in (def_set.resources or {}).items():
-                if resource_key in resources:
+                if resource_key in resources and resources[resource_key] is not resource_value:
                     raise DagsterInvariantViolationError(
-                        f"Definitions objects {resource_key_indexes[resource_key]} and {i} both have a "
-                        f"resource with key '{resource_key}'"
+                        f"Definitions objects {resource_key_indexes[resource_key]} and {i} have "
+                        f"different resources with same key '{resource_key}'"
                     )
                 resources[resource_key] = resource_value
                 resource_key_indexes[resource_key] = i
 
             for logger_key, logger_value in (def_set.loggers or {}).items():
-                if logger_key in loggers:
+                if logger_key in loggers and loggers[logger_key] is not logger_value:
                     raise DagsterInvariantViolationError(
-                        f"Definitions objects {logger_key_indexes[logger_key]} and {i} both have a "
-                        f"logger with key '{logger_key}'"
+                        f"Definitions objects {logger_key_indexes[logger_key]} and {i} have "
+                        f"different loggers with same key '{logger_key}'"
                     )
                 loggers[logger_key] = logger_value
                 logger_key_indexes[logger_key] = i
 
             if def_set.executor is not None:
-                if executor is not None and executor != def_set.executor:
+                if executor is not None and executor is not def_set.executor:
                     raise DagsterInvariantViolationError(
                         f"Definitions objects {executor_index} and {i} both have an executor"
                     )
