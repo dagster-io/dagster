@@ -117,7 +117,7 @@ class AssetGraphSubset(NamedTuple):
             yield AssetKeyPartitionKey(asset_key, None)
 
     def iterate_asset_subsets(self, asset_graph: BaseAssetGraph) -> Iterable[AssetSubset]:
-        """Returns an Iterabel of AssetSubsets representing the subset of each asset that this
+        """Returns an Iterable of AssetSubsets representing the subset of each asset that this
         AssetGraphSubset contains.
         """
         for asset_key in self.asset_keys:
