@@ -3,7 +3,8 @@
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from dagster import Definitions
-from development_to_production.assets import comments, items, stories
+
+from ..assets import comments, items, stories
 
 # Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 resources = {

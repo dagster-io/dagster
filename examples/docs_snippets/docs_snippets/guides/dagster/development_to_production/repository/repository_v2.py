@@ -3,7 +3,8 @@ import os
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from dagster import Definitions
-from development_to_production.assets import comments, items, stories
+
+from ..assets import comments, items, stories
 
 # start
 # __init__.py
