@@ -811,8 +811,10 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
-        """Wraps a dagster-dbt invocation to associate each Snowflake or Bigquery query with the produced
-        asset materializations. For more information, see the documentation for
+        """Associate each warehouse query with the produced asset materializations for use in Dagster
+        Plus Insights. Currently supports Snowflake and BigQuery.
+
+        For more information, see the documentation for
         `dagster_cloud.dagster_insights.dbt_with_snowflake_insights` and
         `dagster_cloud.dagster_insights.dbt_with_bigquery_insights`.
 
