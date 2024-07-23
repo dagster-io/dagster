@@ -55,7 +55,7 @@ def dump_docker_compose_logs(context, docker_compose_yml):
         "logs",
     ]
 
-    subprocess.run(compose_command, capture_output=True, check=False)
+    subprocess.run(compose_command, check=False)
 
 
 @pytest.fixture(scope="module", name="docker_compose_cm")
