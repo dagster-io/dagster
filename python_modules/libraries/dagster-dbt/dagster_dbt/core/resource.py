@@ -802,6 +802,34 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             dbt_cli_invocation=self._dbt_cli_invocation,
         )
 
+    @public
+    @experimental
+    def with_snowflake_insights(
+        self,
+        skip_config_check: bool=False,
+        record_observation_usage: bool = True,
+    ) -> (
+        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
+    ):
+        try:
+            from dagster_cloud.dagster_insights.snowflake import dbt_with_snowflake_insights
+        except ImportError as e:
+            raise DagsterInvalidPropertyError(
+                "The `dagster_cloud` library is required to use the `with_snowflake_insights`"
+                " method. Install the library with `pip install dagster-cloud`."
+            ) from e
+
+        return DbtEventIterator(
+            events=dbt_with_snowflake_insights(
+                context=self._dbt_cli_invocation.context,
+                dbt_cli_invocation=self._dbt_cli_invocation,
+                dagster_events=self,
+                skip_config_check=skip_config_check,
+                record_observation_usage=record_observation_usage,
+            ),
+            dbt_cli_invocation=self._dbt_cli_invocation,
+        )
+
 
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
