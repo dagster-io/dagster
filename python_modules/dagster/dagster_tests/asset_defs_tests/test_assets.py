@@ -1246,7 +1246,7 @@ def test_graph_backed_asset_subset_two_routes():
 
     @op(ins={"in1": In(Nothing), "in2": In(Nothing)})
     def op2(context) -> None:
-        assert context.asset_key_for_input("in1") == AssetKey("asset1")
+        assert context.for_input("in1").asset_key == AssetKey("asset1")
 
     @graph_multi_asset(
         outs={
@@ -1275,7 +1275,7 @@ def test_graph_backed_asset_subset_two_routes_yield_only_selected():
 
     @op(ins={"in1": In(Nothing), "in2": In(Nothing)})
     def op2(context) -> None:
-        assert context.asset_key_for_input("in1") == AssetKey("asset1")
+        assert context.for_input("in1").asset_key == AssetKey("asset1")
 
     @graph_multi_asset(
         outs={

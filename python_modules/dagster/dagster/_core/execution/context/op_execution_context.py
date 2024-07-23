@@ -35,6 +35,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.warnings import deprecation_warning
 
+from .asset_input_execution_context import AssetInputExecutionContext
 from .system import StepExecutionContext
 
 
@@ -627,6 +628,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         else:
             return node_output_handle.output_name
 
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `for_input(name).asset_key` instead."
+    )
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         """Return the AssetKey for the corresponding input."""
@@ -834,6 +838,14 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         return self._step_execution_context.asset_partition_key_range_for_output(output_name)
 
     @public
+    def for_input(self, input_name: str) -> AssetInputExecutionContext:
+        return AssetInputExecutionContext(self._step_execution_context, input_name)
+
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `for_input(name).partition_key_range` instead.",
+    )
+    @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         """Return the PartitionKeyRange for the corresponding input. Errors if the asset depends on a
         non-contiguous chunk of the input.
@@ -896,6 +908,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `for_input(name).partition_key` instead."
+    )
     @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
         """Returns the partition key of the upstream asset corresponding to the given input.
@@ -1090,6 +1105,9 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             dynamic_partitions_store=self.instance,
         )
 
+    @deprecated(
+        breaking_version="2.0", additional_warn_text="Use `for_input(name).partition_keys` instead."
+    )
     @public
     def asset_partition_keys_for_input(self, input_name: str) -> Sequence[str]:
         """Returns a list of the partition keys of the upstream asset corresponding to the
@@ -1155,6 +1173,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             ).get_partition_keys()
         )
 
+    @deprecated(
+        breaking_version="2.0",
+        additional_warn_text="Use `for_input(name).partition_time_window` instead.",
+    )
     @public
     def asset_partitions_time_window_for_input(self, input_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the input asset.

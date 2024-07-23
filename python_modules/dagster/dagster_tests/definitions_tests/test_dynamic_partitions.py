@@ -154,13 +154,13 @@ def test_dynamic_partitions_mapping():
 
     @asset(partitions_def=partitions_def)
     def dynamic2(context: AssetExecutionContext, dynamic1):
-        assert context.asset_partition_keys_for_input("dynamic1") == ["apple"]
+        assert context.for_input("dynamic1").partition_keys == ["apple"]
         assert context.partition_key == "apple"
         return 1
 
     @asset
     def unpartitioned(context, dynamic1):
-        assert context.asset_partition_keys_for_input("dynamic1") == ["apple"]
+        assert context.for_input("dynamic1").partition_keys == ["apple"]
         return 1
 
     with instance_for_test() as instance:
@@ -184,7 +184,7 @@ def test_unpartitioned_downstream_of_dynamic_asset():
 
     @asset
     def unpartitioned(context, dynamic1):
-        assert set(context.asset_partition_keys_for_input("dynamic1")) == set(partitions)
+        assert set(context.for_input("dynamic1").partition_keys) == set(partitions)
         return 1
 
     with instance_for_test() as instance:

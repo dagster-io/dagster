@@ -808,7 +808,7 @@ def test_multi_partition_mapping_with_asset_deps():
 
     @asset(partitions_def=partitions_def, deps=[AssetDep(upstream, partition_mapping=mapping)])
     def downstream(context: AssetExecutionContext):
-        upstream_mp_key = context.asset_partition_key_for_input("upstream")
+        upstream_mp_key = context.for_input("upstream").partition_key
         current_mp_key = context.partition_key
 
         if isinstance(upstream_mp_key, MultiPartitionKey) and isinstance(
@@ -894,8 +894,8 @@ def test_multi_partition_mapping_with_asset_deps():
 
     @multi_asset(specs=[asset_3, asset_4], partitions_def=partitions_def)
     def multi_asset_2(context: AssetExecutionContext):
-        asset_1_mp_key = context.asset_partition_key_for_input("asset_1")
-        asset_2_mp_key = context.asset_partition_key_for_input("asset_2")
+        asset_1_mp_key = context.for_input("asset_1").partition_key
+        asset_2_mp_key = context.for_input("asset_2").partition_key
         current_mp_key = context.partition_key
 
         if (

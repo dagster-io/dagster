@@ -331,7 +331,7 @@ def test_input_context_asset_partitions_time_window():
 
     @asset(partitions_def=partitions_def)
     def downstream_asset(context, upstream_asset):
-        assert context.asset_partitions_time_window_for_input("upstream_asset") == TimeWindow(
+        assert context.for_input("upstream_asset").partition_time_window == TimeWindow(
             parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
         )
         assert upstream_asset is None
@@ -615,7 +615,7 @@ def test_partition_range_single_run():
 
     @asset(partitions_def=partitions_def, deps=["upstream_asset"])
     def downstream_asset(context: AssetExecutionContext) -> None:
-        assert context.asset_partition_key_range_for_input("upstream_asset") == PartitionKeyRange(
+        assert context.for_input("upstream_asset").partition_key_range == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
         assert context.partition_key_range == PartitionKeyRange(

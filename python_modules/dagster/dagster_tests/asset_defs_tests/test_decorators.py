@@ -952,7 +952,7 @@ def test_graph_asset_partition_mapping():
     @op(ins={"in1": In(Nothing)})
     def my_op(context):
         assert context.partition_key == "a"
-        assert context.asset_partition_keys_for_input("in1") == ["a"]
+        assert context.for_input("in1").partition_keys == ["a"]
 
     @graph_asset(
         partitions_def=partitions_def,
@@ -1079,8 +1079,8 @@ def test_graph_multi_asset_decorator(automation_condition_arg):
 
     @op(out={"one": Out(), "two": Out()})
     def two_in_two_out(context, in1, in2):
-        assert context.asset_key_for_input("in1") == AssetKey("x")
-        assert context.asset_key_for_input("in2") == AssetKey("y")
+        assert context.for_input("in1").asset_key == AssetKey("x")
+        assert context.for_input("in2").asset_key == AssetKey("y")
         assert context.asset_key_for_output("one") == AssetKey("first_asset")
         assert context.asset_key_for_output("two") == AssetKey("second_asset")
         return 4, 5
@@ -1133,8 +1133,8 @@ def test_graph_multi_asset_decorator(automation_condition_arg):
 def test_graph_multi_asset_w_key_prefix():
     @op(out={"one": Out(), "two": Out()})
     def two_in_two_out(context, in1, in2):
-        assert context.asset_key_for_input("in1") == AssetKey("x")
-        assert context.asset_key_for_input("in2") == AssetKey("y")
+        assert context.for_input("in1").asset_key == AssetKey("x")
+        assert context.for_input("in2").asset_key == AssetKey("y")
         assert context.asset_key_for_output("one") == AssetKey("first_asset")
         assert context.asset_key_for_output("two") == AssetKey("second_asset")
         return 4, 5

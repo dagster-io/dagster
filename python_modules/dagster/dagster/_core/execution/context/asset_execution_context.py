@@ -23,6 +23,7 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
 
+from .asset_input_execution_context import AssetInputExecutionContext
 from .op_execution_context import OpExecutionContext
 from .system import StepExecutionContext
 
@@ -159,6 +160,10 @@ class AssetExecutionContext(OpExecutionContext):
         Returns: JobDefinition.
         """
         return self.op_execution_context.job_def
+
+    @public
+    def for_input(self, input_name: str) -> AssetInputExecutionContext:
+        return self.op_execution_context.for_input(input_name)
 
     @property
     def repository_def(self) -> RepositoryDefinition:

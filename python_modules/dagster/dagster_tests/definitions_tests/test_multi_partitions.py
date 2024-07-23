@@ -594,7 +594,7 @@ def test_context_returns_multipartition_keys():
     def downstream(context: AssetExecutionContext, upstream):
         assert isinstance(context.partition_key, MultiPartitionKey)
 
-        input_range = context.asset_partition_key_range_for_input("upstream")
+        input_range = context.for_input("upstream").partition_key_range
         assert isinstance(input_range.start, MultiPartitionKey)
         assert isinstance(input_range.end, MultiPartitionKey)
 

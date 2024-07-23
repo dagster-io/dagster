@@ -115,7 +115,7 @@ def test_execute_asset_and_check() -> None:
 
     @asset_check(asset=asset1, description="desc")
     def check1(context: AssetCheckExecutionContext):
-        assert context.op_execution_context.asset_key_for_input("asset1") == asset1.key
+        assert context.op_execution_context.for_input("asset1").asset_key == asset1.key
         return AssetCheckResult(
             asset_key=asset1.key,
             check_name="check1",
@@ -190,7 +190,7 @@ def test_execute_check_and_asset_in_separate_run():
 
     @asset_check(asset=asset1, description="desc")
     def check1(context: AssetCheckExecutionContext):
-        assert context.op_execution_context.asset_key_for_input("asset1") == asset1.key
+        assert context.op_execution_context.for_input("asset1").asset_key == asset1.key
         return AssetCheckResult(
             asset_key=asset1.key,
             check_name="check1",

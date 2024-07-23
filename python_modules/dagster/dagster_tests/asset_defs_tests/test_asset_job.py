@@ -1887,7 +1887,7 @@ def test_resolve_dependency_in_group():
     @asset
     def asset2(context, asset1):
         del asset1
-        assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
+        assert context.for_input("asset1").asset_key == AssetKey(["abc", "asset1"])
 
     with disable_dagster_warnings():
         assert materialize_to_memory([asset1, asset2]).success
