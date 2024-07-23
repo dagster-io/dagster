@@ -11,12 +11,17 @@ from .utils import BUILDKITE
 
 @contextmanager
 def docker_compose_cm(
-    docker_compose_yml, network_name=None, docker_context=None, service=None, env_file=None
+    docker_compose_yml,
+    network_name=None,
+    docker_context=None,
+    service=None,
+    env_file=None,
+    no_build: bool = False,
 ):
     if not network_name:
         network_name = network_name_from_yml(docker_compose_yml)
     try:
-        docker_compose_up(docker_compose_yml, docker_context, service, env_file)
+        docker_compose_up(docker_compose_yml, docker_context, service, env_file, no_build=no_build)
         if BUILDKITE:
             # When running in a container on Buildkite, we need to first connect our container
             # and our network and then yield a dict of container name to the container's
@@ -40,11 +45,12 @@ def docker_compose_cm_fixture(test_directory):
         docker_context=None,
         service=None,
         env_file=None,
+        no_build: bool = False,
     ):
         if not docker_compose_yml:
             docker_compose_yml = default_docker_compose_yml(test_directory)
         with docker_compose_cm(
-            docker_compose_yml, network_name, docker_context, service, env_file
+            docker_compose_yml, network_name, docker_context, service, env_file, no_build
         ) as hostnames:
             yield hostnames
 
@@ -57,7 +63,7 @@ def docker_compose(docker_compose_cm):
         yield docker_compose
 
 
-def docker_compose_up(docker_compose_yml, context, service, env_file):
+def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: bool = False):
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
@@ -65,6 +71,9 @@ def docker_compose_up(docker_compose_yml, context, service, env_file):
 
     if env_file:
         compose_command += ["--env-file", env_file]
+
+    if no_build:
+        compose_command += ["--no-build"]
 
     compose_command += [
         "--file",
