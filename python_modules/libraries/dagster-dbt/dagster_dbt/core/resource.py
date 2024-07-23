@@ -873,7 +873,9 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 dbt_cli_invocation=self._dbt_cli_invocation,
             )
         else:
-            check.failed("The `with_insights` method is only supported for Snowflake and BigQuery.")
+            check.failed(
+                f"The `with_insights` method is only supported for Snowflake and BigQuery and is not supported for adapter type `{adapter_type}`"
+            )
 
 
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
