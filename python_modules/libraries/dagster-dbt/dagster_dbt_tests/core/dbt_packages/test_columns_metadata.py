@@ -141,6 +141,10 @@ def test_exception_column_schema(
         "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
     )
     mocker.patch(
+        "dagster_dbt.core.dbt_cli_event.default_metadata_from_dbt_resource_props",
+        side_effect=Exception("An error occurred"),
+    )
+    mocker.patch(
         "dagster_dbt.core.resource.default_metadata_from_dbt_resource_props",
         side_effect=Exception("An error occurred"),
     )
@@ -202,7 +206,7 @@ def test_exception_column_lineage(
         "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
     )
     mocker.patch(
-        "dagster_dbt.core.resource._build_column_lineage_metadata",
+        "dagster_dbt.core.dbt_cli_event._build_column_lineage_metadata",
         side_effect=Exception("An error occurred"),
     )
 
