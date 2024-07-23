@@ -804,64 +804,16 @@ class DbtEventIterator(Generic[T], abc.Iterator):
 
     @public
     @experimental
-    def with_snowflake_insights(
+    def with_insights(
         self,
         skip_config_check: bool = False,
         record_observation_usage: bool = True,
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
-        """Wraps a dagster-dbt invocation to associate each Snowflake query with the produced
+        """Wraps a dagster-dbt invocation to associate each Snowflake or Bigquery query with the produced
         asset materializations. For more information, see the documentation for
-        `dagster_cloud.dagster_insights.dbt_with_snowflake_insights`.
-
-        Args:
-            skip_config_check (bool): If true, skips the check that the dbt project config is set up
-                correctly. Defaults to False.
-            record_observation_usage (bool): If True, associates the usage associated with
-                asset observations with that asset. Default is True.
-
-        **Example:**
-
-        .. code-block:: python
-
-            @dbt_assets(manifest=DBT_MANIFEST_PATH)
-            def jaffle_shop_dbt_assets(
-                context: AssetExecutionContext,
-                dbt: DbtCliResource,
-            ):
-                yield from dbt.cli(["build"], context=context).stream().with_snowflake_insights()
-        """
-        try:
-            from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
-        except ImportError as e:
-            raise DagsterInvalidPropertyError(
-                "The `dagster_cloud` library is required to use the `with_snowflake_insights`"
-                " method. Install the library with `pip install dagster-cloud`."
-            ) from e
-
-        return DbtEventIterator(
-            events=dbt_with_snowflake_insights(
-                context=self._dbt_cli_invocation.context,
-                dbt_cli_invocation=self._dbt_cli_invocation,
-                dagster_events=self,
-                skip_config_check=skip_config_check,
-                record_observation_usage=record_observation_usage,
-            ),
-            dbt_cli_invocation=self._dbt_cli_invocation,
-        )
-
-    @public
-    @experimental
-    def with_bigquery_insights(
-        self,
-        skip_config_check: bool = False,
-        record_observation_usage: bool = True,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
-        """Wraps a dagster-dbt invocation to associate each Bigquery query with the produced
-        asset materializations. For more information, see the documentation for
+        `dagster_cloud.dagster_insights.dbt_with_snowflake_insights` and
         `dagster_cloud.dagster_insights.dbt_with_bigquery_insights`.
 
         Args:
@@ -879,26 +831,49 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 context: AssetExecutionContext,
                 dbt: DbtCliResource,
             ):
-                yield from dbt.cli(["build"], context=context).stream().with_bigquery_insights()
+                yield from dbt.cli(["build"], context=context).stream().with_insights()
         """
-        try:
-            from dagster_cloud.dagster_insights import dbt_with_bigquery_insights
-        except ImportError as e:
-            raise DagsterInvalidPropertyError(
-                "The `dagster_cloud` library is required to use the `with_bigquery_insights`"
-                " method. Install the library with `pip install dagster-cloud`."
-            ) from e
+        adapter_type = self._dbt_cli_invocation.manifest.get("metadata", {}).get("adapter_type")
+        if adapter_type == "snowflake":
+            try:
+                from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
+            except ImportError as e:
+                raise DagsterInvalidPropertyError(
+                    "The `dagster_cloud` library is required to use the `with_snowflake_insights`"
+                    " method. Install the library with `pip install dagster-cloud`."
+                ) from e
 
-        return DbtEventIterator(
-            events=dbt_with_bigquery_insights(
-                context=self._dbt_cli_invocation.context,
+            return DbtEventIterator(
+                events=dbt_with_snowflake_insights(
+                    context=self._dbt_cli_invocation.context,
+                    dbt_cli_invocation=self._dbt_cli_invocation,
+                    dagster_events=self,
+                    skip_config_check=skip_config_check,
+                    record_observation_usage=record_observation_usage,
+                ),
                 dbt_cli_invocation=self._dbt_cli_invocation,
-                dagster_events=self,
-                skip_config_check=skip_config_check,
-                record_observation_usage=record_observation_usage,
-            ),
-            dbt_cli_invocation=self._dbt_cli_invocation,
-        )
+            )
+        elif adapter_type == "bigquery":
+            try:
+                from dagster_cloud.dagster_insights import dbt_with_bigquery_insights
+            except ImportError as e:
+                raise DagsterInvalidPropertyError(
+                    "The `dagster_cloud` library is required to use the `with_bigquery_insights`"
+                    " method. Install the library with `pip install dagster-cloud`."
+                ) from e
+
+            return DbtEventIterator(
+                events=dbt_with_bigquery_insights(
+                    context=self._dbt_cli_invocation.context,
+                    dbt_cli_invocation=self._dbt_cli_invocation,
+                    dagster_events=self,
+                    skip_config_check=skip_config_check,
+                    record_observation_usage=record_observation_usage,
+                ),
+                dbt_cli_invocation=self._dbt_cli_invocation,
+            )
+        else:
+            check.failed("The `with_insights` method is only supported for Snowflake and BigQuery.")
 
 
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
