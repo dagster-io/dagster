@@ -15,14 +15,14 @@ import {
 describe('filterAssetDefinition', () => {
   it('returns false when no definition is provided', () => {
     const filters = {
-      repos: [{location: 'location1', name: 'repo1'}],
+      codeLocations: [{location: 'location1', name: 'repo1'}],
     };
     expect(filterAssetDefinition(filters, null)).toBe(false);
   });
 
   it('returns false when repo filters do not match and definition exists', () => {
     const filters = {
-      repos: [{location: 'location2', name: 'repo2'}],
+      codeLocations: [{location: 'location2', name: 'repo2'}],
     };
     const definition = {
       repository: {location: {name: 'location1'}, name: 'repo1'},
@@ -141,7 +141,7 @@ describe('filterAssetDefinition', () => {
       team: 'team1',
     });
     const filters = {
-      repos: [repo],
+      codeLocations: [repo],
       groups: [group],
       computeKindTags: ['computeKind1'],
       changedInBranch: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
@@ -166,7 +166,7 @@ describe('filterAssetDefinition', () => {
   });
 
   (
-    ['changedInBranch', 'computeKindTags', 'groups', 'owners', 'repos', 'tags'] as Array<
+    ['changedInBranch', 'computeKindTags', 'groups', 'owners', 'codeLocations', 'tags'] as Array<
       keyof AssetFilterBaseType
     >
   ).forEach((filter) => {

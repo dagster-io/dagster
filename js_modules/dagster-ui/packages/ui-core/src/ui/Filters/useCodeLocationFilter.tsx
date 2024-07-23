@@ -9,12 +9,12 @@ import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetF
 
 type Props =
   | {
-      repos: RepoAddress[];
-      setRepos: (repos: RepoAddress[]) => void;
+      codeLocations: RepoAddress[];
+      setCodeLocations: (repos: RepoAddress[]) => void;
     }
   | {
-      repos: undefined;
-      setRepos: undefined;
+      codeLocations: undefined;
+      setCodeLocations: undefined;
     };
 
 /**
@@ -25,7 +25,10 @@ type Props =
  * WorkspaceContext to get the current state.
  */
 export const useCodeLocationFilter = (
-  {repos, setRepos}: Props = {repos: undefined, setRepos: undefined},
+  {codeLocations, setCodeLocations}: Props = {
+    codeLocations: undefined,
+    setCodeLocations: undefined,
+  },
 ) => {
   const {allRepos, visibleRepos, setVisible, setHidden} = useContext(WorkspaceContext);
 
@@ -58,7 +61,7 @@ export const useCodeLocationFilter = (
   );
 
   return useStaticSetFilter<RepoAddress>({
-    state: repos ? repos : visibleRepoAddresses,
+    state: codeLocations ? codeLocations : visibleRepoAddresses,
     allValues: useMemo(
       () =>
         allRepoAddresses.map((repoAddress) => {
@@ -67,8 +70,8 @@ export const useCodeLocationFilter = (
       [allRepoAddresses],
     ),
     onStateChanged: (state) => {
-      if (setRepos) {
-        setRepos(Array.from(state));
+      if (setCodeLocations) {
+        setCodeLocations(Array.from(state));
       } else {
         setVisibleRepos(state);
       }

@@ -16,7 +16,7 @@ export const STATIC_FILTER_CONFIGS: {
   changedInBranch: StaticBaseConfig<ChangeReason>;
   owners: StaticBaseConfig<AssetOwner>;
   tags: StaticBaseConfig<DefinitionTag>;
-  repos: StaticBaseConfig<RepoAddress>;
+  codeLocations: StaticBaseConfig<RepoAddress>;
 } = {
   groups: AssetGroupsFilterBaseConfig,
   computeKindTags: ComputeKindTagFilterBaseConfig,
@@ -24,5 +24,5 @@ export const STATIC_FILTER_CONFIGS: {
   changedInBranch: ChangedFilterBaseConfig,
   owners: AssetOwnerFilterBaseConfig,
   tags: AssetTagFilterBaseConfig,
-  repos: CodeLocationFilterBaseConfig,
+  codeLocations: CodeLocationFilterBaseConfig,
 };
