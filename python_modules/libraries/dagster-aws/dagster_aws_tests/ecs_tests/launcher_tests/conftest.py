@@ -70,6 +70,7 @@ def task_definition(ecs, image, environment):
                         "condition": "SUCCESS",
                     },
                 ],
+                "healthCheck": {"command": ["HELLO"]},
             },
             {
                 "name": "other",
