@@ -94,15 +94,15 @@ def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: 
     if env_file:
         compose_command += ["--env-file", env_file]
 
-    if no_build:
-        compose_command += ["--no-build"]
-
     compose_command += [
         "--file",
         str(docker_compose_yml),
         "up",
         "--detach",
     ]
+
+    if no_build:
+        compose_command += ["--no-build"]
 
     if service:
         compose_command.append(service)
