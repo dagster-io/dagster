@@ -18,6 +18,9 @@ from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluation,
+)
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -389,6 +392,7 @@ class SensorResult(
                 "asset_events",
                 List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
             ),
+            ("automation_condition_evaluations", Sequence[AutomationConditionEvaluation]),
         ],
     )
 ):
@@ -426,6 +430,7 @@ class SensorResult(
         asset_events: Optional[
             Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]
         ] = None,
+        **kwargs,
     ):
         if skip_reason and len(run_requests if run_requests else []) > 0:
             check.failed(
@@ -453,5 +458,10 @@ class SensorResult(
                     "asset_check_evaluations",
                     (AssetObservation, AssetMaterialization, AssetCheckEvaluation),
                 )
+            ),
+            automation_condition_evaluations=check.opt_sequence_param(
+                kwargs.get("automation_condition_evaluations"),
+                "automation_condition_evaluations",
+                AutomationConditionEvaluation,
             ),
         )

@@ -28,6 +28,9 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, experimental_param, public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluation,
+)
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -87,8 +90,8 @@ class SensorType(Enum):
 
     @property
     def is_handled_by_asset_daemon(self) -> bool:
-        # these "sensors" are currently evaluated by the asset daemon and not the sensor daemon
-        return self in (SensorType.AUTOMATION, SensorType.AUTO_MATERIALIZE)
+        # only the `AUTO_MATERIALIZE` sensor type is handled by the daemon
+        return self == SensorType.AUTO_MATERIALIZE
 
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
@@ -842,6 +845,7 @@ class SensorDefinition(IHasInternalInit):
         ] = []
         updated_cursor = context.cursor
         asset_events = []
+        automation_condition_evaluations: Sequence[AutomationConditionEvaluation] = []
 
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
@@ -869,6 +873,7 @@ class SensorDefinition(IHasInternalInit):
                     updated_cursor = item.cursor  # overwrite value set from context above
 
                 asset_events = item.asset_events
+                automation_condition_evaluations = item.automation_condition_evaluations
 
             elif isinstance(item, RunRequest):
                 run_requests = [item]
@@ -939,6 +944,7 @@ class SensorDefinition(IHasInternalInit):
             log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events,
+            automation_condition_evaluations=automation_condition_evaluations,
         )
 
     def resolve_run_requests(
@@ -1098,6 +1104,7 @@ class SensorExecutionData(
                 "asset_events",
                 Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
             ),
+            ("automation_condition_evaluations", Sequence[AutomationConditionEvaluation]),
         ],
     )
 ):
@@ -1116,6 +1123,7 @@ class SensorExecutionData(
         asset_events: Optional[
             Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
         ] = None,
+        automation_condition_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -1132,6 +1140,11 @@ class SensorExecutionData(
             "asset_events",
             (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
         )
+        check.opt_sequence_param(
+            automation_condition_evaluations,
+            "automation_condition_evaluations",
+            AutomationConditionEvaluation,
+        )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -1144,6 +1157,7 @@ class SensorExecutionData(
             log_key=log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events or [],
+            automation_condition_evaluations=automation_condition_evaluations or [],
         )
 
 
