@@ -9,6 +9,7 @@ from .serdes import (
     SerializableNonScalarKeyMapping as SerializableNonScalarKeyMapping,
     WhitelistMap as WhitelistMap,
     deserialize_value as deserialize_value,
+    deserialize_values as deserialize_values,
     pack_value as pack_value,
     serialize_value as serialize_value,
     unpack_value as unpack_value,

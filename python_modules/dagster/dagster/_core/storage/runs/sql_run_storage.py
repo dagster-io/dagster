@@ -62,6 +62,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes.serdes import deserialize_values
 from dagster._seven import JSONDecodeError
 from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
 from dagster._utils import PrintFn
@@ -850,7 +851,7 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return [deserialize_value(row["body"], PartitionBackfill) for row in rows]
+        return deserialize_values((row["body"] for row in rows), PartitionBackfill)
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")
