@@ -543,7 +543,7 @@ class DbtAttachMetadataContext(NamedTuple):
 
     event: Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation]
     invocation: DbtCliInvocation
-    dbt_resource_props: Dict[str, Any]
+    dbt_resource_props: Mapping[str, Any]
 
     @property
     def adapter(self) -> BaseAdapter:
