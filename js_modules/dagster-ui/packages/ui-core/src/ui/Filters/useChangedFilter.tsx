@@ -50,5 +50,4 @@ export const BaseConfig: StaticBaseConfig<ChangeReason> = {
     </Box>
   ),
   getStringValue: (value: ChangeReason) => value[0] + value.slice(1).toLowerCase(),
-  matchType: 'all-of',
 };
