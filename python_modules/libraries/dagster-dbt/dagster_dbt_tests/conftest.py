@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterator, List, Optional
 
 import pytest
 from dagster_dbt import DbtCliResource
-from dagster_dbt.core.resources_v2 import DbtCliInvocation
+from dagster_dbt.core.resource import DbtCliInvocation
 
 from .dbt_projects import (
     test_asset_checks_path,

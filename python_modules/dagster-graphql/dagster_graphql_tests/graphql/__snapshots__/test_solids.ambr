@@ -3587,14 +3587,6 @@
             }),
             dict({
               'pipeline': dict({
-                'name': 'memoization_job',
-              }),
-              'solidHandle': dict({
-                'handleID': 'my_op',
-              }),
-            }),
-            dict({
-              'pipeline': dict({
                 'name': 'static_partitioned_job',
               }),
               'solidHandle': dict({

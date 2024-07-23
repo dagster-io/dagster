@@ -20,7 +20,7 @@ from sqlalchemy.engine import Connection
 
 import dagster._check as check
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluationWithRunIds,
+    AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
@@ -484,7 +484,7 @@ class SqlScheduleStorage(ScheduleStorage):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AssetConditionEvaluationWithRunIds],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     ):
         if not asset_evaluations:
             return

@@ -1,7 +1,7 @@
 from dagster import AutomationCondition
 
 from ..scenario_specs import one_asset, one_upstream_observable_asset
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 
 def test_newly_updated_condition() -> None:

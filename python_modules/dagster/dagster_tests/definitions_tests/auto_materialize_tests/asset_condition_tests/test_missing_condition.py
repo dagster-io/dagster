@@ -2,7 +2,7 @@ from dagster import AutomationCondition
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:

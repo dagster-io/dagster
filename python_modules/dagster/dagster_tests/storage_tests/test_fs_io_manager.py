@@ -35,9 +35,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
-from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -107,40 +105,6 @@ def test_fs_io_manager_base_dir():
             "rb",
         ) as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
-
-
-def test_fs_io_manager_memoization():
-    recorder = []
-
-    @op
-    def my_op():
-        recorder.append("entered")
-
-    @graph
-    def my_graph():
-        my_op()
-
-    class MyVersionStrategy(VersionStrategy):
-        def get_op_version(self, _):
-            return "foo"
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir) as instance:
-            my_job = my_graph.to_job(version_strategy=MyVersionStrategy())
-
-            unmemoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
-            assert len(unmemoized_plan.step_keys_to_execute) == 1
-
-            result = my_job.execute_in_process(instance=instance)
-            assert result.success
-            assert len(recorder) == 1
-
-            execution_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
-            assert len(execution_plan.step_keys_to_execute) == 0
-
-            result = my_job.execute_in_process(instance=instance)
-            assert result.success
-            assert len(recorder) == 1
 
 
 # lamdba functions can't be pickled (pickle.PicklingError)

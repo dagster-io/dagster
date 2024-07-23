@@ -16,7 +16,7 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resource import DbtCliResource
 from pytest_mock import MockFixture
 from sqlglot import Dialect
 
@@ -101,7 +101,7 @@ def test_exception_fetch_column_schema_with_adapter(
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
 
     mock_adapter = mocker.patch(
-        "dagster_dbt.core.resources_v2.DbtCliInvocation.adapter",
+        "dagster_dbt.core.resource.DbtCliInvocation.adapter",
         return_value=mocker.MagicMock(),
         new_callable=mocker.PropertyMock,
     )
@@ -141,7 +141,11 @@ def test_exception_column_schema(
         "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
     )
     mocker.patch(
-        "dagster_dbt.core.resources_v2.default_metadata_from_dbt_resource_props",
+        "dagster_dbt.core.dbt_cli_event.default_metadata_from_dbt_resource_props",
+        side_effect=Exception("An error occurred"),
+    )
+    mocker.patch(
+        "dagster_dbt.core.resource.default_metadata_from_dbt_resource_props",
         side_effect=Exception("An error occurred"),
     )
 
@@ -202,7 +206,7 @@ def test_exception_column_lineage(
         "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
     )
     mocker.patch(
-        "dagster_dbt.core.resources_v2._build_column_lineage_metadata",
+        "dagster_dbt.core.dbt_cli_event._build_column_lineage_metadata",
         side_effect=Exception("An error occurred"),
     )
 
@@ -538,10 +542,10 @@ def test_column_lineage(
 ) -> None:
     # Patch get_relation_from_adapter so that we can track how often
     # relations are queried from the adapter vs cached
-    from dagster_dbt.core.resources_v2 import _get_relation_from_adapter
+    from dagster_dbt.core.resource import _get_relation_from_adapter
 
     get_relation_from_adapter = mocker.patch(
-        "dagster_dbt.core.resources_v2._get_relation_from_adapter",
+        "dagster_dbt.core.resource._get_relation_from_adapter",
         side_effect=_get_relation_from_adapter,
     )
 

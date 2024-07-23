@@ -20,10 +20,10 @@ from dagster._serdes.serdes import (
 from dagster._utils.security import non_secure_md5_hash_str
 
 from .declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionEvaluationWithRunIds,
-    AssetConditionSnapshot,
     AssetSubsetWithMetadata,
+    AutomationConditionEvaluation,
+    AutomationConditionEvaluationWithRunIds,
+    AutomationConditionSnapshot,
 )
 from .partition import PartitionsDefinition, SerializedPartitionsSubset
 
@@ -130,11 +130,11 @@ class AutoMaterializeRuleEvaluation(NamedTuple):
 
 def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
     serialized_evaluation: str, partitions_def: Optional[PartitionsDefinition]
-) -> "AssetConditionEvaluationWithRunIds":
+) -> "AutomationConditionEvaluationWithRunIds":
     """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
-    objects into the new AssetConditionEvaluationWithRunIds objects.
+    objects into the new AutomationConditionEvaluationWithRunIds objects.
     """
-    from .declarative_automation.serialized_objects import AssetConditionEvaluationWithRunIds
+    from .declarative_automation.serialized_objects import AutomationConditionEvaluationWithRunIds
 
     class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
         @property
@@ -148,14 +148,14 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
         object_deserializers={
             **_WHITELIST_MAP.object_deserializers,
             "AutoMaterializeAssetEvaluation": BackcompatDeserializer(
-                klass=AssetConditionEvaluationWithRunIds
+                klass=AutomationConditionEvaluationWithRunIds
             ),
         },
         enum_serializers=_WHITELIST_MAP.enum_serializers,
     )
 
     return deserialize_value(
-        serialized_evaluation, AssetConditionEvaluationWithRunIds, whitelist_map=whitelist_map
+        serialized_evaluation, AutomationConditionEvaluationWithRunIds, whitelist_map=whitelist_map
     )
 
 
@@ -173,7 +173,7 @@ def deserialize_serialized_partitions_subset_to_asset_subset(
 
 class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     """This handles backcompat for the old AutoMaterializeAssetEvaluation objects, turning them into
-    AssetConditionEvaluationWithRunIds objects.
+    AutomationConditionEvaluationWithRunIds objects.
     """
 
     @property
@@ -198,14 +198,14 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
-    ) -> "AssetConditionSnapshot":
+    ) -> "AutomationConditionSnapshot":
         from .declarative_automation.legacy.rule_condition import RuleCondition
-        from .declarative_automation.serialized_objects import AssetConditionSnapshot
+        from .declarative_automation.serialized_objects import AutomationConditionSnapshot
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
 
-        return AssetConditionSnapshot(
+        return AutomationConditionSnapshot(
             class_name=RuleCondition.__name__,
             description=rule_snapshot.description,
             unique_id=unique_id,
@@ -219,7 +219,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         ],
         is_partitioned: bool,
         rule_snapshot: AutoMaterializeRuleSnapshot,
-    ) -> "AssetConditionEvaluation":
+    ) -> "AutomationConditionEvaluation":
         from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         condition_snapshot = self._asset_condition_snapshot_from_rule_snapshot(rule_snapshot)
@@ -239,7 +239,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 asset_key, serialized
             )
 
-        return AssetConditionEvaluation(
+        return AutomationConditionEvaluation(
             condition_snapshot=condition_snapshot,
             true_subset=true_subset,
             candidate_subset=HistoricalAllPartitionsSubsetSentinel()
@@ -260,10 +260,10 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         rule_snapshots: Sequence[AutoMaterializeRuleSnapshot],
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
-    ) -> Optional["AssetConditionEvaluation"]:
+    ) -> Optional["AutomationConditionEvaluation"]:
         from .declarative_automation.operators.boolean_operators import (
-            NotAssetCondition,
-            OrAssetCondition,
+            NotAutomationCondition,
+            OrAutomationCondition,
         )
         from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
@@ -285,23 +285,23 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         ]
 
         if decision_type == AutoMaterializeDecisionType.DISCARD:
-            # for the discard type, we don't have an OrAssetCondition
+            # for the discard type, we don't have an OrAutomationCondition
             if len(child_evaluations) != 1:
                 return None
             evaluation = child_evaluations[0]
         else:
             unique_id_parts = [
-                OrAssetCondition.__name__,
+                OrAutomationCondition.__name__,
                 *[e.condition_snapshot.unique_id for e in child_evaluations],
             ]
             unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
-            decision_type_snapshot = AssetConditionSnapshot(
-                class_name=OrAssetCondition.__name__, description="Any of", unique_id=unique_id
+            decision_type_snapshot = AutomationConditionSnapshot(
+                class_name=OrAutomationCondition.__name__, description="Any of", unique_id=unique_id
             )
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
             for e in child_evaluations:
                 true_subset |= e.true_subset
-            evaluation = AssetConditionEvaluation(
+            evaluation = AutomationConditionEvaluation(
                 condition_snapshot=decision_type_snapshot,
                 true_subset=true_subset,
                 candidate_subset=HistoricalAllPartitionsSubsetSentinel()
@@ -318,7 +318,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
         # non-materialize conditions are inverted
         unique_id_parts = [
-            NotAssetCondition.__name__,
+            NotAutomationCondition.__name__,
             evaluation.condition_snapshot.unique_id,
         ]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
@@ -332,9 +332,9 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             true_subset = evaluation.true_subset._replace(
                 value=not evaluation.true_subset.bool_value
             )
-        return AssetConditionEvaluation(
-            condition_snapshot=AssetConditionSnapshot(
-                class_name=NotAssetCondition.__name__, description="Not", unique_id=unique_id
+        return AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionSnapshot(
+                class_name=NotAutomationCondition.__name__, description="Not", unique_id=unique_id
             ),
             true_subset=true_subset,
             candidate_subset=HistoricalAllPartitionsSubsetSentinel()
@@ -351,8 +351,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         unpacked_dict: Dict[str, UnpackedValue],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
-    ) -> "AssetConditionEvaluationWithRunIds":
-        from .declarative_automation.operators.boolean_operators import AndAssetCondition
+    ) -> "AutomationConditionEvaluationWithRunIds":
+        from .declarative_automation.operators.boolean_operators import AndAutomationCondition
         from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         asset_key = cast(AssetKey, unpacked_dict.get("asset_key"))
@@ -405,12 +405,12 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
         # the top level condition is the AND of all the sub-conditions
         unique_id_parts = [
-            AndAssetCondition.__name__,
+            AndAutomationCondition.__name__,
             *[e.condition_snapshot.unique_id for e in child_evaluations],
         ]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
-        condition_snapshot = AssetConditionSnapshot(
-            class_name=AndAssetCondition.__name__, description="All of", unique_id=unique_id
+        condition_snapshot = AutomationConditionSnapshot(
+            class_name=AndAutomationCondition.__name__, description="All of", unique_id=unique_id
         )
 
         # all AssetSubsets generated here are created using the current partitions_def, so they
@@ -421,7 +421,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         if not_discard_evaluation:
             true_subset -= not_discard_evaluation.child_evaluations[0].true_subset
 
-        return AssetConditionEvaluation(
+        return AutomationConditionEvaluation(
             condition_snapshot=condition_snapshot,
             true_subset=true_subset,
             candidate_subset=HistoricalAllPartitionsSubsetSentinel()

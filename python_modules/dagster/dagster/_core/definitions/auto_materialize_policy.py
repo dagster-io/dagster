@@ -179,10 +179,6 @@ class AutoMaterializePolicy(
         }
 
     @staticmethod
-    def from_asset_condition(asset_condition: "AutomationCondition") -> "AutoMaterializePolicy":
-        return AutoMaterializePolicy.from_automation_condition(asset_condition)
-
-    @staticmethod
     def from_automation_condition(
         automation_condition: "AutomationCondition",
     ) -> "AutoMaterializePolicy":
@@ -303,21 +299,21 @@ class AutoMaterializePolicy(
         """Converts a set of materialize / skip rules into a single binary expression."""
         from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
         from .declarative_automation.operators import (
-            AndAssetCondition,
-            NotAssetCondition,
-            OrAssetCondition,
+            AndAutomationCondition,
+            NotAutomationCondition,
+            OrAutomationCondition,
         )
 
         if self.asset_condition is not None:
             return self.asset_condition
 
-        materialize_condition = OrAssetCondition(
+        materialize_condition = OrAutomationCondition(
             operands=[
                 rule.to_asset_condition()
                 for rule in sorted(self.materialize_rules, key=lambda rule: rule.description)
             ]
         )
-        skip_condition = OrAssetCondition(
+        skip_condition = OrAutomationCondition(
             operands=[
                 rule.to_asset_condition()
                 for rule in sorted(self.skip_rules, key=lambda rule: rule.description)
@@ -325,16 +321,16 @@ class AutoMaterializePolicy(
         )
         children = [
             materialize_condition,
-            NotAssetCondition(operand=skip_condition),
+            NotAutomationCondition(operand=skip_condition),
         ]
         if self.max_materializations_per_minute:
             discard_condition = DiscardOnMaxMaterializationsExceededRule(
                 self.max_materializations_per_minute
             ).to_asset_condition()
-            children.append(NotAssetCondition(operand=discard_condition))
+            children.append(NotAutomationCondition(operand=discard_condition))
 
         # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d
-        return AndAssetCondition(operands=children)
+        return AndAutomationCondition(operands=children)
 
     def __eq__(self, other) -> bool:
         return (

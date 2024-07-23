@@ -1,4 +1,4 @@
-from dagster import AssetKey, FreshnessPolicy
+from dagster import AssetKey
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.merger import deep_merge_dicts
 
@@ -417,16 +417,3 @@ def assert_assets_match_project(
     assert AssetKey(prefix + ["sort_by_calories"]) in dbt_assets[0].keys
     sort_by_calories_deps = dbt_assets[0].asset_deps[AssetKey(prefix + ["sort_by_calories"])]
     assert sort_by_calories_deps == {AssetKey(prefix + ["cereals"])}, sort_by_calories_deps
-
-    expected_policies = {
-        AssetKey(prefix + ["sort_hot_cereals_by_calories"]): FreshnessPolicy(
-            maximum_lag_minutes=123
-        ),
-        AssetKey(prefix + ["cold_schema", "sort_cold_cereals_by_calories"]): FreshnessPolicy(
-            maximum_lag_minutes=123,
-            cron_schedule="0 9 * * *",
-            cron_schedule_timezone="America/New_York",
-        ),
-    }
-    actual_policies = dbt_assets[0].freshness_policies_by_key
-    assert actual_policies == expected_policies

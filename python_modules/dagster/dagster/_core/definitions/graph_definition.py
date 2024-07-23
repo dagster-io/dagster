@@ -57,7 +57,6 @@ from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .resource_requirement import ResourceRequirement
 from .utils import NormalizedTags
-from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -614,7 +613,6 @@ class GraphDefinition(NodeDefinition):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
-        version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[Sequence[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         asset_layer: Optional["AssetLayer"] = None,
@@ -665,9 +663,6 @@ class GraphDefinition(NodeDefinition):
                 default mode of execution is multi-process.
             op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
                 Only used if retry policy is not defined on the op definition or op invocation.
-            version_strategy (Optional[VersionStrategy]):
-                Defines how each op (and optionally, resource) in the job can be versioned. If
-                provided, memoizaton will be enabled for this job.
             partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
                 keys that can parameterize the job. If this argument is supplied, the config
                 argument can't also be supplied.
@@ -697,7 +692,6 @@ class GraphDefinition(NodeDefinition):
             tags=tags,
             metadata=metadata,
             hook_defs=hooks,
-            version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
             input_values=input_values,

@@ -51,7 +51,6 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import deprecation_warning
 
 from .utils import (
     ASSET_RESOURCE_TYPES,
@@ -538,36 +537,17 @@ def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Option
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     freshness_policy_config = dagster_metadata.get("freshness_policy", {})
 
-    freshness_policy = _legacy_freshness_policy_fn(freshness_policy_config)
-    if freshness_policy:
-        return freshness_policy
-
-    legacy_freshness_policy_config = dbt_resource_props["config"].get(
-        "dagster_freshness_policy", {}
-    )
-    legacy_freshness_policy = _legacy_freshness_policy_fn(legacy_freshness_policy_config)
-
-    if legacy_freshness_policy:
-        deprecation_warning(
-            "dagster_freshness_policy",
-            "0.21.0",
-            "Instead, configure a Dagster freshness policy on a dbt model using"
-            " +meta.dagster.freshness_policy.",
-        )
-
-    return legacy_freshness_policy
-
-
-def _legacy_freshness_policy_fn(
-    freshness_policy_config: Mapping[str, Any],
-) -> Optional[FreshnessPolicy]:
-    if freshness_policy_config:
-        return FreshnessPolicy(
+    freshness_policy = (
+        FreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
             cron_schedule=freshness_policy_config.get("cron_schedule"),
             cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
         )
-    return None
+        if freshness_policy_config
+        else None
+    )
+
+    return freshness_policy
 
 
 def default_auto_materialize_policy_fn(
@@ -576,31 +556,6 @@ def default_auto_materialize_policy_fn(
     dagster_metadata = dbt_resource_props.get("meta", {}).get("dagster", {})
     auto_materialize_policy_config = dagster_metadata.get("auto_materialize_policy", {})
 
-    auto_materialize_policy = _auto_materialize_policy_fn(auto_materialize_policy_config)
-    if auto_materialize_policy:
-        return auto_materialize_policy
-
-    legacy_auto_materialize_policy_config = dbt_resource_props["config"].get(
-        "dagster_auto_materialize_policy", {}
-    )
-    legacy_auto_materialize_policy = _auto_materialize_policy_fn(
-        legacy_auto_materialize_policy_config
-    )
-
-    if legacy_auto_materialize_policy:
-        deprecation_warning(
-            "dagster_auto_materialize_policy",
-            "0.21.0",
-            "Instead, configure a Dagster auto-materialize policy on a dbt model using"
-            " +meta.dagster.auto_materialize_policy.",
-        )
-
-    return legacy_auto_materialize_policy
-
-
-def _auto_materialize_policy_fn(
-    auto_materialize_policy_config: Mapping[str, Any],
-) -> Optional[AutoMaterializePolicy]:
     if auto_materialize_policy_config.get("type") == "eager":
         return AutoMaterializePolicy.eager()
     elif auto_materialize_policy_config.get("type") == "lazy":

@@ -21,7 +21,7 @@ from dagster._core.definitions.declarative_automation.legacy.legacy_context impo
     LegacyRuleEvaluationContext,
 )
 from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
-    AndAssetCondition,
+    AndAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionCursor,
@@ -33,7 +33,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from ..scenario_state import ScenarioState
 
 
-class FalseAssetCondition(AutomationCondition):
+class FalseAutomationCondition(AutomationCondition):
     """Always returns the empty subset."""
 
     label: Optional[str] = None
@@ -84,15 +84,17 @@ class AutomationConditionScenarioState(ScenarioState):
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery
         asset_condition = (
-            AndAssetCondition(
-                operands=[check.not_none(self.automation_condition), FalseAssetCondition()]
+            AndAutomationCondition(
+                operands=[check.not_none(self.automation_condition), FalseAutomationCondition()]
             )
             if self.ensure_empty_result
             else check.not_none(self.automation_condition)
         )
         asset_graph = self.scenario_spec.with_asset_properties(
             keys=[asset],
-            auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(asset_condition),
+            auto_materialize_policy=AutoMaterializePolicy.from_automation_condition(
+                asset_condition
+            ),
         ).asset_graph
 
         with freeze_time(self.current_time):

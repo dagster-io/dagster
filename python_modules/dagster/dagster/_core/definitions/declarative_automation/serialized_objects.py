@@ -52,8 +52,8 @@ def get_serializable_candidate_subset(
     return candidate_subset
 
 
-@whitelist_for_serdes
-class AssetConditionSnapshot(NamedTuple):
+@whitelist_for_serdes(old_storage_names={"AssetConditionSnapshot"})
+class AutomationConditionSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
     class_name: str
@@ -75,11 +75,11 @@ class AssetSubsetWithMetadata(NamedTuple):
         return frozenset(self.metadata.items())
 
 
-@whitelist_for_serdes
-class AssetConditionEvaluation(NamedTuple):
+@whitelist_for_serdes(old_storage_names={"AssetConditionEvaluation"})
+class AutomationConditionEvaluation(NamedTuple):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
-    condition_snapshot: AssetConditionSnapshot
+    condition_snapshot: AutomationConditionSnapshot
     start_timestamp: Optional[float]
     end_timestamp: Optional[float]
 
@@ -87,7 +87,7 @@ class AssetConditionEvaluation(NamedTuple):
     candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
-    child_evaluations: Sequence["AssetConditionEvaluation"]
+    child_evaluations: Sequence["AutomationConditionEvaluation"]
 
     @property
     def asset_key(self) -> AssetKey:
@@ -104,7 +104,7 @@ class AssetConditionEvaluation(NamedTuple):
         discard_evaluation = not_discard_evaluation.child_evaluations[0]
         return discard_evaluation.true_subset
 
-    def for_child(self, child_unique_id: str) -> Optional["AssetConditionEvaluation"]:
+    def for_child(self, child_unique_id: str) -> Optional["AutomationConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
         has an identical hash to the given condition.
         """
@@ -114,8 +114,8 @@ class AssetConditionEvaluation(NamedTuple):
 
         return None
 
-    def with_run_ids(self, run_ids: AbstractSet[str]) -> "AssetConditionEvaluationWithRunIds":
-        return AssetConditionEvaluationWithRunIds(evaluation=self, run_ids=frozenset(run_ids))
+    def with_run_ids(self, run_ids: AbstractSet[str]) -> "AutomationConditionEvaluationWithRunIds":
+        return AutomationConditionEvaluationWithRunIds(evaluation=self, run_ids=frozenset(run_ids))
 
     def legacy_num_skipped(self) -> int:
         if len(self.child_evaluations) < 2:
@@ -132,13 +132,13 @@ class AssetConditionEvaluation(NamedTuple):
         return discarded_subset.size
 
 
-@whitelist_for_serdes
-class AssetConditionEvaluationWithRunIds(NamedTuple):
-    """A union of an AssetConditionEvaluation and the set of run IDs that have been launched in
+@whitelist_for_serdes(old_storage_names={"AssetConditionEvaluationWithRunIds"})
+class AutomationConditionEvaluationWithRunIds(NamedTuple):
+    """A union of an AutomatConditionEvaluation and the set of run IDs that have been launched in
     response to it.
     """
 
-    evaluation: AssetConditionEvaluation
+    evaluation: AutomationConditionEvaluation
     run_ids: FrozenSet[str]
 
     @property
@@ -150,21 +150,21 @@ class AssetConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"AssetConditionEvaluationState"})
 @dataclass(frozen=True)
-class AssetConditionEvaluationState:
-    """Incremental state calculated during the evaluation of an AssetCondition. This may be used
+class AutomationConditionEvaluationState:
+    """Incremental state calculated during the evaluation of an AutomationCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
     Attributes:
-        previous_evaluation: The computed AssetConditionEvaluation.
+        previous_evaluation: The computed AutomationConditionEvaluation.
         previous_tick_evaluation_timestamp: The evaluation_timestamp at which the evaluation was performed.
         max_storage_id: The maximum storage ID over all events used in this computation.
         extra_state_by_unique_id: A mapping from the unique ID of each condition in the evaluation
             tree to the extra state that was calculated for it, if any.
     """
 
-    previous_evaluation: AssetConditionEvaluation
+    previous_evaluation: AutomationConditionEvaluation
     previous_tick_evaluation_timestamp: Optional[float]
 
     max_storage_id: Optional[int]
@@ -217,12 +217,12 @@ class AutomationConditionCursor(NamedTuple):
 
     @staticmethod
     def backcompat_from_evaluation_state(
-        evaluation_state: AssetConditionEvaluationState,
+        evaluation_state: AutomationConditionEvaluationState,
     ) -> "AutomationConditionCursor":
         """Serves as a temporary method to convert from old representation to the new representation."""
 
         def _get_node_cursors(
-            evaluation: AssetConditionEvaluation,
+            evaluation: AutomationConditionEvaluation,
         ) -> Mapping[str, AutomationConditionNodeCursor]:
             node_cursors = {
                 evaluation.condition_snapshot.unique_id: AutomationConditionNodeCursor(

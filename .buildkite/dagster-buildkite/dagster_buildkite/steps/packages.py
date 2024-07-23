@@ -23,6 +23,7 @@ def build_example_packages_steps() -> List[BuildkiteStep]:
             _get_uncustomized_pkg_roots("examples", custom_example_pkg_roots)
             + _get_uncustomized_pkg_roots("examples/experimental", custom_example_pkg_roots)
         )
+        if pkg != "examples/deploy_ecs"
     ]
 
     example_packages = EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG + example_packages_with_standard_config

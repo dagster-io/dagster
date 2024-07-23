@@ -110,7 +110,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
     def _prepare_packages(self, project: "DbtProject") -> None:
-        from .core.resources_v2 import DbtCliResource
+        from .core.resource import DbtCliResource
 
         (
             DbtCliResource(project_dir=project)
@@ -119,7 +119,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
     def _prepare_manifest(self, project: "DbtProject") -> None:
-        from .core.resources_v2 import DbtCliResource
+        from .core.resource import DbtCliResource
 
         (
             DbtCliResource(project_dir=project)

@@ -1,6 +1,6 @@
 import time
 
-from dagster import Int, Output, RetryRequested, VersionStrategy, job
+from dagster import Int, Output, RetryRequested, job
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph
@@ -309,16 +309,3 @@ def multiqueue_job():
 @op
 def bar_solid():
     return "bar"
-
-
-class BasicVersionStrategy(VersionStrategy):
-    def get_op_version(self, _):
-        return "bar"
-
-
-@job(
-    executor_def=celery_executor,
-    version_strategy=BasicVersionStrategy(),
-)
-def bar_job():
-    bar_solid()
