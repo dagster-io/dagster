@@ -1,6 +1,6 @@
 from dagster._core.test_utils import instance_for_test
 
-from feature_graph_backed_assets import defs
+from feature_graph_backed_assets.definitions import defs
 
 
 def test_feature_graph_backed_assets():
