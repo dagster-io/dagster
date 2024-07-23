@@ -313,7 +313,7 @@ def link_code_references_to_git(
                     )
                 )
     """
-    if "gitlab.com" in git_url:
+    if "gitlab" in git_url:
         git_url = _build_gitlab_url(git_url, git_branch)
     elif "github.com" in git_url:
         git_url = _build_github_url(git_url, git_branch)
