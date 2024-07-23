@@ -44,6 +44,7 @@ setup(
         f"sdf-cli>=0.3.9,<{SDF_VERSION_UPPER_BOUND}",
         "orjson",
         "polars",
+        "typer>=0.9.0",
     ],
     entry_points={
         "console_scripts": [
