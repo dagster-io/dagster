@@ -14,7 +14,7 @@ from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import (
+from dagster_dbt.core.resource import (
     DbtCliInvocation,
     DbtCliResource,
     DbtDagsterEventType,

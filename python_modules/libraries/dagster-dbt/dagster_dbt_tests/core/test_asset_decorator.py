@@ -32,7 +32,7 @@ from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_specs import build_dbt_asset_specs
 from dagster_dbt.asset_utils import DUPLICATE_ASSET_KEY_ERROR_MESSAGE
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dbt.version import __version__ as dbt_version
 from packaging import version
