@@ -517,7 +517,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         tags = self._get_run_tags(run_id)
 
         run = self._instance.get_run_by_id(run_id)
-        if not run:
+        if not run or run.is_finished:
             return False
 
         self._instance.report_run_canceling(run)
