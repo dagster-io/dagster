@@ -806,7 +806,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     @experimental
     def with_snowflake_insights(
         self,
-        skip_config_check: bool=False,
+        skip_config_check: bool = False,
         record_observation_usage: bool = True,
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
@@ -855,7 +855,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     @experimental
     def with_bigquery_insights(
         self,
-        skip_config_check: bool=False,
+        skip_config_check: bool = False,
         record_observation_usage: bool = True,
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
