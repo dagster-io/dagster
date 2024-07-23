@@ -21,7 +21,14 @@ def docker_compose_cm(
     if not network_name:
         network_name = network_name_from_yml(docker_compose_yml)
     try:
-        docker_compose_up(docker_compose_yml, docker_context, service, env_file, no_build=no_build)
+        try:
+            docker_compose_up(
+                docker_compose_yml, docker_context, service, env_file, no_build=no_build
+            )
+        except:
+            dump_docker_compose_logs(docker_context, docker_compose_yml)
+            raise
+
         if BUILDKITE:
             # When running in a container on Buildkite, we need to first connect our container
             # and our network and then yield a dict of container name to the container's
@@ -34,6 +41,21 @@ def docker_compose_cm(
             yield dict((container, "localhost") for container in list_containers())
     finally:
         docker_compose_down(docker_compose_yml, docker_context, service, env_file)
+
+
+def dump_docker_compose_logs(context, docker_compose_yml):
+    if context:
+        compose_command = ["docker", "--context", context, "compose"]
+    else:
+        compose_command = ["docker-compose"]
+
+    compose_command += [
+        "--file",
+        str(docker_compose_yml),
+        "logs",
+    ]
+
+    subprocess.run(compose_command, capture_output=True, check=False)
 
 
 @pytest.fixture(scope="module", name="docker_compose_cm")
