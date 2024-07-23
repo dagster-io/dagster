@@ -1,3 +1,10 @@
 from .assets import {{ sdf_assets_name }}
+from dagster_sdf import build_schedule_from_sdf_selection
 
-schedules = []
+schedules = [
+#     build_schedule_from_sdf_selection(
+#         [{{ sdf_assets_name }}],
+#         job_name="materialize_sdf_models",
+#         cron_schedule="0 0 * * *",
+#     ),
+]
