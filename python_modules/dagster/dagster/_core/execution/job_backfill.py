@@ -14,7 +14,7 @@ from dagster._core.remote_representation import CodeLocation, ExternalJob, Exter
 from dagster._core.remote_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
-    FINISHED_STATUSES,
+    IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunsFilter,
@@ -97,15 +97,22 @@ def execute_job_backfill_iteration(
             yield None
             time.sleep(CHECKPOINT_INTERVAL)
         else:
-            backfill_runs = instance.get_runs(
-                RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id))
+            in_progress_runs = instance.get_runs(
+                RunsFilter(
+                    tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
+                    statuses=[
+                        *IN_PROGRESS_RUN_STATUSES,
+                        DagsterRunStatus.QUEUED,
+                        DagsterRunStatus.NOT_STARTED,
+                    ],
+                ),
+                limit=1,
             )
-            for run in backfill_runs:
-                if run.status not in FINISHED_STATUSES:
-                    logger.info(
-                        f"Backfill {backfill.backfill_id} has in-progress runs. Status will be updated when all runs are finished."
-                    )
-                    return
+            if in_progress_runs:
+                logger.info(
+                    f"Backfill {backfill.backfill_id} has in-progress runs. Status will be updated when all runs are finished."
+                )
+                return
             partition_names = cast(Sequence[str], backfill.partition_names)
             logger.info(
                 f"Backfill completed for {backfill.backfill_id} for"
