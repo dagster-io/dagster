@@ -4766,6 +4766,7 @@ export type ScalarUnionConfigType = ConfigType & {
 
 export type Schedule = {
   __typename: 'Schedule';
+  assetSelection: Maybe<AssetSelection>;
   canReset: Scalars['Boolean']['output'];
   cronSchedule: Scalars['String']['output'];
   defaultStatus: InstigationStatus;
@@ -13534,6 +13535,12 @@ export const buildSchedule = (
   relationshipsToOmit.add('Schedule');
   return {
     __typename: 'Schedule',
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection')
+        ? overrides.assetSelection!
+        : relationshipsToOmit.has('AssetSelection')
+        ? ({} as AssetSelection)
+        : buildAssetSelection({}, relationshipsToOmit),
     canReset: overrides && overrides.hasOwnProperty('canReset') ? overrides.canReset! : false,
     cronSchedule:
       overrides && overrides.hasOwnProperty('cronSchedule') ? overrides.cronSchedule! : 'possimus',

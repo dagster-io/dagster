@@ -301,6 +301,7 @@ class GrapheneRepository(graphene.ObjectType):
             [
                 GrapheneSchedule(
                     schedule,
+                    self._repository,
                     self._batch_loader.get_schedule_state(schedule.name),
                     self._batch_loader,
                 )

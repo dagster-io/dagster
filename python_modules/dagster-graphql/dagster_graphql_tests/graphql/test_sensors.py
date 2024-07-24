@@ -1510,6 +1510,31 @@ def test_asset_selection(graphql_context):
     ]
 
 
+def test_jobless_asset_selection(graphql_context):
+    sensor_name = "jobless_sensor"
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    result = execute_dagster_graphql(
+        graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
+    )
+
+    assert result.data
+    assert result.data["sensorOrError"]["__typename"] == "Sensor"
+    assert result.data["sensorOrError"]["assetSelection"]["assetSelectionString"] == "asset_one"
+    assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [{"path": ["asset_one"]}]
+    assert result.data["sensorOrError"]["assetSelection"]["assets"] == [
+        {
+            "key": {"path": ["asset_one"]},
+            "definition": {"assetKey": {"path": ["asset_one"]}},
+        }
+    ]
+    assert result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["nodes"] == [
+        {
+            "key": {"path": ["asset_one"]},
+        }
+    ]
+
+
 def test_invalid_sensor_asset_selection(graphql_context):
     sensor_name = "invalid_asset_selection_error"
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)

@@ -1611,11 +1611,19 @@ type Schedule {
   futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
+  assetSelection: AssetSelection
 }
 
 enum InstigationStatus {
   RUNNING
   STOPPED
+}
+
+type AssetSelection {
+  assetSelectionString: String
+  assetKeys: [AssetKey!]!
+  assets: [Asset!]!
+  assetsOrError: AssetsOrError!
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
@@ -2977,13 +2985,6 @@ type Target {
 
 type SensorMetadata {
   assetKeys: [AssetKey!]
-}
-
-type AssetSelection {
-  assetSelectionString: String
-  assetKeys: [AssetKey!]!
-  assets: [Asset!]!
-  assetsOrError: AssetsOrError!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
