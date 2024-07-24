@@ -174,6 +174,10 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
 
+    @property
+    def supports_returning(self) -> bool:
+        return True
+
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
         with self.connect() as conn:
             # insert or update if already present, using postgres specific on_conflict

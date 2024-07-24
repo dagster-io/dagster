@@ -323,6 +323,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def supports_bucket_queries(self) -> bool:
         return False
 
+    @property
+    def supports_returning(self) -> bool:
+        return False
+
     @abstractmethod
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
