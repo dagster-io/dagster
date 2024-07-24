@@ -767,7 +767,7 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
         )
 
     def get_evaluation_with_run_ids(
-        self, partitions_def: Optional[PartitionsDefinition]
+        self, partitions_def: Optional[PartitionsDefinition] = None
     ) -> AutomationConditionEvaluationWithRunIds:
         try:
             # If this was serialized as an AutomationConditionEvaluationWithRunIds, we can deserialize

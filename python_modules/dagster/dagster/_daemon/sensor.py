@@ -73,6 +73,11 @@ if TYPE_CHECKING:
 
 MIN_INTERVAL_LOOP_TIME = 5
 
+# When retrying a tick, how long to wait before ignoring it and moving on to the next one
+# (To account for the rare case where the daemon is down for a long time, starts back up, and
+# there's an old in-progress tick left to finish that may no longer be correct to finish)
+MAX_TIME_TO_RESUME_TICK_SECONDS = 60 * 60 * 24
+
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
 
 
@@ -432,6 +437,78 @@ def _process_tick(
     )
 
 
+def _unrequested_runs(tick: InstigatorTick) -> Sequence[RunRequest]:
+    reserved_run_ids = tick.tick_data.reserved_run_ids or []
+    unrequested_run_ids = set(reserved_run_ids) - set(tick.tick_data.run_ids)
+    return [
+        run_request
+        for run_id, run_request in zip(reserved_run_ids, tick.run_requests or [])
+        if run_id in unrequested_run_ids
+    ]
+
+
+def _get_evaluation_tick(
+    instance: DagsterInstance,
+    sensor: ExternalSensor,
+    evaluation_timestamp: float,
+    logger: logging.Logger,
+) -> InstigatorTick:
+    """Returns the current tick that the sensor should evaluate for. If there is unfinished work
+    from the previous tick that must be resolved before proceeding, will return that previous tick.
+    """
+    MAX_RETRIES = 3  # TODO: make this variable per-sensor
+    origin_id = sensor.get_external_origin_id()
+    selector_id = sensor.get_external_origin().get_selector().get_id()
+    previous_tick = next(iter(instance.get_ticks(origin_id, selector_id, limit=1)), None)
+
+    # check for unfinished work on the previous tick
+    if previous_tick is not None:
+        has_unrequested_runs = len(_unrequested_runs(previous_tick)) > 0
+        if previous_tick.status == TickStatus.STARTED:
+            # if the previous tick was interrupted before it was able to request all of its runs,
+            # and it hasn't been too long, then resume execution of that tick
+            if (
+                evaluation_timestamp - previous_tick.timestamp <= MAX_TIME_TO_RESUME_TICK_SECONDS
+                and has_unrequested_runs
+            ):
+                logger.warn(
+                    f"Tick {previous_tick.tick_id} was interrupted part-way through, resuming"
+                )
+                return previous_tick
+            else:
+                # previous tick won't be resumed - move it into a SKIPPED state so it isn't left
+                # dangling in STARTED, but don't return it
+                logger.warn(f"Moving dangling STARTED tick {previous_tick.tick_id} into SKIPPED")
+                previous_tick = previous_tick.with_status(status=TickStatus.SKIPPED)
+                instance.update_tick(previous_tick)
+        elif (
+            previous_tick.status == TickStatus.FAILURE
+            and previous_tick.tick_data.failure_count <= MAX_RETRIES
+            and has_unrequested_runs
+        ):
+            logger.info(f"Retrying failed tick {previous_tick.tick_id}")
+            return instance.create_tick(
+                previous_tick.tick_data.with_status(
+                    TickStatus.STARTED,
+                    error=None,
+                    timestamp=evaluation_timestamp,
+                    end_timestamp=None,
+                ),
+            )
+
+    # typical case, create a fresh tick
+    return instance.create_tick(
+        TickData(
+            instigator_origin_id=origin_id,
+            instigator_name=sensor.name,
+            instigator_type=InstigatorType.SENSOR,
+            status=TickStatus.STARTED,
+            timestamp=evaluation_timestamp,
+            selector_id=selector_id,
+        )
+    )
+
+
 def _process_tick_generator(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
@@ -456,16 +533,8 @@ def _process_tick_generator(
         mark_sensor_state_for_tick(instance, external_sensor, sensor_state, now)
 
     try:
-        tick = instance.create_tick(
-            TickData(
-                instigator_origin_id=sensor_state.instigator_origin_id,
-                instigator_name=sensor_state.instigator_name,
-                instigator_type=InstigatorType.SENSOR,
-                status=TickStatus.STARTED,
-                timestamp=now.timestamp(),
-                selector_id=external_sensor.selector_id,
-            )
-        )
+        # get the tick that we should be evaluating for
+        tick = _get_evaluation_tick(instance, external_sensor, now.timestamp(), logger)
 
         check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
@@ -479,14 +548,25 @@ def _process_tick_generator(
             check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
             tick_context.add_log_key(tick_context.log_key)
 
-            yield from _evaluate_sensor(
-                workspace_process_context,
-                tick_context,
-                external_sensor,
-                sensor_state,
-                submit_threadpool_executor,
-                sensor_debug_crash_flags,
-            )
+            # in cases where there is unresolved work left to do, do it
+            if _unrequested_runs(tick):
+                yield from _resume_tick(
+                    workspace_process_context,
+                    tick_context,
+                    tick,
+                    external_sensor,
+                    submit_threadpool_executor,
+                    sensor_debug_crash_flags,
+                )
+            else:
+                yield from _evaluate_sensor(
+                    workspace_process_context,
+                    tick_context,
+                    external_sensor,
+                    sensor_state,
+                    submit_threadpool_executor,
+                    sensor_debug_crash_flags,
+                )
 
     except Exception:
         error_info = DaemonErrorCapture.on_exception(
@@ -606,6 +686,42 @@ def _get_code_location_for_sensor(
     return workspace_process_context.create_request_context().get_code_location(
         sensor_origin.repository_origin.code_location_origin.location_name
     )
+
+
+def _resume_tick(
+    workspace_process_context: IWorkspaceProcessContext,
+    context: SensorLaunchContext,
+    tick: InstigatorTick,
+    external_sensor: ExternalSensor,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
+    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+):
+    instance = workspace_process_context.instance
+
+    if (
+        instance.schedule_storage
+        and instance.schedule_storage.supports_auto_materialize_asset_evaluations
+    ):
+        evaluations = [
+            record.get_evaluation_with_run_ids().evaluation
+            for record in instance.schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+                tick.tick_id
+            )
+        ]
+    else:
+        evaluations = []
+
+    yield from _handle_run_requests(
+        run_requests=_unrequested_runs(tick),
+        evaluations=evaluations,
+        instance=instance,
+        context=context,
+        external_sensor=external_sensor,
+        workspace_process_context=workspace_process_context,
+        submit_threadpool_executor=submit_threadpool_executor,
+        sensor_debug_crash_flags=sensor_debug_crash_flags,
+    )
+    context.update_state(TickStatus.SUCCESS, cursor=context._tick.cursor)  # noqa # TODO
 
 
 def _evaluate_sensor(
