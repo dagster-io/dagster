@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -70,7 +69,7 @@ class AssetCheckSpec(
         description: Optional[str] = None,
         additional_deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         blocking: bool = False,
-        metadata: Optional[RawMetadataMapping] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
