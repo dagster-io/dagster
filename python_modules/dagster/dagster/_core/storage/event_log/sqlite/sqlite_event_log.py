@@ -240,7 +240,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             result = conn.execute(insert_event_statement)
             event_id = result.inserted_primary_key[0]
 
-
         if event.is_dagster_event and event.dagster_event.asset_key:  # type: ignore
             check.invariant(
                 event.dagster_event_type in ASSET_EVENTS,
