@@ -7,11 +7,13 @@ on:
       - docs-prod # prod
     paths:
       - docs/**
+      - examples/doc_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
   pull_request:
     paths:
       - docs/**
+      - examples/doc_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
 concurrency:
@@ -67,6 +69,11 @@ jobs:
         env:
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
+      - name: Copy doc snippets to public directory
+        run: |
+          mkdir -p docs/next/public/docs_snippets
+          cp -R examples/docs_snippets/docs_snippets docs/next/public/docs_snippets/
+
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
         if: |
@@ -85,6 +92,12 @@ jobs:
       - name: Checkout docs-prod branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/docs-prod'
         uses: actions/checkout@v4
+
+      - name: Copy doc snippets to public directory (Production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs-prod'
+        run: |
+          mkdir -p docs/next/public/docs_snippets
+          cp -R examples/docs_snippets/docs_snippets docs/next/public/docs_snippets/
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
