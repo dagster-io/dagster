@@ -10,11 +10,12 @@ from dagster import (
 )
 
 from .information_schema import SdfInformationSchema
+from .workspace import SdfWorkspace
 
 
 def sdf_assets(
     *,
-    information_schema: SdfInformationSchema,
+    workspace: SdfWorkspace,
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -23,6 +24,11 @@ def sdf_assets(
     required_resource_keys: Optional[Set[str]] = None,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    information_schema = SdfInformationSchema(
+        workspace_dir=workspace.workspace_dir,
+        target_dir=workspace.target_dir,
+        environment=workspace.environment,
+    )
     outs, internal_asset_deps = information_schema.build_sdf_multi_asset_args(
         io_manager_key=io_manager_key
     )

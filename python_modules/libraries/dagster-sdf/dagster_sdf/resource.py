@@ -32,6 +32,7 @@ from .constants import (
     SDF_WORKSPACE_YML,
 )
 from .errors import DagsterSdfCliRuntimeError
+from .workspace import SdfWorkspace
 
 logger = get_dagster_logger()
 
@@ -378,11 +379,13 @@ class SdfCliResource(ConfigurableResource):
 
     def __init__(
         self,
-        workspace_dir: Union[str, Path],
+        workspace_dir: Union[str, Path, SdfWorkspace],
         global_config_flags: Optional[List[str]] = None,
         sdf_executable: str = SDF_EXECUTABLE,
         **kwargs,  # allow custom subclasses to add fields
     ):
+        if isinstance(workspace_dir, SdfWorkspace):
+            workspace_dir = workspace_dir.workspace_dir
         # static typing doesn't understand whats going on here, thinks these fields dont exist
         super().__init__(
             workspace_dir=workspace_dir,  # type: ignore

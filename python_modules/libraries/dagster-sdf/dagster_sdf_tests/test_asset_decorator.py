@@ -2,15 +2,15 @@ from pathlib import Path
 
 from dagster import AssetExecutionContext, AssetKey, materialize
 from dagster_sdf.asset_decorator import sdf_assets
-from dagster_sdf.information_schema import SdfInformationSchema
 from dagster_sdf.resource import SdfCliResource
+from dagster_sdf.workspace import SdfWorkspace
 
 from .sdf_workspaces import moms_flower_shop_path
 
 
 def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
     @sdf_assets(
-        information_schema=SdfInformationSchema(
+        workspace=SdfWorkspace(
             workspace_dir=moms_flower_shop_path, target_dir=moms_flower_shop_target_dir
         )
     )
@@ -55,7 +55,7 @@ def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
 
 def test_sdf_with_materialize(moms_flower_shop_target_dir: Path) -> None:
     @sdf_assets(
-        information_schema=SdfInformationSchema(
+        workspace=SdfWorkspace(
             workspace_dir=moms_flower_shop_path, target_dir=moms_flower_shop_target_dir
         )
     )
