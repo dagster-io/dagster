@@ -6,13 +6,13 @@ lesson: '7'
 
 # Creating the manifest during deployment
 
-To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because we built this file by running `dbt parse` during local development. You ran this manually in Lesson 3 and improved the experience in Lesson 4. However, you'll also need to build your dbt manifest file during deployment, which will require a couple additional steps. We recommend adopting CI/CD to automate this process.
+To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because we built this file by running `dbt parse` during local development. You ran this manually in Lesson 3 and improved the experience using `DbtProject`'s `prepare_if_dev` in Lesson 4. However, you'll also need to build your dbt manifest file during deployment, which will require a couple additional steps. We recommend adopting CI/CD to automate this process.
 
 Building your manifest for your production deployment will be needed for both open source and Dagster+ deployments. In this case, Dagster+’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
 
-Since your CI/CD will be running in a fresh environment, you'll need to install dbt and run `dbt deps` before building your manifest with `dbt parse`.
+Since your CI/CD will be running in a fresh environment, you'll need to install dbt and other dependencies before building your manifest.
 
-To get our deployment working, we need to add a step to our GitHub Actions workflow that runs the dbt commands required to generate the `manifest.json`. Specifically, we need to run `dbt deps` and `dbt parse` in the dbt project, just like you did during local development.
+To get our deployment working, we need to add a step to our GitHub Actions workflow that runs the commands required to generate the `manifest.json`. Specifically, we need to run the `dbt project prepare-and-package` command, available in the `dagster_dbt` package discussed earlier.
 
 1. In your Dagster project, locate the `.github/workflows` directory.
 2. Open the `deploy.yml` file.
@@ -29,8 +29,14 @@ To get our deployment working, we need to add a step to our GitHub Actions workf
         dagster-dbt project prepare-and-package --file dagster_university/assets/dbt.py
       shell: bash
     ```
-    
-5. Save and commit the changes. Make sure to push them to the remote!
+
+The code above:
+
+1. Creates a step named `Prepare DBT project for deployement`
+2. Upgrades `pip`, the package installer for Python 
+3. Navigates inside the `project-repo` folder
+4. Upgrades the project dependencies
+5. Prepares the manifest file by running the `dagster-dbt project prepare-and-package` command, specifying the file in which the `DbtProject` object is located.
 
 Once the new step is pushed to the remote, GitHub will automatically try to run a new job using the updated workflow.
 

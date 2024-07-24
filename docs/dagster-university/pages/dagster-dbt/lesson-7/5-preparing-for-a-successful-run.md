@@ -61,22 +61,47 @@ Because we’re still using a DuckDB-backed database, our `type` will also be `d
 
 ---
 
+## Adding a prod target to DbtProject
+
+Next, we need to update the `DbtProject` object in `dagster_university/assets/dbt.py` to specify what profile to target. To optimize the developer experience, let’s use an environment variable to specify the profile to target.
+
+1. In the `.env` file, define an environment variable named `DBT_TARGET` and set it to `dev`:
+
+   ```python
+   DBT_TARGET=dev
+   ```
+
+2. Next, import the `os` module at the top of the `dbt.py` file so the environment variable is accessible:
+
+   ```python
+   import os
+   ```
+
+3. Finally, scroll to the initialization of the DbtProject object, and use the new environment variable to access the profile to target. This should be on or around line 11:
+
+```python
+dbt_project = DbtProject(
+   project_dir=Path(__file__).joinpath("..", "..", "..", "analytics").resolve(),
+   target=os.getenv("DBT_TARGET")
+)
+```
+
+---
+
 ## Adding a prod target to deploy.yml
 
-Next, we need to update the dbt commands in the `.github/workflows/deploy.yml` file to target the new `prod` profile. This will ensure that dbt uses the correct connection details when the GitHub Action runs as part of our Dagster+ deployment.
+After that, we need to update the dbt commands in the `.github/workflows/deploy.yml` file to target the new `prod` profile. This will ensure that dbt uses the correct connection details when the GitHub Action runs as part of our Dagster+ deployment.
 
-Open the file, scroll to the dbt step you added, and add `-- target prod` after the `dbt parse` command. This command should be on or around line 52:
+Open the file, scroll to the environment variable sections, and set an environment variable named `DBT_TARGET` to `prod`. This command should be on or around line 12:
 
 ```bash
-- name: Parse dbt project and package with Dagster project
-  if: steps.prerun.outputs.result == 'pex-deploy'
-  run: |
-    pip install pip --upgrade
-    pip install dbt-duckdb
-    cd project-repo/analytics
-    dbt deps
-    dbt parse --target prod    ## add this flag
-  shell: bash
+env:
+  DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_ORGANIZATION }}
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  ENABLE_FAST_DEPLOYS: 'true'
+  PYTHON_VERSION: '3.8'
+  DAGSTER_CLOUD_FILE: 'dagster_cloud.yaml'
+  DBT_TARGET: 'prod'
 ```
 
 Save and commit the file to git. Don’t forget to push to remote!
@@ -104,7 +129,12 @@ The following table contains the environment variables we need to create in Dags
 ---
 
 - `DAGSTER_ENVIRONMENT`
-- Set this to `prod`. This will be used by your dbt resource to decide which target to use.
+- Set this to `prod`. This will be used by your resources and constants.
+
+---
+
+- `DBT_TARGET`
+- Set this to `prod`. This will be used by your dbt project and dbt resource to decide which target to use.
 
 ---
 
