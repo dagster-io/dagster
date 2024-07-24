@@ -132,11 +132,10 @@ def dlt_assets(
                 yield from dlt.run(context=context)
 
     """
-    dlt_dagster_translator_legacy = check.opt_inst_param(
-        dlt_dagster_translator, "dlt_dagster_translator", DagsterDltTranslator
-    )
     dagster_dlt_translator = check.inst_param(
-        dagster_dlt_translator or dlt_dagster_translator or DagsterDltTranslator(), "dagster_dlt_translator", DagsterDltTranslator
+        dagster_dlt_translator or dlt_dagster_translator or DagsterDltTranslator(),
+        "dagster_dlt_translator",
+        DagsterDltTranslator,
     )
     return multi_asset(
         name=name,
