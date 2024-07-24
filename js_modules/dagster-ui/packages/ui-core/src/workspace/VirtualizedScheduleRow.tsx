@@ -24,6 +24,7 @@ import {
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
@@ -144,7 +145,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                 <MiddleTruncate text={name} />
               </Link>
             </span>
-            {scheduleData ? (
+            {scheduleData && !isHiddenAssetGroupJob(scheduleData.pipelineName) ? (
               <Caption>
                 <PipelineReference
                   showIcon
