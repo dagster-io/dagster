@@ -20,6 +20,18 @@ dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
     dagster_dbt_translator=DagsterDbtTranslator(
         settings=DagsterDbtTranslatorSettings(enable_source_asset_checks=True)
     ),
+    select="+model_1",
 )
 def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+
+
+@dbt_assets(
+    manifest=dbt_manifest_path,
+    dagster_dbt_translator=DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_source_asset_checks=True)
+    ),
+    select="+model_2",
+)
+def dbt_project_assets_2(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
