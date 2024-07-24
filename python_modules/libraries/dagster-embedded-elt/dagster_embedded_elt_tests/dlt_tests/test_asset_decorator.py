@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Sequence
 
 import dlt
 import duckdb
@@ -16,7 +16,10 @@ from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, d
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
 
-from .dlt_test_sources.duckdb_with_transformer import pipeline
+from .dlt_test_sources.duckdb_with_transformer import (
+    pipeline,
+    pipeline as dlt_source,
+)
 
 
 def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
@@ -297,3 +300,125 @@ def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
         assert res2.success
 
     asyncio.run(main())
+
+
+def test_with_asset_key_replacements(dlt_pipeline: Pipeline) -> None:
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_asset_key(self, resource: DltResource) -> AssetKey:
+            return super().get_asset_key(resource).with_prefix("prefix")
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    assert my_dlt_assets.asset_deps.keys()
+    assert all(key.has_prefix(["prefix"]) for key in my_dlt_assets.asset_deps.keys())
+
+
+def test_with_deps_replacements(dlt_pipeline: Pipeline) -> None:
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_deps_asset_keys(self, _) -> Sequence[AssetKey]:
+            return []
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    assert my_dlt_assets.asset_deps.keys()
+    assert all(not deps for deps in my_dlt_assets.asset_deps.values())
+
+
+def test_with_description_replacements(dlt_pipeline: Pipeline) -> None:
+    expected_description = "customized description"
+
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_description(self, _) -> Optional[str]:
+            return expected_description
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    for description in my_dlt_assets.descriptions_by_key.values():
+        assert description == expected_description
+
+
+def test_with_metadata_replacements(dlt_pipeline: Pipeline) -> None:
+    expected_metadata = {"customized": "metadata"}
+
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:
+            return expected_metadata
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    for metadata in my_dlt_assets.metadata_by_key.values():
+        assert metadata["customized"] == "metadata"
+
+
+def test_with_group_replacements(dlt_pipeline: Pipeline) -> None:
+    expected_group = "customized_group"
+
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_group_name(self, _) -> Optional[str]:
+            return expected_group
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    for group in my_dlt_assets.group_names_by_key.values():
+        assert group == expected_group
+
+
+def test_with_owner_replacements(dlt_pipeline: Pipeline) -> None:
+    expected_owners = ["custom@custom.com"]
+
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_owners(self, _) -> Optional[Sequence[str]]:
+            return expected_owners
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    for spec in my_dlt_assets.specs:
+        assert spec.owners == expected_owners
+
+
+def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
+    expected_tags = {"customized": "tag", "dagster/storage_kind": "duckdb"}
+
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_tags(self, _) -> Optional[Mapping[str, str]]:
+            return expected_tags
+
+    @dlt_assets(
+        dlt_source=dlt_source(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def my_dlt_assets(dlt_pipeline_resource: DagsterDltResource): ...
+
+    for tags in my_dlt_assets.tags_by_key.values():
+        assert tags == expected_tags
