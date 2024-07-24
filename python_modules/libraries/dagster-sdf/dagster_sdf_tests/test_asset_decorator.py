@@ -9,7 +9,11 @@ from .sdf_workspaces import moms_flower_shop_path
 
 
 def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
-    @sdf_assets(information_schema=SdfInformationSchema(target_dir=moms_flower_shop_target_dir))
+    @sdf_assets(
+        information_schema=SdfInformationSchema(
+            workspace_dir=moms_flower_shop_path, target_dir=moms_flower_shop_target_dir
+        )
+    )
     def my_flower_shop_assets(): ...
 
     assert my_flower_shop_assets.asset_deps == {
@@ -50,7 +54,11 @@ def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
 
 
 def test_sdf_with_materialize(moms_flower_shop_target_dir: Path) -> None:
-    @sdf_assets(information_schema=SdfInformationSchema(target_dir=moms_flower_shop_target_dir))
+    @sdf_assets(
+        information_schema=SdfInformationSchema(
+            workspace_dir=moms_flower_shop_path, target_dir=moms_flower_shop_target_dir
+        )
+    )
     def my_sdf_assets(context: AssetExecutionContext, sdf: SdfCliResource):
         yield from sdf.cli(["run"], context=context).stream()
 

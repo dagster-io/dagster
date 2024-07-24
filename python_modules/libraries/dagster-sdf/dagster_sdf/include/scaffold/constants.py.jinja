@@ -1,0 +1,3 @@
+from pathlib import Path
+
+sdf_workspace_dir = Path(__file__).joinpath({{ sdf_workspace_dir_relative_path_parts | join(', ')}}).resolve()
