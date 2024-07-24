@@ -1,4 +1,4 @@
-from assets_pandas_type_metadata import defs
+from assets_pandas_type_metadata.definitions import defs
 
 
 def test_defs_can_load():
