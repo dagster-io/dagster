@@ -27,9 +27,7 @@ def upgrade():
             ["run_id", "id"],
             unique=False,
             postgresql_concurrently=True,
-            mysql_length={
-                "run_id": 255
-            },
+            mysql_length={"run_id": 255},
         )
 
 
