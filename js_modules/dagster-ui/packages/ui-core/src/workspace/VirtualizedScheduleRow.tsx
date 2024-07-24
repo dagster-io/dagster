@@ -33,9 +33,14 @@ import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {CronTag} from '../schedules/CronTag';
+import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
 import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {
+  ScheduleAssetSelectionQuery,
+  ScheduleAssetSelectionQueryVariables,
+} from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
@@ -68,7 +73,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   const repo = useRepository(repoAddress);
 
-  const [querySchedule, queryResult] = useLazyQuery<
+  const [querySchedule, scheduleQueryResult] = useLazyQuery<
     SingleScheduleQuery,
     SingleScheduleQueryVariables
   >(SINGLE_SCHEDULE_QUERY, {
@@ -81,12 +86,35 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     },
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(queryResult, 'SingleScheduleQuery');
 
-  useDelayedRowQuery(querySchedule);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useBlockTraceOnQueryResult(scheduleQueryResult, 'SingleScheduleQuery');
 
-  const {data} = queryResult;
+  const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
+    ScheduleAssetSelectionQuery,
+    ScheduleAssetSelectionQueryVariables
+  >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
+    variables: {
+      scheduleSelector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        scheduleName: name,
+      },
+    },
+  });
+
+  useBlockTraceOnQueryResult(scheduleAssetSelectionQueryResult, 'ScheduleAssetSelectionQuery');
+
+  useDelayedRowQuery(
+    React.useCallback(() => {
+      querySchedule();
+      queryScheduleAssetSelection();
+    }, [querySchedule, queryScheduleAssetSelection]),
+  );
+
+  useQueryRefreshAtInterval(scheduleQueryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(scheduleAssetSelectionQueryResult, FIFTEEN_SECONDS);
+
+  const {data} = scheduleQueryResult;
 
   const scheduleData = React.useMemo(() => {
     if (data?.scheduleOrError.__typename !== 'Schedule') {
@@ -183,7 +211,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               ) : null}
             </Box>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={scheduleQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -204,7 +232,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               <TickStatusTag tick={tick} />
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={scheduleQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -217,7 +245,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               showSummary={false}
             />
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={scheduleQueryResult} />
           )}
         </RowCell>
         <RowCell>

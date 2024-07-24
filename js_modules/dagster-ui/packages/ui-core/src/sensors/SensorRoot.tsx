@@ -18,6 +18,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {AUTOMATION_ASSET_SELECTION_FRAGMENT} from '../automation/AutomationAssetSelectionFragment';
 import {InstigationTickStatus, SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -69,6 +70,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     notifyOnNetworkStatusChange: true,
   });
   useBlockTraceOnQueryResult(queryResult, 'SensorRootQuery');
+
   const selectionQueryResult = useQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
@@ -130,6 +132,10 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   }
 
   const {instance} = data;
+  const assetSelection =
+    selectionQueryResult.data?.sensorOrError.__typename === 'Sensor'
+      ? selectionQueryResult.data.sensorOrError.assetSelection
+      : null;
 
   if (
     sensorOrError.sensorType === SensorType.AUTO_MATERIALIZE ||
@@ -143,7 +149,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
           sensor={sensorOrError}
           daemonHealth={assetDaemonStatus.healthy}
           refreshState={refreshState}
-          selectionQueryResult={selectionQueryResult}
+          assetSelection={assetSelection || null}
         />
         <SensorPageAutomaterialize
           repoAddress={repoAddress}
@@ -164,7 +170,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         sensor={sensorOrError}
         daemonHealth={sensorDaemonStatus.healthy}
         refreshState={refreshState}
-        selectionQueryResult={selectionQueryResult}
+        assetSelection={assetSelection || null}
       />
       <SensorInfo
         sensorDaemonStatus={sensorDaemonStatus}
@@ -227,34 +233,13 @@ export const SENSOR_ASSET_SELECTIONS_QUERY = gql`
       ... on Sensor {
         id
         assetSelection {
-          ...SensorAssetSelectionFragment
+          ...AutomationAssetSelectionFragment
         }
       }
       ...PythonErrorFragment
     }
   }
 
-  fragment SensorAssetSelectionFragment on AssetSelection {
-    assetSelectionString
-    assetsOrError {
-      ... on AssetConnection {
-        nodes {
-          id
-          key {
-            path
-          }
-          definition {
-            id
-            autoMaterializePolicy {
-              __typename
-            }
-          }
-        }
-      }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
-    }
-  }
+  ${AUTOMATION_ASSET_SELECTION_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

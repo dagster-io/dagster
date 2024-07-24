@@ -3,6 +3,7 @@ import {Box, Checkbox, MiddleTruncate, Tag, Tooltip} from '@dagster-io/ui-compon
 import {forwardRef, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
+import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
@@ -10,7 +11,6 @@ import {LastRunSummary} from '../instance/LastRunSummary';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
 import {SensorSwitch} from '../sensors/SensorSwitch';
-import {SensorTargetList} from '../sensors/SensorTargetList';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
@@ -118,6 +118,10 @@ export const VirtualizedAutomationSensorRow = forwardRef(
 
     const sensorType = sensorData?.sensorType;
     const sensorInfo = sensorType ? SENSOR_TYPE_META[sensorType] : null;
+    const selectedAssets =
+      sensorAssetSelectionQueryResult.data?.sensorOrError.__typename === 'Sensor'
+        ? sensorAssetSelectionQueryResult.data.sensorOrError.assetSelection
+        : null;
 
     return (
       <div ref={ref} data-index={index}>
@@ -160,11 +164,11 @@ export const VirtualizedAutomationSensorRow = forwardRef(
           <RowCell>
             <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
               {sensorData ? (
-                <SensorTargetList
+                <AutomationTargetList
                   targets={sensorData.targets}
                   repoAddress={repoAddress}
-                  selectionQueryResult={sensorAssetSelectionQueryResult}
-                  sensorType={sensorData.sensorType}
+                  assetSelection={selectedAssets}
+                  automationType={sensorData.sensorType}
                 />
               ) : null}
             </Box>
