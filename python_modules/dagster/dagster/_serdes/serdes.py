@@ -148,6 +148,7 @@ class WhitelistMap(NamedTuple):
     object_serializers: Dict[str, "ObjectSerializer"]
     object_deserializers: Dict[str, "ObjectSerializer"]
     enum_serializers: Dict[str, "EnumSerializer"]
+    object_type_map: Dict[str, Type]
 
     def register_object(
         self,
@@ -194,6 +195,8 @@ class WhitelistMap(NamedTuple):
             for old_storage_name in old_storage_names:
                 self.object_deserializers[old_storage_name] = serializer
 
+        self.object_type_map[name] = serializer.klass
+
     def register_enum(
         self,
         name: str,
@@ -216,11 +219,12 @@ class WhitelistMap(NamedTuple):
 
     @staticmethod
     def create() -> "WhitelistMap":
-        return WhitelistMap(object_serializers={}, object_deserializers={}, enum_serializers={})
-
-    def get_type_map(self) -> Mapping[str, Type]:
-        # Return string name -> type mapping of all registered types
-        return {name: ser.klass for name, ser in self.object_serializers.items()}
+        return WhitelistMap(
+            object_serializers={},
+            object_deserializers={},
+            enum_serializers={},
+            object_type_map={},
+        )
 
 
 _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
@@ -511,7 +515,12 @@ class EnumSerializer(Serializer, Generic[T_Enum]):
         return self.storage_name or self.klass.__name__
 
 
-EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (None, [], {}, set())
+EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (
+    None,
+    [],
+    {},
+    set(),
+)
 
 
 class ObjectSerializer(Serializer, Generic[T]):
@@ -754,7 +763,10 @@ class SetToSequenceFieldSerializer(FieldSerializer):
         return set(sequence_value) if sequence_value is not None else None
 
     def pack(
-        self, set_value: Optional[AbstractSet[Any]], whitelist_map: WhitelistMap, descent_path: str
+        self,
+        set_value: Optional[AbstractSet[Any]],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
     ) -> Optional[Sequence[Any]]:
         return (
             sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
@@ -1075,11 +1087,12 @@ def deserialize_value(
 
     # Never issue warnings when deserializing deprecated objects.
     with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
-        whitelist_map.get_type_map()
+        whitelist_map.object_type_map
     ):
         context = UnpackContext()
         unpacked_value = seven.json.loads(
-            val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)
+            val,
+            object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
         )
         unpacked_value = context.finalize_unpack(unpacked_value)
         if as_type and not (
