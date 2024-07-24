@@ -42,6 +42,9 @@ Once you are authenticated, you can publish the newly built images with:
 
     dagster-image push-all --name <IMAGE NAME>
 
+Note that for the buildkite-test image you must also push the images to the dagster-buildkite
+AWS account as well (559363006250).
+
 To see your published images on AWS, go to https://elementl.awsapps.com/start#/
 and enter the "Management Console" for the "elementl" account (#968703565975).
 Click through to "ECR" and you should see a list of "Private repositories".
