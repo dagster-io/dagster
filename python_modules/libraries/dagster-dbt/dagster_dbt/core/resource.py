@@ -838,7 +838,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         adapter_type = self._dbt_cli_invocation.manifest.get("metadata", {}).get("adapter_type")
         if adapter_type == "snowflake":
             try:
-                from dagster_cloud.dagster_insights import (  # type: ignore
+                from dagster_cloud.dagster_insights import (  # pyright: ignore[reportMissingImports]
                     dbt_with_snowflake_insights,
                 )
             except ImportError as e:
@@ -859,7 +859,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             )
         elif adapter_type == "bigquery":
             try:
-                from dagster_cloud.dagster_insights import (  # type: ignore
+                from dagster_cloud.dagster_insights import (  # pyright: ignore[reportMissingImports]
                     dbt_with_bigquery_insights,
                 )
             except ImportError as e:
