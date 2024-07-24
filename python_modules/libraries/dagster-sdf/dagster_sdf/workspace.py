@@ -64,7 +64,7 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
             )
             if not information_schema.is_hydrated():
                 raise DagsterSdfInformationSchemaNotFoundError(
-                    f"Sdf Information Schema was not generated correctly at expected path {workspace.info_schema_dir} "
+                    f"Sdf Information Schema was not generated correctly at expected path {information_schema.information_schema_dir} "
                     f"after running '{self.prepare.__qualname__}'. Ensure the implementation respects "
                     "all Sdf Workspace properties."
                 )
