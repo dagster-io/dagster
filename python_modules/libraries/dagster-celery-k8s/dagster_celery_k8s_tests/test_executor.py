@@ -14,7 +14,8 @@ from dagster._serdes import serialize_value, unpack_value
 from dagster_celery_k8s.executor import celery_k8s_job_executor
 
 
-@op( tags={
+@op(
+    tags={
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
@@ -23,7 +24,8 @@ from dagster_celery_k8s.executor import celery_k8s_job_executor
                 }
             }
         }
-    })
+    }
+)
 def op1():
     return
 
@@ -85,8 +87,7 @@ def celery_mock():
 
 
 def test_per_step_k8s_config(kubeconfig_file):
-    """
-    We expected precedence order as follows:
+    """We expected precedence order as follows:
     1. celery_k8s_job_executor is most important, it precedes everything else. Is specified, `run_config` from RunRequest is ignored.
     Precedence order:
       1) at job-s definition (via executor_def=...)
