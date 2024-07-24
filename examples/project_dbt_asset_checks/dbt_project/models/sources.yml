@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: raw_data
+    tables:
+      - name: customer
+        columns:
+        - name: a
+          tests:
+            - unique
+    config:
+      meta:
+        dagster:
+          asset_key: [ingest_customer]

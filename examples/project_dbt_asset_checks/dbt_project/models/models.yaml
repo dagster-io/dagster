@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: model_1
+    columns:
+      - name: a
+        tests:
+          - unique
