@@ -18,7 +18,7 @@ def build_dlt_asset_specs(
     dlt_source: DltSource,
     dlt_pipeline: Pipeline,
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
-) -> List[AssetSpec]:
+) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a dlt source and pipeline.
 
     Args:
