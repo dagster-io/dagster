@@ -10,6 +10,7 @@ from dagster import (
     _check as check,
     materialize,
 )
+from dagster._check.functions import CheckError
 from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
@@ -138,6 +139,23 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
         # staging tables are views, so we don't attempt to get row counts for them
         if "stg" not in asset_key.path[-1]
     ), str(metadata_by_asset_key)
+
+
+def test_insights_err_not_snowflake_or_bq(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().with_insights()
+
+    with pytest.raises(CheckError) as exc_info:
+        materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+        )
+
+    assert "is not supported for adapter type `duckdb`" in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
