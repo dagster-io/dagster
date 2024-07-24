@@ -35,18 +35,13 @@ To complete the steps in this guide, you'll need:
 <TabGroup>
 <TabItem name="Using assets">
 
-First, instrument the Dagster <PyObject module="dagster_dbt" object="dbt_assets" decorator /> function with `dbt_with_snowflake_insights`:
+First, append <PyObject object="with_insights" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="with_insights()" /> to the dbt CLI call in your Dagster <PyObject module="dagster_dbt" object="dbt_assets" decorator /> function:
 
 ```python
-from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
-
-
 @dbt_assets(...)
 def my_asset(context: AssetExecutionContext, dbt: DbtCliResource):
-    # Typically you have a `yield from dbt_resource.cli(...)`.
-    # Wrap the original call with `dbt_with_snowflake_insights` as below.
-    dbt_cli_invocation = dbt_resource.cli(["build"], context=context)
-    yield from dbt_with_snowflake_insights(context, dbt_cli_invocation)
+    # Chain `with_insights` after any other metadata fetch, e.g. `fetch_row_count`
+    yield from dbt_resource.cli(["build"], context=context).stream().with_insights()
 ```
 
 This passes through all underlying events and emits an <PyObject object="AssetObservation" /> for each asset materialization. The observation contains the dbt invocation ID and unique ID recorded in the Dagster event log.
@@ -54,20 +49,15 @@ This passes through all underlying events and emits an <PyObject object="AssetOb
 </TabItem>
 <TabItem name="Using ops and jobs">
 
-First, instrument the op function with `dbt_with_snowflake_insights`:
+First, append <PyObject object="with_insights" module="dagster_cloud.dagster_insights" displayText="with_insights()" /> to the dbt CLI call in your Dagster op function:
 
 ```python
-from dagster_cloud.dagster_insights import dbt_with_snowflake_insights
-
-
 @op(out={})
 def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
-    # Typically you have a `yield from dbt_resource.cli(...)`.
-    # Wrap the original call with `dbt_with_snowflake_insights` as below.
-    dbt_cli_invocation = dbt.cli(
+    # Chain `with_insights` after any other metadata fetch, e.g. `fetch_row_count`
+    yield from  dbt.cli(
         ["build"], context=context, manifest=dbt_manifest_path
-    )
-    yield from dbt_with_snowflake_insights(context, dbt_cli_invocation)
+    ).stream().with_insights()
 
 @job
 def my_dbt_job():
