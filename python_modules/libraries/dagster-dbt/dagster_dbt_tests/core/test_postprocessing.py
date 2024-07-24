@@ -15,12 +15,12 @@ from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resource import (
+from dagster_dbt.core.dbt_cli_invocation import (
     DbtCliInvocation,
-    DbtCliResource,
     DbtDagsterEventType,
     _get_dbt_resource_props_from_event,
 )
+from dagster_dbt.core.resource import DbtCliResource
 
 from ..conftest import _create_dbt_invocation
 from ..dbt_projects import test_jaffle_shop_path

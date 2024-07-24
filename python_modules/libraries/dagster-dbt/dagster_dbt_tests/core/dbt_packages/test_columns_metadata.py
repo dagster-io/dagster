@@ -101,7 +101,7 @@ def test_exception_fetch_column_schema_with_adapter(
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
 
     mock_adapter = mocker.patch(
-        "dagster_dbt.core.resource.DbtCliInvocation.adapter",
+        "dagster_dbt.core.dbt_cli_invocation.DbtCliInvocation.adapter",
         return_value=mocker.MagicMock(),
         new_callable=mocker.PropertyMock,
     )
@@ -145,7 +145,7 @@ def test_exception_column_schema(
         side_effect=Exception("An error occurred"),
     )
     mocker.patch(
-        "dagster_dbt.core.resource.default_metadata_from_dbt_resource_props",
+        "dagster_dbt.core.dbt_cli_invocation.default_metadata_from_dbt_resource_props",
         side_effect=Exception("An error occurred"),
     )
 
@@ -542,10 +542,10 @@ def test_column_lineage(
 ) -> None:
     # Patch get_relation_from_adapter so that we can track how often
     # relations are queried from the adapter vs cached
-    from dagster_dbt.core.resource import _get_relation_from_adapter
+    from dagster_dbt.core.dbt_cli_invocation import _get_relation_from_adapter
 
     get_relation_from_adapter = mocker.patch(
-        "dagster_dbt.core.resource._get_relation_from_adapter",
+        "dagster_dbt.core.dbt_cli_invocation._get_relation_from_adapter",
         side_effect=_get_relation_from_adapter,
     )
 
