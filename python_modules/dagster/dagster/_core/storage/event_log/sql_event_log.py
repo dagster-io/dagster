@@ -428,7 +428,7 @@ class SqlEventLogStorage(EventLogStorage):
         keys_to_index = self.get_asset_tags_to_index(set(tags.keys()))
         return {k: v for k, v in tags.items() if k in keys_to_index}
 
-    def store_event(self, event: EventLogEntry) -> None:
+    def store_event(self, event: EventLogEntry) -> int:
         """Store an event corresponding to a pipeline run.
 
         Args:
@@ -460,6 +460,8 @@ class SqlEventLogStorage(EventLogStorage):
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
+
+        return event_id
 
     def get_records_for_run(
         self,
