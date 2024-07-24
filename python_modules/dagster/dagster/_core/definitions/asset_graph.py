@@ -25,6 +25,7 @@ from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependenc
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 class AssetNode(BaseAssetNode):
@@ -169,10 +170,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         - Creating unexecutable external asset definitions for any keys referenced by asset checks
           or as dependencies, but for which no definition was provided.
         """
-        from dagster._core.definitions.external_asset import (
-            create_external_asset_from_source_asset,
-            external_asset_from_spec,
-        )
+        from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
         # Convert any source assets to external assets
         assets_defs = [
@@ -208,12 +206,18 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         all_referenced_asset_keys = {
             key for assets_def in assets_defs for key in assets_def.dependency_keys
         }
-        for key in all_referenced_asset_keys.difference(all_keys):
-            assets_defs.append(
-                external_asset_from_spec(
-                    AssetSpec(key=key, metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True})
+        with disable_dagster_warnings():
+            for key in all_referenced_asset_keys.difference(all_keys):
+                assets_defs.append(
+                    AssetsDefinition(
+                        specs=[
+                            AssetSpec(
+                                key=key,
+                                metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True},
+                            )
+                        ]
+                    )
                 )
-            )
         return assets_defs
 
     @classmethod
