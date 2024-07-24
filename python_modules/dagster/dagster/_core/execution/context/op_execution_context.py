@@ -638,6 +638,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         else:
             return key
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key` instead.")
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output.
@@ -695,6 +696,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_time_window` instead.")
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the output asset.
@@ -770,6 +772,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
@@ -1027,6 +1030,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         return result
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         """Returns a list of the partition keys for the given output.
