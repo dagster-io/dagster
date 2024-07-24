@@ -843,7 +843,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 )
             except ImportError as e:
                 raise DagsterInvalidPropertyError(
-                    "The `dagster_cloud` library is required to use the `with_snowflake_insights`"
+                    "The `dagster_cloud` library is required to use the `with_insights`"
                     " method. Install the library with `pip install dagster-cloud`."
                 ) from e
 
@@ -864,7 +864,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 )
             except ImportError as e:
                 raise DagsterInvalidPropertyError(
-                    "The `dagster_cloud` library is required to use the `with_bigquery_insights`"
+                    "The `dagster_cloud` library is required to use the `with_insights`"
                     " method. Install the library with `pip install dagster-cloud`."
                 ) from e
 
