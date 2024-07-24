@@ -14,7 +14,16 @@ from dagster._serdes import serialize_value, unpack_value
 from dagster_celery_k8s.executor import celery_k8s_job_executor
 
 
-@op
+@op( tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "444m", "memory": "444Mi"},
+                    "limits": {"cpu": "444m", "memory": "444Mi"},
+                }
+            }
+        }
+    })
 def op1():
     return
 
@@ -76,6 +85,17 @@ def celery_mock():
 
 
 def test_per_step_k8s_config(kubeconfig_file):
+    """
+    We expected precedence order as follows:
+    1. celery_k8s_job_executor is most important, it precedes everything else. Is specified, `run_config` from RunRequest is ignored.
+    Precedence order:
+      1) at job-s definition (via executor_def=...)
+      2) at Definitions (via executor=...)
+    2. after it goes run_config from request limit in schedule. If celery_k8s_job_executor is configured (via Definitions or via job), RunRequest config is ignored.
+    3. Then goes tag "dagster-k8s/config" from op.
+
+    This test only checks executor and op's overrides.
+    """
     mock_k8s_client_batch_api = mock.MagicMock()
 
     default_config = dict(
