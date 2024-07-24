@@ -28,6 +28,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -1085,26 +1086,65 @@ def deserialize_value(
     """
     check.str_param(val, "val")
 
-    # Never issue warnings when deserializing deprecated objects.
+    return deserialize_values([val], as_type, whitelist_map)[0]
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Type[T_PackableValue],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[T_PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: None = ...,
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]: ...
+
+
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ] = None,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
+    """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
     with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
         whitelist_map.object_type_map
     ):
-        context = UnpackContext()
-        unpacked_value = seven.json.loads(
-            val,
-            object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
-        )
-        unpacked_value = context.finalize_unpack(unpacked_value)
-        if as_type and not (
-            is_named_tuple_instance(unpacked_value)
-            if as_type is NamedTuple
-            else isinstance(unpacked_value, as_type)
-        ):
-            raise DeserializationError(
-                f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
+        unpacked_values = []
+        for val in vals:
+            context = UnpackContext()
+            unpacked_value = seven.json.loads(
+                val,
+                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
             )
+            unpacked_value = context.finalize_unpack(unpacked_value)
+            if as_type and not (
+                is_named_tuple_instance(unpacked_value)
+                if as_type is NamedTuple
+                else isinstance(unpacked_value, as_type)
+            ):
+                raise DeserializationError(
+                    f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
+                )
+            unpacked_values.append(unpacked_value)
 
-    return unpacked_value
+    return unpacked_values
 
 
 class UnknownSerdesValue:
