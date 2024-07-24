@@ -264,6 +264,26 @@
     dict({
       'description': None,
       'minIntervalSeconds': 30,
+      'name': 'jobless_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': '__anonymous_asset_job_jobless_sensor',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
+      'minIntervalSeconds': 30,
       'name': 'logging_sensor',
       'sensorState': dict({
         'runs': list([

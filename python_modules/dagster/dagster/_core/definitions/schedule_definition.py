@@ -49,7 +49,7 @@ from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
 from .run_request import RunRequest, SkipReason
-from .target import AutomationTarget, ExecutableDefinition
+from .target import ANONYMOUS_ASSET_JOB_PREFIX, AutomationTarget, ExecutableDefinition
 from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
@@ -990,3 +990,7 @@ class ScheduleDefinition(IHasInternalInit):
         a code location.
         """
         return self._default_status
+
+    @property
+    def has_anonymous_job(self) -> bool:
+        return bool(self._target and self._target.job_name.startswith(ANONYMOUS_ASSET_JOB_PREFIX))
