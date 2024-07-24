@@ -1,8 +1,4 @@
-from dagster import (
-    SourceAsset,
-    TableSchema,
-    asset,
-)
+from dagster import SourceAsset, TableSchema, asset
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._utils import file_relative_path
 from dagster_dbt import DbtCliResource, dbt_assets

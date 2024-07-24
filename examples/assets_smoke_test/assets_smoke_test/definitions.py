@@ -1,8 +1,4 @@
-from dagster import (
-    Definitions,
-    EnvVar,
-    load_assets_from_modules,
-)
+from dagster import Definitions, EnvVar, load_assets_from_modules
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from .assets import python_and_dbt_assets
