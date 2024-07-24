@@ -7,6 +7,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+from dagster._annotations import deprecated_param
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
@@ -58,12 +59,18 @@ def build_dlt_asset_specs(
     ]
 
 
+@deprecated_param(
+    param="dlt_dagster_translator",
+    breaking_version="1.8",
+    additional_warn_text="Use `dagster_dlt_translator` instead.",
+)
 def dlt_assets(
     *,
     dlt_source: DltSource,
     dlt_pipeline: Pipeline,
     name: Optional[str] = None,
     group_name: Optional[str] = None,
+    dlt_dagster_translator: Optional[DagsterDltTranslator] = None,
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -125,9 +132,14 @@ def dlt_assets(
                 yield from dlt.run(context=context)
 
     """
+    dlt_dagster_translator_legacy = check.opt_inst_param(
+        dlt_dagster_translator, "dlt_dagster_translator", DagsterDltTranslator
+    )
+    dagster_dlt_translator = check.opt_inst_param(
+        dagster_dlt_translator, "dagster_dlt_translator", DagsterDltTranslator
+    )
     dagster_dlt_translator = (
-        check.opt_inst_param(dagster_dlt_translator, "dlt_dagster_translator", DagsterDltTranslator)
-        or DagsterDltTranslator()
+        dagster_dlt_translator or dlt_dagster_translator_legacy or DagsterDltTranslator()
     )
     return multi_asset(
         name=name,
