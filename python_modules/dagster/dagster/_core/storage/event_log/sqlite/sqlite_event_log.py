@@ -237,7 +237,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         run_id = event.run_id
 
         with self.run_connection(run_id) as conn:
-            conn.execute(insert_event_statement)
+            result = conn.execute(insert_event_statement)
+            event_id = result.inserted_primary_key[0]
+
 
         if event.is_dagster_event and event.dagster_event.asset_key:  # type: ignore
             check.invariant(
@@ -245,8 +247,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 "Can only store asset materializations, materialization_planned, and"
                 " observations in index database",
             )
-
-            event_id = None
 
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
