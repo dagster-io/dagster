@@ -3113,6 +3113,7 @@ export type PartitionBackfill = {
 };
 
 export type PartitionBackfillCancelableRunsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -3125,10 +3126,12 @@ export type PartitionBackfillPartitionsTargetedForAssetKeyArgs = {
 };
 
 export type PartitionBackfillRunsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type PartitionBackfillUnfinishedRunsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
