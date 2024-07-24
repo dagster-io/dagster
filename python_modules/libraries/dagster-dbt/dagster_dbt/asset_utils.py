@@ -876,6 +876,24 @@ def build_dbt_multi_asset_args(
                     )
                 )
 
+            if dagster_dbt_translator.settings.enable_source_asset_checks:
+                if dbt_parent_resource_props["resource_type"].startswith("source"):
+                    test_unique_ids = [
+                        child_unique_id
+                        for child_unique_id in manifest["child_map"][parent_unique_id]
+                        if child_unique_id.startswith("test")
+                    ]
+                    for test_unique_id in test_unique_ids:
+                        check_spec = default_asset_check_fn(
+                            manifest,
+                            dbt_resource_props_by_dbt_unique_id,
+                            dagster_dbt_translator,
+                            parent_asset_key,
+                            test_unique_id,
+                        )
+                        if check_spec:
+                            check_specs_by_key[check_spec.key] = check_spec
+
         self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
             dbt_resource_props,
             dbt_parent_resource_props=dbt_resource_props,

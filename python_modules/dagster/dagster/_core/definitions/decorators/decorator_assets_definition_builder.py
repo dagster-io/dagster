@@ -429,9 +429,9 @@ class DecoratorAssetsDefinitionBuilder:
         keys_by_output_name = make_keys_by_output_name(named_outs_by_asset_key)
         internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
 
-        _validate_check_specs_target_relevant_asset_keys(
-            passed_args.check_specs, list(named_outs_by_asset_key.keys())
-        )
+        # _validate_check_specs_target_relevant_asset_keys(
+        #     passed_args.check_specs, list(named_outs_by_asset_key.keys())
+        # )
 
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,

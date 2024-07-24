@@ -33,6 +33,7 @@ class DagsterDbtTranslatorSettings:
     Args:
         enable_asset_checks (bool): Whether to load dbt tests as Dagster asset checks.
             Defaults to True.
+        enable_source_asset_checks (bool): Whether to load dbt tests as Dagster asset checks for dbt source models
         enable_duplicate_source_asset_keys (bool): Whether to allow dbt sources with duplicate
             Dagster asset keys. Defaults to False.
         enable_code_references (bool): Whether to enable Dagster code references for dbt resources.
@@ -42,6 +43,7 @@ class DagsterDbtTranslatorSettings:
     """
 
     enable_asset_checks: bool = True
+    enable_source_asset_checks: bool = False
     enable_duplicate_source_asset_keys: bool = False
     enable_code_references: bool = False
     enable_dbt_selection_by_name: bool = False
