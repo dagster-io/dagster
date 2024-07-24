@@ -55,6 +55,8 @@ Assets (dlt)
 
 .. autodecorator:: dlt_assets
 
+.. autofunction:: build_dlt_asset_specs
+
 .. autoclass:: DagsterDltTranslator
 
 Resources (dlt)

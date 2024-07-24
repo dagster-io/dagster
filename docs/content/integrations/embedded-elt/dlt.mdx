@@ -275,7 +275,7 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
         destination="snowflake",
         progress="log",
     ),
-    dlt_dagster_translator=CustomDagsterDltTranslator(),
+    dagster_dlt_translator=CustomDagsterDltTranslator(),
 )
 def dlt_example_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
     yield from dlt.run(context=context)
