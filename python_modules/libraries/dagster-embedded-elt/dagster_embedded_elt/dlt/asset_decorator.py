@@ -43,10 +43,10 @@ def build_dlt_asset_specs(
             description=dagster_dlt_translator.get_description(dlt_source_resource),
             group_name=dagster_dlt_translator.get_group_name(dlt_source_resource),
             metadata={
+                **dagster_dlt_translator.get_metadata(dlt_source_resource),
                 META_KEY_SOURCE: dlt_source,
                 META_KEY_PIPELINE: dlt_pipeline,
-                META_KEY_TRANSLATOR: dagster_dlt_translator,
-                **dagster_dlt_translator.get_metadata(dlt_source_resource),
+                META_KEY_TRANSLATOR: dagster_dlt_translator,             
             },
             owners=dagster_dlt_translator.get_owners(dlt_source_resource),
             tags={
