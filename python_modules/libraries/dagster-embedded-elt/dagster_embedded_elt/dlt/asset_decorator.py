@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional, Sequence
 
 from dagster import (
     AssetsDefinition,
@@ -47,7 +47,7 @@ def build_dlt_asset_specs(
                 **dagster_dlt_translator.get_metadata(dlt_source_resource),
                 META_KEY_SOURCE: dlt_source,
                 META_KEY_PIPELINE: dlt_pipeline,
-                META_KEY_TRANSLATOR: dagster_dlt_translator,             
+                META_KEY_TRANSLATOR: dagster_dlt_translator,
             },
             owners=dagster_dlt_translator.get_owners(dlt_source_resource),
             tags={
