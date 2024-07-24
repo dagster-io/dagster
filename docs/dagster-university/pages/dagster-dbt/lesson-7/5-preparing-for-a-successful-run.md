@@ -77,7 +77,7 @@ Next, we need to update the `DbtProject` object in `dagster_university/assets/db
    import os
    ```
 
-3. Finally, scroll to the initialization of the DbtProject object, and use the new environment variable to access the profile to target. This should be on or around line 11:
+3. Finally, scroll to the initialization of the `DbtProject` object, and use the new environment variable to access the profile to target. This should be on or around line 11:
 
 ```python
 dbt_project = DbtProject(
