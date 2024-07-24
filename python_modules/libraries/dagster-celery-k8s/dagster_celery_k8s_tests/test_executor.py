@@ -131,6 +131,7 @@ def test_per_step_k8s_config(kubeconfig_file):
                         }
                     },
                     "load_incluster_config": False,
+                    "kubeconfig_file": kubeconfig_file,
                 }
             }
         }
