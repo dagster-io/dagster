@@ -24,7 +24,6 @@ from .core.resource import DbtCliResource as DbtCliResource
 from .dagster_dbt_translator import (
     DagsterDbtTranslator as DagsterDbtTranslator,
     DagsterDbtTranslatorSettings as DagsterDbtTranslatorSettings,
-    KeyPrefixDagsterDbtTranslator as KeyPrefixDagsterDbtTranslator,
 )
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .dbt_project import (
