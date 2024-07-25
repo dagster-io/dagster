@@ -91,6 +91,7 @@ class SdfInformationSchema(IHaveNew):
     ) -> Tuple[Sequence[AssetDep], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
         deps: Sequence[AssetDep] = []
         table_id_to_dep: Dict[str, AssetKey] = {}
+        table_id_to_upstream: Dict[str, Set[AssetKey]] = {}
         outs: Dict[str, AssetOut] = {}
         internal_asset_deps: Dict[str, Set[AssetKey]] = {}
 
@@ -108,6 +109,13 @@ class SdfInformationSchema(IHaveNew):
                     dep_asset_key = meta_map["values"]
                     deps.append(AssetDep(asset=dep_asset_key))
                     table_id_to_dep[table_row["table_id"]] = AssetKey(dep_asset_key)
+                elif meta_map["keys"] == "dagster-depends-on-asset-key":
+                    dep_asset_key = meta_map["values"]
+                    deps.append(AssetDep(asset=dep_asset_key))
+                    # Currently, we only support one upstream asset
+                    table_id_to_upstream.setdefault(table_row["table_id"], set()).add(
+                        AssetKey(dep_asset_key)
+                    )
 
         # Step 2: Build Dagster Asset Outs and Internal Asset Deps
         for table_row in table_deps.rows(named=True):
@@ -130,7 +138,7 @@ class SdfInformationSchema(IHaveNew):
                         dep
                     )  # Otherwise, use the translator to get the asset key
                     for dep in table_row["depends_on"]
-                }
+                }.union(table_id_to_upstream.get(table_row["table_id"], set()))
 
         return deps, outs, internal_asset_deps
 
