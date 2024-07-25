@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import dataclass_transform
+from typing_extensions import Self, dataclass_transform
 
 import dagster._check as check
 from dagster._check import EvalContext, build_check_call_str
@@ -245,7 +245,7 @@ class IHaveNew:
 
     if TYPE_CHECKING:
 
-        def __new__(cls, **kwargs): ...
+        def __new__(cls, **kwargs) -> Self: ...
 
 
 def is_record(obj) -> bool:
