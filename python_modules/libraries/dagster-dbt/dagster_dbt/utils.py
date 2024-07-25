@@ -24,6 +24,7 @@ def select_unique_ids_from_manifest(
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
+    from dbt.contracts.graph.nodes import UnitTestDefinition
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
@@ -77,7 +78,8 @@ def select_unique_ids_from_manifest(
         **(
             {
                 "unit_tests": {
-                    unique_id: _DictShim(info)
+                    # unit test nodes must be of type UnitTestDefinition
+                    unique_id: UnitTestDefinition(**info)
                     for unique_id, info in manifest_json["unit_tests"].items()
                 },
             }
