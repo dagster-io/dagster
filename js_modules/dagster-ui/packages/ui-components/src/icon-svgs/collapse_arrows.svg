@@ -1,6 +1,3 @@
-<svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="Group 2">
-<path id="Vector" d="M6 7L6 13L4 13L4 9L3.49691e-07 9L5.24537e-07 7L6 7Z" fill="black"/>
-<path id="Vector_2" d="M7 6L7 0L9 0V4L13 4V6L7 6Z" fill="black"/>
-</g>
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M6.16667 18.3333L5 17.1666L10 12.1666L15 17.1666L13.8333 18.3333L10 14.5L6.16667 18.3333ZM10 7.83329L5 2.83329L6.16667 1.66663L10 5.49996L13.8333 1.66663L15 2.83329L10 7.83329Z" fill="white"/>
 </svg>
