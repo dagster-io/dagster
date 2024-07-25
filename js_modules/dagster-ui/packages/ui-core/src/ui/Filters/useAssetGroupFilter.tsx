@@ -37,7 +37,7 @@ export const useAssetGroupFilter = ({
     menuWidth: '300px',
     state: useMemo(() => new Set(assetGroups ?? []), [assetGroups]),
     onStateChanged: useCallback(
-      (values) => {
+      (values: Set<AssetGroupSelector>) => {
         if (setGroups) {
           setGroups(Array.from(values));
         }
