@@ -48,7 +48,7 @@ class PowerBIWorkspaceData:
 
     dashboards_by_id: Dict[str, PowerBIContentData]
     reports_by_id: Dict[str, PowerBIContentData]
-    datasets_by_id: Dict[str, PowerBIContentData]
+    semantic_models_by_id: Dict[str, PowerBIContentData]
     data_sources_by_id: Dict[str, PowerBIContentData]
 
 
