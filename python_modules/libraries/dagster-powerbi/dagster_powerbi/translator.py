@@ -36,7 +36,7 @@ class PowerBIContentData:
     """
 
     content_type: PowerBIContentType
-    data: Dict[str, Any]
+    properties: Dict[str, Any]
 
 
 @record
