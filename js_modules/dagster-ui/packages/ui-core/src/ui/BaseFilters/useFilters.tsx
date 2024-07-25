@@ -1,4 +1,4 @@
-import {Fragment, useMemo} from 'react';
+import {Fragment, useCallback, useMemo} from 'react';
 
 import {FilterDropdownButton} from './FilterDropdown';
 import {FilterObject} from './useFilter';
@@ -16,6 +16,12 @@ export const useFilters = ({filters}: UseFiltersProps) => {
 
   return {
     button: useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),
+    renderButton: useCallback(
+      (label: string) => {
+        <FilterDropdownButton filters={filters} label={label} />;
+      },
+      [filters],
+    ),
     activeFiltersJsx: activeFilterJsx,
   };
 };
