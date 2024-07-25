@@ -64,7 +64,7 @@ from .executor_definition import ExecutorDefinition, multi_or_in_process_executo
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
-from .metadata import MetadataValue, RawMetadataValue, normalize_metadata
+from .metadata import normalize_definition_metadata
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
@@ -92,7 +92,7 @@ class JobDefinition(IHasInternalInit):
     _graph_def: GraphDefinition
     _description: Optional[str]
     _tags: Mapping[str, str]
-    _metadata: Mapping[str, MetadataValue]
+    _metadata: Mapping[str, object]
     _current_level_node_defs: Sequence[NodeDefinition]
     _hook_defs: AbstractSet[HookDefinition]
     _op_retry_policy: Optional[RetryPolicy]
@@ -117,7 +117,7 @@ class JobDefinition(IHasInternalInit):
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, object]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
@@ -159,7 +159,7 @@ class JobDefinition(IHasInternalInit):
         # same graph may be in multiple jobs, keep separate layer
         self._description = check.opt_str_param(description, "description")
         self._tags = normalize_tags(tags).tags
-        self._metadata = normalize_metadata(
+        self._metadata = normalize_definition_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs")
@@ -248,7 +248,7 @@ class JobDefinition(IHasInternalInit):
         description: Optional[str],
         partitions_def: Optional[PartitionsDefinition],
         tags: Union[NormalizedTags, Optional[Mapping[str, Any]]],
-        metadata: Optional[Mapping[str, RawMetadataValue]],
+        metadata: Optional[Mapping[str, object]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
@@ -284,7 +284,7 @@ class JobDefinition(IHasInternalInit):
         return merge_dicts(self._graph_def.tags, self._tags)
 
     @property
-    def metadata(self) -> Mapping[str, MetadataValue]:
+    def metadata(self) -> Mapping[str, object]:
         return self._metadata
 
     @property

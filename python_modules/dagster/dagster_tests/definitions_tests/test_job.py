@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -14,6 +16,13 @@ from dagster import (
     usable_as_dagster_type,
     validate_run_config,
 )
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import HasSerializedMetadataRepresentation
+from dagster._core.definitions.metadata.metadata_value import (
+    JsonMetadataValue,
+    MetadataValue as MetadataValue,
+)
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
 def builder(graph):
@@ -329,3 +338,31 @@ def test_job_recreation_works() -> None:
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
+
+
+def test_arbitrary_metadata() -> None:
+    class SomeCustomObjectForUserFramework(HasSerializedMetadataRepresentation):
+        def serialized_representation(self) -> MetadataValue[Any]:
+            return MetadataValue.json({"foo": "bar"})
+
+    executed = {}
+
+    @op
+    def an_op(context: OpExecutionContext) -> None:
+        executed["yes"] = True
+        assert isinstance(
+            context.job_def.metadata["custom_object"], SomeCustomObjectForUserFramework
+        )
+
+    @job(metadata={"custom_object": SomeCustomObjectForUserFramework()})
+    def a_job() -> None:
+        an_op()
+
+    assert isinstance(a_job, JobDefinition)
+    assert isinstance(a_job.metadata["custom_object"], SomeCustomObjectForUserFramework)
+    assert isinstance(a_job.get_job_snapshot().metadata["custom_object"], JsonMetadataValue)
+
+    assert a_job.execute_in_process().success
+    assert executed["yes"]
+    custom_obj_metadata = a_job.get_job_snapshot().metadata["custom_object"]
+    assert isinstance(custom_obj_metadata, JsonMetadataValue)
