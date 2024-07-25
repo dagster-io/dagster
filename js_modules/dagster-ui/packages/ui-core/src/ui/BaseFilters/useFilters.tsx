@@ -17,7 +17,7 @@ export const useFilters = ({filters}: UseFiltersProps) => {
   return {
     button: useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),
     renderButton: useCallback(
-      (props: Parameters<RenderButtonType>[0]) => (
+      (props: Parameters<RenderButtonType>[0]): ReturnType<RenderButtonType> => (
         <FilterDropdownButton filters={filters} {...props} />
       ),
       [filters],
