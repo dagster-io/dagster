@@ -5,7 +5,7 @@ import pytest
 from dagster_sdf.constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT
 from dagster_sdf.resource import SdfCliResource
 
-from .sdf_workspaces import moms_flower_shop_path
+from .sdf_workspaces import lineage_upstream_path, moms_flower_shop_path
 
 
 def _create_sdf_invocation(
@@ -28,3 +28,8 @@ def _create_sdf_invocation(
 @pytest.fixture(name="moms_flower_shop_target_dir", scope="function")
 def test_moms_flower_shop_target_dir_fixture() -> Path:
     return _create_sdf_invocation(moms_flower_shop_path).target_dir
+
+
+@pytest.fixture(name="lineage_upstream_target_dir", scope="function")
+def test_lineage_upstream_target_dir_fixture() -> Path:
+    return _create_sdf_invocation(lineage_upstream_path).target_dir
