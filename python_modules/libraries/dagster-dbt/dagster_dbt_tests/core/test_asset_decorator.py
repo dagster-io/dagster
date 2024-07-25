@@ -1048,8 +1048,12 @@ def test_dbt_with_semantic_models(test_dbt_semantic_models_manifest: Dict[str, A
     version.parse(dbt_version) < version.parse("1.8.0"),
     reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
 )
-def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: Dict[str, Any]) -> None:
-    @dbt_assets(manifest=test_dbt_unit_tests_manifest)
+@pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
+def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: Dict[str, Any], select: str) -> None:
+    @dbt_assets(
+        manifest=test_dbt_unit_tests_manifest,
+        select=select,
+    )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
