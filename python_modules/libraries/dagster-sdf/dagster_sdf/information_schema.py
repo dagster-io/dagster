@@ -1,107 +1,24 @@
-import os
 from pathlib import Path
-from typing import Dict, Literal, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, Literal, Optional, Set, Tuple, Union
 
 import dagster._check as check
 import polars as pl
 from dagster import AssetKey, AssetOut, Nothing
 from dagster._record import IHaveNew, record_custom
-from dagster._utils import run_with_concurrent_update_guard
 
-from dagster_sdf.errors import DagsterSdfInformationSchemaNotFoundError
-
-from .asset_utils import dagster_name_fn, default_asset_key_fn
+from .asset_utils import dagster_name_fn
 from .constants import (
     DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
     SDF_INFORMATION_SCHEMA_TABLES,
     SDF_TARGET_DIR,
 )
-
-
-def using_dagster_dev() -> bool:
-    return bool(os.getenv("DAGSTER_IS_DEV_CLI"))
+from .dagster_sdf_translator import DagsterSdfTranslator
 
 
 def get_info_schema_dir(target_dir: Path, environment: str) -> Path:
     return target_dir.joinpath(
         SDF_TARGET_DIR, environment, "data", "system", "information_schema::sdf"
     )
-
-
-class SdfInformationSchemaPreparer:
-    def on_load(
-        self,
-        workspace_dir: Path,
-        target_dir: Path,
-        environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
-    ) -> None:
-        """Invoked when SdfWorkspace is instantiated with this preparer."""
-
-    def prepare(self, workspace_dir: Path, target_dir: Path, environment: str) -> None:
-        """Called explictly to compile the workspace."""
-
-    def using_dagster_dev(self) -> bool:
-        return using_dagster_dev()
-
-    def parse_on_load_opt_in(self) -> bool:
-        return bool(os.getenv("DAGSTER_SDF_COMPILE_ON_LOAD"))
-
-
-class DagsterSdfInformationSchemaPreparer(SdfInformationSchemaPreparer):
-    def __init__(
-        self,
-        generate_cli_args: Optional[Sequence[str]] = None,
-    ):
-        """The default SdfInformationSchemaPreparer, this handler provides an experience of:
-            * During development, rerun compile to pick up any changes.
-            * When deploying, expect the outcome of compile to reduce start-up time.
-
-        Args:
-            generate_cli_args (Sequence[str]):
-                The arguments to pass to the sdf cli to prepare the workspace.
-                Default: ["compile", "--log-level=nested"]
-        """
-        self._generate_cli_args = generate_cli_args or ["compile"]
-
-    def on_load(
-        self,
-        workspace_dir: Path,
-        target_dir: Path,
-        environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
-    ) -> None:
-        if self.using_dagster_dev() or self.parse_on_load_opt_in():
-            self.prepare(workspace_dir, target_dir, environment)
-            info_schema_dir = get_info_schema_dir(target_dir, environment)
-            if not info_schema_dir.exists():
-                raise DagsterSdfInformationSchemaNotFoundError(
-                    f"Sdf Information Schema was not generated correctly at expected path {info_schema_dir} "
-                    f"after running '{self.prepare.__qualname__}'. Ensure the implementation respects "
-                    "all Sdf Information Schema properties."
-                )
-
-    def prepare(self, workspace_dir: Path, target_dir: Path, environment: str) -> None:
-        output_dir = target_dir.joinpath(SDF_TARGET_DIR, environment)
-        run_with_concurrent_update_guard(
-            output_dir,
-            self._prepare_workspace,
-            workspace_dir=workspace_dir,
-            target_dir=target_dir,
-            environment=environment,
-        )
-
-    def _prepare_workspace(self, workspace_dir: Path, target_dir: Path, environment: str) -> None:
-        from dagster_sdf.resource import SdfCliResource
-
-        (
-            SdfCliResource(workspace_dir=workspace_dir)
-            .cli(
-                self._generate_cli_args,
-                target_dir=target_dir,
-                environment=environment,
-                raise_on_error=False,
-            )
-            .wait()
-        )
 
 
 @record_custom(checked=False)
@@ -132,7 +49,6 @@ class SdfInformationSchema(IHaveNew):
         workspace_dir: Union[Path, str],
         target_dir: Union[Path, str],
         environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
-        information_schema_preparer: SdfInformationSchemaPreparer = DagsterSdfInformationSchemaPreparer(),
     ):
         check.inst_param(workspace_dir, "workspace_dir", (str, Path))
         check.inst_param(target_dir, "target_dir", (str, Path))
@@ -141,14 +57,7 @@ class SdfInformationSchema(IHaveNew):
         workspace_dir = Path(workspace_dir)
         target_dir = Path(target_dir)
 
-        if information_schema_preparer:
-            information_schema_preparer.on_load(
-                workspace_dir=workspace_dir, target_dir=target_dir, environment=environment
-            )
-
-        information_schema_dir = Path(
-            target_dir, SDF_TARGET_DIR, environment, "data", "system", "information_schema::sdf"
-        )
+        information_schema_dir = get_info_schema_dir(target_dir, environment)
         check.invariant(
             information_schema_dir.exists(),
             f"Information schema directory {information_schema_dir} does not exist.",
@@ -174,7 +83,7 @@ class SdfInformationSchema(IHaveNew):
         )
 
     def build_sdf_multi_asset_args(
-        self, io_manager_key: Optional[str]
+        self, io_manager_key: Optional[str], dagster_sdf_translator: DagsterSdfTranslator
     ) -> Tuple[Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
         outs: Dict[str, AssetOut] = {}
         internal_asset_deps: Dict[str, Set[AssetKey]] = {}
@@ -182,7 +91,7 @@ class SdfInformationSchema(IHaveNew):
         for table_row in self.read_table("tables").rows(named=True):
             if table_row["purpose"] in ["system", "external-system"]:
                 continue
-            asset_key = default_asset_key_fn(table_row["table_id"])
+            asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
             output_name = dagster_name_fn(table_row["table_id"])
             outs[output_name] = AssetOut(
                 key=asset_key,
@@ -192,7 +101,13 @@ class SdfInformationSchema(IHaveNew):
                 is_required=False,
             )
             internal_asset_deps[output_name] = {
-                default_asset_key_fn(dep) for dep in table_row["depends_on"]
+                dagster_sdf_translator.get_asset_key(dep) for dep in table_row["depends_on"]
             }
 
         return outs, internal_asset_deps
+
+    def is_hydrated(self) -> bool:
+        for table in SDF_INFORMATION_SCHEMA_TABLES:
+            if not any(self.information_schema_dir.joinpath(table).iterdir()):
+                return False
+        return True

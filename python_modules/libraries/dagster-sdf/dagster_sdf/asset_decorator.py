@@ -9,22 +9,32 @@ from dagster import (
     multi_asset,
 )
 
+from .dagster_sdf_translator import DagsterSdfTranslator, validate_translator
 from .information_schema import SdfInformationSchema
+from .workspace import SdfWorkspace
 
 
 def sdf_assets(
     *,
-    information_schema: SdfInformationSchema,
+    workspace: SdfWorkspace,
     name: Optional[str] = None,
     io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    dagster_sdf_translator: Optional[DagsterSdfTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    dagster_sdf_translator = validate_translator(dagster_sdf_translator or DagsterSdfTranslator())
+    information_schema = SdfInformationSchema(
+        workspace_dir=workspace.workspace_dir,
+        target_dir=workspace.target_dir,
+        environment=workspace.environment,
+    )
     outs, internal_asset_deps = information_schema.build_sdf_multi_asset_args(
-        io_manager_key=io_manager_key
+        io_manager_key=io_manager_key,
+        dagster_sdf_translator=dagster_sdf_translator,
     )
 
     if (
