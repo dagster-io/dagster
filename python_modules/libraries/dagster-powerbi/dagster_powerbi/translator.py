@@ -11,6 +11,7 @@ T = TypeVar("T")
 U = TypeVar("U")
 
 
+# scaffold out what a generic translator class might look like
 class DagsterTranslator(Generic[T, U]):
     def __init__(self, context: U):
         self._context = context
@@ -20,6 +21,8 @@ class DagsterTranslator(Generic[T, U]):
 
 
 class PowerBIContentType(Enum):
+    """Enum representing each object in PowerBI's ontology, generically referred to as "content" by the API."""
+
     DASHBOARD = "dashboard"
     REPORT = "report"
     SEMANTIC_MODEL = "semantic_model"
@@ -28,12 +31,21 @@ class PowerBIContentType(Enum):
 
 @record
 class PowerBIContentData:
+    """A record representing a piece of content in PowerBI.
+    Includes the content's type and data as returned from the API.
+    """
+
     content_type: PowerBIContentType
     data: Dict[str, Any]
 
 
 @record
 class PowerBIWorkspaceData:
+    """A record representing all content in a PowerBI workspace.
+
+    Provided as context for the translator so that it can resolve dependencies between content.
+    """
+
     dashboards_by_id: Dict[str, PowerBIContentData]
     reports_by_id: Dict[str, PowerBIContentData]
     datasets_by_id: Dict[str, PowerBIContentData]
@@ -41,6 +53,10 @@ class PowerBIWorkspaceData:
 
 
 class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWorkspaceData]):
+    """Translator class which converts raw response data from the PowerBI API into AssetSpecs.
+    Subclass this class to implement custom logic for each type of PowerBI content.
+    """
+
     @property
     def workspace_data(self) -> PowerBIWorkspaceData:
         return self._context
