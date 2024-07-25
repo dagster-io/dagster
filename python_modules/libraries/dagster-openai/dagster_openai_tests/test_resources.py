@@ -1,3 +1,4 @@
+from mock.mock import Base
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -19,6 +20,7 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_openai import OpenAIResource, with_usage_metadata
 from mock import ANY, MagicMock, patch
+from openai import OpenAI
 
 
 @patch("dagster_openai.resources.Client")
@@ -29,6 +31,26 @@ def test_openai_client(mock_client) -> None:
     mock_context = MagicMock()
     with openai_resource.get_client(mock_context):
         mock_client.assert_called_once_with(api_key="xoxp-1234123412341234-12341234-1234")
+
+
+@patch("dagster_openai.resources.Client")
+def test_openai_client_with_config(mock_client) -> None:
+    openai_resource = OpenAIResource(
+        api_key="xoxp-1234123412341234-12341234-1234",
+        organization="foo",
+        project="bar",
+        base_url="http://foo.bar"
+    )
+    openai_resource.setup_for_execution(build_init_resource_context())
+
+    mock_context = MagicMock()
+    with openai_resource.get_client(mock_context):
+        mock_client.assert_called_once_with(
+            api_key="xoxp-1234123412341234-12341234-1234",
+            organization="foo",
+            project="bar",
+            base_url="http://foo.bar"
+        )
 
 
 @patch("dagster_openai.resources.OpenAIResource._wrap_with_usage_metadata")
