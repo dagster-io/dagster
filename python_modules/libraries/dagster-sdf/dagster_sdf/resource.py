@@ -33,7 +33,7 @@ from .constants import (
 )
 from .dagster_sdf_translator import DagsterSdfTranslator, validate_opt_translator
 from .errors import DagsterSdfCliRuntimeError
-from .workspace import SdfWorkspace
+from .sdf_workspace import SdfWorkspace
 
 logger = get_dagster_logger()
 

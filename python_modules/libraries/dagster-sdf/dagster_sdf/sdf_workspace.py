@@ -13,7 +13,7 @@ from .errors import (
     DagsterSdfWorkspaceNotFoundError,
     DagsterSdfWorkspaceYmlFileNotFoundError,
 )
-from .information_schema import SdfInformationSchema
+from .sdf_information_schema import SdfInformationSchema
 
 logger = logging.getLogger("dagster-sdf.artifacts")
 

@@ -6,9 +6,9 @@ from .asset_utils import (
     dagster_name_fn as dagster_name_fn,
     default_asset_key_fn as default_asset_key_fn,
 )
-from .information_schema import SdfInformationSchema as SdfInformationSchema
 from .resource import SdfCliResource as SdfCliResource
+from .sdf_information_schema import SdfInformationSchema as SdfInformationSchema
+from .sdf_workspace import SdfWorkspace as SdfWorkspace
 from .version import __version__ as __version__
-from .workspace import SdfWorkspace as SdfWorkspace
 
 DagsterLibraryRegistry.register("dagster-sdf", __version__)

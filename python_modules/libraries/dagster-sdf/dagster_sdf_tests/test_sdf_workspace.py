@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 from dagster._check import CheckError
 from dagster._core.test_utils import environ
-from dagster_sdf.information_schema import SdfInformationSchema
-from dagster_sdf.workspace import SdfWorkspace
+from dagster_sdf.sdf_information_schema import SdfInformationSchema
+from dagster_sdf.sdf_workspace import SdfWorkspace
 
 from .sdf_workspaces import moms_flower_shop_path
 

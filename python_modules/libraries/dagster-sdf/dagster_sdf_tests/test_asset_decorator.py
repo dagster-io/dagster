@@ -4,7 +4,7 @@ from dagster import AssetExecutionContext, AssetKey, materialize
 from dagster_sdf.asset_decorator import sdf_assets
 from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator
 from dagster_sdf.resource import SdfCliResource
-from dagster_sdf.workspace import SdfWorkspace
+from dagster_sdf.sdf_workspace import SdfWorkspace
 
 from .sdf_workspaces import moms_flower_shop_path
 
