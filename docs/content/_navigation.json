@@ -344,7 +344,7 @@
             ]
           },
           {
-            "title": "Dagster Pipes (Experimental)",
+            "title": "Dagster Pipes",
             "path": "/concepts/dagster-pipes",
             "children": [
               {
