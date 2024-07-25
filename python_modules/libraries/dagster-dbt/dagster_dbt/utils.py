@@ -1,7 +1,9 @@
 from argparse import Namespace
 from typing import AbstractSet, Any, Dict, Mapping
 
-from dagster import AssetKey
+from dagster import AssetKey, get_dagster_logger
+
+logger = get_dagster_logger()
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
@@ -23,8 +25,8 @@ def select_unique_ids_from_manifest(
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
+    from dbt.version import __version__ as dbt_version
     from dbt.contracts.graph.manifest import Manifest
-    from dbt.contracts.graph.nodes import UnitTestDefinition
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
 
@@ -40,6 +42,23 @@ def select_unique_ids_from_manifest(
             ret = super().get(item)
             # allow recursive access e.g. foo.bar.baz
             return _DictShim(ret) if isinstance(ret, dict) else ret
+
+    if dbt_version >= "1.8.0":
+        from dbt.contracts.graph.nodes import UnitTestDefinition
+
+        unit_test = (
+            {
+                "unit_tests": {
+                    # unit test nodes must be of type UnitTestDefinition
+                    unique_id: UnitTestDefinition(**info)
+                    for unique_id, info in manifest_json["unit_tests"].items()
+                },
+            }
+            if manifest_json.get("unit_tests")
+            else {}
+        )
+    else:
+        unit_test = {}
 
     manifest = Manifest(
         nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
@@ -75,17 +94,7 @@ def select_unique_ids_from_manifest(
             if manifest_json.get("saved_queries")
             else {}
         ),
-        **(
-            {
-                "unit_tests": {
-                    # unit test nodes must be of type UnitTestDefinition
-                    unique_id: UnitTestDefinition(**info)
-                    for unique_id, info in manifest_json["unit_tests"].items()
-                },
-            }
-            if manifest_json.get("unit_tests")
-            else {}
-        ),
+        **unit_test,
     )
     child_map = manifest_json["child_map"]
 
