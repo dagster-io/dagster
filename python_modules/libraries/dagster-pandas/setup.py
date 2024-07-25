@@ -48,7 +48,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.7.14",
+        "dagster==1.7.15",
         "pandas",
         # Pin numpy pending release of pandas that either supports numpy 2 or adds a pin
         "numpy<2",
