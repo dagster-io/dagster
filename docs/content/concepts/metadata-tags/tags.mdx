@@ -60,15 +60,16 @@ Tags are useful for organizing assets in non-hierarchical ways. Unlike [asset gr
 def leads(): ...
 ```
 
-Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, <PyObject object="AssetOut" />, and <PyObject object="graph_asset" decorator />.
+Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, and <PyObject object="graph_asset" decorator />.
 
 #### Standard asset tags reference
 
-The following table holds standard asset tag keys defined by Dagster. The `dagster` prefix indicates that the Dagster package takes responsibility for defining the meaning of these tags.
+The following table holds standard asset tag keys defined by Dagster. They can be provided to assets in the way shown in the example above. The `dagster` prefix indicates that the Dagster package takes responsibility for defining the meaning of these tags.
 
 | Key                    | Description                                                       |
 | ---------------------- | ----------------------------------------------------------------- |
-| `dagster/storage_kind` | The technology used to store the asset, e.g. "snowflake" or "s3". |
+| `dagster/storage_kind` | The technology used to store the asset, e.g. "snowflake" or "s3". The Dagster UI also shows this value on the node in the asset graph, with a corresponding icon if Dagster has one. A list of values that correspond to icons is available [here](https://github.com/dagster-io/dagster/blob/master/js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx).   |
+
 
 ### Jobs
 
