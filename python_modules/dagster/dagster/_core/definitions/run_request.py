@@ -112,7 +112,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         stale_assets_only (bool): Set to true to further narrow the asset
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
-        partition_key (Optional[str]): The partition key for this run request.
+        partition_key (Optional[Union[str, MultiPartitionKey]]): The partition key for this run request.
     """
 
     def __new__(
