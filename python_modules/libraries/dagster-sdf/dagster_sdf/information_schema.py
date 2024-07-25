@@ -6,12 +6,13 @@ import polars as pl
 from dagster import AssetKey, AssetOut, Nothing
 from dagster._record import IHaveNew, record_custom
 
-from .asset_utils import dagster_name_fn, default_asset_key_fn
+from .asset_utils import dagster_name_fn
 from .constants import (
     DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
     SDF_INFORMATION_SCHEMA_TABLES,
     SDF_TARGET_DIR,
 )
+from .dagster_sdf_translator import DagsterSdfTranslator
 
 
 def get_info_schema_dir(target_dir: Path, environment: str) -> Path:
@@ -82,7 +83,7 @@ class SdfInformationSchema(IHaveNew):
         )
 
     def build_sdf_multi_asset_args(
-        self, io_manager_key: Optional[str]
+        self, io_manager_key: Optional[str], dagster_sdf_translator: DagsterSdfTranslator
     ) -> Tuple[Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
         outs: Dict[str, AssetOut] = {}
         internal_asset_deps: Dict[str, Set[AssetKey]] = {}
@@ -90,7 +91,7 @@ class SdfInformationSchema(IHaveNew):
         for table_row in self.read_table("tables").rows(named=True):
             if table_row["purpose"] in ["system", "external-system"]:
                 continue
-            asset_key = default_asset_key_fn(table_row["table_id"])
+            asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
             output_name = dagster_name_fn(table_row["table_id"])
             outs[output_name] = AssetOut(
                 key=asset_key,
@@ -100,7 +101,7 @@ class SdfInformationSchema(IHaveNew):
                 is_required=False,
             )
             internal_asset_deps[output_name] = {
-                default_asset_key_fn(dep) for dep in table_row["depends_on"]
+                dagster_sdf_translator.get_asset_key(dep) for dep in table_row["depends_on"]
             }
 
         return outs, internal_asset_deps

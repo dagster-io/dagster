@@ -23,7 +23,7 @@ from dagster._core.errors import DagsterExecutionInterruptedError
 from pydantic import Field, validator
 from typing_extensions import Literal, TypeVar
 
-from .asset_utils import dagster_name_fn, default_asset_key_fn
+from .asset_utils import dagster_name_fn
 from .constants import (
     DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
     SDF_DAGSTER_OUTPUT_DIR,
@@ -31,6 +31,7 @@ from .constants import (
     SDF_TARGET_DIR,
     SDF_WORKSPACE_YML,
 )
+from .dagster_sdf_translator import DagsterSdfTranslator, validate_opt_translator
 from .errors import DagsterSdfCliRuntimeError
 from .workspace import SdfWorkspace
 
@@ -60,6 +61,7 @@ class SdfCliEventMessage:
     @public
     def to_default_asset_events(
         self,
+        dagster_sdf_translator: DagsterSdfTranslator = DagsterSdfTranslator(),
         context: Optional[OpExecutionContext] = None,
     ) -> Iterator[Union[Output, AssetMaterialization]]:
         """Convert an sdf CLI event to a set of corresponding Dagster events.
@@ -99,7 +101,7 @@ class SdfCliEventMessage:
             )
             if has_asset_def
             else AssetMaterialization(
-                asset_key=default_asset_key_fn(table_id),
+                asset_key=dagster_sdf_translator.get_asset_key(table_id),
                 metadata=default_metadata,
             )
         )
@@ -124,6 +126,7 @@ class SdfCliInvocation:
     process: subprocess.Popen
     target_dir: Path
     output_dir: Path
+    dagster_sdf_translator: DagsterSdfTranslator
     raise_on_error: bool
     context: Optional[OpExecutionContext] = field(default=None, repr=False)
     termination_timeout_seconds: float = field(
@@ -139,6 +142,7 @@ class SdfCliInvocation:
         workspace_dir: Path,
         target_dir: Path,
         output_dir: Path,
+        dagster_sdf_translator: DagsterSdfTranslator,
         raise_on_error: bool,
         context: Optional[OpExecutionContext],
     ) -> "SdfCliInvocation":
@@ -155,6 +159,7 @@ class SdfCliInvocation:
             process=process,
             target_dir=target_dir,
             output_dir=output_dir,
+            dagster_sdf_translator=dagster_sdf_translator,
             raise_on_error=raise_on_error,
             context=context,
         )
@@ -207,7 +212,9 @@ class SdfCliInvocation:
     ) -> Iterator[SdfDagsterEventType]:
         """Stream the sdf CLI events and convert them to Dagster events."""
         for event in self.stream_raw_events():
-            yield from event.to_default_asset_events(context=self.context)
+            yield from event.to_default_asset_events(
+                dagster_sdf_translator=self.dagster_sdf_translator, context=self.context
+            )
 
     @public
     def stream(
@@ -443,6 +450,7 @@ class SdfCliResource(ConfigurableResource):
         target_dir: Optional[Path] = None,
         environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
         raise_on_error: bool = True,
+        dagster_sdf_translator: Optional[DagsterSdfTranslator] = None,
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
     ) -> SdfCliInvocation:
         """Create a subprocess to execute an sdf CLI command.
@@ -459,6 +467,8 @@ class SdfCliResource(ConfigurableResource):
             SdfCliInvocation: A invocation instance that can be used to retrieve the output of the
                 sdf CLI command.
         """
+        dagster_sdf_translator = validate_opt_translator(dagster_sdf_translator)
+        dagster_sdf_translator = dagster_sdf_translator or DagsterSdfTranslator()
         context = (
             context.op_execution_context if isinstance(context, AssetExecutionContext) else context
         )
@@ -491,6 +501,7 @@ class SdfCliResource(ConfigurableResource):
             workspace_dir=Path(self.workspace_dir),
             target_dir=target_path,
             output_dir=output_dir,
+            dagster_sdf_translator=dagster_sdf_translator,
             raise_on_error=raise_on_error,
             context=context,
         )
