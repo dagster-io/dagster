@@ -1,15 +1,16 @@
 from pathlib import Path
-from typing import Dict, Literal, Optional, Set, Tuple, Union
+from typing import Dict, Literal, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 import polars as pl
-from dagster import AssetKey, AssetOut, Nothing
+from dagster import AssetDep, AssetKey, AssetOut, Nothing
 from dagster._record import IHaveNew, record_custom
 
 from .asset_utils import dagster_name_fn
 from .constants import (
     DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
-    SDF_INFORMATION_SCHEMA_TABLES,
+    SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE,
+    SDF_INFORMATION_SCHEMA_TABLES_STAGE_PARSE,
     SDF_TARGET_DIR,
 )
 from .dagster_sdf_translator import DagsterSdfTranslator
@@ -70,12 +71,15 @@ class SdfInformationSchema(IHaveNew):
         )
 
     def read_table(
-        self, table_name: Literal["tables", "columns", "table_lineage", "column_lineage"]
+        self,
+        table_name: Literal["tables", "columns", "table_lineage", "column_lineage", "table_deps"],
     ) -> pl.DataFrame:
         check.invariant(
-            table_name in SDF_INFORMATION_SCHEMA_TABLES,
+            table_name
+            in SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE
+            + SDF_INFORMATION_SCHEMA_TABLES_STAGE_PARSE,
             f"Table `{table_name}` is not valid information schema table."
-            f" Select from one of {SDF_INFORMATION_SCHEMA_TABLES}.",
+            f" Select from one of {SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE + SDF_INFORMATION_SCHEMA_TABLES_STAGE_PARSE}.",
         )
 
         return self.information_schema.setdefault(
@@ -84,30 +88,60 @@ class SdfInformationSchema(IHaveNew):
 
     def build_sdf_multi_asset_args(
         self, io_manager_key: Optional[str], dagster_sdf_translator: DagsterSdfTranslator
-    ) -> Tuple[Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
+    ) -> Tuple[Sequence[AssetDep], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
+        deps: Sequence[AssetDep] = []
+        table_id_to_dep: Dict[str, AssetKey] = {}
         outs: Dict[str, AssetOut] = {}
         internal_asset_deps: Dict[str, Set[AssetKey]] = {}
 
-        for table_row in self.read_table("tables").rows(named=True):
-            if table_row["purpose"] in ["system", "external-system"]:
-                continue
+        # Step 0: Filter out system and external-system tables
+        table_deps = self.read_table("table_deps").filter(
+            ~pl.col("purpose").is_in(["system", "external-system"])
+        )
+
+        # Step 1: Build Dagster Asset Deps
+        for table_row in table_deps.rows(named=True):
+            # Iterate over the meta column to find the dagster-asset-key
+            for meta_map in table_row["meta"]:
+                # If the meta_map has a key of dagster-asset-key, add it to the deps
+                if meta_map["keys"] == "dagster-asset-key":
+                    dep_asset_key = meta_map["values"]
+                    deps.append(AssetDep(asset=dep_asset_key))
+                    table_id_to_dep[table_row["table_id"]] = AssetKey(dep_asset_key)
+
+        # Step 2: Build Dagster Asset Outs and Internal Asset Deps
+        for table_row in table_deps.rows(named=True):
             asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
             output_name = dagster_name_fn(table_row["table_id"])
-            outs[output_name] = AssetOut(
-                key=asset_key,
-                dagster_type=Nothing,
-                io_manager_key=io_manager_key,
-                description=table_row["description"],
-                is_required=False,
-            )
-            internal_asset_deps[output_name] = {
-                dagster_sdf_translator.get_asset_key(dep) for dep in table_row["depends_on"]
-            }
+            # If the table is a annotated as a dependency, we don't need to create an output for it
+            if table_row["table_id"] not in table_id_to_dep:
+                outs[output_name] = AssetOut(
+                    key=asset_key,
+                    dagster_type=Nothing,
+                    io_manager_key=io_manager_key,
+                    description=table_row["description"],
+                    is_required=False,
+                )
+                internal_asset_deps[output_name] = {
+                    table_id_to_dep[dep]
+                    if dep
+                    in table_id_to_dep  # If the dep is a dagster dependency, use the meta asset key
+                    else dagster_sdf_translator.get_asset_key(
+                        dep
+                    )  # Otherwise, use the translator to get the asset key
+                    for dep in table_row["depends_on"]
+                }
 
-        return outs, internal_asset_deps
+        return deps, outs, internal_asset_deps
 
-    def is_hydrated(self) -> bool:
-        for table in SDF_INFORMATION_SCHEMA_TABLES:
+    def is_compiled(self) -> bool:
+        for table in SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE:
+            if not any(self.information_schema_dir.joinpath(table).iterdir()):
+                return False
+        return True
+
+    def is_parsed(self) -> bool:
+        for table in SDF_INFORMATION_SCHEMA_TABLES_STAGE_PARSE:
             if not any(self.information_schema_dir.joinpath(table).iterdir()):
                 return False
         return True
