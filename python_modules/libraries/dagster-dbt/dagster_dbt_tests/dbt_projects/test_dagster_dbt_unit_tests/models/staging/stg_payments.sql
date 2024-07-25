@@ -1,3 +1,9 @@
+{{
+    config(
+        tags=["test"],
+    )
+}}
+
 with source as (
     
     {#-

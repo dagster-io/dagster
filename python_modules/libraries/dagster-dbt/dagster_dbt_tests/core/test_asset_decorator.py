@@ -1060,6 +1060,25 @@ def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: Dict[str, Any]) -> No
     assert result.success
 
 
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.8.0"),
+    reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
+    )
+def test_dbt_with_unit_tests_with_tags_selector(test_dbt_unit_tests_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(
+        manifest=test_dbt_unit_tests_manifest,
+        select="tag:test",
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_unit_tests_path))},
+    )
+    assert result.success
+
+
 def test_dbt_with_invalid_self_dependencies(
     test_asset_key_exceptions_manifest: Dict[str, Any],
 ) -> None:

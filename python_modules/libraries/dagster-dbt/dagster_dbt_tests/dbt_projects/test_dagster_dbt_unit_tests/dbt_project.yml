@@ -24,3 +24,8 @@ models:
     materialized: table
     staging:
       materialized: view
+
+seeds:
+  jaffle_shop:
+    raw_payments:
+      +tags: test
