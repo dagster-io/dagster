@@ -39,7 +39,11 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterAssetBackfillDataLoadError,
@@ -951,7 +955,7 @@ def execute_asset_backfill_iteration(
         return
 
     logger.info(
-        f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
+        f"Assets targeted by backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
     )
 
     if backfill.status == BulkActionStatus.REQUESTED:
@@ -1042,10 +1046,38 @@ def execute_asset_backfill_iteration(
             )
             instance.update_backfill(updated_backfill)
 
+        new_materialized_partitions = (
+            updated_backfill_data.materialized_subset
+            - previous_asset_backfill_data.materialized_subset
+        )
+        new_failed_partitions = (
+            updated_backfill_data.failed_and_downstream_subset
+            - previous_asset_backfill_data.failed_and_downstream_subset
+        )
+        updated_backfill_in_progress = (
+            updated_backfill_data.requested_subset - updated_backfill_data.materialized_subset
+        )
+        previous_backfill_in_progress = (
+            previous_asset_backfill_data.requested_subset
+            - previous_asset_backfill_data.materialized_subset
+        )
+        new_requested_partitions = updated_backfill_in_progress - previous_backfill_in_progress
         logger.info(
             f"Asset backfill {updated_backfill.backfill_id} completed iteration with status {updated_backfill.status}."
         )
         logger.info(
+            "Backfill iteration summary:\n"
+            f"**Assets materialized since last iteration:**\n{_asset_graph_subset_to_str(new_materialized_partitions, asset_graph) if new_materialized_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets failed since last iteration and their downstream assets:**\n{_asset_graph_subset_to_str(new_failed_partitions, asset_graph) if new_failed_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets requested by this iteration:**\n{_asset_graph_subset_to_str(new_requested_partitions, asset_graph) if new_requested_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+        )
+        logger.info(
+            "Overall backfill status:\n"
+            f"**Materialized assets:**\n{_asset_graph_subset_to_str(updated_backfill_data.materialized_subset, asset_graph) if updated_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Failed assets and their downstream assets:**\n{_asset_graph_subset_to_str(updated_backfill_data.failed_and_downstream_subset, asset_graph) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets requested or in progress:**\n{_asset_graph_subset_to_str(updated_backfill_in_progress, asset_graph) if updated_backfill_in_progress.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+        )
+        logger.debug(
             f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
         )
 
@@ -1259,6 +1291,38 @@ def _get_next_latest_storage_id(instance_queryer: CachingInstanceQueryer) -> int
     return max(next_latest_storage_id - cursor_offset, 0)
 
 
+def _partition_subset_str(
+    partition_subset: PartitionsSubset,
+    partitions_def: PartitionsDefinition,
+):
+    if isinstance(partition_subset, BaseTimeWindowPartitionsSubset) and isinstance(
+        partitions_def, TimeWindowPartitionsDefinition
+    ):
+        return ", ".join(
+            f" {type(partition_subset)} {type(partitions_def)} {partitions_def.get_num_partitions_in_window(time_window.to_public_time_window())} partitions: {time_window.start} -> {time_window.end}"
+            for time_window in partition_subset.included_time_windows
+        )
+
+    return ", ".join(partition_subset.get_partition_keys())
+
+
+def _asset_graph_subset_to_str(
+    asset_graph_subset: AssetGraphSubset,
+    asset_graph: BaseAssetGraph,
+) -> str:
+    return_str = ""
+    asset_subsets = asset_graph_subset.iterate_asset_subsets(asset_graph)
+    for subset in asset_subsets:
+        if subset.is_partitioned:
+            partitions_def = asset_graph.get(subset.asset_key).partitions_def
+            partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
+            return_str += f"- {subset.asset_key.to_user_string()}: {{{partition_ranges_str}}}\n"
+        else:
+            return_str += f"- {subset.asset_key.to_user_string()}\n"
+
+    return return_str
+
+
 def execute_asset_backfill_iteration_inner(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
@@ -1278,10 +1342,14 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
-        logger.info("Not all root assets have been requested, finding root assets.")
+        logger.info(
+            "Not all root assets (assets in backfill that do not have parents in the backill) have been requested, finding root assets."
+        )
         target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
         initial_candidates.update(target_roots)
-        logger.info(f"Root assets that have not yet been requested: {initial_candidates}")
+        logger.info(
+            f"Root assets that have not yet been requested:\n {_asset_graph_subset_to_str(AssetGraphSubset.from_asset_partition_set(set(target_roots), asset_graph), asset_graph)}"
+        )
 
         yield None
 
@@ -1309,8 +1377,13 @@ def execute_asset_backfill_iteration_inner(
                 " AssetGraphSubset"
             )
 
+        materialized_since_last_tick = (
+            updated_materialized_subset - asset_backfill_data.materialized_subset
+        )
         logger.info(
-            f"Assets materialized since last tick {updated_materialized_subset - asset_backfill_data.materialized_subset}"
+            f"Assets materialized since last tick:\n {_asset_graph_subset_to_str(materialized_since_last_tick, asset_graph)}"
+            if materialized_since_last_tick
+            else "No relevant assets materialized since last tick."
         )
 
         parent_materialized_asset_partitions = set().union(
@@ -1358,17 +1431,29 @@ def execute_asset_backfill_iteration_inner(
     )
 
     logger.info(
-        f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
+        f"Asset partitions to request:\n {_asset_graph_subset_to_str(AssetGraphSubset.from_asset_partition_set(asset_partitions_to_request, asset_graph), asset_graph)}"
+        if asset_partitions_to_request
+        else "No asset partitions to request."
     )
-    not_requested_str = (
-        "\n"
-        + "\n".join([f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons])
-        if len(not_requested_and_reasons) > 0
-        else "None"
-    )
-    logger.info(
-        f"The following assets were considered for materialization but not requested:  {not_requested_str}"
-    )
+    if len(not_requested_and_reasons) > 0:
+
+        def _format_keys(keys: Iterable[AssetKeyPartitionKey]):
+            return ", ".join(
+                f"({key.asset_key.to_user_string()}, {key.partition_key})"
+                if key.partition_key
+                else key.asset_key.to_user_string()
+                for key in keys
+            )
+
+        not_requested_str = "\n".join(
+            [
+                f"[{_format_keys(keys)}] - Reason: {reason}."
+                for keys, reason in not_requested_and_reasons
+            ]
+        )
+        logger.info(
+            f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
+        )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
     asset_backfill_policies = [
@@ -1462,17 +1547,17 @@ def can_run_with_parent(
     if parent_node.backfill_policy != candidate_node.backfill_policy:
         return (
             False,
-            f"parent {parent_node.key} and {candidate_node.key} have different backfill policies",
+            f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different backfill policies so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key} is materialized.",
         )
     if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
         return (
             False,
-            f"parent {parent_node.key} and {candidate_node.key} are in different code locations",
+            f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} are in different code locations so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized.",
         )
     if parent_node.partitions_def != candidate_node.partitions_def:
         return (
             False,
-            f"parent {parent_node.key} and {candidate_node.key} have different partitions definitions",
+            f"parent {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} have different partitions definitions so they cannot be materialized in the same run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized.",
         )
     if (
         parent.partition_key not in asset_partitions_to_request_map[parent.asset_key]
@@ -1480,7 +1565,7 @@ def can_run_with_parent(
     ):
         return (
             False,
-            f"parent {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration",
+            f"parent {parent.asset_key.to_user_string()} with partition key {parent.partition_key} is not requested in this iteration",
         )
     if (
         # if there is a simple mapping between the parent and the child, then
@@ -1507,11 +1592,11 @@ def can_run_with_parent(
         return True, ""
     else:
         failed_reason = (
-            f"partition mapping between {parent_node.key} and {candidate_node.key} is not simple and "
-            f"{parent_node.key} does not meet requirements of: targeting the same partitions as "
-            f"{candidate_node.key}, have all of its partitions requested in this iteration, having "
+            f"partition mapping between {parent_node.key.to_user_string()} and {candidate_node.key.to_user_string()} is not simple and "
+            f"{parent_node.key.to_user_string()} does not meet requirements of: targeting the same partitions as "
+            f"{candidate_node.key.to_user_string()}, have all of its partitions requested in this iteration, having "
             "a backfill policy, and that backfill policy size limit is not exceeded by adding "
-            f"{candidate_node.key} to the run."
+            f"{candidate_node.key.to_user_string()} to the run. {candidate_node.key.to_user_string()} can be materialized once {parent_node.key.to_user_string()} is materialized."
         )
         return False, failed_reason
 
@@ -1535,14 +1620,18 @@ def should_backfill_atomic_asset_partitions_unit(
     it cannot, if applicable
     """
     for candidate in candidates_unit:
+        candidate_asset_partition_string = f"Asset {candidate.asset_key.to_user_string()} {f'with partition {candidate.partition_key}' if candidate.partition_key is not None else ''}"
         if candidate not in target_subset:
-            return False, f"{candidate} not targeted by backfill"
+            return False, f"{candidate_asset_partition_string} is not targeted by backfill"
         elif candidate in failed_and_downstream_subset:
-            return False, f"{candidate} in failed and downstream subset"
+            return (
+                False,
+                f"{candidate_asset_partition_string} has failed or is downstream of a failed asset",
+            )
         elif candidate in materialized_subset:
-            return False, f"{candidate} already materialized by backfill"
+            return False, f"{candidate_asset_partition_string} was already materialized by backfill"
         elif candidate in requested_subset:
-            return False, f"{candidate} already requested by backfill"
+            return False, f"{candidate_asset_partition_string} was already requested by backfill"
 
         parent_partitions_result = asset_graph.get_parents_partitions(
             dynamic_partitions_store, current_time, *candidate
