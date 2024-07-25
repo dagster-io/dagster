@@ -1,9 +1,7 @@
 from argparse import Namespace
 from typing import AbstractSet, Any, Dict, Mapping
 
-from dagster import AssetKey, get_dagster_logger
-
-logger = get_dagster_logger()
+from dagster import AssetKey
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
