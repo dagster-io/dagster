@@ -25,9 +25,9 @@ def select_unique_ids_from_manifest(
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
-    from dbt.version import __version__ as dbt_version
     from dbt.contracts.graph.manifest import Manifest
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
+    from dbt.version import __version__ as dbt_version
     from networkx import DiGraph
 
     # NOTE: this was faster than calling `Manifest.from_dict`, so we are keeping this.
