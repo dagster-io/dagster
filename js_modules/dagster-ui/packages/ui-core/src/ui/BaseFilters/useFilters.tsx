@@ -17,11 +17,15 @@ export const useFilters = ({filters}: UseFiltersProps) => {
   return {
     button: useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),
     renderButton: useCallback(
-      (label: string) => {
-        <FilterDropdownButton filters={filters} label={label} />;
+      (props: Parameters<RenderButtonType>[0]) => {
+        <FilterDropdownButton filters={filters} {...props} />;
       },
       [filters],
     ),
     activeFiltersJsx: activeFilterJsx,
   };
 };
+
+export type RenderButtonType = (
+  props: Partial<React.ComponentProps<typeof FilterDropdownButton>>,
+) => React.ReactNode;
