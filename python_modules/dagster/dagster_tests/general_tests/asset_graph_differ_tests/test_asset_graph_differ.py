@@ -360,3 +360,15 @@ def test_change_metadata(instance):
     assert differ.get_changes_for_asset(AssetKey("fruits")) == [AssetDefinitionChangeType.METADATA]
     assert differ.get_changes_for_asset(AssetKey("letters")) == [AssetDefinitionChangeType.METADATA]
     assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0
+
+
+def test_no_change_code_ref_metadata(instance) -> None:
+    differ = get_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="metadata_asset_graph_code_refs",
+        base_code_locations=["metadata_asset_graph_code_refs"],
+        branch_code_location_to_definitions={
+            "metadata_asset_graph_code_refs": "branch_deployment_change_metadata"
+        },
+    )
+    assert differ.get_changes_for_asset(AssetKey("foo")) == []
