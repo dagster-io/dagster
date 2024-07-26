@@ -10,8 +10,8 @@ from dagster import (
 )
 
 from .dagster_sdf_translator import DagsterSdfTranslator, validate_translator
-from .information_schema import SdfInformationSchema
-from .workspace import SdfWorkspace
+from .sdf_information_schema import SdfInformationSchema
+from .sdf_workspace import SdfWorkspace
 
 
 def sdf_assets(
@@ -32,7 +32,7 @@ def sdf_assets(
         target_dir=workspace.target_dir,
         environment=workspace.environment,
     )
-    outs, internal_asset_deps = information_schema.build_sdf_multi_asset_args(
+    deps, outs, internal_asset_deps = information_schema.build_sdf_multi_asset_args(
         io_manager_key=io_manager_key,
         dagster_sdf_translator=dagster_sdf_translator,
     )
@@ -48,6 +48,7 @@ def sdf_assets(
         outs=outs,
         name=name,
         internal_asset_deps=internal_asset_deps,
+        deps=deps,
         required_resource_keys=required_resource_keys,
         compute_kind="sdf",
         partitions_def=partitions_def,

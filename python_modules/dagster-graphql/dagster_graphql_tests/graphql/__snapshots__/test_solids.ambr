@@ -659,6 +659,22 @@
             }),
             dict({
               'pipeline': dict({
+                'name': '__anonymous_asset_job_jobless_schedule',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_one',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': '__anonymous_asset_job_jobless_sensor',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_one',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
                 'name': 'two_assets_job',
               }),
               'solidHandle': dict({

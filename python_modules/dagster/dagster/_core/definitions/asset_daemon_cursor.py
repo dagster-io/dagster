@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     )
 
 
-@whitelist_for_serdes(old_storage_names={"AssetConditionCursorExtras"})
+@whitelist_for_serdes(storage_name="AssetConditionCursorExtras")
 class AutomationConditionCursorExtras(NamedTuple):
     """Represents additional state that may be optionally saved by an AutomationCondition between
     evaluations.

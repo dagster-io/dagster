@@ -7,7 +7,7 @@ from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
 
 
-@whitelist_for_serdes(old_storage_names={"AndAssetCondition"})
+@whitelist_for_serdes(storage_name="AndAssetCondition")
 @record
 class AndAutomationCondition(AutomationCondition):
     """This class represents the condition that all of its children evaluate to true."""
@@ -40,7 +40,7 @@ class AndAutomationCondition(AutomationCondition):
         return AutomationResult.create_from_children(context, true_slice, child_results)
 
 
-@whitelist_for_serdes(old_storage_names={"OrAssetCondition"})
+@whitelist_for_serdes(storage_name="OrAssetCondition")
 @record
 class OrAutomationCondition(AutomationCondition):
     """This class represents the condition that any of its children evaluate to true."""
@@ -74,7 +74,7 @@ class OrAutomationCondition(AutomationCondition):
         return AutomationResult.create_from_children(context, true_slice, child_results)
 
 
-@whitelist_for_serdes(old_storage_names={"NotAssetCondition"})
+@whitelist_for_serdes(storage_name="NotAssetCondition")
 @record
 class NotAutomationCondition(AutomationCondition):
     """This class represents the condition that none of its children evaluate to true."""

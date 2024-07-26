@@ -5,10 +5,12 @@ import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
 from dagster._core.remote_representation import ExternalSchedule
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
 
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
 
 from ..errors import (
     GraphenePythonError,
@@ -52,6 +54,7 @@ class GrapheneSchedule(graphene.ObjectType):
         upper_limit=graphene.Int(),
         lower_limit=graphene.Int(),
     )
+    assetSelection = graphene.Field(GrapheneAssetSelection)
 
     class Meta:
         name = "Schedule"
@@ -59,12 +62,14 @@ class GrapheneSchedule(graphene.ObjectType):
     def __init__(
         self,
         external_schedule: ExternalSchedule,
+        external_repository: ExternalRepository,
         schedule_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
+        self._external_repository = external_repository
 
         # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
         # that instantiates multiple schedules
@@ -89,6 +94,12 @@ class GrapheneSchedule(graphene.ObjectType):
                 else "UTC"
             ),
             description=external_schedule.description,
+            assetSelection=GrapheneAssetSelection(
+                asset_selection=external_schedule.asset_selection,
+                external_repository=self._external_repository,
+            )
+            if external_schedule.asset_selection
+            else None,
         )
 
     def resolve_id(self, _graphene_info: ResolveInfo) -> str:

@@ -54,7 +54,7 @@ from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection, CoercibleToAssetSelection, KeysAssetSelection
 from .dynamic_partitions_request import AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
 from .run_request import DagsterRunReaction, RunRequest, SensorResult, SkipReason
-from .target import AutomationTarget, ExecutableDefinition
+from .target import ANONYMOUS_ASSET_JOB_PREFIX, AutomationTarget, ExecutableDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -783,7 +783,7 @@ class SensorDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> ExecutableDefinition:
+    def job(self) -> Union[JobDefinition, "UnresolvedAssetJobDefinition"]:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
@@ -1071,6 +1071,10 @@ class SensorDefinition(IHasInternalInit):
     @property
     def asset_selection(self) -> Optional[AssetSelection]:
         return self._asset_selection
+
+    @property
+    def has_anonymous_job(self) -> bool:
+        return bool(self._target and self._target.job_name.startswith(ANONYMOUS_ASSET_JOB_PREFIX))
 
 
 @whitelist_for_serdes(

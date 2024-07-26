@@ -73,3 +73,44 @@ def build_schedule_from_sdf_selection(
         execution_timezone=execution_timezone,
         default_status=default_status,
     )
+
+
+def get_asset_key_for_table_id(sdf_assets: Sequence[AssetsDefinition], table_id: str) -> AssetKey:
+    """Returns the corresponding Dagster asset key for an sdf table.
+
+    Args:
+        table_id (str): The fqn of the the sdf table.
+
+    Raises:
+        DagsterInvalidInvocationError: If the source has more than one table.
+
+    Returns:
+        AssetKey: The corresponding Dagster asset key.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_sdf import sdf_assets, get_asset_key_for_table_id
+
+            @sdf_assets(manifest=...)
+            def all_sdf_assets():
+                ...
+
+            @asset(key=get_asset_key_for_table_id([all_sdf_assets], "my_source"))
+            def upstream_python_asset():
+                ...
+    """
+    asset_keys_by_output_name = {}
+    for sdf_asset in sdf_assets:
+        for name, key in sdf_asset.keys_by_output_name.items():
+            key_table_id = ".".join(key.path)
+            if key_table_id == table_id:
+                asset_keys_by_output_name[name] = key
+
+    if len(asset_keys_by_output_name) > 1:
+        raise KeyError(
+            f"Table {table_id} has more than one table associated with two or more unique dagster asset names:"
+            f" {asset_keys_by_output_name.keys()}."
+        )
+    return next(iter(asset_keys_by_output_name.values()))

@@ -521,6 +521,12 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe_asset(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset(asset_key)
 
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
+        raise NotImplementedError(
+            "Partitioned asset wipe is not supported yet for this event log storage."
+        )
+
     def get_materialized_partitions(
         self,
         asset_key: AssetKey,

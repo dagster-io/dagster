@@ -32,6 +32,7 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -56,6 +57,15 @@ class AssetKeyPartitionKey(NamedTuple):
 
     asset_key: AssetKey
     partition_key: Optional[str] = None
+
+
+# This is currently used only for the asset partition wipe codepath. In the future, we can rename
+# to AssetPartitionRange or similar for more general use.
+class AssetPartitionWipeRange(NamedTuple):
+    """An AssetKey with a partition range."""
+
+    asset_key: AssetKey
+    partition_range: Optional[PartitionKeyRange]
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]

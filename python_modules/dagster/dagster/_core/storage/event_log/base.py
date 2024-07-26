@@ -421,6 +421,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Remove asset index history from event log for given asset_key."""
 
     @abstractmethod
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
+
+    @abstractmethod
     def get_materialized_partitions(
         self,
         asset_key: AssetKey,

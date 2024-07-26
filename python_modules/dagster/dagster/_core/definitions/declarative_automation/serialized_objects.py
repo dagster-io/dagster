@@ -52,7 +52,7 @@ def get_serializable_candidate_subset(
     return candidate_subset
 
 
-@whitelist_for_serdes(old_storage_names={"AssetConditionSnapshot"})
+@whitelist_for_serdes(storage_name="AssetConditionSnapshot")
 class AutomationConditionSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
@@ -75,7 +75,7 @@ class AssetSubsetWithMetadata(NamedTuple):
         return frozenset(self.metadata.items())
 
 
-@whitelist_for_serdes(old_storage_names={"AssetConditionEvaluation"})
+@whitelist_for_serdes(storage_name="AssetConditionEvaluation")
 class AutomationConditionEvaluation(NamedTuple):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
@@ -132,7 +132,7 @@ class AutomationConditionEvaluation(NamedTuple):
         return discarded_subset.size
 
 
-@whitelist_for_serdes(old_storage_names={"AssetConditionEvaluationWithRunIds"})
+@whitelist_for_serdes(storage_name="AssetConditionEvaluationWithRunIds")
 class AutomationConditionEvaluationWithRunIds(NamedTuple):
     """A union of an AutomatConditionEvaluation and the set of run IDs that have been launched in
     response to it.
@@ -150,7 +150,7 @@ class AutomationConditionEvaluationWithRunIds(NamedTuple):
         return self.evaluation.true_subset.size
 
 
-@whitelist_for_serdes(old_storage_names={"AssetConditionEvaluationState"})
+@whitelist_for_serdes(storage_name="AssetConditionEvaluationState")
 @dataclass(frozen=True)
 class AutomationConditionEvaluationState:
     """Incremental state calculated during the evaluation of an AutomationCondition. This may be used

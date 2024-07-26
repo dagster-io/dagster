@@ -1,5 +1,3 @@
-import os
-
 from dagster import Definitions
 from dagster_sdf.resource import SdfCliResource
 
@@ -11,6 +9,9 @@ defs = Definitions(
     assets=[{{ sdf_assets_name }}],
     schedules=schedules,
     resources={
-        "sdf": SdfCliResource(workspace_dir=os.fspath(sdf_workspace_dir), global_config_flags=["--log-form=nested"]),
+        "sdf": SdfCliResource(
+            workspace_dir=sdf_workspace_dir,
+            global_config_flags=["--log-form=nested"]
+        ),
     },
 )
