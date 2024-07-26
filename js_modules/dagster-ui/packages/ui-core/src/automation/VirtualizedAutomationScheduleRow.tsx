@@ -1,5 +1,5 @@
 import {useLazyQuery} from '@apollo/client';
-import {Box, Caption, Checkbox, Colors, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
+import {Box, Caption, Checkbox, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -9,13 +9,13 @@ import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {CronTag} from '../schedules/CronTag';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {humanCronString} from '../schedules/humanCronString';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
-import {SINGLE_SCHEDULE_QUERY, ScheduleStringContainer} from '../workspace/VirtualizedScheduleRow';
+import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
 import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -68,10 +68,6 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
     }, [data]);
 
     const isJob = !!(scheduleData && isThisThingAJob(repo, scheduleData.pipelineName));
-
-    const cronString = scheduleData
-      ? humanCronString(scheduleData.cronSchedule, scheduleData.executionTimezone || 'UTC')
-      : '';
 
     const onChange = (e: React.FormEvent<HTMLInputElement>) => {
       if (onToggleChecked && e.target instanceof HTMLInputElement) {
@@ -135,22 +131,10 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
           <RowCell>
             {scheduleData ? (
               <Box flex={{direction: 'column', gap: 4}}>
-                <ScheduleStringContainer style={{maxWidth: '100%'}}>
-                  <Tooltip position="top-left" content={scheduleData.cronSchedule} display="block">
-                    <div
-                      style={{
-                        color: Colors.textDefault(),
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '100%',
-                        textOverflow: 'ellipsis',
-                      }}
-                      title={cronString}
-                    >
-                      {cronString}
-                    </div>
-                  </Tooltip>
-                </ScheduleStringContainer>
+                <CronTag
+                  cronSchedule={scheduleData.cronSchedule}
+                  executionTimezone={scheduleData.executionTimezone}
+                />
                 {scheduleData.scheduleState.nextTick &&
                 scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
                   <Caption>

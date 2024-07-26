@@ -32,10 +32,10 @@ import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationS
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {CronTag} from '../schedules/CronTag';
 import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {humanCronString} from '../schedules/humanCronString';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
@@ -98,10 +98,6 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   const isJob = !!(scheduleData && isThisThingAJob(repo, scheduleData.pipelineName));
 
-  const cronString = scheduleData
-    ? humanCronString(scheduleData.cronSchedule, scheduleData.executionTimezone || 'UTC')
-    : '';
-
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (onToggleChecked && e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
@@ -161,22 +157,10 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           {scheduleData ? (
             <Box flex={{direction: 'column', gap: 4}}>
-              <ScheduleStringContainer style={{maxWidth: '100%'}}>
-                <Tooltip position="top-left" content={scheduleData.cronSchedule} display="block">
-                  <div
-                    style={{
-                      color: Colors.textDefault(),
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '100%',
-                      textOverflow: 'ellipsis',
-                    }}
-                    title={cronString}
-                  >
-                    {cronString}
-                  </div>
-                </Tooltip>
-              </ScheduleStringContainer>
+              <CronTag
+                cronSchedule={scheduleData.cronSchedule}
+                executionTimezone={scheduleData.executionTimezone}
+              />
               {scheduleData.scheduleState.nextTick &&
               scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
                 <Caption>
@@ -301,18 +285,6 @@ const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
   grid-template-columns: ${({$showCheckboxColumn}) =>
     $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
   height: 100%;
-`;
-
-export const ScheduleStringContainer = styled.div`
-  max-width: 100%;
-
-  .bp4-popover2-target {
-    max-width: 100%;
-
-    :focus {
-      outline: none;
-    }
-  }
 `;
 
 export const SINGLE_SCHEDULE_QUERY = gql`
