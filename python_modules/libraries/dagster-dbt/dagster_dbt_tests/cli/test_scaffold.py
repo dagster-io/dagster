@@ -85,7 +85,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    project_name = f"test_dagster_scaffold_precompiled_manifest"
+    project_name = "test_dagster_scaffold_precompiled_manifest"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     _assert_scaffold_invocation(
@@ -115,7 +115,7 @@ def test_project_scaffold_command_with_dbt_project_with_runtime_manifest(
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
-    project_name = f"test_dagster_scaffold_runtime_manifest"
+    project_name = "test_dagster_scaffold_runtime_manifest"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     _assert_scaffold_invocation(
@@ -145,7 +145,7 @@ def test_project_scaffold_command_with_runtime_manifest_without_env_var(
 
     monkeypatch.delenv("DAGSTER_IS_DEV_CLI", raising=False)
 
-    project_name = f"test_scaffold_runtime_without_env_var"
+    project_name = "test_scaffold_runtime_without_env_var"
     dagster_project_dir = tmp_path.joinpath(project_name)
 
     _assert_scaffold_invocation(
