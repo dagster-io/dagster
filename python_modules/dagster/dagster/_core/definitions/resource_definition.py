@@ -151,6 +151,11 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         """
         return self._required_resource_keys
 
+    def get_required_resource_keys(
+        self, resource_defs: Mapping[str, "ResourceDefinition"]
+    ) -> AbstractSet[str]:
+        return self.required_resource_keys
+
     def _is_dagster_maintained(self) -> bool:
         return self._dagster_maintained
 

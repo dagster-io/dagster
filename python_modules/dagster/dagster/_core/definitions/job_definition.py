@@ -35,6 +35,7 @@ from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
+    ResourceKeyRequirement,
     ResourceRequirement,
     ensure_requirements_satisfied,
 )
@@ -492,7 +493,7 @@ class JobDefinition(IHasInternalInit):
         requirements = self._get_resource_requirements()
         if validate_requirements:
             ensure_requirements_satisfied(self.resource_defs, requirements)
-        required_keys = {req.key for req in requirements}
+        required_keys = {req.key for req in requirements if isinstance(req, ResourceKeyRequirement)}
         if validate_requirements:
             return required_keys.union(
                 get_transitive_required_resource_keys(required_keys, self.resource_defs)
@@ -517,7 +518,7 @@ class JobDefinition(IHasInternalInit):
     def is_missing_required_resources(self) -> bool:
         requirements = self._get_resource_requirements()
         for requirement in requirements:
-            if not requirement.resources_contain_key(self.resource_defs):
+            if not requirement.is_satisfied(self.resource_defs):
                 return True
         return False
 

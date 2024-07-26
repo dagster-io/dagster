@@ -20,7 +20,6 @@ import dagster._check as check
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
-    ResourceWithKeyMapping,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -106,14 +105,14 @@ def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[st
 
     env_vars = _find_env_vars(config_schema_default)
 
-    if isinstance(resource_def, ResourceWithKeyMapping) and isinstance(
-        resource_def.inner_resource,
+    if isinstance(
+        resource_def,
         (
             ConfigurableIOManagerFactoryResourceDefinition,
             ConfigurableResourceFactoryResourceDefinition,
         ),
     ):
-        nested_resources = resource_def.inner_resource.nested_resources
+        nested_resources = resource_def.nested_resources
         for nested_resource in nested_resources.values():
             env_vars = env_vars.union(
                 _env_vars_from_resource_defaults(wrap_resource_for_execution(nested_resource))
@@ -369,7 +368,6 @@ def build_caching_repository_data_from_list(
         asset_checks_defs_by_key=asset_checks_defs_by_key,
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
-        resource_key_mapping=resource_key_mapping or {},
         unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
     )
 
@@ -432,7 +430,6 @@ def build_caching_repository_data_from_dict(
         asset_checks_defs_by_key={},
         top_level_resources={},
         utilized_env_vars={},
-        resource_key_mapping={},
         unresolved_partitioned_asset_schedules={},
     )
 

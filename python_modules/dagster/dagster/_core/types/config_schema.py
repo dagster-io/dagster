@@ -36,10 +36,7 @@ class DagsterTypeLoader(ABC):
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
 
-    def get_resource_requirements(
-        self,
-        type_display_name: str,
-    ) -> Iterator[ResourceRequirement]:
+    def get_resource_requirements(self, type_display_name: str) -> Iterator[ResourceRequirement]:
         for resource_key in sorted(list(self.required_resource_keys())):
             yield TypeLoaderResourceRequirement(
                 key=resource_key, type_display_name=type_display_name

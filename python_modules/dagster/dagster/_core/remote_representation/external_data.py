@@ -34,8 +34,8 @@ from dagster import (
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
-    ResourceWithKeyMapping,
 )
+from dagster._config.pythonic_config.resource import coerce_to_resource, is_coercible_to_resource
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions import (
     AssetSelection,
@@ -82,6 +82,7 @@ from dagster._core.definitions.partition_mapping import (
     get_builtin_partition_mapping_types,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
@@ -1200,7 +1201,8 @@ def _get_resource_usage_from_node(
     handle = NodeHandle(node.name, parent_handle)
     if isinstance(node, OpNode):
         for resource_req in node.get_resource_requirements(pipeline.graph):
-            yield NodeHandleResourceUse(resource_req.key, handle)
+            if isinstance(resource_req, ResourceKeyRequirement):
+                yield NodeHandleResourceUse(resource_req.key, handle)
     elif isinstance(node, GraphNode):
         for nested_node in node.definition.nodes:
             yield from _get_resource_usage_from_node(pipeline, nested_node, handle)
@@ -1259,7 +1261,7 @@ def external_repository_data_from_def(
     )
 
     nested_resource_map = _get_nested_resources_map(
-        resource_datas, repository_def.get_resource_key_mapping()
+        resource_datas, repository_def.get_top_level_resources()
     )
     inverted_nested_resources_map: Dict[str, Dict[str, str]] = defaultdict(dict)
     for resource_key, nested_resources in nested_resource_map.items():
@@ -1526,20 +1528,32 @@ def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
 
 
 def _get_nested_resources_map(
-    resource_datas: Mapping[str, ResourceDefinition], resource_key_mapping: Mapping[int, str]
+    resource_datas: Mapping[str, ResourceDefinition],
+    top_level_resources: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, Mapping[str, NestedResource]]:
     out_map: Mapping[str, Mapping[str, NestedResource]] = {}
     for resource_name, resource_def in resource_datas.items():
-        out_map[resource_name] = _get_nested_resources(resource_def, resource_key_mapping)
+        out_map[resource_name] = _get_nested_resources(resource_def, top_level_resources)
     return out_map
 
 
-def _get_nested_resources(
-    resource_def: ResourceDefinition, resource_key_mapping: Mapping[int, str]
-) -> Mapping[str, NestedResource]:
-    if isinstance(resource_def, ResourceWithKeyMapping):
-        resource_def = resource_def.wrapped_resource
+def _find_match(nested_resource, resource_defs) -> Optional[str]:
+    if is_coercible_to_resource(nested_resource):
+        defn = coerce_to_resource(nested_resource)
+    else:
+        return None
 
+    for k, v in resource_defs.items():
+        if defn is v:
+            return k
+
+    return None
+
+
+def _get_nested_resources(
+    resource_def: ResourceDefinition,
+    top_level_resources: Mapping[str, ResourceDefinition],
+) -> Mapping[str, NestedResource]:
     # ConfigurableResources may have "anonymous" nested resources, which are not
     # explicitly specified as top-level resources
     if isinstance(
@@ -1549,18 +1563,16 @@ def _get_nested_resources(
             ConfigurableIOManagerFactoryResourceDefinition,
         ),
     ):
-        return {
-            k: (
-                NestedResource(
-                    NestedResourceType.TOP_LEVEL, resource_key_mapping[id(nested_resource)]
-                )
-                if id(nested_resource) in resource_key_mapping
-                else NestedResource(
+        results = {}
+        for k, nested_resource in resource_def.nested_resources.items():
+            top_level_key = _find_match(nested_resource, top_level_resources)
+            if top_level_key:
+                results[k] = NestedResource(NestedResourceType.TOP_LEVEL, top_level_key)
+            else:
+                results[k] = NestedResource(
                     NestedResourceType.ANONYMOUS, nested_resource.__class__.__name__
                 )
-            )
-            for k, nested_resource in resource_def.nested_resources.items()
-        }
+        return results
     else:
         return {
             k: NestedResource(NestedResourceType.TOP_LEVEL, k)
@@ -1615,8 +1627,6 @@ def external_resource_data_from_def(
     }
 
     resource_type_def = resource_def
-    if isinstance(resource_type_def, ResourceWithKeyMapping):
-        resource_type_def = resource_type_def.wrapped_resource
 
     # use the resource function name as the resource type if it's a function resource
     # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)

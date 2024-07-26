@@ -12,10 +12,11 @@ from dagster import (
     ResourceDependency,
     ResourceParam,
     asset,
+    job,
     resource,
 )
-from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResourceFactory
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager
 
@@ -155,12 +156,15 @@ def test_nested_resources_runtime_config() -> None:
         completed["yes"] = True
 
     aws_credentials = AWSCredentialsResource.configure_at_launch()
+    s3_resource = S3Resource(bucket_name="my_bucket", aws_credentials=aws_credentials)
+    ec2_resource = EC2Resource(aws_credentials=aws_credentials)
+
     defs = Definitions(
         assets=[my_asset],
         resources={
             "aws_credentials": aws_credentials,
-            "s3": S3Resource(bucket_name="my_bucket", aws_credentials=aws_credentials),
-            "ec2": EC2Resource(aws_credentials=aws_credentials),
+            "s3": s3_resource,
+            "ec2": ec2_resource,
         },
     )
 
@@ -181,6 +185,29 @@ def test_nested_resources_runtime_config() -> None:
         .success
     )
     assert completed["yes"]
+
+    @job(
+        resource_defs={
+            "random_key": aws_credentials,
+            "s3": s3_resource,
+            "ec2": ec2_resource,
+        }
+    )
+    def my_job():
+        my_asset()
+
+    assert my_job.execute_in_process(
+        {
+            "resources": {
+                "random_key": {
+                    "config": {
+                        "username": "foo",
+                        "password": "bar",
+                    }
+                }
+            }
+        }
+    ).success
 
 
 def test_nested_resources_runtime_config_complex() -> None:
@@ -390,8 +417,8 @@ def test_nested_function_resource_runtime_config() -> None:
         writer("bar")
 
     with pytest.raises(
-        CheckError,
-        match="Any partially configured, nested resources must be provided to Definitions",
+        DagsterInvalidDefinitionError,
+        match="Any partially configured, nested resources must be provided as a top level resource.",
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions

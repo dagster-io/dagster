@@ -76,7 +76,8 @@ def resolve_resource_dependencies(
 ) -> Mapping[str, AbstractSet[str]]:
     """Generates a dictionary that maps resource key to resource keys it requires for initialization."""
     resource_dependencies = {
-        key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
+        key: resource_def.get_required_resource_keys(resource_defs)
+        for key, resource_def in resource_defs.items()
     }
     return resource_dependencies
 
@@ -163,7 +164,7 @@ def _core_resource_initialization_event_generator(
 
                 resource_fn = cast(Callable[[InitResourceContext], Any], resource_def.resource_fn)
                 resources = ScopedResourcesBuilder(resource_instances).build(
-                    resource_def.required_resource_keys
+                    resource_def.get_required_resource_keys(resource_defs)
                 )
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
@@ -176,6 +177,7 @@ def _core_resource_initialization_event_generator(
                     ),
                     resources=resources,
                     instance=instance,
+                    all_resource_defs=resource_defs,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
