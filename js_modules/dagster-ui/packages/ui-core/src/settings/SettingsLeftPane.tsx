@@ -17,7 +17,7 @@ const items: SideNavItemConfig[] = [
   {
     key: 'daemons',
     type: 'link',
-    icon: <Icon name="deamon" />,
+    icon: <Icon name="daemon" />,
     label: 'Daemons',
     path: '/deployment/daemons',
   },
