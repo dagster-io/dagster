@@ -1,7 +1,17 @@
 import asyncio
 import os
 import sys
-from typing import TYPE_CHECKING, Any, AsyncIterator, Mapping, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 # re-exports
 import dagster._check as check
@@ -22,6 +32,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
+
+from dagster_graphql.implementation.fetch_assets import get_external_asset_node
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GrapheneUnsupportedOperationError
@@ -366,21 +378,31 @@ async def gen_captured_log_data(
 def wipe_assets(
     graphene_info: "ResolveInfo", asset_partition_ranges: Sequence[AssetPartitionWipeRange]
 ) -> Union["GrapheneAssetWipeSuccess", "GrapheneUnsupportedOperationError"]:
-    from dagster_graphql.schema.errors import GrapheneUnsupportedOperationError
-
     from ...schema.backfill import GrapheneAssetPartitionRange
+    from ...schema.errors import GrapheneUnsupportedOperationError
     from ...schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
-    for asset_partition_range in asset_partition_ranges:
-        # This will be removed when support for partition-scoped wiping is added.
-        if asset_partition_range.partition_range is not None:
-            return GrapheneUnsupportedOperationError(
-                f"Partitioned asset wipe is not supported yet. Found partition range: {asset_partition_range}"
-            )
+    whole_assets_to_wipe: List[AssetKey] = []
+    for apr in asset_partition_ranges:
+        if apr.partition_range is None:
+            whole_assets_to_wipe.append(apr.asset_key)
+        else:
+            node = check.not_none(get_external_asset_node(graphene_info, apr.asset_key))
+            partitions_def = check.not_none(node.partitions_def_data).get_partitions_definition()
+            partition_keys = partitions_def.get_partition_keys_in_range(apr.partition_range)
+            try:
+                instance.wipe_asset_partitions(apr.asset_key, partition_keys)
 
-    asset_keys = [apr.asset_key for apr in asset_partition_ranges]
-    instance.wipe_assets(asset_keys)
+            # NotImplementedError will be thrown if the underlying EventLogStorage does not support
+            # partitioned asset wipe.
+            except NotImplementedError:
+                return GrapheneUnsupportedOperationError(
+                    "Partitioned asset wipe is not supported yet."
+                )
+
+    instance.wipe_assets(whole_assets_to_wipe)
+
     result_ranges = [
         GrapheneAssetPartitionRange(asset_key=apr.asset_key, partition_range=apr.partition_range)
         for apr in asset_partition_ranges
