@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import dagster._check as check
 import docker
@@ -96,7 +96,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         validate_docker_image(docker_image)
         return docker_image
 
-    def _launch_container_with_command(self, run, docker_image, command):
+    def _launch_container_with_command(self, run, docker_image, command, container_kwargs):
         container_context = self.get_container_context(run)
         docker_env = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
         docker_env["DAGSTER_RUN_JOB_NAME"] = run.job_name
@@ -110,7 +110,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=container_context.networks[0] if len(container_context.networks) else None,
-                **container_context.container_kwargs,
+                container_kwargs=container_kwargs,
             )
 
         except docker.errors.ImageNotFound:
@@ -121,7 +121,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 detach=True,
                 environment=docker_env,
                 network=container_context.networks[0] if len(container_context.networks) else None,
-                **container_context.container_kwargs,
+                container_kwargs=container_kwargs,
             )
 
         if len(container_context.networks) > 1:
@@ -147,13 +147,16 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         job_code_origin = check.not_none(context.job_code_origin)
         docker_image = self._get_docker_image(job_code_origin)
 
+        dynamic_container_kwargs: Dict[str, Any] = context.metadata.get('container_kwargs', {})
+        merged_container_kwargs = {**self._container_kwargs, **dynamic_container_kwargs}
+
         command = ExecuteRunArgs(
             job_origin=job_code_origin,
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
-        self._launch_container_with_command(run, docker_image, command)
+        self._launch_container_with_command(run, docker_image, command, merged_container_kwargs)
 
     @property
     def supports_resume_run(self):
