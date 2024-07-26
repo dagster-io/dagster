@@ -20,7 +20,7 @@ def test_local_dev(tmp_path: Path) -> None:
         info_schema = SdfInformationSchema(
             workspace_dir=workspace.workspace_dir, target_dir=workspace.target_dir
         )
-        assert info_schema.is_hydrated()
+        assert info_schema.is_parsed()
 
 
 def test_opt_in_env_var(tmp_path: Path) -> None:
@@ -34,4 +34,4 @@ def test_opt_in_env_var(tmp_path: Path) -> None:
         info_schema = SdfInformationSchema(
             workspace_dir=workspace.workspace_dir, target_dir=workspace.target_dir
         )
-        assert info_schema.is_hydrated()
+        assert info_schema.is_parsed()

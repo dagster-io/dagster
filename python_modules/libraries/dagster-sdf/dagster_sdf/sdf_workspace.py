@@ -50,9 +50,9 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
         Args:
             generate_cli_args (Sequence[str]):
                 The arguments to pass to the sdf cli to prepare the workspace.
-                Default: ["compile", "--show=none", "--log-level=info", "--log-form=nested"]
+                Default: ["compile", "--stage==parse"]
         """
-        self._generate_cli_args = generate_cli_args or ["compile"]
+        self._generate_cli_args = generate_cli_args or ["compile", "--stage=parse"]
 
     def on_load(self, workspace: "SdfWorkspace"):
         if self.using_dagster_dev() or self.compile_on_load_opt_in():
@@ -62,7 +62,7 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
                 target_dir=workspace.target_dir,
                 environment=workspace.environment,
             )
-            if not information_schema.is_hydrated():
+            if not information_schema.is_parsed():
                 raise DagsterSdfInformationSchemaNotFoundError(
                     f"Sdf Information Schema was not generated correctly at expected path {information_schema.information_schema_dir} "
                     f"after running '{self.prepare.__qualname__}'. Ensure the implementation respects "

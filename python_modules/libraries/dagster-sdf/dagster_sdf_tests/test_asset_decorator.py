@@ -2,11 +2,12 @@ from pathlib import Path
 
 from dagster import AssetExecutionContext, AssetKey, materialize
 from dagster_sdf.asset_decorator import sdf_assets
+from dagster_sdf.asset_utils import get_asset_key_for_table_id
 from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator
 from dagster_sdf.resource import SdfCliResource
 from dagster_sdf.sdf_workspace import SdfWorkspace
 
-from .sdf_workspaces import moms_flower_shop_path
+from .sdf_workspaces import lineage_upstream_path, moms_flower_shop_path
 
 
 def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
@@ -52,6 +53,34 @@ def test_asset_deps(moms_flower_shop_target_dir: Path) -> None:
             AssetKey(["moms_flower_shop", "staging", "stg_installs_per_campaign"]),
         },
     }
+
+    asset_key = get_asset_key_for_table_id(
+        [my_flower_shop_assets], "moms_flower_shop.raw.raw_addresses"
+    )
+    assert asset_key == AssetKey(["moms_flower_shop", "raw", "raw_addresses"])
+
+
+def test_upstream_deps(lineage_upstream_target_dir: Path) -> None:
+    @sdf_assets(
+        workspace=SdfWorkspace(
+            workspace_dir=lineage_upstream_path, target_dir=lineage_upstream_target_dir
+        )
+    )
+    def my_lineage_upstream_assets(): ...
+
+    assert my_lineage_upstream_assets.asset_deps == {
+        AssetKey(["lineage", "pub", "depend_on_upstream"]): {
+            AssetKey(["build_upstream_depend_on"])
+        },
+        AssetKey(["lineage", "pub", "knis"]): {AssetKey(["lineage", "pub", "middle"])},
+        AssetKey(["lineage", "pub", "middle"]): {AssetKey(["build_upstream_source"])},
+        AssetKey(["lineage", "pub", "sink"]): {AssetKey(["lineage", "pub", "middle"])},
+    }
+
+    asset_key = get_asset_key_for_table_id(
+        [my_lineage_upstream_assets], "lineage.pub.depend_on_upstream"
+    )
+    assert asset_key == AssetKey(["lineage", "pub", "depend_on_upstream"])
 
 
 def test_sdf_with_materialize(moms_flower_shop_target_dir: Path) -> None:
@@ -160,3 +189,10 @@ def test_with_custom_translater_asset_key_fn(moms_flower_shop_target_dir: Path) 
             ),
         },
     }
+
+    asset_key = get_asset_key_for_table_id(
+        [my_flower_shop_assets], "pre-moms_flower_shop-suff.pre-raw-suff.pre-raw_addresses-suff"
+    )
+    assert asset_key == AssetKey(
+        ["pre-moms_flower_shop-suff", "pre-raw-suff", "pre-raw_addresses-suff"]
+    )
