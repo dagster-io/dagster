@@ -194,16 +194,16 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           </div>
         </RowCell>
         <RowCell>
-          <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            {sensorData ? (
+          {sensorData ? (
+            <div>
               <AutomationTargetList
                 targets={sensorData.targets}
                 repoAddress={repoAddress}
                 assetSelection={selectedAssets}
                 automationType={sensorData.sensorType}
               />
-            ) : null}
-          </Box>
+            </div>
+          ) : null}
         </RowCell>
         <RowCell>
           {sensorData ? (

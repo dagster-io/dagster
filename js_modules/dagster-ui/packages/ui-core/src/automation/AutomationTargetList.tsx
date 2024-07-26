@@ -9,8 +9,9 @@ import {
   DisclosureTriangleButton,
   MiddleTruncate,
   Subtitle2,
+  Tag,
 } from '@dagster-io/ui-components';
-import React, {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {
@@ -49,26 +50,39 @@ export const AutomationTargetList = ({
 
   const visibleTargets = targets?.filter((target) => !isHiddenAssetGroupJob(target.pipelineName));
 
+  if (assetSelection) {
+    return <AssetSelectionTag assetSelection={assetSelection} automationType={automationType} />;
+  }
+
+  if (visibleTargets?.length) {
+    return (
+      <Box flex={{direction: 'row', gap: 4}}>
+        {visibleTargets.map((target) =>
+          target.pipelineName ? (
+            <Tag icon="job" tooltipText={target.pipelineName} key={target.pipelineName}>
+              <PipelineReference
+                key={target.pipelineName}
+                pipelineName={target.pipelineName}
+                pipelineHrefContext={repoAddress}
+                isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
+              />
+            </Tag>
+          ) : null,
+        )}
+      </Box>
+    );
+  }
+
   return (
-    <Box flex={{direction: 'column', gap: 2}}>
-      {assetSelection && (
-        <AssetSelectionLink assetSelection={assetSelection} automationType={automationType} />
-      )}
-      {visibleTargets?.map((target) =>
-        target.pipelineName ? (
-          <PipelineReference
-            key={target.pipelineName}
-            pipelineName={target.pipelineName}
-            pipelineHrefContext={repoAddress}
-            isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
-          />
-        ) : null,
-      )}
-    </Box>
+    <Tag>
+      <div style={{color: Colors.textLight()}}>None</div>
+    </Tag>
   );
 };
 
-const AssetSelectionLink = ({
+const ALL_ASSETS_STRING = 'all materializable assets';
+
+const AssetSelectionTag = ({
   assetSelection,
   automationType,
 }: {
@@ -80,7 +94,7 @@ const AssetSelectionLink = ({
   const error =
     assetSelection.assetsOrError.__typename === 'PythonError' ? assetSelection.assetsOrError : null;
 
-  const sortedAssets = React.useMemo(() => {
+  const sortedAssets = useMemo(() => {
     if (assetSelection.assetsOrError.__typename === 'PythonError') {
       return [];
     }
@@ -91,16 +105,26 @@ const AssetSelectionLink = ({
       );
   }, [assetSelection.assetsOrError]);
 
-  const assetsWithAMP = React.useMemo(
+  const assetsWithAMP = useMemo(
     () => sortedAssets.filter((asset) => !!asset.definition?.autoMaterializePolicy),
     [sortedAssets],
   );
-  const assetsWithoutAMP = React.useMemo(
+  const assetsWithoutAMP = useMemo(
     () => sortedAssets.filter((asset) => !asset.definition?.autoMaterializePolicy),
     [sortedAssets],
   );
 
   const assetSelectionString = assetSelection.assetSelectionString || '';
+  const isAllAssets = assetSelectionString === ALL_ASSETS_STRING;
+  const firstAsset = sortedAssets[0];
+
+  if (firstAsset && sortedAssets.length === 1) {
+    return (
+      <Tag icon="asset">
+        <Link to={assetDetailsPathForKey(firstAsset.key)}>{assetSelectionString}</Link>
+      </Tag>
+    );
+  }
 
   return (
     <>
@@ -108,11 +132,14 @@ const AssetSelectionLink = ({
         isOpen={showAssetSelection}
         title="Targeted assets"
         onClose={() => setShowAssetSelection(false)}
-        style={{width: '750px', maxWidth: '80vw', minWidth: '500px', transform: 'scale(1)'}}
+        style={{width: '750px', maxWidth: '80vw', minWidth: '500px'}}
         canOutsideClickClose
         canEscapeKeyClose
       >
-        <Box flex={{direction: 'column'}}>
+        <Box
+          flex={{direction: 'column'}}
+          style={{height: '50vh', maxHeight: '1000px', minHeight: '400px'}}
+        >
           {automationType === SensorType.AUTO_MATERIALIZE ||
           automationType === SensorType.AUTOMATION ? (
             <>
@@ -142,27 +169,30 @@ const AssetSelectionLink = ({
           </Button>
         </DialogFooter>
       </Dialog>
-      <ButtonLink
-        onClick={() => {
-          if (error) {
-            showCustomAlert({
-              title: 'Python Error',
-              body: <PythonErrorInfo error={error} />,
-            });
-          } else {
-            setShowAssetSelection(true);
-          }
-        }}
+      <Tag
+        icon={sortedAssets.length === 1 ? 'asset' : 'asset_group'}
+        intent={error ? 'danger' : 'none'}
       >
-        {error ? (
-          <>Error loading asset selection</>
-        ) : (
-          <>
-            {assetSelectionString.slice(0, 1).toUpperCase()}
-            {assetSelectionString.slice(1)}
-          </>
-        )}
-      </ButtonLink>
+        <ButtonLink
+          onClick={() => {
+            if (error) {
+              showCustomAlert({
+                title: 'Python error',
+                body: <PythonErrorInfo error={error} />,
+              });
+            } else {
+              setShowAssetSelection(true);
+            }
+          }}
+          color={error ? Colors.textRed() : Colors.linkDefault()}
+        >
+          {error
+            ? 'Error loading asset selection'
+            : isAllAssets
+            ? 'All materializable assets'
+            : assetSelectionString}
+        </ButtonLink>
+      </Tag>
     </>
   );
 };
@@ -176,7 +206,7 @@ const Section = ({
   title?: string;
   titleBorder?: React.ComponentProps<typeof Box>['border'];
 }) => {
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = useState(true);
   return (
     <>
       {title ? (
@@ -197,7 +227,7 @@ const Section = ({
       ) : null}
       {isOpen ? (
         assets.length ? (
-          <div style={{maxHeight: '300px', overflowY: 'scroll'}}>
+          <div style={{height: '100%', overflowY: 'hidden'}}>
             <VirtualizedItemListForDialog
               padding={0}
               items={assets}
