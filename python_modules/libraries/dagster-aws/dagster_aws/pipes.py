@@ -5,7 +5,7 @@ import random
 import string
 import time
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Literal, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Union
 
 import boto3
 import dagster._check as check
@@ -13,7 +13,8 @@ from botocore.exceptions import ClientError
 from dagster import PipesClient
 from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
     PipesContextInjector,
@@ -220,7 +221,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         *,
         function_name: str,
         event: Mapping[str, Any],
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
     ) -> PipesClientCompletedInvocation:
         """Synchronously invoke a lambda function, enriched with the pipes protocol.
 
@@ -310,7 +311,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         job_name: str,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[Dict[str, Any]] = None,
         arguments: Optional[Mapping[str, Any]] = None,
         job_run_id: Optional[str] = None,

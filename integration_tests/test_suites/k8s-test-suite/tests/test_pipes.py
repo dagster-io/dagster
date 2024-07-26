@@ -194,7 +194,7 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
 
             # stand-in for any means of creating kubernetes work
             execute_k8s_job(
-                context=context,
+                context=context.op_execution_context,
                 image=docker_image,
                 command=[
                     "python",

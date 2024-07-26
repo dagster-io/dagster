@@ -6,12 +6,17 @@ import string
 import sys
 import time
 from contextlib import ExitStack, contextmanager
+<<<<<<< HEAD
 from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, TextIO
+=======
+from typing import Iterator, Literal, Mapping, Optional, Sequence, TextIO, Union
+>>>>>>> aceb299e5e (update pipes to accept asset execution context)
 
 import dagster._check as check
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClient,
     PipesClientCompletedInvocation,
@@ -107,7 +112,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     def run(
         self,
         *,
-        context: OpExecutionContext,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         extras: Optional[PipesExtras] = None,
         task: jobs.SubmitTask,
         submit_args: Optional[Mapping[str, Any]] = None,
@@ -120,7 +125,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
                 `spark_env_vars` key of the `new_cluster` field (if there is an existing dictionary
                 here, the Pipes environment variables will be merged in). Everything else will be
                 passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
-            context (OpExecutionContext): The context from the executing op or asset.
+            context (Union[OpExecutionContext, AssetExecutionContext]): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
                 subprocess.
             submit_args (Optional[Mapping[str, Any]]): Additional keyword arguments that will be
@@ -160,7 +165,9 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
         return PipesClientCompletedInvocation(pipes_session)
 
-    def _poll_til_success(self, context: OpExecutionContext, run_id: int) -> None:
+    def _poll_til_success(
+        self, context: Union[OpExecutionContext, AssetExecutionContext], run_id: int
+    ) -> None:
         # poll the Databricks run until it reaches RunResultState.SUCCESS, raising otherwise
 
         last_observed_state = None
