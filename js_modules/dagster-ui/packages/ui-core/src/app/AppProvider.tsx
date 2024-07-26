@@ -23,6 +23,7 @@ import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 import {GlobalStyleProvider} from './GlobalStyleProvider';
 import {LayoutProvider} from './LayoutProvider';
+import {createOperationQueryStringApolloLink} from './OperationQueryStringApolloLink';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
@@ -38,7 +39,6 @@ import {PerformancePageNavigationListener} from '../performance';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 import './blueprint.css';
-import {createOperationQueryStringApolloLink} from './OperationQueryStringApolloLink';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
