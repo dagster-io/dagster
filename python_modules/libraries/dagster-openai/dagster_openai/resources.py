@@ -222,10 +222,7 @@ class OpenAIResource(ConfigurableResource):
             kwargs["project"] = self.project
         if self.base_url:
             kwargs["base_url"] = self.base_url
-        self._client = Client(
-            api_key=self.api_key,
-            **kwargs
-        )
+        self._client = Client(api_key=self.api_key, **kwargs)
 
     @public
     @contextmanager
