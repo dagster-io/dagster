@@ -783,7 +783,7 @@ class SensorDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> ExecutableDefinition:
+    def job(self) -> Union[JobDefinition, "UnresolvedAssetJobDefinition"]:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """

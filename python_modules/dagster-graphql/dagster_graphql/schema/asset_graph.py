@@ -970,7 +970,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                     external_schedule.get_external_origin_id(),
                     external_schedule.selector_id,
                 )
-                results.append(GrapheneSchedule(external_schedule, schedule_state))
+                results.append(
+                    GrapheneSchedule(external_schedule, self._external_repository, schedule_state)
+                )
 
         return results
 

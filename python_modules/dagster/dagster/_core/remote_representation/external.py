@@ -776,6 +776,10 @@ class ExternalSchedule:
         return self._external_schedule_data.job_name
 
     @property
+    def asset_selection(self) -> Optional[AssetSelection]:
+        return self._external_schedule_data.asset_selection
+
+    @property
     def mode(self) -> Optional[str]:
         return self._external_schedule_data.mode
 
