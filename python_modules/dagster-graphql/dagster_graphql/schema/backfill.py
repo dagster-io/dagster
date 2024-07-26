@@ -20,7 +20,15 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalPartitionSet
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import (
+    CANCELABLE_RUN_STATUSES,
+    FINISHED_STATUSES,
+    DagsterRun,
+    DagsterRunStatus,
+    RunPartitionData,
+    RunRecord,
+    RunsFilter,
+)
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -294,13 +302,17 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     runs = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
         limit=graphene.Int(),
+        cursor=graphene.String(),
     )
     unfinishedRuns = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
         limit=graphene.Int(),
+        cursor=graphene.String(),
     )
     cancelableRuns = graphene.Field(
-        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"), limit=graphene.Int()
+        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
+        limit=graphene.Int(),
+        cursor=graphene.String(),
     )
     error = graphene.Field(GraphenePythonError)
     partitionStatuses = graphene.Field(
@@ -368,11 +380,17 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         return external_partition_sets[0]
 
-    def _get_records(self, graphene_info: ResolveInfo) -> Sequence[RunRecord]:
+    def _get_records(
+        self,
+        graphene_info: ResolveInfo,
+        statuses: Optional[Sequence[DagsterRunStatus]],
+        limit: Optional[int],
+        cursor: Optional[str],
+    ) -> Sequence[RunRecord]:
         if self._records is None:
-            filters = RunsFilter.for_backfill(self._backfill_job.backfill_id)
+            filters = RunsFilter.for_backfill(self._backfill_job.backfill_id, statuses=statuses)
             self._records = graphene_info.context.instance.get_run_records(
-                filters=filters,
+                filters=filters, limit=limit, cursor=cursor
             )
         return self._records
 
@@ -426,22 +444,32 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         ]
 
-    def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
+    def resolve_unfinishedRuns(
+        self, graphene_info: ResolveInfo, limit: Optional[int] = None, cursor: Optional[str] = None
+    ) -> Sequence["GrapheneRun"]:
         from .pipelines.pipeline import GrapheneRun
 
-        records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records if not record.dagster_run.is_finished]
+        records = self._get_records(
+            graphene_info, statuses=FINISHED_STATUSES, limit=limit, cursor=cursor
+        )
+        return [GrapheneRun(record) for record in records]
 
-    def resolve_cancelableRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
+    def resolve_cancelableRuns(
+        self, graphene_info: ResolveInfo, limit: Optional[int] = None, cursor: Optional[str] = None
+    ) -> Sequence["GrapheneRun"]:
         from .pipelines.pipeline import GrapheneRun
 
-        records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records if not record.dagster_run.is_cancelable]
+        records = self._get_records(
+            graphene_info, statuses=CANCELABLE_RUN_STATUSES, limit=limit, cursor=cursor
+        )
+        return [GrapheneRun(record) for record in records]
 
-    def resolve_runs(self, graphene_info: ResolveInfo) -> "Sequence[GrapheneRun]":
+    def resolve_runs(
+        self, graphene_info: ResolveInfo, limit: Optional[int] = None, cursor: Optional[str] = None
+    ) -> "Sequence[GrapheneRun]":
         from .pipelines.pipeline import GrapheneRun
 
-        records = self._get_records(graphene_info)
+        records = self._get_records(graphene_info, statuses=None, limit=limit, cursor=cursor)
         return [GrapheneRun(record) for record in records]
 
     def resolve_tags(self, _graphene_info: ResolveInfo):
@@ -457,7 +485,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
             # if it's still in progress then there is no end time
             return None
-        records = self._get_records(graphene_info)
+        records = self._get_records(graphene_info, statuses=None, limit=None, cursor=None)
         max_end_time = 0
         for record in records:
             max_end_time = max(record.end_time or 0, max_end_time)

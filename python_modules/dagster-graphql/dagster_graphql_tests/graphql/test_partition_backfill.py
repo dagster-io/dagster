@@ -174,6 +174,35 @@ GET_PARTITION_BACKFILLS_QUERY = """
 
 """
 
+BACKFILL_RUNS_QUERY = """
+  query BackfillRunsQuery($backfillId: String!, $limit: Int, $allCursor: String, $unfinishedCursor: String, $cancelableCursor: String) {
+    partitionBackfillOrError(backfillId: $backfillId) {
+      __typename
+      ... on PartitionBackfill {
+        runs(limit: $limit, cursor: $allCursor) {
+            id
+            status
+        }
+        cancelableRuns(limit: $limit, cursor: $cancelableCursor) {
+            id
+            status
+        }
+        unfinishedRuns(limit: $limit, cursor: $unfinishedCursor) {
+            id
+            status
+        }
+      }
+      ... on PythonError {
+        message
+        stack
+      }
+      ... on BackfillNotFoundError {
+        message
+      }
+    }
+  }
+"""
+
 
 def _seed_runs(
     graphql_context,
@@ -1190,6 +1219,110 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             '"Title with invalid characters * %" is not a valid title in Dagster'
             in result.data["launchPartitionBackfill"]["message"]
         )
+
+    def test_backfill_runs_limit_and_cursor(self, graphql_context):
+        # TestDaemonPartitionBackfill::test_backfill_runs_limit_and_cursor[sqlite_with_default_run_launcher_managed_grpc_env]
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3", "4", "5"],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        _seed_runs(
+            graphql_context,
+            [
+                (DagsterRunStatus.SUCCESS, "5"),
+                (DagsterRunStatus.STARTED, "2"),
+                (DagsterRunStatus.STARTED, "3"),
+                (DagsterRunStatus.STARTED, "4"),
+                (DagsterRunStatus.STARTED, "5"),
+                (DagsterRunStatus.CANCELED, "2"),
+                (DagsterRunStatus.FAILURE, "3"),
+                (DagsterRunStatus.SUCCESS, "4"),
+            ],
+            backfill_id,
+        )
+
+        all_results = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_RUNS_QUERY,
+            variables={
+                "backfillId": backfill_id,
+                "limit": None,
+                "allCursor": None,
+                "unfinishedCursor": None,
+                "cancelableCursor": None,
+            },
+        )
+
+        assert not all_results.errors
+        assert all_results.data
+        assert all_results.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert len(all_results.data["partitionBackfillOrError"]["runs"]) == 8
+        assert len(all_results.data["partitionBackfillOrError"]["cancelableRuns"]) == 4
+        assert len(all_results.data["partitionBackfillOrError"]["unfinishedRuns"]) == 4
+
+        first_two_results = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_RUNS_QUERY,
+            variables={
+                "backfillId": backfill_id,
+                "limit": 2,
+                "allCursor": None,
+                "unfinishedCursor": None,
+                "cancelableCursor": None,
+            },
+        )
+
+        assert not first_two_results.errors
+        assert first_two_results.data
+        assert (
+            first_two_results.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        )
+        assert len(first_two_results.data["partitionBackfillOrError"]["runs"]) == 2
+        assert len(first_two_results.data["partitionBackfillOrError"]["cancelableRuns"]) == 2
+        assert len(first_two_results.data["partitionBackfillOrError"]["unfinishedRuns"]) == 2
+
+        next_two_results = execute_dagster_graphql(
+            graphql_context,
+            BACKFILL_RUNS_QUERY,
+            variables={
+                "backfillId": backfill_id,
+                "limit": 2,
+                "allCursor": first_two_results.data["partitionBackfillOrError"]["runs"][-1][
+                    "runId"
+                ],
+                "unfinishedCursor": first_two_results.data["partitionBackfillOrError"][
+                    "unfinishedRuns"
+                ][-1]["runId"],
+                "cancelableCursor": first_two_results.data["partitionBackfillOrError"][
+                    "cancelableRuns"
+                ][-1]["runId"],
+            },
+        )
+
+        assert not next_two_results.errors
+        assert next_two_results.data
+        assert (
+            next_two_results.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        )
+        assert len(next_two_results.data["partitionBackfillOrError"]["runs"]) == 2
+        assert len(next_two_results.data["partitionBackfillOrError"]["cancelableRuns"]) == 2
+        assert len(next_two_results.data["partitionBackfillOrError"]["unfinishedRuns"]) == 2
 
 
 class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):

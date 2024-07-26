@@ -2786,9 +2786,9 @@ type PartitionBackfill {
   timestamp: Float!
   endTimestamp: Float
   partitionSet: PartitionSet
-  runs(limit: Int): [Run!]!
-  unfinishedRuns(limit: Int): [Run!]!
-  cancelableRuns(limit: Int): [Run!]!
+  runs(limit: Int, cursor: String): [Run!]!
+  unfinishedRuns(limit: Int, cursor: String): [Run!]!
+  cancelableRuns(limit: Int, cursor: String): [Run!]!
   error: PythonError
   partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
