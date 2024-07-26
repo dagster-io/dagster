@@ -89,6 +89,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
+        add_dagster_metadata_tags: bool = False,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -179,6 +180,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
+        self.add_dagster_metadata_tags = check.bool_param(
+            add_dagster_metadata_tags, "add_dagster_metadata_tags"
+        )
 
         self._current_task_metadata = None
         self._current_task = None
@@ -335,6 +339,15 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
+            "add_dagster_metadata_tags": Field(
+                bool,
+                is_required=False,
+                default_value=False,
+                description=(
+                    "Whether to apply tags to the launched task describing metadata about the run,"
+                    " such as job name, submitting user, and partition"
+                ),
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -342,7 +355,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return cls(inst_data=inst_data, **config_value)
+        return EcsRunLauncher(inst_data=inst_data, **config_value)
 
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
         tags = {
@@ -352,14 +365,31 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         }
         self._instance.add_run_tags(run_id, tags)
 
-    def build_ecs_tags_for_run_task(self, run, container_context: EcsContainerContext):
+    def build_ecs_tags_for_run_task(self, run: DagsterRun, container_context: EcsContainerContext):
         if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
             raise Exception("Cannot override system ECS tag: dagster/run_id")
 
+        to_add = []
+        if self.add_dagster_metadata_tags:
+            to_add.append({"key": "dagster/job_name", "value": run.job_name})
+            if run.tags.get("user"):
+                to_add.append({"key": "user", "value": run.tags["user"]})
+            if run.tags.get("dagster/partition"):
+                to_add.append({"key": "dagster/partition", "value": run.tags["dagster/partition"]})
+            if run.tags.get("dagster/partition_set"):
+                to_add.append(
+                    {"key": "dagster/partition_set", "value": run.tags["dagster/partition_set"]}
+                )
+            if run.tags.get("dagster/image"):
+                to_add.append({"key": "dagster/image", "value": run.tags["dagster/image"]})
+            if run.tags.get("dagster/schedule_name"):
+                to_add.append(
+                    {"key": "dagster/schedule_name", "value": run.tags["dagster/schedule_name"]}
+                )
         return [
             {"key": "dagster/run_id", "value": run.run_id},
-            {"key": "dagster/job_name", "value": run.job_name},
             *container_context.run_ecs_tags,
+            *to_add,
         ]
 
     def _get_run_tags(self, run_id):
@@ -458,12 +488,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             **cpu_and_memory_overrides,
             **task_overrides,
         }
+        run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
+
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
             *self.build_ecs_tags_for_run_task(run, container_context),
+            *run_task_kwargs_from_run.pop("tags", []),
         ]
 
-        run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
         run_task_kwargs.update(run_task_kwargs_from_run)
 
         # launchType and capacityProviderStrategy are incompatible - prefer the latter if it is set
@@ -537,7 +569,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return overrides
 
-    def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
+    def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Dict[str, Any]:
         run_task_kwargs = run.tags.get("ecs/run_task_kwargs")
         if run_task_kwargs:
             return json.loads(run_task_kwargs)
@@ -583,10 +615,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
         return get_task_definition_family("run", check.not_none(run.remote_job_origin))
 
-    def _get_container_name(self, container_context) -> str:
+    def _get_container_name(self, container_context: EcsContainerContext) -> str:
         return container_context.container_name or self.container_name
 
-    def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
+    def _run_task_kwargs(
+        self, run: DagsterRun, image: str, container_context: EcsContainerContext
+    ) -> Dict[str, Any]:
         """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
         """
