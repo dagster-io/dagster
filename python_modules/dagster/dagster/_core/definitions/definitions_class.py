@@ -29,6 +29,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._record import IHaveNew, record_custom
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
@@ -243,7 +244,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
-        Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+        Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]
     ] = None,
     schedules: Optional[
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
@@ -300,7 +301,7 @@ def _create_repository_using_definitions_args(
     )
     def created_repo():
         return [
-            *with_resources(assets or [], resource_defs),
+            *with_resources(_canonicalize_specs_to_assets_defs(assets or []), resource_defs),
             *with_resources(asset_checks or [], resource_defs),
             *(schedules_with_resources),
             *(sensors_with_resources),
@@ -308,6 +309,18 @@ def _create_repository_using_definitions_args(
         ]
 
     return created_repo
+
+
+def _canonicalize_specs_to_assets_defs(
+    assets: Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]],
+) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+    asset_specs = [obj for obj in assets if isinstance(obj, AssetSpec)]
+    result = [obj for obj in assets if not isinstance(obj, AssetSpec)]
+    if asset_specs:
+        with disable_dagster_warnings():
+            result.append(AssetsDefinition(specs=asset_specs))
+
+    return result
 
 
 @deprecated(
@@ -413,9 +426,9 @@ class Definitions(IHaveNew):
       Any other object is coerced to a :py:class:`ResourceDefinition`.
     """
 
-    assets: Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]] = (
-        None
-    )
+    assets: Optional[
+        Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]
+    ] = None
     schedules: Optional[
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
     ] = None
@@ -432,7 +445,7 @@ class Definitions(IHaveNew):
     def __new__(
         cls,
         assets: Optional[
-            Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+            Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]]
         ] = None,
         schedules: Optional[
             Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
