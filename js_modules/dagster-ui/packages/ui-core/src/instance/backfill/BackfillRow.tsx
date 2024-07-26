@@ -15,17 +15,14 @@ import {
   SingleBackfillQueryVariables,
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
-import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
-import {inProgressStatuses} from '../../runs/RunStatuses';
 import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
@@ -140,7 +137,7 @@ export const BackfillRowContent = ({
     statusQueryResult?.loading ? (
       <div style={{color: Colors.textLight()}}>Loading</div>
     ) : (
-      <BackfillStatusTag backfill={backfill} counts={counts} />
+      <BackfillStatusTag backfill={backfill} />
     );
 
   const renderRunStatus = () => {
@@ -386,53 +383,8 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
 
-export const BackfillStatusTag = ({
-  backfill,
-  counts,
-}: {
-  backfill: BackfillTableFragment;
-  counts: {[status: string]: number} | null;
-}) => {
-  if (backfill.isAssetBackfill) {
-    return <BackfillStatusTagForPage backfill={backfill} />;
-  }
-
-  switch (backfill.status) {
-    case BulkActionStatus.REQUESTED:
-      return <Tag>In progress</Tag>;
-    case BulkActionStatus.FAILED:
-      return (
-        <Box margin={{bottom: 12}}>
-          <TagButton
-            onClick={() =>
-              backfill.error &&
-              showCustomAlert({title: 'Error', body: <PythonErrorInfo error={backfill.error} />})
-            }
-          >
-            <Tag intent="danger">Failed</Tag>
-          </TagButton>
-        </Box>
-      );
-    case BulkActionStatus.COMPLETED:
-      if (backfill.partitionNames === null) {
-        return <Tag intent="success">Completed</Tag>;
-      }
-      if (!counts) {
-        return <div style={{color: Colors.textLight()}}>None</div>;
-      }
-      if (counts[RunStatus.SUCCESS] === backfill.partitionNames.length) {
-        return <Tag intent="success">Completed</Tag>;
-      }
-      if (Array.from(inProgressStatuses).some((status) => counts[status])) {
-        return <Tag intent="primary">In progress</Tag>;
-      }
-      return <Tag intent="warning">Incomplete</Tag>;
-    case BulkActionStatus.CANCELING:
-      return <Tag>Canceling</Tag>;
-    case BulkActionStatus.CANCELED:
-      return <Tag>Canceled</Tag>;
-  }
-  return <span />;
+export const BackfillStatusTag = ({backfill}: {backfill: BackfillTableFragment}) => {
+  return <BackfillStatusTagForPage backfill={backfill} />;
 };
 
 const TagButton = styled.button`

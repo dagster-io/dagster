@@ -58,14 +58,25 @@ from dagster._core.remote_representation import (
 )
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import (
+    IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
+    DagsterRunStatus,
+    RunsFilter,
+)
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.test_utils import environ, step_did_not_run, step_failed, step_succeeded
+from dagster._core.test_utils import (
+    create_run_for_test,
+    environ,
+    step_did_not_run,
+    step_failed,
+    step_succeeded,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
@@ -658,6 +669,63 @@ def test_failure_backfill(
     assert step_did_not_run(instance, one, "always_succeed")
     assert step_succeeded(instance, one, "conditionally_fail")
     assert step_succeeded(instance, one, "after_failure")
+
+
+def test_job_backfill_status(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="simple",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    # seed an in progress run so that this run won't get launched by the backfill daemon and will
+    # remain in the in progress state
+    fake_run = create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.STARTED,
+        tags={
+            **DagsterRun.tags_for_backfill_id("simple"),
+            PARTITION_NAME_TAG: "one",
+        },
+    )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 3
+    backfill = instance.get_backfill("simple")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    # manually update the run to be in a finished state, backfill should be marked complete on next iteration
+    instance.delete_run(fake_run.run_id)
+    create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.SUCCESS,
+        tags={
+            **DagsterRun.tags_for_backfill_id("simple"),
+            PARTITION_NAME_TAG: "one",
+        },
+    )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 3
+    backfill = instance.get_backfill("simple")
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
