@@ -99,6 +99,7 @@ def main(
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
         "-e examples/experimental/dagster-blueprints",
+        "-e examples/experimental/dagster-airlift",
     ]
 
     if sys.version_info <= (3, 12):

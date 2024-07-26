@@ -353,6 +353,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-blueprints",
     ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift",
+    ),
 ]
 
 
