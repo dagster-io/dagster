@@ -3,6 +3,7 @@ from dagster_dbt import DbtCliResource, dbt_assets
 
 from .project import {{ dbt_project_name }}
 
+
 @dbt_assets(manifest={{ dbt_project_name }}.manifest_path)
 def {{ dbt_assets_name }}(context: AssetExecutionContext, dbt: DbtCliResource):
     {% if use_experimental_dbt_state -%}
