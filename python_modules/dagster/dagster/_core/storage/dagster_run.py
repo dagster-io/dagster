@@ -448,6 +448,12 @@ class DagsterRun(
 
     @public
     @property
+    def is_cancelable(self) -> bool:
+        """bool: If this run an be canceled."""
+        return self.status in CANCELABLE_RUN_STATUSES
+
+    @public
+    @property
     def is_success(self) -> bool:
         """bool: If this run has successfully finished executing."""
         return self.status == DagsterRunStatus.SUCCESS

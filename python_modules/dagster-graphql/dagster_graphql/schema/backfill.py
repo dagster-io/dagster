@@ -299,6 +299,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
         limit=graphene.Int(),
     )
+    cancelableRuns = graphene.Field(
+        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"), limit=graphene.Int()
+    )
     error = graphene.Field(GraphenePythonError)
     partitionStatuses = graphene.Field(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
@@ -428,6 +431,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records if not record.dagster_run.is_finished]
+
+    def resolve_cancelableRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
+        from .pipelines.pipeline import GrapheneRun
+
+        records = self._get_records(graphene_info)
+        return [GrapheneRun(record) for record in records if not record.dagster_run.is_cancelable]
 
     def resolve_runs(self, graphene_info: ResolveInfo) -> "Sequence[GrapheneRun]":
         from .pipelines.pipeline import GrapheneRun

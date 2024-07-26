@@ -2788,6 +2788,7 @@ type PartitionBackfill {
   partitionSet: PartitionSet
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
+  cancelableRuns(limit: Int): [Run!]!
   error: PythonError
   partitionStatuses: PartitionStatuses
   partitionStatusCounts: [PartitionStatusCounts!]!
