@@ -53,8 +53,9 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.events import EngineEventData
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.invocation import BaseDirectExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
@@ -80,7 +81,7 @@ class PipesMessageHandler:
     """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
 
     Args:
-        context (OpExecutionContext): The context for the executing op/asset.
+        context (Union[OpExecutionContext, AssetExecutionContext]): The context for the executing op/asset.
         message_reader (PipesMessageReader): The message reader used to read messages from the
             external process.
     """
@@ -88,7 +89,11 @@ class PipesMessageHandler:
     # In the future it may make sense to merge PipesMessageReader and PipesMessageHandler, or
     # otherwise adjust their relationship. The current interaction between the two is a bit awkward,
     # but it would also be awkward to have a monolith that users extend.
-    def __init__(self, context: OpExecutionContext, message_reader: "PipesMessageReader") -> None:
+    def __init__(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        message_reader: "PipesMessageReader",
+    ) -> None:
         self._context = context
         self._message_reader = message_reader
         # Queue is thread-safe
@@ -304,7 +309,7 @@ class PipesSession:
     message_handler: PipesMessageHandler
     context_injector_params: PipesParams
     message_reader_params: PipesParams
-    context: OpExecutionContext
+    context: Union[OpExecutionContext, AssetExecutionContext]
     created_at: datetime = field(default_factory=datetime.now)
 
     @cached_property
@@ -472,7 +477,7 @@ class PipesSession:
 
 
 def build_external_execution_context_data(
-    context: OpExecutionContext,
+    context: Union[OpExecutionContext, AssetExecutionContext],
     extras: Optional[PipesExtras],
 ) -> "PipesContextData":
     asset_keys = (
