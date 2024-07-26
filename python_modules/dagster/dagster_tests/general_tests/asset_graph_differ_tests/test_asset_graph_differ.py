@@ -6,7 +6,14 @@ from unittest import mock
 
 import pytest
 from dagster import DagsterInstance, instance_for_test
-from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
+from dagster._core.definitions.asset_graph_differ import (
+    AssetDefinitionChangeType,
+    AssetGraphDiffer,
+    CodeVersionChangeData,
+    DependenciesChangeData,
+    MetadataChangeData,
+    TagsChangeData,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
@@ -132,7 +139,7 @@ def test_removed_asset(instance) -> None:
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
-def test_new_asset_connected(instance):
+def test_new_asset_connected(instance) -> None:
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="basic_asset_graph",
@@ -146,10 +153,19 @@ def test_new_asset_connected(instance):
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [
         AssetDefinitionChangeType.DEPENDENCIES
     ]
+    assert differ.get_changes_for_asset_with_data(AssetKey("downstream")) == [
+        (
+            AssetDefinitionChangeType.DEPENDENCIES,
+            DependenciesChangeData(
+                base_dependencies={AssetKey("upstream")},
+                branch_dependencies={AssetKey("new_asset"), AssetKey("upstream")},
+            ),
+        )
+    ]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
-def test_update_code_version(instance):
+def test_update_code_version(instance) -> None:
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="code_versions_asset_graph",
@@ -161,6 +177,15 @@ def test_update_code_version(instance):
 
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [
         AssetDefinitionChangeType.CODE_VERSION
+    ]
+    assert differ.get_changes_for_asset_with_data(AssetKey("upstream")) == [
+        (
+            AssetDefinitionChangeType.CODE_VERSION,
+            CodeVersionChangeData(
+                base_code_version="1",
+                branch_code_version="2",
+            ),
+        )
     ]
     assert len(differ.get_changes_for_asset(AssetKey("downstream"))) == 0
 
@@ -328,7 +353,7 @@ def test_change_partition_mapping(instance):
     ]
 
 
-def test_change_tags(instance):
+def test_change_tags(instance) -> None:
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="tags_asset_graph",
@@ -336,13 +361,22 @@ def test_change_tags(instance):
         branch_code_location_to_definitions={"tags_asset_graph": "branch_deployment_change_tags"},
     )
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [AssetDefinitionChangeType.TAGS]
+    assert differ.get_changes_for_asset_with_data(AssetKey("upstream")) == [
+        (
+            AssetDefinitionChangeType.TAGS,
+            TagsChangeData(
+                base_tags={"foo": "bar", "one": "two"},
+                branch_tags={"foo": "bar"},
+            ),
+        )
+    ]
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [AssetDefinitionChangeType.TAGS]
     assert differ.get_changes_for_asset(AssetKey("fruits")) == [AssetDefinitionChangeType.TAGS]
     assert differ.get_changes_for_asset(AssetKey("letters")) == [AssetDefinitionChangeType.TAGS]
     assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0
 
 
-def test_change_metadata(instance):
+def test_change_metadata(instance) -> None:
     differ = get_asset_graph_differ(
         instance=instance,
         code_location_to_diff="metadata_asset_graph",
@@ -354,9 +388,33 @@ def test_change_metadata(instance):
     assert differ.get_changes_for_asset(AssetKey("upstream")) == [
         AssetDefinitionChangeType.METADATA
     ]
+    assert differ.get_changes_for_asset_with_data(AssetKey("upstream")) == [
+        (
+            AssetDefinitionChangeType.METADATA,
+            MetadataChangeData(removed_keys={"one"}, added_keys=set(), modified_keys=set()),
+        )
+    ]
     assert differ.get_changes_for_asset(AssetKey("downstream")) == [
         AssetDefinitionChangeType.METADATA
     ]
+    assert differ.get_changes_for_asset_with_data(AssetKey("downstream")) == [
+        (
+            AssetDefinitionChangeType.METADATA,
+            MetadataChangeData(modified_keys={"baz"}, removed_keys=set(), added_keys=set()),
+        )
+    ]
     assert differ.get_changes_for_asset(AssetKey("fruits")) == [AssetDefinitionChangeType.METADATA]
+    assert differ.get_changes_for_asset_with_data(AssetKey("fruits")) == [
+        (
+            AssetDefinitionChangeType.METADATA,
+            MetadataChangeData(removed_keys={"red"}, added_keys={"green"}, modified_keys=set()),
+        )
+    ]
     assert differ.get_changes_for_asset(AssetKey("letters")) == [AssetDefinitionChangeType.METADATA]
+    assert differ.get_changes_for_asset_with_data(AssetKey("letters")) == [
+        (
+            AssetDefinitionChangeType.METADATA,
+            MetadataChangeData(added_keys={"c"}, removed_keys=set(), modified_keys=set()),
+        )
+    ]
     assert len(differ.get_changes_for_asset(AssetKey("numbers"))) == 0

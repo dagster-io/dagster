@@ -1,11 +1,24 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Callable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
+
+from typing_extensions import Annotated
 
 import dagster._check as check
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._record import ImportFrom, record
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -26,6 +39,47 @@ class AssetDefinitionChangeType(Enum):
     TAGS = "TAGS"
     METADATA = "METADATA"
     REMOVED = "REMOVED"
+
+
+class AssetDefinitionChangeData:
+    """Base interface for classes which
+    hold data about asset definition changes.
+    """
+
+    pass
+
+
+@whitelist_for_serdes
+@record
+class CodeVersionChangeData(AssetDefinitionChangeData):
+    base_code_version: Optional[str]
+    branch_code_version: Optional[str]
+
+
+@whitelist_for_serdes
+@record
+class DependenciesChangeData(AssetDefinitionChangeData):
+    base_dependencies: AbstractSet[
+        Annotated["AssetKey", ImportFrom("dagster._core.definitions.events")]
+    ]
+    branch_dependencies: AbstractSet[
+        Annotated["AssetKey", ImportFrom("dagster._core.definitions.events")]
+    ]
+
+
+@whitelist_for_serdes
+@record
+class TagsChangeData(AssetDefinitionChangeData):
+    base_tags: Mapping[str, str]
+    branch_tags: Mapping[str, str]
+
+
+@whitelist_for_serdes
+@record
+class MetadataChangeData(AssetDefinitionChangeData):
+    added_keys: AbstractSet[str]
+    modified_keys: AbstractSet[str]
+    removed_keys: AbstractSet[str]
 
 
 def _get_external_repo_from_context(
@@ -116,31 +170,52 @@ class AssetGraphDiffer:
         )
 
     def _compare_base_and_branch_assets(
-        self, asset_key: "AssetKey"
-    ) -> Sequence[AssetDefinitionChangeType]:
+        self, asset_key: "AssetKey", record_changes: bool
+    ) -> Sequence[Tuple[AssetDefinitionChangeType, Optional[AssetDefinitionChangeData]]]:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
+
+        Args:
+            asset_key (AssetKey): The asset key to compare.
+            record_changes (bool): Whether to record the actual changes alongside the change types.
+                If False, the AssetDefinitionChangeData will be None.
+
+        Returns:
+            List[Tuple[ChangeReason, Optional[AssetDefinitionChangeData]]]: List of tuples where the first element
+                is the change type and the second element is the change data, if requested.
         """
         if self.base_asset_graph is None:
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
-            return [AssetDefinitionChangeType.NEW]
+            return [(AssetDefinitionChangeType.NEW, None)]
 
         if asset_key not in self.base_asset_graph.all_asset_keys:
-            return [AssetDefinitionChangeType.NEW]
+            return [(AssetDefinitionChangeType.NEW, None)]
 
         if asset_key not in self.branch_asset_graph.all_asset_keys:
-            return [AssetDefinitionChangeType.REMOVED]
+            return [(AssetDefinitionChangeType.REMOVED, None)]
 
         branch_asset = self.branch_asset_graph.get(asset_key)
         base_asset = self.base_asset_graph.get(asset_key)
 
-        changes = []
+        changes: List[Tuple[AssetDefinitionChangeType, Optional[AssetDefinitionChangeData]]] = []
         if branch_asset.code_version != base_asset.code_version:
-            changes.append(AssetDefinitionChangeType.CODE_VERSION)
+            data = None
+            if record_changes:
+                data = CodeVersionChangeData(
+                    base_code_version=base_asset.code_version,
+                    branch_code_version=branch_asset.code_version,
+                )
+            changes.append((AssetDefinitionChangeType.CODE_VERSION, data))
 
         if branch_asset.parent_keys != base_asset.parent_keys:
-            changes.append(AssetDefinitionChangeType.DEPENDENCIES)
+            data = None
+            if record_changes:
+                data = DependenciesChangeData(
+                    base_dependencies=(base_asset.parent_keys),
+                    branch_dependencies=(branch_asset.parent_keys),
+                )
+            changes.append((AssetDefinitionChangeType.DEPENDENCIES, data))
         else:
             # if the set of upstream dependencies is different, then we don't need to check if the partition mappings
             # for dependencies have changed since ChangeReason.DEPENDENCIES is already in the list of changes
@@ -148,23 +223,53 @@ class AssetGraphDiffer:
                 if self.branch_asset_graph.get_partition_mapping(
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
-                    changes.append(AssetDefinitionChangeType.DEPENDENCIES)
+                    changes.append((AssetDefinitionChangeType.DEPENDENCIES, None))
                     break
 
         if branch_asset.partitions_def != base_asset.partitions_def:
-            changes.append(AssetDefinitionChangeType.PARTITIONS_DEFINITION)
+            changes.append((AssetDefinitionChangeType.PARTITIONS_DEFINITION, None))
 
         if branch_asset.tags != base_asset.tags:
-            changes.append(AssetDefinitionChangeType.TAGS)
+            data = None
+            if record_changes:
+                data = TagsChangeData(base_tags=base_asset.tags, branch_tags=branch_asset.tags)
+            changes.append((AssetDefinitionChangeType.TAGS, data))
 
-        if branch_asset.metadata != base_asset.metadata:
-            changes.append(AssetDefinitionChangeType.METADATA)
+        branch_keys = set(branch_asset.metadata.keys())
+        base_keys = set(base_asset.metadata.keys())
+
+        new_keys = branch_keys - base_keys
+        removed_keys = base_keys - branch_keys
+        key_overlap = branch_keys.intersection(base_keys)
+        keys_changed = {
+            k for k in key_overlap if branch_asset.metadata[k] != base_asset.metadata[k]
+        }
+        if new_keys or removed_keys or keys_changed:
+            data = None
+            if record_changes:
+                data = MetadataChangeData(
+                    added_keys=new_keys,
+                    modified_keys=keys_changed,
+                    removed_keys=removed_keys,
+                )
+            changes.append((AssetDefinitionChangeType.METADATA, data))
 
         return changes
 
     def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[AssetDefinitionChangeType]:
         """Returns list of ChangeReasons for asset_key as compared to the base deployment."""
-        return self._compare_base_and_branch_assets(asset_key)
+        return [
+            change_type
+            for change_type, _ in self._compare_base_and_branch_assets(
+                asset_key, record_changes=False
+            )
+        ]
+
+    def get_changes_for_asset_with_data(
+        self, asset_key: "AssetKey"
+    ) -> Sequence[Tuple[AssetDefinitionChangeType, Optional[AssetDefinitionChangeData]]]:
+        """Returns list of ChangeReasons and corresponding change data for asset_key as compared to the base deployment."""
+        return self._compare_base_and_branch_assets(asset_key, record_changes=True)
 
     @property
     def branch_asset_graph(self) -> "RemoteAssetGraph":
