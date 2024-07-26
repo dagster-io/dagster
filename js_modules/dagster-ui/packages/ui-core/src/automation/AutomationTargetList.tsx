@@ -1,4 +1,3 @@
-import {QueryResult} from '@apollo/client';
 import {
   Box,
   Button,
@@ -11,14 +10,13 @@ import {
   MiddleTruncate,
   Subtitle2,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {
-  SensorAssetSelectionFragment,
-  SensorAssetSelectionQuery,
-  SensorAssetSelectionQueryVariables,
-} from './types/SensorRoot.types';
+  AssetSelectionNodeFragment,
+  AutomationAssetSelectionFragment,
+} from './types/AutomationAssetSelectionFragment.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {COMMON_COLLATOR} from '../app/Util';
@@ -31,34 +29,30 @@ import {numberFormatter} from '../ui/formatters';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-export const SensorTargetList = ({
-  sensorType,
+type AutomationType = 'schedule' | SensorType;
+
+export const AutomationTargetList = ({
+  assetSelection,
+  automationType,
   targets,
-  selectionQueryResult,
   repoAddress,
 }: {
-  sensorType: SensorType;
-  targets: {pipelineName: string}[] | null | undefined;
+  automationType: AutomationType;
   repoAddress: RepoAddress;
-  selectionQueryResult: QueryResult<SensorAssetSelectionQuery, SensorAssetSelectionQueryVariables>;
+  targets: {pipelineName: string}[] | null;
+  assetSelection: AutomationAssetSelectionFragment | null;
 }) => {
   const repo = useRepository(repoAddress);
-  const assetSelectionResult = selectionQueryResult.data?.sensorOrError;
-  const assetSelectionData =
-    assetSelectionResult?.__typename === 'Sensor' ? assetSelectionResult : null;
-
-  if (!targets && !assetSelectionData) {
+  if (!targets && !assetSelection) {
     return <span />;
   }
-
-  const selectedAssets = assetSelectionData?.assetSelection;
 
   const visibleTargets = targets?.filter((target) => !isHiddenAssetGroupJob(target.pipelineName));
 
   return (
     <Box flex={{direction: 'column', gap: 2}}>
-      {selectedAssets && (
-        <AssetSelectionLink assetSelection={selectedAssets} sensorType={sensorType} />
+      {assetSelection && (
+        <AssetSelectionLink assetSelection={assetSelection} automationType={automationType} />
       )}
       {visibleTargets?.map((target) =>
         target.pipelineName ? (
@@ -76,12 +70,12 @@ export const SensorTargetList = ({
 
 const AssetSelectionLink = ({
   assetSelection,
-  sensorType,
+  automationType,
 }: {
-  assetSelection: SensorAssetSelectionFragment;
-  sensorType: SensorType;
+  assetSelection: AutomationAssetSelectionFragment;
+  automationType: AutomationType;
 }) => {
-  const [showAssetSelection, setShowAssetSelection] = React.useState(false);
+  const [showAssetSelection, setShowAssetSelection] = useState(false);
 
   const error =
     assetSelection.assetsOrError.__typename === 'PythonError' ? assetSelection.assetsOrError : null;
@@ -119,7 +113,8 @@ const AssetSelectionLink = ({
         canEscapeKeyClose
       >
         <Box flex={{direction: 'column'}}>
-          {sensorType === SensorType.AUTO_MATERIALIZE || sensorType === SensorType.AUTOMATION ? (
+          {automationType === SensorType.AUTO_MATERIALIZE ||
+          automationType === SensorType.AUTOMATION ? (
             <>
               <Section
                 title="Assets with a materialization policy"
@@ -177,10 +172,7 @@ const Section = ({
   title,
   titleBorder = 'top-and-bottom',
 }: {
-  assets: Extract<
-    SensorAssetSelectionFragment['assetsOrError'],
-    {__typename: 'AssetConnection'}
-  >['nodes'];
+  assets: AssetSelectionNodeFragment[];
   title?: string;
   titleBorder?: React.ComponentProps<typeof Box>['border'];
 }) => {
@@ -223,14 +215,7 @@ const Section = ({
   );
 };
 
-const VirtualizedSelectedAssetRow = ({
-  asset,
-}: {
-  asset: Extract<
-    SensorAssetSelectionFragment['assetsOrError'],
-    {__typename: 'AssetConnection'}
-  >['nodes'][0];
-}) => {
+const VirtualizedSelectedAssetRow = ({asset}: {asset: AssetSelectionNodeFragment}) => {
   return (
     <Box
       flex={{alignItems: 'center', gap: 4}}
