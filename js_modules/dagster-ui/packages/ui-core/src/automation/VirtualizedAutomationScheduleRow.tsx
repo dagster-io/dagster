@@ -1,23 +1,27 @@
 import {useLazyQuery} from '@apollo/client';
 import {Box, Caption, Checkbox, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
-import {forwardRef, useMemo} from 'react';
+import {forwardRef, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
+import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {PipelineReference} from '../pipelines/PipelineReference';
 import {CronTag} from '../schedules/CronTag';
+import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {
+  ScheduleAssetSelectionQuery,
+  ScheduleAssetSelectionQueryVariables,
+} from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RowCell} from '../ui/VirtualizedTable';
 import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
 import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {
   SingleScheduleQuery,
@@ -37,8 +41,6 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
   (props: ScheduleRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {index, name, repoAddress, checked, onToggleChecked} = props;
 
-    const repo = useRepository(repoAddress);
-
     const [querySchedule, queryResult] = useLazyQuery<
       SingleScheduleQuery,
       SingleScheduleQueryVariables
@@ -54,8 +56,30 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
     });
     useBlockTraceOnQueryResult(queryResult, 'SingleScheduleQuery');
 
-    useDelayedRowQuery(querySchedule);
+    const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
+      ScheduleAssetSelectionQuery,
+      ScheduleAssetSelectionQueryVariables
+    >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
+      variables: {
+        scheduleSelector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+          scheduleName: name,
+        },
+      },
+    });
+
+    useBlockTraceOnQueryResult(scheduleAssetSelectionQueryResult, 'ScheduleAssetSelectionQuery');
+
+    useDelayedRowQuery(
+      useCallback(() => {
+        querySchedule();
+        queryScheduleAssetSelection();
+      }, [querySchedule, queryScheduleAssetSelection]),
+    );
+
     useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+    useQueryRefreshAtInterval(scheduleAssetSelectionQueryResult, FIFTEEN_SECONDS);
 
     const {data} = queryResult;
 
@@ -66,8 +90,6 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
 
       return data.scheduleOrError;
     }, [data]);
-
-    const isJob = !!(scheduleData && isThisThingAJob(repo, scheduleData.pipelineName));
 
     const onChange = (e: React.FormEvent<HTMLInputElement>) => {
       if (onToggleChecked && e.target instanceof HTMLInputElement) {
@@ -96,6 +118,11 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
     }, [scheduleState]);
 
     const tick = scheduleData?.scheduleState.ticks[0];
+    const targets = scheduleData?.pipelineName ? [{pipelineName: scheduleData.pipelineName}] : null;
+    const assetSelection =
+      scheduleAssetSelectionQueryResult.data?.scheduleOrError.__typename === 'Schedule'
+        ? scheduleAssetSelectionQueryResult.data.scheduleOrError.assetSelection
+        : null;
 
     return (
       <div ref={ref} data-index={index}>
@@ -161,17 +188,14 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
             )}
           </RowCell>
           <RowCell>
-            {scheduleData ? (
-              <Caption>
-                <PipelineReference
-                  showIcon
-                  size="small"
-                  pipelineName={scheduleData.pipelineName}
-                  pipelineHrefContext={repoAddress}
-                  isJob={isJob}
-                />
-              </Caption>
-            ) : null}
+            <div>
+              <AutomationTargetList
+                repoAddress={repoAddress}
+                automationType="schedule"
+                targets={targets}
+                assetSelection={assetSelection}
+              />
+            </div>
           </RowCell>
           <RowCell>
             {tick ? (

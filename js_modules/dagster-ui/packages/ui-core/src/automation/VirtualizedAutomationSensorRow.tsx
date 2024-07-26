@@ -162,16 +162,18 @@ export const VirtualizedAutomationSensorRow = forwardRef(
             </div>
           </RowCell>
           <RowCell>
-            <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-              {sensorData ? (
+            {sensorData ? (
+              <div>
                 <AutomationTargetList
-                  targets={sensorData.targets}
+                  targets={sensorData.targets || null}
                   repoAddress={repoAddress}
                   assetSelection={selectedAssets}
                   automationType={sensorData.sensorType}
                 />
-              ) : null}
-            </Box>
+              </div>
+            ) : (
+              <LoadingOrNone queryResult={sensorAssetSelectionQueryResult} />
+            )}
           </RowCell>
           <RowCell>
             {tick ? (
