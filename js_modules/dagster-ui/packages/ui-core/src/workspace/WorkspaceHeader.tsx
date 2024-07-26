@@ -49,7 +49,7 @@ export const WorkspaceHeader = (props: Props) => {
                   onClick={() => tryReload()}
                   loading={reloading}
                   disabled={!hasReloadPermission}
-                  icon={<Icon name="refresh" />}
+                  icon={<Icon name="code_location_reload" />}
                   outlined
                 >
                   Reload definitions

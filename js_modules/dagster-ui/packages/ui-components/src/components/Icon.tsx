@@ -40,20 +40,24 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import code_block from '../icon-svgs/code_block.svg';
 import code_location from '../icon-svgs/code_location.svg';
+import code_location_reload from '../icon-svgs/code_location_reload.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
 import compute_kind from '../icon-svgs/compute_kind.svg';
 import concept_book from '../icon-svgs/concept_book.svg';
-import console_icon from '../icon-svgs/console.svg';
+import concurrency from '../icon-svgs/concurrency.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import copy_to_clipboard from '../icon-svgs/copy_to_clipboard.svg';
+import copy_to_clipboard_done from '../icon-svgs/copy_to_clipboard_done.svg';
 import corporate_fare from '../icon-svgs/corporate_fare.svg';
+import deamon from '../icon-svgs/daemon.svg';
 import dash from '../icon-svgs/dash.svg';
 import datatype_array from '../icon-svgs/datatype_array.svg';
 import datatype_bool from '../icon-svgs/datatype_bool.svg';
 import datatype_number from '../icon-svgs/datatype_number.svg';
 import datatype_string from '../icon-svgs/datatype_string.svg';
 import date from '../icon-svgs/date.svg';
-import deleteSVG from '../icon-svgs/delete.svg';
+import trash from '../icon-svgs/delete.svg';
 import dollar_sign from '../icon-svgs/dollar_sign.svg';
 import done from '../icon-svgs/done.svg';
 import dot from '../icon-svgs/dot.svg';
@@ -104,12 +108,16 @@ import info from '../icon-svgs/info.svg';
 import job from '../icon-svgs/job.svg';
 import layers from '../icon-svgs/layers.svg';
 import line_style from '../icon-svgs/line_style.svg';
+import lineage from '../icon-svgs/lineage.svg';
 import linear_scale from '../icon-svgs/linear_scale.svg';
 import link from '../icon-svgs/link.svg';
 import list from '../icon-svgs/list.svg';
 import location_on from '../icon-svgs/location_on.svg';
 import lock from '../icon-svgs/lock.svg';
 import logout from '../icon-svgs/logout.svg';
+import logs_stderr from '../icon-svgs/logs_stderr.svg';
+import logs_stdout from '../icon-svgs/logs_stdout.svg';
+import logs_structured from '../icon-svgs/logs_structured.svg';
 import materialization from '../icon-svgs/materialization.svg';
 import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
@@ -140,6 +148,8 @@ import password from '../icon-svgs/password.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
+import resource from '../icon-svgs/resource.svg';
+import run from '../icon-svgs/run.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import search from '../icon-svgs/search.svg';
@@ -201,6 +211,7 @@ export const Icons = {
   asset_group,
   backfill,
   badge,
+  code_location_reload,
   date,
   datatype_array,
   datatype_bool,
@@ -222,9 +233,10 @@ export const Icons = {
   partition_success,
   partition_stale,
   partition_failure,
-  repo: source,
-  resource: layers,
-  run: history,
+  repo: folder,
+  resource,
+  concurrency,
+  run,
   sensors,
   schedule,
   source_asset,
@@ -243,12 +255,17 @@ export const Icons = {
   panel_show_bottom,
   panel_show_both,
   calendar,
-  copy_to_clipboard: assignment,
-  copy_to_clipboard_done: assignment_turned_in,
+  copy_to_clipboard,
+  logs_structured,
+  logs_stdout,
+  logs_stderr,
+  copy_to_clipboard_done,
   chat_support,
   changes_present,
   concept_book,
   dash,
+  deamon,
+  lineage,
   open_in_new,
   folder,
   tag,
@@ -302,12 +319,11 @@ export const Icons = {
   code_block,
   code_location,
   compute_kind,
-  console: console_icon,
   content_copy,
   collapse_arrows,
   column_lineage,
   corporate_fare,
-  delete: deleteSVG,
+  delete: trash,
   dollar_sign,
   done,
   dot,
