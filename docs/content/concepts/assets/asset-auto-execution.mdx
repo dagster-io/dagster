@@ -28,7 +28,7 @@ It is recommended to start with the built-in <PyObject object="AutoMaterializePo
 | <PyObject object="AutoMaterializeRule" method="materialize_on_missing" />                | Materialize an asset partition if it has never been materialized before.                                                                                                 |
 | <PyObject object="AutoMaterializeRule" method="materialize_on_cron" />                   | Materialize an asset partition if it has not been materialized since the latest tick of a given cron schedule.                                                           |
 | <PyObject object="AutoMaterializeRule" method="materialize_on_required_for_freshness" /> | Materialize an asset if it is required to satisfy a <PyObject object="FreshnessPolicy" /> of this asset or one of its downstream assets.                                 |
-| <PyObject object="AutoMaterializeRule" method="skip_on_parent_missing" />                | Skip materializing an asset partition if one of its parent asset partitions has never been materialized (for regular assets) or observed (for observable source assets). |
+| <PyObject object="AutoMaterializeRule" method="skip_on_parent_missing" />                | Skip materializing an asset partition if one of its parent asset partitions has never been materialized (for materializable assets) or observed (for observable assets). |
 | <PyObject object="AutoMaterializeRule" method="skip_on_parent_outdated" />               | Skip materializing an asset partition if any of its parents has not incorporated the latest data from its ancestors.                                                     |
 | <PyObject object="AutoMaterializeRule" method="skip_on_not_all_parents_updated" />       | Skip materializing an asset partition if any of its parents have not been updated since the asset's last materialization.                                                |
 
@@ -179,17 +179,17 @@ For time-partitioned assets, the `N` most recent partitions will be selected fro
 
 ### Auto-materialize policies and data versions
 
-[Observable source assets](/concepts/assets/asset-observations#observable-source-assets) are assets that your code doesn't materialize, but that you provide a function for that can tell when they've changed. The <PyObject object="AutoMaterializeRule" method="materialize_on_parent_updated" /> rule incorporates the observed data versions of these assets when determining if it should fire for a downstream asset.
+[Observable assets](/concepts/assets/asset-observations#observable-source-assets) are assets that your code doesn't materialize, but that you provide a function for that can tell when they've changed. The <PyObject object="AutoMaterializeRule" method="materialize_on_parent_updated" /> rule incorporates the observed data versions of these assets when determining if it should fire for a downstream asset.
 
 In this example, we check every minute to see whether `source_file` was modified. If it was, then the <PyObject object="AutoMaterializePolicy" /> on `asset1` will cause it to be materialized.
 
 ```python file=/concepts/assets/auto_materialize_observable_source_asset.py
 import os
 
-from dagster import AutoMaterializePolicy, DataVersion, asset, observable_source_asset
+from dagster import AutoMaterializePolicy, DataVersion, asset, observable_asset
 
 
-@observable_source_asset(auto_observe_interval_minutes=1)
+@observable_asset(auto_observe_interval_minutes=1)
 def source_file():
     return DataVersion(str(os.path.getmtime("source_file.csv")))
 
