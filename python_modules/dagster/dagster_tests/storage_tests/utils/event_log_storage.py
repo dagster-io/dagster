@@ -543,6 +543,7 @@ class TestEventLogStorage:
                 ),
             )
         )
+        assert storage_id
         # Ensure we can query the event log by storage ID
         assert (
             len(
