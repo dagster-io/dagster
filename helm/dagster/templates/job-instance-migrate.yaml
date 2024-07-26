@@ -22,13 +22,23 @@ spec:
       automountServiceAccountToken: true
       securityContext: {{ $_.Values.dagsterWebserver.podSecurityContext | toYaml | nindent 8 }}
       restartPolicy: Never
+      {{- if .Values.migrate.initContainers }}
+      initContainers:
+      {{- range $container := .Values.migrate.initContainers }}
+      - {{ toYaml $container | nindent 8 | trim }}
+      {{- end }}
+      {{- end }}
       containers:
         - name: dagster-instance-migrate
           securityContext: {{ $_.Values.dagsterWebserver.securityContext | toYaml | nindent 12 }}
           imagePullPolicy: {{ $_.Values.dagsterWebserver.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ $_.Values.dagsterWebserver.image) | quote }}
+          {{- if .Values.migrate.customMigrateCommand }}
+          command: {{- toYaml .Values.migrate.customMigrateCommand | nindent 12 }}
+          {{- else }}
           command: ["dagster"]
           args: ["instance", "migrate"]
+          {{- end }}
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
@@ -58,6 +68,11 @@ spec:
             {{- end }}
             {{- end }}
           resources: {{ $_.Values.dagsterWebserver.resources | toYaml | nindent 12 }}
+        {{- if .Values.migrate.extraContainers }}
+        {{- range $container := .Values.migrate.extraContainers }}
+        - {{ toYaml $container | nindent 10 | trim }}
+        {{- end }}
+        {{- end }}
       volumes:
         - name: dagster-instance
           configMap:

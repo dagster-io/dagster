@@ -334,6 +334,18 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
+        "Container": {
+            "title": "Container",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+        },
+        "InitContainer": {
+            "title": "InitContainer",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+        },
         "Webserver": {
             "title": "Webserver",
             "type": "object",
@@ -527,6 +539,34 @@
                             "type": "null"
                         }
                     ]
+                },
+                "extraContainers": {
+                    "title": "Extracontainers",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "extraInitContainers": {
+                    "title": "Extrainitcontainers",
+                    "items": {
+                        "$ref": "#/definitions/InitContainer"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -578,12 +618,6 @@
             "type": "object",
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
-        },
-        "Container": {
-            "title": "Container",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
         },
         "UserDeployment": {
             "title": "UserDeployment",
@@ -807,6 +841,10 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
+                },
+                "pgIsReadyCommandOverride": {
+                    "title": "Pgisreadycommandoverride",
+                    "type": "string"
                 },
                 "postgresqlHost": {
                     "title": "Postgresqlhost",
@@ -2980,6 +3018,34 @@
                             "type": "null"
                         }
                     ]
+                },
+                "extraContainers": {
+                    "title": "Extracontainers",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "extraInitContainers": {
+                    "title": "Extrainitcontainers",
+                    "items": {
+                        "$ref": "#/definitions/InitContainer"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -3028,6 +3094,27 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
+                },
+                "customMigrateCommand": {
+                    "title": "Custommigratecommand",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "extraContainers": {
+                    "title": "Extracontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
+                },
+                "initContainers": {
+                    "title": "Initcontainers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Container"
+                    }
                 }
             },
             "required": [

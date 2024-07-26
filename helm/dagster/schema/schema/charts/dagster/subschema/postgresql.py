@@ -12,6 +12,7 @@ class Service(BaseModel):
 class PostgreSQL(BaseModel):
     image: ExternalImage
     enabled: bool
+    pgIsReadyCommandOverride: Optional[str]
     postgresqlHost: str
     postgresqlUsername: str
     postgresqlPassword: str

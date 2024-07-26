@@ -151,6 +151,29 @@ dagsterWebserver:
   #     subPath: test_file.yaml
   volumeMounts: []
 
+  # Additional containers that should run as sidecars to the webserver. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before the webserver's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the check-db-ready init container.
+  # 
+  # Example:
+  # extraInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraInitContainers: []
+
   # Support Node, affinity and tolerations for webserver pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -786,6 +809,11 @@ postgresql:
   # See: https://docs.sqlalchemy.org/en/13/dialects/postgresql.html#dialect-postgresql
   postgresqlScheme: ""
 
+  # When set, overrides the pg_isready command used to check if the database is ready.
+  # This is useful when using extraInitContainers on the webserver or daemon, in case you
+  # need to handle the sidecar lifecycle yourself (in K8s versions before v1.28).
+  pgIsReadyCommandOverride: ""
+
   service:
     port: 5432
 
@@ -1209,6 +1237,29 @@ dagsterDaemon:
   #     subPath: test_file.yaml
   volumeMounts: []
 
+  # Additional containers that should run as sidecars to the daemon. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using extraInitContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Additional init containers that should run before to the daemon's init container, such as sidecars.
+  # For K8s versions after 1.29, see:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Extra init containers are started **before** the check-db-ready init container.
+  # 
+  # Example:
+  # extraInitContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraInitContainers: []
+
   annotations: {}
   nodeSelector: {}
   affinity: {}
@@ -1279,6 +1330,31 @@ extraManifests:
 ####################################################################################################
 migrate:
   enabled: false
+
+  # When set, overrides the "dagster instance migrate" command used to migrate the dagster DB.
+  # This is useful when using extraContainers on the migration job, in case you
+  # need to handle the sidecar lifecycle yourself (in K8s versions before v1.28).
+  customMigrateCommand: []
+
+  # Additional containers that should be run as sidecars to the migration job. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers
+  # For K8s versions after 1.29, prefer using initContainers instead. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  #
+  # Example:
+  # extraContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  extraContainers: []
+
+  # Init containers that should run before the main job container, such as sidecars. See:
+  # https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/
+  # 
+  # Example:
+  # initContainers:
+  #   - name: my-sidecar
+  #     image: busybox
+  initContainers: []
 
 ####################################################################################################
 # As an open source project, we collect usage statistics to better understand how users engage
