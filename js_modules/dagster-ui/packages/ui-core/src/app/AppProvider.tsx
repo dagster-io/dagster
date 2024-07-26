@@ -23,6 +23,7 @@ import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 import {GlobalStyleProvider} from './GlobalStyleProvider';
 import {LayoutProvider} from './LayoutProvider';
+import {createOperationQueryStringApolloLink} from './OperationQueryStringApolloLink';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
@@ -134,14 +135,19 @@ export const AppProvider = (props: AppProviderProps) => {
 
     return new ApolloClient({
       cache: appCache,
-      link: ApolloLink.from([...apolloLinks, idempotencyLink, splitLink]),
+      link: ApolloLink.from([
+        ...apolloLinks,
+        createOperationQueryStringApolloLink(basePath),
+        idempotencyLink,
+        splitLink,
+      ]),
       defaultOptions: {
         watchQuery: {
           fetchPolicy: 'cache-and-network',
         },
       },
     });
-  }, [apolloLinks, appCache, graphqlPath, headerObject, retryLink, websocketClient]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, retryLink, websocketClient, basePath]);
 
   const appContextValue = React.useMemo(
     () => ({
