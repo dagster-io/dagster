@@ -222,8 +222,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     if not job_config.job_image:
         raise Exception("No image included in either executor config or the dagster job")
 
-    task = create_k8s_job_task(app)
-    task_signature = task.si(
+    task_kwargs = dict(
         execute_step_args_packed=pack_value(execute_step_args),
         job_config_dict=job_config.to_dict(),
         job_namespace=plan_context.executor.job_namespace,
@@ -233,6 +232,14 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         job_wait_timeout=plan_context.executor.job_wait_timeout,
         kubeconfig_file=plan_context.executor.kubeconfig_file,
     )
+
+    # Only set per_step_k8s_config if it is non-empty to avoid passing in a new unexpected
+    # argument to celery workers running older dagster versions before that parameter was added
+    if plan_context.executor.per_step_k8s_config:
+        task_kwargs["per_step_k8s_config"] = plan_context.executor.per_step_k8s_config
+
+    task = create_k8s_job_task(app)
+    task_signature = task.si(**task_kwargs)
 
     return task_signature.apply_async(
         priority=priority,
@@ -277,6 +284,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         per_step_k8s_config=None,
         user_defined_k8s_config_dict=None,
         kubeconfig_file=None,
+        **_kwargs,
     ):
         """Run step execution in a K8s job pod."""
         execute_step_args = unpack_value(
