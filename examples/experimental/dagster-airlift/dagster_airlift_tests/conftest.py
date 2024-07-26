@@ -12,7 +12,8 @@ def airflow_home_dir_fixture() -> Generator[str, None, None]:
     with TemporaryDirectory() as tmpdir:
         # run chmod +x create_airflow_cfg.sh and then run create_airflow_cfg.sh tmpdir
         temp_env = {**os.environ.copy(), "AIRFLOW_HOME": tmpdir}
-        path_to_script = os.path.join(os.path.dirname(__file__), "create_airflow_cfg.sh")
+        # go up one directory from current
+        path_to_script = os.path.join(os.path.dirname(__file__), "..", "create_airflow_cfg.sh")
         path_to_dags = os.path.join(os.path.dirname(__file__), "airflow_project", "dags")
         subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
         subprocess.run([path_to_script, path_to_dags], check=True, env=temp_env)
