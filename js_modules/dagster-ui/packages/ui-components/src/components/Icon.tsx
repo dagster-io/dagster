@@ -226,7 +226,6 @@ import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
 import shield from '../icon-svgs/shield.svg';
 import shield_check from '../icon-svgs/shield_check.svg';
 import slack from '../icon-svgs/slack_color.svg';
-// import slack_color from '../icon-svgs/slack_color.svg';
 import snapshot from '../icon-svgs/snapshot.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
 import source from '../icon-svgs/source.svg';
