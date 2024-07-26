@@ -2,6 +2,7 @@ import inspect
 import json
 import sys
 import tempfile
+from abc import ABC
 from functools import update_wrapper
 
 import pytest
@@ -117,8 +118,12 @@ def test_is_subclass():
     sys.version_info.minor < 9, reason="Generic aliases only exist on py39 or later"
 )
 def test_is_subclass_generic_alias():
+    class AbsParent(ABC): ...
+
+    class Child(AbsParent): ...
+
     # See comments around is_subclass for why this fails
     with pytest.raises(TypeError):
-        issubclass(list[str], DagsterType)
+        issubclass(list[str], Child)
 
-    assert not is_subclass(list[str], DagsterType)
+    assert not is_subclass(list[str], Child)

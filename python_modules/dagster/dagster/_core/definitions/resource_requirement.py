@@ -1,21 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Iterator,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Type,
-)
+from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Sequence, Type
 
+from dagster._record import record
 from dagster._utils.merger import merge_dicts
 
 from ..errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from .utils import DEFAULT_IO_MANAGER_KEY
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+
     from .resource_definition import ResourceDefinition
 
 
@@ -76,21 +70,22 @@ class ResourceAddable(ABC):
         raise NotImplementedError()
 
 
-class OpDefinitionResourceRequirement(
-    NamedTuple("_OpDefinitionResourceRequirement", [("key", str), ("node_description", str)]),
-    ResourceRequirement,
-):
+@record
+class OpDefinitionResourceRequirement(ResourceRequirement):
+    key: str
+    node_description: str
+
     def describe_requirement(self) -> str:
         return f"resource with key '{self.key}' required by {self.node_description}"
 
 
-class InputManagerRequirement(
-    NamedTuple(
-        "_InputManagerRequirement",
-        [("key", str), ("node_description", str), ("input_name", str), ("root_input", bool)],
-    ),
-    ResourceRequirement,
-):
+@record
+class InputManagerRequirement(ResourceRequirement):
+    key: str
+    node_description: str
+    input_name: str
+    root_input: bool
+
     @property
     def expected_type(self) -> Type:
         from ..storage.io_manager import IInputManagerDefinition
@@ -106,16 +101,11 @@ class InputManagerRequirement(
 
 # The ResourceRequirement for unexecutable external assets. Is an analogue to
 # `SourceAssetIOManagerRequirement`.
-class ExternalAssetIOManagerRequirement(
-    NamedTuple(
-        "_ExternalAssetIOManagerRequirement",
-        [
-            ("key", str),
-            ("asset_key", Optional[str]),
-        ],
-    ),
-    ResourceRequirement,
-):
+@record
+class ExternalAssetIOManagerRequirement(ResourceRequirement):
+    key: str
+    asset_key: Optional[str]
+
     @property
     def expected_type(self) -> Type:
         from ..storage.io_manager import IOManagerDefinition
@@ -129,16 +119,11 @@ class ExternalAssetIOManagerRequirement(
         return f"io manager with key '{self.key}' required by {external_asset_descriptor}"
 
 
-class SourceAssetIOManagerRequirement(
-    NamedTuple(
-        "_InputManagerRequirement",
-        [
-            ("key", str),
-            ("asset_key", Optional[str]),
-        ],
-    ),
-    ResourceRequirement,
-):
+@record
+class SourceAssetIOManagerRequirement(ResourceRequirement):
+    key: str
+    asset_key: Optional[str]
+
     @property
     def expected_type(self) -> Type:
         from ..storage.io_manager import IOManagerDefinition
@@ -152,12 +137,12 @@ class SourceAssetIOManagerRequirement(
         return f"io manager with key '{self.key}' required by {source_asset_descriptor}"
 
 
-class OutputManagerRequirement(
-    NamedTuple(
-        "_OutputManagerRequirement", [("key", str), ("node_description", str), ("output_name", str)]
-    ),
-    ResourceRequirement,
-):
+@record
+class OutputManagerRequirement(ResourceRequirement):
+    key: str
+    node_description: str
+    output_name: str
+
     @property
     def expected_type(self) -> Type:
         from ..storage.io_manager import IOManagerDefinition
@@ -171,13 +156,12 @@ class OutputManagerRequirement(
         )
 
 
-class HookResourceRequirement(
-    NamedTuple(
-        "_HookResourceRequirement",
-        [("key", str), ("attached_to", Optional[str]), ("hook_name", str)],
-    ),
-    ResourceRequirement,
-):
+@record
+class HookResourceRequirement(ResourceRequirement):
+    key: str
+    attached_to: Optional[str]
+    hook_name: str
+
     def describe_requirement(self) -> str:
         attached_to_desc = f"attached to {self.attached_to}" if self.attached_to else ""
         return (
@@ -185,18 +169,20 @@ class HookResourceRequirement(
         )
 
 
-class TypeResourceRequirement(
-    NamedTuple("_TypeResourceRequirement", [("key", str), ("type_display_name", str)]),
-    ResourceRequirement,
-):
+@record
+class TypeResourceRequirement(ResourceRequirement):
+    key: str
+    type_display_name: str
+
     def describe_requirement(self) -> str:
         return f"resource with key '{self.key}' required by type '{self.type_display_name}'"
 
 
-class TypeLoaderResourceRequirement(
-    NamedTuple("_TypeLoaderResourceRequirement", [("key", str), ("type_display_name", str)]),
-    ResourceRequirement,
-):
+@record
+class TypeLoaderResourceRequirement(ResourceRequirement):
+    key: str
+    type_display_name: str
+
     def describe_requirement(self) -> str:
         return (
             f"resource with key '{self.key}' required by the loader on type"
@@ -204,26 +190,14 @@ class TypeLoaderResourceRequirement(
         )
 
 
-class ResourceDependencyRequirement(
-    NamedTuple("_ResourceDependencyRequirement", [("key", str), ("source_key", Optional[str])]),
-    ResourceRequirement,
-):
+@record
+class ResourceDependencyRequirement(ResourceRequirement):
+    key: str
+    source_key: Optional[str]
+
     def describe_requirement(self) -> str:
         source_descriptor = f" by resource with key '{self.source_key}'" if self.source_key else ""
         return f"resource with key '{self.key}' required{source_descriptor}"
-
-
-class RequiresResources(ABC):
-    @property
-    @abstractmethod
-    def required_resource_keys(self) -> AbstractSet[str]:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_resource_requirements(
-        self, outer_context: Optional[object] = None
-    ) -> Iterator[ResourceRequirement]:
-        raise NotImplementedError()
 
 
 def ensure_resources_of_expected_type(
@@ -271,7 +245,7 @@ def get_resource_key_conflicts(
 def merge_resource_defs(
     old_resource_defs: Mapping[str, "ResourceDefinition"],
     resource_defs_to_merge_in: Mapping[str, "ResourceDefinition"],
-    requires_resources: RequiresResources,
+    requires_resources: "AssetsDefinition",
 ) -> Mapping[str, "ResourceDefinition"]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 

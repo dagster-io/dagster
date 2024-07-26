@@ -843,7 +843,10 @@ def _validate_resource_requirements(
 ) -> None:
     """Validate correctness of resources against required resource keys."""
     if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
-        for requirement in op_def.get_resource_requirements():
+        for requirement in op_def.get_resource_requirements(
+            asset_layer=None,
+            handle=None,
+        ):
             if not requirement.is_io_manager_requirement:
                 ensure_requirements_satisfied(resource_defs, [requirement])
 
