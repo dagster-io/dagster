@@ -10,8 +10,8 @@ from dagster import (
 )
 
 from .dagster_sdf_translator import DagsterSdfTranslator, validate_translator
-from .information_schema import SdfInformationSchema
-from .workspace import SdfWorkspace
+from .sdf_information_schema import SdfInformationSchema
+from .sdf_workspace import SdfWorkspace
 
 
 def sdf_assets(
