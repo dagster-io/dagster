@@ -2028,6 +2028,10 @@ type SensorNotFoundError implements Error {
   sensorName: String!
 }
 
+type UnsupportedOperationError implements Error {
+  message: String!
+}
+
 type DuplicateDynamicPartitionError implements Error {
   message: String!
   partitionsDefName: String!
@@ -3655,7 +3659,7 @@ type Mutation {
   shutdownRepositoryLocation(
     repositoryLocationName: String!
   ): ShutdownRepositoryLocationMutationResult!
-  wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
+  wipeAssets(assetPartitionRanges: [PartitionsByAssetSelector!]!): AssetWipeMutationResult!
   reportRunlessAssetEvents(
     eventParams: ReportRunlessAssetEventsParams!
   ): ReportRunlessAssetEventsResult!
@@ -3710,10 +3714,21 @@ union AssetWipeMutationResult =
     AssetNotFoundError
   | UnauthorizedError
   | PythonError
+  | UnsupportedOperationError
   | AssetWipeSuccess
 
 type AssetWipeSuccess {
-  assetKeys: [AssetKey!]!
+  assetPartitionRanges: [AssetPartitionRange!]!
+}
+
+type AssetPartitionRange {
+  assetKey: AssetKey!
+  partitionRange: PartitionRange
+}
+
+type PartitionRange {
+  start: String!
+  end: String!
 }
 
 union ReportRunlessAssetEventsResult =

@@ -167,6 +167,35 @@ class GrapheneAssetPartitions(graphene.ObjectType):
         super().__init__(assetKey=GrapheneAssetKey(path=asset_key.path), partitions=partitions)
 
 
+class GraphenePartitionRange(graphene.ObjectType):
+    start = graphene.NonNull(graphene.String)
+    end = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "PartitionRange"
+
+    def __init__(self, start: str, end: str):
+        super().__init__(start=start, end=end)
+
+
+class GrapheneAssetPartitionRange(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    partitionRange = graphene.Field(GraphenePartitionRange)
+
+    class Meta:
+        name = "AssetPartitionRange"
+
+    def __init__(self, asset_key: AssetKey, partition_range: Optional[PartitionKeyRange]):
+        super().__init__(
+            assetKey=GrapheneAssetKey(path=asset_key.path),
+            partitionRange=(
+                GraphenePartitionRange(start=partition_range.start, end=partition_range.end)
+                if partition_range
+                else None
+            ),
+        )
+
+
 class GrapheneAssetBackfillData(graphene.ObjectType):
     class Meta:
         name = "AssetBackfillData"
