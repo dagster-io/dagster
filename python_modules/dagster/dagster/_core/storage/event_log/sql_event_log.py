@@ -428,7 +428,7 @@ class SqlEventLogStorage(EventLogStorage):
         keys_to_index = self.get_asset_tags_to_index(set(tags.keys()))
         return {k: v for k, v in tags.items() if k in keys_to_index}
 
-    def store_event(self, event: EventLogEntry) -> int:
+    def store_event(self, event: EventLogEntry) -> Optional[int]:
         """Store an event corresponding to a pipeline run.
 
         Args:

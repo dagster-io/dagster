@@ -165,7 +165,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
-    def store_event(self, event: EventLogEntry) -> int:
+    def store_event(self, event: EventLogEntry) -> Optional[int]:
         """Store an event corresponding to a run.
 
         Args:
@@ -209,7 +209,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return event_id
 
-    def store_event_batch(self, events: Sequence[EventLogEntry]) -> Sequence[int]:
+    def store_event_batch(self, events: Sequence[EventLogEntry]) -> Sequence[Optional[int]]:
         check.sequence_param(events, "event", of_type=EventLogEntry)
 
         check.invariant(

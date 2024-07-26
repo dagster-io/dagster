@@ -225,7 +225,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def index_connection(self) -> ContextManager[Connection]:
         return self._connect(INDEX_SHARD_NAME)
 
-    def store_event(self, event: EventLogEntry) -> int:
+    def store_event(self, event: EventLogEntry) -> Optional[int]:
         """Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
         cross-run asset queries.
 
@@ -236,9 +236,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         insert_event_statement = self.prepare_insert_event(event)
         run_id = event.run_id
 
+        event_id = None
         with self.run_connection(run_id) as conn:
-            result = conn.execute(insert_event_statement)
-            event_id = result.inserted_primary_key[0]
+            conn.execute(insert_event_statement)
 
         if event.is_dagster_event and event.dagster_event.asset_key:  # type: ignore
             check.invariant(

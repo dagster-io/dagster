@@ -80,7 +80,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def upgrade(self):
         pass
 
-    def store_event(self, event) -> int:
+    def store_event(self, event) -> Optional[int]:
         event_id = super(InMemoryEventLogStorage, self).store_event(event)
         self._storage_id += 1
 
