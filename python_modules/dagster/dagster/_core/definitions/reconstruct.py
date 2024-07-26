@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from functools import lru_cache
+from inspect import isfunction
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -706,6 +707,11 @@ def repository_def_from_target_def(
         RepositoryDefinition,
     )
     from .source_asset import SourceAsset
+
+    if isfunction(target):
+        # TODO: validate that it takes no arguments
+        target = target()
+        # TODO: validate that it's a Definitions object
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
