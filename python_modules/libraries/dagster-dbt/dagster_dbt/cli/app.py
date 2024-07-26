@@ -108,7 +108,6 @@ def copy_scaffold(
     dagster_project_dir: Path,
     dbt_project_dir: Path,
     use_experimental_dbt_state: bool,
-    use_dbt_project: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
     dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
@@ -161,17 +160,11 @@ def copy_scaffold(
                 dbt_core_version_upper_bound=DBT_CORE_VERSION_UPPER_BOUND,
                 project_name=project_name,
                 use_experimental_dbt_state=use_experimental_dbt_state,
-                use_dbt_project=use_dbt_project,
             ).dump(destination_path)
 
             path.unlink()
 
     dagster_project_dir.joinpath("scaffold").rename(dagster_project_dir.joinpath(project_name))
-
-    if use_dbt_project:
-        dagster_project_dir.joinpath(project_name, "constants.py").unlink()
-    else:
-        dagster_project_dir.joinpath(project_name, "project.py").unlink()
 
 
 def _check_and_error_on_package_conflicts(project_name: str) -> None:
@@ -246,17 +239,6 @@ def project_scaffold_command(
             hidden=True,
         ),
     ] = False,
-    use_dbt_project: Annotated[
-        bool,
-        typer.Option(
-            ...,
-            "--use-dbt-project",
-            "--use-experimental-dbt-project",
-            "--use-dbt-project-package-data-dir",
-            help="Controls whether `DbtProject` is used.",
-            is_flag=True,
-        ),
-    ] = False,
 ) -> None:
     """This command will initialize a new Dagster project and create directories and files that
     load assets from an existing dbt project.
@@ -273,19 +255,15 @@ def project_scaffold_command(
     )
 
     dagster_project_dir = Path.cwd().joinpath(project_name)
-    use_dbt_project = use_dbt_project or use_experimental_dbt_state
 
     copy_scaffold(
         project_name=project_name,
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
         use_experimental_dbt_state=use_experimental_dbt_state,
-        use_dbt_project=use_dbt_project,
     )
 
-    dagster_dev_command = "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev"
-    if use_dbt_project:
-        dagster_dev_command = "dagster dev"
+    dagster_dev_command = "dagster dev"
 
     console.print(
         "Your Dagster project has been initialized. To view your dbt project in Dagster, run"
