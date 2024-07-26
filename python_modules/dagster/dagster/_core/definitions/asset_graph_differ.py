@@ -235,24 +235,32 @@ class AssetGraphDiffer:
                 data = TagsChangeData(base_tags=base_asset.tags, branch_tags=branch_asset.tags)
             changes.append((AssetDefinitionChangeType.TAGS, data))
 
-        branch_keys = set(branch_asset.metadata.keys())
-        base_keys = set(base_asset.metadata.keys())
+        if not record_changes:
+            if base_asset.metadata != branch_asset.metadata:
+                changes.append((AssetDefinitionChangeType.METADATA, None))
+        else:
+            # if we are recording changes, we need to compare the metadata keys and values
+            # fully to determine what has changed
+            branch_keys = set(branch_asset.metadata.keys())
+            base_keys = set(base_asset.metadata.keys())
 
-        new_keys = branch_keys - base_keys
-        removed_keys = base_keys - branch_keys
-        key_overlap = branch_keys.intersection(base_keys)
-        keys_changed = {
-            k for k in key_overlap if branch_asset.metadata[k] != base_asset.metadata[k]
-        }
-        if new_keys or removed_keys or keys_changed:
-            data = None
-            if record_changes:
-                data = MetadataChangeData(
-                    added_keys=new_keys,
-                    modified_keys=keys_changed,
-                    removed_keys=removed_keys,
+            new_keys = branch_keys - base_keys
+            removed_keys = base_keys - branch_keys
+            key_overlap = branch_keys.intersection(base_keys)
+            keys_changed = {
+                k for k in key_overlap if branch_asset.metadata[k] != base_asset.metadata[k]
+            }
+            if new_keys or removed_keys or keys_changed:
+                changes.append(
+                    (
+                        AssetDefinitionChangeType.METADATA,
+                        MetadataChangeData(
+                            added_keys=new_keys,
+                            modified_keys=keys_changed,
+                            removed_keys=removed_keys,
+                        ),
+                    )
                 )
-            changes.append((AssetDefinitionChangeType.METADATA, data))
 
         return changes
 
