@@ -258,3 +258,17 @@ def test_local_directory_file():
 
     with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
         loadable_targets_from_python_file(path, working_directory=os.path.dirname(path))
+
+
+def test_defs_loader():
+    module_path = file_relative_path(__file__, "build_defs.py")
+    loadable_targets = loadable_targets_from_python_file(module_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "defs"
+
+    repo_def = repository_def_from_pointer(CodePointer.from_python_file(module_path, symbol, None))
+
+    assert isinstance(repo_def, RepositoryDefinition)
+    assert len(repo_def.assets_defs_by_key) == 1

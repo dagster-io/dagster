@@ -182,6 +182,7 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._core.definitions.decorators.config_mapping_decorator import (
     config_mapping as config_mapping,
 )
+from dagster._core.definitions.decorators.defs_loader_decorator import defs_loader as defs_loader
 from dagster._core.definitions.decorators.graph_decorator import graph as graph
 from dagster._core.definitions.decorators.hook_decorator import (
     failure_hook as failure_hook,
@@ -205,6 +206,7 @@ from dagster._core.definitions.definitions_class import (
     Definitions as Definitions,
     create_repository_using_definitions_args as create_repository_using_definitions_args,
 )
+from dagster._core.definitions.definitions_loader import DefinitionsLoader as DefinitionsLoader
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,

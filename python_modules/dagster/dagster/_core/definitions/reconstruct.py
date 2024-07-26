@@ -589,6 +589,7 @@ def _is_list_of_assets(
 
 def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
     from .definitions_class import Definitions
+    from .definitions_loader import DefinitionsLoader
     from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
@@ -602,13 +603,14 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
                 PendingRepositoryDefinition,
                 GraphDefinition,
                 Definitions,
+                DefinitionsLoader,
             ),
         )
         or _is_list_of_assets(definition)
     ):
         raise DagsterInvariantViolationError(
-            "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-            f"or RepositoryDefinition. Got {definition!r}."
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, "
+            "DefinitionsLoader or RepositoryDefinition. Got {definition!r}."
         )
     return definition
 
@@ -697,6 +699,7 @@ def repository_def_from_target_def(
 ) -> Optional["RepositoryDefinition"]:
     from .assets import AssetsDefinition
     from .definitions_class import Definitions
+    from .definitions_loader import DefinitionsLoader
     from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
     from .repository_definition import (
@@ -706,6 +709,11 @@ def repository_def_from_target_def(
         RepositoryDefinition,
     )
     from .source_asset import SourceAsset
+
+    if isinstance(target, DefinitionsLoader):
+        # TODO: validate that it takes no arguments
+        target = target.load_fn()
+        # TODO: validate that it's a Definitions object
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case

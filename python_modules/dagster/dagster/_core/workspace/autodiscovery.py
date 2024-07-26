@@ -5,10 +5,12 @@ from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.definitions_loader import DefinitionsLoader
 from dagster._core.definitions.load_assets_from_modules import assets_from_modules
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
+DEFS_LOADER_NAME = "defs"
 
 
 class LoadableTarget(NamedTuple):
@@ -49,6 +51,10 @@ def loadable_targets_from_python_package(
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
     from dagster._core.definitions import JobDefinition
+
+    for name, value in inspect.getmembers(module):
+        if name == DEFS_LOADER_NAME and isinstance(value, DefinitionsLoader):
+            return [LoadableTarget(name, value)]
 
     loadable_defs = _loadable_targets_of_type(module, Definitions)
 
@@ -103,7 +109,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         return [LoadableTarget(LOAD_ALL_ASSETS, [*module_assets, *module_source_assets])]
 
     raise DagsterInvariantViolationError(
-        "No repositories, jobs, pipelines, graphs, or asset definitions found in "
+        "No repositories, jobs, pipelines, graphs, asset definitions, or build_defs functions found in "
         f'"{module.__name__}".'
     )
 
