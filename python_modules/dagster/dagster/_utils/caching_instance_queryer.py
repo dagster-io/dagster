@@ -484,6 +484,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return set()
         elif run.asset_selection:
             return run.asset_selection
+        if run.execution_plan_snapshot_id:
+            execution_plan_snapshot = check.not_none(
+                self._instance.get_execution_plan_snapshot(run.execution_plan_snapshot_id)
+            )
+            return execution_plan_snapshot.asset_selection
         else:
             # must resort to querying the event log
             return self._get_planned_materializations_for_run_from_events(run_id=run_id)
