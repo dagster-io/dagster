@@ -54,6 +54,9 @@ import copy_to_clipboard from '../icon-svgs/copy_to_clipboard.svg';
 import copy_to_clipboard_done from '../icon-svgs/copy_to_clipboard_done.svg';
 import corporate_fare from '../icon-svgs/corporate_fare.svg';
 import daemon from '../icon-svgs/daemon.svg';
+import dagster_primary from '../icon-svgs/dagster_primary.svg';
+import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
+import dagster_solid from '../icon-svgs/dagster_solid.svg';
 import dash from '../icon-svgs/dash.svg';
 import datatype_array from '../icon-svgs/datatype_array.svg';
 import datatype_bool from '../icon-svgs/datatype_bool.svg';
@@ -147,8 +150,7 @@ import metadata from '../icon-svgs/metadata.svg';
 import missing from '../icon-svgs/missing.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
 import more_vert from '../icon-svgs/more_vert.svg';
-import ms_teams from '../icon-svgs/ms_teams.svg';
-import ms_teams_color from '../icon-svgs/ms_teams_color.svg';
+import ms_teams from '../icon-svgs/ms_teams_color.svg';
 import multi_asset from '../icon-svgs/multi_asset.svg';
 import new_svg from '../icon-svgs/new.svg';
 import new_in_branch from '../icon-svgs/new_in_branch.svg';
@@ -163,8 +165,7 @@ import op from '../icon-svgs/op.svg';
 import op_selector from '../icon-svgs/op_selector.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import owner from '../icon-svgs/owner.svg';
-import pagerduty from '../icon-svgs/pagerduty.svg';
-import pagerduty_color from '../icon-svgs/pagerduty_color.svg';
+import pagerduty from '../icon-svgs/pagerduty_color.svg';
 import palette from '../icon-svgs/palette.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
 import panel_show_both from '../icon-svgs/panel_show_both.svg';
@@ -224,8 +225,8 @@ import settings from '../icon-svgs/settings.svg';
 import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
 import shield from '../icon-svgs/shield.svg';
 import shield_check from '../icon-svgs/shield_check.svg';
-import slack from '../icon-svgs/slack.svg';
-import slack_color from '../icon-svgs/slack_color.svg';
+import slack from '../icon-svgs/slack_color.svg';
+// import slack_color from '../icon-svgs/slack_color.svg';
 import snapshot from '../icon-svgs/snapshot.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
 import source from '../icon-svgs/source.svg';
@@ -358,6 +359,9 @@ export const Icons = {
   corporate_fare,
   daemon,
   dash,
+  dagster_primary,
+  dagster_reversed,
+  dagster_solid,
   datatype_array,
   datatype_bool,
   datatype_number,
@@ -450,7 +454,6 @@ export const Icons = {
   more_horiz,
   more_vert,
   ms_teams,
-  ms_teams_color,
   multi_asset,
   new_in_branch,
   nightlight,
@@ -465,7 +468,6 @@ export const Icons = {
   open_in_new,
   owner,
   pagerduty,
-  pagerduty_color,
   palette,
   panel_hide_right,
   panel_show_both,
@@ -526,7 +528,6 @@ export const Icons = {
   shield,
   shield_check,
   slack,
-  slack_color,
   snapshot,
   sort_by_alpha,
   source,
@@ -596,12 +597,6 @@ export const Icons = {
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([
-  (slack_color as any).src,
-  (ms_teams_color as any).src,
-  (pagerduty_color as any).src,
-]);
-
 export type IconName = keyof typeof Icons;
 
 const rotations: {[key in IconName]?: string} = {
@@ -615,6 +610,7 @@ interface Props {
   name: IconName;
   size?: 12 | 16 | 20 | 24 | 48;
   style?: React.CSSProperties;
+  useOriginalColor?: boolean;
 }
 
 export const Icon = React.memo((props: Props) => {
@@ -624,8 +620,9 @@ export const Icon = React.memo((props: Props) => {
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
   const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
 
-  const color: string | null =
-    props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.accentPrimary());
+  const color: string | null = props.useOriginalColor
+    ? null
+    : props.color || Colors.accentPrimary();
   return (
     <IconWrapper
       role="img"
@@ -638,7 +635,6 @@ export const Icon = React.memo((props: Props) => {
     />
   );
 });
-
 interface WrapperProps {
   $color: string | null;
   $size: number;
