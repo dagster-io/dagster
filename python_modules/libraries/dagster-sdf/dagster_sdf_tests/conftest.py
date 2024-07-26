@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 from dagster_sdf.constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT
-from dagster_sdf.resource import SdfCliInvocation, SdfCliResource
+from dagster_sdf.resource import SdfCliResource
 
 from .sdf_workspaces import moms_flower_shop_path
 
@@ -12,7 +12,7 @@ def _create_sdf_invocation(
     workspace_dir: Path,
     run_workspace: bool = False,
     environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
-) -> SdfCliInvocation:
+):
     sdf = SdfCliResource(
         workspace_dir=os.fspath(workspace_dir), global_config_flags=["--log-form=nested"]
     )
