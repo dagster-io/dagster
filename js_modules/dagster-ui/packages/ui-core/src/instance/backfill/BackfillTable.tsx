@@ -33,7 +33,6 @@ export const BackfillTable = ({
             <th>Requested</th>
             <th>Launched by</th>
             <th>Backfill status</th>
-            <th>Run status</th>
             <th style={{width: 80}} />
           </tr>
         </thead>

@@ -1,18 +1,14 @@
 import {QueryResult, gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
-import countBy from 'lodash/countBy';
 import * as React from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {
-  PartitionStatusesForBackfillFragment,
   SingleBackfillCountsQuery,
   SingleBackfillCountsQueryVariables,
-  SingleBackfillQuery,
-  SingleBackfillQueryVariables,
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -23,7 +19,6 @@ import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
-import {RunStatusTagsWithCounts} from '../../runs/RunTimeline';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
@@ -48,10 +43,10 @@ export const BackfillRow = (props: BackfillRowProps) => {
     props.backfill.isAssetBackfill;
 
   if (statusUnsupported) {
-    return <BackfillRowContent {...props} counts={null} statuses={null} statusQueryResult={null} />;
+    return <BackfillRowContent {...props} counts={null} statusQueryResult={null} />;
   }
   return (
-    <BackfillRowLoader backfillId={props.backfill.id} numPartitions={props.backfill.numPartitions}>
+    <BackfillRowLoader backfillId={props.backfill.id}>
       {(data) => <BackfillRowContent {...props} {...data} />}
     </BackfillRowLoader>
   );
@@ -60,24 +55,13 @@ export const BackfillRow = (props: BackfillRowProps) => {
 interface LoadResult {
   counts: {[runStatus: string]: number} | null;
   statusQueryResult: QueryResult<any, any> | null;
-  statuses: PartitionStatusesForBackfillFragment['results'] | null;
 }
 
 export const BackfillRowLoader = (props: {
   backfillId: string;
-  numPartitions: number | null;
   children: (data: LoadResult) => React.ReactNode;
 }) => {
-  const {backfillId, numPartitions} = props;
-
-  const statusDetails = useLazyQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
-    {
-      variables: {backfillId},
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-  useBlockTraceOnQueryResult(statusDetails[1], 'SingleBackfillQuery');
+  const {backfillId} = props;
 
   const statusCounts = useLazyQuery<SingleBackfillCountsQuery, SingleBackfillCountsQueryVariables>(
     SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
@@ -91,29 +75,23 @@ export const BackfillRowLoader = (props: {
   // Note: We switch queries based on how many partitions there are to display,
   // because the detail is nice for small backfills but breaks for 100k+ partitions.
   //
-  const [statusQueryFn, statusQueryResult] =
-    (numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? statusCounts : statusDetails;
+  const [statusQueryFn, statusQueryResult] = statusCounts;
 
   useDelayedRowQuery(statusQueryFn);
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
   const {data} = statusQueryResult;
-  const {counts, statuses} = React.useMemo(() => {
+  const {counts} = React.useMemo(() => {
     if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
-      return {counts: null, statuses: null};
+      return {counts: null};
     }
-    if ('partitionStatusCounts' in data.partitionBackfillOrError) {
-      const counts = Object.fromEntries(
-        data.partitionBackfillOrError.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
-      );
-      return {counts, statuses: null};
-    }
-    const statuses = data.partitionBackfillOrError.partitionStatuses?.results || null;
-    const counts = countBy(statuses, (k) => k.runStatus);
-    return {counts, statuses};
+    const counts = Object.fromEntries(
+      data.partitionBackfillOrError.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
+    );
+    return {counts};
   }, [data]);
 
-  return props.children({counts, statuses, statusQueryResult});
+  return props.children({counts, statusQueryResult});
 };
 
 export const BackfillRowContent = ({
@@ -123,7 +101,6 @@ export const BackfillRowContent = ({
   onShowPartitionsRequested,
   refetch,
   counts,
-  statuses,
   statusQueryResult,
 }: BackfillRowProps & LoadResult) => {
   const repoAddress = backfill.partitionSet
@@ -139,20 +116,6 @@ export const BackfillRowContent = ({
     ) : (
       <BackfillStatusTag backfill={backfill} />
     );
-
-  const renderRunStatus = () => {
-    if (!backfill.isValidSerialization) {
-      return <p>A partitions definition has changed since this backfill ran.</p>;
-    }
-    if (statusQueryResult?.loading) {
-      return <div style={{color: Colors.textLight()}}>Loading</div>;
-    }
-    return counts ? (
-      <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
-    ) : (
-      <div style={{color: Colors.textLight()}}>{'\u2013'}</div>
-    );
-  };
 
   return (
     <tr>
@@ -193,7 +156,6 @@ export const BackfillRowContent = ({
         <CreatedByTagCell tags={backfill.tags} repoAddress={repoAddress} />
       </td>
       <td style={{width: 140}}>{renderBackfillStatus()}</td>
-      <td>{renderRunStatus()}</td>
       <td>
         <BackfillActionsMenu
           backfill={backfill}
@@ -202,55 +164,6 @@ export const BackfillRowContent = ({
         />
       </td>
     </tr>
-  );
-};
-
-const BACKFILL_PARTITIONS_COUNTS_THRESHOLD = 1000;
-
-const BackfillRunStatus = ({
-  backfill,
-  statuses,
-  counts,
-}: {
-  backfill: BackfillTableFragment;
-  statuses: PartitionStatusesForBackfillFragment['results'] | null;
-  counts: {[status: string]: number};
-}) => {
-  const history = useHistory();
-  const partitionCounts = Object.entries(counts).reduce(
-    (partitionCounts, [runStatus, count]) => {
-      partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
-      return partitionCounts;
-    },
-    {} as {[status: string]: number},
-  );
-
-  const health: PartitionStatusHealthSourceOps = React.useMemo(
-    () => ({
-      runStatusForPartitionKey: (key: string) =>
-        statuses?.filter((s) => s.partitionName === key)[0]?.runStatus || RunStatus.NOT_STARTED,
-    }),
-    [statuses],
-  );
-
-  return statuses && backfill.partitionNames ? (
-    <PartitionStatus
-      partitionNames={backfill.partitionNames}
-      health={health}
-      splitPartitions
-      onClick={(partitionName) => {
-        const entry = statuses.find((r) => r.partitionName === partitionName);
-        if (entry?.runId) {
-          history.push(`/runs/${entry.runId}`);
-        }
-      }}
-    />
-  ) : (
-    <RunStatusTagsWithCounts
-      succeededCount={partitionCounts[RunStatus.SUCCESS] || 0}
-      inProgressCount={partitionCounts[RunStatus.STARTED] || 0}
-      failedCount={partitionCounts[RunStatus.FAILURE] || 0}
-    />
   );
 };
 
