@@ -107,7 +107,7 @@ export const BackfillRowContent = ({
     statusQueryResult?.loading ? (
       <div style={{color: Colors.textLight()}}>Loading</div>
     ) : (
-      <BackfillStatusTag backfill={backfill} />
+      <BackfillStatusTagForPage backfill={backfill} />
     );
 
   return (
@@ -287,10 +287,6 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
     [requested],
   );
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
-};
-
-export const BackfillStatusTag = ({backfill}: {backfill: BackfillTableFragment}) => {
-  return <BackfillStatusTagForPage backfill={backfill} />;
 };
 
 const TagButton = styled.button`
