@@ -9,7 +9,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey
-from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin
@@ -61,14 +61,20 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     )
     partition = kwargs.get("partition")
     if partition:
-        partitions_def = implicit_job_def.partitions_def
-        if partitions_def is None or all(
+        if all(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is None
             for asset_key in asset_keys
         ):
             check.failed("Provided '--partition' option, but none of the assets are partitioned")
 
-        tags = partitions_def.get_tags_for_partition_key(partition)
+        try:
+            tags = implicit_job_def.get_tags_for_partition_key(partition)
+        except DagsterUnknownPartitionError:
+            raise DagsterInvalidSubsetError(
+                "All selected assets must have a PartitionsDefinition containing the passed"
+                f" partition key `{partition}` or have no PartitionsDefinition."
+            )
+
     else:
         if any(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is not None

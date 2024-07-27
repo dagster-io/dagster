@@ -674,22 +674,21 @@ class JobDefinition(IHasInternalInit):
 
         merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
-            if not (self.partitions_def and self.partitioned_config):
-                check.failed("Attempted to execute a partitioned run for a non-partitioned job")
-            self.partitions_def.validate_partition_key(
+            tags_for_partition_key = ephemeral_job.get_tags_for_partition_key(
                 partition_key, dynamic_partitions_store=instance
             )
 
-            run_config = (
-                run_config
-                if run_config
-                else self.partitioned_config.get_run_config_for_partition_key(partition_key)
-            )
-            merged_tags.update(
-                self.partitioned_config.get_tags_for_partition_key(
-                    partition_key, job_name=self.name
+            if not run_config and self.partitioned_config:
+                run_config = self.partitioned_config.get_run_config_for_partition_key(partition_key)
+
+            if self.partitioned_config:
+                merged_tags.update(
+                    self.partitioned_config.get_tags_for_partition_key(
+                        partition_key, job_name=self.name
+                    )
                 )
-            )
+            else:
+                merged_tags.update(tags_for_partition_key)
 
         return core_execute_in_process(
             ephemeral_job=ephemeral_job,
@@ -701,6 +700,48 @@ class JobDefinition(IHasInternalInit):
             run_id=run_id,
             asset_selection=frozenset(asset_selection),
         )
+
+    def get_tags_for_partition_key(
+        self,
+        partition_key: str,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    ) -> Mapping[str, str]:
+        """Gets tags for the given partition key and ensures that it's a member of the PartitionsDefinition
+        corresponding to every asset in the selection.
+        """
+        if self.partitions_def:
+            self.partitions_def.validate_partition_key(
+                partition_key, dynamic_partitions_store=dynamic_partitions_store
+            )
+            return self.partitions_def.get_tags_for_partition_key(partition_key)
+        elif self.asset_layer:
+            if asset_selection:
+                selected_asset_keys = asset_selection
+            elif self.asset_selection:
+                selected_asset_keys = self.asset_selection
+            else:
+                selected_asset_keys = [
+                    key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
+                ]
+
+            partitions_def = None
+            for asset_key in selected_asset_keys:
+                asset_node = self.asset_layer.get(asset_key)
+                if asset_node.partitions_def:
+                    asset_node.partitions_def.validate_partition_key(
+                        partition_key, dynamic_partitions_store=dynamic_partitions_store
+                    )
+                    partitions_def = asset_node.partitions_def
+
+            if partitions_def is None:
+                check.failed(
+                    "Attempted to execute a partitioned run for a job with no partitioned assets",
+                )
+
+            return partitions_def.get_tags_for_partition_key(partition_key)
+        else:
+            check.failed("Attempted to execute a partitioned run for a non-partitioned job")
 
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
