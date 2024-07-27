@@ -743,6 +743,12 @@ class JobDefinition(IHasInternalInit):
         else:
             check.failed("Attempted to execute a partitioned run for a non-partitioned job")
 
+    def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:
+        if self._partitioned_config:
+            return self._partitioned_config.get_run_config_for_partition_key(partition_key)
+        else:
+            return {}
+
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
         return (

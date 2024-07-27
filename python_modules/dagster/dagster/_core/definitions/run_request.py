@@ -1,8 +1,11 @@
+from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
+    Dict,
     List,
     Mapping,
     NamedTuple,
@@ -10,7 +13,6 @@ from typing import (
     Sequence,
     Set,
     Union,
-    cast,
 )
 
 import dagster._check as check
@@ -32,13 +34,13 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.cached_method import cached_method
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -186,40 +188,22 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "RunRequest":
-        from dagster._core.definitions.partition import PartitionsDefinition
-
         if self.partition_key is None:
             check.failed(
                 "Cannot resolve partition for run request without partition key",
             )
 
-        partitions_def = target_definition.partitions_def
-        if partitions_def is None:
-            check.failed(
-                "Cannot resolve partition for run request when target job"
-                f" '{target_definition.name}' is unpartitioned.",
+        dynamic_partitions_store_after_requests = (
+            DynamicPartitionsStoreAfterRequests.from_requests(
+                dynamic_partitions_store, dynamic_partitions_requests
             )
-        partitions_def = cast(PartitionsDefinition, partitions_def)
-
-        partitioned_config = target_definition.partitioned_config
-        if partitioned_config is None:
-            check.failed(
-                "Cannot resolve partition for run request on unpartitioned job",
-            )
-
-        _check_valid_partition_key_after_dynamic_partitions_requests(
-            self.partition_key,
-            partitions_def,
-            dynamic_partitions_requests,
-            current_time,
-            dynamic_partitions_store,
+            if dynamic_partitions_store
+            else None
         )
-
         tags = {
             **(self.tags or {}),
-            **partitioned_config.get_tags_for_partition_key(
-                self.partition_key,
-                job_name=target_definition.name,
+            **target_definition.get_tags_for_partition_key(
+                self.partition_key, dynamic_partitions_store=dynamic_partitions_store_after_requests
             ),
         }
 
@@ -227,7 +211,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             run_config=(
                 self.run_config
                 if self.run_config
-                else partitioned_config.get_run_config_for_partition_key(self.partition_key)
+                else target_definition.get_run_config_for_partition_key(self.partition_key)
             ),
             tags=tags,
         )
@@ -257,68 +241,63 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         return self.asset_graph_subset is not None
 
 
-def _check_valid_partition_key_after_dynamic_partitions_requests(
-    partition_key: str,
-    partitions_def: "PartitionsDefinition",
-    dynamic_partitions_requests: Sequence[
-        Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
-    ],
-    current_time: Optional[datetime] = None,
-    dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-):
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+@record
+class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
+    """Represents the dynamic partitions that will be in the contained DynamicPartitionsStore
+    after the contained requests are satisfied.
+    """
 
-    if isinstance(partitions_def, MultiPartitionsDefinition):
-        multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
+    wrapped_dynamic_partitions_store: DynamicPartitionsStore
+    added_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
+    deleted_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
 
-        for dimension in partitions_def.partitions_defs:
-            _check_valid_partition_key_after_dynamic_partitions_requests(
-                multipartition_key.keys_by_dimension[dimension.name],
-                dimension.partitions_def,
-                dynamic_partitions_requests,
-                current_time,
-                dynamic_partitions_store,
-            )
+    @staticmethod
+    def from_requests(
+        wrapped_dynamic_partitions_store: DynamicPartitionsStore,
+        dynamic_partitions_requests: Sequence[
+            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        ],
+    ) -> "DynamicPartitionsStoreAfterRequests":
+        added_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
+        deleted_partition_keys_by_partitions_def_name: Dict[str, Set[str]] = defaultdict(set)
 
-    elif isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name:
-        if not dynamic_partitions_store:
-            check.failed(
-                "Cannot resolve partition for run request on dynamic partitions without"
-                " dynamic_partitions_store"
-            )
-
-        add_partition_keys: Set[str] = set()
-        delete_partition_keys: Set[str] = set()
         for req in dynamic_partitions_requests:
+            name = req.partitions_def_name
             if isinstance(req, AddDynamicPartitionsRequest):
-                if req.partitions_def_name == partitions_def.name:
-                    add_partition_keys.update(set(req.partition_keys))
+                added_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
             elif isinstance(req, DeleteDynamicPartitionsRequest):
-                if req.partitions_def_name == partitions_def.name:
-                    delete_partition_keys.update(set(req.partition_keys))
+                deleted_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
+            else:
+                check.failed(f"Unexpected request type: {req}")
 
-        partition_keys_after_requests_resolved = (
-            set(
-                dynamic_partitions_store.get_dynamic_partitions(
-                    partitions_def_name=partitions_def.name
-                )
+        return DynamicPartitionsStoreAfterRequests(
+            wrapped_dynamic_partitions_store=wrapped_dynamic_partitions_store,
+            added_partition_keys_by_partitions_def_name=added_partition_keys_by_partitions_def_name,
+            deleted_partition_keys_by_partitions_def_name=deleted_partition_keys_by_partitions_def_name,
+        )
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        partition_keys = set(
+            self.wrapped_dynamic_partitions_store.get_dynamic_partitions(partitions_def_name)
+        )
+        added_partition_keys = self.added_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        )
+        deleted_partition_keys = self.deleted_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        )
+        return list((partition_keys | added_partition_keys) - deleted_partition_keys)
+
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return partition_key not in self.deleted_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, set()
+        ) and (
+            partition_key
+            in self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+            or self.wrapped_dynamic_partitions_store.has_dynamic_partition(
+                partitions_def_name, partition_key
             )
-            | add_partition_keys
-        ) - delete_partition_keys
-
-        if partition_key not in partition_keys_after_requests_resolved:
-            check.failed(
-                f"Dynamic partition key {partition_key} for partitions def"
-                f" '{partitions_def.name}' is invalid. After dynamic partitions requests are"
-                " applied, it does not exist in the set of valid partition keys."
-            )
-
-    else:
-        partitions_def.validate_partition_key(
-            partition_key,
-            dynamic_partitions_store=dynamic_partitions_store,
-            current_time=current_time,
         )
 
 
