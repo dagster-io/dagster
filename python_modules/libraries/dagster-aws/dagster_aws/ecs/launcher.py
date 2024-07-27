@@ -15,6 +15,7 @@ from dagster import (
     Noneable,
     Permissive,
     ScalarUnion,
+    Shape,
     StringSource,
     _check as check,
 )
@@ -89,7 +90,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
-        add_dagster_metadata_tags: bool = False,
+        propagate_tags: Optional[Dict[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -180,9 +181,26 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
-        self.add_dagster_metadata_tags = check.bool_param(
-            add_dagster_metadata_tags, "add_dagster_metadata_tags"
+        self.propagate_tags = check.opt_dict_param(
+            propagate_tags,
+            "propagate_tags",
         )
+        if (
+            len(
+                [
+                    key
+                    for key in self.propagate_tags
+                    if key in {"include_all", "include_only", "exclude"}
+                ]
+            )
+            >= 2
+        ):
+            raise ValueError(
+                "Only one of include_only, include_all, or exclude can be set for the propagate_tags "
+                "config property"
+            )
+        if self.propagate_tags.get("include_only"):
+            self.propagate_tags["include_only"] = set(self.propagate_tags["include_only"])
 
         self._current_task_metadata = None
         self._current_task = None
@@ -348,6 +366,28 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " such as job name, submitting user, and partition"
                 ),
             ),
+            "propagate_tags": Field(
+                Shape(
+                    {
+                        "include_all": Field(
+                            bool,
+                            default_value=True,
+                            description="Whether to propagate all tags assigned to a Dagster run to the underlying ECS instance.",
+                        ),
+                        "include_only": Field(
+                            Array(str),
+                            default_value=[],
+                            description="List of specific tag keys which should be propagated to ECS task.",
+                        ),
+                        "exclude": Field(
+                            Array(str),
+                            default_value=[],
+                            description="List of specific tag keys which should not be propagated to ECS task. Includes all other tags.",
+                        ),
+                    }
+                ),
+                is_required=False,
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -369,27 +409,25 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
             raise Exception("Cannot override system ECS tag: dagster/run_id")
 
-        to_add = []
-        if self.add_dagster_metadata_tags:
+        if self.propagate_tags:
+            # Add contextual Dagster run tags to ECS tags
+            tags = run.tags
+            if self.propagate_tags.get("include_all"):
+                tags = {**run.tags}
+            elif self.propagate_tags.get("include_only"):
+                tags = {
+                    k: v for k, v in run.tags.items() if k in self.propagate_tags["include_only"]
+                }
+            elif self.propagate_tags.get("exclude"):
+                tags = {
+                    k: v for k, v in run.tags.items() if k not in self.propagate_tags["exclude"]
+                }
+            if self.propagate_tags.get("add_job_name"):
+                tags["dagster/job_name"] = run.job_name
+            to_add = [{"key": k, "value": v} for k, v in tags.items()]
+        else:
+            to_add = []
 
-            if "dagster/job_name" in run.tags:
-                raise ValueError(f"Cannot override dagster/job_name when `add_dagster_metadata_tags` is set to True on the EcsRunLauncher. Either remove the dagster/job_name tag from the job definition / run, or set `add_dagster_metadata_tags=False`")
-
-            to_add.append({"key": "dagster/job_name", "value": run.job_name})
-            if run.tags.get("user"):
-                to_add.append({"key": "user", "value": run.tags["user"]})
-            if run.tags.get("dagster/partition"):
-                to_add.append({"key": "dagster/partition", "value": run.tags["dagster/partition"]})
-            if run.tags.get("dagster/partition_set"):
-                to_add.append(
-                    {"key": "dagster/partition_set", "value": run.tags["dagster/partition_set"]}
-                )
-            if run.tags.get("dagster/image"):
-                to_add.append({"key": "dagster/image", "value": run.tags["dagster/image"]})
-            if run.tags.get("dagster/schedule_name"):
-                to_add.append(
-                    {"key": "dagster/schedule_name", "value": run.tags["dagster/schedule_name"]}
-                )
         return [
             {"key": "dagster/run_id", "value": run.run_id},
             *container_context.run_ecs_tags,
