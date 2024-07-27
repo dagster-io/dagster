@@ -3189,7 +3189,7 @@ def test_error_on_deleted_dynamic_partitions_run_request(
         expected_datetime=None,
         expected_status=TickStatus.FAILURE,
         expected_run_ids=None,
-        expected_error="Dynamic partition key 2 for partitions def 'quux' is invalid",
+        expected_error="Could not find a partition with key `2`",
     )
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
 
@@ -3239,7 +3239,7 @@ def test_multipartitions_with_dynamic_dims_run_request_sensor(
             expected_datetime=None,
             expected_status=TickStatus.FAILURE,
             expected_run_ids=None,
-            expected_error="does not exist in the set of valid partition keys",
+            expected_error="Could not find a partition with key `2|1`",
         )
 
 
