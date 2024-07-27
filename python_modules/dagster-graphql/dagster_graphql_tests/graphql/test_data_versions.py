@@ -12,6 +12,7 @@ from dagster import (
     repository,
 )
 from dagster._config.pythonic_config import Config
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_NAME
 from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -357,9 +358,7 @@ def _materialize_assets(
         if asset_selection
         else None
     )
-    selector = infer_job_selector(
-        context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
-    )
+    selector = infer_job_selector(context, ASSET_BASE_JOB_NAME, asset_selection=gql_asset_selection)
     if partition_keys:
         results = []
         for key in partition_keys:
@@ -381,7 +380,9 @@ def _materialize_assets(
         return results
     else:
         selector = infer_job_selector(
-            context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
+            context,
+            ASSET_BASE_JOB_NAME,
+            asset_selection=gql_asset_selection,
         )
         return execute_dagster_graphql(
             context,
@@ -396,7 +397,7 @@ def _materialize_assets(
 
 
 def _fetch_data_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):
-    selector = infer_job_selector(context, repo.get_implicit_asset_job_names()[0])
+    selector = infer_job_selector(context, repo.get_implicit_global_asset_job_def().name)
     return execute_dagster_graphql(
         context,
         GET_ASSET_DATA_VERSIONS,

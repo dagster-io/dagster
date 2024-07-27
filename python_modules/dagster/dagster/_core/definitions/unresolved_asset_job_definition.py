@@ -226,6 +226,7 @@ class UnresolvedAssetJobDefinition(
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,
             resource_defs=resource_defs,
+            allow_different_partitions_defs=False,
         )
 
 
