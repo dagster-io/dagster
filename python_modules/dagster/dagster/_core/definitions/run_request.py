@@ -40,9 +40,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
-    from dagster._core.definitions.unresolved_asset_job_definition import (
-        UnresolvedAssetJobDefinition,
-    )
 
 
 @whitelist_for_serdes(old_storage_names={"JobType"})
@@ -182,15 +179,14 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
 
     def with_resolved_tags_and_config(
         self,
-        target_definition: Union["JobDefinition", "UnresolvedAssetJobDefinition"],
+        target_definition: "JobDefinition",
         dynamic_partitions_requests: Sequence[
             Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
         ],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "RunRequest":
-        from dagster._core.definitions.job_definition import JobDefinition
-        from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+        from dagster._core.definitions.partition import PartitionsDefinition
 
         if self.partition_key is None:
             check.failed(
@@ -205,11 +201,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             )
         partitions_def = cast(PartitionsDefinition, partitions_def)
 
-        partitioned_config = (
-            target_definition.partitioned_config
-            if isinstance(target_definition, JobDefinition)
-            else PartitionedConfig.from_flexible_config(target_definition.config, partitions_def)
-        )
+        partitioned_config = target_definition.partitioned_config
         if partitioned_config is None:
             check.failed(
                 "Cannot resolve partition for run request on unpartitioned job",
