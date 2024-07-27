@@ -287,9 +287,7 @@ class ScenarioState:
     ) -> Self:
         run_id = make_new_run_id()
         with freeze_time(self.current_time):
-            job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
-                asset_keys=list(asset_keys)
-            )
+            job_def = self.scenario_spec.defs.get_implicit_global_asset_job_def()
             assert job_def
             execution_plan = create_execution_plan(job_def, run_config={})
             self.instance.create_run_for_job(

@@ -33,8 +33,7 @@ class DefinitionsRunner:
             yield DefinitionsRunner(defs, instance)
 
     def materialize_all_assets(self, partition_key: Optional[str] = None) -> ExecuteInProcessResult:
-        all_keys = list(self.defs.get_repository_def().asset_graph.all_asset_keys)
-        job_def = self.defs.get_implicit_job_def_for_assets(all_keys)
+        job_def = self.defs.get_implicit_global_asset_job_def()
         assert job_def
         return job_def.execute_in_process(instance=self.instance, partition_key=partition_key)
 
@@ -42,7 +41,7 @@ class DefinitionsRunner:
         self, asset_selection: Sequence[CoercibleToAssetKey], partition_key: Optional[str] = None
     ) -> ExecuteInProcessResult:
         asset_keys = [AssetKey.from_coercible(asset_key) for asset_key in asset_selection]
-        job_def = self.defs.get_implicit_job_def_for_assets(asset_keys)
+        job_def = self.defs.get_implicit_global_asset_job_def()
         assert job_def
         return job_def.execute_in_process(
             instance=self.instance,
