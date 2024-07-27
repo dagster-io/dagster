@@ -149,6 +149,7 @@ def get_base_asset_jobs(
 def build_asset_job(
     name: str,
     asset_graph: AssetGraph,
+    allow_different_partitions_defs: bool,
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[
@@ -202,7 +203,10 @@ def build_asset_job(
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
     partitions_def = _infer_and_validate_common_partitions_def(
-        asset_graph, asset_graph.executable_asset_keys, partitions_def
+        asset_graph,
+        asset_graph.executable_asset_keys,
+        required_partitions_def=partitions_def,
+        allow_different_partitions_defs=allow_different_partitions_defs,
     )
 
     deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
@@ -271,7 +275,9 @@ def build_asset_job(
 
 
 def get_asset_graph_for_job(
-    parent_asset_graph: AssetGraph, selection: AssetSelection
+    parent_asset_graph: AssetGraph,
+    selection: AssetSelection,
+    allow_different_partitions_defs: bool = False,
 ) -> AssetGraph:
     """Subset an AssetGraph to create an AssetGraph representing an asset job.
 
@@ -295,7 +301,11 @@ def get_asset_graph_for_job(
             f" Invalid selected keys: {invalid_keys}",
         )
 
-    _infer_and_validate_common_partitions_def(parent_asset_graph, selected_keys)
+    _infer_and_validate_common_partitions_def(
+        parent_asset_graph,
+        selected_keys,
+        allow_different_partitions_defs=allow_different_partitions_defs,
+    )
 
     selected_check_keys = selection.resolve_checks(parent_asset_graph)
 
@@ -404,6 +414,7 @@ def _subset_assets_defs(
 def _infer_and_validate_common_partitions_def(
     asset_graph: AssetGraph,
     asset_keys: Iterable[AssetKey],
+    allow_different_partitions_defs: bool,
     required_partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Optional[PartitionsDefinition]:
     keys_by_partitions_def = defaultdict(set)
@@ -418,18 +429,19 @@ def _infer_and_validate_common_partitions_def(
                 )
             keys_by_partitions_def[partitions_def].add(key)
 
-    if len(keys_by_partitions_def) > 1:
-        keys_by_partitions_def_str = "\n".join(
-            f"{partitions_def}: {asset_keys}"
-            for partitions_def, asset_keys in keys_by_partitions_def.items()
-        )
-        raise DagsterInvalidDefinitionError(
-            f"Selected assets must have the same partitions definitions, but the"
-            f" selected assets have different partitions definitions: \n{keys_by_partitions_def_str}"
-        )
-    elif len(keys_by_partitions_def) == 1:
+    if len(keys_by_partitions_def) == 1:
         return next(iter(keys_by_partitions_def.keys()))
     else:
+        if len(keys_by_partitions_def) > 1 and not allow_different_partitions_defs:
+            keys_by_partitions_def_str = "\n".join(
+                f"{partitions_def}: {asset_keys}"
+                for partitions_def, asset_keys in keys_by_partitions_def.items()
+            )
+            raise DagsterInvalidDefinitionError(
+                f"Selected assets must have the same partitions definitions, but the"
+                f" selected assets have different partitions definitions: \n{keys_by_partitions_def_str}"
+            )
+
         return None
 
 
