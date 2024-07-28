@@ -139,8 +139,8 @@ Add the following to the bottom of `dagster_databricks_pipes.py` to define the r
 ```python file=/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py startafter=start_definitions endbefore=end_definitions
 pipes_databricks_resource = PipesDatabricksClient(
     client=WorkspaceClient(
-        host=os.getenv("DATABRICKS_HOST"),
-        token=os.getenv("DATABRICKS_TOKEN"),
+        host=os.environ["DATABRICKS_HOST"],
+        token=os.environ["DATABRICKS_TOKEN"],
     )
 )
 
