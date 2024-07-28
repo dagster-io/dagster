@@ -184,23 +184,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.propagate_tags = check.opt_dict_param(
             propagate_tags,
             "propagate_tags",
+            key_type=str,
+            value_type=dict,
         )
-        if (
-            len(
-                [
-                    key
-                    for key in self.propagate_tags
-                    if key in {"include_all", "include_only", "exclude"}
-                ]
-            )
-            >= 2
-        ):
-            raise ValueError(
-                "Only one of include_only, include_all, or exclude can be set for the propagate_tags "
-                "config property"
-            )
-        if self.propagate_tags.get("include_only"):
-            self.propagate_tags["include_only"] = set(self.propagate_tags["include_only"])
+        if self.propagate_tags:
+            check.invariant(len(self.propagate_tags) <= 1, "Only one of include_only, include_all, or exclude can be set for the propagate_tags config property")
 
         self._current_task_metadata = None
         self._current_task = None
@@ -363,21 +351,22 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                         "include_all": Field(
                             bool,
                             default_value=True,
-                            description="Whether to propagate all tags assigned to a Dagster run to the underlying ECS instance.",
+                            description="Whether to propagate all tags assigned to a Dagster run to the ECS task.",
                         ),
                         "include_only": Field(
                             Array(str),
                             default_value=[],
-                            description="List of specific tag keys which should be propagated to ECS task.",
+                            description="List of specific tag keys from the Dagster run which should be propagated to the ECS task.",
                         ),
                         "exclude": Field(
                             Array(str),
                             default_value=[],
-                            description="List of specific tag keys which should not be propagated to ECS task. Includes all other tags.",
+                            description="List of specific tag keys which should not be propagated to the ECS task. All other tags will be propagated to the ECS task.",
                         ),
                     }
                 ),
                 is_required=False,
+                description="Configuration for propagating tags from Dagster runs to ECS tasks. Only one of include_all, include_only, or exclude can be set.",
             ),
             **SHARED_ECS_SCHEMA,
         }
