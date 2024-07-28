@@ -357,15 +357,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
-            "add_dagster_metadata_tags": Field(
-                bool,
-                is_required=False,
-                default_value=False,
-                description=(
-                    "Whether to apply tags to the launched task describing metadata about the run,"
-                    " such as job name, submitting user, and partition"
-                ),
-            ),
             "propagate_tags": Field(
                 Shape(
                     {
