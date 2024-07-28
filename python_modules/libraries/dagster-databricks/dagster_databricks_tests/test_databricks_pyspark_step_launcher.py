@@ -81,21 +81,6 @@ class TestCreateRemoteConfig:
         assert env_vars.env_variables == vars_to_add
 
     @mock.patch("dagster_databricks.databricks.Config")
-    def test_given_oauth_creds_when_accessing_legacy_clients_raises_ValueError(
-        self, mock_workspace_client_config, mock_step_launcher_factory
-    ):
-        client_id = "abc123"
-        client_secret = "super-secret"
-        test_launcher = mock_step_launcher_factory(
-            oauth_creds={"client_id": client_id, "client_secret": client_secret},
-        )
-        assert mock_workspace_client_config.call_args.kwargs["client_id"] == client_id
-        assert mock_workspace_client_config.call_args.kwargs["client_secret"] == client_secret
-
-        with pytest.raises(ValueError):
-            assert test_launcher.databricks_runner.client.client
-
-    @mock.patch("dagster_databricks.databricks.Config")
     def test_given_bad_config_raises_ValueError(
         self, mock_workspace_client_config, mock_step_launcher_factory
     ):
