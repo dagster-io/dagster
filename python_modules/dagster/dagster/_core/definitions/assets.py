@@ -1319,6 +1319,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
             selected_asset_check_keys (AbstractSet[AssetCheckKey]): The selected asset checks
         """
+        check.invariant(
+            self.can_subset or not self.is_executable,
+            f"Attempted to subset an executable AssetsDefinition for {self.node_def.name}, but can_subset=False.",
+        )
         subsetted_computation = check.not_none(self._computation).subset_for(
             selected_asset_keys, selected_asset_check_keys
         )
