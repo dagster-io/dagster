@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.bash import BashOperator
 
 default_args = {
     "owner": "airflow",
