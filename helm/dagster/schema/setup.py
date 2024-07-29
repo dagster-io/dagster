@@ -1,8 +1,23 @@
+from pathlib import Path
+from typing import Dict
+
 from setuptools import find_packages, setup
 
+
+def get_version() -> str:
+    version: Dict[str, str] = {}
+    with open(Path(__file__).parent / "version.py", encoding="utf8") as fp:
+        exec(fp.read(), version)
+
+    return version["__version__"]
+
+
+ver = get_version()
+# dont pin dev installs to avoid pip dep resolver issues
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-helm",
-    version="0.0.1",
+    version=get_version(),
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
@@ -21,11 +36,11 @@ setup(
         "test": [
             # remove pin once minimum supported kubernetes version is 1.19
             "kubernetes<22.6.0",
-            "dagster",
-            "dagster-aws",
-            "dagster-azure",
-            "dagster-gcp",
-            "dagster-k8s",
+            f"dagster{pin}",
+            f"dagster-aws{pin}",
+            f"dagster-azure{pin}",
+            f"dagster-gcp{pin}",
+            f"dagster-k8s{pin}",
         ]
     },
     entry_points={
