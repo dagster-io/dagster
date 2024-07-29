@@ -83,7 +83,7 @@ When deploying your Dagster project to production, **we recommend generating the
 
 The easiest way to handle the creation of your manifest file is to use <PyObject object="DbtProject" module="dagster_dbt" />.
 
-In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command, the creation of your manifest is handled at runtime during development:
+In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command, the creation of your manifest is handled at run time during development:
 
 ```python startafter=start_compile_dbt_manifest_with_dbt_project endbefore=end_compile_dbt_manifest_with_dbt_project file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
