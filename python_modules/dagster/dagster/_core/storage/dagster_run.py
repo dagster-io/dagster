@@ -27,6 +27,8 @@ from dagster._core.utils import make_new_run_id
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 from .tags import (
+    ASSET_EVALUATION_ID_TAG,
+    AUTOMATION_CONDITION_TAG,
     BACKFILL_ID_TAG,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
@@ -498,8 +500,12 @@ class DagsterRun(
         return {BACKFILL_ID_TAG: backfill_id}
 
     @staticmethod
-    def tags_for_tick_id(tick_id: str) -> Mapping[str, str]:
-        return {TICK_ID_TAG: tick_id}
+    def tags_for_tick_id(tick_id: str, has_evaluations: bool = False) -> Mapping[str, str]:
+        if has_evaluations:
+            automation_tags = {AUTOMATION_CONDITION_TAG: "true", ASSET_EVALUATION_ID_TAG: tick_id}
+        else:
+            automation_tags = {}
+        return {TICK_ID_TAG: tick_id, **automation_tags}
 
 
 class RunsFilter(

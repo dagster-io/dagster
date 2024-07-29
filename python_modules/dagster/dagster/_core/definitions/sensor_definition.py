@@ -90,8 +90,8 @@ class SensorType(Enum):
 
     @property
     def is_handled_by_asset_daemon(self) -> bool:
-        # these "sensors" are currently evaluated by the asset daemon and not the sensor daemon
-        return self in (SensorType.AUTOMATION, SensorType.AUTO_MATERIALIZE)
+        # only the `AUTO_MATERIALIZE` sensor type is handled by the daemon
+        return self == SensorType.AUTO_MATERIALIZE
 
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30

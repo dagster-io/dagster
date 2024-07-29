@@ -2,7 +2,6 @@ import logging
 import time
 from typing import AbstractSet, Iterator, NamedTuple, Sequence
 
-import mock
 import pytest
 from dagster import AutomationCondition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
@@ -17,11 +16,11 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.test_utils import MockedRunLauncher, in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils import file_relative_path
 
-from .user_space_ds_defs import amp_sensor, downstream, upstream
+from .user_space_ds_defs import downstream, upstream
 
 
 class AutomationTickResult(NamedTuple):
@@ -112,28 +111,12 @@ def workspace():
 
 
 def test_user_space_eval(workspace: WorkspaceProcessContext) -> None:
-    with mock.patch(
-        "user_space_ds_defs.amp_sensor._evaluation_fn",
-        wraps=amp_sensor._evaluation_fn,  # noqa
-    ) as mocked_eval:
-        asset_daemon = AssetDaemon(
-            settings=workspace.instance.get_auto_materialize_settings(),
-            pre_sensor_interval_seconds=42,
-        )
+    assert isinstance(workspace.instance.run_launcher, MockedRunLauncher)
 
-        list(
-            asset_daemon._run_iteration_impl(  # noqa: SLF001
-                workspace,
-                threadpool_executor=None,
-                amp_tick_futures={},
-                debug_crash_flags={},
-            )
-        )
+    list(execute_sensor_iteration(workspace, logging.Logger("test"), None, None))
 
-        assert isinstance(workspace.instance.run_launcher, MockedRunLauncher)
-        launched_runs = workspace.instance.run_launcher.queue()
-        assert len(launched_runs) == 1
-        asset_selection = launched_runs[0].asset_selection
-        assert upstream.key in asset_selection
-        assert downstream.key in asset_selection
-        mocked_eval.assert_called()
+    launched_runs = workspace.instance.run_launcher.queue()
+    assert len(launched_runs) == 1
+    asset_selection = launched_runs[0].asset_selection
+    assert upstream.key in asset_selection
+    assert downstream.key in asset_selection

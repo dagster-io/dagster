@@ -18,16 +18,13 @@ from dagster._core.definitions.asset_daemon_cursor import (
     backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AutomationConditionEvaluation,
-)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.execution.submit_asset_runs import submit_asset_run
@@ -936,39 +933,25 @@ class AssetDaemon(DagsterDaemon):
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
-            # experimental code path for evaluating scheduling in user space
-            if sensor and sensor.sensor_type == SensorType.AUTOMATION:
-                run_requests, new_cursor, evaluations = invoke_sensor_for_evaluation(
-                    sensor=sensor,
-                    workspace_process_context=workspace_process_context,
-                    instigator_data=check.inst(
-                        check.not_none(instigator_state).instigator_data, SensorInstigatorData
+            run_requests, new_cursor, evaluations = AssetDaemonContext(
+                evaluation_id=evaluation_id,
+                asset_graph=asset_graph,
+                auto_materialize_asset_keys=auto_materialize_asset_keys,
+                instance=instance,
+                cursor=stored_cursor,
+                materialize_run_tags={
+                    **instance.auto_materialize_run_tags,
+                    **DagsterRun.tags_for_tick_id(
+                        str(tick.tick_id),
                     ),
-                    evaluation_id=evaluation_id,
-                    stored_cursor=stored_cursor,
-                    tick=tick,
-                    asset_graph=asset_graph,
-                )
-            else:
-                run_requests, new_cursor, evaluations = AssetDaemonContext(
-                    evaluation_id=evaluation_id,
-                    asset_graph=asset_graph,
-                    auto_materialize_asset_keys=auto_materialize_asset_keys,
-                    instance=instance,
-                    cursor=stored_cursor,
-                    materialize_run_tags={
-                        **instance.auto_materialize_run_tags,
-                        **DagsterRun.tags_for_tick_id(
-                            str(tick.tick_id),
-                        ),
-                        **sensor_tags,
-                    },
-                    observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
-                    auto_observe_asset_keys=auto_observe_asset_keys,
-                    respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
-                    logger=self._logger,
-                    request_backfills=request_backfills,
-                ).evaluate()
+                    **sensor_tags,
+                },
+                observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
+                auto_observe_asset_keys=auto_observe_asset_keys,
+                respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
+                logger=self._logger,
+                request_backfills=request_backfills,
+            ).evaluate()
 
             check.invariant(new_cursor.evaluation_id == evaluation_id)
 
@@ -1122,46 +1105,3 @@ class AssetDaemon(DagsterDaemon):
             )
 
         self._logger.info(f"Finished auto-materialization tick{print_group_name}")
-
-
-def invoke_sensor_for_evaluation(
-    sensor: ExternalSensor,
-    workspace_process_context: IWorkspaceProcessContext,
-    instigator_data: SensorInstigatorData,
-    evaluation_id: int,
-    stored_cursor: AssetDaemonCursor,
-    tick: InstigatorTick,
-    asset_graph: RemoteAssetGraph,
-) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
-    sensor_origin = sensor.get_external_origin()
-    request_ctx = workspace_process_context.create_request_context()
-    code_loc = request_ctx.get_code_location(sensor_origin.location_name)
-
-    sensor_cursor = AssetDaemonCursor(
-        evaluation_id=evaluation_id,  # bump this before sending it over
-        previous_evaluation_state=stored_cursor.previous_evaluation_state,
-        last_observe_request_timestamp_by_asset_key=stored_cursor.last_observe_request_timestamp_by_asset_key,
-    )
-    sensor_cursor_str = asset_daemon_cursor_to_instigator_serialized_cursor(sensor_cursor)
-    result = code_loc.get_external_sensor_execution_data(
-        instance=workspace_process_context.instance,
-        repository_handle=sensor.handle.repository_handle,
-        name=sensor.name,
-        last_tick_completion_time=instigator_data.last_tick_timestamp,
-        last_run_key=instigator_data.last_run_key,
-        cursor=sensor_cursor_str,
-        log_key=[
-            sensor.handle.repository_handle.repository_name,
-            sensor.name,
-            str(tick.tick_id),
-        ],
-        last_sensor_start_time=instigator_data.last_sensor_start_timestamp,
-    )
-    run_requests = result.run_requests or []
-    new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
-        result.cursor,
-        asset_graph,
-    )
-    # TODO: evaluations no longer exist on the cursor object
-    evaluations = []
-    return (run_requests, new_cursor, evaluations)

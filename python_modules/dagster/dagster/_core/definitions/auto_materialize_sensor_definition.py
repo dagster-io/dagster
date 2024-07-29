@@ -83,10 +83,21 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
         # tick_id and sensor tags should get set in daemon
         run_tags=context.instance.auto_materialize_run_tags,
     )
+    # only record evaluation results where something changed
+    updated_evaluations = []
+    for result in results:
+        previous_cursor = cursor.get_previous_condition_cursor(result.asset_key)
+        if (
+            previous_cursor is None
+            or previous_cursor.result_value_hash != result.value_hash
+            or not result.true_slice.is_empty
+        ):
+            updated_evaluations.append(result.serializable_evaluation)
 
     return SensorResult(
         run_requests=run_requests,
         cursor=asset_daemon_cursor_to_instigator_serialized_cursor(new_cursor),
+        automation_condition_evaluations=updated_evaluations,
     )
 
 
