@@ -9,7 +9,6 @@ from contextlib import ExitStack, contextmanager
 from typing import Iterator, Literal, Mapping, Optional, Sequence, TextIO
 
 import dagster._check as check
-from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -31,7 +30,6 @@ from databricks.sdk.service import files, jobs
 from pydantic import Field
 
 
-@experimental
 class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
     """Pipes client for databricks.
 
@@ -89,10 +87,14 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         if task.as_dict().get("new_cluster", {}).get("cluster_log_conf", {}).get("dbfs", None):
             log_readers = [
                 PipesDbfsLogReader(
-                    client=self.client, remote_log_name="stdout", target_stream=sys.stdout
+                    client=self.client,
+                    remote_log_name="stdout",
+                    target_stream=sys.stdout,
                 ),
                 PipesDbfsLogReader(
-                    client=self.client, remote_log_name="stderr", target_stream=sys.stderr
+                    client=self.client,
+                    remote_log_name="stderr",
+                    target_stream=sys.stderr,
                 ),
             ]
         else:
@@ -217,7 +219,6 @@ def dbfs_tempdir(dbfs_client: files.DbfsAPI) -> Iterator[str]:
         dbfs_client.delete(tempdir, recursive=True)
 
 
-@experimental
 class PipesDbfsContextInjector(PipesContextInjector):
     """A context injector that injects context into a Databricks job by writing a JSON file to DBFS.
 
@@ -255,7 +256,6 @@ class PipesDbfsContextInjector(PipesContextInjector):
         )
 
 
-@experimental
 class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     """Message reader that reads messages by periodically reading message chunks from an
     automatically-generated temporary directory on DBFS.
@@ -312,7 +312,6 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         )
 
 
-@experimental
 class PipesDbfsLogReader(PipesChunkedLogReader):
     """Reader that reads a log file from DBFS.
 
