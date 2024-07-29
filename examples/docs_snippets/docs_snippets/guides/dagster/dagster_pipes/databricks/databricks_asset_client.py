@@ -59,8 +59,8 @@ def databricks_asset(
 
 pipes_databricks_resource = PipesDatabricksClient(
     client=WorkspaceClient(
-        host=os.getenv("DATABRICKS_HOST"),
-        token=os.getenv("DATABRICKS_TOKEN"),
+        host=os.environ["DATABRICKS_HOST"],
+        token=os.environ["DATABRICKS_TOKEN"],
     )
 )
 
