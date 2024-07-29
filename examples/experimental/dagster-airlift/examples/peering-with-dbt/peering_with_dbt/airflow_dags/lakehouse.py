@@ -4,7 +4,7 @@ from datetime import datetime
 import duckdb
 import pandas as pd
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 
 
 def load_csv_to_duckdb():
