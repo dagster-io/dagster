@@ -1,3 +1,5 @@
+from typing import Any, List, cast
+
 import dagster._check as check
 import pytest
 from dagster import (
@@ -15,6 +17,9 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.cacheable_assets import (
+    CACHED_ASSET_ID_KEY,
+    CACHED_ASSET_METADATA_KEY,
+    CACHED_ASSET_PREFIX,
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
@@ -62,7 +67,7 @@ def define_cacheable_and_uncacheable_assets():
 
 
 @repository
-def pending_repo():
+def pending_repo() -> List[Any]:
     return [
         define_empty_job(),
         define_simple_job(),
@@ -320,3 +325,53 @@ def test_multiple_wrapped_cached_assets():
         )
         == 1
     )
+
+
+def define_asset_with_cache_data() -> List[AssetsDefinition]:
+    @asset(
+        metadata={
+            CACHED_ASSET_ID_KEY: "my_cached_asset_id",
+            CACHED_ASSET_METADATA_KEY: {"foo": "bar"},
+        }
+    )
+    def cached_asset():
+        return 5
+
+    @asset(
+        metadata={
+            CACHED_ASSET_ID_KEY: "my_cached_asset_id",
+            CACHED_ASSET_METADATA_KEY: {"baz": "qux"},
+        }
+    )
+    def other_cached_asset():
+        return 10
+
+    return [cached_asset, other_cached_asset]
+
+
+@repository
+def pending_repo_from_cached_asset_metadata() -> List[Any]:
+    return [
+        define_asset_with_cache_data(),
+        define_asset_job(
+            "all_asset_job",
+            selection=AssetSelection.assets(
+                AssetKey("cached_asset"), AssetKey("other_cached_asset")
+            ),
+        ),
+    ]
+
+
+def test_is_pending_from_cached_asset_metadata() -> None:
+    assert isinstance(pending_repo_from_cached_asset_metadata, PendingRepositoryDefinition)
+
+    data = pending_repo_from_cached_asset_metadata._compute_repository_load_data()  # noqa: SLF001
+    assert data.cached_data_by_key.keys() == {f"{CACHED_ASSET_PREFIX}my_cached_asset_id"}
+
+    cached_data = cast(
+        List[AssetsDefinitionCacheableData],
+        data.cached_data_by_key[f"{CACHED_ASSET_PREFIX}my_cached_asset_id"],
+    )
+    assert len(cached_data) == 2
+    assert cached_data[0].extra_metadata == {"foo": "bar"}
+    assert cached_data[1].extra_metadata == {"baz": "qux"}

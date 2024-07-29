@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -9,6 +10,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
 )
@@ -399,13 +401,35 @@ class PendingRepositoryDefinition:
         return self._name
 
     def _compute_repository_load_data(self) -> RepositoryLoadData:
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+        from dagster._core.definitions import AssetsDefinition
+        from dagster._core.definitions.cacheable_assets import (
+            CACHED_ASSET_ID_KEY,
+            CACHED_ASSET_METADATA_KEY,
+            CACHED_ASSET_PREFIX,
+            CacheableAssetsDefinition,
+        )
+
+        cached_asset_metadata: List[Tuple[str, Any]] = [
+            (meta[CACHED_ASSET_ID_KEY], meta.get(CACHED_ASSET_METADATA_KEY))
+            for asset_defn in self._repository_definitions
+            if isinstance(asset_defn, AssetsDefinition)
+            for meta in asset_defn.metadata_by_key.values()
+            if CACHED_ASSET_ID_KEY in meta
+        ]
+        cached_metadata_by_key: Dict[str, List[AssetsDefinitionCacheableData]] = defaultdict(list)
+        for asset_id, metadata in cached_asset_metadata:
+            cached_metadata_by_key[f"{CACHED_ASSET_PREFIX}{asset_id}"].append(
+                AssetsDefinitionCacheableData(extra_metadata=metadata)
+            )
 
         return RepositoryLoadData(
             cached_data_by_key={
-                defn.unique_id: defn.compute_cacheable_data()
-                for defn in self._repository_definitions
-                if isinstance(defn, CacheableAssetsDefinition)
+                **{
+                    defn.unique_id: defn.compute_cacheable_data()
+                    for defn in self._repository_definitions
+                    if isinstance(defn, CacheableAssetsDefinition)
+                },
+                **cached_metadata_by_key,
             }
         )
 
