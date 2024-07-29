@@ -146,7 +146,12 @@ def main(
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
-    cmd = ["uv", "pip", "install"] + (["--system"] if system else []) + install_targets
+    cmd = (
+        ["uv", "pip", "install"]
+        + (["--system"] if system else [])
+        + install_targets
+        + ["--config-settings", "editable_mode=compat"]
+    )
 
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')
