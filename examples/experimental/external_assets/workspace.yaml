@@ -1,2 +1,4 @@
 load_from:
-  - python_package: external_assets
+  - python_package:
+      package_name: external_assets.definitions
+      location_name: external_assets
