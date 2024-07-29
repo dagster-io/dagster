@@ -21,6 +21,7 @@ export type SensorSwitchFragment = {
 
 export type SensorStateQueryVariables = Types.Exact<{
   id: Types.Scalars['String']['input'];
+  selector: Types.InstigationSelector;
 }>;
 
 export type SensorStateQuery = {

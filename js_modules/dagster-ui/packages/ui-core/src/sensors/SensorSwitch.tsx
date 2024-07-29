@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useMemo} from 'react';
 
 import {SET_CURSOR_MUTATION} from './EditCursorDialog';
 import {
@@ -56,16 +57,20 @@ export const SensorSwitch = (props: Props) => {
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
+  const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
+
   const {id, name} = sensor;
-  const sensorSelector = {
-    ...repoAddressToSelector(repoAddress),
-    sensorName: name,
-  };
 
   const {data, loading} = useQuery<SensorStateQuery, SensorStateQueryVariables>(
     SENSOR_STATE_QUERY,
     {
-      variables: {id: sensor.id},
+      variables: {
+        id: sensor.id,
+        selector: {
+          ...repoAddressSelector,
+          name,
+        },
+      },
     },
   );
 
@@ -74,7 +79,18 @@ export const SensorSwitch = (props: Props) => {
     StartSensorMutationVariables
   >(START_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
-    refetchQueries: [{variables: {id: sensor.id}, query: SENSOR_STATE_QUERY}],
+    refetchQueries: [
+      {
+        variables: {
+          id: sensor.id,
+          selector: {
+            ...repoAddressSelector,
+            name,
+          },
+        },
+        query: SENSOR_STATE_QUERY,
+      },
+    ],
     awaitRefetchQueries: true,
   });
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
@@ -90,7 +106,15 @@ export const SensorSwitch = (props: Props) => {
     SetSensorCursorMutationVariables
   >(SET_CURSOR_MUTATION);
   const clearCursor = async () => {
-    await setSensorCursor({variables: {sensorSelector, cursor: undefined}});
+    await setSensorCursor({
+      variables: {
+        sensorSelector: {
+          ...repoAddressToSelector(repoAddress),
+          sensorName: name,
+        },
+        cursor: undefined,
+      },
+    });
   };
   const cursor =
     (sensor.sensorState.typeSpecificData &&
@@ -104,7 +128,14 @@ export const SensorSwitch = (props: Props) => {
     if (status === InstigationStatus.RUNNING) {
       stopSensor({variables: {id}});
     } else {
-      startSensor({variables: {sensorSelector}});
+      startSensor({
+        variables: {
+          sensorSelector: {
+            ...repoAddressToSelector(repoAddress),
+            sensorName: name,
+          },
+        },
+      });
     }
   };
 
@@ -278,8 +309,8 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
 `;
 
 const SENSOR_STATE_QUERY = gql`
-  query SensorStateQuery($id: String!) {
-    instigationStateOrError(id: $id) {
+  query SensorStateQuery($id: String!, $selector: InstigationSelector!) {
+    instigationStateOrError(id: $id, instigationSelector: $selector) {
       ... on InstigationState {
         id
         ...InstigationStateBaseFragment

@@ -18,6 +18,7 @@ export type ScheduleSwitchFragment = {
 
 export type ScheduleStateQueryVariables = Types.Exact<{
   id: Types.Scalars['String']['input'];
+  selector: Types.InstigationSelector;
 }>;
 
 export type ScheduleStateQuery = {

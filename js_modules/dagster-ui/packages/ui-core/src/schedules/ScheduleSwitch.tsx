@@ -1,5 +1,6 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
 import {Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
 
 import {
   START_SCHEDULE_MUTATION,
@@ -39,15 +40,18 @@ export const ScheduleSwitch = (props: Props) => {
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
-  const scheduleSelector = {
-    ...repoAddressToSelector(repoAddress),
-    scheduleName: name,
-  };
+  const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
 
   const {data, loading} = useQuery<ScheduleStateQuery, ScheduleStateQueryVariables>(
     SCHEDULE_STATE_QUERY,
     {
-      variables: {id: schedule.id},
+      variables: {
+        id: schedule.id,
+        selector: {
+          ...repoAddressSelector,
+          name,
+        },
+      },
     },
   );
 
@@ -75,7 +79,12 @@ export const ScheduleSwitch = (props: Props) => {
       });
     } else {
       startSchedule({
-        variables: {scheduleSelector},
+        variables: {
+          scheduleSelector: {
+            ...repoAddressSelector,
+            scheduleName: name,
+          },
+        },
       });
     }
   };
@@ -158,8 +167,8 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
 `;
 
 const SCHEDULE_STATE_QUERY = gql`
-  query ScheduleStateQuery($id: String!) {
-    instigationStateOrError(id: $id) {
+  query ScheduleStateQuery($id: String!, $selector: InstigationSelector!) {
+    instigationStateOrError(id: $id, instigationSelector: $selector) {
       ... on InstigationState {
         id
         ...InstigationStateBaseFragment
