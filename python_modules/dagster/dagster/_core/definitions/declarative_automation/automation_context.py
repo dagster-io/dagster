@@ -110,8 +110,7 @@ class AutomationContext(NamedTuple):
         legacy_context: "LegacyRuleEvaluationContext",
     ) -> "AutomationContext":
         asset_graph = asset_graph_view.asset_graph
-        auto_materialize_policy = check.not_none(asset_graph.get(asset_key).auto_materialize_policy)
-        automation_condition = auto_materialize_policy.to_automation_condition()
+        automation_condition = check.not_none(asset_graph.get(asset_key).automation_condition)
 
         return AutomationContext(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
