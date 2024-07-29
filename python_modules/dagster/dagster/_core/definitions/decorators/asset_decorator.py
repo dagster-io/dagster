@@ -453,7 +453,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,
-                    tags=validate_tags_strict(args.tags),
+                    tags=validate_tags_strict(args.tags or {}),
                 )
             },
             upstream_asset_deps=args.deps,
