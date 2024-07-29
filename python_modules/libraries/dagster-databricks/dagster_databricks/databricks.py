@@ -4,7 +4,7 @@ import os
 import time
 from enum import Enum
 from importlib.metadata import version
-from typing import IO, Any, Mapping, Optional, Tuple, Union
+from typing import IO, Any, Mapping, Optional, Tuple
 
 import dagster
 import dagster._check as check
@@ -259,7 +259,7 @@ class DatabricksClient:
             self._client = None
             self._api_client = None
 
-    def __setup_user_agent(self, client: Union[databricks_cli.sdk.ApiClient]) -> None:
+    def __setup_user_agent(self, client: databricks_cli.sdk.ApiClient) -> None:
         """Overrides the user agent for the Databricks API client."""
         client.default_headers["user-agent"] = f"dagster-databricks/{__version__}"
 
