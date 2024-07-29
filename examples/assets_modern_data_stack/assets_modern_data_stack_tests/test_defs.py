@@ -1,4 +1,4 @@
-from assets_modern_data_stack import defs
+from assets_modern_data_stack.definitions import defs
 
 
 def test_defs_can_load():

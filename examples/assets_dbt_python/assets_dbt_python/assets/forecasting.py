@@ -6,7 +6,7 @@ import pandas as pd
 from dagster import AssetIn, asset, build_last_update_freshness_checks
 from scipy import optimize
 
-from ..dbt import daily_order_summary_asset_key
+from .dbt import daily_order_summary_asset_key
 
 
 def model_func(x, a, b):
