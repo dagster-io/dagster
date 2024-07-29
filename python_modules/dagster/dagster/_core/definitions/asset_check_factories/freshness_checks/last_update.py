@@ -1,8 +1,6 @@
 import datetime
 from typing import Any, Dict, Iterable, Optional, Sequence, Union, cast
 
-import pendulum
-
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_result import AssetCheckResult
@@ -16,6 +14,7 @@ from dagster._core.definitions.metadata import (
     TimestampMetadataValue,
 )
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._time import get_current_timestamp, get_timezone
 from dagster._utils.schedules import (
     get_latest_completed_cron_tick,
     get_next_cron_tick,
@@ -168,9 +167,11 @@ def _build_freshness_multi_check(
     def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
         for check_key in context.selected_asset_check_keys:
             asset_key = check_key.asset_key
-            current_timestamp = pendulum.now("UTC").timestamp()
+            current_timestamp = get_current_timestamp()
 
-            current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+            current_time_in_freshness_tz = datetime.datetime.fromtimestamp(
+                current_timestamp, tz=get_timezone(timezone)
+            )
             latest_completed_cron_tick = (
                 get_latest_completed_cron_tick(
                     deadline_cron, current_time_in_freshness_tz, timezone

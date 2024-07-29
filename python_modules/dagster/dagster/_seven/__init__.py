@@ -10,7 +10,6 @@ from typing import Any, Callable, List, Sequence, Type
 
 from typing_extensions import TypeGuard
 
-from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 from .json import (
     JSONDecodeError as JSONDecodeError,
     dump as dump,

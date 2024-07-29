@@ -1,6 +1,5 @@
 from typing import Optional, Sequence, Union, cast
 
-import pendulum
 from dagster import (
     AssetDep,
     AssetsDefinition,
@@ -17,6 +16,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
+from dagster._time import parse_time_string
 
 from .perf_scenario import ActivityHistory, PerfScenario
 
@@ -94,5 +94,5 @@ partition_mappings_galore_perf_scenario = PerfScenario(
         [build_run_request_for_all_partitions(a) for a in assets]
         + [build_run_request_for_all_partitions(assets_by_key["d"])]
     ),
-    current_time=pendulum.parse("2023-09-06T00:05"),
+    current_time=parse_time_string("2023-09-06T00:05"),
 )
