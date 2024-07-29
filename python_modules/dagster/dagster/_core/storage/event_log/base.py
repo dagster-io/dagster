@@ -228,16 +228,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return build_run_step_stats_from_events(run_id, logs)
 
     @abstractmethod
-    def store_event(self, event: "EventLogEntry") -> None:
+    def store_event(self, event: "EventLogEntry") -> Optional[int]:
         """Store an event corresponding to a pipeline run.
 
         Args:
             event (EventLogEntry): The event to store.
         """
 
-    def store_event_batch(self, events: Sequence["EventLogEntry"]) -> None:
-        for event in events:
-            self.store_event(event)
+    def store_event_batch(self, events: Sequence["EventLogEntry"]) -> Sequence[Optional[int]]:
+        return [self.store_event(event) for event in events]
 
     @abstractmethod
     def delete_events(self, run_id: str) -> None:

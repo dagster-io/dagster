@@ -2366,8 +2366,8 @@ class DagsterInstance(DynamicPartitionsStore):
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
 
-    def store_event(self, event: "EventLogEntry") -> None:
-        self._event_storage.store_event(event)
+    def store_event(self, event: "EventLogEntry") -> Optional[int]:
+        return self._event_storage.store_event(event)
 
     def handle_new_event(
         self,
