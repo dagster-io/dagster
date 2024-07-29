@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
 
 import mock
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -60,7 +59,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
-from dagster._time import parse_time_string
+from dagster._time import datetime_from_timestamp, get_current_datetime, parse_time_string
 from typing_extensions import Self
 
 from .base_scenario import run_request
@@ -127,7 +126,7 @@ class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
-    current_time: datetime.datetime = field(default_factory=lambda: pendulum.now("UTC"))
+    current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
     sensors: Sequence[SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
 
@@ -355,7 +354,7 @@ class ScenarioState:
         return dataclasses.replace(
             self,
             scenario_spec=self.scenario_spec.with_current_time(
-                pendulum.from_timestamp(test_time_fn())
+                datetime_from_timestamp(test_time_fn())
             ),
         )
 
