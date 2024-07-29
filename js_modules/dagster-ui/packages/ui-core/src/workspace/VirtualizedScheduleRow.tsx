@@ -24,13 +24,12 @@ import {
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {CronTag} from '../schedules/CronTag';
 import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
@@ -45,8 +44,8 @@ import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
-const TEMPLATE_COLUMNS_WITH_CHECKBOX = '60px 1fr 1fr 76px 148px 210px 92px';
-const TEMPLATE_COLUMNS = '1fr 1fr 76px 148px 210px 92px';
+const TEMPLATE_COLUMNS = '1.2fr 1fr 1fr 76px 148px 210px 92px';
+const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
 
 interface ScheduleRowProps {
   name: string;
@@ -147,6 +146,11 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
   }, [scheduleState]);
 
   const tick = scheduleData?.scheduleState.ticks[0];
+  const targets = scheduleData?.pipelineName ? [{pipelineName: scheduleData.pipelineName}] : null;
+  const assetSelection =
+    scheduleAssetSelectionQueryResult.data?.scheduleOrError.__typename === 'Schedule'
+      ? scheduleAssetSelectionQueryResult.data.scheduleOrError.assetSelection
+      : null;
 
   return (
     <Row $height={height} $start={start}>
@@ -163,24 +167,11 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          <Box flex={{direction: 'column', gap: 4}}>
-            <span style={{fontWeight: 500}}>
-              <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
-                <MiddleTruncate text={name} />
-              </Link>
-            </span>
-            {scheduleData && !isHiddenAssetGroupJob(scheduleData.pipelineName) ? (
-              <Caption>
-                <PipelineReference
-                  showIcon
-                  size="small"
-                  pipelineName={scheduleData.pipelineName}
-                  pipelineHrefContext={repoAddress}
-                  isJob={isJob}
-                />
-              </Caption>
-            ) : null}
-          </Box>
+          <span style={{fontWeight: 500}}>
+            <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
+              <MiddleTruncate text={name} />
+            </Link>
+          </span>
         </RowCell>
         <RowCell>
           {scheduleData ? (
@@ -213,6 +204,16 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
           ) : (
             <LoadingOrNone queryResult={scheduleQueryResult} />
           )}
+        </RowCell>
+        <RowCell>
+          <div>
+            <AutomationTargetList
+              repoAddress={repoAddress}
+              automationType="schedule"
+              targets={targets}
+              assetSelection={assetSelection}
+            />
+          </div>
         </RowCell>
         <RowCell>
           {scheduleData ? (
@@ -300,6 +301,7 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
       ) : null}
       <HeaderCell>Schedule name</HeaderCell>
       <HeaderCell>Schedule</HeaderCell>
+      <HeaderCell>Target</HeaderCell>
       <HeaderCell>Running</HeaderCell>
       <HeaderCell>Last tick</HeaderCell>
       <HeaderCell>Last run</HeaderCell>

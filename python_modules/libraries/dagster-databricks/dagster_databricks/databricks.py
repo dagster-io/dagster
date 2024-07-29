@@ -4,7 +4,7 @@ import os
 import time
 from enum import Enum
 from importlib.metadata import version
-from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
+from typing import IO, Any, Mapping, Optional, Tuple, Union
 
 import dagster
 import dagster._check as check
@@ -20,7 +20,7 @@ from databricks.sdk.core import (
     oauth_service_principal,
     pat_auth,
 )
-from databricks.sdk.service import compute, jobs
+from databricks.sdk.service import jobs
 from typing_extensions import Final
 
 import dagster_databricks
@@ -118,11 +118,11 @@ class WorkspaceClientFactory:
             if host is not None:
                 # This allows for explicit override of the host, while letting other credentials be read from the
                 # environment or ~/.databrickscfg file
-                c = Config(host=host, credentials_provider=DefaultCredentials(), **product_info)
+                c = Config(host=host, credentials_provider=DefaultCredentials(), **product_info)  # type: ignore  # (bad stubs)
             else:
                 # The initialization machinery in the Config object will look for the host and other auth info in the
                 # environment, as long as no values are provided for those attributes (including None)
-                c = Config(credentials_provider=DefaultCredentials(), **product_info)
+                c = Config(credentials_provider=DefaultCredentials(), **product_info)  # type: ignore  # (bad stubs)
         else:
             raise ValueError(f"Unexpected auth type {auth_type}")
         self.config = c
@@ -259,10 +259,7 @@ class DatabricksClient:
             self._client = None
             self._api_client = None
 
-    def __setup_user_agent(
-        self,
-        client: Union[WorkspaceClient, databricks_cli.sdk.ApiClient],
-    ) -> None:
+    def __setup_user_agent(self, client: Union[databricks_cli.sdk.ApiClient]) -> None:
         """Overrides the user agent for the Databricks API client."""
         client.default_headers["user-agent"] = f"dagster-databricks/{__version__}"
 
@@ -365,11 +362,13 @@ class DatabricksClient:
         dbfs_service = self.workspace_client.dbfs
 
         jdoc = dbfs_service.read(path=dbfs_path, length=block_size)
-        data += base64.b64decode(jdoc.data)
+        jdoc_data = check.not_none(jdoc.data, f"read file {dbfs_path} with no data")
+        data += base64.b64decode(jdoc_data)
         while jdoc.bytes_read == block_size:
-            bytes_read += jdoc.bytes_read
+            bytes_read += check.not_none(jdoc.bytes_read)
             jdoc = dbfs_service.read(path=dbfs_path, offset=bytes_read, length=block_size)
-            data += base64.b64decode(jdoc.data)
+            jdoc_data = check.not_none(jdoc.data, f"read file {dbfs_path} with no data")
+            data += base64.b64decode(jdoc_data)
 
         return data
 
@@ -386,7 +385,9 @@ class DatabricksClient:
         dbfs_service = self.workspace_client.dbfs
 
         create_response = dbfs_service.create(path=dbfs_path, overwrite=overwrite)
-        handle = create_response.handle
+        handle = check.not_none(
+            create_response.handle, "create file response did not return handle"
+        )
 
         block = file_obj.read(block_size)
         while block:
@@ -403,6 +404,8 @@ class DatabricksClient:
         attribute may be `None` if the run hasn't yet terminated.
         """
         run = self.workspace_client.jobs.get_run(databricks_run_id)
+        if run.state is None:
+            check.failed("Databricks job run state is None")
         return DatabricksRunState.from_databricks(run.state)
 
     def poll_run_state(
@@ -602,9 +605,6 @@ class DatabricksJobRunner:
             "Multiple tasks specified in Databricks run",
         )
 
-        notification_settings = self._get_notification_settings(run_config)
-        job_health_settings = self._get_job_health_settings(run_config)
-
         return self.client.workspace_client.jobs.submit(
             run_name=run_config.get("run_name"),
             tasks=[
@@ -620,54 +620,37 @@ class DatabricksJobRunner:
             ],
             idempotency_token=run_config.get("idempotency_token"),
             timeout_seconds=run_config.get("timeout_seconds"),
-            health=job_health_settings,
-            **notification_settings,
-        ).bind()["run_id"]
-
-    def _get_job_health_settings(
-        self, run_config: Mapping[str, Any]
-    ) -> Optional[List[jobs.JobsHealthRule]]:
-        if "job_health_settings" in run_config:
-            job_health_settings = [
-                jobs.JobsHealthRule.from_dict(h) for h in run_config["job_health_settings"]
-            ]
-        else:
-            job_health_settings = None
-        return job_health_settings
-
-    def _get_notification_settings(
-        self, run_config: Mapping[str, Any]
-    ) -> Mapping[
-        str,
-        Union[jobs.JobEmailNotifications, jobs.JobNotificationSettings, jobs.WebhookNotifications],
-    ]:
-        notification_configs = {}
-        if "email_notifications" in run_config:
-            email_notifications = jobs.JobEmailNotifications.from_dict(
+            health=jobs.JobsHealthRules.from_dict({"rules": run_config["job_health_settings"]})
+            if "job_health_settings" in run_config
+            else None,
+            email_notifications=jobs.JobEmailNotifications.from_dict(
                 run_config["email_notifications"]
             )
-            notification_configs.update({"email_notifications": email_notifications})
-        if "notification_settings" in run_config:
-            notification_settings = jobs.JobNotificationSettings.from_dict(
+            if "email_notifications" in run_config
+            else None,
+            notification_settings=jobs.JobNotificationSettings.from_dict(
                 run_config["notification_settings"]
             )
-            notification_configs.update({"notification_settings": notification_settings})
-        if "webhook_notifications" in run_config:
-            webhook_notifications = jobs.WebhookNotifications.from_dict(
+            if "notification_settings" in run_config
+            else None,
+            webhook_notifications=jobs.WebhookNotifications.from_dict(
                 run_config["webhook_notifications"]
             )
-            notification_configs.update({"webhook_notifications": webhook_notifications})
-        return notification_configs
+            if "webhook_notifications" in run_config
+            else None,
+        ).bind()["run_id"]
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int
     ) -> Optional[Tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
-
         # Run.cluster_instance can be None. In that case, fall back to cluster instance on first
         # task. Currently pyspark step launcher runs jobs with singleton tasks.
-        cluster_instance = run.cluster_instance or run.tasks[0].cluster_instance
+        cluster_instance = check.not_none(
+            run.cluster_instance or check.not_none(run.tasks)[0].cluster_instance,
+            "Run has no attached cluster instance.",
+        )
         cluster_id = check.inst(
             cluster_instance.cluster_id,
             str,
@@ -681,12 +664,16 @@ class DatabricksJobRunner:
                 f"Logs not configured for cluster {cluster_id} used for run {databricks_run_id}"
             )
             return None
-        if cast(Optional[compute.S3StorageInfo], log_config.s3) is not None:
-            logs_prefix = log_config.s3.destination
+        if log_config.s3 is not None:
+            logs_prefix = check.not_none(
+                log_config.s3.destination, "S3 logs destination not set for cluster"
+            )
             log.warn("Retrieving S3 logs not yet implemented")
             return None
-        elif cast(Optional[compute.DbfsStorageInfo], log_config.dbfs) is not None:
-            logs_prefix = log_config.dbfs.destination
+        elif log_config.dbfs is not None:
+            logs_prefix = check.not_none(
+                log_config.dbfs.destination, "DBFS logs destination not set for cluster"
+            )
             stdout = self.wait_for_dbfs_logs(log, logs_prefix, cluster_id, "stdout")
             stderr = self.wait_for_dbfs_logs(log, logs_prefix, cluster_id, "stderr")
             return stdout, stderr

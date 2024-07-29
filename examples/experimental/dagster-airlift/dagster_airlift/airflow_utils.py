@@ -1,7 +1,7 @@
 import datetime
 import json
 from datetime import timedelta
-from typing import Any, Dict, List, NamedTuple, Optional, Sequence
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import requests
 from dagster import (
@@ -37,14 +37,14 @@ class TaskMapping(NamedTuple):
     # A constrained version of AssetSpec that only includes the fields we can easily concatenate.
     key: AssetKey
     deps: List[AssetDep] = []
-    tags: Dict[str, str] = {}
-    metadata: Dict[str, Any] = {}
+    tags: Mapping[str, str] = {}
+    metadata: Mapping[str, Any] = {}
     group: Optional[str] = None
 
 
 def assets_defs_from_airflow_instance(
     airflow_webserver_url: str,
-    auth: tuple[str, str],
+    auth: Tuple[str, str],
     instance_name: str,
     task_maps: Sequence[TaskMapping] = [],
 ) -> List[AssetsDefinition]:
@@ -160,7 +160,7 @@ def assets_defs_from_airflow_instance(
 
 def build_airflow_polling_sensor(
     airflow_webserver_url: str,
-    auth: tuple[str, str],
+    auth: Tuple[str, str],
     airflow_asset_specs: List[AssetSpec],
 ) -> SensorDefinition:
     api_url = f"{airflow_webserver_url}/api/v1"
@@ -237,10 +237,10 @@ def timestamp_from_airflow_date(airflow_date: str) -> float:
         return datetime.datetime.strptime(airflow_date, "%Y-%m-%dT%H:%M:%S.%f+00:00").timestamp()
 
 
-def add_prefix_to_specs(prefix: List[str], specs: List[AssetSpec]) -> List[AssetSpec]:
+def add_prefix_to_specs(prefix: Sequence[str], specs: Sequence[AssetSpec]) -> Sequence[AssetSpec]:
     return [
         AssetSpec(
-            key=AssetKey(prefix + list(spec.key.path)),
+            key=AssetKey([*prefix, *spec.key.path]),
             description=spec.description,
             metadata=spec.metadata,
             tags=spec.tags,
@@ -268,7 +268,7 @@ def airflow_task_mappings_from_dbt_project(
     before_prefix_asset_keys = [spec.key for spec in original_specs]
     for spec in dbt_specs:
         deps = [
-            AssetDep(AssetKey([airflow_instance_name, "dbt"] + dep.asset_key.path))
+            AssetDep(AssetKey([airflow_instance_name, "dbt", *dep.asset_key.path]))
             if dep.asset_key in before_prefix_asset_keys
             else dep
             for dep in spec.deps
