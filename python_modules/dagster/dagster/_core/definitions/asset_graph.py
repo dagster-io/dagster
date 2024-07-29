@@ -16,6 +16,9 @@ from dagster._core.definitions.base_asset_graph import (
     BaseAssetGraph,
     BaseAssetNode,
 )
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
@@ -99,6 +102,10 @@ class AssetNode(BaseAssetNode):
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
         return self._spec.auto_materialize_policy
+
+    @property
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        return self._spec.automation_condition
 
     @property
     def auto_observe_interval_minutes(self) -> Optional[float]:

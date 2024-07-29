@@ -4,7 +4,13 @@ from contextlib import contextmanager, nullcontext
 from typing import Any, Generator, Mapping, Optional, Sequence, cast
 
 import pytest
-from dagster import AssetSpec, AutoMaterializeRule, DagsterInstance, instance_for_test
+from dagster import (
+    AssetSpec,
+    AutoMaterializeRule,
+    AutomationCondition,
+    DagsterInstance,
+    instance_for_test,
+)
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -46,7 +52,12 @@ from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state impor
 )
 
 from .base_scenario import run_request
-from .scenario_specs import one_asset, two_assets_in_sequence, two_partitions_def
+from .scenario_specs import (
+    one_asset,
+    one_upstream_observable_asset,
+    two_assets_in_sequence,
+    two_partitions_def,
+)
 from .updated_scenarios.asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.cron_scenarios import (
@@ -181,6 +192,17 @@ auto_materialize_sensor_scenarios = [
         .evaluate_tick()
         .assert_requested_runs(),
     ),
+    AssetDaemonScenario(
+        id="one_upstream_observable_asset",
+        initial_spec=one_upstream_observable_asset.with_asset_properties(
+            automation_condition=AutomationCondition.cron_tick_passed("*/10 * * * *"),
+        ),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(minutes=10)
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["A", "B"])),
+    ),
 ]
 
 
@@ -202,7 +224,9 @@ daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
     daemon_scenarios_with_threadpool_without_sensor,
     ids=[scenario.id for scenario in daemon_scenarios_with_threadpool_without_sensor],
 )
-def test_asset_daemon_with_threadpool_without_sensor(scenario: AssetDaemonScenario) -> None:
+def test_asset_daemon_with_threadpool_without_sensor(
+    scenario: AssetDaemonScenario,
+) -> None:
     with get_daemon_instance(
         extra_overrides={
             "auto_materialize": {"use_threads": True, "num_workers": 4, "use_sensors": False}

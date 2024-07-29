@@ -24,6 +24,7 @@ from dagster import (
     SensorDefinition,
     asset,
     multi_asset,
+    op,
 )
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -32,7 +33,6 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -160,13 +160,24 @@ class ScenarioSpec:
                 )
                 # create an observable_source_asset or regular asset depending on the execution type
                 if execution_type == AssetExecutionType.OBSERVATION:
-                    # strip out the relevant paramters from the spec
-                    params = {"key", "group_name", "partitions_def", "metadata"}
+                    if isinstance(spec, AssetSpecWithPartitionsDef):
+                        sd = spec._asdict()
+                        partitions_def = sd.pop("partitions_def")
+                        specs = [AssetSpec(**sd)]
+                    else:
+                        partitions_def = None
+                        specs = [spec]
 
-                    @observable_source_asset(
-                        **{k: v for k, v in spec._asdict().items() if k in params},
+                    @op
+                    def noop(): ...
+
+                    osa = AssetsDefinition(
+                        specs=specs,
+                        partitions_def=partitions_def,
+                        execution_type=execution_type,
+                        keys_by_output_name={"result": spec.key},
+                        node_def=noop,
                     )
-                    def osa() -> None: ...
 
                     assets.append(osa)
                 else:
