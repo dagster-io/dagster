@@ -6,7 +6,7 @@ from dagster import Definitions, EnvVar
 from development_to_production.assets.hacker_news_assets import comments, items, stories
 
 # start
-# __init__.py
+# definitions.py
 
 
 resources = {

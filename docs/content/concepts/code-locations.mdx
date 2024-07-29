@@ -53,7 +53,7 @@ Code locations are loaded in a different process and communicate with Dagster sy
 To define a code location, create a top-level variable that contains a <PyObject object="Definitions"/> object in a Python module. For example:
 
 ```python
-# my_file.py
+# definitions.py
 
 defs = Definitions(
     assets=[dbt_customers_asset, dbt_orders_asset],
@@ -63,7 +63,7 @@ defs = Definitions(
 )
 ```
 
-Definitions can be included in a Python file like `my_file.py` or a Python module. If using the latter, the <PyObject object="Definitions"/> object should be defined in the module's top-level `__init__.py` file.
+It is recommenced to include Definitions in a Python file named `definitions.py`.
 
 ---
 
@@ -110,7 +110,7 @@ To load a code location from a Python module, use the `module_name` property in 
 locations:
   - location_name: my-code-location
     code_source:
-      module_name: my_module_name
+      module_name: my_module_name.definitions
 ```
 
 </TabItem>

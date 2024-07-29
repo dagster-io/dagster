@@ -130,7 +130,7 @@ Dagster automatically sets certain [environment variables](/dagster-plus/managin
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v1.py startafter=start_repository endbefore=end_repository
-# __init__.py
+# definitions.py
 from dagster import Definitions
 
 from ..assets import comments, items, stories

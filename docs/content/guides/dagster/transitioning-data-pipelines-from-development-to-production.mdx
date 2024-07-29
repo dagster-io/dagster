@@ -102,7 +102,7 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
 Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
-# __init__.py
+# definitions.py
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from dagster import Definitions
@@ -163,7 +163,7 @@ We want to store the assets in a production Snowflake database, so we need to up
 Instead, we can determine the configuration for resources based on the environment:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v2.py startafter=start endbefore=end
-# __init__.py
+# definitions.py
 
 # Note that storing passwords in configuration is bad practice. It will be resolved soon.
 resources = {
@@ -207,7 +207,7 @@ We still have some problems with this setup:
 We can easily solve these problems using <PyObject object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
-# __init__.py
+# definitions.py
 
 
 resources = {

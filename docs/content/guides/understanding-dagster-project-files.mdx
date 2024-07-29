@@ -23,7 +23,8 @@ The following demonstrates a Dagster project using the default project skeleton,
 ├── README.md
 ├── my_dagster_project
 │   ├── __init__.py
-│   └──  assets.py
+│   ├──  assets.py
+│   └──  definitions.py
 ├── my_dagster_project_tests
 ├── pyproject.toml
 ├── setup.cfg
@@ -83,10 +84,7 @@ Let's take a look at what each of these files and directories does:
     <tr>
       <td>__init__.py</td>
       <td>
-        The <code>__init__.py</code> file includes a{" "}
-        <PyObject object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in a module.
-        <br /><br />
-        Refer to the <a href="/concepts/code-locations#load-definitions-in-an-installed-package">Code locations documentation</a> to learn other ways to deploy and load your Dagster code.
+        A file required in a Python package. Refer to the <a href="https://docs.python.org/3/reference/import.html#regular-packages">Python documentation</a> for more information.
       </td>
     </tr>
     <tr>
@@ -105,6 +103,15 @@ Let's take a look at what each of these files and directories does:
         <br />
         Similarly, you can also use <PyObject object="load_assets_from_modules" /> to
         load assets from single Python files. Refer to the <a href="/guides/dagster/example_project">Fully featured project guide</a> for more info and best practices.
+      </td>
+    </tr>
+    <tr>
+      <td>definitions.py</td>
+      <td>
+        The <code>definitions.py</code> file includes a{" "}
+        <PyObject object="Definitions" /> object that contains all the definitions defined within your project. A definition can be an asset, a job, a schedule, a sensor, or a resource. This allows Dagster to load the definitions in a module.
+        <br /><br />
+        Refer to the <a href="/concepts/code-locations#load-definitions-in-an-installed-package">Code locations documentation</a> to learn other ways to deploy and load your Dagster code.
       </td>
     </tr>
 
@@ -291,7 +298,8 @@ For local development, a project with a single code location might look like thi
 ├── README.md
 ├── my_dagster_project
 │   ├── __init__.py
-│   └──  assets.py
+│   ├──  assets.py
+│   └──  definitions.py
 ├── my_dagster_project_tests
 ├── dagster.yaml      ## optional, used for instance settings
 ├── pyproject.toml    ## optional, used to define the project as a module
@@ -312,7 +320,8 @@ For local development, a project with multiple code locations might look like th
 ├── README.md
 ├── my_dagster_project
 │   ├── __init__.py
-│   └──  assets.py
+│   ├──  assets.py
+│   └──  definitions.py
 ├── my_dagster_project_tests
 ├── dagster.yaml      ## optional, used for instance settings
 ├── pyproject.toml
@@ -338,7 +347,8 @@ A Dagster project deployed to your infrastructure might look like this:
 ├── README.md
 ├── my_dagster_project
 │   ├── __init__.py
-│   └──  assets.py
+│   ├──  assets.py
+│   └──  definitions.py
 ├── my_dagster_project_tests
 ├── dagster.yaml      ## optional, used for instance settings
 ├── pyproject.toml
@@ -364,7 +374,8 @@ For a Dagster+ Serverless deployment, a project might look like this:
 ├── README.md
 ├── my_dagster_project
 │   ├── __init__.py
-│   └──  assets.py
+│   ├──  assets.py
+│   └──  definitions.py
 ├── my_dagster_project_tests
 ├── dagster_cloud.yaml         ## defines code locations
 ├── deployment_settings.yaml   ## optional, defines settings for full deployments
@@ -386,7 +397,8 @@ For a Dagster+ Hybrid deployment, a project might look like this:
 ├── README.md
 ├── my_dagster_project
 │   ├── __init__.py
-│   └──  assets.py
+│   ├──  assets.py
+│   └──  definitions.py
 ├── my_dagster_project_tests
 ├── dagster.yaml                ## optional, hybrid agent custom configuration
 ├── dagster_cloud.yaml          ## defines code locations

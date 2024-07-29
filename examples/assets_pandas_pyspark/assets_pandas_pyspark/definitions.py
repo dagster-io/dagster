@@ -1,7 +1,7 @@
 def get_weather_defs():
     # gather_assets_start
 
-    # __init__.py
+    # definitions.py
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import table_assets
@@ -23,7 +23,7 @@ def get_weather_defs():
 def get_spark_weather_defs():
     # gather_spark_assets_start
 
-    # __init__.py
+    # definitions.py
 
     from dagster import Definitions, load_assets_from_modules
 

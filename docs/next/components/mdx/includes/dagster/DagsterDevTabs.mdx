@@ -20,20 +20,20 @@ dagster dev -f my_file.py -f my_second_file.py
 </TabItem>
 <TabItem name="From a module">
 
-Dagster can also load Python modules as [code locations](/concepts/code-locations). When this approach is used, Dagster loads the definitions defined at the top-level of the module, in a variable containing the <PyObject object="Definitions" /> object of its root `__init__.py` file. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
+Dagster can also load Python modules as [code locations](/concepts/code-locations). When this approach is used, Dagster loads the definitions defined in the module passed to the command line. It is recommended to define a variable containing the <PyObject object="Definitions" /> object in a submodule named `definitions` inside the Python module. In practice, the submodule can be created by adding a file named `definitions.py` at the root level of the Python module. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
 
-In the following example, we used the `-m` argument to supply the name of the module:
+In the following example, we used the `-m` argument to supply the name of the module and where to find the definitions:
 
 ```shell
-dagster dev -m your_module_name
+dagster dev -m your_module_name.definitions
 ```
 
-This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named module - defined as the root `__init__.py` file - in the current Python environment.
+This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the `definitions` submodule in the current Python environment.
 
 You can also include multiple modules at a time, where each module will be loaded as a code location:
 
 ```shell
-dagster dev -m your_module_name -m your_second_module
+dagster dev -m your_module_name.definitions -m your_second_module.definitions
 ```
 
 ---
@@ -45,7 +45,7 @@ To load definitions without supplying command line arguments, you can use the `p
 
 ```toml
 [tool.dagster]
-module_name = "your_module_name"  ## name of project's Python module
+module_name = "your_module_name.definitions"  ## name of project's Python module and where to find the definitions
 code_location_name = "your_code_location_name"  ## optional, name of code location to display in the Dagster UI
 ```
 
@@ -58,7 +58,7 @@ dagster dev
 Instead of this:
 
 ```shell
-dagster dev -m your_module_name
+dagster dev -m your_module_name.definitions
 ```
 
 ---
