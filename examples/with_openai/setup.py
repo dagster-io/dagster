@@ -10,7 +10,7 @@ setup(
         "faiss-cpu==1.8.0",
         "filelock",
         "langchain==0.2.7",
-        "langchain-community==0.2.7",
+        "langchain-community==0.2.9",
         "langchain-openai==0.1.14",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
