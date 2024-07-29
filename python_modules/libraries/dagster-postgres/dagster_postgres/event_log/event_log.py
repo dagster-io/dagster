@@ -165,7 +165,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
-    def store_event(self, event: EventLogEntry) -> None:
+    def store_event(self, event: EventLogEntry) -> Optional[int]:
         """Store an event corresponding to a run.
 
         Args:
@@ -207,7 +207,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
 
-    def store_event_batch(self, events: Sequence[EventLogEntry]) -> None:
+        return event_id
+
+    def store_event_batch(self, events: Sequence[EventLogEntry]) -> Sequence[Optional[int]]:
         check.sequence_param(events, "event", of_type=EventLogEntry)
 
         check.invariant(
@@ -227,6 +229,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             raise DagsterInvariantViolationError("Cannot store asset event tags for null event id.")
 
         self.store_asset_event_tags(events, event_ids)
+
+        return event_ids
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
