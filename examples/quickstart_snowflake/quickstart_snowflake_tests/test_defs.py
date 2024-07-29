@@ -1,4 +1,4 @@
-from quickstart_snowflake.definitions import defs
+from quickstart_snowflake import defs
 
 
 def test_def_can_load():
