@@ -18,4 +18,7 @@ default_args = {
 dag = DAG(
     "print_dag", default_args=default_args, schedule_interval=None, is_paused_upon_creation=False
 )
-load_iris = PythonOperator(task_id="print_task", python_callable=print_hello, dag=dag)
+print_op = PythonOperator(task_id="print_task", python_callable=print_hello, dag=dag)
+downstream_print_op = PythonOperator(
+    task_id="downstream_print_task", python_callable=print_hello, dag=dag
+)
