@@ -5,6 +5,7 @@ import {UserPreferences} from '@dagster-io/ui-core/app/UserSettingsDialog/UserPr
 import {useAssetGraphExplorerFilters} from '@dagster-io/ui-core/asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetCatalogTableBottomActionBar} from '@dagster-io/ui-core/assets/AssetCatalogTableBottomActionBar.oss';
 import {AssetPageHeader} from '@dagster-io/ui-core/assets/AssetPageHeader.oss';
+import {AssetWipeDialog} from '@dagster-io/ui-core/assets/AssetWipeDialog.oss';
 import {AssetsGraphHeader} from '@dagster-io/ui-core/assets/AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '@dagster-io/ui-core/assets/AssetsOverviewRoot.oss';
 import {useAssetCatalogFiltering} from '@dagster-io/ui-core/assets/useAssetCatalogFiltering.oss';
@@ -21,6 +22,7 @@ export const InjectedComponents = ({children}: {children: React.ReactNode}) => {
           AssetsOverview: AssetsOverviewRoot,
           FallthroughRoot,
           AssetsGraphHeader,
+          AssetWipeDialog,
           OverviewPageAlerts: null,
           RunMetricsDialog: null,
           AssetCatalogTableBottomActionBar,

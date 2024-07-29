@@ -8,6 +8,7 @@ import {assertUnreachable} from './Util';
 import {useAssetGraphExplorerFilters} from '../asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetCatalogTableBottomActionBar} from '../assets/AssetCatalogTableBottomActionBar.oss';
 import {AssetPageHeader} from '../assets/AssetPageHeader.oss';
+import {AssetWipeDialog} from '../assets/AssetWipeDialog.oss';
 import {AssetsGraphHeader} from '../assets/AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '../assets/AssetsOverviewRoot.oss';
 import {useAssetCatalogFiltering} from '../assets/useAssetCatalogFiltering.oss';
@@ -29,6 +30,7 @@ type InjectedComponentContextType = {
   AssetsOverview: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
   FallthroughRoot: AComponentFromComponent<typeof FallthroughRoot> | null;
   AssetsGraphHeader: AComponentFromComponent<typeof AssetsGraphHeader> | null;
+  AssetWipeDialog: AComponentFromComponent<typeof AssetWipeDialog> | null;
 
   RunMetricsDialog: AComponentWithProps<{
     runId: string;
