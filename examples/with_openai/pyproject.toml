@@ -3,5 +3,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "with_openai.definitions"
-code_location_name = "with_openai"
+module_name = "with_openai"

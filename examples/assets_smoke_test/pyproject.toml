@@ -3,5 +3,4 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "assets_smoke_test.definitions"
-code_location_name = "assets_smoke_test"
+module_name = "assets_smoke_test.python_and_dbt_assets"

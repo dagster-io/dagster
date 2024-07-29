@@ -1,4 +1,4 @@
-from with_wandb.definitions import defs
+from with_wandb import defs
 
 
 def test_defs_can_load():

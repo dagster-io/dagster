@@ -1,4 +1,4 @@
-from assets_dbt_python.definitions import defs
+from assets_dbt_python import defs
 
 
 def test_def_can_load():
