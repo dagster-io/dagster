@@ -11,7 +11,7 @@ from dagster_pipes import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from .context import PipesMessageHandler
 
 
-@experimental
 class PipesClient(ABC):
     """Pipes client base class.
 
@@ -52,7 +51,6 @@ class PipesClient(ABC):
         """
 
 
-@experimental
 class PipesClientCompletedInvocation:
     def __init__(
         self,
@@ -119,7 +117,6 @@ class PipesClientCompletedInvocation:
         return self._session.get_custom_messages()
 
 
-@experimental
 class PipesContextInjector(ABC):
     @abstractmethod
     @contextmanager
@@ -147,7 +144,6 @@ class PipesContextInjector(ABC):
         """
 
 
-@experimental
 class PipesMessageReader(ABC):
     @abstractmethod
     @contextmanager
