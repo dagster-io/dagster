@@ -35,6 +35,7 @@ def build_integration_steps() -> List[BuildkiteStep]:
     steps += build_celery_k8s_suite_steps()
     steps += build_k8s_suite_steps()
     steps += build_daemon_suite_steps()
+    steps += build_auto_materialize_perf_suite_steps()
 
     return steps
 
@@ -157,6 +158,7 @@ def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
         pytest_tox_factors,
         queue=BuildkiteQueue.DOCKER,  # crashes on python 3.11/3.12 without additional resources
         always_run_if=has_helm_changes,
+        pytest_extra_cmds=celery_k8s_integration_suite_pytest_extra_cmds,
     )
 
 
@@ -172,6 +174,20 @@ def build_daemon_suite_steps():
         directory,
         pytest_tox_factors,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
+    )
+
+
+def build_auto_materialize_perf_suite_steps():
+    pytest_tox_factors = None
+    directory = os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
+    return build_integration_suite_steps(
+        directory,
+        pytest_tox_factors,
+        unsupported_python_versions=[
+            version
+            for version in AvailablePythonVersion.get_all()
+            if version != AvailablePythonVersion.V3_11
+        ],
     )
 
 
@@ -200,7 +216,10 @@ def build_k8s_suite_steps():
     pytest_tox_factors = ["-default", "-subchart"]
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
     return build_integration_suite_steps(
-        directory, pytest_tox_factors, always_run_if=has_helm_changes
+        directory,
+        pytest_tox_factors,
+        always_run_if=has_helm_changes,
+        pytest_extra_cmds=k8s_integration_suite_pytest_extra_cmds,
     )
 
 
@@ -219,7 +238,6 @@ def build_integration_suite_steps(
         Union[List[AvailablePythonVersion], UnsupportedVersionsFunction]
     ] = None,
 ) -> List[BuildkiteTopLevelStep]:
-    pytest_extra_cmds = pytest_extra_cmds or default_integration_suite_pytest_extra_cmds
     return PackageSpec(
         directory,
         env_vars=[
@@ -241,7 +259,15 @@ def build_integration_suite_steps(
     ).build_steps()
 
 
-def default_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
+def k8s_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
+    return [
+        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
+        "aws ecr get-login --no-include-email --region us-west-2 | sh",
+    ]
+
+
+def celery_k8s_integration_suite_pytest_extra_cmds(version: str, _) -> List[str]:
     cmds = [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",

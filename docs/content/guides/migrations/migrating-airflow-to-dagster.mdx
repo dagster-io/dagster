@@ -15,11 +15,11 @@ If your organization makes heavy use of the `PythonOperator`, the Airflow TaskFl
 
 ## Migrating pipelines that use the TaskFlow API
 
-The Airflow piplines that are the most simple to migrate to Dagster are those that use Airflow's [TaskFlow](https://airflow.apache.org/docs/apache-airflow/stable/tutorial/taskflow.html) API.
+The Airflow pipelines that are the most simple to migrate to Dagster are those that use Airflow's [TaskFlow](https://airflow.apache.org/docs/apache-airflow/stable/tutorial/taskflow.html) API.
 
 With this approach, pipelines are constructed using Airflow `@task` decorators that can easily be mapped to a function using the Dagster <PyObject object="asset" decorator /> decorator. For example, given the Airflow task below:
 
-```python
+```python file=guides/migrations/migrating_airflow_to_dagster.py startafter=start_simple_airflow_task endbefore=end_simple_airflow_task dedent=4
 from airflow.decorators import task
 
 @task()
@@ -31,7 +31,7 @@ def extract():
 
 This can be directly translated to a Dagster asset like so.
 
-```python
+```python file=guides/migrations/migrating_airflow_to_dagster.py startafter=start_simple_dagster_asset endbefore=end_simple_dagster_asset dedent=4
 from dagster import asset
 
 @asset
@@ -43,7 +43,7 @@ def extract():
 
 Now, let’s walk through the full `tutorial_taskflow_api.py` example DAG, and how it would be translated to Dagster assets.
 
-```python
+```python file=guides/migrations/migrating_airflow_to_dagster.py startafter=start_full_airflow_example endbefore=end_full_airflow_example dedent=4
 import json
 
 import pendulum
@@ -57,18 +57,17 @@ from airflow.decorators import dag, task
     tags=["example"],
 )
 def tutorial_taskflow_api():
-    """
-    ### TaskFlow API Tutorial Documentation
+    """### TaskFlow API Tutorial Documentation
     This is a simple data pipeline example which demonstrates the use of
     the TaskFlow API using three simple tasks for Extract, Transform, and Load.
     Documentation that goes along with the Airflow TaskFlow API tutorial is
     located
     [here](https://airflow.apache.org/docs/apache-airflow/stable/tutorial_taskflow_api.html)
     """
+
     @task
     def extract():
-        """
-        #### Extract task
+        """#### Extract task
         A simple Extract task to get data ready for the rest of the data
         pipeline. In this case, getting data is simulated by reading from a
         hardcoded JSON string.
@@ -77,10 +76,10 @@ def tutorial_taskflow_api():
 
         order_data_dict = json.loads(data_string)
         return order_data_dict
+
     @task(multiple_outputs=True)
     def transform(order_data_dict: dict):
-        """
-        #### Transform task
+        """#### Transform task
         A simple Transform task which takes in the collection of order data and
         computes the total order value.
         """
@@ -90,30 +89,28 @@ def tutorial_taskflow_api():
             total_order_value += value
 
         return {"total_order_value": total_order_value}
+
     @task
     def load(total_order_value: float):
-        """
-        #### Load task
+        """#### Load task
         A simple Load task which takes in the result of the Transform task and
         instead of saving it to end user review, just prints it out.
         """
-
         print(f"Total order value is: {total_order_value:.2f}")
+
     order_data = extract()
     order_summary = transform(order_data)
     load(order_summary["total_order_value"])
-
 
 tutorial_taskflow_api()
 ```
 
 By converting the Airflow `task` to a Dagster <PyObject object="asset" decorator />, and our Airflow `dag` to a Dagster <PyObject object="job" decorator />, the resulting code will look like the following.
 
-```python
+```python file=guides/migrations/migrating_airflow_to_dagster.py startafter=start_full_dagster_example endbefore=end_full_dagster_example dedent=4
 import json
 
 from dagster import AssetExecutionContext, Definitions, define_asset_job, asset
-
 
 @asset
 def extract():
@@ -127,7 +124,6 @@ def extract():
     order_data_dict = json.loads(data_string)
 
     return order_data_dict
-
 
 @asset
 def transform(extract):
@@ -143,7 +139,6 @@ def transform(extract):
 
     return total_order_value
 
-
 @asset
 def load(context: AssetExecutionContext, transform):
     """Load task
@@ -153,15 +148,12 @@ def load(context: AssetExecutionContext, transform):
     """
     context.log.info(f"Total order value is: {transform:.2f}")
 
-
 airflow_taskflow_example = define_asset_job(
-    name="airflow_taskflow_example",
-    selection=[extract, transform, load]
+    name="airflow_taskflow_example", selection=[extract, transform, load]
 )
 
 defs = Definitions(
-    assets=[extract, transform, load],
-    jobs=[airflow_taskflow_example]
+    assets=[extract, transform, load], jobs=[airflow_taskflow_example]
 )
 ```
 
@@ -187,12 +179,16 @@ Some benefits of containerizing your pipelines are as follows:
 
 Let’s walk through an example of how a containerized pipeline can be run from Airflow, and then let’s walk through how the same would be done in Dagster. Imagine you have a Dockerized pipeline deployed to your registry of choice with an image named `example-data-pipeline`. In Apache Airflow, you would be able to run the image of that image by using the `KubernetesPodOperator`.
 
-```python
+```python file=guides/migrations/migrating_airflow_to_dagster.py startafter=start_run_docker_image_with_airflow endbefore=end_run_docker_image_with_airflow dedent=4
 from airflow import DAG
-from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
+    KubernetesPodOperator,
+)
 from pendulum import datetime
 
-with DAG(dag_id="example_kubernetes_dag", schedule_interval=None, catchup=False) as dag:
+with DAG(
+    dag_id="example_kubernetes_dag", schedule_interval=None, catchup=False
+) as dag:
     KubernetesPodOperator(
         image="example-data-pipeline:latest",
         name="example-kubernetes-task",
@@ -203,13 +199,14 @@ with DAG(dag_id="example_kubernetes_dag", schedule_interval=None, catchup=False)
 
 Now, let's look at how the same image would be run on Kubernetes using Dagster Pipes and the `dagster_k8s` wrapper.
 
-```python
+```python file=guides/migrations/migrating_airflow_to_dagster.py startafter=start_run_docker_image_with_dagster_pipes endbefore=end_run_docker_image_with_dagster_pipes dedent=4
 from dagster import AssetExecutionContext, asset
 from dagster_k8s import PipesK8sClient
 
-
 @asset
-def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
+def k8s_pipes_asset(
+    context: AssetExecutionContext, k8s_pipes_client: PipesK8sClient
+):
     return k8s_pipes_client.run(
         context=context,
         image="example-data-pipeline:latest",
@@ -222,6 +219,8 @@ def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sCl
             ]
         },
     ).get_materialize_result()
+```
+
 The primary difference between Airflow and Dagster are how the k8s pod specifications are exposed. In Airflow, they are passed as parameters to the `KubernetesPodOperator`, whereas in Dagster they are passed as a `base_pod_spec` dictionary to the `k8s_pipes_client.run` method. Additionally, in Airflow, `get_logs` is required to capture `stdout`. In Dagster, however, they are automatically captured on the `stdout` tab of the step output.
 
 The primary difference between Airflow and Dagster are how the k8s pod specification are expose. In Airflow, they are passed as parameters the `KubernetesPodOperator`, whereas in Dagster they are passed as a `base_pod_spec` dictionary to the `k8s_pipes_client.run` method. Another difference is that in Airflow, `get_logs` is required to capture _stdout_, however, with Dagster they are automatically captured to on the _stdout_ tab of the step output.
@@ -233,4 +232,3 @@ In the above example, we demonstrated how to run images on Kubernetes using the 
 A common pattern when building containerized pipelines is to accept a large number of command-line arguments using libraries like `argparse`. However, with Dagster you can pass a dictionary of parameters on the Dagster context using the `extras` parameter. Then, in your pipeline code, you can access the context `PipesContext.get()` if you are using Python.
 
 For a step-by-step walkthrough of using Dagster Pipes, refer to the [Dagster Pipes tutorial](https://docs.dagster.io/concepts/dagster-pipes/subprocess).
-```

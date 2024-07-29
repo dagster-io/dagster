@@ -39,7 +39,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.execution.context.init import build_init_resource_context
 
-from dagster_dbt.asset_utils import (
+from ..asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_description_fn,
@@ -48,11 +48,11 @@ from dagster_dbt.asset_utils import (
     get_asset_deps,
     get_deps,
 )
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-
+from ..dagster_dbt_translator import DagsterDbtTranslator
 from ..errors import DagsterDbtCloudJobInvariantViolationError
-from ..utils import ASSET_RESOURCE_TYPES, result_to_events
+from ..utils import ASSET_RESOURCE_TYPES
 from .resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
+from .utils import result_to_events
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
@@ -509,6 +509,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
                     for output_name in context.op_execution_context.selected_output_names
+                    # outputs corresponding to asset checks from dbt tests won't be in this dict
+                    if output_name in fqns_by_output_name
                 ]
 
                 dbt_options.append(f"--select {' '.join(sorted(selected_models))}")

@@ -7,15 +7,16 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, Temporal
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionSnapshot,
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
+    AutomationConditionEvaluation,
     AutomationConditionNodeCursor,
+    AutomationConditionSnapshot,
     get_serializable_candidate_subset,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._record import copy
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
@@ -37,12 +38,12 @@ if TYPE_CHECKING:
     )
     from .operators import (
         AllDepsCondition,
-        AndAssetCondition,
+        AndAutomationCondition,
         AnyDepsCondition,
         AnyDownstreamConditionsCondition,
         NewlyTrueCondition,
-        NotAssetCondition,
-        OrAssetCondition,
+        NotAutomationCondition,
+        OrAutomationCondition,
         SinceCondition,
     )
 
@@ -59,14 +60,28 @@ class AutomationCondition(ABC):
     @property
     @abstractmethod
     def description(self) -> str:
+        """Human-readable description of when this condition is true."""
         raise NotImplementedError()
 
-    def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
+    @property
+    @abstractmethod
+    def label(self) -> Optional[str]:
+        """User-provided label subjectively describing the purpose of this condition in the broader evaluation tree."""
+        raise NotImplementedError()
+
+    @property
+    def name(self) -> Optional[str]:
+        """Formal name of this specific condition, generally aligning with its static constructor."""
+        return None
+
+    def get_snapshot(self, unique_id: str) -> AutomationConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
-        return AssetConditionSnapshot(
+        return AutomationConditionSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
+            label=self.label,
+            name=self.name,
         )
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
@@ -93,30 +108,41 @@ class AutomationCondition(ABC):
 
         return AutoMaterializePolicy.from_automation_condition(self)
 
+    def is_rule_condition(self):
+        from .legacy import RuleCondition
+
+        if isinstance(self, RuleCondition):
+            return True
+        return any(child.is_rule_condition() for child in self.children)
+
     @abstractmethod
     def evaluate(self, context: "AutomationContext") -> "AutomationResult":
         raise NotImplementedError()
 
-    def __and__(self, other: "AutomationCondition") -> "AndAssetCondition":
-        from .operators import AndAssetCondition
+    def with_label(self, label: Optional[str]) -> "AutomationCondition":
+        """Returns a copy of this AutomationCondition with a human-readable label."""
+        return copy(self, label=label)
 
-        # group AndAssetConditions together
-        if isinstance(self, AndAssetCondition):
-            return AndAssetCondition(operands=[*self.operands, other])
-        return AndAssetCondition(operands=[self, other])
+    def __and__(self, other: "AutomationCondition") -> "AndAutomationCondition":
+        from .operators import AndAutomationCondition
 
-    def __or__(self, other: "AutomationCondition") -> "OrAssetCondition":
-        from .operators import OrAssetCondition
+        # group AndAutomationConditions together
+        if isinstance(self, AndAutomationCondition):
+            return AndAutomationCondition(operands=[*self.operands, other])
+        return AndAutomationCondition(operands=[self, other])
 
-        # group OrAssetConditions together
-        if isinstance(self, OrAssetCondition):
-            return OrAssetCondition(operands=[*self.operands, other])
-        return OrAssetCondition(operands=[self, other])
+    def __or__(self, other: "AutomationCondition") -> "OrAutomationCondition":
+        from .operators import OrAutomationCondition
 
-    def __invert__(self) -> "NotAssetCondition":
-        from .operators import NotAssetCondition
+        # group OrAutomationConditions together
+        if isinstance(self, OrAutomationCondition):
+            return OrAutomationCondition(operands=[*self.operands, other])
+        return OrAutomationCondition(operands=[self, other])
 
-        return NotAssetCondition(operand=self)
+    def __invert__(self) -> "NotAutomationCondition":
+        from .operators import NotAutomationCondition
+
+        return NotAutomationCondition(operand=self)
 
     def since(self, reset_condition: "AutomationCondition") -> "SinceCondition":
         """Returns a AutomationCondition that is true if this condition has become true since the
@@ -267,32 +293,32 @@ class AutomationCondition(ABC):
         - None of its parent partitions are currently part of an in-progress run
         """
         with disable_dagster_warnings():
-            became_missing_or_any_deps_updated = (
-                AutomationCondition.missing().newly_true()
+            became_missing_or_any_parents_updated = (
+                AutomationCondition.missing().newly_true().with_label("became missing")
                 | AutomationCondition.any_deps_match(
                     AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
-                )
+                ).with_label("any parents updated")
             )
 
-            any_parent_missing = AutomationCondition.any_deps_match(
+            any_parents_missing = AutomationCondition.any_deps_match(
                 AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
-            )
-            any_parent_in_progress = AutomationCondition.any_deps_match(
+            ).with_label("any parents missing")
+            any_parents_in_progress = AutomationCondition.any_deps_match(
                 AutomationCondition.in_progress()
-            )
+            ).with_label("any parents in progress")
             return (
                 AutomationCondition.in_latest_time_window()
-                & became_missing_or_any_deps_updated.since(
+                & became_missing_or_any_parents_updated.since(
                     AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
                 )
-                & ~any_parent_missing
-                & ~any_parent_in_progress
+                & ~any_parents_missing
+                & ~any_parents_in_progress
                 & ~AutomationCondition.in_progress()
-            )
+            ).with_label("eager")
 
     @experimental
     @staticmethod
-    def cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
         """Returns a condition which will materialize asset partitions within the latest time window
         on a given cron schedule, after their parents have been updated. For example, if the
         cron_schedule is set to "0 0 * * *" (every day at midnight), then this rule will not become
@@ -307,16 +333,19 @@ class AutomationCondition(ABC):
         - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
         with disable_dagster_warnings():
-            cron_tick_passed = AutomationCondition.cron_tick_passed(cron_schedule, cron_timezone)
+            cron_label = f"'{cron_schedule}' ({cron_timezone})"
+            cron_tick_passed = AutomationCondition.cron_tick_passed(
+                cron_schedule, cron_timezone
+            ).with_label(f"tick of {cron_label} passed")
             all_deps_updated_since_cron = AutomationCondition.all_deps_match(
                 AutomationCondition.newly_updated().since(cron_tick_passed)
                 | AutomationCondition.will_be_requested()
-            )
+            ).with_label(f"all parents updated since {cron_label}")
             return (
                 AutomationCondition.in_latest_time_window()
                 & cron_tick_passed.since(AutomationCondition.newly_requested())
                 & all_deps_updated_since_cron
-            )
+            ).with_label(f"on cron {cron_label}")
 
     @experimental
     @staticmethod
@@ -343,7 +372,7 @@ class AutomationResult(NamedTuple):
     child_results: Sequence["AutomationResult"]
 
     node_cursor: Optional[AutomationConditionNodeCursor]
-    serializable_evaluation: AssetConditionEvaluation
+    serializable_evaluation: AutomationConditionEvaluation
 
     extra_state: Any
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
@@ -412,7 +441,7 @@ class AutomationResult(NamedTuple):
         child_results: Sequence["AutomationResult"],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "AutomationResult":
-        """Returns a new AssetConditionEvaluation from the given child results."""
+        """Returns a new AutomationResult from the given child results."""
         return AutomationResult._create(
             context=context,
             true_slice=true_slice,
@@ -428,7 +457,7 @@ class AutomationResult(NamedTuple):
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "AutomationResult":
-        """Returns a new AssetConditionEvaluation from the given parameters."""
+        """Returns a new AutomationResult from the given parameters."""
         return AutomationResult._create(
             context=context,
             true_slice=true_slice,
@@ -477,8 +506,8 @@ def _create_serializable_evaluation(
     start_timestamp: float,
     end_timestamp: float,
     child_results: Sequence[AutomationResult],
-) -> AssetConditionEvaluation:
-    return AssetConditionEvaluation(
+) -> AutomationConditionEvaluation:
+    return AutomationConditionEvaluation(
         condition_snapshot=context.condition.get_snapshot(context.condition_unique_id),
         true_subset=true_slice.convert_to_valid_asset_subset(),
         candidate_subset=get_serializable_candidate_subset(

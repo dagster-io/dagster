@@ -18,8 +18,8 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
     AssetSubsetWithMetadata,
+    AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -112,20 +112,21 @@ class AssetDaemonScenarioState(ScenarioState):
 
     run_requests: Sequence[RunRequest] = field(default_factory=list)
     serialized_cursor: str = field(default=serialize_value(AssetDaemonCursor.empty(0)))
-    evaluations: Sequence[AssetConditionEvaluation] = field(default_factory=list)
+    evaluations: Sequence[AutomationConditionEvaluation] = field(default_factory=list)
     tick_index: int = 1
 
     # set by scenario runner
     is_daemon: bool = False
     sensor_name: Optional[str] = None
     threadpool_executor: Optional[ThreadPoolExecutor] = None
+    request_backfills: bool = False
 
     def with_serialized_cursor(self, serialized_cursor: str) -> "AssetDaemonScenarioState":
         return dataclasses.replace(self, serialized_cursor=serialized_cursor)
 
     def _evaluate_tick_fast(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
         try:
             cursor = deserialize_value(self.serialized_cursor, AssetDaemonCursor)
         except DeserializationError:
@@ -152,10 +153,11 @@ class AssetDaemonScenarioState(ScenarioState):
             },
             respect_materialization_data_versions=False,
             logger=self.logger,
+            request_backfills=self.request_backfills,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)
-        check.is_list(new_evaluations, of_type=AssetConditionEvaluation)
+        check.is_list(new_evaluations, of_type=AutomationConditionEvaluation)
 
         # make sure these run requests are available on the instance
         for request in new_run_requests:
@@ -173,7 +175,7 @@ class AssetDaemonScenarioState(ScenarioState):
     ) -> Tuple[
         Sequence[RunRequest],
         AssetDaemonCursor,
-        Sequence[AssetConditionEvaluation],
+        Sequence[AutomationConditionEvaluation],
     ]:
         with self._create_workspace_context() as workspace_context:
             workspace = workspace_context.create_request_context()
@@ -237,6 +239,16 @@ class AssetDaemonScenarioState(ScenarioState):
                     )
                 )
             ]
+            backfill_requests = [
+                RunRequest.for_asset_graph_subset(
+                    backfill.asset_backfill_data.target_subset, tags=backfill.tags
+                )
+                for backfill in self.instance.get_backfills()
+                if backfill.tags.get("dagster/asset_evaluation_id") == str(new_cursor.evaluation_id)
+                and backfill.asset_backfill_data is not None
+            ]
+
+            new_run_requests.extend(backfill_requests)
             new_evaluations = [
                 e.get_evaluation_with_run_ids(
                     self.asset_graph.get(e.asset_key).partitions_def
@@ -246,6 +258,12 @@ class AssetDaemonScenarioState(ScenarioState):
                 ).get_auto_materialize_evaluations_for_evaluation_id(new_cursor.evaluation_id)
             ]
             return new_run_requests, new_cursor, new_evaluations
+
+    def evaluate_tick_daemon(self):
+        with freeze_time(self.current_time):
+            run_requests, cursor, _ = self._evaluate_tick_daemon()
+        new_state = self.with_serialized_cursor(serialize_value(cursor))
+        return new_state, run_requests
 
     def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":
         self.logger.critical("********************************")
@@ -354,7 +372,7 @@ class AssetDaemonScenarioState(ScenarioState):
         return self
 
     def _assert_evaluation_daemon(
-        self, key: AssetKey, actual_evaluation: AssetConditionEvaluation
+        self, key: AssetKey, actual_evaluation: AutomationConditionEvaluation
     ) -> None:
         """Additional assertions for daemon mode. Checks that the evaluation for the given asset
         contains the expected run ids.
@@ -417,8 +435,8 @@ class AssetDaemonScenarioState(ScenarioState):
             assert actual_evaluation.true_subset.size == num_requested
 
         def get_leaf_evaluations(
-            e: AssetConditionEvaluation,
-        ) -> Sequence[AssetConditionEvaluation]:
+            e: AutomationConditionEvaluation,
+        ) -> Sequence[AutomationConditionEvaluation]:
             if len(e.child_evaluations) == 0:
                 return [e]
             leaf_evals = []

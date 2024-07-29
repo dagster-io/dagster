@@ -1,8 +1,8 @@
 import {buildQueryMock} from '../../assets/AutoMaterializePolicyPage/__fixtures__/AutoMaterializePolicyPage.fixtures';
 import {buildPipelineTag, buildRun, buildRuns} from '../../graphql/types';
 import {DagsterTag} from '../RunTag';
-import {RUNS_ROOT_QUERY} from '../RunsRoot';
-import {RunsRootQuery, RunsRootQueryVariables} from '../types/RunsRoot.types';
+import {RunsRootQuery, RunsRootQueryVariables} from '../types/usePaginatedRunsTableRuns.types';
+import {RUNS_ROOT_QUERY} from '../usePaginatedRunsTableRuns';
 
 export const RunsRootMock = buildQueryMock<RunsRootQuery, RunsRootQueryVariables>({
   query: RUNS_ROOT_QUERY,

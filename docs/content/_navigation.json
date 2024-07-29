@@ -344,7 +344,7 @@
             ]
           },
           {
-            "title": "Dagster Pipes (Experimental)",
+            "title": "Dagster Pipes",
             "path": "/concepts/dagster-pipes",
             "children": [
               {
@@ -364,6 +364,10 @@
                     "path": "/concepts/dagster-pipes/subprocess/reference"
                   }
                 ]
+              },
+              {
+                "title": "Dagster Pipes + AWS Glue",
+                "path": "/concepts/dagster-pipes/aws-glue"
               },
               {
                 "title": "Dagster Pipes + AWS Lambda",
@@ -1158,7 +1162,6 @@
             "title": "Observe your Airflow pipelines with Dagster",
             "path": "/guides/migrations/observe-your-airflow-pipelines-with-dagster"
           }
-
         ]
       },
       {
@@ -1315,10 +1318,6 @@
                 "path": "/apidocs/external-assets-rest"
               }
             ]
-          },
-          {
-            "title": "Job versioning & memoization (Deprecated)",
-            "path": "/_apidocs/memoization"
           },
           {
             "title": "Repositories",

@@ -62,6 +62,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes.serdes import deserialize_values
 from dagster._seven import JSONDecodeError
 from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
 from dagster._utils import PrintFn
@@ -253,6 +254,12 @@ class SqlRunStorage(RunStorage):
 
         return query
 
+    def _add_filters_to_table(self, table: db.Table, filters: RunsFilter) -> db.Table:
+        if filters.tags:
+            table = self._apply_tags_table_filters(table, filters.tags)
+
+        return table
+
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
 
@@ -290,9 +297,6 @@ class SqlRunStorage(RunStorage):
                 RunsTable.c.create_timestamp < filters.created_before.replace(tzinfo=None)
             )
 
-        if filters.tags:
-            query = self._apply_tags_table_filters(query, filters.tags)
-
         return query
 
     def _runs_query(
@@ -315,7 +319,7 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        table = RunsTable
+        table = self._add_filters_to_table(RunsTable, filters)
         base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
             table
         )
@@ -323,43 +327,24 @@ class SqlRunStorage(RunStorage):
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
     def _apply_tags_table_filters(
-        self, query: SqlAlchemyQuery, tags: Mapping[str, Union[str, Sequence[str]]]
+        self, table: db.Table, tags: Mapping[str, Union[str, Sequence[str]]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
-        expected_count = len(tags)
-        if expected_count == 1:
-            key, value = next(iter(tags.items()))
-            # since run tags should be much larger than runs, select where exists
-            # should be more efficient than joining
-            subquery = db.exists().where(
-                (RunsTable.c.run_id == RunTagsTable.c.run_id)
-                & (RunTagsTable.c.key == key)
-                & (
-                    (RunTagsTable.c.value == value)
+        for i, (key, value) in enumerate(tags.items()):
+            run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+
+            table = table.join(
+                run_tags_alias,
+                db.and_(
+                    RunsTable.c.run_id == run_tags_alias.c.run_id,
+                    run_tags_alias.c.key == key,
+                    (run_tags_alias.c.value == value)
                     if isinstance(value, str)
-                    else RunTagsTable.c.value.in_(value)
-                )
+                    else run_tags_alias.c.value.in_(value),
+                ),
             )
-            query = query.where(subquery)
-        elif expected_count > 1:
-            # efficient query for filtering by multiple tags. first find all run_ids that match
-            # all tags, then select from runs table where run_id in that set
-            subquery = db_select([RunTagsTable.c.run_id])
-            expressions = []
-            for key, value in tags.items():
-                expression = RunTagsTable.c.key == key
-                if isinstance(value, str):
-                    expression &= RunTagsTable.c.value == value
-                else:
-                    expression &= RunTagsTable.c.value.in_(value)
-                expressions.append(expression)
-            subquery = subquery.where(db.or_(*expressions))
-            subquery = subquery.group_by(RunTagsTable.c.run_id)
-            subquery = subquery.having(
-                db.func.count(db.distinct(RunTagsTable.c.key)) == expected_count
-            )
-            query = query.where(RunsTable.c.run_id.in_(subquery))
-        return query
+
+        return table
 
     def get_runs(
         self,
@@ -866,7 +851,7 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return [deserialize_value(row["body"], PartitionBackfill) for row in rows]
+        return deserialize_values((row["body"] for row in rows), PartitionBackfill)
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")

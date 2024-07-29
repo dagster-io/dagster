@@ -1,1 +1,0 @@
-SELECT day, count(*) from {{ ref("cleaned_events") }} group by 1

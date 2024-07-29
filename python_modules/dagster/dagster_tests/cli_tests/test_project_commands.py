@@ -48,7 +48,7 @@ def test_project_scaffold_command_succeeds():
         # test target loadable
         origins = get_origins_from_toml("my_dagster_project/pyproject.toml")
         assert len(origins) == 1
-        assert origins[0].loadable_target_origin.module_name == "my_dagster_project"
+        assert origins[0].loadable_target_origin.module_name == "my_dagster_project.definitions"
 
 
 def test_scaffold_code_location_scaffold_command_fails_when_dir_path_exists():
@@ -73,7 +73,7 @@ def test_scaffold_code_location_command_succeeds():
         # test target loadable
         origins = get_origins_from_toml("my_dagster_code/pyproject.toml")
         assert len(origins) == 1
-        assert origins[0].loadable_target_origin.module_name == "my_dagster_code"
+        assert origins[0].loadable_target_origin.module_name == "my_dagster_code.definitions"
 
 
 def test_from_example_command_fails_when_example_not_available():

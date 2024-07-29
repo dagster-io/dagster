@@ -205,7 +205,14 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
       return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
       if (node.error) {
-        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
+        return (
+          <FailureContent
+            message={node.message}
+            error={node.error}
+            metadataEntries={node.metadataEntries}
+            eventType={eventType}
+          />
+        );
       }
       return (
         <DefaultContent

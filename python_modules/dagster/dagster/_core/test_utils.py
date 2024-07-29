@@ -266,8 +266,8 @@ def poll_for_finished_run(
                 raise Exception("Timed out")
 
 
-def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30):
-    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
+def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30, message=None):
+    poll_for_event(instance, run_id, event_type="STEP_START", message=message, timeout=timeout)
 
 
 def poll_for_event(

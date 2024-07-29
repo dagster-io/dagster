@@ -24,6 +24,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._core.pipes.utils import PipesEnvContextInjector
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster_aws.pipes import (
+    PipesGlueClient,
     PipesLambdaClient,
     PipesLambdaLogsMessageReader,
     PipesS3ContextInjector,
@@ -31,6 +32,7 @@ from dagster_aws.pipes import (
 )
 from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
 
+from .fake_glue import LocalGlueMockClient
 from .fake_lambda import LOG_TAIL_LIMIT, FakeLambdaClient, LambdaFunctions
 
 _PYTHON_EXECUTABLE = shutil.which("python") or "python"
@@ -47,8 +49,8 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
 
 
 _S3_TEST_BUCKET = "pipes-testing"
-_S3_SERVER_PORT = 5193
-_S3_SERVER_URL = f"http://localhost:{_S3_SERVER_PORT}"
+_MOTO_SERVER_PORT = 5193
+_MOTO_SERVER_URL = f"http://localhost:{_MOTO_SERVER_PORT}"
 
 
 @pytest.fixture
@@ -88,14 +90,19 @@ def external_script() -> Iterator[str]:
 
 
 @pytest.fixture
-def s3_client() -> Iterator[boto3.client]:
+def moto_server() -> Iterator[boto3.client]:
     # We need to use the moto server for cross-process communication
-    server = ThreadedMotoServer(port=5193)  # on localhost:5000 by default
+    server = ThreadedMotoServer(port=_MOTO_SERVER_PORT)  # on localhost:5000 by default
     server.start()
-    client = boto3.client("s3", region_name="us-east-1", endpoint_url=_S3_SERVER_URL)
-    client.create_bucket(Bucket=_S3_TEST_BUCKET)
-    yield client
+    yield server
     server.stop()
+
+
+@pytest.fixture
+def s3_client(moto_server) -> boto3.client:
+    client = boto3.client("s3", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
+    client.create_bucket(Bucket=_S3_TEST_BUCKET)
+    return client
 
 
 def test_s3_pipes_components(
@@ -267,3 +274,108 @@ def test_lambda_s3_pipes(s3_client):
     mat_evts = result.get_asset_materialization_events()
     assert len(mat_evts) == 1
     assert mat_evts[0].materialization.metadata["meta"].value == "data"
+
+
+GLUE_JOB_NAME = "test-job"
+
+
+@pytest.fixture
+def external_s3_glue_script(s3_client) -> Iterator[str]:
+    # This is called in an external process and so cannot access outer scope
+    def script_fn():
+        import time
+
+        import boto3
+        from dagster_pipes import (
+            PipesCliArgsParamsLoader,
+            PipesS3ContextLoader,
+            PipesS3MessageWriter,
+            open_dagster_pipes,
+        )
+
+        client = boto3.client("s3", region_name="us-east-1", endpoint_url="http://localhost:5193")
+        context_loader = PipesS3ContextLoader(client=client)
+        message_writer = PipesS3MessageWriter(client, interval=0.001)
+
+        with open_dagster_pipes(
+            context_loader=context_loader,
+            message_writer=message_writer,
+            params_loader=PipesCliArgsParamsLoader(),
+        ) as context:
+            context.log.info("hello world")
+            time.sleep(0.1)  # sleep to make sure that we encompass multiple intervals for S3 IO
+            context.report_asset_materialization(
+                metadata={"bar": {"raw_value": context.get_extra("bar"), "type": "md"}},
+                data_version="alpha",
+            )
+            context.report_asset_check(
+                "foo_check",
+                passed=True,
+                severity="WARN",
+                metadata={
+                    "meta_1": 1,
+                    "meta_2": {"raw_value": "foo", "type": "text"},
+                },
+            )
+
+    with temp_script(script_fn) as script_path:
+        s3_client.upload_file(script_path, _S3_TEST_BUCKET, "glue_script.py")
+        # yield path on s3
+        yield f"s3://{_S3_TEST_BUCKET}/glue_script.py"
+
+
+@pytest.fixture
+def glue_client(moto_server, external_s3_glue_script, s3_client) -> boto3.client:
+    client = boto3.client("glue", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
+    client.create_job(
+        Name=GLUE_JOB_NAME,
+        Description="Test job",
+        Command={
+            "Name": "glueetl",  # Spark job type
+            "ScriptLocation": external_s3_glue_script,
+            "PythonVersion": "3.10",
+        },
+        GlueVersion="4.0",
+        Role="arn:aws:iam::012345678901:role/service-role/AWSGlueServiceRole-test",
+    )
+    return client
+
+
+def test_glue_s3_pipes(capsys, s3_client, glue_client):
+    context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
+    message_reader = PipesS3MessageReader(bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001)
+
+    @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
+    def foo(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
+        results = pipes_glue_client.run(
+            context=context,
+            job_name=GLUE_JOB_NAME,
+            extras={"bar": "baz"},
+        ).get_results()
+        return results
+
+    pipes_glue_client = PipesGlueClient(
+        client=LocalGlueMockClient(glue_client=glue_client, s3_client=s3_client),
+        context_injector=context_injector,
+        message_reader=message_reader,
+    )
+
+    with instance_for_test() as instance:
+        materialize([foo], instance=instance, resources={"pipes_glue_client": pipes_glue_client})
+        mat = instance.get_latest_materialization_event(foo.key)
+        assert mat and mat.asset_materialization
+        assert isinstance(mat.asset_materialization.metadata["bar"], MarkdownMetadataValue)
+        assert mat.asset_materialization.metadata["bar"].value == "baz"
+        assert mat.asset_materialization.tags
+        assert mat.asset_materialization.tags[DATA_VERSION_TAG] == "alpha"
+        assert mat.asset_materialization.tags[DATA_VERSION_IS_USER_PROVIDED_TAG]
+
+        captured = capsys.readouterr()
+        assert re.search(r"dagster - INFO - [^\n]+ - hello world\n", captured.err, re.MULTILINE)
+
+        asset_check_executions = instance.event_log_storage.get_asset_check_execution_history(
+            check_key=AssetCheckKey(foo.key, name="foo_check"),
+            limit=1,
+        )
+        assert len(asset_check_executions) == 1
+        assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED

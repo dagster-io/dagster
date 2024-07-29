@@ -16,7 +16,7 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resource import DbtCliResource
 from pytest_mock import MockFixture
 from sqlglot import Dialect
 
@@ -101,7 +101,7 @@ def test_exception_fetch_column_schema_with_adapter(
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
 
     mock_adapter = mocker.patch(
-        "dagster_dbt.core.resources_v2.DbtCliInvocation.adapter",
+        "dagster_dbt.core.dbt_cli_invocation.DbtCliInvocation.adapter",
         return_value=mocker.MagicMock(),
         new_callable=mocker.PropertyMock,
     )
@@ -141,7 +141,11 @@ def test_exception_column_schema(
         "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
     )
     mocker.patch(
-        "dagster_dbt.core.resources_v2.default_metadata_from_dbt_resource_props",
+        "dagster_dbt.core.dbt_cli_event.default_metadata_from_dbt_resource_props",
+        side_effect=Exception("An error occurred"),
+    )
+    mocker.patch(
+        "dagster_dbt.core.dbt_event_iterator.default_metadata_from_dbt_resource_props",
         side_effect=Exception("An error occurred"),
     )
 
@@ -202,7 +206,7 @@ def test_exception_column_lineage(
         "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
     )
     mocker.patch(
-        "dagster_dbt.core.resources_v2._build_column_lineage_metadata",
+        "dagster_dbt.core.dbt_cli_event._build_column_lineage_metadata",
         side_effect=Exception("An error occurred"),
     )
 
@@ -325,6 +329,9 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
     AssetKey(["incremental_orders"]): TableColumnLineage(
         deps_by_column={
             "order_id": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_id")],
+            "order_date": [
+                TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_date")
+            ],
         }
     ),
     AssetKey(["customers"]): TableColumnLineage(
@@ -521,19 +528,28 @@ def test_column_lineage_real_warehouse(
     ],
 )
 @pytest.mark.parametrize(
-    "use_experimental_fetch_column_schema",
+    "use_async_fetch_column_schema",
     [True, False],
 )
 def test_column_lineage(
     sql_dialect: str,
     test_metadata_manifest: Dict[str, Any],
     asset_key_selection: Optional[AssetKey],
-    use_experimental_fetch_column_schema: bool,
+    use_async_fetch_column_schema: bool,
     monkeypatch: pytest.MonkeyPatch,
+    mocker: MockFixture,
+    capsys,
 ) -> None:
-    monkeypatch.setenv(
-        "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
+    # Patch get_relation_from_adapter so that we can track how often
+    # relations are queried from the adapter vs cached
+    from dagster_dbt.core.dbt_cli_invocation import _get_relation_from_adapter
+
+    get_relation_from_adapter = mocker.patch(
+        "dagster_dbt.core.dbt_cli_invocation._get_relation_from_adapter",
+        side_effect=_get_relation_from_adapter,
     )
+
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(not use_async_fetch_column_schema).lower())
     # Simulate the parsing of the SQL into a different dialect.
     assert Dialect.get_or_raise(sql_dialect)
 
@@ -546,7 +562,7 @@ def test_column_lineage(
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         cli_invocation = dbt.cli(["build"], context=context).stream()
-        if use_experimental_fetch_column_schema:
+        if use_async_fetch_column_schema:
             cli_invocation = cli_invocation.fetch_column_metadata()
         yield from cli_invocation
 
@@ -555,7 +571,10 @@ def test_column_lineage(
         resources={"dbt": dbt},
         selection=asset_key_selection and AssetSelection.assets(asset_key_selection),
     )
-    assert result.success
+
+    # Check that the warning is printed only when using log_column_level_metadata
+    if not use_async_fetch_column_schema:
+        assert "`log_column_level_metadata` macro is deprecated" in capsys.readouterr().err
 
     column_lineage_by_asset_key = {
         event.materialization.asset_key: TableMetadataSet.extract(
@@ -575,6 +594,17 @@ def test_column_lineage(
     assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
         str(column_lineage_by_asset_key) + "\n\n" + str(expected_column_lineage_by_asset_key)
     )
+
+    # Ensure we cache relation metadata fetches
+    if use_async_fetch_column_schema:
+        relation_keys_passed = [
+            call.kwargs["relation_key"] for call in get_relation_from_adapter.call_args_list
+        ]
+        # We may query the same relation multiple times if they initiate at around the same time.
+        # Still, the total number of unique relations queried should be a lot lower than the total
+        # number of instances where we get column metadata (around 33 instead of 60+)
+        REPEAT_QUERIES_PADDING = 10
+        assert len(relation_keys_passed) <= len(set(relation_keys_passed)) + REPEAT_QUERIES_PADDING
 
 
 @pytest.mark.parametrize(

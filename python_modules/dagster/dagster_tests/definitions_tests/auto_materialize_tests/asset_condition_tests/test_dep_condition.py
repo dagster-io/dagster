@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 import dagster._check as check
 import pytest
@@ -15,13 +15,17 @@ from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state impor
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset_depends_on_two, two_partitions_def
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 
 def get_hardcoded_condition():
     true_set = set()
 
     class HardcodedCondition(AutomationCondition):
+        @property
+        def label(self) -> Optional[str]:
+            return None
+
         @property
         def description(self) -> str:
             return "..."

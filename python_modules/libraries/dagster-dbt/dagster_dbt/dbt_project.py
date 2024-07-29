@@ -110,7 +110,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
     def _prepare_packages(self, project: "DbtProject") -> None:
-        from .core.resources_v2 import DbtCliResource
+        from .core.resource import DbtCliResource
 
         (
             DbtCliResource(project_dir=project)
@@ -119,7 +119,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
     def _prepare_manifest(self, project: "DbtProject") -> None:
-        from .core.resources_v2 import DbtCliResource
+        from .core.resource import DbtCliResource
 
         (
             DbtCliResource(project_dir=project)
@@ -140,7 +140,7 @@ class DbtProject(IHaveNew):
     * during development, pull the dependencies and reload the manifest at run time to pick up any changes.
     * when deployed, expect a manifest that was created at build time to reduce start-up time.
 
-    The cli ``dagster-dbt project prepare-for-deployment`` can be used as part of the deployment process to
+    The cli ``dagster-dbt project prepare-and-package`` can be used as part of the deployment process to
     handle the project preparation.
 
     This object can be passed directly to :py:class:`~dagster_dbt.DbtCliResource`.

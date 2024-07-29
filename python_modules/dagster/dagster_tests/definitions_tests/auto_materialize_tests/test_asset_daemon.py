@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.scheduler.instigation import (
@@ -33,13 +33,17 @@ from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     asset_daemon_cursor_from_instigator_serialized_cursor,
+    get_has_migrated_sensor_names,
     get_has_migrated_to_sensors,
     set_auto_materialize_paused,
 )
-from dagster._serdes.serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._time import get_current_datetime
 
-from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
+from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import (
+    ScenarioSpec,
+    get_code_location_origin,
+)
 
 from .base_scenario import run_request
 from .scenario_specs import one_asset, two_assets_in_sequence, two_partitions_def
@@ -184,7 +188,9 @@ auto_materialize_sensor_scenarios = [
     "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
 )
 def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         scenario.evaluate_daemon(instance)
 
 
@@ -198,7 +204,9 @@ daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
 )
 def test_asset_daemon_with_threadpool_without_sensor(scenario: AssetDaemonScenario) -> None:
     with get_daemon_instance(
-        extra_overrides={"auto_materialize": {"use_threads": True, "num_workers": 4}}
+        extra_overrides={
+            "auto_materialize": {"use_threads": True, "num_workers": 4, "use_sensors": False}
+        }
     ) as instance:
         with _get_threadpool_executor(instance) as threadpool_executor:
             scenario.evaluate_daemon(instance, threadpool_executor=threadpool_executor)
@@ -214,7 +222,6 @@ def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario, num_threads: in
     with get_daemon_instance(
         extra_overrides={
             "auto_materialize": {
-                "use_sensors": True,
                 "use_threads": num_threads > 0,
                 "num_workers": num_threads,
             }
@@ -223,7 +230,7 @@ def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario, num_threads: in
         with _get_threadpool_executor(instance) as threadpool_executor:
             scenario.evaluate_daemon(
                 instance,
-                sensor_name="default_auto_materialize_sensor",
+                sensor_name="default_automation_condition_sensor",
                 threadpool_executor=threadpool_executor,
             )
 
@@ -266,7 +273,9 @@ daemon_scenario = AssetDaemonScenario(
 
 
 def test_daemon_paused() -> None:
-    with get_daemon_instance(paused=True) as instance:
+    with get_daemon_instance(
+        paused=True, extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         ticks = _get_asset_daemon_ticks(instance)
         assert len(ticks) == 0
 
@@ -304,7 +313,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
     id="simple_daemon_scenario",
     initial_spec=three_assets.with_sensors(
         [
-            AutoMaterializeSensorDefinition(
+            AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_a",
                 asset_selection=AssetSelection.assets("A"),
                 default_status=DefaultSensorStatus.RUNNING,
@@ -312,7 +321,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
                     "foo_tag": "bar_val",
                 },
             ),
-            AutoMaterializeSensorDefinition(
+            AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_b",
                 asset_selection=AssetSelection.assets("B"),
                 default_status=DefaultSensorStatus.STOPPED,
@@ -354,14 +363,7 @@ def _assert_sensor_state(
 def test_auto_materialize_sensor_no_transition():
     # have not been using global AMP before - first tick does not create
     # any sensor states except for the one that is declared in code
-    with get_daemon_instance(
-        paused=False,
-        extra_overrides={
-            "auto_materialize": {
-                "use_sensors": True,
-            }
-        },
-    ) as instance:
+    with get_daemon_instance(paused=False) as instance:
         assert not get_has_migrated_to_sensors(instance)
 
         result = daemon_sensor_scenario.evaluate_daemon(instance)
@@ -412,14 +414,7 @@ def test_auto_materialize_sensor_no_transition():
 
 
 def test_auto_materialize_sensor_transition():
-    with get_daemon_instance(
-        paused=False,
-        extra_overrides={
-            "auto_materialize": {
-                "use_sensors": True,
-            }
-        },
-    ) as instance:
+    with get_daemon_instance(paused=False) as instance:
         # Have been using global AMP, so there is a cursor
         pre_sensor_evaluation_id = 12345
 
@@ -461,7 +456,7 @@ def test_auto_materialize_sensor_transition():
         )
         _assert_sensor_state(
             instance,
-            "default_auto_materialize_sensor",
+            "default_automation_condition_sensor",
             expected_num_ticks=1,
             expected_status=InstigatorStatus.RUNNING,
         )
@@ -477,13 +472,95 @@ def test_auto_materialize_sensor_transition():
             )
 
 
+# this scenario simulates the true default case in which we have an implicit default sensor
+single_daemon_sensor_scenario = AssetDaemonScenario(
+    id="simplest_daemon_scenario",
+    initial_spec=three_assets.with_sensors(
+        [
+            AutomationConditionSensorDefinition(
+                name="named_sensor",
+                asset_selection=AssetSelection.assets("C"),
+                default_status=DefaultSensorStatus.RUNNING,
+            ),
+        ]
+    ).with_all_eager(3),
+    # advance time so that we'll have another tick immediately
+    execution_fn=lambda state: state.evaluate_tick(),
+)
+
+
+def test_auto_materialize_sensor_name_transition() -> None:
+    # this instigator state was generated from a scenario which used an automation sensor with the
+    # old default name.
+    instigator_state_str = """
+[{"__class__": "InstigatorState", "job_specific_data": {"__class__": "SensorInstigatorData", "cursor": "0eJztmU1v1DAQhv9KlTNCjr/NrS03JC4cq8oa22MasUmWxFmoVv3vONkuLRUgBKvVGu1pN+Ox5/UzTqJX2VbW+hWMo7XVm4vqchwxvQVs++56GsZ+qF5dVLiB1QSp6TvbhJxV51iekmzvRhw2aAf8PGG+Tk2bf6BdW3dvYV7KfsL7PGObq7SwXjfdR9skbHfVbm4f8krrATdNP43W911olip+KT3OKdsX+qbUt4uU6332M50xok9NFvRdyKxW0boWrFb8tRaa6r143GCXdhvqptUqh7s+4L72vIOpa/K+dinbijgVfF1TwqgHwzxHMNGL/IcHUIo+bvP3Yt/nEk+CPeRwgIR2nDLK9JMlZogfdoN5wkumLzPf5ZEZKaS7GV51WS2I5/5hDqRhwvkav6YBbAaU8Gn3Owmj/dKkO9tigiwMli7lwXnmkURGWI34MEdYiERj1EAMwcB4cFKhCdQZ5VykoljiR+B3Qg1dGMwB7p32yCXhlGoTHRNKQwyqVl55L+pi+3myd5DSWgfppddSMkpUfgByF4UIQTiOQZ2JH5q4EZTmd42gnudHl5S1rCHo6I1hzOhozsQPTRxo8EoZY1BFyb1wXmughCtNgyb+fMYPT5wJ4ZCjERLzO5krIh0BzniESCQLZ+KHJh4N6nyiqZKUqsCIkjVSoaOLJkD0Z+KHJf6DLXk0NxiODGrAcVolu4TtHYxzcsUFi9o4CV5iBKKCFLSWYJwJgmHEKs88W6Z/6cZVCcf26n+yTH9E/Aj8TqihRVumsu+gEi1T2cRLtExlEy/RMhVOvEDLVDbxEi1TwcSPa5l+AeovLdPtc+3PPnbtid/cPnwDztf1/w==", "last_run_key": null, "last_sensor_start_timestamp": null, "last_tick_start_timestamp": null, "last_tick_timestamp": 1721153174.85828, "min_interval": 30, "sensor_type": {"__enum__": "SensorType.AUTO_MATERIALIZE"}}, "job_type": {"__enum__": "InstigatorType.SENSOR"}, "origin": {"__class__": "ExternalJobOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "InProcessRepositoryLocationOrigin", "container_context": {}, "container_image": null, "entry_point": ["dagster"], "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": "_asset_daemon_target_7536c52ad38a1551adc94d1c01f57384b1f17266", "executable_path": "/Users/owen/.virtualenvs/dagster/bin/python3", "module_name": "dagster_tests.definitions_tests.auto_materialize_tests.scenario_state", "package_name": null, "python_file": null, "working_directory": "/Users/owen/src/dagster/js_modules/dagster-ui"}, "location_name": "test_location"}, "repository_name": "__repository__"}, "job_name": "default_auto_materialize_sensor"}, "status": {"__enum__": "InstigatorStatus.RUNNING"}}, {"__class__": "InstigatorState", "job_specific_data": {"__class__": "SensorInstigatorData", "cursor": "0eJztl01r3DAQhv9K8LkUWd/qraS3Qi89liBG0qgxXdtbS942LPnvHXuzTbqUnJaQwJ5sj2Y07zySJWbfeB83UIr3zYer5mMpWD8B9uNwPU9lnJp3Vw3uYDND7cbBd4m8ONkopPoxFJx26Cf8OSN9166nB/RbH+48LFP5H3hHEXvK0sN22w3ffVexP2T7dnNPM20n3HXjXHwch9StWeKauiwu+xN9cx37Vcr10fuJzpwx1o4E/RVCMa3hbatEa+R7qyy3R/G4w6EeChrmzYbMw5jwmHupYB46quvgsm9YMCm2LWeCR3AiSgSXo6IXmcAY/lDm82K/UIpHwRHInKCiLzOhrP+ZYoH49TBIAadMTz0/08iCFOrtAq+5blbEy/ohGeo04/KNv+sEngBVfKz+IKH4X1299T1WIGGwrhINLpEvJDLDpuD9YhEpM4vZAnMMk5ApaIMu8eBMCJmrN0v8Bfi9ogVdGSwGGYONKDWTnFuXg1DGQk6mNdHEqNo3u56v9g8y1tqko45Wa8GZoQNQhqxUSipITOZC/NzEneKc7hrFo6SjS+tWt5Bsjs4J4Wx2F+LnJg48RWOcc2iyllGFaC1wJo3lybJ42ePnJy6UCijRKY10J0vDdGAghcyQmRbpQvzcxLNDSzuaG825SYIZ3SJXNofsEuR4IX5e4v+0JQ/NDaYXBjVhmTfVr2Z/C2VxbqQS2bqgIWrMwEzSircaXHBJCczY3N881f6kczsSp6brD0jEnt0=", "last_run_key": null, "last_sensor_start_timestamp": null, "last_tick_start_timestamp": null, "last_tick_timestamp": 1721153174.85828, "min_interval": 30, "sensor_type": {"__enum__": "SensorType.AUTO_MATERIALIZE"}}, "job_type": {"__enum__": "InstigatorType.SENSOR"}, "origin": {"__class__": "ExternalJobOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "InProcessRepositoryLocationOrigin", "container_context": {}, "container_image": null, "entry_point": ["dagster"], "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": "_asset_daemon_target_7536c52ad38a1551adc94d1c01f57384b1f17266", "executable_path": "/Users/owen/.virtualenvs/dagster/bin/python3", "module_name": "dagster_tests.definitions_tests.auto_materialize_tests.scenario_state", "package_name": null, "python_file": null, "working_directory": "/Users/owen/src/dagster/js_modules/dagster-ui"}, "location_name": "test_location"}, "repository_name": "__repository__"}, "job_name": "named_sensor"}, "status": {"__enum__": "InstigatorStatus.DECLARED_IN_CODE"}}]
+"""
+
+    # now pre-populate this instance with that modified instigator state
+    with get_daemon_instance(paused=False) as instance:
+        assert instance.schedule_storage is not None
+
+        # copy over the state from the old scenario
+        for state in deserialize_value(instigator_state_str, as_type=list):
+            # we update the code location origin from the insitigator state string to ensure that it
+            # lines up with the current-day origin
+            updated_state = state._replace(
+                origin=state.origin._replace(
+                    repository_origin=state.origin.repository_origin._replace(
+                        code_location_origin=get_code_location_origin(
+                            single_daemon_sensor_scenario.initial_spec
+                        )
+                    )
+                )
+            )
+            instance.schedule_storage.add_instigator_state(updated_state)
+        assert not get_has_migrated_sensor_names(instance)
+
+        # we evaluate a single tick of the renamed sensor
+        single_daemon_sensor_scenario.evaluate_daemon(instance)
+
+        assert get_has_migrated_sensor_names(instance)
+
+        sensor_states = instance.schedule_storage.all_instigator_state(
+            instigator_type=InstigatorType.SENSOR
+        )
+
+        # there are still 2 sensors, but we have some old state for "default_auto_materialize_sensor"
+        assert len(sensor_states) == 3
+
+        _assert_sensor_state(
+            instance,
+            "default_automation_condition_sensor",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.RUNNING,
+        )
+        _assert_sensor_state(
+            instance,
+            "named_sensor",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.DECLARED_IN_CODE,
+        )
+
+        for sensor_state in sensor_states:
+            # skip over the old state for the old name
+            if sensor_state.instigator_name == "default_auto_materialize_sensor":
+                continue
+            # ensure that we're properly accounting for the old cursor information
+            assert (
+                asset_daemon_cursor_from_instigator_serialized_cursor(
+                    cast(SensorInstigatorData, sensor_state.instigator_data).cursor,
+                    None,
+                ).evaluation_id
+                > 2
+            )
+
+
 @pytest.mark.parametrize("num_threads", [0, 4])
 def test_auto_materialize_sensor_ticks(num_threads):
     with get_daemon_instance(
         paused=True,
         extra_overrides={
             "auto_materialize": {
-                "use_sensors": True,
                 "use_threads": num_threads > 0,
                 "num_workers": num_threads,
             }
@@ -529,7 +606,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             )
             _assert_sensor_state(
                 instance,
-                "default_auto_materialize_sensor",
+                "default_automation_condition_sensor",
                 expected_num_ticks=0,
                 expected_status=InstigatorStatus.STOPPED,
             )
@@ -575,7 +652,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=2)
 
             # Starting a default sensor causes it to make ticks too
-            result = result.start_sensor("default_auto_materialize_sensor")
+            result = result.start_sensor("default_automation_condition_sensor")
             result = result.with_current_time_advanced(seconds=15)
             result = result.evaluate_tick()
 
@@ -591,7 +668,9 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 expected_status=InstigatorStatus.DECLARED_IN_CODE,
             )
             _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=3)
-            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=1)
+            _assert_sensor_state(
+                instance, "default_automation_condition_sensor", expected_num_ticks=1
+            )
 
             result = result.with_current_time_advanced(seconds=15)
             result = result.evaluate_tick()
@@ -603,7 +682,9 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 expected_status=InstigatorStatus.DECLARED_IN_CODE,
             )
             _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=4)
-            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=1)
+            _assert_sensor_state(
+                instance, "default_automation_condition_sensor", expected_num_ticks=1
+            )
 
             result = result.with_current_time_advanced(seconds=15)
             result = result.evaluate_tick()
@@ -615,7 +696,9 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 expected_status=InstigatorStatus.DECLARED_IN_CODE,
             )
             _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=5)
-            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=2)
+            _assert_sensor_state(
+                instance, "default_automation_condition_sensor", expected_num_ticks=2
+            )
 
             # Stop each sensor, ticks stop too
             result = result.stop_sensor("auto_materialize_sensor_b")
@@ -634,7 +717,9 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 expected_num_ticks=5,
                 expected_status=InstigatorStatus.STOPPED,
             )
-            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=3)
+            _assert_sensor_state(
+                instance, "default_automation_condition_sensor", expected_num_ticks=3
+            )
 
             result = result.stop_sensor("auto_materialize_sensor_a")
             result = result.with_current_time_advanced(seconds=30)
@@ -652,9 +737,11 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 expected_num_ticks=5,
                 expected_status=InstigatorStatus.STOPPED,
             )
-            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=4)
+            _assert_sensor_state(
+                instance, "default_automation_condition_sensor", expected_num_ticks=4
+            )
 
-            result = result.stop_sensor("default_auto_materialize_sensor")
+            result = result.stop_sensor("default_automation_condition_sensor")
             result = result.with_current_time_advanced(seconds=30)
             result = result.evaluate_tick()
 
@@ -672,7 +759,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             )
             _assert_sensor_state(
                 instance,
-                "default_auto_materialize_sensor",
+                "default_automation_condition_sensor",
                 expected_num_ticks=4,
                 expected_status=InstigatorStatus.STOPPED,
             )
@@ -705,7 +792,9 @@ def test_auto_materialize_sensor_ticks(num_threads):
 
 
 def test_default_purge() -> None:
-    with get_daemon_instance() as instance:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
         scenario_time = daemon_scenario.initial_spec.current_time
         _create_tick(
             instance, TickStatus.SKIPPED, (scenario_time - datetime.timedelta(days=8)).timestamp()
@@ -735,7 +824,12 @@ def test_default_purge() -> None:
 
 def test_custom_purge() -> None:
     with get_daemon_instance(
-        extra_overrides={"retention": {"auto_materialize": {"purge_after_days": {"skipped": 2}}}},
+        extra_overrides={
+            "retention": {
+                "auto_materialize": {"purge_after_days": {"skipped": 2}},
+            },
+            "auto_materialize": {"use_sensors": False},
+        },
     ) as instance:
         freeze_datetime = get_current_datetime()
 

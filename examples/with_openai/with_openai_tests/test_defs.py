@@ -1,4 +1,4 @@
-from with_openai import defs
+from with_openai.definitions import defs
 
 
 def test_defs():

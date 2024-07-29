@@ -304,8 +304,11 @@ export type AssetConditionEvaluationRecord = {
   endTimestamp: Maybe<Scalars['Float']['output']>;
   evaluation: AssetConditionEvaluation;
   evaluationId: Scalars['Int']['output'];
+  evaluationNodes: Array<AutomationConditionEvaluationNode>;
   id: Scalars['ID']['output'];
+  isLegacy: Scalars['Boolean']['output'];
   numRequested: Scalars['Int']['output'];
+  rootUniqueId: Scalars['String']['output'];
   runIds: Array<Scalars['String']['output']>;
   startTimestamp: Maybe<Scalars['Float']['output']>;
   timestamp: Scalars['Float']['output'];
@@ -562,6 +565,12 @@ export type AssetOrError = Asset | AssetNotFoundError;
 
 export type AssetOwner = TeamAssetOwner | UserAssetOwner;
 
+export type AssetPartitionRange = {
+  __typename: 'AssetPartitionRange';
+  assetKey: AssetKey;
+  partitionRange: Maybe<PartitionRange>;
+};
+
 export type AssetPartitionStatuses =
   | DefaultPartitionStatuses
   | MultiPartitionStatuses
@@ -608,11 +617,12 @@ export type AssetWipeMutationResult =
   | AssetNotFoundError
   | AssetWipeSuccess
   | PythonError
-  | UnauthorizedError;
+  | UnauthorizedError
+  | UnsupportedOperationError;
 
 export type AssetWipeSuccess = {
   __typename: 'AssetWipeSuccess';
-  assetKeys: Array<AssetKey>;
+  assetPartitionRanges: Array<AssetPartitionRange>;
 };
 
 export type AssetsOrError = AssetConnection | PythonError;
@@ -685,6 +695,20 @@ export type AutoMaterializeRuleWithRuleEvaluations = {
   __typename: 'AutoMaterializeRuleWithRuleEvaluations';
   rule: AutoMaterializeRule;
   ruleEvaluations: Array<AutoMaterializeRuleEvaluation>;
+};
+
+export type AutomationConditionEvaluationNode = {
+  __typename: 'AutomationConditionEvaluationNode';
+  candidateSubset: Maybe<AssetSubset>;
+  childUniqueIds: Array<Scalars['String']['output']>;
+  endTimestamp: Maybe<Scalars['Float']['output']>;
+  expandedLabel: Array<Scalars['String']['output']>;
+  isPartitioned: Scalars['Boolean']['output'];
+  numTrue: Scalars['Int']['output'];
+  startTimestamp: Maybe<Scalars['Float']['output']>;
+  trueSubset: AssetSubset;
+  uniqueId: Scalars['String']['output'];
+  userLabel: Maybe<Scalars['String']['output']>;
 };
 
 export type BackfillNotFoundError = Error & {
@@ -2780,7 +2804,7 @@ export type MutationTerminateRunsArgs = {
 };
 
 export type MutationWipeAssetsArgs = {
-  assetKeys: Array<AssetKeyInput>;
+  assetPartitionRanges: Array<PartitionsByAssetSelector>;
 };
 
 export type NestedResourceEntry = {
@@ -3059,6 +3083,7 @@ export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
+  cancelableRuns: Array<Run>;
   description: Maybe<Scalars['String']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
   error: Maybe<PythonError>;
@@ -3085,6 +3110,10 @@ export type PartitionBackfill = {
   title: Maybe<Scalars['String']['output']>;
   unfinishedRuns: Array<Run>;
   user: Maybe<Scalars['String']['output']>;
+};
+
+export type PartitionBackfillCancelableRunsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type PartitionBackfillLogEventsArgs = {
@@ -3144,6 +3173,12 @@ export type PartitionMapping = {
   __typename: 'PartitionMapping';
   className: Scalars['String']['output'];
   description: Scalars['String']['output'];
+};
+
+export type PartitionRange = {
+  __typename: 'PartitionRange';
+  end: Scalars['String']['output'];
+  start: Scalars['String']['output'];
 };
 
 export type PartitionRangeSelector = {
@@ -3822,7 +3857,7 @@ export type QueryGraphOrErrorArgs = {
 
 export type QueryInstigationStateOrErrorArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
-  instigationSelector?: InputMaybe<InstigationSelector>;
+  instigationSelector: InstigationSelector;
 };
 
 export type QueryInstigationStatesOrErrorArgs = {
@@ -4749,6 +4784,7 @@ export type ScalarUnionConfigType = ConfigType & {
 
 export type Schedule = {
   __typename: 'Schedule';
+  assetSelection: Maybe<AssetSelection>;
   canReset: Scalars['Boolean']['output'];
   cronSchedule: Scalars['String']['output'];
   defaultStatus: InstigationStatus;
@@ -5482,6 +5518,11 @@ export type UnpartitionedAssetStatus = {
   materialized: Scalars['Boolean']['output'];
 };
 
+export type UnsupportedOperationError = Error & {
+  __typename: 'UnsupportedOperationError';
+  message: Scalars['String']['output'];
+};
+
 export type UrlCodeReference = {
   __typename: 'UrlCodeReference';
   label: Maybe<Scalars['String']['output']>;
@@ -6071,12 +6112,19 @@ export const buildAssetConditionEvaluationRecord = (
         : buildAssetConditionEvaluation({}, relationshipsToOmit),
     evaluationId:
       overrides && overrides.hasOwnProperty('evaluationId') ? overrides.evaluationId! : 5501,
+    evaluationNodes:
+      overrides && overrides.hasOwnProperty('evaluationNodes') ? overrides.evaluationNodes! : [],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : '1c158e55-c1c1-43c2-9f14-8e369549e154',
+    isLegacy: overrides && overrides.hasOwnProperty('isLegacy') ? overrides.isLegacy! : true,
     numRequested:
       overrides && overrides.hasOwnProperty('numRequested') ? overrides.numRequested! : 2364,
+    rootUniqueId:
+      overrides && overrides.hasOwnProperty('rootUniqueId')
+        ? overrides.rootUniqueId!
+        : 'voluptatibus',
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 6.66,
@@ -6550,6 +6598,29 @@ export const buildAssetNotFoundError = (
   };
 };
 
+export const buildAssetPartitionRange = (
+  overrides?: Partial<AssetPartitionRange>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetPartitionRange'} & AssetPartitionRange => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetPartitionRange');
+  return {
+    __typename: 'AssetPartitionRange',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    partitionRange:
+      overrides && overrides.hasOwnProperty('partitionRange')
+        ? overrides.partitionRange!
+        : relationshipsToOmit.has('PartitionRange')
+        ? ({} as PartitionRange)
+        : buildPartitionRange({}, relationshipsToOmit),
+  };
+};
+
 export const buildAssetPartitions = (
   overrides?: Partial<AssetPartitions>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -6680,7 +6751,10 @@ export const buildAssetWipeSuccess = (
   relationshipsToOmit.add('AssetWipeSuccess');
   return {
     __typename: 'AssetWipeSuccess',
-    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
+    assetPartitionRanges:
+      overrides && overrides.hasOwnProperty('assetPartitionRanges')
+        ? overrides.assetPartitionRanges!
+        : [],
   };
 };
 
@@ -6827,6 +6901,43 @@ export const buildAutoMaterializeRuleWithRuleEvaluations = (
         : buildAutoMaterializeRule({}, relationshipsToOmit),
     ruleEvaluations:
       overrides && overrides.hasOwnProperty('ruleEvaluations') ? overrides.ruleEvaluations! : [],
+  };
+};
+
+export const buildAutomationConditionEvaluationNode = (
+  overrides?: Partial<AutomationConditionEvaluationNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AutomationConditionEvaluationNode'} & AutomationConditionEvaluationNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AutomationConditionEvaluationNode');
+  return {
+    __typename: 'AutomationConditionEvaluationNode',
+    candidateSubset:
+      overrides && overrides.hasOwnProperty('candidateSubset')
+        ? overrides.candidateSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    childUniqueIds:
+      overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.53,
+    expandedLabel:
+      overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
+    isPartitioned:
+      overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
+    numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
+    startTimestamp:
+      overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
+    trueSubset:
+      overrides && overrides.hasOwnProperty('trueSubset')
+        ? overrides.trueSubset!
+        : relationshipsToOmit.has('AssetSubset')
+        ? ({} as AssetSubset)
+        : buildAssetSubset({}, relationshipsToOmit),
+    uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
+    userLabel:
+      overrides && overrides.hasOwnProperty('userLabel') ? overrides.userLabel! : 'dolorem',
   };
 };
 
@@ -10625,6 +10736,8 @@ export const buildPartitionBackfill = (
         : buildAssetBackfillData({}, relationshipsToOmit),
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    cancelableRuns:
+      overrides && overrides.hasOwnProperty('cancelableRuns') ? overrides.cancelableRuns! : [],
     description:
       overrides && overrides.hasOwnProperty('description')
         ? overrides.description!
@@ -10779,6 +10892,19 @@ export const buildPartitionMapping = (
       overrides && overrides.hasOwnProperty('description')
         ? overrides.description!
         : 'voluptatibus',
+  };
+};
+
+export const buildPartitionRange = (
+  overrides?: Partial<PartitionRange>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionRange'} & PartitionRange => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionRange');
+  return {
+    __typename: 'PartitionRange',
+    end: overrides && overrides.hasOwnProperty('end') ? overrides.end! : 'non',
+    start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : 'dolorem',
   };
 };
 
@@ -13473,6 +13599,12 @@ export const buildSchedule = (
   relationshipsToOmit.add('Schedule');
   return {
     __typename: 'Schedule',
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection')
+        ? overrides.assetSelection!
+        : relationshipsToOmit.has('AssetSelection')
+        ? ({} as AssetSelection)
+        : buildAssetSelection({}, relationshipsToOmit),
     canReset: overrides && overrides.hasOwnProperty('canReset') ? overrides.canReset! : false,
     cronSchedule:
       overrides && overrides.hasOwnProperty('cronSchedule') ? overrides.cronSchedule! : 'possimus',
@@ -14837,6 +14969,18 @@ export const buildUnpartitionedAssetStatus = (
     inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : false,
     materialized:
       overrides && overrides.hasOwnProperty('materialized') ? overrides.materialized! : false,
+  };
+};
+
+export const buildUnsupportedOperationError = (
+  overrides?: Partial<UnsupportedOperationError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UnsupportedOperationError'} & UnsupportedOperationError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UnsupportedOperationError');
+  return {
+    __typename: 'UnsupportedOperationError',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'aut',
   };
 };
 

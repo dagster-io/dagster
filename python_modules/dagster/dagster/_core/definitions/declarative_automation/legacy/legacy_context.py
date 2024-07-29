@@ -251,7 +251,7 @@ class LegacyRuleEvaluationContext:
         that rule is part of the broader condition.
         """
         from ...auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
-        from ..operators import NotAssetCondition
+        from ..operators import NotAutomationCondition
         from .rule_condition import RuleCondition
 
         # if you have a discard condition, it'll be part of a structure of the form
@@ -263,7 +263,7 @@ class LegacyRuleEvaluationContext:
         # get Not(DiscardCond)
         not_discard_condition = self.condition.children[2]
         unique_id = not_discard_condition.get_unique_id(parent_unique_id=unique_id, index=2)
-        if not isinstance(not_discard_condition, NotAssetCondition):
+        if not isinstance(not_discard_condition, NotAutomationCondition):
             return None
 
         # get DiscardCond

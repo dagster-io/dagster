@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import dagster._check as check
 import graphene
@@ -507,6 +507,16 @@ class GrapheneDuplicateDynamicPartitionError(graphene.ObjectType):
         )
 
 
+class GrapheneUnsupportedOperationError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "UnsupportedOperationError"
+
+    def __init__(self, message: Optional[str] = None):
+        super().__init__()
+        self.message = check.str_param(message, "message") or "Unsupported operation."
+
+
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -537,5 +547,6 @@ types = [
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,
+    GrapheneUnsupportedOperationError,
     GrapheneDuplicateDynamicPartitionError,
 ]

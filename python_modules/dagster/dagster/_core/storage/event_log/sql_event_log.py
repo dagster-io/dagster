@@ -69,6 +69,7 @@ from dagster._core.storage.sqlalchemy_compat import (
 )
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_values
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import (
@@ -665,7 +666,7 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(raw_event_query).fetchall()
 
         try:
-            records = [deserialize_value(json_str, EventLogEntry) for (json_str,) in results]
+            records = deserialize_values((json_str for (json_str,) in results), EventLogEntry)
             return build_run_step_stats_from_events(run_id, records)
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
@@ -1782,6 +1783,12 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetKeyTable.c.asset_key == asset_key.to_string(),
                 )
             )
+
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
+        raise NotImplementedError(
+            "Partitioned asset wipe is not supported yet for this event log storage."
+        )
 
     def get_materialized_partitions(
         self,

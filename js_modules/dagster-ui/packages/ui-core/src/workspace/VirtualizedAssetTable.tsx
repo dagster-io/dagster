@@ -6,7 +6,7 @@ import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetKeyInput, DefinitionTag} from '../graphql/types';
-import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
+import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
 type Row =

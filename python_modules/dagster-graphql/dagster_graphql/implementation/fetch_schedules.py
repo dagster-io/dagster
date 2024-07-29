@@ -142,7 +142,9 @@ def get_schedules_or_error(
         filtered = external_schedules
 
     results = [
-        GrapheneSchedule(schedule, schedule_states_by_name.get(schedule.name), batch_loader)
+        GrapheneSchedule(
+            schedule, repository, schedule_states_by_name.get(schedule.name), batch_loader
+        )
         for schedule in filtered
     ]
 
@@ -169,7 +171,7 @@ def get_schedules_for_pipeline(
             external_schedule.get_external_origin_id(),
             external_schedule.selector_id,
         )
-        results.append(GrapheneSchedule(external_schedule, schedule_state))
+        results.append(GrapheneSchedule(external_schedule, repository, schedule_state))
 
     return results
 
@@ -194,7 +196,7 @@ def get_schedule_or_error(
     schedule_state = graphene_info.context.instance.get_instigator_state(
         external_schedule.get_external_origin_id(), external_schedule.selector_id
     )
-    return GrapheneSchedule(external_schedule, schedule_state)
+    return GrapheneSchedule(external_schedule, repository, schedule_state)
 
 
 def get_schedule_next_tick(

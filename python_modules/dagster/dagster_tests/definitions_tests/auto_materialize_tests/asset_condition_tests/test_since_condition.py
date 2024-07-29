@@ -3,7 +3,7 @@ from dagster._core.definitions.declarative_automation.operators import SinceCond
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 from .test_dep_condition import get_hardcoded_condition
 
 

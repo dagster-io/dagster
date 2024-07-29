@@ -6,7 +6,7 @@ import {useLaunchWithTelemetry} from './useLaunchWithTelemetry';
 import {GenericError} from '../app/PythonErrorInfo';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {UserDisplay} from '../runs/UserDisplay';
-import {SetFilterValue} from '../ui/Filters/useStaticSetFilter';
+import {SetFilterValue} from '../ui/BaseFilters/useStaticSetFilter';
 
 type LaunchpadHooksContextValue = {
   LaunchRootExecutionButton?: typeof LaunchRootExecutionButton;

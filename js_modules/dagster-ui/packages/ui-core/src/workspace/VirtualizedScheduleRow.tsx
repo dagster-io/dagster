@@ -24,6 +24,7 @@ import {
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
@@ -31,10 +32,15 @@ import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationS
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {CronTag} from '../schedules/CronTag';
+import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
 import {SCHEDULE_SWITCH_FRAGMENT, ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {humanCronString} from '../schedules/humanCronString';
+import {
+  ScheduleAssetSelectionQuery,
+  ScheduleAssetSelectionQueryVariables,
+} from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
@@ -67,7 +73,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   const repo = useRepository(repoAddress);
 
-  const [querySchedule, queryResult] = useLazyQuery<
+  const [querySchedule, scheduleQueryResult] = useLazyQuery<
     SingleScheduleQuery,
     SingleScheduleQueryVariables
   >(SINGLE_SCHEDULE_QUERY, {
@@ -80,12 +86,35 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     },
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(queryResult, 'SingleScheduleQuery');
 
-  useDelayedRowQuery(querySchedule);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useBlockTraceOnQueryResult(scheduleQueryResult, 'SingleScheduleQuery');
 
-  const {data} = queryResult;
+  const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
+    ScheduleAssetSelectionQuery,
+    ScheduleAssetSelectionQueryVariables
+  >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
+    variables: {
+      scheduleSelector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        scheduleName: name,
+      },
+    },
+  });
+
+  useBlockTraceOnQueryResult(scheduleAssetSelectionQueryResult, 'ScheduleAssetSelectionQuery');
+
+  useDelayedRowQuery(
+    React.useCallback(() => {
+      querySchedule();
+      queryScheduleAssetSelection();
+    }, [querySchedule, queryScheduleAssetSelection]),
+  );
+
+  useQueryRefreshAtInterval(scheduleQueryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(scheduleAssetSelectionQueryResult, FIFTEEN_SECONDS);
+
+  const {data} = scheduleQueryResult;
 
   const scheduleData = React.useMemo(() => {
     if (data?.scheduleOrError.__typename !== 'Schedule') {
@@ -96,10 +125,6 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
   }, [data]);
 
   const isJob = !!(scheduleData && isThisThingAJob(repo, scheduleData.pipelineName));
-
-  const cronString = scheduleData
-    ? humanCronString(scheduleData.cronSchedule, scheduleData.executionTimezone || 'UTC')
-    : '';
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (onToggleChecked && e.target instanceof HTMLInputElement) {
@@ -144,7 +169,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                 <MiddleTruncate text={name} />
               </Link>
             </span>
-            {scheduleData ? (
+            {scheduleData && !isHiddenAssetGroupJob(scheduleData.pipelineName) ? (
               <Caption>
                 <PipelineReference
                   showIcon
@@ -160,22 +185,10 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
         <RowCell>
           {scheduleData ? (
             <Box flex={{direction: 'column', gap: 4}}>
-              <ScheduleStringContainer style={{maxWidth: '100%'}}>
-                <Tooltip position="top-left" content={scheduleData.cronSchedule} display="block">
-                  <div
-                    style={{
-                      color: Colors.textDefault(),
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '100%',
-                      textOverflow: 'ellipsis',
-                    }}
-                    title={cronString}
-                  >
-                    {cronString}
-                  </div>
-                </Tooltip>
-              </ScheduleStringContainer>
+              <CronTag
+                cronSchedule={scheduleData.cronSchedule}
+                executionTimezone={scheduleData.executionTimezone}
+              />
               {scheduleData.scheduleState.nextTick &&
               scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
                 <Caption>
@@ -198,7 +211,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               ) : null}
             </Box>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={scheduleQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -219,7 +232,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               <TickStatusTag tick={tick} />
             </div>
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={scheduleQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -232,7 +245,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               showSummary={false}
             />
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={scheduleQueryResult} />
           )}
         </RowCell>
         <RowCell>
@@ -302,19 +315,7 @@ const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
   height: 100%;
 `;
 
-const ScheduleStringContainer = styled.div`
-  max-width: 100%;
-
-  .bp4-popover2-target {
-    max-width: 100%;
-
-    :focus {
-      outline: none;
-    }
-  }
-`;
-
-const SINGLE_SCHEDULE_QUERY = gql`
+export const SINGLE_SCHEDULE_QUERY = gql`
   query SingleScheduleQuery($selector: ScheduleSelector!) {
     scheduleOrError(scheduleSelector: $selector) {
       ... on Schedule {
@@ -325,6 +326,8 @@ const SINGLE_SCHEDULE_QUERY = gql`
         scheduleState {
           id
           runningCount
+          hasStartPermission
+          hasStopPermission
           ticks(limit: 1) {
             id
             ...TickTagFragment

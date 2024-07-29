@@ -36,13 +36,11 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPo
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
+from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
-from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.resource_requirement import (
     ExternalAssetIOManagerRequirement,
@@ -58,13 +56,7 @@ from dagster._core.definitions.utils import (
     normalize_group_name,
     validate_asset_owner,
 )
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
-from dagster._core.utils import toposort_flatten
-from dagster._record import record
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -1185,8 +1177,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
-        auto_materialize_policy: Optional[
-            Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
+        automation_condition: Optional[
+            Union[AutomationCondition, Mapping[AssetKey, AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
     ) -> "AssetsDefinition":
@@ -1211,14 +1203,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 if old_value and old_value != default_value and attr_name in replace_dict:
                     conflicts_by_attr_name[attr_name].add(key)
 
-            if isinstance(auto_materialize_policy, dict):
-                automation_condition = {
-                    k: v.to_automation_condition() for k, v in auto_materialize_policy.items()
-                }
-            elif isinstance(auto_materialize_policy, AutoMaterializePolicy):
-                automation_condition = auto_materialize_policy.to_automation_condition()
-            else:
-                automation_condition = None
             update_replace_dict_and_conflicts(
                 new_value=automation_condition, attr_name="automation_condition"
             )
@@ -1319,36 +1303,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             **{**self.get_attributes_dict(), "specs": mapped_specs}
         )
 
-    def _subset_graph_backed_asset(
-        self,
-        selected_asset_keys: AbstractSet[AssetKey],
-        selected_asset_check_keys: AbstractSet[AssetCheckKey],
-    ) -> SubselectedGraphDefinition:
-        from dagster._core.definitions.graph_definition import GraphDefinition
-
-        if not isinstance(self.node_def, GraphDefinition):
-            raise DagsterInvalidInvocationError(
-                "Method _subset_graph_backed_asset cannot subset an asset that is not a graph"
-            )
-
-        dep_op_handles_by_asset_or_check_key = cast(
-            # because self.node_def is a graph, these NodeHandles that reference ops inside it will
-            # not be None
-            Mapping[AssetKeyOrCheckKey, AbstractSet[NodeHandle]],
-            self.dep_op_handles_by_asset_or_check_key,
-        )
-        op_selection: List[str] = []
-        for asset_key in selected_asset_keys:
-            dep_node_handles = dep_op_handles_by_asset_or_check_key[asset_key]
-            for dep_op_handle in dep_node_handles:
-                op_selection.append(".".join(dep_op_handle.path))
-        for asset_check_key in selected_asset_check_keys:
-            dep_op_handles = dep_op_handles_by_asset_or_check_key[asset_check_key]
-            for dep_op_handle in dep_op_handles:
-                op_selection.append(".".join(dep_op_handle.path))
-
-        return get_graph_subset(self.node_def, op_selection)
-
     def subset_for(
         self,
         selected_asset_keys: AbstractSet[AssetKey],
@@ -1361,51 +1315,18 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_keys (AbstractSet[AssetKey]): The total set of asset keys
             selected_asset_check_keys (AbstractSet[AssetCheckKey]): The selected asset checks
         """
-        from dagster._core.definitions.graph_definition import GraphDefinition
-
-        check.invariant(
-            self.can_subset,
-            f"Attempted to subset AssetsDefinition for {self.node_def.name}, but can_subset=False.",
+        subsetted_computation = check.not_none(self._computation).subset_for(
+            selected_asset_keys, selected_asset_check_keys
         )
-
-        # Set of assets within selected_asset_keys which are outputted by this AssetDefinition
-        asset_subselection = selected_asset_keys & self.keys
-        if selected_asset_check_keys is None:
-            # filter to checks that target selected asset keys
-            asset_check_subselection = {
-                key for key in self.check_keys if key.asset_key in asset_subselection
-            }
-        else:
-            asset_check_subselection = selected_asset_check_keys & self.check_keys
-
-        # Early escape if all assets and checks in AssetsDefinition are selected
-        if asset_subselection == self.keys and asset_check_subselection == self.check_keys:
-            return self
-        elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
-            subsetted_node = self._subset_graph_backed_asset(
-                asset_subselection, asset_check_subselection
-            )
-
-            replaced_attributes = dict(
-                node_def=subsetted_node,
-                selected_asset_keys=selected_asset_keys & self.keys,
-                selected_asset_check_keys=asset_check_subselection,
-                is_subset=True,
-            )
-
-            return self.__class__.dagster_internal_init(
-                **merge_dicts(self.get_attributes_dict(), replaced_attributes)
-            )
-        else:
-            # multi_asset subsetting
-            replaced_attributes = {
-                "selected_asset_keys": asset_subselection,
-                "selected_asset_check_keys": asset_check_subselection,
+        return self.__class__.dagster_internal_init(
+            **{
+                **self.get_attributes_dict(),
+                "node_def": subsetted_computation.node_def,
+                "selected_asset_keys": subsetted_computation.selected_asset_keys,
+                "selected_asset_check_keys": subsetted_computation.selected_asset_check_keys,
                 "is_subset": True,
             }
-            return self.__class__.dagster_internal_init(
-                **merge_dicts(self.get_attributes_dict(), replaced_attributes)
-            )
+        )
 
     @property
     def is_subset(self) -> bool:
@@ -1534,66 +1455,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
         with disable_dagster_warnings():
             return self.__class__(**attributes_dict)
-
-    @cached_property
-    def dep_op_handles_by_asset_or_check_key(
-        self,
-    ) -> Mapping[AssetKeyOrCheckKey, AbstractSet[Optional[NodeHandle]]]:
-        result = defaultdict(set)
-        for op_output_handle, keys in self.asset_or_check_keys_by_dep_op_output_handle.items():
-            for key in keys:
-                result[key].add(op_output_handle.node_handle)
-
-        return result
-
-    @cached_property
-    def asset_or_check_keys_by_dep_op_output_handle(
-        self,
-    ) -> Mapping[NodeOutputHandle, AbstractSet[AssetKeyOrCheckKey]]:
-        """Returns a mapping between op outputs and the assets and asset checks that, when selected,
-        those op outputs need to be produced for.
-
-        For non-graph-backed assets, this is essentially the same as node_keys_by_output_name.
-
-        For graph-backed multi-assets, depending on the asset selection, we often only need to
-        execute a subset of the ops and for those ops to only produce a subset of their outputs,
-        in order to materialize/observe the asset.
-
-        Op output X will be selected when asset (or asset check) A is selected iff there's at least
-        one path in the graph from X to the op output corresponding to A, and no outputs in that
-        path directly correspond to other assets.
-        """
-        from .graph_definition import GraphDefinition
-
-        computation = check.not_none(self._computation)
-        asset_or_check_keys_by_op_output_handle = (
-            computation.asset_or_check_keys_by_op_output_handle
-        )
-        if not isinstance(computation.full_node_def, GraphDefinition):
-            return {
-                key: {op_output_handle}
-                for key, op_output_handle in asset_or_check_keys_by_op_output_handle.items()
-            }
-
-        op_output_graph = OpOutputHandleGraph.from_graph(computation.full_node_def)
-        reverse_toposorted_op_outputs_handles = [
-            *reversed(toposort_flatten(op_output_graph.upstream)),
-            *(op_output_graph.op_output_handles - op_output_graph.upstream.keys()),
-        ]
-
-        result: Dict[NodeOutputHandle, Set[AssetKeyOrCheckKey]] = defaultdict(set)
-
-        for op_output_handle in reverse_toposorted_op_outputs_handles:
-            asset_key_or_check_key = asset_or_check_keys_by_op_output_handle.get(op_output_handle)
-
-            if asset_key_or_check_key:
-                result[op_output_handle].add(asset_key_or_check_key)
-            else:
-                child_op_output_handles = op_output_graph.downstream.get(op_output_handle, set())
-                for child_op_output_handle in child_op_output_handles:
-                    result[op_output_handle].update(result[child_op_output_handle])
-
-        return result
 
     def get_attributes_dict(self) -> Dict[str, Any]:
         return dict(
@@ -1957,49 +1818,3 @@ def unique_id_from_asset_and_check_keys(asset_or_check_keys: Iterable["AssetKeyO
     """
     sorted_key_strs = sorted(str(key) for key in asset_or_check_keys)
     return non_secure_md5_hash_str(json.dumps(sorted_key_strs).encode("utf-8"))[:8]
-
-
-@record
-class OpOutputHandleGraph:
-    """A graph where each node is a NodeOutputHandle corresponding to an op. There's an edge from
-    op_output_1 to op_output_2 if op_output_2 is part of an op that has an input that's connected to
-    op_output_1.
-    """
-
-    op_output_handles: AbstractSet[NodeOutputHandle]
-    upstream: Mapping[NodeOutputHandle, AbstractSet[NodeOutputHandle]]
-    downstream: Mapping[NodeOutputHandle, AbstractSet[NodeOutputHandle]]
-
-    @staticmethod
-    def from_graph(graph_def: "GraphDefinition") -> "OpOutputHandleGraph":
-        op_output_handles = graph_def.get_op_output_handles(None)
-        input_output_pairs = graph_def.get_op_input_output_handle_pairs(None)
-
-        op_output_handles_by_op_handle: Dict[NodeHandle, Set[NodeOutputHandle]] = defaultdict(set)
-        for op_output_handle in op_output_handles:
-            op_output_handles_by_op_handle[op_output_handle.node_handle].add(op_output_handle)
-
-        downstream_op_output_handles_by_op_output_handle: Dict[
-            NodeOutputHandle, Set[NodeOutputHandle]
-        ] = defaultdict(set)
-        upstream_op_output_handles_by_op_output_handle: Dict[
-            NodeOutputHandle, Set[NodeOutputHandle]
-        ] = defaultdict(set)
-
-        for op_output_handle, op_input_handle in input_output_pairs:
-            downstream_op_output_handles = op_output_handles_by_op_handle[
-                op_input_handle.node_handle
-            ]
-            for downstream_op_output_handle in downstream_op_output_handles:
-                upstream_op_output_handles_by_op_output_handle[downstream_op_output_handle].add(
-                    op_output_handle
-                )
-                downstream_op_output_handles_by_op_output_handle[op_output_handle].add(
-                    downstream_op_output_handle
-                )
-
-        return OpOutputHandleGraph(
-            op_output_handles=op_output_handles,
-            downstream=downstream_op_output_handles_by_op_output_handle,
-            upstream=upstream_op_output_handles_by_op_output_handle,
-        )

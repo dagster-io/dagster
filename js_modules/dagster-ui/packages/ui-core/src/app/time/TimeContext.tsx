@@ -7,13 +7,13 @@ export const TimezoneStorageKey = 'TimezonePreference';
 export const HourCycleKey = 'HourCyclePreference';
 
 type TimeContextValue = {
-  timezone: [string, React.Dispatch<React.SetStateAction<string | undefined>>];
-  hourCycle: [HourCycle, React.Dispatch<React.SetStateAction<HourCycle | undefined>>];
+  timezone: ReturnType<typeof useStateWithStorage<string>>;
+  hourCycle: ReturnType<typeof useStateWithStorage<HourCycle>>;
 };
 
 export const TimeContext = React.createContext<TimeContextValue>({
-  timezone: ['UTC', () => 'UTC'],
-  hourCycle: ['Automatic', () => 'Automatic'],
+  timezone: ['UTC', () => 'UTC', () => {}],
+  hourCycle: ['Automatic', () => 'Automatic', () => {}],
 });
 
 const validateTimezone = (saved: string | undefined) =>

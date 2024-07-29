@@ -78,6 +78,7 @@
 -e python_modules/libraries/dagster-postgres/
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
+-e python_modules/libraries/dagster-sdf/
 -e python_modules/libraries/dagster-shell/
 -e python_modules/libraries/dagster-slack/
 -e python_modules/libraries/dagster-snowflake/
@@ -126,3 +127,5 @@ pendulum<3
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
+-e examples/experimental/dagster-airlift # (includes airflow dependencies)
+-e examples/experimental/dagster-airlift/examples/peering-with-dbt

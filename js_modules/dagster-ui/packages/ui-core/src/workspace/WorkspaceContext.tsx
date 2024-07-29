@@ -184,11 +184,13 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         bypassCache: true,
       });
       const entry = locationData.data?.workspaceLocationEntryOrError;
-      setLocationEntriesData((locationsData) =>
-        Object.assign({}, locationsData, {
-          [name]: entry,
-        }),
-      );
+      if (entry) {
+        setLocationEntriesData((locationsData) =>
+          Object.assign({}, locationsData, {
+            [name]: entry,
+          }),
+        );
+      }
       return locationData;
     },
     [client, getData, localCacheIdPrefix],
@@ -236,11 +238,11 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       Array.from(
         new Set([
           ...Object.values(prevLocationStatuses.current).filter(
-            (loc) => !locationStatuses[loc.name],
+            (loc) => loc && !locationStatuses[loc.name],
           ),
           ...Object.values(locationEntriesData).filter(
             (loc): loc is WorkspaceLocationNodeFragment =>
-              loc?.__typename === 'WorkspaceLocationEntry' && !locationStatuses[loc.name],
+              loc && loc?.__typename === 'WorkspaceLocationEntry' && !locationStatuses[loc.name],
           ),
         ]),
       ),
@@ -265,7 +267,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     () =>
       Object.values(locationEntriesData).filter(
         (entry): entry is WorkspaceLocationNodeFragment =>
-          entry.__typename === 'WorkspaceLocationEntry',
+          !!entry && entry.__typename === 'WorkspaceLocationEntry',
       ),
     [locationEntriesData],
   );
@@ -363,24 +365,12 @@ const useVisibleRepos = (
 } => {
   const {basePath} = React.useContext(AppContext);
 
-  const [oldHiddenKeys, setOldHiddenKeys] = useStateWithStorage<string[]>(
-    HIDDEN_REPO_KEYS,
-    validateHiddenKeys,
-  );
   const [hiddenKeys, setHiddenKeys] = useStateWithStorage<string[]>(
     basePath + ':' + HIDDEN_REPO_KEYS,
     validateHiddenKeys,
   );
 
   const hiddenKeysJSON = JSON.stringify([...hiddenKeys.sort()]);
-
-  // TODO: Remove this logic eventually...
-  const migratedOldHiddenKeys = React.useRef(false);
-  if (oldHiddenKeys.length && !migratedOldHiddenKeys.current) {
-    setHiddenKeys(oldHiddenKeys);
-    setOldHiddenKeys(undefined);
-    migratedOldHiddenKeys.current = true;
-  }
 
   const toggleVisible = React.useCallback(
     (repoAddresses: RepoAddress[]) => {

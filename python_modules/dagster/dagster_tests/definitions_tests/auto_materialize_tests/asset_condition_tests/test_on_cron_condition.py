@@ -3,13 +3,13 @@ from dagster import AutomationCondition
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
 from ..scenario_specs import hourly_partitions_def, two_assets_in_sequence
-from .asset_condition_scenario import AutomationConditionScenarioState
+from .automation_condition_scenario import AutomationConditionScenarioState
 
 
 def test_on_cron_unpartitioned() -> None:
     state = AutomationConditionScenarioState(
         two_assets_in_sequence,
-        automation_condition=AutomationCondition.cron(cron_schedule="0 * * * *"),
+        automation_condition=AutomationCondition.on_cron(cron_schedule="0 * * * *"),
         ensure_empty_result=False,
     ).with_current_time("2020-02-02T00:55:00")
 
@@ -54,7 +54,7 @@ def test_on_cron_hourly_partitioned() -> None:
     state = (
         AutomationConditionScenarioState(
             two_assets_in_sequence,
-            automation_condition=AutomationCondition.cron(cron_schedule="0 * * * *"),
+            automation_condition=AutomationCondition.on_cron(cron_schedule="0 * * * *"),
             ensure_empty_result=False,
         )
         .with_asset_properties(partitions_def=hourly_partitions_def)

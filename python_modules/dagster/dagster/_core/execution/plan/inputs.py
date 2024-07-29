@@ -1,27 +1,14 @@
 import hashlib
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Iterator, List, Optional, Sequence, Set, Union, cast
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster._core.definitions.version_strategy import ResourceVersionContext
 from dagster._core.errors import (
     DagsterExecutionLoadInputError,
-    DagsterInvariantViolationError,
     DagsterTypeLoadingError,
     user_code_error_boundary,
 )
@@ -95,18 +82,10 @@ class StepInputSource(ABC):
         self, step_context: "StepExecutionContext", input_def: InputDefinition
     ) -> Iterator[object]: ...
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> AbstractSet[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> AbstractSet[str]:
         return set()
-
-    @abstractmethod
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        """See resolve_step_versions in resolve_versions.py for explanation of step_versions."""
-        raise NotImplementedError()
 
 
 @whitelist_for_serdes(
@@ -116,8 +95,9 @@ class StepInputSource(ABC):
 class FromLoadableAsset(StepInputSource):
     """Load input value from an asset."""
 
-    node_handle: NodeHandle
-    input_name: str
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle = NodeHandle("", None)
+    input_name: str = ""
 
     def load_input_object(
         self,
@@ -130,7 +110,7 @@ class FromLoadableAsset(StepInputSource):
         asset_layer = step_context.job_def.asset_layer
 
         input_asset_key = asset_layer.asset_key_for_input(
-            self.node_handle, input_name=self.input_name
+            step_context.node_handle, input_name=input_def.name
         )
         assert input_asset_key is not None
 
@@ -140,8 +120,8 @@ class FromLoadableAsset(StepInputSource):
             else asset_layer.get(input_asset_key).io_manager_key
         )
 
-        op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
-        config_data = op_config.inputs.get(self.input_name) if op_config else None
+        op_config = step_context.resolved_run_config.ops.get(str(step_context.node_handle))
+        config_data = op_config.inputs.get(input_def.name) if op_config else None
 
         loader = getattr(step_context.resources, input_manager_key)
         resources = build_resources_for_manager(input_manager_key, step_context)
@@ -179,56 +159,17 @@ class FromLoadableAsset(StepInputSource):
             metadata=metadata,
         )
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        from ..resolve_versions import check_valid_version, resolve_config_version
-
-        op = job_def.get_node(self.node_handle)
-        input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)
-        io_manager_def = job_def.resource_defs[input_manager_key]
-
-        op_config = check.not_none(resolved_run_config.ops.get(op.name))
-        input_config = op_config.inputs.get(self.input_name)
-        resource_entry = check.not_none(resolved_run_config.resources.get(input_manager_key))
-        resource_config = resource_entry.config
-
-        version_context = ResourceVersionContext(
-            resource_def=io_manager_def,
-            resource_config=resource_config,
-        )
-
-        if job_def.version_strategy is not None:
-            io_manager_def_version = job_def.version_strategy.get_resource_version(version_context)
-        else:
-            io_manager_def_version = io_manager_def.version
-
-        if io_manager_def_version is None:
-            raise DagsterInvariantViolationError(
-                f"While using memoization, version for io manager '{io_manager_def}' was "
-                "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the io_manager decorator."
-            )
-
-        check_valid_version(io_manager_def_version)
-        return join_and_hash(
-            resolve_config_version(input_config),
-            resolve_config_version(resource_config),
-            io_manager_def_version,
-        )
-
-    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
-        input_asset_key = job_def.asset_layer.asset_key_for_input(self.node_handle, self.input_name)
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
+        input_asset_key = job_def.asset_layer.asset_key_for_input(op_handle, op_input_name)
         if input_asset_key is None:
             check.failed(
-                f"Must have an asset key associated with input {self.input_name} to load it"
+                f"Must have an asset key associated with input {op_input_name} to load it"
                 " using FromSourceAsset",
             )
 
-        input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
+        input_def = job_def.get_node(op_handle).input_def_named(op_input_name)
         if input_def.input_manager_key is not None:
             input_manager_key = input_def.input_manager_key
         else:
@@ -302,54 +243,10 @@ class FromInputManager(StepInputSource):
             metadata=metadata,
         )
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        from ..resolve_versions import check_valid_version, resolve_config_version
-
-        node = job_def.get_node(self.node_handle)
-        input_manager_key: str = check.not_none(
-            node.input_def_named(self.input_name).input_manager_key
-        )
-        input_manager_def = job_def.resource_defs[input_manager_key]
-
-        op_config = resolved_run_config.ops[node.name]
-        input_config = op_config.inputs.get(self.input_name)
-        resource_config = check.not_none(
-            resolved_run_config.resources.get(input_manager_key)
-        ).config
-
-        version_context = ResourceVersionContext(
-            resource_def=input_manager_def,
-            resource_config=resource_config,
-        )
-
-        if job_def.version_strategy is not None:
-            input_manager_def_version = job_def.version_strategy.get_resource_version(
-                version_context
-            )
-        else:
-            input_manager_def_version = input_manager_def.version
-
-        if input_manager_def_version is None:
-            raise DagsterInvariantViolationError(
-                f"While using memoization, version for input manager '{input_manager_key}' was "
-                "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the input_manager decorator."
-            )
-
-        check_valid_version(input_manager_def_version)
-        return join_and_hash(
-            resolve_config_version(input_config),
-            resolve_config_version(resource_config),
-            input_manager_def_version,
-        )
-
-    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
-        input_def = job_def.get_node(self.node_handle).input_def_named(self.input_name)
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
+        input_def = job_def.get_node(op_handle).input_def_named(op_input_name)
 
         input_manager_key: str = check.not_none(input_def.input_manager_key)
 
@@ -477,23 +374,9 @@ class FromStepOutput(StepInputSource, IHaveNew):
             metadata=metadata,
         )
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        if (
-            self.step_output_handle.step_key not in step_versions
-            or not step_versions[self.step_output_handle.step_key]
-        ):
-            return None
-        else:
-            return join_and_hash(
-                step_versions[self.step_output_handle.step_key], self.step_output_handle.output_name
-            )
-
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
 
@@ -545,22 +428,11 @@ class FromConfig(StepInputSource):
                 step_context.get_type_loader_context(), config_data
             )
 
-    def required_resource_keys(self, job_def: JobDefinition) -> AbstractSet[str]:
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> AbstractSet[str]:
         dagster_type = self.get_associated_input_def(job_def).dagster_type
         return dagster_type.loader.required_resource_keys() if dagster_type.loader else set()
-
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        config_data = self.get_associated_config(resolved_run_config)
-        input_def = self.get_associated_input_def(job_def)
-        dagster_type = input_def.dagster_type
-        loader = check.not_none(dagster_type.loader)
-
-        return loader.compute_loaded_input_version(config_data)
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
@@ -578,16 +450,10 @@ class FromDirectInputValue(
         job_def = step_context.job_def
         yield job_def.get_direct_input_value(self.input_name)
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
-
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        return str(self.input_name)
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
@@ -610,14 +476,6 @@ class FromDefaultValue(StepInputSource):
     ) -> Iterator[object]:
         yield self._load_value(step_context.job_def)
 
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        return join_and_hash(repr(self._load_value(job_def)))
-
 
 class MultiStepInputSource(StepInputSource, ABC):
     sources: Sequence[StepInputSource]
@@ -638,24 +496,15 @@ class MultiStepInputSource(StepInputSource, ABC):
 
         return handles
 
-    def required_resource_keys(self, job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         resource_keys: Set[str] = set()
         for source in self.sources:
-            resource_keys = resource_keys.union(source.required_resource_keys(job_def))
+            resource_keys = resource_keys.union(
+                source.required_resource_keys(job_def, op_handle, op_input_name)
+            )
         return resource_keys
-
-    def compute_version(
-        self,
-        step_versions: Mapping[str, Optional[str]],
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-    ) -> Optional[str]:
-        return join_and_hash(
-            *[
-                inner_source.compute_version(step_versions, job_def, resolved_run_config)
-                for inner_source in self.sources
-            ]
-        )
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
@@ -829,7 +678,9 @@ class FromPendingDynamicStepOutput(IHaveNew):
         # None mapping_key on StepOutputHandle acts as placeholder
         return self.step_output_handle
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
 
@@ -878,7 +729,9 @@ class FromUnresolvedStepOutput(IHaveNew):
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
         return self.unresolved_step_output_handle.get_step_output_handle_with_placeholder()
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
 
@@ -916,7 +769,9 @@ class FromDynamicCollect(IHaveNew):
     def get_step_output_handle_dep_with_placeholder(self) -> StepOutputHandle:
         return self.source.get_step_output_handle_dep_with_placeholder()
 
-    def required_resource_keys(self, _job_def: JobDefinition) -> Set[str]:
+    def required_resource_keys(
+        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+    ) -> Set[str]:
         return set()
 
     def resolve(self, mapping_keys: Optional[Sequence[str]]):

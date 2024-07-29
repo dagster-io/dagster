@@ -96,9 +96,23 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
 
 
 WIPE_ASSETS = """
-    mutation AssetKeyWipe($assetKeys: [AssetKeyInput!]!) {
-        wipeAssets(assetKeys: $assetKeys) {
+    mutation AssetKeyWipe($assetPartitionRanges: [PartitionsByAssetSelector!]!) {
+        wipeAssets(assetPartitionRanges: $assetPartitionRanges) {
             __typename
+            ... on UnsupportedOperationError {
+              message
+            }
+            ... on AssetWipeSuccess {
+                assetPartitionRanges {
+                    assetKey {
+                        path
+                    }
+                    partitionRange {
+                        start
+                        end
+                    }
+                }
+            }
         }
     }
 """
@@ -890,24 +904,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         snapshot.assert_match(result.data)
 
-    def test_asset_wipe(self, graphql_context: WorkspaceRequestContext):
-        _create_run(graphql_context, "single_asset_job")
-        _create_run(graphql_context, "multi_asset_job")
-
-        asset_keys = graphql_context.instance.all_asset_keys()
-        assert AssetKey("a") in asset_keys
-
-        result = execute_dagster_graphql(
-            graphql_context, WIPE_ASSETS, variables={"assetKeys": [{"path": ["a"]}]}
-        )
-
-        assert result.data
-        assert result.data["wipeAssets"]
-        assert result.data["wipeAssets"]["__typename"] == "AssetWipeSuccess"
-
-        asset_keys = graphql_context.instance.all_asset_keys()
-        assert AssetKey("a") not in asset_keys
-
     @pytest.mark.parametrize(
         "event_type,asset_key,partitions,description",
         [
@@ -1063,6 +1059,23 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert second_timestamp == int(materializations[0]["timestamp"])
+
+    def test_asset_node_in_pipeline_that_does_not_exist(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        selector = infer_job_selector(graphql_context, "two_assets_job")
+        selector["repositoryLocationName"] = "does_not_exist"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODES_FROM_KEYS,
+            variables={
+                "pipelineSelector": selector,
+                "assetKeys": [{"path": ["asset_one"]}],
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) == 0
 
     def test_asset_node_in_pipeline(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "two_assets_job")
@@ -2591,6 +2604,78 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             dependencies[0]["partitionMapping"]["description"]
             == "Maps a downstream partition to any upstream partition with an overlapping time window."
         )
+
+
+# This is factored out of TestAssetAwareEventLog because there is a separate implementation for plus
+# graphql tests.
+class TestAssetWipe(ExecutingGraphQLContextTestMatrix):
+    def test_asset_wipe(self, graphql_context: WorkspaceRequestContext):
+        # run to create materialization
+        _create_partitioned_run(graphql_context, "integers_asset_job", "0")
+
+        asset_keys = graphql_context.instance.all_asset_keys()
+        assert AssetKey("integers_asset") in asset_keys
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_WITH_PARTITION,
+            variables={"assetKey": {"path": ["integers_asset"]}},
+        )
+
+        mat = result.data["assetOrError"]["assetMaterializations"][0]
+        assert mat["partition"] == "0"
+
+        # wipe
+        result = execute_dagster_graphql(
+            graphql_context,
+            WIPE_ASSETS,
+            variables={"assetPartitionRanges": [{"assetKey": {"path": ["integers_asset"]}}]},
+        )
+
+        assert result.data
+        assert result.data["wipeAssets"]
+        assert result.data["wipeAssets"]["__typename"] == "AssetWipeSuccess"
+        assert result.data["wipeAssets"]["assetPartitionRanges"][0]["assetKey"]["path"] == [
+            "integers_asset"
+        ]
+        assert result.data["wipeAssets"]["assetPartitionRanges"][0]["partitionRange"] is None
+
+        asset_keys = graphql_context.instance.all_asset_keys()
+        assert AssetKey("integers_asset") not in asset_keys
+
+        # run again to create another materialization
+        _create_partitioned_run(graphql_context, "integers_asset_job", "0")
+
+        asset_keys = graphql_context.instance.all_asset_keys()
+        assert AssetKey("integers_asset") in asset_keys
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_WITH_PARTITION,
+            variables={"assetKey": {"path": ["integers_asset"]}},
+        )
+
+        mat = result.data["assetOrError"]["assetMaterializations"][0]
+        assert mat["partition"] == "0"
+
+        # wipe with range
+        result = execute_dagster_graphql(
+            graphql_context,
+            WIPE_ASSETS,
+            variables={
+                "assetPartitionRanges": [
+                    {
+                        "assetKey": {"path": ["integers_asset"]},
+                        "partitions": {"range": {"start": "0", "end": "0"}},
+                    }
+                ]
+            },
+        )
+
+        assert result.data
+        assert result.data["wipeAssets"]
+        assert result.data["wipeAssets"]["__typename"] == "UnsupportedOperationError"
+        assert "Partitioned asset wipe is not supported yet" in result.data["wipeAssets"]["message"]
 
 
 class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):

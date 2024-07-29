@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import pytest
-from dagster import AssetKey, Definitions, external_assets_from_specs
+from dagster import AssetKey, Definitions
 from dagster_looker.asset_specs import build_looker_asset_specs
 from dagster_looker.dagster_looker_translator import DagsterLookerTranslator, LookMLStructureType
 
@@ -11,18 +11,15 @@ from .looker_projects import test_exception_derived_table_path, test_retail_demo
 
 def test_build_looker_asset_specs_as_external_assets() -> None:
     looker_specs = build_looker_asset_specs(project_dir=test_retail_demo_path)
-    my_looker_assets = external_assets_from_specs(looker_specs)
 
-    assert Definitions(assets=[*my_looker_assets])
+    Definitions.validate_loadable(Definitions(assets=looker_specs))
 
 
 def test_asset_deps() -> None:
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(project_dir=test_retail_demo_path)
-    )
+    my_looker_assets = build_looker_asset_specs(project_dir=test_retail_demo_path)
     asset_deps = {}
-    for external_asset_def in my_looker_assets:
-        asset_deps.update(external_asset_def.asset_deps)
+    for spec in my_looker_assets:
+        asset_deps[spec.key] = {dep.asset_key for dep in spec.deps}
 
     assert asset_deps == {
         # Dashboards
@@ -281,13 +278,10 @@ def test_asset_deps() -> None:
 
 
 def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) -> None:
-    [my_looker_assets] = external_assets_from_specs(
-        build_looker_asset_specs(project_dir=test_exception_derived_table_path)
-    )
+    [spec] = build_looker_asset_specs(project_dir=test_exception_derived_table_path)
 
-    assert my_looker_assets.asset_deps == {
-        AssetKey(["view", "exception_derived_table"]): set(),
-    }
+    assert spec.key == AssetKey(["view", "exception_derived_table"])
+    assert not spec.deps
     assert (
         "Failed to optimize derived table SQL for view `exception_derived_table`"
         " in file `exception_derived_table.view.lkml`."
@@ -302,22 +296,15 @@ def test_with_asset_key_replacements() -> None:
         ) -> AssetKey:
             return super().get_asset_key(lookml_structure).with_prefix("prefix")
 
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(
-            project_dir=test_retail_demo_path,
-            dagster_looker_translator=CustomDagsterLookerTranslator(),
-        ),
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
 
-    for external_asset_def in my_looker_assets:
-        assert external_asset_def.asset_deps.keys()
-        assert all(key.has_prefix(["prefix"]) for key in external_asset_def.asset_deps.keys())
-        assert all(deps for deps in external_asset_def.asset_deps.values())
-        assert all(
-            dep.has_prefix(["prefix"])
-            for deps in external_asset_def.asset_deps.values()
-            for dep in deps
-        )
+    for spec in my_looker_assets:
+        assert spec.deps
+        assert spec.key.has_prefix(["prefix"])
+        assert all(dep.asset_key.has_prefix(["prefix"]) for dep in spec.deps)
 
 
 def test_with_deps_replacements() -> None:
@@ -325,16 +312,13 @@ def test_with_deps_replacements() -> None:
         def get_deps(self, _) -> Sequence[AssetKey]:
             return []
 
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(
-            project_dir=test_retail_demo_path,
-            dagster_looker_translator=CustomDagsterLookerTranslator(),
-        ),
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
 
-    for external_asset_def in my_looker_assets:
-        assert external_asset_def.asset_deps.keys()
-        assert all(not deps for deps in external_asset_def.asset_deps.values())
+    for spec in my_looker_assets:
+        assert not spec.deps
 
 
 def test_with_description_replacements() -> None:
@@ -344,16 +328,13 @@ def test_with_description_replacements() -> None:
         def get_description(self, _) -> Optional[str]:
             return expected_description
 
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(
-            project_dir=test_retail_demo_path,
-            dagster_looker_translator=CustomDagsterLookerTranslator(),
-        ),
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
 
-    for external_asset_def in my_looker_assets:
-        for description in external_asset_def.descriptions_by_key.values():
-            assert description == expected_description
+    for spec in my_looker_assets:
+        assert spec.description == expected_description
 
 
 def test_with_metadata_replacements() -> None:
@@ -363,16 +344,13 @@ def test_with_metadata_replacements() -> None:
         def get_metadata(self, _) -> Optional[Mapping[str, Any]]:
             return expected_metadata
 
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(
-            project_dir=test_retail_demo_path,
-            dagster_looker_translator=CustomDagsterLookerTranslator(),
-        ),
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
 
-    for external_asset_def in my_looker_assets:
-        for metadata in external_asset_def.metadata_by_key.values():
-            assert metadata == expected_metadata
+    for spec in my_looker_assets:
+        assert spec.metadata == expected_metadata
 
 
 def test_with_group_replacements() -> None:
@@ -382,16 +360,13 @@ def test_with_group_replacements() -> None:
         def get_group_name(self, _) -> Optional[str]:
             return expected_group
 
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(
-            project_dir=test_retail_demo_path,
-            dagster_looker_translator=CustomDagsterLookerTranslator(),
-        ),
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
 
-    for external_asset_def in my_looker_assets:
-        for group in external_asset_def.group_names_by_key.values():
-            assert group == expected_group
+    for spec in my_looker_assets:
+        assert spec.group_name == expected_group
 
 
 def test_with_owner_replacements() -> None:
@@ -401,16 +376,13 @@ def test_with_owner_replacements() -> None:
         def get_owners(self, _) -> Optional[Sequence[str]]:
             return expected_owners
 
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(
-            project_dir=test_retail_demo_path,
-            dagster_looker_translator=CustomDagsterLookerTranslator(),
-        ),
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
 
-    for external_asset_def in my_looker_assets:
-        for spec in external_asset_def.specs:
-            assert spec.owners == expected_owners
+    for spec in my_looker_assets:
+        assert spec.owners == expected_owners
 
 
 def test_with_tag_replacements() -> None:
@@ -420,13 +392,10 @@ def test_with_tag_replacements() -> None:
         def get_tags(self, _) -> Optional[Mapping[str, str]]:
             return expected_tags
 
-    my_looker_assets = external_assets_from_specs(
-        build_looker_asset_specs(
-            project_dir=test_retail_demo_path,
-            dagster_looker_translator=CustomDagsterLookerTranslator(),
-        ),
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
 
-    for external_asset_def in my_looker_assets:
-        for tags in external_asset_def.tags_by_key.values():
-            assert tags == expected_tags
+    for spec in my_looker_assets:
+        assert spec.tags == expected_tags

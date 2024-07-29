@@ -3,4 +3,5 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "quickstart_aws"
+module_name = "quickstart_aws.definitions"
+code_location_name = "quickstart_aws"

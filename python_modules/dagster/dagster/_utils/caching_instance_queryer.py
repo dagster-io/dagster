@@ -458,6 +458,15 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return run_tags.get(tag_key) == tag_value
 
     @cached_method
+    def _get_planned_materializations_for_run_from_snapshot(
+        self, *, snapshot_id: str
+    ) -> AbstractSet[AssetKey]:
+        execution_plan_snapshot = check.not_none(
+            self._instance.get_execution_plan_snapshot(snapshot_id)
+        )
+        return execution_plan_snapshot.asset_selection
+
+    @cached_method
     def _get_planned_materializations_for_run_from_events(
         self, *, run_id: str
     ) -> AbstractSet[AssetKey]:
@@ -484,6 +493,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return set()
         elif run.asset_selection:
             return run.asset_selection
+        elif run.execution_plan_snapshot_id:
+            return self._get_planned_materializations_for_run_from_snapshot(
+                snapshot_id=check.not_none(run.execution_plan_snapshot_id)
+            )
         else:
             # must resort to querying the event log
             return self._get_planned_materializations_for_run_from_events(run_id=run_id)

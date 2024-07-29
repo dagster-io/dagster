@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
     AutomationResult,
 )
-from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
+from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionCursor,
     AutomationConditionNodeCursor,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 def _has_legacy_condition(condition: AutomationCondition):
     """Detects if the given condition has any legacy rules."""
-    if isinstance(condition, AssetCondition):
+    if isinstance(condition, RuleCondition):
         return True
     else:
         return any(_has_legacy_condition(child) for child in condition.children)

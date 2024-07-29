@@ -56,7 +56,6 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import deprecation_warning
 
 from .compute import AssetExecutionContext, OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
@@ -858,7 +857,6 @@ def build_op_context(
     partition_key: Optional[str] = None,
     partition_key_range: Optional[PartitionKeyRange] = None,
     mapping_key: Optional[str] = None,
-    _assets_def: Optional[AssetsDefinition] = None,
 ) -> DirectOpExecutionContext:
     """Builds op execution context from provided parameters.
 
@@ -878,8 +876,6 @@ def build_op_context(
             output. Can be accessed using ``context.get_mapping_key()``.
         partition_key (Optional[str]): String value representing partition key to execute with.
         partition_key_range (Optional[PartitionKeyRange]): Partition key range to execute with.
-        _assets_def (Optional[AssetsDefinition]): Internal argument that populates the op's assets
-            definition, not meant to be populated by users.
 
     Examples:
         .. code-block:: python
@@ -894,16 +890,6 @@ def build_op_context(
         raise DagsterInvalidInvocationError(
             "Attempted to invoke ``build_op_context`` with both ``op_config``, and its "
             "legacy version, ``config``. Please provide one or the other."
-        )
-
-    if _assets_def:
-        deprecation_warning(
-            subject="build_op_context",
-            additional_warn_text=(
-                "Parameter '_assets_def' was passed to build_op_context. This parameter was intended for internal use only, and has been deprecated "
-            ),
-            breaking_version="1.8.0",
-            stacklevel=1,
         )
 
     op_config = op_config if op_config else config

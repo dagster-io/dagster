@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -7,12 +7,13 @@ from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="AndAssetCondition")
 @record
-class AndAssetCondition(AutomationCondition):
+class AndAutomationCondition(AutomationCondition):
     """This class represents the condition that all of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition]
+    label: Optional[str] = None
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
@@ -21,6 +22,10 @@ class AndAssetCondition(AutomationCondition):
     @property
     def description(self) -> str:
         return "All of"
+
+    @property
+    def name(self) -> str:
+        return "AND"
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
@@ -35,12 +40,13 @@ class AndAssetCondition(AutomationCondition):
         return AutomationResult.create_from_children(context, true_slice, child_results)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="OrAssetCondition")
 @record
-class OrAssetCondition(AutomationCondition):
+class OrAutomationCondition(AutomationCondition):
     """This class represents the condition that any of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition]
+    label: Optional[str] = None
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
@@ -49,6 +55,10 @@ class OrAssetCondition(AutomationCondition):
     @property
     def description(self) -> str:
         return "Any of"
+
+    @property
+    def name(self) -> str:
+        return "OR"
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
@@ -64,16 +74,21 @@ class OrAssetCondition(AutomationCondition):
         return AutomationResult.create_from_children(context, true_slice, child_results)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="NotAssetCondition")
 @record
-class NotAssetCondition(AutomationCondition):
+class NotAutomationCondition(AutomationCondition):
     """This class represents the condition that none of its children evaluate to true."""
 
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
         return "Not"
+
+    @property
+    def name(self) -> str:
+        return "NOT"
 
     @property
     def children(self) -> Sequence[AutomationCondition]:

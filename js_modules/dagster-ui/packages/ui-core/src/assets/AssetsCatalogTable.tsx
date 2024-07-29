@@ -5,6 +5,7 @@ import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} 
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 
+import {AssetCatalogTableBottomActionBar} from './AssetCatalogTableBottomActionBar';
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -279,15 +280,7 @@ export const AssetsCatalogTable = ({
         </>
       }
       belowActionBarComponents={
-        activeFiltersJsx.length ? (
-          <Box
-            border="top-and-bottom"
-            padding={{vertical: 12, left: 24, right: 12}}
-            flex={{direction: 'row', gap: 4, alignItems: 'center'}}
-          >
-            {activeFiltersJsx}
-          </Box>
-        ) : null
+        <AssetCatalogTableBottomActionBar activeFiltersJsx={activeFiltersJsx} />
       }
       refreshState={refreshState}
       prefixPath={prefixPath || emptyArray}

@@ -33,6 +33,7 @@ import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
 import calendar from '../icon-svgs/calendar.svg';
 import cancel from '../icon-svgs/cancel.svg';
+import catalog from '../icon-svgs/catalog.svg';
 import changes_present from '../icon-svgs/changes-present.svg';
 import chat_support from '../icon-svgs/chat-support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
@@ -80,6 +81,7 @@ import folder_open from '../icon-svgs/folder_open.svg';
 import forum from '../icon-svgs/forum.svg';
 import gantt_flat from '../icon-svgs/gantt_flat.svg';
 import gantt_waterfall from '../icon-svgs/gantt_waterfall.svg';
+import git_commit from '../icon-svgs/git_commit.svg';
 import github from '../icon-svgs/github.svg';
 import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
@@ -257,6 +259,7 @@ export const Icons = {
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
+  git_commit,
   gitlab,
   globe,
   graduation_cap,
@@ -289,6 +292,7 @@ export const Icons = {
   bar_chart,
   bolt,
   cached,
+  catalog,
   cancel,
   check_circle,
   checklist,

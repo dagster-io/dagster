@@ -54,7 +54,7 @@ from dagster._core.execution.plan.compute import execute_core_compute
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
+from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
@@ -179,6 +179,7 @@ def _step_output_error_checked_user_event_sequence(
     step = step_context.step
     op_label = step_context.describe_op()
     output_names = list([output_def.name for output_def in step.step_outputs])
+    selected_output_names = step_context.selected_output_names
 
     for user_event in user_event_sequence:
         if not isinstance(user_event, (Output, DynamicOutput)):
@@ -191,6 +192,12 @@ def _step_output_error_checked_user_event_sequence(
             raise DagsterInvariantViolationError(
                 f'Core compute for {op_label} returned an output "{output.output_name}" that does '
                 f"not exist. The available outputs are {output_names}"
+            )
+
+        if output.output_name not in selected_output_names:
+            raise DagsterInvariantViolationError(
+                f'Core compute for {op_label} returned an output "{output.output_name}" that is '
+                f"not selected. The selected outputs are {selected_output_names}"
             )
 
         step_output = step.step_output_named(cast(str, output.output_name))
@@ -283,10 +290,11 @@ def _step_output_error_checked_user_event_sequence(
             is_observable_asset = asset_key is not None and asset_layer.get(asset_key).is_observable
 
             if step_output_def.dagster_type.is_nothing and not is_observable_asset:
-                step_context.log.info(
-                    f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
-                )
-                yield Output(output_name=step_output_def.name, value=None)
+                if step_output.name in selected_output_names:
+                    step_context.log.info(
+                        f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
+                    )
+                    yield Output(output_name=step_output_def.name, value=None)
             elif not step_output_def.is_dynamic:
                 raise DagsterStepOutputNotFoundError(
                     f"Core compute for {op_label} did not return an output for non-optional "
@@ -377,7 +385,6 @@ def _type_check_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Any,
-    version: Optional[str],
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
@@ -410,7 +417,6 @@ def _type_check_output(
                 description=type_check.description if type_check else None,
                 metadata=type_check.metadata if type_check else {},
             ),
-            version=version,
             metadata=output.metadata,
         ),
     )
@@ -542,13 +548,7 @@ def _type_check_and_store_output(
         step_context.step_output_capture[step_output_handle] = output.value
         step_context.step_output_metadata_capture[step_output_handle] = output.metadata
 
-    version = (
-        step_context.execution_plan.known_state.step_output_versions.get(step_output_handle)
-        if MEMOIZED_RUN_TAG in step_context.job.get_definition().tags
-        else None
-    )
-
-    for output_event in _type_check_output(step_context, step_output_handle, output, version):
+    for output_event in _type_check_output(step_context, step_output_handle, output):
         yield output_event
 
     for evt in _store_output(step_context, step_output_handle, output):

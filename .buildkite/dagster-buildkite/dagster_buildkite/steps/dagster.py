@@ -79,9 +79,7 @@ def build_repo_wide_prettier_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":prettier: prettier")
         .run(
-            "pushd js_modules/dagster-ui/packages/eslint-config",
-            "yarn install",
-            "popd",
+            "make install_prettier",
             "make check_prettier",
         )
         .on_test_image(AvailablePythonVersion.get_default())

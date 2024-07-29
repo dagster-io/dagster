@@ -45,7 +45,7 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
@@ -781,7 +781,7 @@ def auto_materialize_asset():
     pass
 
 
-auto_materialize_sensor = AutoMaterializeSensorDefinition(
+auto_materialize_sensor = AutomationConditionSensorDefinition(
     "my_auto_materialize_sensor",
     asset_selection=[auto_materialize_asset],
 )

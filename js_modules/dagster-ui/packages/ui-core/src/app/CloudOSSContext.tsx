@@ -14,7 +14,10 @@ type FeatureContext = {
 export const CloudOSSContext = React.createContext<{
   isBranchDeployment: boolean;
   featureContext: FeatureContext;
-  useAugmentSearchResults: () => (results: SearchResult[]) => SearchResult[];
+  useAugmentSearchResults: () => (
+    results: SearchResult[],
+    searchContext: 'catalog' | 'global',
+  ) => SearchResult[];
 }>({
   isBranchDeployment: false,
   featureContext: {

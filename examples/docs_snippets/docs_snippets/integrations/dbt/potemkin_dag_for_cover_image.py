@@ -19,27 +19,6 @@ class dagster_fivetran:
         return [users, orders]
 
 
-class dagster_dbt:
-    @staticmethod
-    def load_assets_from_dbt_manifest(manifest):
-        @asset(non_argument_deps={"users"}, compute_kind="dbt")
-        def stg_users():
-            """Users with test accounts removed."""
-            ...
-
-        @asset(non_argument_deps={"orders"}, compute_kind="dbt")
-        def stg_orders():
-            """Cleaned orders table."""
-            ...
-
-        @asset(non_argument_deps={"stg_users", "stg_orders"}, compute_kind="dbt")
-        def daily_order_summary():
-            """Summary of daily orders, by user."""
-            raise ValueError()
-
-        return [stg_users, stg_orders, daily_order_summary]
-
-
 # start
 from pathlib import Path
 

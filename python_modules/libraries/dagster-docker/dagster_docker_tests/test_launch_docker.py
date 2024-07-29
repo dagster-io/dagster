@@ -162,7 +162,7 @@ def test_launch_docker_image_on_job_config(aws_env):
                 assert run.tags[DOCKER_IMAGE_TAG] == docker_image
 
 
-def _check_event_log_contains(event_log, expected_type_and_message):
+def check_event_log_contains(event_log, expected_type_and_message):
     types_and_messages = [
         (e.dagster_event.event_type_value, e.message) for e in event_log if e.is_dagster_event
     ]
@@ -232,7 +232,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             run_logs = instance.all_logs(run_id)
 
-            _check_event_log_contains(
+            check_event_log_contains(
                 run_logs,
                 [
                     ("PIPELINE_CANCELING", "Sending run termination request"),
@@ -448,3 +448,6 @@ def _test_launch(
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
                 assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED
+
+                # termination is a no-op once run is finished
+                assert not launcher.terminate(run.run_id)

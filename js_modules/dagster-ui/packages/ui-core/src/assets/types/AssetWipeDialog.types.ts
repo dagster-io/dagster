@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type AssetWipeMutationVariables = Types.Exact<{
-  assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
+  assetPartitionRanges: Array<Types.PartitionsByAssetSelector> | Types.PartitionsByAssetSelector;
 }>;
 
 export type AssetWipeMutation = {
@@ -12,7 +12,11 @@ export type AssetWipeMutation = {
     | {__typename: 'AssetNotFoundError'}
     | {
         __typename: 'AssetWipeSuccess';
-        assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+        assetPartitionRanges: Array<{
+          __typename: 'AssetPartitionRange';
+          assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          partitionRange: {__typename: 'PartitionRange'; start: string; end: string} | null;
+        }>;
       }
     | {
         __typename: 'PythonError';
@@ -24,5 +28,6 @@ export type AssetWipeMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
-    | {__typename: 'UnauthorizedError'};
+    | {__typename: 'UnauthorizedError'}
+    | {__typename: 'UnsupportedOperationError'};
 };

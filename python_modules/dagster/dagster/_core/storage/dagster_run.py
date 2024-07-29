@@ -51,7 +51,7 @@ class DagsterRunStatus(Enum):
     # Runs waiting to be launched by the Dagster Daemon.
     QUEUED = "QUEUED"
 
-    # Runs that have been launched, but execution has not yet started."""
+    # Runs in the brief window between creating the run and launching or enqueueing it.
     NOT_STARTED = "NOT_STARTED"
 
     # Runs that are managed outside of the Dagster control plane.
@@ -98,6 +98,14 @@ FINISHED_STATUSES = [
     DagsterRunStatus.SUCCESS,
     DagsterRunStatus.FAILURE,
     DagsterRunStatus.CANCELED,
+]
+
+NOT_FINISHED_STATUSES = [
+    DagsterRunStatus.STARTING,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.NOT_STARTED,
 ]
 
 # Run statuses for runs that can be safely canceled.
@@ -437,6 +445,12 @@ class DagsterRun(
     def is_finished(self) -> bool:
         """bool: If this run has completely finished execution."""
         return self.status in FINISHED_STATUSES
+
+    @public
+    @property
+    def is_cancelable(self) -> bool:
+        """bool: If this run an be canceled."""
+        return self.status in CANCELABLE_RUN_STATUSES
 
     @public
     @property

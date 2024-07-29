@@ -1,5 +1,111 @@
 # Changelog
 
+# 1.7.15 (core) / 0.23.15 (libraries)
+
+### New
+
+- [dagster-celery-k8s] Added a `per_step_k8s_config` configuration option to the `celery_k8s_job_executor` , allowing the k8s configuration of individual steps to be configured at run launch time. Thanks [@alekseik1](https://github.com/alekseik1)!
+- [dagster-dbt] Deprecated the `log_column_level_metadata` macro in favor of the new `with_column_metadata` API.
+- [dagster-airbyte] Deprecated `load_assets_from_airbyte_project` as the Octavia CLI has been deprecated.
+
+### Bugfixes
+
+- [ui] Fix global search to find matches on very long strings.
+- Fixed an issue introduced in the 1.7.14 release where multi-asset sensors would sometimes raise an error about fetching too many event records.
+- Fixes an issue introduced in 1.7.13 where type-checkers interpretted the return type of `RunRequest(...)` as `None`
+- [dagster-aws] Fixed an issue where the `EcsRunLauncher` would sometimes fail to launch runs when the `include_sidecars` option was set to `True`.
+- [dagster-dbt] Fixed an issue where errors would not propagate through deferred metadata fetches.
+
+### Dagster Plus
+
+- On June 20, 2024, AWS changed the AWS CloudMap CreateService API to allow resource-level permissions. The Dagster+ ECS Agent uses this API to launch code locations. We’ve updated the Dagster+ ECS Agent CloudFormation template to accommodate this change for new users. Existing users have until October 14, 2024 to add the new permissions and should have already received similar communication directly from AWS.
+- Fixed a bug with BigQuery cost tracking in Dagster+ insights, where some runs would fail if there were null values for either `total_byte_billed` or `total_slot_ms` in the BigQuery `INFORMATION_SCHEMA.JOBS` table.
+- Fixed an issue where code locations that failed to load with extremely large error messages or stack traces would sometimes cause errors with agent heartbeats until the code location was redeployed.
+
+# 1.7.14 (core) / 0.23.14 (libraries)
+
+### New
+
+- [blueprints] When specifying an asset key in `ShellCommandBlueprint`, you can now use slashes as a delimiter to generate an `AssetKey` with multiple path components.
+- [community-controbution][mlflow] The mlflow resource now has a `mlflow_run_id` attribute (Thanks Joe Percivall!)
+- [community-contribution][mlflow] The mlflow resource will now retry when it fails to fetch the mlflow run ID (Thanks Joe Percivall!)
+
+### Bugfixes
+
+- Fixed an issue introduced in the 1.7.13 release where Dagster would fail to load certain definitions when using Python 3.12.4.
+- Fixed an issue where in-progress steps would continue running after an unexpected exception caused a run to fail.
+- [dagster-dbt] Fixed an issue where column lineage was unable to be built in self-referential incremental models.
+- Fixed an issue where `dagster dev` was logging unexpectedly without the `grpcio<1.65.0` pin.
+- Fixed an issue where a `ContextVar was created in a different context` error was raised when executing an async asset.
+- [community-contribution] `multi_asset` type-checker fix from @aksestok, thanks!
+- [community-contribution][ui] Fix to use relative links for manifest/favicon files, thanks @aebrahim!
+
+### Documentation
+
+- [community-contribution] Fixed helm repo CLI command typo, thanks @fxd24!
+
+### Dagster Plus
+
+- [ui] The deployment settings yaml editor is now on a page with its own URL, instead of within a dialog.
+
+# 1.7.13 (core) / 0.23.13 (libraries)
+
+### New
+
+- The `InputContext` passed to an `IOManager` ’s `load_input` function when invoking the `output_value` or `output_for_node` methods on `JobExecutionResult` now has the name `"dummy_input_name"` instead of `None`.
+- [dagster-ui] Asset materializations can now be reported from the dropdown menu in the asset list view.
+- [dagster-dbt] `DbtProject` is adopted and no longer experimental. Using `DbtProject` helps achieve a setup where the dbt manifest file and dbt dependencies are available and up-to-date, during development and in production. Check out the API docs for more: [https://docs.dagster.io/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject).
+- [dagster-dbt] The `—use-dbt-project` flag was introduced for the cli command `dagster-dbt project scaffold`. Creating a Dagster project wrapping a dbt project using that flag will include a `DbtProject` .
+- [dagster-ui] The Dagster UI now loads events in batches of 1000 in the run log viewer, instead of batches of 10000. This value can be adjusted by setting the `DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE` environment variable on the Dagster webserver.
+- Asset backfills will now retry if there is an unexpected exception raised in the middle of the backfill. Previously, they would only retry if there was a problem connecting to the code server while launching runs in the backfill.
+- Added the ability to monitor jobs which have failed to start in time with the `RunFailureReason.START_TIMEOUT` run monitoring failure reason. Thanks @jobicarter!
+- [experimental] Introduced the ability to attach code references to your assets, which allow you to view source code for an asset in your editor or in git source control. For more information, see the code references docs: [https://docs.dagster.io/guides/dagster/code-references](https://docs.dagster.io/guides/dagster/code-references).
+- [ui] Performance improvements to loading the asset overview tab.
+- [ui] Performance improvements for rendering gantt charts with 1000’s of ops/steps.
+- [dagster-celery] Introduced a new Dagster Celery runner, a more lightweight way to run Dagster jobs without an executor. Thanks, @egordm!
+
+### Bugfixes
+
+- Fixed a bug that caused tags added to `ObserveResult` objects to not be stored with the produced `AssetObservation` event.
+- Fixed a bug which could cause `metadata` defined on `SourceAssets` to be unavailable when accessed in an IOManager.
+- For subselections of graph-backed multi-assets, there are some situations where we used to unnecessarily execute some of the non-selected assets. Now, we no longer execute them in those situations. There are also some situations where we would skip execution of some ops that might be needed. More information on the particulars is available [here](https://github.com/dagster-io/dagster/pull/22733).
+- Fixed the `@graph_asset` decorator overload missing an `owners` argument, thanks @askvinni!
+- Fixed behavior of passing custom image config to the K8sRunLauncher, thanks @[marchinho11](https://github.com/marchinho11)!
+- [dagster-dbt] Fixed an issue with emitting column lineage when using BigQuery.
+- [dagster-k8s] Added additional retries to `execute_k8s_job` when there was a transient failure while loading logs from the launched job. Thanks [@piotrmarczydlo](https://github.com/piotrmarczydlo)!
+- [dagster-fivetran] Fixed an issue where the Fivetran connector resource would sometimes hang if there was a networking issue while connecting to the Fivetran API.
+- [dagster-aws] Fixed an issue where the EMR step launcher would sometimes fail due to multiple versions of the `dateutil` package being installed in the default EMR python evnrionment.
+- [ui] The “Create date” column in the runs table now correctly shows the time at which a run was created instead of the time when it started to execute.
+- [ui] Fixed dark mode colors in run partitions graphs.
+- [auto-materialize] Fixed an issue which could cause errors in the `AutoMaterializeRule.skip_on_parent_missing` rule when a parent asset had its `PartitionsDefinition` changed.
+- [declarative-automation] Fixed an issue which could cause errors when viewing the evaluation history of assets with `AutomationConditions`.
+- [declarative-automation] Previously, `AutomationCondition.newly_updated()` would trigger on any `ASSET_OBSERVATION` event. Now, it only triggers when the data version on that event changes.
+
+### Breaking Changes
+
+- [dagster-dbt] The cli command `dagster-dbt project prepare-for-deployment` has been replaced by `dagster-dbt project prepare-and-package`.
+- [dagster-dbt] During development,`DbtProject` no longer prepares the dbt manifest file and dbt dependencies in its constructor during initialization. This process has been moved to `prepare_if_dev()`, that can be called on the `DbtProject` instance after initialization. Check out the API docs for more: [https://docs.dagster.io/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_dev](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_devhttps://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_dev).
+
+### Deprecations
+
+- Passing `GraphDefinition` as the `job` argument to schedules and sensors is deprecated. Derive a job from the `GraphDefinition` using `graph_def.to_job()` and pass this instead.
+
+### Documentation
+
+- Added some additional copy, headings, and other formatting to the [dbt quickstart](https://docs.dagster.io/integrations/dbt/quickstart).
+- Added information about asset checks to the [Testing assets guide](https://docs.dagster.io/guides/dagster/testing-assets).
+- Updated `dagster-plus CLI` in the sidenav to correctly be `dagster-cloud CLI`.
+- Thanks to Tim Nordenfur and Dimitar Vanguelov for fixing a few typos!
+- Introduced guides to migrate Airflow pipelines to Dagster that leverage the TaskFlow API or are containerized and executed with an operator like the KubernetesPodOperator.
+- Fixed instructions on setting secrets in Kubernetes Dagster deployments, thanks @abhinavDhulipala!
+
+### Dagster Plus
+
+- A history of code location deploys can now be viewed on the Code Locations tab under the Deployment view. Previously deployed versions can now be restored from history.
+- [ui] Various improvements have been made to the asset health dashboard, which is now no longer experimental.
+- [ui] Fixed issues in per-event asset insights where bar charts incorrectly displayed events in reverse order, and with UTC timestamps.
+- Fixed a recent regression where creating an alert that notifies asset owners that are teams raises an error.
+
 # 1.7.12 (core)/ 0.23.12 (libraries)
 
 ### Bugfixes

@@ -300,6 +300,7 @@ def link_code_references_to_git(
 
     Example:
         .. code-block:: python
+
                 defs = Definitions(
                     assets=link_code_references_to_git(
                         with_source_code_references([my_dbt_assets]),
@@ -312,7 +313,7 @@ def link_code_references_to_git(
                     )
                 )
     """
-    if "gitlab.com" in git_url:
+    if "gitlab" in git_url:
         git_url = _build_gitlab_url(git_url, git_branch)
     elif "github.com" in git_url:
         git_url = _build_github_url(git_url, git_branch)

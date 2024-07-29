@@ -585,9 +585,11 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection header="Automation details" icon="auto_materialize_policy">
             {renderAutomationDetailsSection()}
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
-            {renderComputeDetailsSection()}
-          </LargeCollapsibleSection>
+          {assetNode.isExecutable ? (
+            <LargeCollapsibleSection header="Compute details" icon="settings" collapsedByDefault>
+              {renderComputeDetailsSection()}
+            </LargeCollapsibleSection>
+          ) : null}
         </>
       }
     />

@@ -13,7 +13,12 @@ if TYPE_CHECKING:
 
 
 @whitelist_for_serdes
-class ChangeReason(Enum):
+class AssetDefinitionChangeType(Enum):
+    """What change an asset has undergone between two deployments. Used
+    in distinguishing asset definition changes in branch deployment and
+    in subsequent other deployments.
+    """
+
     NEW = "NEW"
     CODE_VERSION = "CODE_VERSION"
     DEPENDENCIES = "DEPENDENCIES"
@@ -110,30 +115,32 @@ class AssetGraphDiffer:
             base_asset_graph=(lambda: base_repo.asset_graph) if base_repo is not None else None,
         )
 
-    def _compare_base_and_branch_assets(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
+    def _compare_base_and_branch_assets(
+        self, asset_key: "AssetKey"
+    ) -> Sequence[AssetDefinitionChangeType]:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
         """
         if self.base_asset_graph is None:
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
-            return [ChangeReason.NEW]
+            return [AssetDefinitionChangeType.NEW]
 
         if asset_key not in self.base_asset_graph.all_asset_keys:
-            return [ChangeReason.NEW]
+            return [AssetDefinitionChangeType.NEW]
 
         if asset_key not in self.branch_asset_graph.all_asset_keys:
-            return [ChangeReason.REMOVED]
+            return [AssetDefinitionChangeType.REMOVED]
 
         branch_asset = self.branch_asset_graph.get(asset_key)
         base_asset = self.base_asset_graph.get(asset_key)
 
         changes = []
         if branch_asset.code_version != base_asset.code_version:
-            changes.append(ChangeReason.CODE_VERSION)
+            changes.append(AssetDefinitionChangeType.CODE_VERSION)
 
         if branch_asset.parent_keys != base_asset.parent_keys:
-            changes.append(ChangeReason.DEPENDENCIES)
+            changes.append(AssetDefinitionChangeType.DEPENDENCIES)
         else:
             # if the set of upstream dependencies is different, then we don't need to check if the partition mappings
             # for dependencies have changed since ChangeReason.DEPENDENCIES is already in the list of changes
@@ -141,21 +148,21 @@ class AssetGraphDiffer:
                 if self.branch_asset_graph.get_partition_mapping(
                     asset_key, upstream_asset
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
-                    changes.append(ChangeReason.DEPENDENCIES)
+                    changes.append(AssetDefinitionChangeType.DEPENDENCIES)
                     break
 
         if branch_asset.partitions_def != base_asset.partitions_def:
-            changes.append(ChangeReason.PARTITIONS_DEFINITION)
+            changes.append(AssetDefinitionChangeType.PARTITIONS_DEFINITION)
 
         if branch_asset.tags != base_asset.tags:
-            changes.append(ChangeReason.TAGS)
+            changes.append(AssetDefinitionChangeType.TAGS)
 
         if branch_asset.metadata != base_asset.metadata:
-            changes.append(ChangeReason.METADATA)
+            changes.append(AssetDefinitionChangeType.METADATA)
 
         return changes
 
-    def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[ChangeReason]:
+    def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[AssetDefinitionChangeType]:
         """Returns list of ChangeReasons for asset_key as compared to the base deployment."""
         return self._compare_base_and_branch_assets(asset_key)
 

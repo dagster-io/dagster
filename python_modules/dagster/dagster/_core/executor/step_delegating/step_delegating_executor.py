@@ -227,135 +227,160 @@ class StepDelegatingExecutor(Executor):
 
                 last_check_step_health_time = get_current_datetime()
 
-                # Order of events is important here. During an interation, we call handle_event, then get_steps_to_execute,
-                # then is_complete. get_steps_to_execute updates the state of ActiveExecution, and without it
-                # is_complete can return true when we're just between steps.
-                while not active_execution.is_complete:
-                    if active_execution.check_for_interrupts():
-                        active_execution.mark_interrupted()
-                        if not plan_context.instance.run_will_resume(plan_context.run_id):
-                            DagsterEvent.engine_event(
-                                plan_context,
-                                "Executor received termination signal, forwarding to steps",
-                                EngineEventData.interrupted(list(running_steps.keys())),
-                            )
+                try:
+                    # Order of events is important here. During an interation, we call handle_event, then get_steps_to_execute,
+                    # then is_complete. get_steps_to_execute updates the state of ActiveExecution, and without it
+                    # is_complete can return true when we're just between steps.
+                    while not active_execution.is_complete:
+                        if active_execution.check_for_interrupts():
+                            active_execution.mark_interrupted()
+                            if not plan_context.instance.run_will_resume(plan_context.run_id):
+                                DagsterEvent.engine_event(
+                                    plan_context,
+                                    "Executor received termination signal, forwarding to steps",
+                                    EngineEventData.interrupted(list(running_steps.keys())),
+                                )
+                                for step in running_steps.values():
+                                    list(
+                                        self._step_handler.terminate_step(
+                                            self._get_step_handler_context(
+                                                plan_context, [step], active_execution
+                                            )
+                                        )
+                                    )
+                            else:
+                                DagsterEvent.engine_event(
+                                    plan_context,
+                                    "Executor received termination signal, not forwarding to steps"
+                                    " because run will be resumed",
+                                    EngineEventData(
+                                        metadata={
+                                            "steps_in_flight": MetadataValue.text(
+                                                str(running_steps.keys())
+                                            )
+                                        },
+                                    ),
+                                )
+
+                            return
+
+                        if active_execution.has_in_flight_steps:
+                            for dagster_event in self._pop_events(
+                                plan_context.instance,
+                                plan_context.run_id,
+                                seen_storage_ids,
+                            ):
+                                yield dagster_event
+                                # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
+                                # and yields them.
+
+                                if dagster_event.is_step_skipped:
+                                    assert isinstance(dagster_event.step_key, str)
+                                    active_execution.verify_complete(
+                                        plan_context, dagster_event.step_key
+                                    )
+                                else:
+                                    active_execution.handle_event(dagster_event)
+                                    if (
+                                        dagster_event.is_step_success
+                                        or dagster_event.is_step_failure
+                                        or dagster_event.is_resource_init_failure
+                                        or dagster_event.is_step_up_for_retry
+                                    ):
+                                        assert isinstance(dagster_event.step_key, str)
+                                        del running_steps[dagster_event.step_key]
+
+                                        if not dagster_event.is_step_up_for_retry:
+                                            active_execution.verify_complete(
+                                                plan_context, dagster_event.step_key
+                                            )
+
+                        # process skips from failures or uncovered inputs
+                        list(active_execution.plan_events_iterator(plan_context))
+
+                        curr_time = get_current_datetime()
+                        if (
+                            curr_time - last_check_step_health_time
+                        ).total_seconds() >= self._check_step_health_interval_seconds:
+                            last_check_step_health_time = curr_time
                             for step in running_steps.values():
-                                list(
-                                    self._step_handler.terminate_step(
+                                step_context = plan_context.for_step(step)
+
+                                try:
+                                    health_check_result = self._step_handler.check_step_health(
                                         self._get_step_handler_context(
                                             plan_context, [step], active_execution
                                         )
                                     )
-                                )
-                        else:
-                            DagsterEvent.engine_event(
-                                plan_context,
-                                "Executor received termination signal, not forwarding to steps"
-                                " because run will be resumed",
-                                EngineEventData(
-                                    metadata={
-                                        "steps_in_flight": MetadataValue.text(
-                                            str(running_steps.keys())
+                                    if not health_check_result.is_healthy:
+                                        DagsterEvent.step_failure_event(
+                                            step_context=step_context,
+                                            step_failure_data=StepFailureData(
+                                                error=None,
+                                                user_failure_data=None,
+                                            ),
+                                            message=(
+                                                f"Step {step.key} failed health check:"
+                                                f" {health_check_result.unhealthy_reason}"
+                                            ),
                                         )
-                                    },
-                                ),
+                                except Exception:
+                                    serializable_error = serializable_error_info_from_exc_info(
+                                        sys.exc_info()
+                                    )
+                                    # Log a step failure event if there was an error during the health
+                                    # check
+                                    DagsterEvent.step_failure_event(
+                                        step_context=plan_context.for_step(step),
+                                        step_failure_data=StepFailureData(
+                                            error=serializable_error,
+                                            user_failure_data=None,
+                                        ),
+                                    )
+
+                        if self._max_concurrent is not None:
+                            max_steps_to_run = self._max_concurrent - len(running_steps)
+                            check.invariant(
+                                max_steps_to_run >= 0, "More steps are active than max_concurrent"
                             )
+                        else:
+                            max_steps_to_run = None  # disables limit
 
-                        return
+                        # process events from concurrency blocked steps
+                        list(active_execution.concurrency_event_iterator(plan_context))
 
-                    if active_execution.has_in_flight_steps:
-                        for dagster_event in self._pop_events(
-                            plan_context.instance,
-                            plan_context.run_id,
-                            seen_storage_ids,
-                        ):
-                            yield dagster_event
-                            # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
-                            # and yields them.
-
-                            if dagster_event.is_step_skipped:
-                                assert isinstance(dagster_event.step_key, str)
-                                active_execution.verify_complete(
-                                    plan_context, dagster_event.step_key
-                                )
-                            else:
-                                active_execution.handle_event(dagster_event)
-                                if (
-                                    dagster_event.is_step_success
-                                    or dagster_event.is_step_failure
-                                    or dagster_event.is_resource_init_failure
-                                    or dagster_event.is_step_up_for_retry
-                                ):
-                                    assert isinstance(dagster_event.step_key, str)
-                                    del running_steps[dagster_event.step_key]
-
-                                    if not dagster_event.is_step_up_for_retry:
-                                        active_execution.verify_complete(
-                                            plan_context, dagster_event.step_key
-                                        )
-
-                    # process skips from failures or uncovered inputs
-                    list(active_execution.plan_events_iterator(plan_context))
-
-                    curr_time = get_current_datetime()
-                    if (
-                        curr_time - last_check_step_health_time
-                    ).total_seconds() >= self._check_step_health_interval_seconds:
-                        last_check_step_health_time = curr_time
-                        for step in running_steps.values():
-                            step_context = plan_context.for_step(step)
-
-                            try:
-                                health_check_result = self._step_handler.check_step_health(
+                        for step in active_execution.get_steps_to_execute(max_steps_to_run):
+                            running_steps[step.key] = step
+                            list(
+                                self._step_handler.launch_step(
                                     self._get_step_handler_context(
                                         plan_context, [step], active_execution
                                     )
                                 )
-                                if not health_check_result.is_healthy:
-                                    DagsterEvent.step_failure_event(
-                                        step_context=step_context,
-                                        step_failure_data=StepFailureData(
-                                            error=None,
-                                            user_failure_data=None,
-                                        ),
-                                        message=(
-                                            f"Step {step.key} failed health check:"
-                                            f" {health_check_result.unhealthy_reason}"
-                                        ),
+                            )
+
+                        time.sleep(self._sleep_seconds)
+                except Exception:
+                    if not active_execution.is_complete and running_steps:
+                        serializable_error = serializable_error_info_from_exc_info(sys.exc_info())
+                        DagsterEvent.engine_event(
+                            plan_context,
+                            "Unexpected exception while steps were still in-progress - terminating running steps:",
+                            EngineEventData(
+                                metadata={
+                                    "steps_interrupted": MetadataValue.text(
+                                        str(list(running_steps.keys()))
                                     )
-                            except Exception:
-                                serializable_error = serializable_error_info_from_exc_info(
-                                    sys.exc_info()
-                                )
-                                # Log a step failure event if there was an error during the health
-                                # check
-                                DagsterEvent.step_failure_event(
-                                    step_context=plan_context.for_step(step),
-                                    step_failure_data=StepFailureData(
-                                        error=serializable_error,
-                                        user_failure_data=None,
-                                    ),
-                                )
-
-                    if self._max_concurrent is not None:
-                        max_steps_to_run = self._max_concurrent - len(running_steps)
-                        check.invariant(
-                            max_steps_to_run >= 0, "More steps are active than max_concurrent"
+                                },
+                                error=serializable_error,
+                            ),
                         )
-                    else:
-                        max_steps_to_run = None  # disables limit
-
-                    # process events from concurrency blocked steps
-                    list(active_execution.concurrency_event_iterator(plan_context))
-
-                    for step in active_execution.get_steps_to_execute(max_steps_to_run):
-                        running_steps[step.key] = step
-                        list(
-                            self._step_handler.launch_step(
-                                self._get_step_handler_context(
-                                    plan_context, [step], active_execution
+                        for step in running_steps.values():
+                            list(
+                                self._step_handler.terminate_step(
+                                    self._get_step_handler_context(
+                                        plan_context, [step], active_execution
+                                    )
                                 )
                             )
-                        )
-
-                    time.sleep(self._sleep_seconds)
+                    raise

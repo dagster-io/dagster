@@ -76,7 +76,7 @@ const DEBOUNCE_MSEC = 100;
 export const SearchDialog = () => {
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
-    includeAssetFilters: false,
+    searchContext: 'global',
   });
   const trackEvent = useTrackEvent();
 

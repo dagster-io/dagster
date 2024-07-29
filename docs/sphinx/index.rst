@@ -27,7 +27,6 @@
    sections/api/apidocs/dynamic
    sections/api/apidocs/types
    sections/api/apidocs/utilities
-   sections/api/apidocs/memoization
    sections/api/apidocs/libraries/dagster-airbyte
    sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws

@@ -15,6 +15,7 @@ from dagster import (
     ScheduleDefinition,
     SourceAsset,
     asset,
+    asset_check,
     build_schedule_from_partitioned_job,
     create_repository_using_definitions_args,
     define_asset_job,
@@ -27,11 +28,14 @@ from dagster import (
     observable_source_asset,
     op,
     repository,
+    schedule,
     sensor,
     with_resources,
 )
 from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -606,7 +610,7 @@ def test_asset_missing_resources():
         DagsterInvalidDefinitionError,
         match="resource with key 'foo' required by op 'asset_foo' was not provided.",
     ):
-        Definitions(assets=[asset_foo])
+        Definitions.validate_loadable(Definitions(assets=[asset_foo]))
 
     source_asset_io_req = SourceAsset(key=AssetKey("foo"), io_manager_key="foo")
 
@@ -616,7 +620,7 @@ def test_asset_missing_resources():
             "io manager with key 'foo' required by SourceAsset with key [\"foo\"] was not provided"
         ),
     ):
-        Definitions(assets=[source_asset_io_req])
+        Definitions.validate_loadable(Definitions(assets=[source_asset_io_req]))
 
     external_asset_io_req = create_external_asset_from_source_asset(source_asset_io_req)
     with pytest.raises(
@@ -625,7 +629,7 @@ def test_asset_missing_resources():
             "io manager with key 'foo' required by external asset with key [\"foo\"] was not provided"
         ),
     ):
-        Definitions(assets=[external_asset_io_req])
+        Definitions.validate_loadable(Definitions(assets=[external_asset_io_req]))
 
 
 def test_assets_with_executor():
@@ -651,7 +655,7 @@ def test_asset_missing_io_manager():
             " provided."
         ),
     ):
-        Definitions(assets=[asset_foo])
+        Definitions.validate_loadable(Definitions(assets=[asset_foo]))
 
 
 def test_resource_defs_on_asset():
@@ -743,7 +747,7 @@ def test_job_with_reserved_name():
             "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
         ),
     ):
-        Definitions(jobs=[the_job])
+        Definitions.validate_loadable(Definitions(jobs=[the_job]))
 
 
 def test_asset_cycle():
@@ -764,6 +768,20 @@ def test_asset_cycle():
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
         Definitions(assets=[a, b, c, s]).get_all_job_defs()
+
+
+def test_unsatisfied_resources():
+    @asset(required_resource_keys={"foo"})
+    def asset1(): ...
+
+    Definitions(assets=[asset1])
+
+
+def test_unresolved_asset_job():
+    @asset(required_resource_keys={"foo"})
+    def asset1(): ...
+
+    Definitions(assets=[asset1], jobs=[define_asset_job("job1")])
 
 
 def test_merge():
@@ -818,24 +836,35 @@ def test_merge():
     )
 
     merged = Definitions.merge(defs1, defs2)
-    assert merged.assets == [asset1, asset2]
-    assert merged.jobs == [job1, job2]
-    assert merged.schedules == [schedule1, schedule2]
-    assert merged.sensors == [sensor1, sensor2]
-    assert merged.resources == {"resource1": resource1, "resource2": resource2}
-    assert merged.loggers == {"logger1": logger1, "logger2": logger2}
-    assert merged.executor == in_process_executor
+    assert merged == Definitions(
+        assets=[asset1, asset2],
+        jobs=[job1, job2],
+        schedules=[schedule1, schedule2],
+        sensors=[sensor1, sensor2],
+        resources={"resource1": resource1, "resource2": resource2},
+        loggers={"logger1": logger1, "logger2": logger2},
+        executor=in_process_executor,
+        asset_checks=[],
+    )
 
 
 def test_resource_conflict_on_merge():
     defs1 = Definitions(resources={"resource1": 4})
-    defs2 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 5})
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a resource with key 'resource1'",
+        match="Definitions objects 0 and 1 have different resources with same key 'resource1'",
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_resource_conflict_on_merge_same_value():
+    defs1 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 4})
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.resources == {"resource1": 4}
 
 
 def test_logger_conflict_on_merge():
@@ -843,14 +872,30 @@ def test_logger_conflict_on_merge():
     def logger1(_):
         raise Exception("not executed")
 
+    @logger
+    def logger2(_):
+        raise Exception("also not executed")
+
     defs1 = Definitions(loggers={"logger1": logger1})
-    defs2 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger2})
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a logger with key 'logger1'",
+        match="Definitions objects 0 and 1 have different loggers with same key 'logger1'",
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_logger_conflict_on_merge_same_vlaue():
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger1})
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.loggers == {"logger1": logger1}
 
 
 def test_executor_conflict_on_merge():
@@ -861,6 +906,13 @@ def test_executor_conflict_on_merge():
         DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_executor_conflict_on_merge_same_value():
+    defs1 = Definitions(executor=in_process_executor)
+    defs2 = Definitions(executor=in_process_executor)
+
+    assert Definitions.merge(defs1, defs2).executor == in_process_executor
 
 
 def test_get_all_asset_specs():
@@ -878,12 +930,14 @@ def test_get_all_asset_specs():
     @observable_source_asset(group_name="blag")
     def asset6(): ...
 
-    defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6])
+    asset7 = AssetSpec("asset7", tags={"apple": "banana"})
+
+    defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6, asset7])
     all_asset_specs = defs.get_all_asset_specs()
-    assert len(all_asset_specs) == 6
+    assert len(all_asset_specs) == 7
     asset_specs_by_key = {spec.key: spec for spec in all_asset_specs}
     assert asset_specs_by_key.keys() == {
-        AssetKey(s) for s in ["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]
+        AssetKey(s) for s in ["asset1", "asset2", "asset3", "asset4", "asset5", "asset6", "asset7"]
     }
     assert asset_specs_by_key[AssetKey("asset1")] == AssetSpec(
         "asset1", tags={"foo": "fooval"}, group_name="default"
@@ -899,6 +953,18 @@ def test_get_all_asset_specs():
         tags={"biz": "boz"},
     )
     assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec("asset6", group_name="blag")
+    assert asset_specs_by_key[AssetKey("asset7")] == asset7._replace(group_name="default")
+
+
+def test_asset_spec_dependencies_in_graph() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    defs = Definitions(assets=[upstream_asset, downstream_asset])
+
+    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+        upstream_asset.key
+    }
 
 
 def test_invalid_partitions_subclass():
@@ -918,4 +984,91 @@ def test_invalid_partitions_subclass():
         DeprecationWarning,
         match="custom PartitionsDefinition subclasses",
     ):
-        Definitions(assets=[asset1])
+        Definitions.validate_loadable(Definitions(assets=[asset1]))
+
+
+def test_hoist_automation_assets():
+    @asset
+    def foo():
+        pass
+
+    @asset
+    def bar():
+        pass
+
+    @sensor(name="foo_sensor", target=foo)
+    def foo_sensor():
+        pass
+
+    @schedule(name="bar_schedule", cron_schedule="* * * * *", target=bar)
+    def bar_schedule():
+        pass
+
+    foo_job = define_asset_job("foo_job", selection=[foo])
+
+    defs = Definitions(sensors=[foo_sensor], schedules=[bar_schedule], jobs=[foo_job])
+
+    assert defs.get_assets_def(foo.key) == foo
+    assert defs.get_assets_def(bar.key) == bar
+
+    # We can define and execute asset jobs that reference assets only defined in targets
+    assert defs.get_job_def(foo_job.name).execute_in_process().success
+
+
+def test_definitions_dedupe_reference_equality():
+    """Test that Definitions objects correctly dedupe objects by
+    reference equality.
+    """
+
+    @asset
+    def the_asset():
+        pass
+
+    @asset_check(asset=the_asset)
+    def the_check():
+        return AssetCheckResult(passed=True)
+
+    the_job = define_asset_job(name="the_job", selection="the_asset")
+
+    @sensor(job=the_job)
+    def the_sensor():
+        pass
+
+    @schedule(job=the_job, cron_schedule="* * * * *")
+    def the_schedule():
+        pass
+
+    defs = Definitions(
+        assets=[the_asset, the_asset],
+        asset_checks=[the_check, the_check],
+        jobs=[the_job, the_job],
+        sensors=[the_sensor, the_sensor],
+        schedules=[the_schedule, the_schedule],
+    )
+    underlying_repo = defs.get_repository_def()
+    assert (
+        len(
+            [
+                assets_def
+                for assets_def in underlying_repo.asset_graph.assets_defs
+                if not isinstance(assets_def, AssetChecksDefinition)
+            ]
+        )
+        == 1
+    )
+    assert len(list(underlying_repo.asset_graph._assets_defs_by_check_key)) == 1  # noqa
+    assert (
+        len(
+            [job_def for job_def in underlying_repo.get_all_jobs() if job_def.name != "__ASSET_JOB"]
+        )
+        == 1
+    )
+    assert len(list(underlying_repo.sensor_defs)) == 1
+    assert len(list(underlying_repo.schedule_defs)) == 1
+
+    # properties on the definitions object do not dedupe
+    assert len(defs.assets) == 2
+    assert len(defs.asset_checks) == 2
+    assert len(defs.jobs) == 2
+    assert len(defs.sensors) == 2
+    assert len(defs.schedules) == 2

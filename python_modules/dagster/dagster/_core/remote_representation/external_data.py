@@ -52,7 +52,7 @@ from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinit
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
@@ -87,6 +87,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
@@ -430,6 +431,7 @@ class ScheduleSnap(
             ("execution_timezone", Optional[str]),
             ("description", Optional[str]),
             ("default_status", Optional[DefaultScheduleStatus]),
+            ("asset_selection", Optional[AssetSelection]),
         ],
     )
 ):
@@ -445,10 +447,18 @@ class ScheduleSnap(
         execution_timezone: Optional[str],
         description: Optional[str] = None,
         default_status: Optional[DefaultScheduleStatus] = None,
+        asset_selection: Optional[AssetSelection] = None,
     ):
         cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(cron_schedule, str):
             cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
+
+        if asset_selection is not None:
+            check.opt_inst_param(asset_selection, "asset_selection", AssetSelection)
+            check.invariant(
+                is_whitelisted_for_serdes_object(asset_selection),
+                "asset_selection must be serializable",
+            )
 
         return super(ScheduleSnap, cls).__new__(
             cls,
@@ -467,10 +477,27 @@ class ScheduleSnap(
                 if default_status == DefaultScheduleStatus.RUNNING
                 else None
             ),
+            asset_selection=check.opt_inst_param(
+                asset_selection, "asset_selection", AssetSelection
+            ),
         )
 
     @classmethod
-    def from_def(cls, schedule_def: ScheduleDefinition) -> Self:
+    def from_def(
+        cls, schedule_def: ScheduleDefinition, repository_def: RepositoryDefinition
+    ) -> Self:
+        if schedule_def.has_anonymous_job:
+            job_def = check.inst(
+                schedule_def.job,
+                UnresolvedAssetJobDefinition,
+                "Anonymous job should be UnresolvedAssetJobDefinition",
+            )
+            serializable_asset_selection = job_def.selection.to_serializable_asset_selection(
+                repository_def.asset_graph
+            )
+        else:
+            serializable_asset_selection = None
+
         return cls(
             name=schedule_def.name,
             cron_schedule=schedule_def.cron_schedule,
@@ -482,6 +509,7 @@ class ScheduleSnap(
             execution_timezone=schedule_def.execution_timezone,
             description=schedule_def.description,
             default_status=schedule_def.default_status,
+            asset_selection=serializable_asset_selection,
         )
 
 
@@ -644,7 +672,17 @@ class SensorSnap(
                 for target in sensor_def.targets
             }
 
-            serializable_asset_selection = None
+            if sensor_def.has_anonymous_job:
+                job_def = check.inst(
+                    sensor_def.job,
+                    UnresolvedAssetJobDefinition,
+                    "Anonymous job should be UnresolvedAssetJobDefinition",
+                )
+                serializable_asset_selection = job_def.selection.to_serializable_asset_selection(
+                    repository_def.asset_graph
+                )
+            else:
+                serializable_asset_selection = None
 
         return cls(
             name=sensor_def.name,
@@ -660,7 +698,7 @@ class SensorSnap(
             asset_selection=serializable_asset_selection,
             run_tags=(
                 sensor_def.run_tags
-                if isinstance(sensor_def, AutoMaterializeSensorDefinition)
+                if isinstance(sensor_def, AutomationConditionSensorDefinition)
                 else None
             ),
         )
@@ -1591,7 +1629,10 @@ def external_repository_data_from_def(
     return ExternalRepositoryData(
         name=repository_def.name,
         external_schedule_datas=sorted(
-            [ScheduleSnap.from_def(schedule_def) for schedule_def in repository_def.schedule_defs],
+            [
+                ScheduleSnap.from_def(schedule_def, repository_def)
+                for schedule_def in repository_def.schedule_defs
+            ],
             key=lambda sd: sd.name,
         ),
         # `PartitionSetDefinition` has been deleted, so we now construct `PartitionSetSnap`
@@ -1961,22 +2002,6 @@ def external_resource_data_from_def(
         sensors_using=resource_sensor_usage_map.get(name, []),
         resource_type=resource_type,
         dagster_maintained=dagster_maintained,
-    )
-
-
-def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ScheduleSnap:
-    check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
-    return ScheduleSnap(
-        name=schedule_def.name,
-        cron_schedule=schedule_def.cron_schedule,
-        job_name=schedule_def.job_name,
-        op_selection=schedule_def.target.op_selection,
-        mode=DEFAULT_MODE_NAME,
-        environment_vars=schedule_def.environment_vars,
-        partition_set_name=None,
-        execution_timezone=schedule_def.execution_timezone,
-        description=schedule_def.description,
-        default_status=schedule_def.default_status,
     )
 
 

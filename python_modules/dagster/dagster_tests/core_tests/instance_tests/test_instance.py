@@ -399,7 +399,7 @@ def test_get_required_daemon_types():
 
     with instance_for_test(
         overrides={
-            "auto_materialize": {"enabled": False},
+            "auto_materialize": {"enabled": False, "use_sensors": False},
         }
     ) as instance:
         assert instance.get_required_daemon_types() == [

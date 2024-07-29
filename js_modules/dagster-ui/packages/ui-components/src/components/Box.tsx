@@ -4,7 +4,7 @@ import {Colors} from './Color';
 import {BorderSetting, BorderSide, DirectionalSpacing, FlexProperties} from './types';
 import {assertUnreachable} from '../util/assertUnreachable';
 
-interface Props {
+export interface Props {
   background?: string | null;
   border?: BorderSide | BorderSetting | null;
   flex?: FlexProperties | null;

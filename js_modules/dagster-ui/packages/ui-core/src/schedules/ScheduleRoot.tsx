@@ -3,9 +3,14 @@ import {NonIdealState, Page, Tab, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {SCHEDULE_ASSET_SELECTIONS_QUERY} from './ScheduleAssetSelectionsQuery';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
+import {
+  ScheduleAssetSelectionQuery,
+  ScheduleAssetSelectionQueryVariables,
+} from './types/ScheduleAssetSelectionsQuery.types';
 import {
   PreviousRunsForScheduleQuery,
   PreviousRunsForScheduleQueryVariables,
@@ -14,7 +19,7 @@ import {
 } from './types/ScheduleRoot.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -55,7 +60,18 @@ export const ScheduleRoot = (props: Props) => {
 
   useBlockTraceOnQueryResult(queryResult, 'ScheduleRootQuery');
 
-  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const selectionQueryResult = useQuery<
+    ScheduleAssetSelectionQuery,
+    ScheduleAssetSelectionQueryVariables
+  >(SCHEDULE_ASSET_SELECTIONS_QUERY, {
+    variables: {scheduleSelector},
+    notifyOnNetworkStatusChange: true,
+  });
+  useBlockTraceOnQueryResult(selectionQueryResult, 'ScheduleAssetSelectionQuery');
+
+  const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);
+  const refreshState = useMergedRefresh(refreshState1, refreshState2);
 
   const tabs = (
     <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
@@ -63,6 +79,11 @@ export const ScheduleRoot = (props: Props) => {
       <Tab id="runs" title="Run history" />
     </Tabs>
   );
+
+  const assetSelection =
+    selectionQueryResult.data?.scheduleOrError.__typename === 'Schedule'
+      ? selectionQueryResult.data.scheduleOrError.assetSelection
+      : null;
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
@@ -79,6 +100,7 @@ export const ScheduleRoot = (props: Props) => {
               repoAddress={repoAddress}
               schedule={scheduleOrError}
               refreshState={refreshState}
+              assetSelection={assetSelection}
             />
             {showDaemonWarning ? (
               <SchedulerInfo

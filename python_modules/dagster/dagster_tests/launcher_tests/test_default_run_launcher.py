@@ -8,8 +8,10 @@ from typing import Any, Mapping
 
 import pytest
 from dagster import (
+    DagsterEvent,
     DagsterEventType,
     DefaultRunLauncher,
+    Output,
     _check as check,
     _seven,
     file_relative_path,
@@ -17,6 +19,7 @@ from dagster import (
 )
 from dagster._core.definitions import op
 from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -108,6 +111,27 @@ def add(_, num1, num2):
     return num1 + num2
 
 
+@op
+def op_that_emits_duplicate_step_success_event(context):
+    # emits a duplicate step success event which will mess up the execution
+    # machinery and fail the run worker
+
+    # Wait for the other op to start so that it will be terminated mid-execution
+    poll_for_step_start(context.instance, context.dagster_run.run_id, message="sleepy_op")
+
+    yield DagsterEvent.step_success_event(
+        context._step_execution_context,  # noqa
+        StepSuccessData(duration_ms=50.0),
+    )
+    yield Output(5)
+
+
+@job
+def job_that_fails_run_worker():
+    sleepy_op()
+    op_that_emits_duplicate_step_success_event()
+
+
 @job
 def math_diamond():
     one = return_one()
@@ -123,6 +147,7 @@ def nope():
         sleepy_job,
         slow_job,
         math_diamond,
+        job_that_fails_run_worker,
     ]
 
 
@@ -448,6 +473,9 @@ def test_terminated_run(
     terminated_run = instance.get_run_by_id(run_id)
     assert terminated_run and terminated_run.status == DagsterRunStatus.CANCELED
 
+    # termination is a no-op once run is finished
+    assert not launcher.terminate(run_id)
+
     poll_for_event(
         instance,
         run_id,
@@ -671,6 +699,50 @@ def test_multi_op_selection_execution(
         "return_one",
         "multiply_by_2",
     }
+
+
+def test_job_that_fails_run_worker(
+    instance: DagsterInstance,
+    workspace: WorkspaceRequestContext,
+):
+    external_job = (
+        workspace.get_code_location("test")
+        .get_repository("nope")
+        .get_full_external_job("job_that_fails_run_worker")
+    )
+    run = instance.create_run_for_job(
+        job_def=job_that_fails_run_worker,
+        run_config={},
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
+    )
+    run_id = run.run_id
+
+    run = instance.get_run_by_id(run_id)
+    assert run and run.status == DagsterRunStatus.NOT_STARTED
+
+    instance.launch_run(run.run_id, workspace)
+    finished_run = poll_for_finished_run(instance, run_id)
+    assert finished_run.status == DagsterRunStatus.FAILURE
+
+    run_logs = instance.all_logs(run_id)
+    _check_event_log_contains(
+        run_logs,
+        [
+            (
+                "ENGINE_EVENT",
+                "Unexpected exception while steps were still in-progress - terminating running steps:",
+            ),
+            (
+                "STEP_FAILURE",
+                'Execution of step "sleepy_op" failed.',
+            ),
+            (
+                "PIPELINE_FAILURE",
+                'Execution of run for "job_that_fails_run_worker" failed. An exception was thrown during execution.',
+            ),
+        ],
+    )
 
 
 @pytest.mark.parametrize(

@@ -99,6 +99,5 @@ def make_dagster_job_from_airflow_dag(
         tags=mutated_tags,
         metadata={},
         op_retry_policy=None,
-        version_strategy=None,
     )
     return job_def

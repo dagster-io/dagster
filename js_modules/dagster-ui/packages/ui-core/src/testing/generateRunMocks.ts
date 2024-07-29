@@ -21,6 +21,7 @@ export const generateRunMocks = (runCount: number, range: [number, number]) => {
         startTime,
         status,
         endTime,
+        automation: null,
       };
     });
 };

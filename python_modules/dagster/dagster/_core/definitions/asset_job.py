@@ -253,8 +253,7 @@ def build_asset_job(
             metadata=original_job.metadata,
             logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
-            op_retry_policy=original_job._op_retry_policy,  # noqa: SLF001
-            version_strategy=original_job.version_strategy,
+            op_retry_policy=original_job.op_retry_policy,
         )
 
     return graph.to_job(

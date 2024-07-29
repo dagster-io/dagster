@@ -416,7 +416,7 @@ def test_definitions_conflicting_checks() -> None:
         DagsterInvalidDefinitionError,
         match="Duplicate asset check key.+asset1.+check1",
     ):
-        Definitions(asset_checks=[make_check(), make_check()])
+        Definitions.validate_loadable(Definitions(asset_checks=[make_check(), make_check()]))
 
 
 def test_definitions_same_name_different_asset() -> None:
@@ -427,7 +427,9 @@ def test_definitions_same_name_different_asset() -> None:
 
         return check1
 
-    Definitions(asset_checks=[make_check_for_asset("asset1"), make_check_for_asset("asset2")])
+    Definitions.validate_loadable(
+        Definitions(asset_checks=[make_check_for_asset("asset1"), make_check_for_asset("asset2")])
+    )
 
 
 def test_definitions_same_asset_different_name() -> None:
@@ -438,7 +440,9 @@ def test_definitions_same_asset_different_name() -> None:
 
         return _check
 
-    Definitions(asset_checks=[make_check("check1"), make_check("check2")])
+    Definitions.validate_loadable(
+        Definitions(asset_checks=[make_check("check1"), make_check("check2")])
+    )
 
 
 def test_resource_params() -> None:

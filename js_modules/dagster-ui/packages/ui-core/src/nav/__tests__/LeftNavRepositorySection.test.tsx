@@ -86,7 +86,7 @@ describe('Repository options', () => {
     });
 
     it(`initializes with one repo if it's the only one, even though it's hidden`, async () => {
-      window.localStorage.setItem(HIDDEN_REPO_KEYS, `["${repoOne}:${locationOne}"]`);
+      window.localStorage.setItem(`:${HIDDEN_REPO_KEYS}`, `["${repoOne}:${locationOne}"]`);
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
@@ -136,7 +136,7 @@ describe('Repository options', () => {
 
     it('initializes with correct repo option, if `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(
-        HIDDEN_REPO_KEYS,
+        `:${HIDDEN_REPO_KEYS}`,
         `["lorem:ipsum","${DUNDER_REPO_NAME}:abc_location"]`,
       );
 
@@ -162,7 +162,7 @@ describe('Repository options', () => {
     });
 
     it('initializes with all repo options, no matching `HIDDEN_REPO_KEYS` localStorage', async () => {
-      window.localStorage.setItem(HIDDEN_REPO_KEYS, '["hello:world"]');
+      window.localStorage.setItem(`:${HIDDEN_REPO_KEYS}`, '["hello:world"]');
 
       await act(() =>
         render(
@@ -198,7 +198,7 @@ describe('Repository options', () => {
 
     it('initializes empty, if all items in `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(
-        HIDDEN_REPO_KEYS,
+        `:${HIDDEN_REPO_KEYS}`,
         `["lorem:ipsum", "foo:bar", "${DUNDER_REPO_NAME}:abc_location"]`,
       );
 

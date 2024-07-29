@@ -3,8 +3,9 @@ import json
 import os
 import random
 import string
+import time
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Literal, Mapping, Optional, Sequence
 
 import boto3
 import dagster._check as check
@@ -119,7 +120,6 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         )
 
 
-@experimental
 class PipesLambdaLogsMessageReader(PipesMessageReader):
     """Message reader that consumes buffered pipes messages that were flushed on exit from the
     final 4k of logs that are returned from issuing a sync lambda invocation. This means messages
@@ -158,12 +158,35 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
 
 
 @experimental
+class PipesCloudWatchMessageReader(PipesMessageReader):
+    """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
+
+    @contextmanager
+    def read_messages(
+        self,
+        handler: PipesMessageHandler,
+    ) -> Iterator[PipesParams]:
+        self._handler = handler
+        try:
+            # use buffered stdio to shift the pipes messages to the tail of logs
+            yield {PipesDefaultMessageWriter.BUFFERED_STDIO_KEY: PipesDefaultMessageWriter.STDERR}
+        finally:
+            self._handler = None
+
+    def consume_cloudwatch_logs(
+        self, client: boto3.client, log_group: str, log_stream: str
+    ) -> None:
+        raise NotImplementedError("CloudWatch logs are not yet supported in the pipes protocol.")
+
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
+
+
 class PipesLambdaEventContextInjector(PipesEnvContextInjector):
     def no_messages_debug_text(self) -> str:
         return "Attempted to inject context via the lambda event input."
 
 
-@experimental
 class PipesLambdaClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS lambda.
 
@@ -198,13 +221,17 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         function_name: str,
         event: Mapping[str, Any],
         context: OpExecutionContext,
-    ):
+    ) -> PipesClientCompletedInvocation:
         """Synchronously invoke a lambda function, enriched with the pipes protocol.
 
         Args:
             function_name (str): The name of the function to use.
             event (Mapping[str, Any]): A JSON serializable object to pass as input to the lambda.
             context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+            process.
         """
         with open_pipes_session(
             context=context,
@@ -241,3 +268,147 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
         # should probably have a way to return the lambda result payload
         return PipesClientCompletedInvocation(session)
+
+
+class PipesGlueContextInjector(PipesS3ContextInjector):
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to inject context via Glue job arguments."
+
+
+class PipesGlueLogsMessageReader(PipesCloudWatchMessageReader):
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
+
+
+@experimental
+class PipesGlueClient(PipesClient, TreatAsResourceParam):
+    """A pipes client for invoking AWS Glue jobs.
+
+    Args:
+        client (boto3.client): The boto Glue client used to call invoke.
+        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
+            context into the Glue job, for example, :py:class:`PipesGlueContextInjector`.
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
+            from the glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
+    """
+
+    def __init__(
+        self,
+        client: boto3.client,
+        context_injector: PipesContextInjector,
+        message_reader: Optional[PipesMessageReader] = None,
+    ):
+        self._client = client
+        self._context_injector = context_injector
+        self._message_reader = message_reader or PipesCloudWatchMessageReader()
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def run(
+        self,
+        *,
+        job_name: str,
+        context: OpExecutionContext,
+        extras: Optional[Dict[str, Any]] = None,
+        arguments: Optional[Mapping[str, Any]] = None,
+        job_run_id: Optional[str] = None,
+        allocated_capacity: Optional[int] = None,
+        timeout: Optional[int] = None,
+        max_capacity: Optional[float] = None,
+        security_configuration: Optional[str] = None,
+        notification_property: Optional[Mapping[str, Any]] = None,
+        worker_type: Optional[str] = None,
+        number_of_workers: Optional[int] = None,
+        execution_class: Optional[Literal["FLEX", "STANDARD"]] = None,
+    ) -> PipesClientCompletedInvocation:
+        """Start a Glue job, enriched with the pipes protocol.
+
+        See also: `AWS API Documentation <https://docs.aws.amazon.com/goto/WebAPI/glue-2017-03-31/StartJobRun>`_
+
+        Args:
+            job_name (str): The name of the job to use.
+            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            extras (Optional[Dict[str, Any]]): Additional Dagster metadata to pass to the Glue job.
+            arguments (Optional[Dict[str, str]]): Arguments to pass to the Glue job Command
+            job_run_id (Optional[str]): The ID of the previous job run to retry.
+            allocated_capacity (Optional[int]): The amount of DPUs (Glue data processing units) to allocate to this job.
+            timeout (Optional[int]): The job run timeout in minutes.
+            max_capacity (Optional[float]): The maximum capacity for the Glue job in DPUs (Glue data processing units).
+            security_configuration (Optional[str]): The name of the Security Configuration to be used with this job run.
+            notification_property (Optional[Mapping[str, Any]]): Specifies configuration properties of a job run notification.
+            worker_type (Optional[str]): The type of predefined worker that is allocated when a job runs.
+            number_of_workers (Optional[int]): The number of workers that are allocated when a job runs.
+            execution_class (Optional[Literal["FLEX", "STANDARD"]]): The execution property of a job run.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+            process.
+        """
+        with open_pipes_session(
+            context=context,
+            message_reader=self._message_reader,
+            context_injector=self._context_injector,
+            extras=extras,
+        ) as session:
+            arguments = arguments or {}
+
+            pipes_args = session.get_bootstrap_cli_arguments()
+
+            if isinstance(self._context_injector, PipesS3ContextInjector):
+                arguments = {**arguments, **pipes_args}
+
+            params = {
+                "JobName": job_name,
+                "Arguments": arguments,
+                "JobRunId": job_run_id,
+                "AllocatedCapacity": allocated_capacity,
+                "Timeout": timeout,
+                "MaxCapacity": max_capacity,
+                "SecurityConfiguration": security_configuration,
+                "NotificationProperty": notification_property,
+                "WorkerType": worker_type,
+                "NumberOfWorkers": number_of_workers,
+                "ExecutionClass": execution_class,
+            }
+
+            # boto3 does not accept None as defaults for some of the parameters
+            # so we need to filter them out
+            params = {k: v for k, v in params.items() if v is not None}
+
+            try:
+                response = self._client.start_job_run(**params)
+                run_id = response["JobRunId"]
+                context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
+                response = self._wait_for_job_run_completion(job_name, run_id)
+
+                if response["JobRun"]["JobRunState"] == "FAILED":
+                    raise RuntimeError(
+                        f"Glue job {job_name} run {run_id} failed:\n{response['JobRun']['ErrorMessage']}"
+                    )
+                else:
+                    context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
+
+            except ClientError as err:
+                context.log.error(
+                    "Couldn't create job %s. Here's why: %s: %s",
+                    job_name,
+                    err.response["Error"]["Code"],
+                    err.response["Error"]["Message"],
+                )
+                raise
+
+        # TODO: get logs from CloudWatch. there are 2 separate streams for stdout and driver stderr to read from
+        # the log group can be found in the response from start_job_run, and the log stream is the job run id
+        # worker logs have log streams like: <job_id>_<worker_id> but we probably don't need to read those
+
+        # should probably have a way to return the lambda result payload
+        return PipesClientCompletedInvocation(session)
+
+    def _wait_for_job_run_completion(self, job_name: str, run_id: str) -> Dict[str, Any]:
+        while True:
+            response = self._client.get_job_run(JobName=job_name, RunId=run_id)
+            if response["JobRun"]["JobRunState"] in ["FAILED", "SUCCEEDED"]:
+                return response
+            time.sleep(5)

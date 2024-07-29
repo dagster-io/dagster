@@ -15,7 +15,7 @@ APPLE_STOCK_PRICES = {
 }
 
 
-class StockPrices(pa.SchemaModel):
+class StockPrices(pa.DataFrameModel):
     """Open/close prices for one or more stocks by day."""
 
     name: Series[str] = pa.Field(description="Ticker symbol of stock")

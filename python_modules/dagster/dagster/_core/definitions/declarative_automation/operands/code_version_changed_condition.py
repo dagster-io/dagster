@@ -10,9 +10,15 @@ from ..automation_context import AutomationContext
 @whitelist_for_serdes
 @record
 class CodeVersionChangedCondition(AutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Asset code version changed since previous tick"
+
+    @property
+    def name(self) -> str:
+        return "code_version_changed"
 
     @property
     def requires_cursor(self) -> bool:

@@ -395,11 +395,13 @@ def test_nested_function_resource_runtime_config() -> None:
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions
-        defs = Definitions(
-            assets=[my_asset],
-            resources={
-                "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
-            },
+        Definitions.validate_loadable(
+            Definitions(
+                assets=[my_asset],
+                resources={
+                    "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
+                },
+            )
         )
 
     defs = Definitions(

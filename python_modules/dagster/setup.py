@@ -28,6 +28,9 @@ def get_version() -> str:
 # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
 GRPC_VERSION_FLOOR = "1.44.0"
 
+# Pin to avoid logspew until https://github.com/grpc/grpc/issues/37178 is fully resolved
+GRPC_VERSION_CEILING_EXCLUSIVE = "1.65.0"
+
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
@@ -85,8 +88,8 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         "croniter>=0.3.34",
-        f"grpcio>={GRPC_VERSION_FLOOR}",
-        f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
+        f"grpcio>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CEILING_EXCLUSIVE}",
+        f"grpcio-health-checking>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CEILING_EXCLUSIVE}",
         "packaging>=20.9",
         "pendulum>=3,<4; python_version>='3.12'",
         "pendulum>=0.7.0,<4; python_version>='3.9' and python_version<'3.12'",
@@ -122,7 +125,7 @@ setup(
         "test": [
             "buildkite-test-collector",
             "docker",
-            f"grpcio-tools>={GRPC_VERSION_FLOOR}",
+            f"grpcio-tools>={GRPC_VERSION_FLOOR},<{GRPC_VERSION_CEILING_EXCLUSIVE}",
             "mock==3.0.5",
             "mypy-protobuf",
             "objgraph",

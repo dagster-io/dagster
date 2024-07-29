@@ -21,6 +21,15 @@ if TYPE_CHECKING:
     from dagster._core.test_utils import TestType
 
 
+def test_kwargs_only() -> None:
+    @record
+    class MyClass:
+        foo: str
+
+    with pytest.raises(TypeError, match="takes 1 positional argument but 2 were given"):
+        MyClass("fdslk")  # type: ignore # good job type checker
+
+
 def test_runtime_typecheck() -> None:
     @record
     class MyClass:
@@ -387,19 +396,25 @@ def test_base_class_conflicts() -> None:
         @abstractmethod
         def abstract_prop(self): ...
 
+        @property
+        @abstractmethod
+        def abstract_prop_with_default(self) -> int: ...
+
     class DidntImpl(AbsPropBase): ...
 
     with pytest.raises(
         TypeError,
-        match="Can't instantiate abstract class DidntImpl with abstract method abstract_prop",
+        match="Can't instantiate abstract class DidntImpl",
     ):
         DidntImpl()  # type: ignore # good job type checker
 
     @record
     class A(AbsPropBase):
         abstract_prop: Any
+        abstract_prop_with_default: int = 0
 
     assert A(abstract_prop=4).abstract_prop == 4
+    assert A(abstract_prop=4).abstract_prop_with_default == 0
 
     class ConflictFnBase:
         def some_method(self): ...
@@ -477,3 +492,11 @@ def test_new_remaps_fields() -> None:
     assert r2.foo.s == "test"
 
     assert pickle.loads(pickle.dumps(r)) == r
+
+
+def test_docs():
+    @record
+    class Documented:
+        """So much to know about this class."""
+
+    assert Documented.__doc__

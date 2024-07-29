@@ -872,7 +872,8 @@ class MultiAssetSensorCursorAdvances:
         context: MultiAssetSensorEvaluationContext,
         initial_cursor: MultiAssetSensorContextCursor,
     ) -> MultiAssetSensorAssetCursorComponent:
-        from dagster._core.event_api import AssetRecordsFilter
+        from dagster._core.events import DagsterEventType
+        from dagster._core.storage.event_log.base import EventRecordsFilter
 
         advanced_records: Set[int] = self._advanced_record_ids_by_key.get(asset_key, set())
         if len(advanced_records) == 0:
@@ -893,24 +894,19 @@ class MultiAssetSensorCursorAdvances:
             latest_unconsumed_record_by_partition = (
                 initial_asset_cursor.trailing_unconsumed_partitioned_event_ids
             )
-            limit = greatest_consumed_event_id_in_tick - (
-                latest_consumed_event_id_at_tick_start or 0
-            )
-            materializations_events = (
-                context.instance.fetch_materializations(
-                    AssetRecordsFilter(
+            unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
+                context.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
                         asset_key=asset_key,
-                        after_storage_id=latest_consumed_event_id_at_tick_start,
-                        before_storage_id=greatest_consumed_event_id_in_tick,
+                        after_cursor=latest_consumed_event_id_at_tick_start,
+                        before_cursor=greatest_consumed_event_id_in_tick,
                     ),
                     ascending=True,
-                    limit=limit,
-                ).records
-                if limit > 0
+                )
+                if greatest_consumed_event_id_in_tick
+                > (latest_consumed_event_id_at_tick_start or 0)
                 else []
-            )
-            unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
-                materializations_events
             )
 
             # Iterate through events in ascending order, storing the latest unconsumed

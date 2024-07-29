@@ -22,8 +22,8 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
 import {RunTable} from '../../runs/RunTable';
 import {DagsterTag} from '../../runs/RunTag';
-import {usePaginatedRunsTableRuns} from '../../runs/RunsRoot';
 import {HourWindow} from '../../runs/useHourWindow';
+import {usePaginatedRunsTableRuns} from '../../runs/usePaginatedRunsTableRuns';
 import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
 import {StickyTableContainer} from '../../ui/StickyTableContainer';
 
@@ -87,7 +87,7 @@ export const BackfillRunsTab = ({backfill}: {backfill: BackfillDetailsBackfillFr
       {view === 'timeline' && (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
           <Button onClick={onPageEarlier}>&larr;</Button>
-          <Button onClick={onPageNow}>{backfill.endTimestamp ? 'Jump to End' : 'Now'}</Button>
+          <Button onClick={onPageNow}>{backfill.endTimestamp ? 'Jump to end' : 'Now'}</Button>
           <Button onClick={onPageLater}>&rarr;</Button>
         </Box>
       )}
@@ -128,7 +128,7 @@ const ExecutionRunTable = ({
   if (pipelineRunsOrError.__typename !== 'Runs') {
     return (
       <Box padding={{vertical: 64}}>
-        <NonIdealState icon="error" title="Query Error" description={pipelineRunsOrError.message} />
+        <NonIdealState icon="error" title="Query error" description={pipelineRunsOrError.message} />
       </Box>
     );
   }
@@ -188,13 +188,13 @@ const ExecutionRunTimeline = ({
 
   // Unwrap the timeline to show runs on separate rows, and sort them explicitly by
   // newest => oldest so that they match what you see in the "List" tab.
-  const job = jobs[0];
+  const row = jobs[0];
   const {runs, now} = React.useMemo(() => {
     const now = Date.now();
-    return job
-      ? {runs: [...job.runs].sort((a, b) => b.startTime - a.startTime), now}
+    return row
+      ? {runs: [...row.runs].sort((a, b) => b.startTime - a.startTime), now}
       : {runs: [], now};
-  }, [job]);
+  }, [row]);
 
   return (
     <>

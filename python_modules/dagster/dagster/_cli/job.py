@@ -5,7 +5,6 @@ import textwrap
 from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
 
 import click
-from tabulate import tabulate
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -31,7 +30,7 @@ from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterBackfillFailedError
-from dagster._core.execution.api import create_execution_plan, execute_job
+from dagster._core.execution.api import execute_job
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
@@ -48,7 +47,6 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.workspace import IWorkspace
@@ -238,65 +236,9 @@ def print_op(
             printer.line(output_def_snap.name)
 
 
-@job_cli.command(
-    name="list_versions",
-    help="Display the freshness of memoized results for the given job.\n\n{instructions}".format(
-        instructions=get_job_in_same_python_env_instructions("list_versions")
-    ),
-)
-@python_job_target_argument
-@python_job_config_argument("list_versions")
-def job_list_versions_command(**kwargs):
-    with get_instance_for_cli() as instance:
-        execute_list_versions_command(instance, kwargs)
-
-
-def execute_list_versions_command(instance: DagsterInstance, kwargs: ClickArgMapping):
-    check.inst_param(instance, "instance", DagsterInstance)
-
-    config = list(
-        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
-    )
-
-    job_origin = get_job_python_origin_from_kwargs(kwargs)
-    job = recon_job_from_origin(job_origin)
-    run_config = get_run_config_from_file_list(config)
-
-    memoized_plan = create_execution_plan(
-        job,
-        run_config=run_config,
-        instance_ref=instance.get_ref(),
-        tags={MEMOIZED_RUN_TAG: "true"},
-    )
-
-    add_step_to_table(memoized_plan)
-
-
 def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
     check.opt_sequence_param(file_list, "file_list", of_type=str)
     return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
-
-
-def add_step_to_table(memoized_plan):
-    # the step keys that we need to execute are those which do not have their inputs populated.
-    step_keys_not_stored = set(memoized_plan.step_keys_to_execute)
-    table = []
-    for step_output_handle, version in memoized_plan.step_output_versions.items():
-        table.append(
-            [
-                f"{step_output_handle.step_key}.{step_output_handle.output_name}",
-                version,
-                (
-                    "stored"
-                    if step_output_handle.step_key not in step_keys_not_stored
-                    else "to-be-recomputed"
-                ),
-            ]
-        )
-    table_str = tabulate(
-        table, headers=["Step Output", "Version", "Status of Output"], tablefmt="github"
-    )
-    click.echo(table_str)
 
 
 @job_cli.command(

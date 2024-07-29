@@ -2,8 +2,8 @@ import {Box, Icon} from '@dagster-io/ui-components';
 import uniqBy from 'lodash/uniqBy';
 import {useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
 
@@ -17,8 +17,7 @@ export const useComputeKindTagFilter = ({
   setComputeKindTags?: null | ((s: string[]) => void);
 }) => {
   return useStaticSetFilter<string>({
-    name: 'Compute kind',
-    icon: 'compute_kind',
+    ...BaseConfig,
     allValues: useMemo(
       () =>
         allComputeKindTags.map((value) => ({
@@ -28,13 +27,6 @@ export const useComputeKindTagFilter = ({
       [allComputeKindTags],
     ),
     menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="compute_kind" />
-        <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
-      </Box>
-    ),
-    getStringValue: (value) => value,
     state: computeKindTags ?? emptyArray,
     onStateChanged: (values) => {
       setComputeKindTags?.(Array.from(values));
@@ -54,3 +46,15 @@ export function useAssetKindTagsForAssets(
     [assets],
   );
 }
+
+export const BaseConfig: StaticBaseConfig<string> = {
+  name: 'Compute kind',
+  icon: 'compute_kind',
+  renderLabel: ({value}: {value: string}) => (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Icon name="compute_kind" />
+      <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
+    </Box>
+  ),
+  getStringValue: (value: string) => value,
+};

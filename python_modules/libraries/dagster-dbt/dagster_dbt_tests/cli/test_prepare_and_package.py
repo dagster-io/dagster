@@ -9,14 +9,17 @@ import pytest
 import yaml
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dbt_project import DbtProject
 from typer.testing import CliRunner
 
 runner = CliRunner()
 
 
-def test_prepare_and_package(monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path) -> None:
+@pytest.mark.parametrize("prepare_command_name", ["prepare-for-deployment", "prepare-and-package"])
+def test_prepare_and_package(
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path, prepare_command_name: str
+) -> None:
     monkeypatch.chdir(dbt_project_dir)
 
     project_name = "jaffle_dagster"
@@ -31,7 +34,6 @@ def test_prepare_and_package(monkeypatch: pytest.MonkeyPatch, dbt_project_dir: P
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 
@@ -47,7 +49,7 @@ def test_prepare_and_package(monkeypatch: pytest.MonkeyPatch, dbt_project_dir: P
         app,
         [
             "project",
-            "prepare-and-package",
+            prepare_command_name,
             "--file",
             os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
         ],
@@ -75,7 +77,6 @@ def test_prepare_and_package_with_dependencies(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 
@@ -133,7 +134,6 @@ def test_prepare_and_package_with_packages(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 
