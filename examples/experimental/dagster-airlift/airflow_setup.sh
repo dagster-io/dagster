@@ -25,3 +25,13 @@ auth_backend = airflow.api.auth.backend.basic_auth
 expose_config = True
 
 EOL
+
+# call airflow command to create the default user
+airflow db migrate && \
+airflow users create \
+  --username admin \
+--password admin \
+  --firstname Peter \
+  --lastname Parker \
+  --role Admin \
+  --email spiderman@superhero.org

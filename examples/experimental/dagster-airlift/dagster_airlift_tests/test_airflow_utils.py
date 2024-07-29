@@ -14,7 +14,6 @@ from dagster_airlift import (
 
 def test_dag_peering(
     airflow_instance: None,
-    airflow_home_dir: str,
 ) -> None:
     """Test that dags can be correctly peered from airflow, and certain metadata properties are retained."""
     assets_defs = assets_defs_from_airflow_instance(
