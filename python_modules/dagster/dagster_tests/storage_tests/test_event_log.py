@@ -9,10 +9,10 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 import sqlalchemy
 import sqlalchemy as db
+from dagster import DagsterInstance
 from dagster._core.errors import DagsterEventLogInvalidForRun
 from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
-    InMemoryEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
     SqliteEventLogStorage,
@@ -22,6 +22,7 @@ from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.sql import create_engine
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
+from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy import __version__ as sqlalchemy_version
@@ -34,12 +35,13 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):
-        storage = InMemoryEventLogStorage()
-        try:
-            yield storage
-        finally:
-            storage.dispose()
+    def event_log_storage(self, instance):
+        yield instance.event_log_storage
+
+    @pytest.fixture(name="instance", scope="function")
+    def instance(self):
+        with DagsterInstance.ephemeral() as the_instance:
+            yield the_instance
 
     @pytest.mark.skipif(
         sys.version_info >= (3, 12) and sqlalchemy_version.startswith("1.4."),
@@ -52,16 +54,17 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
 class TestSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
-    @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):
-        # make the temp dir in the cwd since default temp roots
-        # have issues with FS notif based event log watching
+    @pytest.fixture(name="instance", scope="function")
+    def instance(self):
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            storage = SqliteEventLogStorage(tmpdir_path)
-            try:
-                yield storage
-            finally:
-                storage.dispose()
+            with instance_for_test(temp_dir=tmpdir_path) as instance:
+                yield instance
+
+    @pytest.fixture(scope="function", name="storage")
+    def event_log_storage(self, instance):
+        event_log_storage = instance.event_log_storage
+        assert isinstance(event_log_storage, SqliteEventLogStorage)
+        yield instance.event_log_storage
 
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
@@ -134,35 +137,47 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
 class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
-    @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):
-        # make the temp dir in the cwd since default temp roots
-        # have issues with FS notif based event log watching
+    @pytest.fixture(name="instance", scope="function")
+    def instance(self):
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            storage = ConsolidatedSqliteEventLogStorage(tmpdir_path)
-            try:
-                yield storage
-            finally:
-                storage.dispose()
+            with instance_for_test(
+                temp_dir=tmpdir_path,
+                overrides={
+                    "event_log_storage": {
+                        "module": "dagster.core.storage.event_log",
+                        "class": "ConsolidatedSqliteEventLogStorage",
+                        "config": {"base_dir": tmpdir_path},
+                    }
+                },
+            ) as instance:
+                yield instance
+
+    @pytest.fixture(scope="function", name="storage")
+    def event_log_storage(self, instance):
+        event_log_storage = instance.event_log_storage
+        assert isinstance(event_log_storage, ConsolidatedSqliteEventLogStorage)
+        yield event_log_storage
 
 
 class TestLegacyStorage(TestEventLogStorage):
     __test__ = True
 
-    @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):
-        # make the temp dir in the cwd since default temp roots
-        # have issues with FS notif based event log watching
+    @pytest.fixture(name="instance", scope="function")
+    def instance(self):
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
-            # first create the unified storage class
-            storage = DagsterSqliteStorage.from_local(tmpdir_path)
-            # next create the legacy adapter class
-            legacy_storage = LegacyEventLogStorage(storage)
-            try:
-                yield legacy_storage
-            finally:
-                legacy_storage.dispose()
-                storage.dispose()
+            with instance_for_test(temp_dir=tmpdir_path) as instance:
+                yield instance
+
+    @pytest.fixture(scope="function", name="storage")
+    def event_log_storage(self, instance):
+        storage = instance.get_ref().storage
+        assert isinstance(storage, DagsterSqliteStorage)
+        legacy_storage = LegacyEventLogStorage(storage)
+        legacy_storage.register_instance(instance)
+        try:
+            yield legacy_storage
+        finally:
+            legacy_storage.dispose()
 
     def is_sqlite(self, storage):
         return True
