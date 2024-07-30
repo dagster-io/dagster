@@ -28,7 +28,12 @@ def test_openai_client(mock_client) -> None:
 
     mock_context = MagicMock()
     with openai_resource.get_client(mock_context):
-        mock_client.assert_called_once_with(api_key="xoxp-1234123412341234-12341234-1234")
+        mock_client.assert_called_once_with(
+            api_key="xoxp-1234123412341234-12341234-1234",
+            organization=None,
+            project=None,
+            base_url=None,
+        )
 
 
 @patch("dagster_openai.resources.Client")
