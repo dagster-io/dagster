@@ -232,7 +232,7 @@ def asset_check(
             asset_deps={},
             asset_in_map={},
             asset_out_map={},
-            execution_type=None,
+            effect_type=None,
         )
 
         builder = DecoratorAssetsDefinitionBuilder(

@@ -30,7 +30,7 @@ from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
+    AssetEffectType,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
@@ -155,12 +155,10 @@ class ScenarioSpec:
 
                 assets.append(_multi_asset)
             else:
-                execution_type_str = spec.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-                execution_type = (
-                    AssetExecutionType[execution_type_str] if execution_type_str else None
-                )
+                effect_type_str = spec.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+                effect_type = AssetEffectType[effect_type_str] if effect_type_str else None
                 # create an observable_source_asset or regular asset depending on the execution type
-                if execution_type == AssetExecutionType.OBSERVATION:
+                if effect_type == AssetEffectType.OBSERVATION:
                     # strip out the relevant paramters from the spec
                     params = {"key", "group_name", "partitions_def", "metadata"}
 

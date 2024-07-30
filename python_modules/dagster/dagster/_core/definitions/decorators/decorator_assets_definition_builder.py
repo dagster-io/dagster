@@ -24,7 +24,7 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.asset_spec import AssetEffectType, AssetSpec
 from dagster._core.definitions.assets import (
     ASSET_SUBSET_INPUT_PREFIX,
     AssetsDefinition,
@@ -229,7 +229,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     retry_policy: Optional[RetryPolicy]
     specs: Sequence[AssetSpec]
     upstream_asset_deps: Optional[Iterable[AssetDep]]
-    execution_type: Optional[AssetExecutionType]
+    effect_type: Optional[AssetEffectType]
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -557,7 +557,7 @@ class DecoratorAssetsDefinitionBuilder:
             is_subset=False,
             selected_asset_keys=None,  # not a subset so this is None
             selected_asset_check_keys=None,  # not a subset so this is none
-            execution_type=self.args.execution_type,
+            effect_type=self.args.effect_type,
         )
 
     @cached_property

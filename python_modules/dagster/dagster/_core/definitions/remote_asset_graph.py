@@ -19,7 +19,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import AssetEffectType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -436,13 +436,13 @@ def _warn_on_duplicate_nodes(
     # more than one node is materializable or if more than one node is observable. It is valid
     # if there is at most one materializable node and at most one observable node, with all
     # other nodes unexecutable.
-    _warn_on_duplicates_within_subset(materializable_node_pairs, AssetExecutionType.MATERIALIZATION)
-    _warn_on_duplicates_within_subset(observable_node_pairs, AssetExecutionType.OBSERVATION)
+    _warn_on_duplicates_within_subset(materializable_node_pairs, AssetEffectType.MATERIALIZATION)
+    _warn_on_duplicates_within_subset(observable_node_pairs, AssetEffectType.OBSERVATION)
 
 
 def _warn_on_duplicates_within_subset(
     node_pairs: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
-    execution_type: AssetExecutionType,
+    effect_type: AssetEffectType,
 ) -> None:
     repo_handles_by_asset_key: DefaultDict[AssetKey, List[RepositoryHandle]] = defaultdict(list)
     for repo_handle, node in node_pairs:
@@ -456,8 +456,8 @@ def _warn_on_duplicates_within_subset(
     duplicate_str = "\n".join(duplicate_lines)
     if duplicates:
         warnings.warn(
-            f"Found {execution_type.value} nodes for some asset keys in multiple code locations."
-            f" Only one {execution_type.value} node is allowed per asset key. Duplicates:\n {duplicate_str}"
+            f"Found {effect_type.value} nodes for some asset keys in multiple code locations."
+            f" Only one {effect_type.value} node is allowed per asset key. Duplicates:\n {duplicate_str}"
         )
 
 

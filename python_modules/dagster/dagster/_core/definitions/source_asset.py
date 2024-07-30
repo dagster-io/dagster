@@ -15,7 +15,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param, public
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import AssetEffectType
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
@@ -306,12 +306,8 @@ class SourceAsset(ResourceAddable):
         return cast(OpDefinition, self.node_def)
 
     @property
-    def execution_type(self) -> AssetExecutionType:
-        return (
-            AssetExecutionType.OBSERVATION
-            if self.is_observable
-            else AssetExecutionType.UNEXECUTABLE
-        )
+    def effect_type(self) -> AssetEffectType:
+        return AssetEffectType.OBSERVATION if self.is_observable else AssetEffectType.UNEXECUTABLE
 
     @property
     def is_executable(self) -> bool:

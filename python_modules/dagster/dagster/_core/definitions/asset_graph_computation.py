@@ -5,7 +5,7 @@ from typing import AbstractSet, Dict, List, Mapping, Optional, Set, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import AssetEffectType
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -34,7 +34,7 @@ class AssetGraphComputation(IHaveNew):
     is_subset: bool
     selected_asset_keys: AbstractSet[AssetKey]
     selected_asset_check_keys: AbstractSet[AssetCheckKey]
-    execution_type: AssetExecutionType
+    effect_type: AssetEffectType
 
     def __new__(
         cls,
@@ -47,7 +47,7 @@ class AssetGraphComputation(IHaveNew):
         is_subset: bool,
         selected_asset_keys: AbstractSet[AssetKey],
         selected_asset_check_keys: AbstractSet[AssetCheckKey],
-        execution_type: AssetExecutionType,
+        effect_type: AssetEffectType,
     ):
         result = super().__new__(
             cls,
@@ -60,7 +60,7 @@ class AssetGraphComputation(IHaveNew):
             is_subset=is_subset,
             selected_asset_keys=selected_asset_keys,
             selected_asset_check_keys=selected_asset_check_keys,
-            execution_type=execution_type,
+            effect_type=effect_type,
         )
         result.output_names_by_key  # eagerly compute this to catch any errors at contruction time  # noqa: B018
         return result

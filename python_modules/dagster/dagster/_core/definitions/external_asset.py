@@ -5,7 +5,7 @@ from dagster._annotations import deprecated, experimental
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
-    AssetExecutionType,
+    AssetEffectType,
     AssetSpec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
@@ -120,7 +120,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             outs={"result": Out(io_manager_key=source_asset.io_manager_key)},
         )
         extra_metadata_entries = {}
-        execution_type = AssetExecutionType.OBSERVATION
+        effect_type = AssetEffectType.OBSERVATION
     else:
         keys_by_output_name = {}
         node_def = None
@@ -129,7 +129,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             if source_asset.io_manager_key is not None
             else {}
         )
-        execution_type = None
+        effect_type = None
 
     observe_interval = source_asset.auto_observe_interval_minutes
     metadata = {
@@ -162,7 +162,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             # We don't pass the `io_manager_def` because it will already be present in
             # `resource_defs` (it is added during `SourceAsset` initialization).
             resource_defs=source_asset.resource_defs,
-            execution_type=execution_type,
+            effect_type=effect_type,
         )
 
 

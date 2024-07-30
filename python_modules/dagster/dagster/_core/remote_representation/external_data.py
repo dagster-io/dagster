@@ -49,7 +49,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import AssetEffectType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutomationConditionSensorDefinition,
@@ -1344,7 +1344,7 @@ class ExternalAssetNode(
             ("asset_key", AssetKey),
             ("dependencies", Sequence[ExternalAssetDependency]),
             ("depended_by", Sequence[ExternalAssetDependedBy]),
-            ("execution_type", AssetExecutionType),
+            ("effect_type", AssetEffectType),
             ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_names", Sequence[str]),
@@ -1386,7 +1386,7 @@ class ExternalAssetNode(
         asset_key: AssetKey,
         dependencies: Sequence[ExternalAssetDependency],
         depended_by: Sequence[ExternalAssetDependedBy],
-        execution_type: Optional[AssetExecutionType] = None,
+        effect_type: Optional[AssetEffectType] = None,
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
@@ -1422,28 +1422,28 @@ class ExternalAssetNode(
                 check.failed(
                     f"Expected metadata value for key {SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE} to be a TextMetadataValue, got {val}"
                 )
-            metadata_execution_type = AssetExecutionType[check.not_none(val.value)]
-            if execution_type is not None:
+            metadata_effect_type = AssetEffectType[check.not_none(val.value)]
+            if effect_type is not None:
                 check.invariant(
-                    execution_type == metadata_execution_type,
-                    f"Execution type {execution_type} in metadata does not match type inferred from metadata {metadata_execution_type}",
+                    effect_type == metadata_effect_type,
+                    f"Execution type {effect_type} in metadata does not match type inferred from metadata {metadata_effect_type}",
                 )
-            execution_type = metadata_execution_type
+            effect_type = metadata_effect_type
         else:
             if is_source and is_observable:
-                default_execution_type = AssetExecutionType.OBSERVATION
+                default_effect_type = AssetEffectType.OBSERVATION
             elif is_source:
-                default_execution_type = AssetExecutionType.UNEXECUTABLE
+                default_effect_type = AssetEffectType.UNEXECUTABLE
             else:
-                default_execution_type = AssetExecutionType.MATERIALIZATION
+                default_effect_type = AssetEffectType.MATERIALIZATION
 
-            execution_type = (
+            effect_type = (
                 check.opt_inst_param(
-                    execution_type,
-                    "execution_type",
-                    AssetExecutionType,
+                    effect_type,
+                    "effect_type",
+                    AssetEffectType,
                 )
-                or default_execution_type
+                or default_effect_type
             )
 
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
@@ -1508,20 +1508,20 @@ class ExternalAssetNode(
                 auto_observe_interval_minutes, "auto_observe_interval_minutes"
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            execution_type=check.inst_param(execution_type, "execution_type", AssetExecutionType),
+            effect_type=check.inst_param(effect_type, "effect_type", AssetEffectType),
         )
 
     @property
     def is_materializable(self) -> bool:
-        return self.execution_type == AssetExecutionType.MATERIALIZATION
+        return self.effect_type == AssetEffectType.MATERIALIZATION
 
     @property
     def is_external(self) -> bool:
-        return self.execution_type != AssetExecutionType.MATERIALIZATION
+        return self.effect_type != AssetEffectType.MATERIALIZATION
 
     @property
     def is_executable(self) -> bool:
-        return self.execution_type != AssetExecutionType.UNEXECUTABLE
+        return self.effect_type != AssetEffectType.UNEXECUTABLE
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
@@ -1798,7 +1798,7 @@ def external_asset_nodes_from_defs(
                     for pk in sorted(asset_node.parent_keys)
                 ],
                 depended_by=[ExternalAssetDependedBy(k) for k in sorted(asset_node.child_keys)],
-                execution_type=asset_node.execution_type,
+                effect_type=asset_node.effect_type,
                 compute_kind=compute_kind,
                 op_name=op_name,
                 op_names=op_names,

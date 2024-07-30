@@ -16,7 +16,7 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import AssetEffectType
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
@@ -562,7 +562,7 @@ def _get_output_asset_events(
     output_def: OutputDefinition,
     io_manager_metadata: Mapping[str, MetadataValue],
     step_context: StepExecutionContext,
-    execution_type: AssetExecutionType,
+    effect_type: AssetEffectType,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
     all_metadata = {**output.metadata, **io_manager_metadata}
 
@@ -571,7 +571,7 @@ def _get_output_asset_events(
     step_context.wipe_input_asset_version_info(asset_key)
     tags: Dict[str, str]
     if (
-        execution_type == AssetExecutionType.MATERIALIZATION
+        effect_type == AssetEffectType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
         and asset_key in step_context.job_def.asset_layer.executable_asset_keys
     ):
@@ -601,7 +601,7 @@ def _get_output_asset_events(
         if not step_context.has_data_version(asset_key):
             data_version = DataVersion(tags[DATA_VERSION_TAG])
             step_context.set_data_version(asset_key, data_version)
-    elif execution_type == AssetExecutionType.OBSERVATION:
+    elif effect_type == AssetEffectType.OBSERVATION:
         assert isinstance(output, Output)
         tags = (
             _build_data_version_observation_tags(output.data_version) if output.data_version else {}
@@ -615,13 +615,13 @@ def _get_output_asset_events(
     if backfill_id:
         tags[BACKFILL_ID_TAG] = backfill_id
 
-    if execution_type == AssetExecutionType.MATERIALIZATION:
+    if effect_type == AssetEffectType.MATERIALIZATION:
         event_class = AssetMaterialization
         event_class = AssetMaterialization
-    elif execution_type == AssetExecutionType.OBSERVATION:
+    elif effect_type == AssetEffectType.OBSERVATION:
         event_class = AssetObservation
     else:
-        check.failed(f"Unexpected asset execution type {execution_type}")
+        check.failed(f"Unexpected asset execution type {effect_type}")
 
     if asset_partitions:
         for partition in asset_partitions:
@@ -853,16 +853,16 @@ def _log_materialization_or_observation_events_for_asset(
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
-        execution_type = check.not_none(assets_def).execution_type
+        effect_type = check.not_none(assets_def).effect_type
 
         check.invariant(
-            execution_type != AssetExecutionType.UNEXECUTABLE,
+            effect_type != AssetEffectType.UNEXECUTABLE,
             "There should never be unexecutable assets here",
         )
 
         check.invariant(
-            execution_type in {AssetExecutionType.MATERIALIZATION, AssetExecutionType.OBSERVATION},
-            f"Unexpected asset execution type {execution_type}",
+            effect_type in {AssetEffectType.MATERIALIZATION, AssetEffectType.OBSERVATION},
+            f"Unexpected asset execution type {effect_type}",
         )
 
         asset_events = list(
@@ -873,7 +873,7 @@ def _log_materialization_or_observation_events_for_asset(
                 output_def,
                 manager_metadata,
                 step_context,
-                execution_type,
+                effect_type,
             )
         )
 

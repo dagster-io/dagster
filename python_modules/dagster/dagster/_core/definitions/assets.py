@@ -29,7 +29,7 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
-    AssetExecutionType,
+    AssetEffectType,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -114,7 +114,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _computation: Optional[AssetGraphComputation]
 
     @experimental_param(param="specs")
-    @experimental_param(param="execution_type")
+    @experimental_param(param="effect_type")
     def __init__(
         self,
         *,
@@ -147,7 +147,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         is_subset: bool = False,
         owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
         specs: Optional[Sequence[AssetSpec]] = None,
-        execution_type: Optional[AssetExecutionType] = None,
+        effect_type: Optional[AssetEffectType] = None,
         # TODO: FOU-243
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
@@ -224,7 +224,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 is_subset=check.bool_param(is_subset, "is_subset"),
                 selected_asset_keys=selected_asset_keys,
                 selected_asset_check_keys=selected_asset_check_keys,
-                execution_type=execution_type or AssetExecutionType.MATERIALIZATION,
+                effect_type=effect_type or AssetEffectType.MATERIALIZATION,
             )
 
         self._partitions_def = partitions_def
@@ -389,7 +389,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
         specs: Optional[Sequence[AssetSpec]],
-        execution_type: Optional[AssetExecutionType],
+        effect_type: Optional[AssetEffectType],
     ) -> "AssetsDefinition":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -406,7 +406,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 selected_asset_check_keys=selected_asset_check_keys,
                 is_subset=is_subset,
                 specs=specs,
-                execution_type=execution_type,
+                effect_type=effect_type,
             )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -789,7 +789,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=None,
             is_subset=False,
             specs=specs,
-            execution_type=AssetExecutionType.MATERIALIZATION,
+            effect_type=AssetEffectType.MATERIALIZATION,
         )
 
     @public
@@ -1105,27 +1105,27 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return next(iter(self.check_keys))
 
     @property
-    def execution_type(self) -> AssetExecutionType:
+    def effect_type(self) -> AssetEffectType:
         if self._computation is None:
-            return AssetExecutionType.UNEXECUTABLE
+            return AssetEffectType.UNEXECUTABLE
         else:
-            return self._computation.execution_type
+            return self._computation.effect_type
 
     @property
     def is_external(self) -> bool:
-        return self.execution_type != AssetExecutionType.MATERIALIZATION
+        return self.effect_type != AssetEffectType.MATERIALIZATION
 
     @property
     def is_observable(self) -> bool:
-        return self.execution_type == AssetExecutionType.OBSERVATION
+        return self.effect_type == AssetEffectType.OBSERVATION
 
     @property
     def is_materializable(self) -> bool:
-        return self.execution_type == AssetExecutionType.MATERIALIZATION
+        return self.effect_type == AssetEffectType.MATERIALIZATION
 
     @property
     def is_executable(self) -> bool:
-        return self.execution_type != AssetExecutionType.UNEXECUTABLE
+        return self.effect_type != AssetEffectType.UNEXECUTABLE
 
     def get_partition_mapping_for_dep(self, dep_key: AssetKey) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(dep_key)
@@ -1470,7 +1470,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=self.check_keys,
             specs=self.specs,
             is_subset=self.is_subset,
-            execution_type=self._computation.execution_type if self._computation else None,
+            effect_type=self._computation.effect_type if self._computation else None,
         )
 
 
