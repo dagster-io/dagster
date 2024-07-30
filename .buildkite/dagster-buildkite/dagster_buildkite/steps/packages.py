@@ -360,6 +360,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             AvailablePythonVersion.V3_12,
         ],
     ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/peering-with-dbt",
+    ),
 ]
 
 
