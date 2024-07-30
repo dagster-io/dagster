@@ -1002,7 +1002,7 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, remote_job):
                 "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
             },
             {"dagster/git_commit_hash"},
-            True,
+            False,
             [],
             ["dagster/partition_key",],
             False
