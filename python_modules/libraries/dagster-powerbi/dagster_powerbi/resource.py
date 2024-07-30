@@ -7,6 +7,7 @@ from dagster import (
     _check as check,
     external_assets_from_specs,
 )
+from dagster._annotations import public
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -24,6 +25,7 @@ from dagster_powerbi.translator import (
 BASE_API_URL = "https://api.powerbi.com/v1.0/myorg/"
 
 
+@public
 class PowerBIWorkspace(ConfigurableResource):
     """Represents a workspace in PowerBI and provides utilities
     to interact with the PowerBI API.
@@ -125,6 +127,7 @@ class PowerBIWorkspace(ConfigurableResource):
             dashboards + reports + semantic_models + list(data_sources_by_id.values()),
         )
 
+    @public
     def build_assets(
         self,
         dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
