@@ -1,5 +1,6 @@
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_powerbi import DagsterPowerBITranslator
 from dagster_powerbi.translator import PowerBIContentData, PowerBIContentType, PowerBIWorkspaceData
 
@@ -144,3 +145,19 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
     assert len(deps) == 2
     assert deps[0].asset_key == AssetKey(["data_27_09_2019.xlsx"])
     assert deps[1].asset_key == AssetKey(["sales_marketing_datas.xlsx"])
+
+
+class MyCustomTranslator(DagsterPowerBITranslator):
+    def get_dashboard_spec(self, dashboard: PowerBIContentData) -> AssetSpec:
+        return super().get_dashboard_spec(dashboard)._replace(metadata={"custom": "metadata"})
+
+
+def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> None:
+    dashboard = next(iter(workspace_data.dashboards_by_id.values()))
+
+    translator = MyCustomTranslator(workspace_data)
+    asset_spec = translator.get_dashboard_spec(dashboard)
+
+    assert asset_spec.metadata == {"custom": "metadata"}
+    assert asset_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
+    assert asset_spec.tags == {"dagster/storage_kind": "powerbi"}
