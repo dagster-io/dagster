@@ -111,7 +111,7 @@ def test_translator_dashboard_spec(workspace_data: PowerBIWorkspaceData) -> None
     dashboard = next(iter(workspace_data.dashboards_by_id.values()))
 
     translator = DagsterPowerBITranslator(workspace_data)
-    asset_spec = translator.get_dashboard_spec(dashboard)
+    asset_spec = translator.get_asset_spec(dashboard)
 
     assert asset_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
     assert asset_spec.tags == {"dagster/storage_kind": "powerbi"}
@@ -124,7 +124,7 @@ def test_translator_report_spec(workspace_data: PowerBIWorkspaceData) -> None:
     report = next(iter(workspace_data.reports_by_id.values()))
 
     translator = DagsterPowerBITranslator(workspace_data)
-    asset_spec = translator.get_report_spec(report)
+    asset_spec = translator.get_asset_spec(report)
 
     assert asset_spec.key.path == ["report", "Sales_Returns_Sample_v201912"]
     assert asset_spec.tags == {"dagster/storage_kind": "powerbi"}
@@ -137,7 +137,7 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
     semantic_model = next(iter(workspace_data.semantic_models_by_id.values()))
 
     translator = DagsterPowerBITranslator(workspace_data)
-    asset_spec = translator.get_semantic_model_spec(semantic_model)
+    asset_spec = translator.get_asset_spec(semantic_model)
 
     assert asset_spec.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
     assert asset_spec.tags == {"dagster/storage_kind": "powerbi"}
@@ -156,7 +156,7 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
     dashboard = next(iter(workspace_data.dashboards_by_id.values()))
 
     translator = MyCustomTranslator(workspace_data)
-    asset_spec = translator.get_dashboard_spec(dashboard)
+    asset_spec = translator.get_asset_spec(dashboard)
 
     assert asset_spec.metadata == {"custom": "metadata"}
     assert asset_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
