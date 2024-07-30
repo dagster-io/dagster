@@ -982,7 +982,7 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
             True,
             [],
             [],
-            False
+            False,
         ),
         (
             {
@@ -993,7 +993,7 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
             False,
             ["dagster/partition_key"],
             [],
-            False
+            False,
         ),
         (
             {
@@ -1003,8 +1003,10 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
             {"dagster/git_commit_hash"},
             False,
             [],
-            ["dagster/partition_key",],
-            False
+            [
+                "dagster/partition_key",
+            ],
+            False,
         ),
         (
             {
@@ -1014,30 +1016,34 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
             {"dagster/git_commit_hash", "dagster/job_name"},
             False,
             [],
-            ["dagster/partition_key",],
-            True
-        )
-
+            [
+                "dagster/partition_key",
+            ],
+            True,
+        ),
     ],
 )
 def test_propagate_tags_include_all(
     run_tags: dict[str, str],
     expected_ecs_tag_keys: set[str],
     include_all: bool,
-    include_only: list[str], exclude: list[str],
+    include_only: list[str],
+    exclude: list[str],
     add_job_name: bool,
     instance_cm,
     workspace,
     job,
     external_job,
-    ecs
+    ecs,
 ):
     with instance_cm(
         {
-            "propagate_tags": {"include_all": include_all,
-                               "include_only": include_only,
-                               "exclude": exclude,
-                               "add_job_name": add_job_name},
+            "propagate_tags": {
+                "include_all": include_all,
+                "include_only": include_only,
+                "exclude": exclude,
+                "add_job_name": add_job_name,
+            },
         }
     ) as instance:
         run = instance.create_run_for_job(
