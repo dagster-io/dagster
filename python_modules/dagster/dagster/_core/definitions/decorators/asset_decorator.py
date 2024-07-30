@@ -36,6 +36,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
+from ..asset_result_type import AssetResultType, asset_execution_type_from_result_type
 from ..asset_spec import AssetExecutionType, AssetSpec
 from ..assets import AssetsDefinition
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -99,6 +100,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[Sequence[str]] = ...,
+    result_type: Optional[AssetResultType] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -108,6 +110,7 @@ def asset(
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
+@experimental_param(param="result_type")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
 )
@@ -146,6 +149,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
+    result_type: AssetResultType = "materialize",
     # TODO: FOU-243
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
@@ -224,6 +228,9 @@ def asset(
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
         key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
+        result_type (Literal["materialize", "observe"]): The result that executing the computation is
+            expected to have for the asset. Defaults to "materialize", but can be set to "observe"
+            for computations that observe the asset instead of materializing it.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
@@ -271,6 +278,7 @@ def asset(
         check_specs=check_specs,
         key=key,
         owners=owners,
+        result_type=result_type,
     )
 
     if compute_fn is not None:
@@ -343,6 +351,7 @@ class AssetDecoratorArgs(NamedTuple):
     key: Optional[CoercibleToAssetKey]
     check_specs: Optional[Sequence[AssetCheckSpec]]
     owners: Optional[Sequence[str]]
+    result_type: AssetResultType
 
 
 class ResourceRelatedState(NamedTuple):
@@ -466,7 +475,7 @@ def create_assets_def_from_fn_and_decorator_args(
             asset_deps={},
             can_subset=False,
             decorator_name="@asset",
-            execution_type=AssetExecutionType.MATERIALIZATION,
+            execution_type=asset_execution_type_from_result_type(args.result_type),
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
