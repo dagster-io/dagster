@@ -970,6 +970,37 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
             instance.launch_run(run.run_id, workspace)
 
 
+def test_propagate_tags_include_all(instance_cm, workspace, job, external_job, ecs):
+    with instance_cm(
+        {
+            "propagate_tags": {"include_all": True},
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        expected_tags = {
+            "dagster/partition_key": "abc",
+            "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+        }
+        test_tags = {
+            **expected_tags,
+           "ecs/memory": "30720",
+           "ecs/cpu": "4096"
+        }
+
+        instance.add_run_tags(run.run_id, test_tags)
+        instance.launch_run(run.run_id, workspace)
+
+        expected_tags.update({"dagster/run_id": run.run_id})
+        initial_tasks = ecs.list_tasks()
+        tasks = ecs.describe_tasks(tasks=initial_tasks["taskArns"])
+        tags = tasks["tasks"][1]["tags"]
+        assert set([tag["key"] for tag in tags]) == set(expected_tags.keys())
+
+
 def test_launch_run_with_container_context(
     ecs,
     instance,
