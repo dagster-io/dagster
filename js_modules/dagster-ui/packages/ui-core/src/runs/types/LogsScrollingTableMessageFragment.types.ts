@@ -208,6 +208,15 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationPlannedEvent =
   stepKey: string | null;
 };
 
+export type LogsScrollingTableMessageFragment_AssetMaterializationFailureEvent = {
+  __typename: 'AssetMaterializationFailureEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsScrollingTableMessageFragment_AssetMaterializationPlannedEvent = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
@@ -3010,6 +3019,7 @@ export type LogsScrollingTableMessageFragment =
   | LogsScrollingTableMessageFragment_AlertSuccessEvent
   | LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent
   | LogsScrollingTableMessageFragment_AssetCheckEvaluationPlannedEvent
+  | LogsScrollingTableMessageFragment_AssetMaterializationFailureEvent
   | LogsScrollingTableMessageFragment_AssetMaterializationPlannedEvent
   | LogsScrollingTableMessageFragment_EngineEvent
   | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent
