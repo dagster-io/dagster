@@ -7,7 +7,7 @@ import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
 import {RunFragment} from './types/RunFragments.types';
-import { RunTableRunFragment } from './types/RunTableRunFragment.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
 import {Mono} from '../../../ui-components/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
