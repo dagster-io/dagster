@@ -13,7 +13,7 @@ import styled from 'styled-components';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags} from './RunTags';
 import {RunFilterToken, runsPathWithFilters} from './RunsFilterInput';
-import {RunTableRunFragment} from './types/RunTable.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PipelineTag} from '../graphql/types';

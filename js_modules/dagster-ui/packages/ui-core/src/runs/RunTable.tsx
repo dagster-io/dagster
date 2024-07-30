@@ -7,7 +7,7 @@ import {RunTableActionBar} from './RunTableActionBar';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunTableTargetHeader} from './RunTableTargetHeader';
 import {RunFilterToken} from './RunsFilterInput';
-import {RunTableRunFragment} from './types/RunTable.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 

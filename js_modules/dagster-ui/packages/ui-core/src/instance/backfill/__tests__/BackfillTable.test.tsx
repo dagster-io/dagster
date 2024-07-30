@@ -18,8 +18,8 @@ describe('BackfillTable', () => {
     jest.spyOn(Alerting, 'showCustomAlert');
     const user = userEvent.setup();
 
-    await act(() => {
-      render(
+    await act(async () => {
+      await render(
         <MemoryRouter>
           <Alerting.CustomAlertProvider />
           <MockedProvider mocks={[BackfillTableFragmentFailedErrorStatus]}>
