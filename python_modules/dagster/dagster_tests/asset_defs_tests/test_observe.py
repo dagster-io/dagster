@@ -2,10 +2,12 @@ from typing import Optional
 
 import pytest
 from dagster import (
+    AssetEffectType,
     ConfigurableResource,
     DataVersionsByPartition,
     IOManager,
     StaticPartitionsDefinition,
+    asset,
 )
 from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
@@ -43,7 +45,10 @@ def test_basic_observe():
 
 
 def test_observe_partitions():
-    @observable_source_asset(partitions_def=StaticPartitionsDefinition(["apple", "orange", "kiwi"]))
+    @asset(
+        partitions_def=StaticPartitionsDefinition(["apple", "orange", "kiwi"]),
+        effect_type=AssetEffectType.OBSERVE,
+    )
     def foo():
         return DataVersionsByPartition({"apple": "one", "orange": DataVersion("two")})
 
@@ -63,7 +68,7 @@ def test_observe_partitions():
 
 
 def test_observe_partitions_non_partitioned_asset():
-    @observable_source_asset
+    @asset(effect_type=AssetEffectType.OBSERVE)
     def foo():
         return DataVersionsByPartition({"apple": "one", "orange": DataVersion("two")})
 
@@ -81,7 +86,7 @@ def test_observe_data_version_partitioned_asset():
 
 
 def test_observe_tags():
-    @observable_source_asset
+    @asset(effect_type=AssetEffectType.OBSERVE)
     def foo(_context) -> DataVersion:
         return DataVersion("alpha")
 

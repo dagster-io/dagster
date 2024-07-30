@@ -99,6 +99,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[Sequence[str]] = ...,
+    effect_type: Optional[AssetEffectType] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -108,6 +109,7 @@ def asset(
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
+@experimental_param(param="effect_type")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
 )
@@ -146,6 +148,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
+    effect_type: AssetEffectType = AssetEffectType.MATERIALIZE,
     # TODO: FOU-243
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
@@ -224,6 +227,9 @@ def asset(
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
         key (Optional[CoeercibleToAssetKey]): The key for this asset. If provided, cannot specify key_prefix or name.
+        effect_type (Optional[AssetEffectType]): The effect that executing the computation is expected
+            to have for the asset. Defaults to MATERIALIZE, but can be set to OBSERVE for computations
+            that observe the asset instead of materializing it.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
@@ -271,6 +277,7 @@ def asset(
         check_specs=check_specs,
         key=key,
         owners=owners,
+        effect_type=effect_type,
     )
 
     if compute_fn is not None:
@@ -343,6 +350,7 @@ class AssetDecoratorArgs(NamedTuple):
     key: Optional[CoercibleToAssetKey]
     check_specs: Optional[Sequence[AssetCheckSpec]]
     owners: Optional[Sequence[str]]
+    effect_type: AssetEffectType
 
 
 class ResourceRelatedState(NamedTuple):
@@ -466,7 +474,7 @@ def create_assets_def_from_fn_and_decorator_args(
             asset_deps={},
             can_subset=False,
             decorator_name="@asset",
-            effect_type=AssetEffectType.MATERIALIZATION,
+            effect_type=args.effect_type,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
