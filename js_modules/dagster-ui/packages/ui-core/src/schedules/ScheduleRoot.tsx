@@ -25,7 +25,8 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment'
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';

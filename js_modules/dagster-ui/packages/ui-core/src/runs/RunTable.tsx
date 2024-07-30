@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Checkbox, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -7,7 +6,6 @@ import {RunRow} from './RunRow';
 import {RunTableActionBar} from './RunTableActionBar';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunTableTargetHeader} from './RunTableTargetHeader';
-import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {RunsFilter} from '../graphql/types';
@@ -136,52 +134,3 @@ export const RunTable = (props: RunTableProps) => {
     </>
   );
 };
-
-export const RUN_TAGS_FRAGMENT = gql`
-  fragment RunTagsFragment on PipelineTag {
-    key
-    value
-  }
-`;
-
-export const RUN_TABLE_RUN_FRAGMENT = gql`
-  fragment RunTableRunFragment on Run {
-    id
-    status
-    stepKeysToExecute
-    canTerminate
-    hasReExecutePermission
-    hasTerminatePermission
-    hasDeletePermission
-    mode
-    rootRunId
-    parentRunId
-    pipelineSnapshotId
-    pipelineName
-    repositoryOrigin {
-      id
-      repositoryName
-      repositoryLocationName
-    }
-    solidSelection
-    assetSelection {
-      ... on AssetKey {
-        path
-      }
-    }
-    assetCheckSelection {
-      name
-      assetKey {
-        path
-      }
-    }
-    status
-    tags {
-      ...RunTagsFragment
-    }
-    ...RunTimeFragment
-  }
-
-  ${RUN_TIME_FRAGMENT}
-  ${RUN_TAGS_FRAGMENT}
-`;
