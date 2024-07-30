@@ -1,4 +1,6 @@
 from collections import defaultdict
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -482,3 +484,19 @@ class PendingRepositoryDefinition:
         """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition."""
         repository_load_data = self._compute_repository_load_data()
         return self._get_repository_definition(repository_load_data)
+
+
+# contextvar
+current_repository_load_data: ContextVar[Optional[RepositoryLoadData]] = ContextVar(
+    "repository_load_data", default=None
+)
+
+
+@contextmanager
+def repository_load_context(data: Optional[RepositoryLoadData]):
+    """Context manager that sets the current repository load data."""
+    try:
+        current_repository_load_data.set(data)
+        yield
+    finally:
+        current_repository_load_data.set(None)

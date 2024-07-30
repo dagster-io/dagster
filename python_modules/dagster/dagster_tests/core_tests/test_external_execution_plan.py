@@ -365,3 +365,51 @@ def bar(foo):
 @repository
 def pending_repo() -> Sequence[PendingRepositoryListDefinition]:
     return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+
+
+def test_using_cached_asset_data() -> None:
+    with instance_for_test() as instance:
+        from .pending_repo_from_cached_asset_metadata import pending_repo_from_cached_asset_metadata
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        job_def = repository_def.get_job("all_asset_job")
+        repository_load_data = repository_def.repository_load_data
+        assert (
+            instance.run_storage.get_cursor_values({"fetch_cached_data"}).get("fetch_cached_data")
+            == "1"
+        )
+
+        recon_repo = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "pending_repo_from_cached_asset_metadata.py"),
+            fn_name="pending_repo_from_cached_asset_metadata",
+        )
+        recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
+
+        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+
+        # avoid fetching definitions again, since plan has repository_load_data
+        assert (
+            instance.run_storage.get_cursor_values({"fetch_cached_data"}).get("fetch_cached_data")
+            == "1"
+        )
+
+        run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
+
+        events = execute_plan(
+            execution_plan=execution_plan,
+            job=recon_job,
+            dagster_run=run,
+            instance=instance,
+        )
+
+        assert (
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 2
+        ), "Expected two successful steps"
+
+        # should not have needed to get_definitions again after creating the plan
+        assert (
+            instance.run_storage.get_cursor_values({"fetch_cached_data"}).get("fetch_cached_data")
+            == "1"
+        )
