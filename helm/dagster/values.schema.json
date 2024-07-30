@@ -2987,7 +2987,8 @@
                 "runMonitoring",
                 "runRetries",
                 "sensors",
-                "schedules"
+                "schedules",
+                "autoMaterialize"
             ],
             "additionalProperties": false
         },
