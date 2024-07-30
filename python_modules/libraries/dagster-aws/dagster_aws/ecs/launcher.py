@@ -4,7 +4,7 @@ import os
 import uuid
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -185,7 +185,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             propagate_tags,
             "propagate_tags",
             key_type=str,
-            value_type=bool | list,
+            value_type=Union[bool, List],
         )
         if self.propagate_tags:
             check.invariant(
