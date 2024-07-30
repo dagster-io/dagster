@@ -104,7 +104,7 @@ class DataGenerator:
         return sorted(signups, key=lambda x: x["registered_at"])
 
     def get_signups_for_dates(
-        self, start_date: datetime, end_date: Union[datetime, None] = None
+            self, start_date: datetime, end_date: Union[datetime, None] = None
     ) -> Sequence[Signup]:
         signups = []
 
