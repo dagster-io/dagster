@@ -498,6 +498,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         )
         command = self._get_command_args(args, context)
         image = self._get_image_for_run(context)
+        if image is None:
+            raise ValueError("Could not determine image for run")
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
