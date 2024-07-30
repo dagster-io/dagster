@@ -737,15 +737,12 @@ class AssetDaemon(DagsterDaemon):
                     check.not_none(repository).asset_graph
                 )
             else:
-                eligible_keys = {
-                    *asset_graph.materializable_asset_keys,
-                    *asset_graph.external_asset_keys,
-                }
+                eligible_keys = asset_graph.all_asset_keys
 
             auto_materialize_asset_keys = {
                 target_key
                 for target_key in eligible_keys
-                if asset_graph.get(target_key).auto_materialize_policy is not None
+                if asset_graph.get(target_key).automation_condition is not None
             }
             num_target_assets = len(auto_materialize_asset_keys)
 

@@ -21,6 +21,9 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import ExternalRepository
@@ -126,6 +129,15 @@ class RemoteAssetNode(BaseAssetNode):
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
         return self._materializable_node.auto_materialize_policy if self.is_materializable else None
+
+    @property
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        if self.is_materializable:
+            return self._materializable_node.automation_condition
+        elif self.is_observable:
+            return self._observable_node.automation_condition
+        else:
+            return None
 
     @property
     def auto_observe_interval_minutes(self) -> Optional[float]:

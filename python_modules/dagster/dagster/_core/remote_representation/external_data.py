@@ -54,6 +54,9 @@ from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
     GraphNode,
@@ -1522,6 +1525,13 @@ class ExternalAssetNode(
     @property
     def is_executable(self) -> bool:
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
+
+    @property
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        if self.auto_materialize_policy is not None:
+            return self.auto_materialize_policy.to_automation_condition()
+        else:
+            return None
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
