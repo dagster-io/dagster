@@ -20,7 +20,7 @@ import {
 } from './types/ScheduleSwitch.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus} from '../graphql/types';
-import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationUtils';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

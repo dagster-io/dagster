@@ -8,7 +8,7 @@ import {
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationUtils';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 
 export const START_SENSOR_MUTATION = gql`
   mutation StartSensor($sensorSelector: SensorSelector!) {

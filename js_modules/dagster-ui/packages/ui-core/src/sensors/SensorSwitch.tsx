@@ -37,7 +37,6 @@ import {
 } from './types/SensorSwitch.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
-import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationUtils';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -306,16 +305,4 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
     }
     sensorType
   }
-`;
-
-const SENSOR_STATE_QUERY = gql`
-  query SensorStateQuery($id: String!, $selector: InstigationSelector!) {
-    instigationStateOrError(id: $id, instigationSelector: $selector) {
-      ... on InstigationState {
-        id
-        ...InstigationStateBaseFragment
-      }
-    }
-  }
-  ${INSTIGATION_STATE_BASE_FRAGMENT}
 `;
