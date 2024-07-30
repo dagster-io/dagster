@@ -1,23 +1,21 @@
-from typing import Sequence
+from typing import Any, Mapping, Sequence
 
 from dagster import asset, define_asset_job, repository
 from dagster._core.definitions.cacheable_assets import (
     CACHED_ASSET_ID_KEY,
     CACHED_ASSET_METADATA_KEY,
-    CACHED_ASSET_PREFIX,
-)
-from dagster._core.definitions.repository_definition.repository_definition import (
-    current_repository_load_data,
+    extract_from_current_repository_load_data,
 )
 from dagster._core.definitions.repository_definition.valid_definitions import (
     PendingRepositoryListDefinition,
 )
 from dagster._core.instance import DagsterInstance
 
-cached_data = current_repository_load_data.get()
+metadata_value_cached_assets: Sequence[Mapping[Any, Any]] | None = (
+    extract_from_current_repository_load_data("my_cached_asset_id")
+)
 
-metadata_value_cached_assets = None
-if not cached_data:
+if metadata_value_cached_assets is None:
     instance = DagsterInstance.get()
     kvs_key = "fetch_cached_data"
     get_definitions_called = int(
@@ -26,13 +24,6 @@ if not cached_data:
     instance.run_storage.set_cursor_values({kvs_key: str(get_definitions_called + 1)})
 
     metadata_value_cached_assets = [{"foo": "bar"}, {"baz": "qux"}]
-else:
-    metadata_value_cached_assets = [
-        data.extra_metadata
-        for data in cached_data.cached_data_by_key.get(
-            f"{CACHED_ASSET_PREFIX}my_cached_asset_id", []
-        )
-    ]
 
 assert metadata_value_cached_assets == [
     {"foo": "bar"},
