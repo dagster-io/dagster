@@ -20,6 +20,7 @@ import {
   STOP_SENSOR_MUTATION,
   displaySensorMutationErrors,
 } from './SensorMutations';
+import {SENSOR_STATE_QUERY} from './SensorStateQuery';
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
