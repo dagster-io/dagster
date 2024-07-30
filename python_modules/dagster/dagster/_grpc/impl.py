@@ -3,7 +3,7 @@
 import os
 import sys
 import threading
-from contextlib import contextmanager, nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -29,6 +29,9 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    repository_load_context,
+)
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
@@ -122,52 +125,56 @@ def core_execute_run(
             yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
             raise
 
-    # try to load the pipeline definition early
-    try:
-        # add in cached metadata to load repository more efficiently
-        if dagster_run.has_repository_load_data:
-            execution_plan_snapshot = instance.get_execution_plan_snapshot(
-                check.not_none(dagster_run.execution_plan_snapshot_id)
+    with ExitStack() as stack:
+        # try to load the pipeline definition early
+        try:
+            # add in cached metadata to load repository more efficiently
+            if dagster_run.has_repository_load_data:
+                execution_plan_snapshot = instance.get_execution_plan_snapshot(
+                    check.not_none(dagster_run.execution_plan_snapshot_id)
+                )
+                stack.enter_context(
+                    repository_load_context(execution_plan_snapshot.repository_load_data)
+                )
+                recon_job = recon_job.with_repository_load_data(
+                    execution_plan_snapshot.repository_load_data,
+                )
+            recon_job.get_definition()
+        except Exception:
+            yield instance.report_engine_event(
+                "Could not load job definition.",
+                dagster_run,
+                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
-            recon_job = recon_job.with_repository_load_data(
-                execution_plan_snapshot.repository_load_data,
+            yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
+            raise
+
+        # Reload the run to verify that its status didn't change while the pipeline was loaded
+        dagster_run = check.not_none(
+            instance.get_run_by_id(dagster_run.run_id),
+            f"Job run with id '{dagster_run.run_id}' was deleted after the run worker started.",
+        )
+
+        try:
+            yield from execute_run_iterator(
+                recon_job, dagster_run, instance, resume_from_failure=resume_from_failure
             )
-        recon_job.get_definition()
-    except Exception:
-        yield instance.report_engine_event(
-            "Could not load job definition.",
-            dagster_run,
-            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
-        )
-        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
-        raise
-
-    # Reload the run to verify that its status didn't change while the pipeline was loaded
-    dagster_run = check.not_none(
-        instance.get_run_by_id(dagster_run.run_id),
-        f"Job run with id '{dagster_run.run_id}' was deleted after the run worker started.",
-    )
-
-    try:
-        yield from execute_run_iterator(
-            recon_job, dagster_run, instance, resume_from_failure=resume_from_failure
-        )
-    except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
-        yield instance.report_engine_event(
-            message="Run execution terminated by interrupt",
-            dagster_run=dagster_run,
-        )
-        raise
-    except Exception:
-        yield instance.report_engine_event(
-            "An exception was thrown during execution that is likely a framework error, "
-            "rather than an error in user code.",
-            dagster_run,
-            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
-        )
-        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
-        raise
+        except (KeyboardInterrupt, DagsterExecutionInterruptedError):
+            yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
+            yield instance.report_engine_event(
+                message="Run execution terminated by interrupt",
+                dagster_run=dagster_run,
+            )
+            raise
+        except Exception:
+            yield instance.report_engine_event(
+                "An exception was thrown during execution that is likely a framework error, "
+                "rather than an error in user code.",
+                dagster_run,
+                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+            )
+            yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
+            raise
 
 
 @contextmanager

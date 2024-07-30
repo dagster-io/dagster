@@ -10,6 +10,9 @@ from dagster._core.definitions.executor_definition import (
     multi_or_in_process_executor,
 )
 from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.repository_definition.repository_definition import (
+    repository_load_context,
+)
 from dagster._core.definitions.run_config import selector_for_named_defs
 from dagster._core.errors import (
     DagsterError,
@@ -202,22 +205,23 @@ def execute_run_host_mode(
         dagster_run.job_name,
         execution_plan_snapshot,
     )
-    recon_job = recon_job.with_repository_load_data(execution_plan.repository_load_data)
+    with repository_load_context(execution_plan.repository_load_data):
+        recon_job = recon_job.with_repository_load_data(execution_plan.repository_load_data)
 
-    _execute_run_iterable = ExecuteRunWithPlanIterable(
-        execution_plan=execution_plan,
-        iterator=job_execution_iterator,
-        execution_context_manager=PlanOrchestrationContextManager(
-            context_event_generator=host_mode_execution_context_event_generator,
-            job=recon_job,
+        _execute_run_iterable = ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            run_config=dagster_run.run_config,
-            dagster_run=dagster_run,
-            instance=instance,
-            raise_on_error=raise_on_error,
-            executor_defs=executor_defs,
-            output_capture=None,
-        ),
-    )
-    event_list = list(_execute_run_iterable)
-    return event_list
+            iterator=job_execution_iterator,
+            execution_context_manager=PlanOrchestrationContextManager(
+                context_event_generator=host_mode_execution_context_event_generator,
+                job=recon_job,
+                execution_plan=execution_plan,
+                run_config=dagster_run.run_config,
+                dagster_run=dagster_run,
+                instance=instance,
+                raise_on_error=raise_on_error,
+                executor_defs=executor_defs,
+                output_capture=None,
+            ),
+        )
+        event_list = list(_execute_run_iterable)
+        return event_list
