@@ -11,8 +11,6 @@ def get_version() -> str:
     # return version["__version__"]
 
 
-# TODO - add your package to scripts/install_dev_python_modules.py
-
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
@@ -22,7 +20,7 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="",  # TODO - fill out description
+    description="Build assets representing Power BI dashboards and reports.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "dagster-powerbi"
@@ -39,7 +37,6 @@ setup(
     packages=find_packages(exclude=["dagster_powerbi_tests*"]),
     install_requires=[
         f"dagster{pin}",
-        # TODO - fill in remaining dependencies
     ],
     zip_safe=False,
 )
