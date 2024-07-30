@@ -80,6 +80,10 @@ class Schedules(BaseModel):
     numSubmitWorkers: Optional[int]
 
 
+class AutoMaterialize(BaseModel):
+    useSensors: bool
+
+
 class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
@@ -104,6 +108,7 @@ class Daemon(BaseModel):
     runRetries: Dict[str, Any]
     sensors: Sensors
     schedules: Schedules
+    autoMaterialize: AutoMaterialize
     schedulerName: Optional[str]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]

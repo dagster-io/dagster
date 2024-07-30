@@ -1141,6 +1141,11 @@ dagsterDaemon:
     # used to decrease latency when a schedule emits multiple run requests within a single tick.
     # numSubmitWorkers: 4
 
+  autoMaterialize:
+    # Whether or not to use auto-materialize sensors. See:
+    # https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materialize-sensors
+    useSensors: false
+
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See
   # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/

@@ -133,6 +133,12 @@ data:
       {{- end }}
     {{- end }}
 
+    {{- $autoMaterialize := .Values.dagsterDaemon.autoMaterialize }}
+    {{- if and (.Values.dagsterDaemon.enabled) ($autoMaterialize.useSensors) }}
+    auto_materialize:
+      use_sensors: {{ $autoMaterialize.useSensors }}
+    {{- end }}
+
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
 

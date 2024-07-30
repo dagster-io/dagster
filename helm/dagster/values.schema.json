@@ -2790,6 +2790,19 @@
                 "useThreads"
             ]
         },
+        "AutoMaterialize": {
+            "title": "AutoMaterialize",
+            "type": "object",
+            "properties": {
+                "useSensors": {
+                    "title": "Usesensors",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "useSensors"
+            ]
+        },
         "Daemon": {
             "title": "Daemon",
             "type": "object",
@@ -2896,6 +2909,9 @@
                 },
                 "schedules": {
                     "$ref": "#/definitions/Schedules"
+                },
+                "autoMaterialize": {
+                    "$ref": "#/definitions/AutoMaterialize"
                 },
                 "schedulerName": {
                     "title": "Schedulername",
