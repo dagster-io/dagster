@@ -376,8 +376,16 @@ def test_using_cached_asset_data() -> None:
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data
         assert (
-            instance.run_storage.get_cursor_values({"fetch_cached_data"}).get("fetch_cached_data")
+            instance.run_storage.get_cursor_values({"fetched_external_data"}).get(
+                "fetched_external_data"
+            )
             == "1"
+        )
+        assert (
+            instance.run_storage.get_cursor_values({"used_cached_external_data"}).get(
+                "used_cached_external_data"
+            )
+            is None
         )
 
         recon_repo = ReconstructableRepository.for_file(
@@ -390,7 +398,15 @@ def test_using_cached_asset_data() -> None:
 
         # avoid fetching definitions again, since plan has repository_load_data
         assert (
-            instance.run_storage.get_cursor_values({"fetch_cached_data"}).get("fetch_cached_data")
+            instance.run_storage.get_cursor_values({"fetched_external_data"}).get(
+                "fetched_external_data"
+            )
+            == "1"
+        )
+        assert (
+            instance.run_storage.get_cursor_values({"used_cached_external_data"}).get(
+                "used_cached_external_data"
+            )
             == "1"
         )
 
@@ -408,8 +424,16 @@ def test_using_cached_asset_data() -> None:
             == 2
         ), "Expected two successful steps"
 
-        # should not have needed to get_definitions again after creating the plan
+        # should not have needed to get definitions again after creating the plan
         assert (
-            instance.run_storage.get_cursor_values({"fetch_cached_data"}).get("fetch_cached_data")
+            instance.run_storage.get_cursor_values({"fetched_external_data"}).get(
+                "fetched_external_data"
+            )
+            == "1"
+        )
+        assert (
+            instance.run_storage.get_cursor_values({"used_cached_external_data"}).get(
+                "used_cached_external_data"
+            )
             == "1"
         )

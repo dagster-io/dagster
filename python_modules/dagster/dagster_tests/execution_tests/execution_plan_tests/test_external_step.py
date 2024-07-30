@@ -734,3 +734,40 @@ def bar(foo):
 @repository
 def pending_repo():
     return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
+
+
+def test_multiproc_launcher_with_repository_load_asset_metadata() -> None:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_config = {
+            "resources": {
+                "step_launcher": {"config": {"scratch_dir": tmpdir}},
+                "io_manager": {"config": {"base_dir": tmpdir}},
+            }
+        }
+
+        with instance_for_test() as instance:
+            recon_repo = ReconstructableRepository.for_file(
+                file_relative_path(
+                    __file__, "../../core_tests/pending_repo_from_cached_asset_metadata.py"
+                ),
+                fn_name="pending_repo_from_cached_asset_metadata_with_step_launcher",
+            )
+            recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
+
+            # Run twice to ensure that the cacheable data is only computed once
+            for i in range(2):
+                with execute_job(
+                    recon_job,
+                    run_config=run_config,
+                    instance=instance,
+                ) as result:
+                    assert result.success
+                    assert (
+                        instance.run_storage.get_cursor_values({"fetched_external_data"}).get(
+                            "fetched_external_data"
+                        )
+                        == "1"
+                    )
+                    assert instance.run_storage.get_cursor_values(
+                        {"used_cached_external_data"}
+                    ).get("used_cached_external_data") == str(i * 2 + 2)
