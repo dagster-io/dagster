@@ -48,7 +48,7 @@ one_upstream_observable_asset = ScenarioSpec(
     [
         AssetSpec(
             "A",
-            metadata={SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetEffectType.OBSERVATION.value},
+            metadata={SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetEffectType.OBSERVE.value},
         ),
         AssetSpec("B", deps=["A"]),
     ]

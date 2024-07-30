@@ -158,7 +158,7 @@ class ScenarioSpec:
                 effect_type_str = spec.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
                 effect_type = AssetEffectType[effect_type_str] if effect_type_str else None
                 # create an observable_source_asset or regular asset depending on the execution type
-                if effect_type == AssetEffectType.OBSERVATION:
+                if effect_type == AssetEffectType.OBSERVE:
                     # strip out the relevant paramters from the spec
                     params = {"key", "group_name", "partitions_def", "metadata"}
 

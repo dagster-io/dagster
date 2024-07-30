@@ -120,7 +120,7 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             outs={"result": Out(io_manager_key=source_asset.io_manager_key)},
         )
         extra_metadata_entries = {}
-        effect_type = AssetEffectType.OBSERVATION
+        effect_type = AssetEffectType.OBSERVE
     else:
         keys_by_output_name = {}
         node_def = None

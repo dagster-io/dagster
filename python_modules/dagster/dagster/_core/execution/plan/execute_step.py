@@ -571,7 +571,7 @@ def _get_output_asset_events(
     step_context.wipe_input_asset_version_info(asset_key)
     tags: Dict[str, str]
     if (
-        effect_type == AssetEffectType.MATERIALIZATION
+        effect_type == AssetEffectType.MATERIALIZE
         and step_context.is_external_input_asset_version_info_loaded
         and asset_key in step_context.job_def.asset_layer.executable_asset_keys
     ):
@@ -601,7 +601,7 @@ def _get_output_asset_events(
         if not step_context.has_data_version(asset_key):
             data_version = DataVersion(tags[DATA_VERSION_TAG])
             step_context.set_data_version(asset_key, data_version)
-    elif effect_type == AssetEffectType.OBSERVATION:
+    elif effect_type == AssetEffectType.OBSERVE:
         assert isinstance(output, Output)
         tags = (
             _build_data_version_observation_tags(output.data_version) if output.data_version else {}
@@ -615,10 +615,10 @@ def _get_output_asset_events(
     if backfill_id:
         tags[BACKFILL_ID_TAG] = backfill_id
 
-    if effect_type == AssetEffectType.MATERIALIZATION:
+    if effect_type == AssetEffectType.MATERIALIZE:
         event_class = AssetMaterialization
         event_class = AssetMaterialization
-    elif effect_type == AssetEffectType.OBSERVATION:
+    elif effect_type == AssetEffectType.OBSERVE:
         event_class = AssetObservation
     else:
         check.failed(f"Unexpected asset execution type {effect_type}")
@@ -861,7 +861,7 @@ def _log_materialization_or_observation_events_for_asset(
         )
 
         check.invariant(
-            effect_type in {AssetEffectType.MATERIALIZATION, AssetEffectType.OBSERVATION},
+            effect_type in {AssetEffectType.MATERIALIZE, AssetEffectType.OBSERVE},
             f"Unexpected asset execution type {effect_type}",
         )
 

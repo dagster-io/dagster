@@ -307,7 +307,7 @@ class SourceAsset(ResourceAddable):
 
     @property
     def effect_type(self) -> AssetEffectType:
-        return AssetEffectType.OBSERVATION if self.is_observable else AssetEffectType.UNEXECUTABLE
+        return AssetEffectType.OBSERVE if self.is_observable else AssetEffectType.UNEXECUTABLE
 
     @property
     def is_executable(self) -> bool:

@@ -224,7 +224,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 is_subset=check.bool_param(is_subset, "is_subset"),
                 selected_asset_keys=selected_asset_keys,
                 selected_asset_check_keys=selected_asset_check_keys,
-                effect_type=effect_type or AssetEffectType.MATERIALIZATION,
+                effect_type=effect_type or AssetEffectType.MATERIALIZE,
             )
 
         self._partitions_def = partitions_def
@@ -789,7 +789,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=None,
             is_subset=False,
             specs=specs,
-            effect_type=AssetEffectType.MATERIALIZATION,
+            effect_type=AssetEffectType.MATERIALIZE,
         )
 
     @public
@@ -1113,15 +1113,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def is_external(self) -> bool:
-        return self.effect_type != AssetEffectType.MATERIALIZATION
+        return self.effect_type != AssetEffectType.MATERIALIZE
 
     @property
     def is_observable(self) -> bool:
-        return self.effect_type == AssetEffectType.OBSERVATION
+        return self.effect_type == AssetEffectType.OBSERVE
 
     @property
     def is_materializable(self) -> bool:
-        return self.effect_type == AssetEffectType.MATERIALIZATION
+        return self.effect_type == AssetEffectType.MATERIALIZE
 
     @property
     def is_executable(self) -> bool:

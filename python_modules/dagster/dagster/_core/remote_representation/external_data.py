@@ -1431,11 +1431,11 @@ class ExternalAssetNode(
             effect_type = metadata_effect_type
         else:
             if is_source and is_observable:
-                default_effect_type = AssetEffectType.OBSERVATION
+                default_effect_type = AssetEffectType.OBSERVE
             elif is_source:
                 default_effect_type = AssetEffectType.UNEXECUTABLE
             else:
-                default_effect_type = AssetEffectType.MATERIALIZATION
+                default_effect_type = AssetEffectType.MATERIALIZE
 
             effect_type = (
                 check.opt_inst_param(
@@ -1513,11 +1513,11 @@ class ExternalAssetNode(
 
     @property
     def is_materializable(self) -> bool:
-        return self.effect_type == AssetEffectType.MATERIALIZATION
+        return self.effect_type == AssetEffectType.MATERIALIZE
 
     @property
     def is_external(self) -> bool:
-        return self.effect_type != AssetEffectType.MATERIALIZATION
+        return self.effect_type != AssetEffectType.MATERIALIZE
 
     @property
     def is_executable(self) -> bool:

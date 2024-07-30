@@ -633,7 +633,7 @@ def multi_asset(
         ),
         backfill_policy=backfill_policy,
         decorator_name="@multi_asset",
-        effect_type=AssetEffectType.MATERIALIZATION,
+        effect_type=AssetEffectType.MATERIALIZE,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

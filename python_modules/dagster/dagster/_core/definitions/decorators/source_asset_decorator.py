@@ -282,7 +282,7 @@ def multi_observable_source_asset(
         ),
         backfill_policy=None,
         decorator_name="@multi_observable_source_asset",
-        effect_type=AssetEffectType.OBSERVATION,
+        effect_type=AssetEffectType.OBSERVE,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

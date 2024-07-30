@@ -436,8 +436,8 @@ def _warn_on_duplicate_nodes(
     # more than one node is materializable or if more than one node is observable. It is valid
     # if there is at most one materializable node and at most one observable node, with all
     # other nodes unexecutable.
-    _warn_on_duplicates_within_subset(materializable_node_pairs, AssetEffectType.MATERIALIZATION)
-    _warn_on_duplicates_within_subset(observable_node_pairs, AssetEffectType.OBSERVATION)
+    _warn_on_duplicates_within_subset(materializable_node_pairs, AssetEffectType.MATERIALIZE)
+    _warn_on_duplicates_within_subset(observable_node_pairs, AssetEffectType.OBSERVE)
 
 
 def _warn_on_duplicates_within_subset(

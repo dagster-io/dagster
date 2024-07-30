@@ -59,9 +59,9 @@ SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET = "dagster/auto_created_stub_asset"
 
 @whitelist_for_serdes
 class AssetEffectType(Enum):
-    OBSERVATION = "OBSERVATION"
+    OBSERVE = "OBSERVE"
     UNEXECUTABLE = "UNEXECUTABLE"
-    MATERIALIZATION = "MATERIALIZATION"
+    MATERIALIZE = "MATERIALIZE"
 
 
 @experimental_param(param="owners")
