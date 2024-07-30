@@ -81,6 +81,7 @@ EventSpecificData = Union[
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
+    "AssetMaterializationFailureData",
 ]
 
 
@@ -114,6 +115,8 @@ class DagsterEventType(str, Enum):
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
+
+    ASSET_MATERIALIZATION_FAILURE = "ASSET_MATERIALIZATION_FAILURE"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -241,12 +244,14 @@ PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN
 BATCH_WRITABLE_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
+    DagsterEventType.ASSET_MATERIALIZATION_FAILURE,
 }
 
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+    DagsterEventType.ASSET_MATERIALIZATION_FAILURE,
 }
 
 ASSET_CHECK_EVENTS = {
@@ -717,6 +722,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.asset_key
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.asset_key
+        elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_FAILURE:
+            return self.asset_materialization_failure_data.asset_key
         else:
             return None
 
@@ -733,6 +740,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.partition
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.partition
+        elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_FAILURE:
+            return self.asset_materialization_failure_data.partition
         else:
             return None
 
@@ -787,6 +796,15 @@ class DagsterEvent(
             self.event_type,
         )
         return cast(AssetMaterializationPlannedData, self.event_specific_data)
+
+    @property
+    def asset_materialization_failure_data(self) -> "AssetMaterializationFailureData":
+        _assert_type(
+            "asset_materialization_failure",
+            DagsterEventType.ASSET_MATERIALIZATION_FAILURE,
+            self.event_type,
+        )
+        return cast(AssetMaterializationFailureData, self.event_specific_data)
 
     @property
     def asset_check_planned_data(self) -> "AssetCheckEvaluationPlanned":
@@ -965,6 +983,20 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_START,
             step_context=step_context,
             message=f'Started execution of step "{step_context.step.key}".',
+        )
+
+    @staticmethod
+    def build_asset_materialization_failure_event(
+        job_name: str,
+        step_key: str,
+        asset_materialization_failure_data: "AssetMaterializationFailureData",
+    ) -> "DagsterEvent":
+        return DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_FAILURE.value,
+            job_name=job_name,
+            message="",
+            event_specific_data=asset_materialization_failure_data,
+            step_key=step_key,
         )
 
     @staticmethod
@@ -1543,6 +1575,31 @@ class AssetObservationData(
             asset_observation=check.inst_param(
                 asset_observation, "asset_observation", AssetObservation
             ),
+        )
+
+
+@whitelist_for_serdes
+class AssetMaterializationFailureData(
+    NamedTuple(
+        "_AssetMaterializationFailureData",
+        [
+            ("asset_key", AssetKey),
+            ("partition", Optional[str]),
+            ("error", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        partition: Optional[str],
+        error: Optional[SerializableErrorInfo] = None,
+    ):
+        return super(AssetMaterializationFailureData, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            partition=check.opt_str_param(partition, "partition"),
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 

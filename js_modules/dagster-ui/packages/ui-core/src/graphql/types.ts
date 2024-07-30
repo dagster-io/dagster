@@ -392,6 +392,20 @@ export type AssetLineageInfo = {
   partitions: Array<Scalars['String']['output']>;
 };
 
+export type AssetMaterializationFailureEvent = MessageEvent &
+  RunEvent & {
+    __typename: 'AssetMaterializationFailureEvent';
+    assetKey: Maybe<AssetKey>;
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    pipelineName: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
 export type AssetMaterializationPlannedEvent = MessageEvent &
   RunEvent & {
     __typename: 'AssetMaterializationPlannedEvent';
@@ -927,6 +941,7 @@ export enum DagsterEventType {
   ASSET_CHECK_EVALUATION = 'ASSET_CHECK_EVALUATION',
   ASSET_CHECK_EVALUATION_PLANNED = 'ASSET_CHECK_EVALUATION_PLANNED',
   ASSET_MATERIALIZATION = 'ASSET_MATERIALIZATION',
+  ASSET_MATERIALIZATION_FAILURE = 'ASSET_MATERIALIZATION_FAILURE',
   ASSET_MATERIALIZATION_PLANNED = 'ASSET_MATERIALIZATION_PLANNED',
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
   ASSET_STORE_OPERATION = 'ASSET_STORE_OPERATION',
@@ -982,6 +997,7 @@ export type DagsterRunEvent =
   | AlertSuccessEvent
   | AssetCheckEvaluationEvent
   | AssetCheckEvaluationPlannedEvent
+  | AssetMaterializationFailureEvent
   | AssetMaterializationPlannedEvent
   | EngineEvent
   | ExecutionStepFailureEvent
@@ -6300,6 +6316,36 @@ export const buildAssetLineageInfo = (
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
     partitions: overrides && overrides.hasOwnProperty('partitions') ? overrides.partitions! : [],
+  };
+};
+
+export const buildAssetMaterializationFailureEvent = (
+  overrides?: Partial<AssetMaterializationFailureEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetMaterializationFailureEvent'} & AssetMaterializationFailureEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetMaterializationFailureEvent');
+  return {
+    __typename: 'AssetMaterializationFailureEvent',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
+    pipelineName:
+      overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'et',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'sequi',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'natus',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'rerum',
   };
 };
 

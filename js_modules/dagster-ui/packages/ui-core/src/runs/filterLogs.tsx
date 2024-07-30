@@ -6,11 +6,12 @@ import {weakmapMemoize} from '../app/Util';
 
 export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
   const filteredNodes = logs.allNodes.filter((node) => {
-    // These events are used to determine which assets a run will materialize and are not intended
+    // These events are used for internal bookkeeping and are not intended
     // to be displayed in the Dagster UI. Pagination is offset based, so we remove these logs client-side.
     if (
       node.__typename === 'AssetMaterializationPlannedEvent' ||
-      node.__typename === 'AssetCheckEvaluationPlannedEvent'
+      node.__typename === 'AssetCheckEvaluationPlannedEvent' ||
+      node.__typename === 'AssetMaterializationFailureEvent'
     ) {
       return false;
     }

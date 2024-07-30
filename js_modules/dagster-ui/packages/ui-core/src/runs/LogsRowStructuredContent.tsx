@@ -152,6 +152,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
         />
       );
     case 'AssetMaterializationPlannedEvent':
+    case 'AssetMaterializationFailureEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'ObjectStoreOperationEvent':
       return (
