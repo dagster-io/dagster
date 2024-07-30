@@ -188,7 +188,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             value_type=bool | list,
         )
         if self.propagate_tags:
-            check.invariant(len([k for k, v in self.propagate_tags.items() if v]) <= 1, "Only one of include_only, include_all, or exclude can be set for the propagate_tags config property")
+            check.invariant(
+                len([k for k, v in self.propagate_tags.items() if v and k != "add_job_name"]) <= 1,
+                "Only one of include_only, include_all, or exclude can be set for the propagate_tags config property",
+            )
 
         self._current_task_metadata = None
         self._current_task = None
@@ -363,6 +366,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                             default_value=[],
                             description="List of specific tag keys which should not be propagated to the ECS task. All other tags will be propagated to the ECS task.",
                         ),
+                        "add_job_name": Field(
+                            bool,
+                            default_value=True,
+                            description="Whether to propagate the job name from the Dagster run to the ECS task.",
+                        ),
                     }
                 ),
                 is_required=False,
@@ -393,14 +401,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             # Add contextual Dagster run tags to ECS tags
             tags = run.tags
             if self.propagate_tags.get("include_all"):
-                tags = {k: v for k, v in run.tags.items() if not k.startswith("ecs/")}  # ecs tags are redundant to information already defined on the task
+                tags = {
+                    k: v for k, v in run.tags.items() if not k.startswith("ecs/")
+                }  # ecs tags are redundant to information already defined on the task
             elif self.propagate_tags.get("include_only"):
                 tags = {
                     k: v for k, v in run.tags.items() if k in self.propagate_tags["include_only"]
                 }
             elif self.propagate_tags.get("exclude"):
                 tags = {
-                    k: v for k, v in run.tags.items() if k not in self.propagate_tags["exclude"] and not k.startswith("ecs/")
+                    k: v
+                    for k, v in run.tags.items()
+                    if k not in self.propagate_tags["exclude"] and not k.startswith("ecs/")
                 }
             if self.propagate_tags.get("add_job_name"):
                 tags["dagster/job_name"] = run.job_name
