@@ -27,7 +27,7 @@ from dagster import Definitions  # noqa
 from dagster_aws.pipes import PipesGlueContextInjector
 
 
-bucket = "aws-glue-assets-467123434025-eu-north-1"
+bucket = os.environ["DAGSTER_GLUE_S3_CONTEXT_BUCKET"]
 
 
 defs = Definitions(

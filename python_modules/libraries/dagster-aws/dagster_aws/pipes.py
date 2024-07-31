@@ -6,6 +6,7 @@ import string
 import sys
 import time
 from contextlib import contextmanager
+from threading import Thread
 from typing import TYPE_CHECKING, Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, List, Generator
 from typing import TypedDict
 import signal
@@ -439,18 +440,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
 
             try:
                 response = self._client.start_job_run(**params)
-                run_id = response["JobRunId"]
-                self._register_interruption_handler(context, job_name, run_id)
-                context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
-                response = self._wait_for_job_run_completion(job_name, run_id)
-                log_group = response["JobRun"]["LogGroupName"]
 
-                if response["JobRun"]["JobRunState"] == "FAILED":
-                    raise RuntimeError(
-                        f"Glue job {job_name} run {run_id} failed:\n{response['JobRun']['ErrorMessage']}"
-                    )
-                else:
-                    context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
 
             except ClientError as err:
                 context.log.error(
@@ -461,11 +451,26 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 )
                 raise
 
+            run_id = response["JobRunId"]
+
+            log_group = self._client.get_job_run(JobName=job_name, RunId=run_id)["JobRun"]["LogGroupName"]
+            self._register_interruption_handler(context, job_name, run_id)
+            context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
+
+            response = self._wait_for_job_run_completion(job_name, run_id)
+
+            if response["JobRun"]["JobRunState"] == "FAILED":
+                raise RuntimeError(
+                    f"Glue job {job_name} run {run_id} failed:\n{response['JobRun']['ErrorMessage']}"
+                )
+            else:
+                context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
+
             if isinstance(self._message_reader, PipesGlueLogsMessageReader):
-                self._message_reader.consume_cloudwatch_logs(log_group=f"{log_group}/output", log_stream=run_id,
+                # TODO: receive messages from a background thread in real-time
+                self._message_reader.consume_cloudwatch_logs(f"{log_group}/output", run_id,
                                                              start_time=int(start_timestamp))
 
-        # should probably have a way to return the lambda result payload
         return PipesClientCompletedInvocation(session)
 
     def _wait_for_job_run_completion(self, job_name: str, run_id: str) -> Dict[str, Any]:
