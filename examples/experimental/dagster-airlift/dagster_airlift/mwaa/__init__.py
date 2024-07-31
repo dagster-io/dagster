@@ -1,0 +1,1 @@
+from .auth_backend import MwaaSessionAuthBackend as MwaaSessionAuthBackend

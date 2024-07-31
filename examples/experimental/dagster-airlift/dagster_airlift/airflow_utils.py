@@ -48,9 +48,13 @@ class AirflowAuthBackend(ABC):
     def get_session(self) -> requests.Session:
         raise NotImplementedError("This method must be implemented by subclasses.")
 
+    def get_webserver_url(self) -> str:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
 
 class BasicAuthBackend(AirflowAuthBackend):
-    def __init__(self, username: str, password: str):
+    def __init__(self, webserver_url: str, username: str, password: str):
+        self._webserver_url = webserver_url
         self.username = username
         self.password = password
 
@@ -59,18 +63,23 @@ class BasicAuthBackend(AirflowAuthBackend):
         session.auth = (self.username, self.password)
         return session
 
+    def get_webserver_url(self) -> str:
+        return self._webserver_url
+
 
 class AirflowInstance(NamedTuple):
-    airflow_webserver_url: str
     auth_backend: AirflowAuthBackend
     name: str
 
     @property
-    def api_url(self) -> str:
-        return f"{self.airflow_webserver_url}/api/v1"
+    def normalized_name(self) -> str:
+        return self.name.replace(" ", "_").replace("-", "_")
+
+    def get_api_url(self) -> str:
+        return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
     def list_dags(self) -> List[DagInfo]:
-        response = self.auth_backend.get_session().get(f"{self.api_url}/dags")
+        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags")
         if response.status_code == 200:
             dags = response.json()
             return [
@@ -87,7 +96,7 @@ class AirflowInstance(NamedTuple):
 
     def get_task_info(self, dag_id: str, task_id: str) -> Dict[str, Any]:
         response = self.auth_backend.get_session().get(
-            f"{self.api_url}/dags/{dag_id}/tasks/{task_id}"
+            f"{self.get_api_url()}/dags/{dag_id}/tasks/{task_id}"
         )
         if response.status_code == 200:
             return response.json()
@@ -97,19 +106,21 @@ class AirflowInstance(NamedTuple):
             )
 
     def get_task_url(self, dag_id: str, task_id: str) -> str:
-        return f"{self.airflow_webserver_url}/dags/{dag_id}/{task_id}"
+        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/{task_id}"
 
     def get_dag_url(self, dag_id: str) -> str:
-        return f"{self.airflow_webserver_url}/dags/{dag_id}"
+        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}"
 
     def get_dag_run_url(self, dag_id: str, run_id: str) -> str:
-        return f"{self.airflow_webserver_url}/dags/{dag_id}/grid?dag_run_id={run_id}&tab=details"
+        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/grid?dag_run_id={run_id}&tab=details"
 
     def get_dag_run_asset_key(self, dag_id: str) -> AssetKey:
-        return AssetKey([self.name, "dag", f"{dag_id}__successful_run"])
+        return AssetKey([self.normalized_name, "dag", f"{dag_id}__successful_run"])
 
     def get_dag_source_code(self, file_token: str) -> str:
-        response = self.auth_backend.get_session().get(f"{self.api_url}/dagSources/{file_token}")
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/dagSources/{file_token}"
+        )
         if response.status_code == 200:
             return response.text
         else:
@@ -125,7 +136,7 @@ class AirflowInstance(NamedTuple):
         self, dag_id: str, start_date: datetime.datetime, end_date: datetime.datetime
     ) -> List[Dict[str, Any]]:
         response = self.auth_backend.get_session().get(
-            f"{self.api_url}/dags/{dag_id}/dagRuns",
+            f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
             params={
                 "updated_at_gte": self.airflow_str_from_datetime(start_date),
                 "updated_at_lte": self.airflow_str_from_datetime(end_date),
@@ -218,7 +229,7 @@ def assets_defs_from_airflow_instance(
                 description=f"A materialization corresponds to a successful run of airflow DAG {dag_info.dag_id}.",
                 metadata=metadata,
                 tags={"dagster/compute_kind": "airflow"},
-                group_name=f"{airflow_instance.name}__dags",
+                group_name=f"{airflow_instance.normalized_name}__dags",
                 deps=[AssetDep(asset=spec.key) for spec in leaf_upstreams],
             )
         )

@@ -47,6 +47,9 @@ setup(
         "dbt-duckdb",
         "pendulum>=2.0.0,<3.0.0",
     ],
+    extras_require={
+        "mwaa": ["boto3"],
+    },
     zip_safe=False,
     entry_points={
         "console_scripts": [
