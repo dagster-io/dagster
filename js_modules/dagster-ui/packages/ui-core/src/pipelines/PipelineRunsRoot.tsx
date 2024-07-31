@@ -28,7 +28,8 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {usePageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {

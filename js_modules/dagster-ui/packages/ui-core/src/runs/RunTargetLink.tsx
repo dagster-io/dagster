@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {assetKeysForRun} from './RunUtils';
-import {RunTableRunFragment} from './types/RunTable.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RepoAddress} from '../workspace/types';

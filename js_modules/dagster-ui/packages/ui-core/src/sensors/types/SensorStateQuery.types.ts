@@ -2,26 +2,12 @@
 
 import * as Types from '../../graphql/types';
 
-export type ScheduleSwitchFragment = {
-  __typename: 'Schedule';
-  id: string;
-  name: string;
-  cronSchedule: string;
-  executionTimezone: string | null;
-  scheduleState: {
-    __typename: 'InstigationState';
-    id: string;
-    selectorId: string;
-    status: Types.InstigationStatus;
-  };
-};
-
-export type ScheduleStateQueryVariables = Types.Exact<{
+export type SensorStateQueryVariables = Types.Exact<{
   id: Types.Scalars['String']['input'];
   selector: Types.InstigationSelector;
 }>;
 
-export type ScheduleStateQuery = {
+export type SensorStateQuery = {
   __typename: 'Query';
   instigationStateOrError:
     | {
