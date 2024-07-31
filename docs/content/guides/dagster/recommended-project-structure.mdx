@@ -132,7 +132,7 @@ In this example, we grouped resources (e.g., database connections, Spark session
 
 In complex projects, we find it helpful to make resources reusable and configured with pre-defined values via <PyObject object="configured" />. This approach allows your teammates to use a pre-defined resource set or make changes to shared resources, thus enabling more efficient project development.
 
-This pattern also helps you easily execute jobs in different environments without code changes. In this example, we dynamically defined a code location based on the deployment in [`definitions.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/defininitions.py) and can keep all code the same across testing, local development, staging, and production. Read more about our recommendations in the [Transitioning data pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) guide.
+This pattern also helps you easily execute jobs in different environments without code changes. In this example, we dynamically defined a code location based on the deployment in [`definitions.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/__init__.py) and can keep all code the same across testing, local development, staging, and production. Read more about our recommendations in the [Transitioning data pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) guide.
 
 ---
 
