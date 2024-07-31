@@ -353,6 +353,36 @@ def test_sensor_threading_disabled(
     assert "sensors" not in instance
 
 
+def test_automaterialize_use_sensor_default(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert "autoMaterialize" not in instance
+
+
+def test_automaterialize_use_sensor_enabled(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(autoMaterialize={"useSensors": True})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["auto_materialize"]["use_sensors"] is True
+
+
 def test_run_retries_default(
     instance_template: HelmTemplate,
 ):
