@@ -1,5 +1,6 @@
 import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useHistory} from 'react-router-dom';
 
 import {OpTags} from './OpTags';
 import {DefinitionTag, buildDefinitionTag} from '../graphql/types';
@@ -35,6 +36,8 @@ export const AssetComputeKindTag = ({
   linkToFilteredAssetsTable?: boolean;
   currentPageFilter?: StaticSetFilter<string>;
 }) => {
+  const history = useHistory();
+
   return (
     <Tooltip
       content={
@@ -64,7 +67,7 @@ export const AssetComputeKindTag = ({
               ? () => currentPageFilter.setState(new Set([computeKind || '']))
               : shouldLink
               ? () => {
-                  window.location.href = linkToAssetTableWithComputeKindFilter(computeKind || '');
+                  history.push(linkToAssetTableWithComputeKindFilter(computeKind || ''));
                 }
               : () => {},
           },
@@ -89,6 +92,8 @@ export const AssetStorageKindTag = ({
   linkToFilteredAssetsTable?: boolean;
   currentPageFilter?: StaticSetFilter<DefinitionTag>;
 }) => {
+  const history = useHistory();
+
   return (
     <Tooltip
       content={
@@ -118,7 +123,7 @@ export const AssetStorageKindTag = ({
               ? () => currentPageFilter.setState(new Set([buildStorageKindTag(storageKind)]))
               : shouldLink
               ? () => {
-                  window.location.href = linkToAssetTableWithStorageKindFilter(storageKind);
+                  history.push(linkToAssetTableWithStorageKindFilter(storageKind));
                 }
               : () => {},
           },
