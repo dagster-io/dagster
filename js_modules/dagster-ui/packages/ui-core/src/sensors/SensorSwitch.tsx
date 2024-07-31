@@ -31,11 +31,8 @@ import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
-import {
-  SensorStateQuery,
-  SensorStateQueryVariables,
-  SensorSwitchFragment,
-} from './types/SensorSwitch.types';
+import {SensorStateQuery, SensorStateQueryVariables} from './types/SensorStateQuery.types';
+import {SensorSwitchFragment} from './types/SensorSwitch.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
