@@ -3,11 +3,12 @@ import json
 import os
 import random
 import string
+import sys
 import time
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, List, Generator
 from typing import TypedDict
-
+import signal
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
@@ -209,7 +210,8 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
 
     def _get_all_cloudwatch_events(
             self,
-            log_group: str, log_stream: str,
+            log_group: str,
+            log_stream: str,
             start_time: Optional[int] = None,
             end_time: Optional[int] = None
         ) -> Generator[List[CloudWatchEvent], None, None]:
@@ -329,13 +331,11 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
 
 class PipesGlueContextInjector(PipesS3ContextInjector):
-    def no_messages_debug_text(self) -> str:
-        return "Attempted to inject context via Glue job arguments."
+    pass
 
 
 class PipesGlueLogsMessageReader(PipesCloudWatchMessageReader):
-    def no_messages_debug_text(self) -> str:
-        return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
+    pass
 
 
 @experimental
@@ -440,8 +440,10 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             try:
                 response = self._client.start_job_run(**params)
                 run_id = response["JobRunId"]
+                self._register_interruption_handler(context, job_name, run_id)
                 context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
                 response = self._wait_for_job_run_completion(job_name, run_id)
+                log_group = response["JobRun"]["LogGroupName"]
 
                 if response["JobRun"]["JobRunState"] == "FAILED":
                     raise RuntimeError(
@@ -459,12 +461,9 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 )
                 raise
 
-        # TODO: get logs from CloudWatch. there are 2 separate streams for stdout and driver stderr to read from
-        # the log group can be found in the response from start_job_run, and the log stream is the job run id
-        # worker logs have log streams like: <job_id>_<worker_id> but we probably don't need to read those
-
-        if isinstance(self._message_reader, PipesGlueLogsMessageReader):
-            self._message_reader.consume_cloudwatch_logs(response, start_time=start_timestamp)
+            if isinstance(self._message_reader, PipesGlueLogsMessageReader):
+                self._message_reader.consume_cloudwatch_logs(log_group=f"{log_group}/output", log_stream=run_id,
+                                                             start_time=int(start_timestamp))
 
         # should probably have a way to return the lambda result payload
         return PipesClientCompletedInvocation(session)
@@ -475,3 +474,25 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             if response["JobRun"]["JobRunState"] in ["FAILED", "SUCCEEDED"]:
                 return response
             time.sleep(5)
+
+    def _register_interruption_handler(self, context: OpExecutionContext, job_name: str, run_id: str):
+        """
+        Creates a handler which will gracefully stop the Run in case of external termination.
+        It will stop the Glue job before doing so.
+        """
+
+        def handler(signum, frame):
+            context.log.warning(f"Dagster run interrupted! Stopping Glue job run {run_id}...")
+            response = self._client.batch_stop_job_run(
+                JobName=job_name,
+                JobRunIds=[run_id]
+            )
+            runs = response["SuccessfulSubmissions"]
+            if len(runs) > 0:
+                context.log.warning(f"Successfully stopped Glue job run {run_id}.")
+            else:
+                context.log.warning(f"Something went wrong during run termination: {response['errors']}")
+
+            raise KeyboardInterrupt
+
+        signal.signal(signal.SIGINT, handler)
