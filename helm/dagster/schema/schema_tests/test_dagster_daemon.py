@@ -364,7 +364,7 @@ def test_automaterialize_use_sensor_default(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert "autoMaterialize" not in instance
+    assert "auto_materialize" not in instance
 
 
 def test_automaterialize_use_sensor_enabled(
