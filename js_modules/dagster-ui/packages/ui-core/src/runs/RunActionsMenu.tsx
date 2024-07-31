@@ -32,7 +32,7 @@ import {
   PipelineEnvironmentQuery,
   PipelineEnvironmentQueryVariables,
 } from './types/RunActionsMenu.types';
-import {RunTableRunFragment} from './types/RunTable.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {AppContext} from '../app/AppContext';

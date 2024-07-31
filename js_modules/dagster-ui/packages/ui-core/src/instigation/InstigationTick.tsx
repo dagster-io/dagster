@@ -13,7 +13,8 @@ import {
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 
 export const RunList = ({runIds}: {runIds: string[]}) => {
   const queryResult = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(

@@ -28,6 +28,7 @@ import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {AssetPageHeader} from '../AssetPageHeader.oss';
 import {AssetView} from '../AssetView';
+import {AssetWipeDialog} from '../AssetWipeDialog.oss';
 import {AssetsGraphHeader} from '../AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '../AssetsOverviewRoot.oss';
 import {
@@ -70,6 +71,7 @@ describe('AssetView', () => {
           value={{
             components: {
               AssetPageHeader,
+              AssetWipeDialog,
               AppTopNavRightOfLogo,
               UserPreferences,
               AssetsOverview: AssetsOverviewRoot,

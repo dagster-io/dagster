@@ -542,11 +542,9 @@ def test_job_config_with_asset_partitions():
         assert context.op_execution_context.op_config["a"] == 5
         assert context.partition_key == "2020-01-01"
 
-    the_job = define_asset_job(
-        "job",
-        partitions_def=daily_partitions_def,
-        config={"ops": {"asset1": {"config": {"a": 5}}}},
-    ).resolve(asset_graph=AssetGraph.from_assets([asset1]))
+    the_job = define_asset_job("job", config={"ops": {"asset1": {"config": {"a": 5}}}}).resolve(
+        asset_graph=AssetGraph.from_assets([asset1])
+    )
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
     assert (
