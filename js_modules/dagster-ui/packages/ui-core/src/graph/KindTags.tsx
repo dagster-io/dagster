@@ -1,5 +1,6 @@
 import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useHistory} from 'react-router-dom';
 
 import {OpTags} from './OpTags';
 import {DefinitionTag, buildDefinitionTag} from '../graphql/types';
@@ -21,13 +22,13 @@ export const buildStorageKindTag = (storageKind: string): DefinitionTag =>
   buildDefinitionTag({key: 'dagster/storage_kind', value: storageKind});
 
 export const AssetComputeKindTag = ({
-  definition,
+  computeKind,
   linkToFilteredAssetsTable: shouldLink,
   style,
   currentPageFilter,
   ...rest
 }: {
-  definition: {computeKind: string | null};
+  computeKind: string;
   style: React.CSSProperties;
   reduceColor?: boolean;
   reduceText?: boolean;
@@ -35,23 +36,22 @@ export const AssetComputeKindTag = ({
   linkToFilteredAssetsTable?: boolean;
   currentPageFilter?: StaticSetFilter<string>;
 }) => {
-  if (!definition.computeKind) {
-    return null;
-  }
+  const history = useHistory();
+
   return (
     <Tooltip
       content={
         currentPageFilter ? (
           <>
-            Filter to <CaptionMono>{definition.computeKind}</CaptionMono> assets
+            Filter to <CaptionMono>{computeKind}</CaptionMono> assets
           </>
         ) : shouldLink ? (
           <>
-            View all <CaptionMono>{definition.computeKind}</CaptionMono> assets
+            View all <CaptionMono>{computeKind}</CaptionMono> assets
           </>
         ) : (
           <>
-            Compute kind <CaptionMono>{definition.computeKind}</CaptionMono>
+            Compute kind <CaptionMono>{computeKind}</CaptionMono>
           </>
         )
       }
@@ -62,17 +62,14 @@ export const AssetComputeKindTag = ({
         style={{...style, cursor: shouldLink || currentPageFilter ? 'pointer' : 'default'}}
         tags={[
           {
-            label: definition.computeKind,
-            onClick:
-              currentPageFilter && definition.computeKind
-                ? () => currentPageFilter.setState(new Set([definition.computeKind || '']))
-                : shouldLink
-                ? () => {
-                    window.location.href = linkToAssetTableWithComputeKindFilter(
-                      definition.computeKind || '',
-                    );
-                  }
-                : () => {},
+            label: computeKind,
+            onClick: currentPageFilter
+              ? () => currentPageFilter.setState(new Set([computeKind || '']))
+              : shouldLink
+              ? () => {
+                  history.push(linkToAssetTableWithComputeKindFilter(computeKind || ''));
+                }
+              : () => {},
           },
         ]}
       />
@@ -95,6 +92,8 @@ export const AssetStorageKindTag = ({
   linkToFilteredAssetsTable?: boolean;
   currentPageFilter?: StaticSetFilter<DefinitionTag>;
 }) => {
+  const history = useHistory();
+
   return (
     <Tooltip
       content={
@@ -124,7 +123,7 @@ export const AssetStorageKindTag = ({
               ? () => currentPageFilter.setState(new Set([buildStorageKindTag(storageKind)]))
               : shouldLink
               ? () => {
-                  window.location.href = linkToAssetTableWithStorageKindFilter(storageKind);
+                  history.push(linkToAssetTableWithStorageKindFilter(storageKind));
                 }
               : () => {},
           },

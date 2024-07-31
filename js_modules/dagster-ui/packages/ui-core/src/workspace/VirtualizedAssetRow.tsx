@@ -24,6 +24,7 @@ import {AssetViewType} from '../assets/useAssetView';
 import {
   AssetComputeKindTag,
   AssetStorageKindTag,
+  isCanonicalComputeKindTag,
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
 import {AssetKeyInput, DefinitionTag} from '../graphql/types';
@@ -85,6 +86,8 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     }
   };
 
+  const computeKind =
+    definition?.computeKind || definition?.tags.find(isCanonicalComputeKindTag)?.value;
   const storageKindTag = definition?.tags.find(isCanonicalStorageKindTag);
 
   return (
@@ -106,11 +109,11 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 textStyle="middle-truncate"
               />
             </div>
-            {definition && (
+            {computeKind && (
               <AssetComputeKindTag
                 reduceColor
                 reduceText
-                definition={definition}
+                computeKind={computeKind}
                 style={{position: 'relative'}}
                 currentPageFilter={computeKindFilter}
               />

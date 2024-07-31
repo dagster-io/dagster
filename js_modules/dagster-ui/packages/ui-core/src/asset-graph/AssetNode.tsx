@@ -21,6 +21,7 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {
   AssetComputeKindTag,
   AssetStorageKindTag,
+  isCanonicalComputeKindTag,
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
@@ -39,6 +40,8 @@ export const AssetNode = React.memo(
     const isSource = definition.isSource;
 
     const {liveData} = useAssetLiveData(definition.assetKey);
+    const computeKind =
+      definition.computeKind || definition.tags?.find(isCanonicalComputeKindTag)?.value;
     const storageKindTag = definition.tags?.find(isCanonicalStorageKindTag);
     return (
       <AssetInsetForHoverEffect>
@@ -81,11 +84,13 @@ export const AssetNode = React.memo(
                 currentPageFilter={storageKindTagsFilter}
               />
             )}
-            <AssetComputeKindTag
-              definition={definition}
-              style={{position: 'relative', paddingTop: 7, margin: 0}}
-              currentPageFilter={computeKindTagsFilter}
-            />
+            {computeKind && (
+              <AssetComputeKindTag
+                computeKind={computeKind}
+                style={{position: 'relative', paddingTop: 7, margin: 0}}
+                currentPageFilter={computeKindTagsFilter}
+              />
+            )}
           </Box>
         </AssetNodeContainer>
       </AssetInsetForHoverEffect>
