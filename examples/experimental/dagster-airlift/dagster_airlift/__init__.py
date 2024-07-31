@@ -1,5 +1,6 @@
 from .airflow_utils import (
     AirflowInstance as AirflowInstance,
+    AirflowMigrationLoader as AirflowMigrationLoader,
     BasicAuthBackend as BasicAuthBackend,
     TaskMapping as TaskMapping,
     airflow_task_mappings_from_dbt_project as airflow_task_mappings_from_dbt_project,

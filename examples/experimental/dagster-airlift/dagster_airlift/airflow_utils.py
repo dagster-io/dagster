@@ -2,7 +2,9 @@ import datetime
 import json
 from abc import ABC
 from datetime import timedelta
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
+from importlib import import_module
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Mapping, NamedTuple, Optional, Sequence
 
 import requests
 from dagster import (
@@ -11,17 +13,20 @@ from dagster import (
     AssetMaterialization,
     AssetsDefinition,
     AssetSpec,
+    Definitions,
     JsonMetadataValue,
     MarkdownMetadataValue,
     SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
     TimestampMetadataValue,
+    _check as check,
     multi_asset,
     sensor,
 )
 from dagster._core.utils import toposort_flatten
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
+from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 from dagster_dbt import build_dbt_asset_specs
 from pydantic import BaseModel
 
@@ -390,3 +395,160 @@ def toposort_specs(specs: List[AssetSpec]) -> List[AssetSpec]:
             {spec.key: {dep.asset_key for dep in spec.deps} for spec in specs}
         )
     ]
+
+
+# Each blueprint yaml will live in a file structure like this
+# / blueprints
+#   / dag_id
+#     / task_id.yaml
+# Each task_id.yaml will look something like this:
+# - asset: my/asset/key
+#   tags: {}
+#   metadata: {}
+#   deps: [upstream/asset/key]
+#   compute_pointer: my.compute.pointer
+# - asset: my/other/asset/key
+#   ...
+# The migration yaml is combined with the blueprints to create a "complete picture" of where assets
+# are in the migration process.
+# Eventually; the goal will be to not need the migration yaml, and instead be able to derive
+# the migration state from the airflow tasks/dags themselves.
+# but migration.yaml is the easy version.
+
+
+class AssetComputePointer(BaseModel):
+    module_name: str
+    fn_name: str
+
+
+class AssetInfo(BaseModel):
+    asset_key: str
+    tags: Dict[str, str] = {}
+    metadata: Dict[str, Any] = {}
+    deps: List[str] = []
+    asset_compute_pointer: Optional[AssetComputePointer] = None
+
+
+class MultiAssetSpec(BaseModel):
+    asset_infos: List[AssetInfo]
+
+
+class MigratingAssetsBlueprint(BaseModel):
+    type: Literal["external_asset"] = "external_asset"
+    asset_infos: List[AssetInfo]
+    migrated: bool
+    compute_kind: str
+    name: str
+
+    def build_defs(self) -> Definitions:
+        asset_specs = [
+            AssetSpec(
+                key=AssetKey.from_user_string(info.asset_key),
+                metadata=info.metadata,
+                tags=info.tags,
+                deps=[AssetDep(AssetKey.from_user_string(dep)) for dep in info.deps],
+            )
+            for info in self.asset_infos
+        ]
+
+        @multi_asset(
+            specs=asset_specs,
+            name=self.name,
+            compute_kind=self.compute_kind,
+        )
+        def _external_asset() -> None:
+            if self.migrated:
+                for info in self.asset_infos:
+                    ptr = check.not_none(info.asset_compute_pointer)
+                    module = import_module(ptr.module_name)
+                    compute_fn = getattr(module, ptr.fn_name)
+                    compute_fn()
+
+        return Definitions(assets=[_external_asset])
+
+
+class TaskMigrationState(BaseModel):
+    task_id: str
+    migrated: bool
+
+
+class DagMigrationState(BaseModel):
+    dag_id: str
+    tasks: List[TaskMigrationState]
+
+
+class AirflowMigrationState(BaseModel):
+    dags: List[DagMigrationState]
+
+    def get_migration_state_for_task(self, dag_id: str, task_id: str) -> bool:
+        for dag in self.dags:
+            if dag.dag_id == dag_id:
+                for task in dag.tasks:
+                    if task.task_id == task_id:
+                        return task.migrated
+        raise ValueError(f"Task {task_id} not found in migration state for dag {dag_id}")
+
+
+class AirflowMigrationLoader:
+    # Eventually this should take in an airflow instance (or list of airflow instances)
+    # instead of a "migration yaml path"
+    def __init__(self, migration_yaml_path: Path, asset_specs_path: Path):
+        # migration yaml is one big yaml document that looks like this:
+        # - dag_id: my_dag
+        #     tasks:
+        #       - task_id: my_task
+        #         migrated: false
+        #         ...
+        self.migration_yaml_path = migration_yaml_path
+        self.asset_specs_path = asset_specs_path
+
+    def load_defs(self) -> Definitions:
+        # First, verify the paths for migration yaml and blueprints exist
+        check.invariant(
+            self.migration_yaml_path.exists(),
+            f"No file or directory at path: {self.migration_yaml_path}",
+        )
+        check.invariant(
+            self.asset_specs_path.exists(), f"No file or directory at path: {self.asset_specs_path}"
+        )
+
+        # Load the migration yaml as a pydantic model
+        airflow_migration_state = parse_yaml_file_to_pydantic(
+            AirflowMigrationState,
+            self.migration_yaml_path.read_text(),
+            str(self.migration_yaml_path),
+        )
+
+        # Load MultiAssetSpecs from the blueprints path
+        # iterate through directories in the blueprints path
+        # dag_id.task_id -> MultiAssetSpec
+        multi_asset_specs: Dict[str, MultiAssetSpec] = {}
+        for dag_named_path in self.asset_specs_path.iterdir():
+            # we should only have to check directories of depth 1
+            if dag_named_path.is_dir():
+                # iterate through yaml files in the directory
+                for task_named_file in dag_named_path.iterdir():
+                    if task_named_file.suffix in [".yaml", ".yml"]:
+                        multi_asset_spec = parse_yaml_file_to_pydantic(
+                            MultiAssetSpec, task_named_file.read_text(), str(task_named_file)
+                        )
+                        # Append the blueprint to the list of blueprints
+                        multi_asset_specs[f"{dag_named_path.name}.{task_named_file.stem}"] = (
+                            multi_asset_spec
+                        )
+
+        multi_asset_blueprints: List[MigratingAssetsBlueprint] = []
+        for dag_and_task in multi_asset_specs.keys():
+            dag_id, task_id = dag_and_task.split(".")
+            multi_asset_blueprints.append(
+                MigratingAssetsBlueprint(
+                    asset_infos=multi_asset_spec.asset_infos,
+                    migrated=airflow_migration_state.get_migration_state_for_task(
+                        dag_id=dag_id, task_id=task_id
+                    ),
+                    compute_kind="airflow",
+                    name=f"{dag_id}__{task_id}",
+                )
+            )
+
+        return Definitions.merge(*[blueprint.build_defs() for blueprint in multi_asset_blueprints])

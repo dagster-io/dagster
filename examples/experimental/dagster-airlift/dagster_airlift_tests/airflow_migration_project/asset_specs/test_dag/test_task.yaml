@@ -1,0 +1,7 @@
+asset_infos:
+  - asset_key: my/asset
+    deps: 
+      - upstream/asset
+    asset_compute_pointer:
+      module_name: dagster_airlift_tests.fake_compute
+      fn_name: compute_fn
