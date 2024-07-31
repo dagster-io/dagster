@@ -1,28 +1,23 @@
 import os
 
-from dagster import Definitions
-
-from .assets import (
-    activity_analytics,
-    core,
-    recommender,
-    dbt
-)
-from .constants import ACTIVITY_ANALYTICS, CORE, RECOMMENDER
-from .jobs import activity_analytics_assets_sensor, core_assets_schedule, recommender_assets_sensor
-from .project import dbt_project, DBT_PROJECT_DIR
-from .resources.duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
-from .resources.hn_resource import HNAPIClient, HNAPISubsampleClient
-from .resources.parquet_io_manager import LocalPartitionedParquetIOManager, S3PartitionedParquetIOManager
-from .resources.snowflake_io_manager import SnowflakeIOManager
-from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
-
-from dagster import load_assets_from_package_module
+from dagster import Definitions, load_assets_from_package_module
 from dagster_aws.s3 import S3Resource
 from dagster_aws.s3.io_manager import S3PickleIOManager
 from dagster_dbt import DbtCliResource
 from dagster_pyspark import pyspark_resource
 
+from .assets import activity_analytics, core, dbt, recommender
+from .constants import ACTIVITY_ANALYTICS, CORE, RECOMMENDER
+from .jobs import activity_analytics_assets_sensor, core_assets_schedule, recommender_assets_sensor
+from .project import DBT_PROJECT_DIR, dbt_project
+from .resources.duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
+from .resources.hn_resource import HNAPIClient, HNAPISubsampleClient
+from .resources.parquet_io_manager import (
+    LocalPartitionedParquetIOManager,
+    S3PartitionedParquetIOManager,
+)
+from .resources.snowflake_io_manager import SnowflakeIOManager
+from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
 
 core_assets = load_assets_from_package_module(core, group_name=CORE)
 
@@ -32,10 +27,7 @@ activity_analytics_assets = load_assets_from_package_module(
     group_name=ACTIVITY_ANALYTICS,
 )
 
-recommender_assets = load_assets_from_package_module(
-    recommender,
-    group_name=RECOMMENDER
-)
+recommender_assets = load_assets_from_package_module(recommender, group_name=RECOMMENDER)
 
 dbt_assets = load_assets_from_package_module(dbt)
 
@@ -44,7 +36,6 @@ all_assets = [
     *recommender_assets,
     *activity_analytics_assets,
     *dbt_assets,
-    
 ]
 
 dbt_local_resource = DbtCliResource(
