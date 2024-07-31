@@ -12,6 +12,8 @@ from dagster import (
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.test_utils import instance_for_test
 from dagster_airlift import (
+    AirflowInstance,
+    BasicAuthBackend,
     TaskMapping,
     assets_defs_from_airflow_instance,
     build_airflow_polling_sensor,
@@ -22,10 +24,13 @@ def test_dag_peering(
     airflow_instance: None,
 ) -> None:
     """Test that dags can be correctly peered from airflow, and certain metadata properties are retained."""
-    assets_defs = assets_defs_from_airflow_instance(
+    instance = AirflowInstance(
         airflow_webserver_url="http://localhost:8080",
-        auth=("admin", "admin"),
-        instance_name="airflow_instance",
+        auth_backend=BasicAuthBackend(username="admin", password="admin"),
+        name="airflow_instance",
+    )
+    assets_defs = assets_defs_from_airflow_instance(
+        airflow_instance=instance,
         task_maps=[
             TaskMapping(
                 dag_id="print_dag",
@@ -65,8 +70,7 @@ def test_dag_peering(
     assert task_spec.metadata["Task ID"] == "print_task"
 
     sensor_def = build_airflow_polling_sensor(
-        airflow_webserver_url="http://localhost:8080",
-        auth=("admin", "admin"),
+        airflow_instance=instance,
         airflow_asset_specs=[list(assets_def.specs)[0] for assets_def in assets_defs],  # noqa
     )
 
