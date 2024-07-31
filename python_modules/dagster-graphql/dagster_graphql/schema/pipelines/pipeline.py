@@ -319,6 +319,7 @@ class GraphenePipelineRun(graphene.Interface):
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
     )
 
     class Meta:
@@ -363,6 +364,7 @@ class GrapheneRun(graphene.ObjectType):
     eventConnection = graphene.Field(
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),
+        limit=graphene.Argument(graphene.Int),
     )
     creationTime = graphene.NonNull(graphene.Float)
     startTime = graphene.Float()
@@ -541,8 +543,10 @@ class GrapheneRun(graphene.ObjectType):
             )
         ]
 
-    def resolve_eventConnection(self, graphene_info: ResolveInfo, afterCursor=None):
-        conn = graphene_info.context.instance.get_records_for_run(self.run_id, cursor=afterCursor)
+    def resolve_eventConnection(self, graphene_info: ResolveInfo, afterCursor=None, limit=None):
+        conn = graphene_info.context.instance.get_records_for_run(
+            self.run_id, cursor=afterCursor, limit=limit
+        )
         return GrapheneEventConnection(
             events=[
                 from_event_record(record.event_log_entry, self.dagster_run.job_name)
