@@ -127,5 +127,6 @@ pendulum<3
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
--e examples/experimental/dagster-airlift # (includes airflow dependencies)
+-e examples/experimental/dagster-blueprints
+-e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-airlift/examples/peering-with-dbt

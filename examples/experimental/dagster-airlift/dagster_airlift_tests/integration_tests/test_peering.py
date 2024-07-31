@@ -4,6 +4,9 @@ from typing import cast
 import requests
 from dagster import (
     AssetDep,
+    AssetsDefinition,
+    AssetSpec,
+    Definitions,
     JsonMetadataValue,
     MarkdownMetadataValue,
     SensorResult,
@@ -11,12 +14,11 @@ from dagster import (
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.test_utils import instance_for_test
-from dagster_airlift import (
-    AirflowInstance,
-    BasicAuthBackend,
-    TaskMapping,
-    assets_defs_from_airflow_instance,
-    build_airflow_polling_sensor,
+from dagster_airlift import AirflowInstance, BasicAuthBackend, create_defs_from_airflow_instance
+from dagster_airlift.core.migration_state import (
+    AirflowMigrationState,
+    DagMigrationState,
+    TaskMigrationState,
 )
 
 
@@ -30,50 +32,70 @@ def test_dag_peering(
         ),
         name="airflow_instance",
     )
-    assets_defs = assets_defs_from_airflow_instance(
+    defs = create_defs_from_airflow_instance(
         airflow_instance=instance,
-        task_maps=[
-            TaskMapping(
-                dag_id="print_dag",
-                task_id="print_task",
-                key=AssetKey(["some", "key"]),
-            ),
-            TaskMapping(
-                dag_id="print_dag",
-                task_id="downstream_print_task",
-                key=AssetKey(["other", "key"]),
-                deps=[AssetDep(AssetKey(["some", "key"]))],
-            ),
-        ],
+        orchestrated_defs=Definitions(
+            assets=[
+                AssetSpec(
+                    key=AssetKey(["some", "key"]), tags={"airlift/task_id": "print_dag__print_task"}
+                ),
+                AssetSpec(
+                    key=AssetKey(["other", "key"]),
+                    tags={"airlift/task_id": "print_dag__downstream_print_task"},
+                    deps=[AssetDep(AssetKey(["some", "key"]))],
+                ),
+            ],
+        ),
+        migration_state_override=AirflowMigrationState(
+            dags={
+                "print_dag": DagMigrationState(
+                    tasks={
+                        "print_task": TaskMigrationState(migrated=False),
+                        "downstream_print_task": TaskMigrationState(migrated=False),
+                    }
+                )
+            },
+        ),
     )
-    assert len(assets_defs) == 3
-    dag_def = [  # noqa
+    assert defs.assets
+    assert len(list(defs.assets)) == 3
+    assets_defs = list(defs.assets)
+    dag_def: AssetsDefinition = [  # noqa
         assets_def
         for assets_def in assets_defs
-        if assets_def.key == AssetKey(["airflow_instance", "dag", "print_dag__successful_run"])
+        if assets_def.key == AssetKey(["airflow_instance", "dag", "print_dag"])  # type: ignore
     ][0]
-    assert dag_def.key == AssetKey(["airflow_instance", "dag", "print_dag__successful_run"])
-    assert len(list(dag_def.specs)) == 1
-    spec = list(dag_def.specs)[0]  # noqa
-    spec_metadata = spec.metadata
+    assert dag_def.key == AssetKey(["airflow_instance", "dag", "print_dag"])
+    spec_metadata = next(iter(dag_def.specs)).metadata
     assert spec_metadata["Dag ID"] == "print_dag"
     assert spec_metadata["Link to DAG"] == MarkdownMetadataValue(
         "[View DAG](http://localhost:8080/dags/print_dag)"
     )
     assert "Source Code" in spec_metadata
 
-    task_def = [  # noqa
-        assets_def for assets_def in assets_defs if assets_def.key == AssetKey(["some", "key"])
+    task_def: AssetsDefinition = [  # noqa
+        assets_def
+        for assets_def in assets_defs
+        if assets_def.key == AssetKey(["some", "key"])  # type: ignore
     ][0]
     assert len(list(task_def.specs)) == 1
     task_spec = list(task_def.specs)[0]  # noqa
     assert task_spec.metadata["Dag ID"] == "print_dag"
-    assert task_spec.metadata["Task ID"] == "print_task"
+    assert task_spec.metadata["Computed in Task ID"] == "print_task"
 
-    sensor_def = build_airflow_polling_sensor(
-        airflow_instance=instance,
-        airflow_asset_specs=[list(assets_def.specs)[0] for assets_def in assets_defs],  # noqa
-    )
+    other_task_def: AssetsDefinition = [  # noqa
+        assets_def
+        for assets_def in assets_defs
+        if assets_def.key == AssetKey(["other", "key"])  # type: ignore
+    ][0]
+    assert len(list(other_task_def.specs)) == 1
+    other_task_spec = list(other_task_def.specs)[0]  # noqa
+    assert other_task_spec.metadata["Dag ID"] == "print_dag"
+    assert other_task_spec.metadata["Computed in Task ID"] == "downstream_print_task"
+    assert other_task_spec.deps == [AssetDep(AssetKey(["some", "key"]))]
+
+    assert defs.sensors
+    sensor_def = next(iter(defs.sensors))
 
     # Kick off a run of the dag
     response = requests.post(
@@ -103,8 +125,7 @@ def test_dag_peering(
         dag_mat = [  # noqa
             asset_mat
             for asset_mat in sensor_result.asset_events
-            if asset_mat.asset_key
-            == AssetKey(["airflow_instance", "dag", "print_dag__successful_run"])
+            if asset_mat.asset_key == AssetKey(["airflow_instance", "dag", "print_dag"])
         ][0]
         assert dag_mat
         assert "Airflow Run ID" in dag_mat.metadata

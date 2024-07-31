@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import boto3
 import requests
 
-from ..airflow_utils import AirflowAuthBackend
+from ..core.airflow_instance import AirflowAuthBackend
 
 
 def get_session_info(region: str, env_name: str) -> Tuple[str, str]:
