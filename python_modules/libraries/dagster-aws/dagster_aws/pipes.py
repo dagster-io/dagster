@@ -171,7 +171,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
     def __init__(self, client: Optional[boto3.client] = None):
         """
         Args:
-            client (boto3.client): boto3 CloudWatch client
+            client (boto3.client): boto3 CloudWatch client.
         """
         self.client = client or boto3.client("logs")
 
@@ -214,7 +214,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
             end_time: Optional[int] = None
         ) -> Generator[List[CloudWatchEvent], None, None]:
         """
-        Returns batches of CloudWatch events until the stream is complete or end_time
+        Returns batches of CloudWatch events until the stream is complete or end_time.
         """
         params = {
             "logGroupName": log_group,
