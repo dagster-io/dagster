@@ -1,8 +1,8 @@
 import boto3
 from dagster_pipes import (
     PipesCliArgsParamsLoader,
-    PipesS3ContextLoader,
     PipesDefaultMessageWriter,
+    PipesS3ContextLoader,
     open_dagster_pipes,
 )
 
@@ -18,9 +18,7 @@ def main():
     ) as pipes:
         pipes.log.info("Hello from AWS Glue job!")
         pipes.report_asset_materialization(
-            metadata={
-                "some_metric": {"raw_value": 0, "type": "int"}
-            },
+            metadata={"some_metric": {"raw_value": 0, "type": "int"}},
             data_version="alpha",
         )
 

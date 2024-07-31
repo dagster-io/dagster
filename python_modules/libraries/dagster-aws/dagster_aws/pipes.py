@@ -332,7 +332,8 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
 
 class PipesGlueContextInjector(PipesS3ContextInjector):
-    pass
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to inject context via Glue job Arguments"
 
 
 class PipesGlueLogsMessageReader(PipesCloudWatchMessageReader):
