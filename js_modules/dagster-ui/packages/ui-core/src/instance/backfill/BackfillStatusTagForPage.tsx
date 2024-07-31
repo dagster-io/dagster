@@ -13,7 +13,6 @@ type BackfillState = {
 
 export const BackfillStatusTagForPage = ({backfill}: {backfill: BackfillState}) => {
   const {status, error} = backfill;
-  console.log({error, status});
   function errorState(status: string) {
     return (
       <Box margin={{bottom: 12}}>
