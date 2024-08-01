@@ -96,7 +96,7 @@ setup(
         "python-dotenv",
         "pytz",
         "requests",
-        "setuptools",
+        "setuptools>=70.0",  # https://www.cve.org/CVERecord?id=CVE-2024-6345
         "tabulate",
         "tomli<3",
         "tqdm<5",
