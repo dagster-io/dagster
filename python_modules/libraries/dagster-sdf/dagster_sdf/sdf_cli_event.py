@@ -22,9 +22,10 @@ class SdfCliEventMessage:
     @property
     def is_result_event(self) -> bool:
         return (
-            self.raw_event["ev"] == "cmd.do.derived"
+            bool(self.raw_event.get("ev_table"))
+            and bool(self.raw_event.get("status_type"))
+            and bool(self.raw_event.get("status_code"))
             and self.raw_event["ev_type"] == "close"
-            and bool(self.raw_event.get("status"))
         )
 
     @public
@@ -51,11 +52,11 @@ class SdfCliEventMessage:
         if not self.is_result_event:
             return
 
-        is_success = self.raw_event["status"] == "succeeded"
+        is_success = self.raw_event["status_code"] == "succeeded"
         if not is_success:
             return
 
-        table_id = self.raw_event["table"]
+        table_id = self.raw_event["ev_table"]
         default_metadata = {
             "table_id": table_id,
             "Execution Duration": self.raw_event["ev_dur_ms"] / 1000,

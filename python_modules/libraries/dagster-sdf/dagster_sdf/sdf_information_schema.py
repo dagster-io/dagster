@@ -1,9 +1,18 @@
+import os
 from pathlib import Path
-from typing import Dict, Literal, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, Iterator, List, Literal, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 import polars as pl
-from dagster import AssetDep, AssetKey, AssetOut, Nothing
+from dagster import AssetDep, AssetKey, AssetObservation, AssetOut, Nothing, TableColumn
+from dagster._core.definitions.metadata import (
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+    TableColumnConstraints,
+    TableMetadataSet,
+    TableSchema,
+)
 from dagster._record import IHaveNew, record_custom
 
 from .asset_utils import dagster_name_fn
@@ -14,6 +23,7 @@ from .constants import (
     SDF_TARGET_DIR,
 )
 from .dagster_sdf_translator import DagsterSdfTranslator
+from .sdf_event_iterator import SdfDagsterEventType
 
 
 def get_info_schema_dir(target_dir: Path, environment: str) -> Path:
@@ -42,6 +52,7 @@ class SdfInformationSchema(IHaveNew):
         environment (str, optional): The environment to use. Defaults to "dbg".
     """
 
+    workspace_dir: Path
     information_schema_dir: Path
     information_schema: Dict[str, pl.DataFrame]
 
@@ -66,6 +77,7 @@ class SdfInformationSchema(IHaveNew):
 
         return super().__new__(
             cls,
+            workspace_dir=workspace_dir,
             information_schema_dir=information_schema_dir,
             information_schema={},
         )
@@ -141,6 +153,60 @@ class SdfInformationSchema(IHaveNew):
                 }.union(table_id_to_upstream.get(table_row["table_id"], set()))
 
         return deps, outs, internal_asset_deps
+
+    def get_columns(self) -> Dict[str, List[TableColumn]]:
+        columns = self.read_table("columns")[
+            ["table_id", "column_id", "classifiers", "column_name", "datatype", "description"]
+        ]
+        table_columns: Dict[str, List[TableColumn]] = {}
+        for row in columns.rows(named=True):
+            if row["table_id"] not in table_columns:
+                table_columns[row["table_id"]] = []
+            table_columns[row["table_id"]].append(
+                TableColumn(
+                    name=row["column_name"],
+                    type=row["datatype"],
+                    description=row["description"],
+                    constraints=TableColumnConstraints(other=row["classifiers"]),
+                )
+            )
+        return table_columns
+
+    def stream_asset_observations(
+        self, dagster_sdf_translator: DagsterSdfTranslator
+    ) -> Iterator[SdfDagsterEventType]:
+        table_columns = self.get_columns()
+        tables = self.read_table("tables").filter(
+            ~pl.col("purpose").is_in(["system", "external-system"])
+        )
+        for table_row in tables.rows(named=True):
+            asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
+            code_references = None
+            for source_location in table_row["source_locations"]:
+                if source_location.endswith(".sql"):
+                    code_references = CodeReferencesMetadataSet(
+                        code_references=CodeReferencesMetadataValue(
+                            code_references=[
+                                LocalFileCodeReference(
+                                    file_path=os.fspath(
+                                        self.workspace_dir.joinpath(source_location)
+                                    )
+                                )
+                            ]
+                        )
+                    )
+            metadata = {
+                **TableMetadataSet(
+                    column_schema=TableSchema(
+                        columns=table_columns.get(table_row["table_id"], []),
+                    ),
+                    relation_identifier=table_row["table_id"],
+                ),
+                **(code_references if code_references else {}),
+            }
+            yield AssetObservation(
+                asset_key=asset_key, description=table_row["description"], metadata=metadata
+            )
 
     def is_compiled(self) -> bool:
         for table in SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE:

@@ -11,10 +11,12 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
 from typing_extensions import Literal
 
+from .constants import SDF_TARGET_DIR
 from .dagster_sdf_translator import DagsterSdfTranslator
 from .errors import DagsterSdfCliRuntimeError
 from .sdf_cli_event import SdfCliEventMessage
 from .sdf_event_iterator import SdfDagsterEventType, SdfEventIterator
+from .sdf_information_schema import SdfInformationSchema
 
 logger = get_dagster_logger()
 
@@ -27,14 +29,16 @@ class SdfCliInvocation:
 
     Args:
         process (subprocess.Popen): The process running the sdf command.
+        workspace_dir (Path): The path to the workspace directory.
         target_dir (Path): The path to the target directory.
-        output_dir (Path): The path to the output directory.
+        enviornment (str): The environment to use.
         raise_on_error (bool): Whether to raise an exception if the sdf command fails.
     """
 
     process: subprocess.Popen
+    workspace_dir: Path
     target_dir: Path
-    output_dir: Path
+    environment: str
     dagster_sdf_translator: DagsterSdfTranslator
     raise_on_error: bool
     context: Optional[OpExecutionContext] = field(default=None, repr=False)
@@ -50,7 +54,7 @@ class SdfCliInvocation:
         env: Dict[str, str],
         workspace_dir: Path,
         target_dir: Path,
-        output_dir: Path,
+        environment: str,
         dagster_sdf_translator: DagsterSdfTranslator,
         raise_on_error: bool,
         context: Optional[OpExecutionContext],
@@ -66,8 +70,9 @@ class SdfCliInvocation:
 
         sdf_cli_invocation = cls(
             process=process,
+            workspace_dir=workspace_dir,
             target_dir=target_dir,
-            output_dir=output_dir,
+            environment=environment,
             dagster_sdf_translator=dagster_sdf_translator,
             raise_on_error=raise_on_error,
             context=context,
@@ -124,6 +129,11 @@ class SdfCliInvocation:
             yield from event.to_default_asset_events(
                 dagster_sdf_translator=self.dagster_sdf_translator, context=self.context
             )
+        yield from SdfInformationSchema(
+            workspace_dir=self.workspace_dir,
+            target_dir=self.target_dir,
+            environment=self.environment,
+        ).stream_asset_observations(dagster_sdf_translator=self.dagster_sdf_translator)
 
     @public
     def stream(
@@ -203,7 +213,7 @@ class SdfCliInvocation:
                 # Retrieve the makefile-run.json artifact.
                 run_results = sdf_cli_invocation.get_artifact("makefile-run.json")
         """
-        artifact_path = self.output_dir.joinpath(artifact)
+        artifact_path = self.target_dir.joinpath(SDF_TARGET_DIR, self.environment, artifact)
 
         return orjson.loads(artifact_path.read_bytes())
 

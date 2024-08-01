@@ -90,7 +90,11 @@ def test_sdf_with_materialize(moms_flower_shop_target_dir: Path) -> None:
         )
     )
     def my_sdf_assets(context: AssetExecutionContext, sdf: SdfCliResource):
-        yield from sdf.cli(["run"], context=context).stream()
+        yield from sdf.cli(
+            ["run", "--save", "info-schema"],
+            target_dir=moms_flower_shop_target_dir,
+            context=context,
+        ).stream()
 
     result = materialize(
         [my_sdf_assets],

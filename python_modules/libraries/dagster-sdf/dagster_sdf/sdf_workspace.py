@@ -50,9 +50,9 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
         Args:
             generate_cli_args (Sequence[str]):
                 The arguments to pass to the sdf cli to prepare the workspace.
-                Default: ["compile", "--stage==parse"]
+                Default: ["compile", "--save==table-deps"]
         """
-        self._generate_cli_args = generate_cli_args or ["compile", "--stage=parse"]
+        self._generate_cli_args = generate_cli_args or ["compile", "--save", "table-deps"]
 
     def on_load(self, workspace: "SdfWorkspace"):
         if self.using_dagster_dev() or self.compile_on_load_opt_in():

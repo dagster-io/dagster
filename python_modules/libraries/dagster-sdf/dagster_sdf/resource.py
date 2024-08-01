@@ -12,7 +12,6 @@ from .constants import (
     DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
     SDF_DAGSTER_OUTPUT_DIR,
     SDF_EXECUTABLE,
-    SDF_TARGET_DIR,
     SDF_WORKSPACE_YML,
 )
 from .dagster_sdf_translator import DagsterSdfTranslator, validate_opt_translator
@@ -143,8 +142,6 @@ class SdfCliResource(ConfigurableResource):
         target_args = ["--target-dir", str(target_path)]
         log_level_args = ["--log-level", "info"]
 
-        output_dir = target_path.joinpath(SDF_TARGET_DIR, environment)
-
         # Ensure that the target_dir exists
         target_path.mkdir(parents=True, exist_ok=True)
 
@@ -162,7 +159,7 @@ class SdfCliResource(ConfigurableResource):
             env=env,
             workspace_dir=Path(self.workspace_dir),
             target_dir=target_path,
-            output_dir=output_dir,
+            environment=environment,
             dagster_sdf_translator=dagster_sdf_translator,
             raise_on_error=raise_on_error,
             context=context,
