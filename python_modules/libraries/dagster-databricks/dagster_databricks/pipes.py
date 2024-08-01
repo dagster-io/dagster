@@ -6,11 +6,7 @@ import string
 import sys
 import time
 from contextlib import ExitStack, contextmanager
-<<<<<<< HEAD
-from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, TextIO
-=======
-from typing import Iterator, Literal, Mapping, Optional, Sequence, TextIO, Union
->>>>>>> aceb299e5e (update pipes to accept asset execution context)
+from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, TextIO, Union
 
 import dagster._check as check
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
