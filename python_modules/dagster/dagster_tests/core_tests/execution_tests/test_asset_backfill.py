@@ -813,54 +813,66 @@ def external_asset_graph_from_assets_by_repo_name(
 )
 def test_serialization(static_serialization, time_window_serialization):
     time_window_partitions = DailyPartitionsDefinition(start_date="2015-05-05")
-
-    @asset(partitions_def=time_window_partitions)
-    def daily_asset():
-        return 1
-
     keys = ["a", "b", "c", "d", "e", "f"]
     static_partitions = StaticPartitionsDefinition(keys)
 
-    @asset(partitions_def=static_partitions)
-    def static_asset():
-        return 1
+    def make_asset_graph1():
+        @asset(partitions_def=time_window_partitions)
+        def daily_asset(): ...
 
-    asset_graph = external_asset_graph_from_assets_by_repo_name(
-        {"repo": [daily_asset, static_asset]}
+        @asset(partitions_def=static_partitions)
+        def static_asset(): ...
+
+        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+
+    asset_graph1 = make_asset_graph1()
+    assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph1) is True
+    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph1) is True
+
+    def make_asset_graph2():
+        @asset(partitions_def=static_partitions)
+        def daily_asset(): ...
+
+        @asset(partitions_def=time_window_partitions)
+        def static_asset(): ...
+
+        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
+
+    asset_graph2 = make_asset_graph2()
+    assert (
+        AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph2) is False
     )
+    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph2) is False
 
-    assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph) is True
-    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True
+    def make_asset_graph3():
+        @asset(partitions_def=StaticPartitionsDefinition(keys + ["x"]))
+        def daily_asset(): ...
 
-    daily_asset._partitions_def = static_partitions  # noqa: SLF001
-    static_asset._partitions_def = time_window_partitions  # noqa: SLF001
+        @asset(partitions_def=static_partitions)
+        def static_asset(): ...
 
-    asset_graph = external_asset_graph_from_assets_by_repo_name(
-        {"repo": [daily_asset, static_asset]}
-    )
+        return external_asset_graph_from_assets_by_repo_name({"repo": [daily_asset, static_asset]})
 
-    assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph) is False
-    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is False
+    asset_graph3 = make_asset_graph3()
 
-    static_asset._partitions_def = StaticPartitionsDefinition(keys + ["x"])  # noqa: SLF001
+    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph3) is True
 
-    asset_graph = external_asset_graph_from_assets_by_repo_name(
-        {"repo": [daily_asset, static_asset]}
-    )
+    def make_asset_graph4():
+        @asset(partitions_def=static_partitions)
+        def daily_asset_renamed():
+            return 1
 
-    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True
+        @asset(partitions_def=time_window_partitions)
+        def static_asset(): ...
 
-    @asset(partitions_def=static_partitions)
-    def daily_asset_renamed():
-        return 1
+        return external_asset_graph_from_assets_by_repo_name(
+            {"repo": [daily_asset_renamed, static_asset]}
+        )
 
-    asset_graph_renamed = external_asset_graph_from_assets_by_repo_name(
-        {"repo": [daily_asset_renamed, static_asset]}
-    )
+    asset_graph4 = make_asset_graph4()
 
     assert (
-        AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph_renamed)
-        is False
+        AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph4) is False
     )
 
 

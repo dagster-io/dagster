@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
@@ -106,15 +105,6 @@ def _get_code_location_origin_from_repository(repository: RepositoryDefinition, 
     )
 
 
-class AssetSpecWithPartitionsDef(
-    namedtuple(
-        "AssetSpecWithPartitionsDef",
-        AssetSpec._fields + ("partitions_def",),
-        defaults=(None,) * (1 + len(AssetSpec._fields)),
-    )
-): ...
-
-
 class MultiAssetSpec(NamedTuple):
     specs: Sequence[AssetSpec]
     partitions_def: Optional[PartitionsDefinition] = None
@@ -125,7 +115,7 @@ class MultiAssetSpec(NamedTuple):
 class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
-    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
+    asset_specs: Sequence[Union[AssetSpec, MultiAssetSpec]]
     current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
     sensors: Sequence[SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
@@ -160,20 +150,12 @@ class ScenarioSpec:
                 )
                 # create an observable_source_asset or regular asset depending on the execution type
                 if execution_type == AssetExecutionType.OBSERVATION:
-                    if isinstance(spec, AssetSpecWithPartitionsDef):
-                        sd = spec._asdict()
-                        partitions_def = sd.pop("partitions_def")
-                        specs = [AssetSpec(**sd)]
-                    else:
-                        partitions_def = None
-                        specs = [spec]
 
                     @op
                     def noop(): ...
 
                     osa = AssetsDefinition(
-                        specs=specs,
-                        partitions_def=partitions_def,
+                        specs=[spec],
                         execution_type=execution_type,
                         keys_by_output_name={"result": spec.key},
                         node_def=noop,
@@ -253,13 +235,7 @@ class ScenarioSpec:
                 )
             else:
                 if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
-                    if "partitions_def" in kwargs:
-                        # partitions_def is not a field on AssetSpec, so we need to do this hack
-                        new_asset_specs.append(
-                            AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
-                        )
-                    else:
-                        new_asset_specs.append(spec._replace(**kwargs))
+                    new_asset_specs.append(spec._replace(**kwargs))
                 else:
                     new_asset_specs.append(spec)
         return dataclasses.replace(self, asset_specs=new_asset_specs)
