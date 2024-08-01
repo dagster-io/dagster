@@ -971,42 +971,27 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
 
 
 @pytest.mark.parametrize(
-    ["run_tags", "expected_ecs_tag_keys", "include_all", "include_only", "exclude", "add_job_name"],
+    ["run_tags", "expected_ecs_tag_keys", "include_all", "include_only", "exclude",],
     [
         (
             {
                 "dagster/partition_key": "abc",
                 "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
             },
-            {"dagster/partition_key", "dagster/git_commit_hash"},
+            {"dagster/partition_key", "dagster/git_commit_hash", "dagster/job_name"},
             True,
             [],
             [],
-            False,
         ),
         (
             {
                 "dagster/partition_key": "abc",
                 "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
             },
-            {"dagster/partition_key"},
+            {"dagster/partition_key", "dagster/job_name"},
             False,
             ["dagster/partition_key"],
             [],
-            False,
-        ),
-        (
-            {
-                "dagster/partition_key": "abc",
-                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
-            },
-            {"dagster/git_commit_hash"},
-            False,
-            [],
-            [
-                "dagster/partition_key",
-            ],
-            False,
         ),
         (
             {
@@ -1019,7 +1004,18 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
             [
                 "dagster/partition_key",
             ],
-            True,
+        ),
+        (
+            {
+                "dagster/partition_key": "abc",
+                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+            },
+            {"dagster/git_commit_hash", "dagster/job_name"},
+            False,
+            [],
+            [
+                "dagster/partition_key",
+            ],
         ),
     ],
 )
@@ -1029,7 +1025,6 @@ def test_propagate_tags_include_all(
     include_all: bool,
     include_only: list[str],
     exclude: list[str],
-    add_job_name: bool,
     instance_cm,
     workspace,
     job,
@@ -1042,7 +1037,6 @@ def test_propagate_tags_include_all(
                 "include_all": include_all,
                 "include_only": include_only,
                 "exclude": exclude,
-                "add_job_name": add_job_name,
             },
         }
     ) as instance:
