@@ -328,6 +328,13 @@ export const useRunsForTimeline = ({
       if (run.startTime === null) {
         return;
       }
+
+      // If the run has ended prior to the start of the range, discard it. This can occur
+      // because we are using "updated" time for filtering our runs, which is a value
+      // independent of start/end timestamps.
+      if (run.endTime && run.endTime * 1000 < start) {
+        return;
+      }
       if (!run.repositoryOrigin) {
         return;
       }
@@ -366,7 +373,7 @@ export const useRunsForTimeline = ({
     const current = {jobInfo, runsByJobKey: map};
     previousRunsByJobKey.current = current;
     return current;
-  }, [loading, ongoingRunsData, completedRuns]);
+  }, [loading, ongoingRunsData, completedRuns, start]);
 
   const jobsWithCompletedRunsAndOngoingRuns = useMemo(() => {
     const jobs: Record<string, TimelineRow> = {};
