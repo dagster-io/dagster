@@ -1,9 +1,10 @@
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Union
 
 import dagster._check as check
 import graphene
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.events import DagsterEventType
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
 from dagster._core.remote_representation.represented import RepresentedJob
@@ -317,6 +318,32 @@ class GraphenePipelineRun(graphene.Interface):
 
     class Meta:
         name = "PipelineRun"
+
+
+class GrapheneMegaRun(graphene.ObjectType):
+    id = graphene.NonNull(graphene.ID)
+    runId = graphene.NonNull(graphene.String)
+    status = graphene.NonNull(GrapheneRunStatus)
+    creationTime = graphene.NonNull(graphene.Float)
+    startTime = graphene.Float()
+    endTime = graphene.Float()
+    tags = non_null_list(GraphenePipelineTag)
+    # some way to have the job name or asset selection in one field?
+    jobName = graphene.NonNull(graphene.String)
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
+
+    class Meta:
+        name = "MegaRun"
+
+    def __init__(self, record: Union[RunRecord, PartitionBackfill]):
+        check.inst_param(record, "record", (RunRecord, PartitionBackfill))
+
+        self._record = record
+        self._mega_run = record.to_mega_run()
+        super().__init__(
+            runId=self._mega_run.run_id,
+            status=self._mega_run.status.value,
+        )
 
 
 class GrapheneRun(graphene.ObjectType):

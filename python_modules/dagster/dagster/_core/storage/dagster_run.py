@@ -24,6 +24,7 @@ from dagster._core.loader import InstanceLoadableBy
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
+from dagster._record import record
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 from .tags import (
@@ -189,6 +190,17 @@ class RunOpConcurrency(
                 has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
             ),
         )
+
+
+@record
+class MegaRun:
+    run_id: str
+    status: DagsterRunStatus
+    create_timestamp: datetime
+    start_time: Optional[float]
+    end_time: Optional[float]
+    target: Union[str, AbstractSet[Union[AssetKey, AssetCheckKey]]]
+    tags: Mapping[str, str]
 
 
 class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
@@ -651,10 +663,28 @@ class RunRecord(
         # this should be replaced with an async DB call
         records = instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
 
-        for record in records:
-            result_map[record.dagster_run.run_id] = record
+        for run_record in records:
+            result_map[run_record.dagster_run.run_id] = run_record
 
         return result_map.values()
+
+    def to_mega_run(self) -> MegaRun:
+        from dagster._core.definitions.asset_job import is_base_asset_job_name
+
+        target = (
+            self.dagster_run.job_name
+            if not is_base_asset_job_name(self.dagster_run.job_name)
+            else self.dagster_job.asset_selection + self.dagster_job.asset_check_selection
+        )
+        return MegaRun(
+            run_id=self.dagster_run.run_id,
+            status=self.dagster_run.status,
+            create_timestamp=self.create_timestamp,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            target=target,
+            tags=self.dagster_run.tags,
+        )
 
 
 @whitelist_for_serdes

@@ -12,9 +12,11 @@ from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.storage.dagster_run import MegaRun
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
+from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
 from ..definitions.selector import PartitionsByAssetSelector
@@ -452,4 +454,16 @@ class PartitionBackfill(
             asset_selection=list(asset_graph_subset.asset_keys),
             title=title,
             description=description,
+        )
+
+    def to_mega_run(self) -> MegaRun:
+        # target = self.asset_selection if self.asset_selection else
+        return MegaRun(
+            run_id=self.backfill_id,
+            status=self.status.to_dagster_run_status(),
+            create_timestamp=datetime_from_timestamp(self.backfill_timestamp),
+            start_time=self.backfill_timestamp,
+            end_time=None,
+            tags=self.tags,
+            target=None,
         )
