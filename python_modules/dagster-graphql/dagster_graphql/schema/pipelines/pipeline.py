@@ -576,6 +576,8 @@ class GrapheneRun(graphene.ObjectType):
         return self._run_record.end_time
 
     def resolve_updateTime(self, graphene_info: ResolveInfo):
+        if self.dagster_run.status in COMPLETED_STATUSES:
+            return self._run_record.end_time
         return self._run_record.update_timestamp.timestamp()
 
     def resolve_creationTime(self, graphene_info: ResolveInfo):
