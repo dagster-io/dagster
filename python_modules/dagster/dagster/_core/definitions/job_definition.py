@@ -742,6 +742,12 @@ class JobDefinition(IHasInternalInit):
         )
         return partitions_def.get_tags_for_partition_key(partition_key)
 
+    def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:
+        if self._partitioned_config:
+            return self._partitioned_config.get_run_config_for_partition_key(partition_key)
+        else:
+            return {}
+
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
         return (
