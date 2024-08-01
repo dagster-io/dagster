@@ -204,6 +204,16 @@ class JobDefinition(IHasInternalInit):
                 self._config_mapping = config
             elif isinstance(config, PartitionedConfig):
                 self._partitioned_config = config
+                if asset_layer:
+                    for asset_key in asset_layer.asset_keys_by_node_output_handle.values():
+                        asset_partitions_def = asset_layer.get(asset_key).partitions_def
+                        check.invariant(
+                            asset_partitions_def is None
+                            or asset_partitions_def == config.partitions_def,
+                            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
+                            f" than supplied for a target asset 'partitions_def'. Asset: {asset_key.to_user_string()}",
+                        )
+
             elif isinstance(config, dict):
                 self._run_config = config
                 # Using config mapping here is a trick to make it so that the preset will be used even
@@ -806,7 +816,9 @@ class JobDefinition(IHasInternalInit):
                 *selection_data.asset_check_selection
             )
 
-        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+        job_asset_graph = get_asset_graph_for_job(
+            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+        )
 
         return build_asset_job(
             name=self.name,
@@ -817,6 +829,7 @@ class JobDefinition(IHasInternalInit):
             tags=self.tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
+            allow_different_partitions_defs=True,
         )
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
