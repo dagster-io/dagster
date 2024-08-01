@@ -189,7 +189,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         )
         if self.propagate_tags:
             check.invariant(
-                len([k for k, v in self.propagate_tags.items() if v and k != "add_job_name"]) <= 1,
+                len([k for k, v in self.propagate_tags.items() if v]) <= 1,
                 "Only one of include_only, include_all, or exclude can be set for the propagate_tags config property",
             )
 
@@ -366,11 +366,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                             default_value=[],
                             description="List of specific tag keys which should not be propagated to the ECS task. All other tags will be propagated to the ECS task.",
                         ),
-                        "add_job_name": Field(
-                            bool,
-                            default_value=True,
-                            description="Whether to propagate the job name from the Dagster run to the ECS task.",
-                        ),
                     }
                 ),
                 is_required=False,
@@ -414,8 +409,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     for k, v in run.tags.items()
                     if k not in self.propagate_tags["exclude"] and not k.startswith("ecs/")
                 }
-            if self.propagate_tags.get("add_job_name"):
-                tags["dagster/job_name"] = run.job_name
             to_add = [{"key": k, "value": v} for k, v in tags.items()]
         else:
             to_add = []
@@ -434,6 +427,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return [
             {"key": "dagster/run_id", "value": run.run_id},
+            {"key": "dagster/job_name", "value": run.job_name},
             *container_context.run_ecs_tags,
             *to_add,
         ]
