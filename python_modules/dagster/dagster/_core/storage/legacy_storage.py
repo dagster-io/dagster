@@ -399,7 +399,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._storage.event_log_storage.get_step_stats_for_run(run_id, step_keys)
 
-    def store_event(self, event: "EventLogEntry") -> Optional[int]:
+    def store_event(self, event: "EventLogEntry") -> None:
         return self._storage.event_log_storage.store_event(event)
 
     def delete_events(self, run_id: str) -> None:
