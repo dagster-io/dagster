@@ -971,7 +971,13 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
 
 
 @pytest.mark.parametrize(
-    ["run_tags", "expected_ecs_tag_keys", "include_all", "include_only", "exclude",],
+    [
+        "run_tags",
+        "expected_ecs_tag_keys",
+        "include_all",
+        "include_only",
+        "exclude",
+    ],
     [
         (
             {
