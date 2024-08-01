@@ -420,6 +420,18 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         else:
             to_add = []
 
+        # ECS tags can't have * in the value, which is the value passed to `dagster/solid_selection` when all steps in
+        # a run are selected (probably the most common case), or when all tags before or after a step are selected.
+        # We need to replace * with a character that is allowed in ECS tags.
+        for i, k in enumerate(to_add):
+            if k["key"] == "dagster/solid_selection":
+                if k["value"].startswith("*"):
+                    to_add[i]["value"] = to_add[i]["value"].lreplace("*", "ALL_BEFORE_AND_")
+                if k["value"].endswith("*"):
+                    to_add[i]["value"] = to_add[i]["value"].rreplace("*", "_AND_ALL_AFTER")
+                if k["value"] == "*":
+                    to_add[i]["value"] = to_add[i]["value"].replace("*", "ALL")
+
         return [
             {"key": "dagster/run_id", "value": run.run_id},
             *container_context.run_ecs_tags,
