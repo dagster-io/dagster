@@ -18,11 +18,7 @@ import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {
-  AssetComputeKindTag,
-  AssetStorageKindTag,
-  isCanonicalStorageKindTag,
-} from '../graph/KindTags';
+import {AssetComputeKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
@@ -31,15 +27,13 @@ interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
   computeKindTagsFilter?: StaticSetFilter<string>;
-  storageKindTagsFilter?: StaticSetFilter<DefinitionTag>;
 }
 
 export const AssetNode = React.memo(
-  ({definition, selected, computeKindTagsFilter, storageKindTagsFilter}: Props) => {
+  ({definition, selected, computeKindTagsFilter}: Props) => {
     const isSource = definition.isSource;
 
     const {liveData} = useAssetLiveData(definition.assetKey);
-    const storageKindTag = definition.tags?.find(isCanonicalStorageKindTag);
     return (
       <AssetInsetForHoverEffect>
         <Box
@@ -74,13 +68,6 @@ export const AssetNode = React.memo(
             )}
           </AssetNodeBox>
           <Box flex={{direction: 'row-reverse', gap: 8}}>
-            {storageKindTag && (
-              <AssetStorageKindTag
-                storageKind={storageKindTag.value}
-                style={{position: 'relative', paddingTop: 7, margin: 0}}
-                currentPageFilter={storageKindTagsFilter}
-              />
-            )}
             <AssetComputeKindTag
               definition={definition}
               style={{position: 'relative', paddingTop: 7, margin: 0}}
