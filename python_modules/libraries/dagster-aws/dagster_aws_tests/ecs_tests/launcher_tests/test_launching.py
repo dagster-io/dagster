@@ -88,6 +88,11 @@ def test_default_launcher(
         )
         assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][0]["value"] == run.run_id
 
+        assert (
+            ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][1]["key"] == "dagster/job_name"
+        )
+        assert ecs.list_tags_for_resource(resourceArn=task_arn)["tags"][1]["value"] == run.job_name
+
     # We set job-specific overides
     overrides = task["overrides"]["containerOverrides"]
     assert len(overrides) == 1
