@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Sequence, cast
+from typing import cast
 
 from dagster import asset, define_asset_job
 from dagster._core.definitions.cacheable_assets import (
@@ -17,9 +17,7 @@ FETCHED_KVS_KEY = "fetched_external_data"
 USED_CACHE_KVS_KEY = "used_cached_external_data"
 
 instance = DagsterInstance.get()
-metadata_value_cached_assets: Sequence[Mapping[Any, Any]] | None = (
-    extract_from_current_repository_load_data("my_cached_asset_id")
-)
+metadata_value_cached_assets = extract_from_current_repository_load_data("my_cached_asset_id")
 
 if metadata_value_cached_assets is not None:
     get_definitions_called = int(
