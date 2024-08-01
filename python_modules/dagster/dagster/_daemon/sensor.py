@@ -1068,5 +1068,7 @@ def _create_sensor_run(
         asset_check_selection=(
             frozenset(run_request.asset_check_keys) if run_request.asset_check_keys else None
         ),
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
+        asset_graph=code_location.get_repository(
+            external_job.repository_handle.repository_name
+        ).asset_graph,
     )
