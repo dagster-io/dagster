@@ -13,6 +13,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -366,20 +367,26 @@ export const TimeDividers = (props: TimeDividersProps) => {
   const [start, end] = rangeMs;
   const formatDateTime = useFormatDateTime();
 
-  const dateMarkers: DateMarker[] = React.useMemo(() => {
-    const totalTime = end - start;
+  // Create a cursor date at midnight in the user's timezone, to be used when
+  // generating date and time markers.
+  const boundaryCursor = useMemo(() => {
     const startDate = new Date(start);
     const startDateStringWithTimezone = formatDateTime(
       startDate,
       dateTimeOptionsWithTimezone,
       'en-US',
     );
+    return new Date(startDateStringWithTimezone);
+  }, [formatDateTime, start]);
 
+  const dateMarkers: DateMarker[] = React.useMemo(() => {
+    const totalTime = end - start;
     const dayBoundaries = [];
 
-    // Create a date at midnight on this date in this timezone.
-    let cursor = new Date(startDateStringWithTimezone);
+    let cursor = boundaryCursor;
 
+    // Add date boundaries. This is not identical to time interval boundaries, due to
+    // daylight savings.
     while (cursor.valueOf() < end) {
       const dayStart = cursor.getTime();
       const dayEnd = new Date(dayStart).setDate(cursor.getDate() + 1); // Increment by one day.
@@ -403,29 +410,41 @@ export const TimeDividers = (props: TimeDividersProps) => {
         width: right - left,
       };
     });
-  }, [end, formatDateTime, start]);
+  }, [boundaryCursor, end, formatDateTime, start]);
 
   const timeMarkers: TimeMarker[] = React.useMemo(() => {
     const totalTime = end - start;
-    const startGap = start % interval;
-    const firstMarker = start - startGap;
-    const markerCount = Math.ceil(totalTime / interval) + 1;
-    return [...new Array(markerCount)]
-      .map((_, ii) => {
-        const time = firstMarker + ii * interval;
-        const date = new Date(time);
+    const timeBoundaries = [];
+
+    let cursor = boundaryCursor;
+
+    // Add time boundaries at every interval.
+    while (cursor.valueOf() < end) {
+      const intervalStart = cursor.getTime();
+      const intervalEnd = new Date(intervalStart).setTime(cursor.getTime() + interval); // Increment by interval.
+      cursor = new Date(intervalEnd);
+      timeBoundaries.push(intervalStart);
+    }
+
+    // Create boundary markers, then slice off any markers that would be offscreen.
+    return timeBoundaries
+      .map((intervalStart) => {
+        const date = new Date(intervalStart);
+        const startLeftMsec = intervalStart - start;
+        const left = Math.max(0, (startLeftMsec / totalTime) * 100);
         const label =
           interval < ONE_HOUR_MSEC
             ? formatDateTime(date, timeOnlyOptionsWithMinute).replace(' ', '')
             : formatDateTime(date, timeOnlyOptions).replace(' ', '');
+
         return {
           label,
           key: date.toString(),
-          left: ((time - start) / totalTime) * 100,
+          left,
         };
       })
       .filter((marker) => marker.left > 0);
-  }, [end, start, interval, formatDateTime]);
+  }, [end, start, boundaryCursor, interval, formatDateTime]);
 
   const now = _now || Date.now();
   const msToLeft = (ms: number) => `${(((ms - start) / (end - start)) * 100).toPrecision(3)}%`;
