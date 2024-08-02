@@ -47,6 +47,8 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 
 .. autoclass:: UrlMetadataValue
 
+.. autoclass:: CodeReferencesMetadataValue
+
 Tables
 ^^^^^^
 

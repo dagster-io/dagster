@@ -71,7 +71,7 @@ Dagster's dbt integration can automatically attach references to the SQL files b
 
 In some cases, you may want to manually attach code references to your asset definitions. Some assets may have a more complex source structure, such as an asset whose definition is spread across multiple Python source files or an asset which is partially defined with a `.sql` model file.
 
-To manually attach code references to an asset definition, use `CodeReferencesMetadataValue`. You can then choose to augment these manual references with `with_source_code_references`:
+To manually attach code references to an asset definition, use <Pyobject module="dagster" object="CodeReferencesMetadataValue"/>. You can then choose to augment these manual references with <Pyobject module="dagster" object="with_source_code_references"/>:
 
 ```python file=/guides/dagster/code_references/manual_references.py
 import os
