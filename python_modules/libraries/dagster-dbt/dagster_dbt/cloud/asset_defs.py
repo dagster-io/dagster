@@ -361,7 +361,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             asset_outs,
             group_names_by_key,
             freshness_policies_by_key,
-            auto_materialize_policies_by_key,
+            automation_conditions_by_key,
             _,
             fqns_by_output_name,
             metadata_by_output_name,
@@ -410,8 +410,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 for asset_key, freshness_policy in freshness_policies_by_key.items()
             },
             auto_materialize_policies_by_output_name={
-                asset_outs[asset_key][0]: auto_materialize_policy
-                for asset_key, auto_materialize_policy in auto_materialize_policies_by_key.items()
+                asset_outs[asset_key][0]: automation_condition.as_auto_materialize_policy()
+                for asset_key, automation_condition in automation_conditions_by_key.items()
             },
         )
 

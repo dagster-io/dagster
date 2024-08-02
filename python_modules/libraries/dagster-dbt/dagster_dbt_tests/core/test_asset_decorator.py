@@ -6,6 +6,7 @@ import pytest
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
+    AutomationCondition,
     BackfillPolicy,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
@@ -737,6 +738,33 @@ def test_with_auto_materialize_policy_replacements(
         assert (
             expected_specs_by_key[asset_key].auto_materialize_policy
             == expected_auto_materialize_policy
+        )
+
+
+def test_with_automation_condition_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    expected_automation_condition = AutomationCondition.eager()
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_automation_condition(self, _: Mapping[str, Any]) -> Optional[AutomationCondition]:
+            return expected_automation_condition
+
+    expected_specs_by_key = {
+        spec.key: spec
+        for spec in build_dbt_asset_specs(
+            manifest=test_jaffle_shop_manifest,
+            dagster_dbt_translator=CustomDagsterDbtTranslator(),
+        )
+    }
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+    def my_dbt_assets(): ...
+
+    for asset_key, automation_condition in my_dbt_assets.automation_conditions_by_key.items():
+        assert automation_condition == expected_automation_condition
+        assert (
+            expected_specs_by_key[asset_key].automation_condition == expected_automation_condition
         )
 
 

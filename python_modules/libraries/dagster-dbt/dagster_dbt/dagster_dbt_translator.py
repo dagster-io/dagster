@@ -4,6 +4,7 @@ from typing import Any, Mapping, Optional, Sequence
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
+    AutomationCondition,
     FreshnessPolicy,
     PartitionMapping,
     _check as check,
@@ -427,6 +428,64 @@ class DagsterDbtTranslator:
 
         """
         return default_auto_materialize_policy_fn(dbt_resource_props)
+
+    @public
+    @experimental(emit_runtime_warning=False)
+    def get_automation_condition(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[AutomationCondition]:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster :py:class:`dagster.AutoMaterializePolicy` for that resource.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        This method can be overridden to provide a custom AutomationCondition for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[AutoMaterializePolicy]: A Dagster auto-materialize policy.
+
+        Examples:
+            Set a custom AutomationCondition for all dbt resources:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutomationCondition]:
+                        return AutomationCondition.eager()
+
+            Set a custom AutomationCondition for dbt resources with a specific tag:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_automation_condition(self, dbt_resource_props: Mapping[str, Any]) -> Optional[AutomationCondition]:
+                        automation_condition = None
+                        if "my_custom_tag" in dbt_resource_props.get("tags", []):
+                            automation_condition = AutomationCondition.eager()
+
+                        return automation_condition
+
+        """
+        auto_materialize_policy = self.get_auto_materialize_policy(dbt_resource_props)
+        return (
+            auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
+        )
 
 
 @dataclass
