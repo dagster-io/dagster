@@ -395,12 +395,14 @@ export const useRunsForTimeline = ({
         name: isAdHoc ? 'Ad hoc materializations' : pipelineName,
         type: isAdHoc ? 'asset' : 'job',
         repoAddress,
-        path: workspacePipelinePath({
-          repoName: repoAddress.name,
-          repoLocation: repoAddress.location,
-          pipelineName,
-          isJob: true,
-        }),
+        path: isAdHoc
+          ? null
+          : workspacePipelinePath({
+              repoName: repoAddress.name,
+              repoLocation: repoAddress.location,
+              pipelineName,
+              isJob: true,
+            }),
         runs,
       } as TimelineRow;
     });
