@@ -6,6 +6,7 @@ import {
   Heading,
   Icon,
   IconWrapper,
+  MiddleTruncate,
   PageHeader,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -78,14 +79,24 @@ export const AssetPageHeader = ({
           <Title>
             <BreadcrumbsWithSlashes
               items={breadcrumbs}
-              currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
+              currentBreadcrumbRenderer={({text}) => (
+                <TruncatedHeading>
+                  {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                </TruncatedHeading>
+              )}
               breadcrumbRenderer={({text, href}) => (
-                <Heading>
-                  <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
-                </Heading>
+                <TruncatedHeading>
+                  <BreadcrumbLink to={href || '#'}>
+                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                  </BreadcrumbLink>
+                </TruncatedHeading>
               )}
               $numHeaderBreadcrumbs={headerBreadcrumbs.length}
-              popoverProps={{popoverClassName: 'dagster-popover'}}
+              popoverProps={{
+                minimal: true,
+                modifiers: {offset: {enabled: true, options: {offset: [0, 8]}}},
+                popoverClassName: 'dagster-popover',
+              }}
             />
             {copyableString ? (
               <Tooltip placement="bottom" content="Copy asset key">
@@ -104,6 +115,11 @@ export const AssetPageHeader = ({
     />
   );
 };
+
+const TruncatedHeading = styled(Heading)`
+  max-width: 300px;
+  overflow: hidden;
+`;
 
 const CopyButton = styled.button`
   border: none;
