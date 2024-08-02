@@ -254,6 +254,7 @@ def test_asset_key_for_asset_with_key_prefix_str():
     assert _asset_keys_for_node(result, "hello__asset_foo") == {AssetKey(["hello", "asset_foo"])}
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset():
     @asset
     def asset1(source1):
@@ -298,6 +299,7 @@ def test_source_asset():
     assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_missing_io_manager():
     @asset
     def asset1(source1):
@@ -1550,6 +1552,7 @@ def test_multi_all():
         assert materialization_events[2].asset_key == AssetKey("foo")
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_subset_with_source_asset():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1674,6 +1677,7 @@ def test_graph_output_is_input_within_graph():
     assert result.output_for_node("complicated_graph", "asset_3") == 4
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
@@ -1700,6 +1704,7 @@ def test_source_asset_io_manager_def():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset_io_manager_not_provided():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1728,6 +1733,7 @@ def test_source_asset_io_manager_not_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset_io_manager_key_provided():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1756,6 +1762,7 @@ def test_source_asset_io_manager_key_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_requires_resource_defs():
@@ -1845,6 +1852,7 @@ def test_transitive_resource_deps_provided():
     assert the_job.execute_in_process().success
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
@@ -1988,6 +1996,7 @@ def test_async_multi_asset():
     assert result.success
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_selection_multi_component():
     source_asset = SourceAsset(["apple", "banana"])
 
@@ -2593,6 +2602,7 @@ def test_subset_cycle_resolution_complex():
     assert result.output_for_node("foo_3", "f") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_subset_cycle_resolution_basic():
     """Ops:
         foo produces: a, b
@@ -2660,6 +2670,7 @@ def test_subset_cycle_resolution_basic():
     }
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_subset_cycle_resolution_with_asset_check():
     """Ops:
         foo produces: a, b

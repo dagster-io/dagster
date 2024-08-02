@@ -129,6 +129,7 @@ def test_materialize_conflicting_resources():
 
 
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_materialize_source_assets():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -192,6 +193,7 @@ def test_materialize_asset_specs_conflicting_key():
 
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_materialize_source_asset_conflicts():
     @io_manager(required_resource_keys={"foo"})
     def the_manager():

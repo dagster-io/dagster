@@ -45,6 +45,7 @@ from dagster._core.storage.tags import (
 from dagster._core.test_utils import (
     assert_namedtuple_lists_equal,
     freeze_time,
+    ignore_warning,
     raise_exception_on_warnings,
 )
 from dagster._time import create_datetime, parse_time_string
@@ -376,6 +377,7 @@ def test_cross_job_different_partitions():
     ).success
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset_partitions():
     hourly_asset = SourceAsset(
         AssetKey("hourly_asset"),
