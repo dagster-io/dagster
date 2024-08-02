@@ -9,7 +9,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import load_run_config_yaml
 from graphene.types.generic import GenericScalar
 
-from ..implementation.fetch_runs import get_run_ids, get_runs, get_runs_count
+from ..implementation.fetch_runs import get_mega_runs, get_run_ids, get_runs, get_runs_count
 from ..implementation.utils import UserFacingGraphQLError
 from .errors import (
     GrapheneInvalidPipelineRunsFilterError,
@@ -211,6 +211,28 @@ def parse_run_config_input(
     return run_config
 
 
+class GrapheneMegaRuns(graphene.ObjectType):
+    results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneMegaRun")
+
+    class Meta:
+        name = "MegaRuns"
+
+    def __init__(self, cursor, limit):
+        super().__init__()
+
+        self._cursor = cursor
+        self._limit = limit
+
+    def resolve_results(self, graphene_info: ResolveInfo):
+        return get_mega_runs(graphene_info, self._cursor, self._limit)
+
+
+class GrapheneMegaRunsOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneMegaRuns, GrapheneInvalidPipelineRunsFilterError, GraphenePythonError)
+        name = "MegaRunsOrError"
+
+
 types = [
     GrapheneLaunchRunResult,
     GrapheneLaunchRunReexecutionResult,
@@ -221,4 +243,5 @@ types = [
     GrapheneRunGroup,
     GrapheneRunGroupOrError,
     GrapheneRunGroups,
+    GrapheneMegaRunsOrError,
 ]

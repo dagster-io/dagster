@@ -2950,6 +2950,32 @@ type RunGroups {
   results: [RunGroup!]!
 }
 
+union MegaRunsOrError = MegaRuns | InvalidPipelineRunsFilterError | PythonError
+
+type MegaRuns {
+  results: [MegaRun!]!
+}
+
+type MegaRun {
+  singleRun: Run
+  backfill: PartitionBackfill
+  runType: RunType!
+  runId: String!
+  status: RunStatus
+  creationTime: Float
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
+}
+
+enum RunType {
+  RUN
+  BACKFILL
+}
+
 type Sensor {
   id: ID!
   jobOriginId: String!
@@ -3216,6 +3242,7 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
+  megaRunsOrError(cursor: String, limit: Int): MegaRunsOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!

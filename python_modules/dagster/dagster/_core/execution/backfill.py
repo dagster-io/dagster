@@ -457,7 +457,8 @@ class PartitionBackfill(
         )
 
     def to_mega_run(self) -> MegaRun:
-        # target = self.asset_selection if self.asset_selection else
+        # TODO - we don't have the job name on the backfill object, just the partition set?
+        target = self.asset_selection if self.asset_selection else self.partition_set_name
         return MegaRun(
             run_id=self.backfill_id,
             status=self.status.to_dagster_run_status(),
@@ -465,5 +466,5 @@ class PartitionBackfill(
             start_time=self.backfill_timestamp,
             end_time=None,
             tags=self.tags,
-            target=None,
+            target=target,
         )

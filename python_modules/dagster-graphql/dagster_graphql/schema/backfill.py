@@ -28,6 +28,8 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+
 from ..implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
     partition_statuses_from_run_partition_data,
@@ -118,6 +120,18 @@ class GrapheneBulkActionStatus(graphene.Enum):
 
     class Meta:
         name = "BulkActionStatus"
+
+    def to_dagster_run_status(self) -> GrapheneRunStatus:
+        if self == GrapheneBulkActionStatus.REQUESTED:
+            return GrapheneRunStatus.STARTED
+        if self == GrapheneBulkActionStatus.COMPLETED:
+            return GrapheneRunStatus.SUCCESS
+        if self == GrapheneBulkActionStatus.FAILED:
+            return GrapheneRunStatus.FAILURE
+        if self == GrapheneBulkActionStatus.CANCELED:
+            return GrapheneRunStatus.CANCELED
+        if self == GrapheneBulkActionStatus.CANCELING:
+            return GrapheneRunStatus.CANCELING
 
 
 class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):

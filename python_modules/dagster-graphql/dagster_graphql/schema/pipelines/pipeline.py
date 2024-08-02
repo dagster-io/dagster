@@ -19,6 +19,7 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.backfill import GrapheneBulkActionStatus, GraphenePartitionBackfill
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 from ...implementation.events import from_event_record
@@ -320,32 +321,6 @@ class GraphenePipelineRun(graphene.Interface):
         name = "PipelineRun"
 
 
-class GrapheneMegaRun(graphene.ObjectType):
-    id = graphene.NonNull(graphene.ID)
-    runId = graphene.NonNull(graphene.String)
-    status = graphene.NonNull(GrapheneRunStatus)
-    creationTime = graphene.NonNull(graphene.Float)
-    startTime = graphene.Float()
-    endTime = graphene.Float()
-    tags = non_null_list(GraphenePipelineTag)
-    # some way to have the job name or asset selection in one field?
-    jobName = graphene.NonNull(graphene.String)
-    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
-
-    class Meta:
-        name = "MegaRun"
-
-    def __init__(self, record: Union[RunRecord, PartitionBackfill]):
-        check.inst_param(record, "record", (RunRecord, PartitionBackfill))
-
-        self._record = record
-        self._mega_run = record.to_mega_run()
-        super().__init__(
-            runId=self._mega_run.run_id,
-            status=self._mega_run.status.value,
-        )
-
-
 class GrapheneRun(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
@@ -620,6 +595,97 @@ class GrapheneRun(graphene.ObjectType):
         for concurrency_key, count in self.dagster_run.run_op_concurrency.root_key_counts.items():
             root_concurrency_keys.extend([concurrency_key] * count)
         return root_concurrency_keys
+
+
+class GrapheneRunType(graphene.Enum):
+    """The underlying kind of run represented by a MegaRun."""
+
+    RUN = "RUN"
+    BACKFILL = "BACKFILL"
+
+    class Meta:
+        name = "RunType"
+
+
+class GrapheneMegaRun(graphene.ObjectType):
+    singleRun = graphene.Field(GrapheneRun)
+    backfill = graphene.Field(GraphenePartitionBackfill)
+    runType = graphene.NonNull(GrapheneRunType)
+
+    # fields promoted to top level in the object since they are used to power the UI
+    runId = graphene.NonNull(graphene.String)
+    status = graphene.Field(GrapheneRunStatus)
+    creationTime = graphene.Float()
+    startTime = graphene.Float()
+    endTime = graphene.Float()
+    tags = non_null_list(GraphenePipelineTag)
+    # maybe we can combine these into a single target field? not sure if that's an improvement
+    jobName = graphene.String()
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandle))
+
+    class Meta:
+        name = "MegaRun"
+
+    def __init__(self, record: Union[RunRecord, PartitionBackfill]):
+        check.inst_param(record, "record", (RunRecord, PartitionBackfill))
+
+        super().__init__(
+            singleRun=GrapheneRun(record) if isinstance(record, RunRecord) else None,
+            backfill=GraphenePartitionBackfill(record)
+            if isinstance(record, PartitionBackfill)
+            else None,
+            runType=GrapheneRunType.RUN
+            if isinstance(record, RunRecord)
+            else GrapheneRunType.BACKFILL,
+        )
+
+    # TODO - return types
+    # TODO - need to call the resolve_X fn for anything that isn't set at init time
+    def resolve_runId(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.runId
+        return self.backfill.id
+
+    def resolve_status(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.status
+        return GrapheneBulkActionStatus(self.backfill.status).to_dagster_run_status()
+
+    def resolve_creationTime(self, graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.resolve_creationTime(graphene_info)
+        return self.backfill.timestamp
+
+    def resolve_startTime(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.startTime
+        return self.backfill.timestamp
+
+    def resolve_endTime(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.endTime
+        return self.backfill.endTime
+
+    def resolve_tags(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.tags
+        return self.backfill.tags
+
+    def resolve_jobName(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.jobName
+        return self.backfill.tags
+
+    def resolve_assetSelection(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.assetSelection
+        return self.backfill.assetSelection
+
+    def resolve_assetCheckSelection(self, _graphene_info: ResolveInfo):
+        if self.runType == GrapheneRunType.RUN:
+            return self.singleRun.assetCheckSelection
+        return []
 
 
 class GrapheneIPipelineSnapshotMixin:

@@ -156,6 +156,8 @@ from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
 from ..resources import GrapheneResourceDetailsListOrError, GrapheneResourceDetailsOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
+    GrapheneMegaRuns,
+    GrapheneMegaRunsOrError,
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
     GrapheneRunIds,
@@ -346,6 +348,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneRunOrError),
         runId=graphene.NonNull(graphene.ID),
         description="Retrieve a run by its run id.",
+    )
+    megaRunsOrError = graphene.Field(
+        graphene.NonNull(GrapheneMegaRunsOrError),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        description="Retireve MegaRuns after applying cursor and limit.",
     )
     runTagKeysOrError = graphene.Field(
         GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
@@ -802,6 +810,11 @@ class GrapheneQuery(graphene.ObjectType):
 
     async def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
         return await gen_run_by_id(graphene_info, runId)
+
+    def resolve_megaRunsOrError(
+        self, _graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
+    ):
+        return GrapheneMegaRuns(cursor=cursor, limit=limit)
 
     @capture_error
     def resolve_partitionSetsOrError(
