@@ -62,6 +62,7 @@ from dagster._core.workspace.load_target import EmptyWorkspaceTarget, ModuleTarg
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
+from dagster._record import copy
 from dagster._scheduler.scheduler import ScheduleIterationTimes, launch_scheduled_runs
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp, get_timezone
 from dagster._utils import DebugCrashFlags
@@ -828,8 +829,9 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
             running_to_not_running_schedule = ExternalSchedule(
-                external_schedule_data=running_schedule._external_schedule_data._replace(  # noqa: SLF001
-                    default_status=DefaultScheduleStatus.STOPPED
+                external_schedule_data=copy(
+                    running_schedule._external_schedule_data,  # noqa: SLF001
+                    default_status=DefaultScheduleStatus.STOPPED,
                 ),
                 handle=running_schedule.handle.repository_handle,
             )
