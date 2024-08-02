@@ -1,5 +1,3 @@
-from typing import AbstractSet, Iterable
-
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -10,7 +8,6 @@ from dagster import (
     DataVersion,
     Definitions,
     IOManager,
-    JobDefinition,
     SourceAsset,
     _check as check,
     asset,
@@ -195,21 +192,6 @@ def test_how_source_assets_are_backwards_compatible() -> None:
     assert result_two.output_for_node("an_asset") == "hardcoded-computed"
 
 
-def get_job_for_assets(defs: Definitions, *coercibles_or_defs) -> JobDefinition:
-    job_def = defs.get_implicit_job_def_for_assets(set_from_coercibles_or_defs(coercibles_or_defs))
-    assert job_def, "Expected to find a job def"
-    return job_def
-
-
-def set_from_coercibles_or_defs(coercibles_or_defs: Iterable) -> AbstractSet["AssetKey"]:
-    return set(
-        [
-            AssetKey.from_coercible_or_definition(coercible_or_def)
-            for coercible_or_def in coercibles_or_defs
-        ]
-    )
-
-
 def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
     class DummyIOManager(IOManager):
         def handle_output(self, context, obj) -> None:
@@ -234,7 +216,7 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
     instance = DagsterInstance.ephemeral()
 
-    job_def_without_shim = get_job_for_assets(defs_with_source, an_asset)
+    job_def_without_shim = defs_with_source.get_implicit_global_asset_job_def()
 
     result_one = job_def_without_shim.execute_in_process(
         instance=instance, partition_key="2021-01-02"
@@ -248,7 +230,7 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
     assert isinstance(defs_with_shim.get_assets_def("source_asset"), AssetsDefinition)
 
-    job_def_with_shim = get_job_for_assets(defs_with_shim, an_asset)
+    job_def_with_shim = defs_with_shim.get_implicit_global_asset_job_def()
 
     result_two = job_def_with_shim.execute_in_process(
         instance=instance,
