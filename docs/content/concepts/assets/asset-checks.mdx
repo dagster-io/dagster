@@ -47,7 +47,11 @@ Before continuing, you should be familiar with:
 
 ## How it works
 
-Defined in code, asset checks are used to test some property of one or more Dagster assets. You can use Python to define them, or if using dbt, load your [dbt tests into Dagster as asset checks](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks).
+Defined in code, asset checks are used to test some property of one or more Dagster assets. Asset checks can be defined by:
+
+- Using custom Python code
+- Imported from external systems like [dbt](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks)
+- Using Dagster's [built-in utility methods](#built-in-asset-checks)
 
 Asset checks and their results are [visible in the UI](/concepts/assets/asset-checks/define-execute-asset-checks#using-asset-check-results), allowing you to communicate useful information about data quality, data freshness, and other issues to stakeholders. Asset check results can also be used to create conditional steps in your pipelines - for example, if a quality check fails, execution can be halted to prevent issues spreading downstream.
 
@@ -76,6 +80,17 @@ From here, you can:
 - **Dagster+ only**:
   - [Create alerts](/dagster-plus/managing-deployments/alerts) based on asset check results
   - Use [Insights' asset materialization metadata](/dagster-plus/insights/asset-metadata) to track asset check results over time
+
+### Built-in asset checks
+
+The following table lists Dagster's built-in utility methods for creating asset checks.
+
+| API                                                         | Description                                                                                               |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| <PyObject object="build_metadata_bounds_checks" />          | Builds asset checks that pass if numeric metadata value falls within a particular range                   |
+| <PyObject object="build_column_schema_change_checks" />     | Builds asset checks that pass if an asset's columns are the same, compared with its prior materialization |
+| <PyObject object="build_last_update_freshness_checks" />    | Builds asset checks that pass if not too much time has elapsed since the latest time an asset was updated |
+| <PyObject object="build_time_partition_freshness_checks" /> | Builds asset checks that pass if an asset's most recent partition has been materialized before a deadline |
 
 ### Limitations
 
