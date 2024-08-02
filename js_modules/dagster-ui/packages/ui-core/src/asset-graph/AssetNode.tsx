@@ -19,7 +19,6 @@ import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stal
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/KindTags';
-import {DefinitionTag} from '../graphql/types';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -29,57 +28,54 @@ interface Props {
   computeKindTagsFilter?: StaticSetFilter<string>;
 }
 
-export const AssetNode = React.memo(
-  ({definition, selected, computeKindTagsFilter}: Props) => {
-    const isSource = definition.isSource;
+export const AssetNode = React.memo(({definition, selected, computeKindTagsFilter}: Props) => {
+  const isSource = definition.isSource;
 
-    const {liveData} = useAssetLiveData(definition.assetKey);
-    return (
-      <AssetInsetForHoverEffect>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          style={{minHeight: 24}}
-        >
-          <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
-          <ChangedReasonsTag
-            changedReasons={definition.changedReasons}
-            assetKey={definition.assetKey}
+  const {liveData} = useAssetLiveData(definition.assetKey);
+  return (
+    <AssetInsetForHoverEffect>
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        style={{minHeight: 24}}
+      >
+        <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+        <ChangedReasonsTag
+          changedReasons={definition.changedReasons}
+          assetKey={definition.assetKey}
+        />
+      </Box>
+      <AssetNodeContainer $selected={selected}>
+        <AssetNodeBox $selected={selected} $isSource={isSource}>
+          <AssetNameRow definition={definition} />
+          <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
+            {definition.description ? (
+              <AssetDescription $color={Colors.textDefault()}>
+                {markdownToPlaintext(definition.description).split('\n')[0]}
+              </AssetDescription>
+            ) : (
+              <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
+            )}
+            {definition.isPartitioned && !definition.isSource && (
+              <PartitionCountTags definition={definition} liveData={liveData} />
+            )}
+          </Box>
+
+          <AssetNodeStatusRow definition={definition} liveData={liveData} />
+          {(liveData?.assetChecks || []).length > 0 && (
+            <AssetNodeChecksRow definition={definition} liveData={liveData} />
+          )}
+        </AssetNodeBox>
+        <Box flex={{direction: 'row-reverse', gap: 8}}>
+          <AssetComputeKindTag
+            definition={definition}
+            style={{position: 'relative', paddingTop: 7, margin: 0}}
+            currentPageFilter={computeKindTagsFilter}
           />
         </Box>
-        <AssetNodeContainer $selected={selected}>
-          <AssetNodeBox $selected={selected} $isSource={isSource}>
-            <AssetNameRow definition={definition} />
-            <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
-              {definition.description ? (
-                <AssetDescription $color={Colors.textDefault()}>
-                  {markdownToPlaintext(definition.description).split('\n')[0]}
-                </AssetDescription>
-              ) : (
-                <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
-              )}
-              {definition.isPartitioned && !definition.isSource && (
-                <PartitionCountTags definition={definition} liveData={liveData} />
-              )}
-            </Box>
-
-            <AssetNodeStatusRow definition={definition} liveData={liveData} />
-            {(liveData?.assetChecks || []).length > 0 && (
-              <AssetNodeChecksRow definition={definition} liveData={liveData} />
-            )}
-          </AssetNodeBox>
-          <Box flex={{direction: 'row-reverse', gap: 8}}>
-            <AssetComputeKindTag
-              definition={definition}
-              style={{position: 'relative', paddingTop: 7, margin: 0}}
-              currentPageFilter={computeKindTagsFilter}
-            />
-          </Box>
-        </AssetNodeContainer>
-      </AssetInsetForHoverEffect>
-    );
-  },
-  isEqual,
-);
+      </AssetNodeContainer>
+    </AssetInsetForHoverEffect>
+  );
+}, isEqual);
 
 export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
