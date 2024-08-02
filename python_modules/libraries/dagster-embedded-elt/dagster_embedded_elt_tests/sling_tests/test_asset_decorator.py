@@ -380,10 +380,9 @@ def test_fetch_column_metadata(
     assert all(["dagster/column_schema" in metadata for metadata in metadatas]), str(metadatas)
     assert all(["dagster/column_lineage" in metadata for metadata in metadatas]), str(metadatas)
 
+    products_key = AssetKey(["target", "main", "products"])
     products_metadata = next(
-        mat
-        for mat in asset_materializations
-        if mat.asset_key and mat.asset_key.path[-1] == "products"
+        mat for mat in asset_materializations if mat.asset_key and mat.asset_key == products_key
     ).step_materialization_data.materialization.metadata
 
     assert products_metadata["dagster/column_schema"] == TableSchemaMetadataValue(
@@ -399,7 +398,7 @@ def test_fetch_column_metadata(
     )
 
     # upstream key is gross filepath thing, we just extract it
-    upstream_key = next(iter(next(iter(my_sling_assets.asset_deps.values()))))
+    upstream_key = next(iter(my_sling_assets.asset_deps[products_key]))
     assert products_metadata["dagster/column_lineage"] == TableColumnLineageMetadataValue(
         column_lineage=TableColumnLineage(
             deps_by_column={
