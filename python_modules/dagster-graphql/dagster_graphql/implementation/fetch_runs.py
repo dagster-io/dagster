@@ -404,6 +404,10 @@ def get_mega_runs(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> Sequence["GrapheneMegaRun"]:
+    """Returns a merged list of backfills and single runs (runs that are not part of a backfill).
+
+    Cursor format: run_id;backfill_id
+    """
     from ..schema.pipelines.pipeline import GrapheneMegaRun
 
     check.opt_str_param(cursor, "cursor")
@@ -425,6 +429,7 @@ def get_mega_runs(
         key=lambda x: x.create_timestamp.timestamp()
         if isinstance(x, RunRecord)
         else x.backfill_timestamp,
+        reverse=True,
     )
     if limit:
         all_mega_runs = all_mega_runs[:limit]
