@@ -19,11 +19,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.data_version import (
-    DATA_VERSION_TAG,
-    DataVersion,
-    extract_data_version_from_entry,
-)
+from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
@@ -773,47 +769,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     # RECONCILIATION
     ####################
 
-    def _asset_partitions_data_versions(
-        self,
-        asset_key: AssetKey,
-        asset_partitions: Optional[AbstractSet[AssetKeyPartitionKey]],
-        after_cursor: Optional[int] = None,
-        before_cursor: Optional[int] = None,
-    ) -> Mapping[AssetKeyPartitionKey, Optional[DataVersion]]:
-        if not self.asset_graph.get(asset_key).is_partitioned:
-            asset_partition = AssetKeyPartitionKey(asset_key)
-            latest_record = self.get_latest_materialization_or_observation_record(
-                asset_partition, after_cursor=after_cursor, before_cursor=before_cursor
-            )
-            return (
-                {asset_partition: extract_data_version_from_entry(latest_record.event_log_entry)}
-                if latest_record is not None
-                else {}
-            )
-        else:
-            query_result = self.instance._event_storage.get_latest_tags_by_partition(  # noqa
-                asset_key,
-                event_type=self._event_type_for_key(asset_key),
-                tag_keys=[DATA_VERSION_TAG],
-                after_cursor=after_cursor,
-                before_cursor=before_cursor,
-                asset_partitions=(
-                    [
-                        asset_partition.partition_key
-                        for asset_partition in asset_partitions
-                        if asset_partition.partition_key is not None
-                    ]
-                    if asset_partitions is not None
-                    else None
-                ),
-            )
-            return {
-                AssetKeyPartitionKey(asset_key, partition_key): (
-                    DataVersion(tags[DATA_VERSION_TAG]) if tags.get(DATA_VERSION_TAG) else None
-                )
-                for partition_key, tags in query_result.items()
-            }
-
     def _asset_partition_versions_updated_after_cursor(
         self,
         asset_key: AssetKey,
@@ -832,21 +787,42 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if not to_query_asset_partitions:
             return updated_asset_partitions
 
-        latest_versions = self._asset_partitions_data_versions(
-            asset_key, to_query_asset_partitions, after_cursor=after_cursor
-        )
-        previous_versions = self._asset_partitions_data_versions(
-            asset_key, to_query_asset_partitions, before_cursor=after_cursor + 1
-        )
-        queryed_updated_asset_partitions = {
-            ap for ap, version in latest_versions.items() if previous_versions.get(ap) != version
-        }
-        # keep track of the maximum storage id at which an asset partition was updated after
-        for asset_partition in queryed_updated_asset_partitions:
-            self._asset_partition_versions_updated_after_cursor_cache[asset_partition] = (
-                after_cursor
+        if not self.asset_graph.get(asset_key).is_partitioned:
+            asset_partition = AssetKeyPartitionKey(asset_key)
+            latest_record = self.get_latest_materialization_or_observation_record(
+                asset_partition, after_cursor=after_cursor
             )
-        return {*updated_asset_partitions, *queryed_updated_asset_partitions}
+            latest_data_version = (
+                extract_data_version_from_entry(latest_record.event_log_entry)
+                if latest_record
+                else None
+            )
+            previous_record = self.get_latest_materialization_or_observation_record(
+                asset_partition, before_cursor=after_cursor + 1
+            )
+            previous_data_version = (
+                extract_data_version_from_entry(previous_record.event_log_entry)
+                if previous_record
+                else None
+            )
+            return set([asset_partition]) if latest_data_version != previous_data_version else set()
+
+        partition_keys = [
+            asset_partition.partition_key
+            for asset_partition in asset_partitions
+            if asset_partition.partition_key
+        ]
+        updated_partition_keys = (
+            self.instance.event_log_storage.get_updated_data_version_partitions(
+                asset_key=asset_key,
+                partitions=partition_keys,
+                since_storage_id=after_cursor,
+            )
+        )
+        return set(
+            AssetKeyPartitionKey(asset_key, partition_key)
+            for partition_key in updated_partition_keys
+        )
 
     def get_asset_partitions_updated_after_cursor(
         self,
@@ -901,7 +877,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ):
             return updated_after_cursor
 
-        # more expensive check to explicitly handle data versions
         return self._asset_partition_versions_updated_after_cursor(
             asset_key, updated_after_cursor, after_cursor
         )
