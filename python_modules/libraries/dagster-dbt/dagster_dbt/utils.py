@@ -2,6 +2,7 @@ from argparse import Namespace
 from typing import AbstractSet, Any, Dict, Mapping
 
 from dagster import AssetKey
+from packaging import version
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
@@ -25,6 +26,7 @@ def select_unique_ids_from_manifest(
     import dbt.graph.selector as graph_selector
     from dbt.contracts.graph.manifest import Manifest
     from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
+    from dbt.version import __version__ as dbt_version
     from networkx import DiGraph
 
     # NOTE: this was faster than calling `Manifest.from_dict`, so we are keeping this.
@@ -39,6 +41,22 @@ def select_unique_ids_from_manifest(
             ret = super().get(item)
             # allow recursive access e.g. foo.bar.baz
             return _DictShim(ret) if isinstance(ret, dict) else ret
+
+    unit_tests = {}
+    if version.parse(dbt_version) >= version.parse("1.8.0"):
+        from dbt.contracts.graph.nodes import UnitTestDefinition
+
+        unit_tests = (
+            {
+                "unit_tests": {
+                    # unit test nodes must be of type UnitTestDefinition
+                    unique_id: UnitTestDefinition(**info)
+                    for unique_id, info in manifest_json["unit_tests"].items()
+                },
+            }
+            if manifest_json.get("unit_tests")
+            else {}
+        )
 
     manifest = Manifest(
         nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
@@ -74,16 +92,7 @@ def select_unique_ids_from_manifest(
             if manifest_json.get("saved_queries")
             else {}
         ),
-        **(
-            {
-                "unit_tests": {
-                    unique_id: _DictShim(info)
-                    for unique_id, info in manifest_json["unit_tests"].items()
-                },
-            }
-            if manifest_json.get("unit_tests")
-            else {}
-        ),
+        **unit_tests,
     )
     child_map = manifest_json["child_map"]
 

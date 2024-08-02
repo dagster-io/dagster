@@ -1,0 +1,50 @@
+workspace:
+  name: lineage
+  edition: "1.3"
+  description: >
+    Creates a three stage pipeline with one source ('source.sql') and two sinks, called 'sink.sql' and 'knis.sql'. It shows how to compute lineage.
+
+    Type 'sdf build' to run the pipeline
+
+    Type 'sdf compile' to view information on classifiers and schema
+
+    Type 'sdf lineage' to view lineage in the cli
+
+    Type 'sdf auth login' and 'sdf deploy' to deploy and view lineage on the sdf console
+
+    Try removing the DATA.pii classifier on source.
+
+  includes:
+    - path: models/
+    - path: checks/
+    - path: dagster/
+---
+environment:
+  name: trino
+
+  defaults:
+    dialect: trino
+
+  includes:
+    - type: model
+      path: models/
+    - type: check
+      path: checks/
+---
+classifier:
+  name: DATA
+
+  labels:
+    - name: uid
+    - name: pii
+---
+table:
+  name: source
+
+  columns:
+    - name: user_id
+      classifiers:
+        - DATA.uid
+    - name: phone
+      classifiers:
+        - DATA.pii

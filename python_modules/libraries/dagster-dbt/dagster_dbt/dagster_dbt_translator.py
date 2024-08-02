@@ -9,10 +9,6 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental, public
-from dagster._core.definitions.asset_key import (
-    CoercibleToAssetKeyPrefix,
-    check_opt_coercible_to_asset_key_prefix_param,
-)
 from dagster._core.definitions.utils import is_valid_definition_tag_key
 
 from .asset_utils import (
@@ -431,45 +427,6 @@ class DagsterDbtTranslator:
 
         """
         return default_auto_materialize_policy_fn(dbt_resource_props)
-
-
-class KeyPrefixDagsterDbtTranslator(DagsterDbtTranslator):
-    """A DagsterDbtTranslator that applies prefixes to the asset keys generated from dbt resources.
-
-    Attributes:
-        asset_key_prefix (Optional[Union[str, Sequence[str]]]): A prefix to apply to all dbt models,
-            seeds, snapshots, etc. This will *not* apply to dbt sources.
-        source_asset_key_prefix (Optional[Union[str, Sequence[str]]]): A prefix to apply to all dbt
-            sources.
-    """
-
-    def __init__(
-        self,
-        asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        source_asset_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        *args,
-        **kwargs,
-    ):
-        self._asset_key_prefix = (
-            check_opt_coercible_to_asset_key_prefix_param(asset_key_prefix, "asset_key_prefix")
-            or []
-        )
-        self._source_asset_key_prefix = (
-            check_opt_coercible_to_asset_key_prefix_param(
-                source_asset_key_prefix, "source_asset_key_prefix"
-            )
-            or []
-        )
-
-        super().__init__(*args, **kwargs)
-
-    @public
-    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        base_key = default_asset_key_fn(dbt_resource_props)
-        if dbt_resource_props["resource_type"] == "source":
-            return base_key.with_prefix(self._source_asset_key_prefix)
-        else:
-            return base_key.with_prefix(self._asset_key_prefix)
 
 
 @dataclass

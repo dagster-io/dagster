@@ -9,7 +9,8 @@ import {
 } from './types/SensorPreviousRuns.types';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
+import {RunTable} from '../runs/RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';

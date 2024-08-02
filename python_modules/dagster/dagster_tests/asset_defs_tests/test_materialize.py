@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -8,6 +9,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AssetSpec,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
@@ -149,6 +151,43 @@ def test_materialize_source_assets():
         result = materialize([the_asset, the_source], instance=instance)
         assert result.success
         assert result.output_for_node("the_asset") == 6
+
+
+def test_materialize_asset_specs():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return 5
+
+    the_source = AssetSpec(
+        key=AssetKey(["the_source"]), metadata={"dagster/io_manager_key": "my_io_manager"}
+    )
+
+    @asset
+    def the_asset(the_source):
+        return the_source + 1
+
+    with instance_for_test() as instance:
+        result = materialize(
+            [the_asset, the_source], instance=instance, resources={"my_io_manager": MyIOManager()}
+        )
+        assert result.success
+        assert result.output_for_node("the_asset") == 6
+
+
+def test_materialize_asset_specs_conflicting_key():
+    the_source = AssetSpec(key=AssetKey(["the_source"]))
+
+    @asset(key="the_source")
+    def the_asset(): ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape("Duplicate asset key: AssetKey(['the_source'])"),
+    ):
+        materialize([the_asset, the_source])
 
 
 @ignore_warning("Parameter `resource_defs` .* is experimental")

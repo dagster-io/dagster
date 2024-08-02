@@ -10,7 +10,6 @@ from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
@@ -52,7 +51,6 @@ _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/nam
 _DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
 
 
-@experimental
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
     """Message reader that reads messages from kubernetes pod logs."""
 
@@ -90,7 +88,6 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
         return "Attempted to read messages by extracting them from kubernetes pod logs directly."
 
 
-@experimental
 class PipesK8sClient(PipesClient, TreatAsResourceParam):
     """A pipes client for launching kubernetes pods.
 

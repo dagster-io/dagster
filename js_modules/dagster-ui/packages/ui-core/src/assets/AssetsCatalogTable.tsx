@@ -62,7 +62,6 @@ export function useCachedAssets({
 
   return {cacheManager};
 }
-const requery = () => [{query: ASSET_CATALOG_TABLE_QUERY, fetchPolicy: 'no-cache' as const}];
 
 export function useAllAssets({
   batchLimit = DEFAULT_BATCH_LIMIT,
@@ -286,7 +285,6 @@ export const AssetsCatalogTable = ({
       prefixPath={prefixPath || emptyArray}
       searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
-      requery={requery}
       computeKindFilter={computeKindFilter}
       storageKindFilter={storageKindFilter}
     />

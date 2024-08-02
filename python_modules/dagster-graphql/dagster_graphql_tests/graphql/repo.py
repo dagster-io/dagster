@@ -1100,6 +1100,10 @@ def define_schedules():
     def always_error():
         raise Exception("darnit")
 
+    @schedule(cron_schedule="* * * * *", target=[asset_one])
+    def jobless_schedule(_):
+        pass
+
     return [
         asset_job_schedule,
         run_config_error_schedule,
@@ -1118,6 +1122,7 @@ def define_schedules():
         past_tick_schedule,
         provide_config_schedule,
         always_error,
+        jobless_schedule,
     ]
 
 
@@ -1225,6 +1230,10 @@ def define_sensors():
     def the_failure_sensor():
         pass
 
+    @sensor(target=[asset_one])
+    def jobless_sensor(_):
+        pass
+
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
         asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
@@ -1249,6 +1258,7 @@ def define_sensors():
         auto_materialize_sensor,
         every_asset_sensor,
         invalid_asset_selection_error,
+        jobless_sensor,
     ]
 
 
@@ -2105,7 +2115,7 @@ test_repo._name = "test_repo"  # noqa: SLF001
 
 def _targets_asset_job(instigator: Union[ScheduleDefinition, SensorDefinition]) -> bool:
     try:
-        return instigator.job_name in asset_job_names
+        return instigator.job_name in asset_job_names or instigator.has_anonymous_job
     except DagsterInvalidDefinitionError:  # thrown when `job_name` is invalid
         return False
 

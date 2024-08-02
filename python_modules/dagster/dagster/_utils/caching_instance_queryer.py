@@ -15,8 +15,6 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
@@ -48,6 +46,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._time import get_current_datetime
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -89,7 +88,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
 
-        self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
+        self._evaluation_time = evaluation_time if evaluation_time else get_current_datetime()
 
         self._respect_materialization_data_versions = (
             self._instance.auto_materialize_respect_materialization_data_versions
@@ -458,6 +457,15 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return run_tags.get(tag_key) == tag_value
 
     @cached_method
+    def _get_planned_materializations_for_run_from_snapshot(
+        self, *, snapshot_id: str
+    ) -> AbstractSet[AssetKey]:
+        execution_plan_snapshot = check.not_none(
+            self._instance.get_execution_plan_snapshot(snapshot_id)
+        )
+        return execution_plan_snapshot.asset_selection
+
+    @cached_method
     def _get_planned_materializations_for_run_from_events(
         self, *, run_id: str
     ) -> AbstractSet[AssetKey]:
@@ -484,6 +492,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return set()
         elif run.asset_selection:
             return run.asset_selection
+        elif run.execution_plan_snapshot_id:
+            return self._get_planned_materializations_for_run_from_snapshot(
+                snapshot_id=check.not_none(run.execution_plan_snapshot_id)
+            )
         else:
             # must resort to querying the event log
             return self._get_planned_materializations_for_run_from_events(run_id=run_id)

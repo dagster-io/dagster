@@ -6,7 +6,7 @@ import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 export const TimezoneStorageKey = 'TimezonePreference';
 export const HourCycleKey = 'HourCyclePreference';
 
-type TimeContextValue = {
+export type TimeContextValue = {
   timezone: ReturnType<typeof useStateWithStorage<string>>;
   hourCycle: ReturnType<typeof useStateWithStorage<HourCycle>>;
 };

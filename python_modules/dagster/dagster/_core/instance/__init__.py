@@ -39,6 +39,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -101,6 +102,7 @@ RUNLESS_JOB_NAME = ""
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
@@ -1200,7 +1202,7 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_job_snapshot=job_def.get_parent_job_snapshot(),
             external_job_origin=external_job_origin,
             job_code_origin=job_code_origin,
-            asset_job_partitions_def=job_def.partitions_def,
+            asset_graph=job_def.asset_layer.asset_graph,
         )
 
     def _construct_run_with_snapshots(
@@ -1353,10 +1355,9 @@ class DagsterInstance(DynamicPartitionsStore):
         job_name: str,
         step: "ExecutionStepSnap",
         output: "ExecutionStepOutputSnap",
-        job_partitions_def: Optional["PartitionsDefinition"],
+        asset_graph: Optional["BaseAssetGraph"],
     ) -> None:
         from dagster._core.definitions.partition import DynamicPartitionsDefinition
-        from dagster._core.definitions.partition_key_range import PartitionKeyRange
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
@@ -1380,23 +1381,24 @@ class DagsterInstance(DynamicPartitionsStore):
                     f" {ASSET_PARTITION_RANGE_END_TAG} set without the other"
                 )
 
-            if job_partitions_def is None:
+            if asset_graph is None:
                 raise DagsterInvariantViolationError(
-                    "Must provide partitions_def to create_run when creating "
+                    "Must provide asset_graph to create_run when creating "
                     "a run with a partition range."
                 )
 
+            partitions_def = asset_graph.get(asset_key).partitions_def
             if (
-                isinstance(job_partitions_def, DynamicPartitionsDefinition)
-                and job_partitions_def.name is None
+                isinstance(partitions_def, DynamicPartitionsDefinition)
+                and partitions_def.name is None
             ):
                 raise DagsterInvariantViolationError(
-                    "Creating a run targeting a partition range is not supported for jobs partitioned with function-based dynamic partitions"
+                    "Creating a run targeting a partition range is not supported for assets partitioned with function-based dynamic partitions"
                 )
 
-            if check.not_none(output.properties).is_asset_partitioned:
-                partitions_subset = job_partitions_def.subset_with_partition_keys(
-                    job_partitions_def.get_partition_keys_in_range(
+            if partitions_def is not None:
+                partitions_subset = partitions_def.subset_with_partition_keys(
+                    partitions_def.get_partition_keys_in_range(
                         PartitionKeyRange(partition_range_start, partition_range_end),
                         dynamic_partitions_store=self,
                     )
@@ -1418,7 +1420,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         dagster_run: DagsterRun,
         execution_plan_snapshot: "ExecutionPlanSnapshot",
-        asset_job_partitions_def: Optional["PartitionsDefinition"],
+        asset_graph: Optional["BaseAssetGraph"],
     ) -> None:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
@@ -1430,7 +1432,7 @@ class DagsterInstance(DynamicPartitionsStore):
                     asset_key = check.not_none(output.properties).asset_key
                     if asset_key:
                         self._log_materialization_planned_event_for_asset(
-                            dagster_run, asset_key, job_name, step, output, asset_job_partitions_def
+                            dagster_run, asset_key, job_name, step, output, asset_graph
                         )
 
                     if check.not_none(output.properties).asset_check_key:
@@ -1475,7 +1477,7 @@ class DagsterInstance(DynamicPartitionsStore):
         op_selection: Optional[Sequence[str]],
         external_job_origin: Optional["RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
-        asset_job_partitions_def: Optional["PartitionsDefinition"] = None,
+        asset_graph: Optional["BaseAssetGraph"],
     ) -> DagsterRun:
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
         from dagster._core.definitions.utils import normalize_tags
@@ -1609,9 +1611,7 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_run = self._run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot:
-            self._log_asset_planned_events(
-                dagster_run, execution_plan_snapshot, asset_job_partitions_def
-            )
+            self._log_asset_planned_events(dagster_run, execution_plan_snapshot, asset_graph)
 
         return dagster_run
 
@@ -1702,7 +1702,9 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_check_selection=parent_run.asset_check_selection,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
-            asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
+            asset_graph=code_location.get_repository(
+                external_job.repository_handle.repository_name
+            ).asset_graph,
         )
 
     def register_managed_run(
@@ -2236,6 +2238,19 @@ class DagsterInstance(DynamicPartitionsStore):
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
 
+    def wipe_asset_partitions(
+        self,
+        asset_key: AssetKey,
+        partition_keys: Sequence[str],
+    ) -> None:
+        """Wipes asset event history from the event log for the given asset key and partition keys.
+
+        Args:
+            asset_key (Sequence[AssetKey]): Asset key to wipe.
+            partition_keys (Sequence[str]): Partition keys to wipe.
+        """
+        self._event_storage.wipe_asset_partitions(asset_key, partition_keys)
+
     @traced
     def get_materialized_partitions(
         self,
@@ -2366,8 +2381,8 @@ class DagsterInstance(DynamicPartitionsStore):
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
 
-    def store_event(self, event: "EventLogEntry") -> None:
-        self._event_storage.store_event(event)
+    def store_event(self, event: "EventLogEntry") -> Optional[int]:
+        return self._event_storage.store_event(event)
 
     def handle_new_event(
         self,

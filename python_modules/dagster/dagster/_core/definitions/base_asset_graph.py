@@ -132,6 +132,10 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
+    def automation_condition(self) -> Optional["AutomationCondition"]: ...
+
+    @property
+    @abstractmethod
     def auto_observe_interval_minutes(self) -> Optional[float]: ...
 
     @property

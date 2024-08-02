@@ -30,7 +30,7 @@ export const AssetPageHeader = ({
   assetKey,
   headerBreadcrumbs,
   Title = defaultTitleComponent,
-  view,
+  view: _view,
   ...extra
 }: Props) => {
   const copy = useCopyToClipboard();

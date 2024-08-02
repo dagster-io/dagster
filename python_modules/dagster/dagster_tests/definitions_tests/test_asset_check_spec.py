@@ -29,3 +29,11 @@ def test_additional_deps():
         ),
     ):
         AssetCheckSpec(asset="foo", name="check1", additional_deps=["foo"])
+
+
+def test_unserializable_metadata():
+    class SomeObject: ...
+
+    obj = SomeObject()
+
+    assert AssetCheckSpec(asset="foo", name="check1", metadata={"foo": obj}).metadata["foo"] == obj

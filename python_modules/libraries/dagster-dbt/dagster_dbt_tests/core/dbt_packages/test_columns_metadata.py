@@ -145,7 +145,7 @@ def test_exception_column_schema(
         side_effect=Exception("An error occurred"),
     )
     mocker.patch(
-        "dagster_dbt.core.dbt_cli_invocation.default_metadata_from_dbt_resource_props",
+        "dagster_dbt.core.dbt_event_iterator.default_metadata_from_dbt_resource_props",
         side_effect=Exception("An error occurred"),
     )
 

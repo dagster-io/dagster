@@ -24,6 +24,9 @@ export type StartThisScheduleMutation = {
         scheduleState: {
           __typename: 'InstigationState';
           id: string;
+          selectorId: string;
+          name: string;
+          instigationType: Types.InstigationType;
           status: Types.InstigationStatus;
           runningCount: number;
         };

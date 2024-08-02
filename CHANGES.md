@@ -1,5 +1,33 @@
 # Changelog
 
+# 1.7.16 (core) / 0.23.16 (libraries)
+
+### Experimental
+
+- [pipes] PipesGlueClient, an AWS Glue pipes client has been added to `dagster_aws`.
+
+# 1.7.15 (core) / 0.23.15 (libraries)
+
+### New
+
+- [dagster-celery-k8s] Added a `per_step_k8s_config` configuration option to the `celery_k8s_job_executor` , allowing the k8s configuration of individual steps to be configured at run launch time. Thanks [@alekseik1](https://github.com/alekseik1)!
+- [dagster-dbt] Deprecated the `log_column_level_metadata` macro in favor of the new `with_column_metadata` API.
+- [dagster-airbyte] Deprecated `load_assets_from_airbyte_project` as the Octavia CLI has been deprecated.
+
+### Bugfixes
+
+- [ui] Fix global search to find matches on very long strings.
+- Fixed an issue introduced in the 1.7.14 release where multi-asset sensors would sometimes raise an error about fetching too many event records.
+- Fixes an issue introduced in 1.7.13 where type-checkers interpretted the return type of `RunRequest(...)` as `None`
+- [dagster-aws] Fixed an issue where the `EcsRunLauncher` would sometimes fail to launch runs when the `include_sidecars` option was set to `True`.
+- [dagster-dbt] Fixed an issue where errors would not propagate through deferred metadata fetches.
+
+### Dagster Plus
+
+- On June 20, 2024, AWS changed the AWS CloudMap CreateService API to allow resource-level permissions. The Dagster+ ECS Agent uses this API to launch code locations. We’ve updated the Dagster+ ECS Agent CloudFormation template to accommodate this change for new users. Existing users have until October 14, 2024 to add the new permissions and should have already received similar communication directly from AWS.
+- Fixed a bug with BigQuery cost tracking in Dagster+ insights, where some runs would fail if there were null values for either `total_byte_billed` or `total_slot_ms` in the BigQuery `INFORMATION_SCHEMA.JOBS` table.
+- Fixed an issue where code locations that failed to load with extremely large error messages or stack traces would sometimes cause errors with agent heartbeats until the code location was redeployed.
+
 # 1.7.14 (core) / 0.23.14 (libraries)
 
 ### New

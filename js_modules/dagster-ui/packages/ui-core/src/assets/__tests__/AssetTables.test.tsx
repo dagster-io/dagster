@@ -12,6 +12,7 @@ import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/m
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
 import {AssetPageHeader} from '../AssetPageHeader.oss';
+import {AssetWipeDialog} from '../AssetWipeDialog.oss';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {AssetsGraphHeader} from '../AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '../AssetsOverviewRoot.oss';
@@ -60,6 +61,7 @@ describe('AssetTable', () => {
                 value={{
                   components: {
                     AssetPageHeader,
+                    AssetWipeDialog,
                     AppTopNavRightOfLogo,
                     UserPreferences,
                     AssetsOverview: AssetsOverviewRoot,

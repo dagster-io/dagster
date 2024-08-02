@@ -222,7 +222,7 @@ export const SectionedLeftNav = () => {
         }
       }
     },
-    overscan: 40,
+    overscan: 10,
   });
 
   const totalHeight = rowVirtualizer.getTotalSize();

@@ -122,6 +122,34 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
           }
         }
       }
+      assetSelection {
+        assetSelectionString
+        assetKeys {
+          path
+        }
+        assets {
+          key {
+            path
+          }
+          definition {
+            assetKey {
+              path
+            }
+          }
+        }
+        assetsOrError {
+          ... on AssetConnection {
+            nodes {
+              key {
+                path
+              }
+            }
+          }
+          ... on PythonError {
+            message
+          }
+        }
+      }
     }
   }
 }
@@ -364,6 +392,33 @@ def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_cas
         datetime.datetime(2019, 2, 27, tzinfo=get_timezone("US/Central")).timestamp(),
         datetime.datetime(2019, 2, 28, tzinfo=get_timezone("US/Central")).timestamp(),
         datetime.datetime(2019, 3, 1, tzinfo=get_timezone("US/Central")).timestamp(),
+    ]
+
+
+def test_jobless_asset_selection(graphql_context):
+    schedule_name = "jobless_schedule"
+    schedule_selector = infer_schedule_selector(graphql_context, schedule_name)
+
+    result = execute_dagster_graphql(
+        graphql_context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
+    )
+
+    assert result.data
+    assert result.data["scheduleOrError"]["__typename"] == "Schedule"
+    assert result.data["scheduleOrError"]["assetSelection"]["assetSelectionString"] == "asset_one"
+    assert result.data["scheduleOrError"]["assetSelection"]["assetKeys"] == [
+        {"path": ["asset_one"]}
+    ]
+    assert result.data["scheduleOrError"]["assetSelection"]["assets"] == [
+        {
+            "key": {"path": ["asset_one"]},
+            "definition": {"assetKey": {"path": ["asset_one"]}},
+        }
+    ]
+    assert result.data["scheduleOrError"]["assetSelection"]["assetsOrError"]["nodes"] == [
+        {
+            "key": {"path": ["asset_one"]},
+        }
     ]
 
 

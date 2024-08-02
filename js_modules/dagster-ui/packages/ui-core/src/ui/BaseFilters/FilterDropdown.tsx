@@ -283,8 +283,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 
 type FilterDropdownButtonProps = {
   filters: FilterObject[];
+  label?: string;
 };
-export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonProps) => {
+export const FilterDropdownButton = React.memo(({filters, label}: FilterDropdownButtonProps) => {
   const keyRef = React.useRef(0);
 
   const [isOpen, _setIsOpen] = useState(false);
@@ -367,7 +368,7 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
                 setIsOpen((isOpen) => !isOpen);
               }}
             >
-              Filter
+              {label ?? 'Filter'}
             </Button>
           </Popover>
         </div>

@@ -1,4 +1,3 @@
-import {QueryResult} from '@apollo/client';
 import {
   Box,
   Button,
@@ -11,18 +10,16 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
+import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
-import {SensorTargetList} from './SensorTargetList';
 import {SensorFragment} from './types/SensorFragment.types';
-import {
-  SensorAssetSelectionQuery,
-  SensorAssetSelectionQueryVariables,
-} from './types/SensorRoot.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {AutomationTargetList} from '../automation/AutomationTargetList';
+import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -59,13 +56,13 @@ export const SensorDetails = ({
   repoAddress,
   daemonHealth,
   refreshState,
-  selectionQueryResult,
+  assetSelection,
 }: {
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
   refreshState: QueryRefreshState;
-  selectionQueryResult: QueryResult<SensorAssetSelectionQuery, SensorAssetSelectionQueryVariables>;
+  assetSelection: AutomationAssetSelectionFragment | null;
 }) => {
   const {
     name,
@@ -88,12 +85,6 @@ export const SensorDetails = ({
 
   const [showTestTickDialog, setShowTestTickDialog] = useState(false);
   const running = status === InstigationStatus.RUNNING;
-
-  const assetSelectionResult = selectionQueryResult.data?.sensorOrError;
-
-  const assetSelectionData =
-    assetSelectionResult?.__typename === 'Sensor' ? assetSelectionResult : null;
-  const selectedAssets = assetSelectionData?.assetSelection;
 
   return (
     <>
@@ -169,17 +160,17 @@ export const SensorDetails = ({
               </td>
             </tr>
           )}
-          {(sensor.targets && sensor.targets.length) || selectedAssets ? (
+          {(sensor.targets && sensor.targets.length) || assetSelection ? (
             <tr>
               <td>Target</td>
-              <td>
-                <SensorTargetList
+              <TargetCell>
+                <AutomationTargetList
                   targets={sensor.targets}
                   repoAddress={repoAddress}
-                  selectionQueryResult={selectionQueryResult}
-                  sensorType={sensor.sensorType}
+                  assetSelection={assetSelection || null}
+                  automationType={sensor.sensorType}
                 />
-              </td>
+              </TargetCell>
             </tr>
           ) : null}
           <tr>
@@ -241,3 +232,9 @@ export const SensorDetails = ({
     </>
   );
 };
+
+const TargetCell = styled.td`
+  button {
+    line-height: 20px;
+  }
+`;

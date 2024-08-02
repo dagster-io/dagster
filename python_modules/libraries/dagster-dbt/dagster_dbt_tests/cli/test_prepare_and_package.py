@@ -34,7 +34,6 @@ def test_prepare_and_package(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 
@@ -78,7 +77,6 @@ def test_prepare_and_package_with_dependencies(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 
@@ -136,7 +134,6 @@ def test_prepare_and_package_with_packages(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 

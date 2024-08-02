@@ -1,5 +1,4 @@
 import {Box, Button, Colors, Dialog, Icon, Table, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {useCallback, useMemo, useState} from 'react';
 import styled, {css} from 'styled-components';
 
@@ -453,9 +452,4 @@ const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
     }
     return '';
   }}
-`;
-
-const UserLabel = styled.div`
-  font-size: 12px;
-  color: ${Colors.textDefault()};
 `;

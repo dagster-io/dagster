@@ -92,8 +92,6 @@ def copy_scaffold(
     sdf_workspace_dir_relative_path_parts = [
         f'"{part}"' for part in sdf_workspace_dir_relative_path.parts
     ]
-    sdf_compile_command = ['"compile"']
-
     env = Environment(loader=FileSystemLoader(dagster_project_dir))
 
     for path in dagster_project_dir.glob("**/*"):
@@ -105,7 +103,6 @@ def copy_scaffold(
             env.get_template(template_path).stream(
                 sdf_workspace_dir_relative_path_parts=sdf_workspace_dir_relative_path_parts,
                 sdf_workspace_name=f"{sdf_workspace_name}_project",
-                sdf_compile_command=sdf_compile_command,
                 sdf_assets_name=f"{sdf_workspace_name}_sdf_assets",
                 sdf_version_upper_bound=SDF_VERSION_UPPER_BOUND,
                 workspace_name=workspace_name,

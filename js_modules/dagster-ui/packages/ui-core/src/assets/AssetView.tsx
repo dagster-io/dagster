@@ -31,6 +31,7 @@ import {
 } from './types/AssetView.types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
+import {useWipeModal} from './useWipeModal';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -276,6 +277,15 @@ export const AssetView = ({
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
   }, [path, selectedTab, setCurrentPage]);
 
+  const wipe = useWipeModal(
+    definition
+      ? {
+          assetKey: definition.assetKey,
+          repository: definition.repository,
+        }
+      : null,
+    refresh,
+  );
   const reportEvents = useReportEventsModal(
     definition
       ? {
@@ -327,10 +337,14 @@ export const AssetView = ({
               <LaunchAssetExecutionButton
                 scope={{all: [definition]}}
                 showChangedAndMissingOption={false}
-                additionalDropdownOptions={reportEvents.dropdownOptions}
+                additionalDropdownOptions={[
+                  ...reportEvents.dropdownOptions,
+                  ...wipe.dropdownOptions,
+                ]}
               />
             ) : undefined}
             {reportEvents.element}
+            {wipe.element}
           </Box>
         }
       />

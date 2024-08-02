@@ -101,15 +101,15 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
 
         # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
         # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
-        # has been split into it's own class in 1.7.0
+        # has been split into it's own class in 1.9.0
         if type(instance) is AssetExecutionContext and cls is not AssetExecutionContext:
             deprecation_warning(
                 subject="AssetExecutionContext",
                 additional_warn_text=(
-                    "Starting in version 1.8.0 AssetExecutionContext will no longer be a subclass"
+                    "Starting in version 1.9.0 AssetExecutionContext will no longer be a subclass"
                     " of OpExecutionContext."
                 ),
-                breaking_version="1.8.0",
+                breaking_version="1.9.0",
                 stacklevel=1,
             )
         return super().__instancecheck__(instance)
@@ -638,6 +638,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         else:
             return key
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key` instead.")
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output.
@@ -695,6 +696,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_time_window` instead.")
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the output asset.
@@ -770,6 +772,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
@@ -1027,6 +1030,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
         return result
 
+    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_keys` instead.")
     @public
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         """Returns a list of the partition keys for the given output.

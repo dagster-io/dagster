@@ -77,6 +77,7 @@ def main(
         "-e python_modules/libraries/dagster-mlflow",
         "-e python_modules/libraries/dagster-mysql",
         "-e python_modules/libraries/dagster-looker",
+        "-e python_modules/libraries/dagster-openai",
         "-e python_modules/libraries/dagster-pagerduty",
         "-e python_modules/libraries/dagster-pandas",
         "-e python_modules/libraries/dagster-papertrail",
@@ -98,6 +99,7 @@ def main(
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
         "-e examples/experimental/dagster-blueprints",
+        "-e examples/experimental/dagster-airlift",
     ]
 
     if sys.version_info <= (3, 12):

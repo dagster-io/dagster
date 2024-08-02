@@ -34,10 +34,11 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_polars_tests*"]),
+    include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        "polars>=0.20.0",
+        "polars>=0.20.0,<1.3.0",
         "pyarrow>=8.0.0",
         "typing-extensions>=4.7.0",
         "universal_pathlib>=0.1.4",
