@@ -165,7 +165,7 @@ defs = Definitions(
 
 ### In any Dagster environment
 
-The <PyObject module="dagster" object="link_code_references_to_git"/> utility allows you to convert local file code references to source control links. You'll need to provide the base URL of your git repository, the branch or commit hash, and a path to the repository root locally.
+The <PyObject module="dagster" object="link_code_references_to_git"/> utility allows you to convert local file code references to source control links. You'll need to provide the base URL of your git repository, the branch or commit hash, and a <PyObject module="dagster" object="FilePathMapping"/> which tells Dagster how to convert local file paths to paths in the repository. The simplest way to do so is with an <PyObject module="dagster" object="AnchorBasedFilePathMapping"/>, which uses a local file path and the corresponding path in the repository to infer the mapping for other files.
 
 ```python file=/guides/dagster/code_references/link_to_source_control.py
 from pathlib import Path

@@ -76,3 +76,7 @@ For more information, refer to the `Linking to asset definition code with code r
 .. autofunction:: with_source_code_references
 
 .. autofunction:: link_code_references_to_git
+
+.. autoclass:: FilePathMapping
+
+.. autoclass:: AnchorBasedFilePathMapping
