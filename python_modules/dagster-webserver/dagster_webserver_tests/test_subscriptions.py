@@ -23,16 +23,14 @@ EVENT_LOG_SUBSCRIPTION = """
     }
 """
 
-COMPUTE_LOG_SUBSCRIPTION = """
-    subscription ComputeLogsSubscription(
-        $runId: ID!
-        $stepKey: String!
-        $ioType: ComputeIOType!
-    ) {
-        computeLogs(runId: $runId, stepKey: $stepKey, ioType: $ioType) {
-            __typename
-        }
+CAPTURED_LOGS_SUBSCRIPTION = """
+  subscription CapturedLogsSubscription($logKey: [String!]!) {
+    capturedLogs(logKey: $logKey) {
+      stdout
+      stderr
+      cursor
     }
+  }
 """
 
 
@@ -158,28 +156,26 @@ def test_event_log_subscription_chunked(asgi_client, run_id):
 
 
 @mock.patch(
-    "dagster._core.storage.local_compute_log_manager.LocalComputeLogManager.is_watch_completed"
+    "dagster._core.storage.local_compute_log_manager.LocalComputeLogManager.is_capture_complete"
 )
-def test_compute_log_subscription(mock_watch_completed, asgi_client, run_id):
-    mock_watch_completed.return_value = False
+def test_captured_log_subscription(mock_capture_completed, asgi_client, run_id):
+    mock_capture_completed.return_value = False
 
     with asgi_client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
         start_connection(ws)
         start_subscription(
             ws,
-            COMPUTE_LOG_SUBSCRIPTION,
+            CAPTURED_LOGS_SUBSCRIPTION,
             {
-                "runId": run_id,
-                "stepKey": "example_op",
-                "ioType": "STDERR",
+                "logKey": [run_id, "compute_logs", "example_op"],
             },
         )
         rx = ws.receive_json()
         assert rx["type"] != GraphQLWS.ERROR, rx
 
         gc.collect()
-        assert len(objgraph.by_type("ComputeLogSubscription")) == 1
+        assert len(objgraph.by_type("CapturedLogSubscription")) == 1
         end_subscription(ws)
 
     gc.collect()
-    assert len(objgraph.by_type("ComputeLogSubscription")) == 0
+    assert len(objgraph.by_type("CapturedLogSubscription")) == 0

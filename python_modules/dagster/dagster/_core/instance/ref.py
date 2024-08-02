@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from dagster._core.scheduler.scheduler import Scheduler
     from dagster._core.secrets.loader import SecretsLoader
     from dagster._core.storage.base_storage import DagsterStorage
-    from dagster._core.storage.compute_log_manager import ComputeLogManager
+    from dagster._core.storage.captured_log_manager import CapturedLogManager
     from dagster._core.storage.event_log.base import EventLogStorage
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs.base import RunStorage
@@ -527,10 +527,10 @@ class InstanceRef(
         )
 
     @property
-    def compute_log_manager(self) -> "ComputeLogManager":
-        from dagster._core.storage.compute_log_manager import ComputeLogManager
+    def compute_log_manager(self) -> "CapturedLogManager":
+        from dagster._core.storage.captured_log_manager import CapturedLogManager
 
-        return self.compute_logs_data.rehydrate(as_type=ComputeLogManager)
+        return self.compute_logs_data.rehydrate(as_type=CapturedLogManager)
 
     @property
     def scheduler(self) -> Optional["Scheduler"]:

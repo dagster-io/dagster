@@ -152,10 +152,6 @@ Compute log manager
 
 .. autoclass:: CapturedLogManager
 
-.. currentmodule:: dagster._core.storage.compute_log_manager
-
-.. autoclass:: ComputeLogManager
-
 .. currentmodule:: dagster._core.storage.local_compute_log_manager
 
 .. autoclass:: LocalComputeLogManager

@@ -8,7 +8,7 @@ from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage

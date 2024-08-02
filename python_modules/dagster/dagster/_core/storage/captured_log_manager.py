@@ -1,15 +1,21 @@
 import os
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from enum import Enum
 from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence, Tuple
 
 from typing_extensions import Final, Self
 
 import dagster._check as check
 from dagster._core.captured_log_api import LogLineCursor
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
+
+
+class ComputeIOType(Enum):
+    STDOUT = "stdout"
+    STDERR = "stderr"
 
 
 class CapturedLogContext(
@@ -156,7 +162,7 @@ def _has_max_data(chunk: Optional[bytes]) -> bool:
     return chunk and len(chunk) >= MAX_BYTES_CHUNK_READ  # type: ignore
 
 
-class CapturedLogManager(ABC):
+class CapturedLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for capturing the unstructured logs (stdout/stderr) in the current
     process, stored / retrieved with a provided log_key.
     """
@@ -248,7 +254,6 @@ class CapturedLogManager(ABC):
             ComputeLogSubscription
         """
 
-    @abstractmethod
     def unsubscribe(self, subscription: CapturedLogSubscription) -> None:
         """Deregisters an observable object from receiving log updates.
 
@@ -256,6 +261,10 @@ class CapturedLogManager(ABC):
             subscription (CapturedLogSubscription): subscription object which manages when to send
                 back data to the subscriber
         """
+        pass
+
+    def dispose(self):
+        pass
 
     def build_log_key_for_run(self, run_id: str, step_key: str) -> Sequence[str]:
         """Legacy adapter to translate run_id/key to captured log manager-based log_key."""
