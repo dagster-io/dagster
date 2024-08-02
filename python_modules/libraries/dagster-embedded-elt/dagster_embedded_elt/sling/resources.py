@@ -423,6 +423,34 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
+    def _parse_pretty_table_output(self, table_output: str) -> List[Dict[str, str]]:
+        table_rows = [row.strip()[1:-1] for row in table_output.split("\n") if row.startswith("|")]
+        tabular_data = [[x.strip() for x in row.split("|")] for row in table_rows]
+
+        column_keys = tabular_data[0]
+        column_values = tabular_data[1:]
+
+        return [
+            {column_keys[i]: column_values[i] for i in range(len(column_keys))}
+            for column_values in column_values
+        ]
+
+    def get_column_info_for_table(self, target_name: str, table_name: str) -> List[Dict[str, str]]:
+        """Fetches column metadata for a given table in a Sling target and parses it into a list of
+        dictionaries, keyed by column name.
+
+        Args:
+            target_name (str): The name of the target connection to use.
+            table_name (str): The name of the table to fetch column metadata for.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries, keyed by column name, containing column metadata.
+        """
+        output = self.run_sling_cli(
+            ["conns", "discover", target_name, "--pattern", table_name, "--columns"]
+        )
+        return self._parse_pretty_table_output(output)
+
     def run_sling_cli(self, args: Sequence[str]) -> str:
         """Runs the Sling CLI with the given arguments and returns the output.
 

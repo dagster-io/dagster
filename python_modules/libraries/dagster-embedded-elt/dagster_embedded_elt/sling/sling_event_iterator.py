@@ -1,6 +1,6 @@
 import re
 from collections import abc
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterator, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generic, Iterator, Optional, Sequence, Union, cast
 
 from dagster import (
     AssetMaterialization,
@@ -34,6 +34,7 @@ def _get_logs_for_stream(
     stream_name: str,
     sling_cli: "SlingResource",
 ) -> Sequence[str]:
+    """Parses out the logs for a specific stream from the raw logs returned by the Sling CLI."""
     corresponding_logs = []
     recording_logs = False
     for log in sling_cli.stream_raw_logs():
@@ -52,6 +53,22 @@ def _strip_quotes_target_table_name(target_table_name: str) -> str:
 
 
 INSERT_REGEX: re.Pattern[str] = re.compile(r".*inserted (\d+) rows into (.*) in.*")
+
+
+def _get_target_table_name(stream_name: str, sling_cli: "SlingResource") -> Optional[str]:
+    """Extracts the target table name from the logs for a specific stream."""
+    corresponding_logs = _get_logs_for_stream(stream_name, sling_cli)
+    insert_log = next((log for log in corresponding_logs if re.match(INSERT_REGEX, log)), None)
+    if not insert_log:
+        return None
+
+    target_table_name = check.not_none(re.match(INSERT_REGEX, insert_log)).group(2)
+    return _strip_quotes_target_table_name(target_table_name)
+
+
+COLUMN_NAME_COL = "COLUMN"
+COLUMN_TYPE_COL = "GENERAL TYPE"
+
 SLING_COLUMN_PREFIX = "_sling_"
 
 
@@ -68,24 +85,16 @@ def fetch_column_metadata(
     if isinstance(context, AssetExecutionContext):
         upstream_assets = context.assets_def.asset_deps[materialization.asset_key]
 
-    corresponding_logs = _get_logs_for_stream(stream_name, sling_cli)
-    insert_log = next((log for log in corresponding_logs if re.match(INSERT_REGEX, log)), None)
+    target_table_name = _get_target_table_name(stream_name, sling_cli)
 
-    if insert_log:
+    if target_table_name:
         try:
-            target_table_name = check.not_none(re.match(INSERT_REGEX, insert_log)).group(2)
-            target_table_name = _strip_quotes_target_table_name(target_table_name)
-
-            output = sling_cli.run_sling_cli(
-                ["conns", "discover", target_name, "--pattern", target_table_name, "--columns"]
-            )
-            table_rows = [row.strip()[1:-1] for row in output.split("\n") if row.startswith("|")]
-            tabular_data = [[x.strip() for x in row.split("|")] for row in table_rows]
-
-            col_name_idx = tabular_data[0].index("COLUMN")
-            general_type_idx = tabular_data[0].index("GENERAL TYPE")
-
-            column_type_map = {row[col_name_idx]: row[general_type_idx] for row in tabular_data[1:]}
+            column_info = sling_cli.get_column_info_for_table(target_name, target_table_name)
+            column_type_map = {
+                col[COLUMN_NAME_COL]: col[COLUMN_TYPE_COL]
+                for col in column_info
+                if COLUMN_TYPE_COL in col
+            }
 
             column_lineage = None
             # If there is only one upstream asset (typical case), we can infer column lineage
