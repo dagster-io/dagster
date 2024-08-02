@@ -2,13 +2,14 @@ import contextlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import time
 import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Union
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Sequence, Union
 
 import sling
 from dagster import (
@@ -422,6 +423,17 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
+    def run_sling_cli(self, args: Sequence[str]) -> str:
+        """Runs the Sling CLI with the given arguments and returns the output.
+
+        Args:
+            args (Sequence[str]): The arguments to pass to the Sling CLI.
+
+        Returns:
+            str: The output from the Sling CLI.
+        """
+        return subprocess.check_output(args=[sling.SLING_BIN, *args]).decode("utf-8")
+
     def replicate(
         self,
         *,
@@ -447,6 +459,7 @@ class SlingResource(ConfigurableResource):
             dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
             replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
 
+        dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
         replication_config_dict = dict(validate_replication(replication_config))
         return SlingEventIterator(
             self._replicate(
@@ -457,6 +470,7 @@ class SlingResource(ConfigurableResource):
             ),
             sling_cli=self,
             replication_config=replication_config_dict,
+            context=context,
         )
 
     def _replicate(
@@ -464,11 +478,10 @@ class SlingResource(ConfigurableResource):
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
         replication_config: Dict[str, Any],
-        dagster_sling_translator: Optional[DagsterSlingTranslator],
+        dagster_sling_translator: DagsterSlingTranslator,
         debug: bool,
     ) -> Iterator[AssetMaterialization]:
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
-        dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
 
         # convert to dict to enable updating the index
         context_streams = self._get_replication_streams_for_context(context)
