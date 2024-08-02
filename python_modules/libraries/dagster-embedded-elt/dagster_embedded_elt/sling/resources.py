@@ -339,7 +339,6 @@ class SlingResource(ConfigurableResource):
             )
 
         prepared_environment = self.prepare_environment()
-        print(prepared_environment)
         with environ(prepared_environment):
             yield
 
