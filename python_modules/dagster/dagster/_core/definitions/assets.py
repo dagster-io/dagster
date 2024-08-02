@@ -1401,6 +1401,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 tags=spec.tags,
             )
 
+    @public
+    def get_asset_spec(self, key: Optional[AssetKey] = None) -> AssetSpec:
+        return self._specs_by_key[key or self.key]
+
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
         if self._computation is None:
             return self._specs_by_key[key].metadata.get(
