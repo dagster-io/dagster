@@ -37,8 +37,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.7.15",
-        "dagster-deltalake==0.23.15",
+        "dagster==1.7.16",
+        "dagster-deltalake==0.23.16",
         "pandas",
     ],
     zip_safe=False,

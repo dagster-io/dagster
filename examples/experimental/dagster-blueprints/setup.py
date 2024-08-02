@@ -37,8 +37,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_blueprints_tests*", "examples*"]),
     install_requires=[
-        "dagster==1.7.15",
-        "dagster-databricks==0.23.15",
+        "dagster==1.7.16",
+        "dagster-databricks==0.23.16",
     ],
     zip_safe=False,
     entry_points={
