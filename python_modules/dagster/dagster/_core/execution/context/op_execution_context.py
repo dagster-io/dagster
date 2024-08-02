@@ -101,7 +101,7 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
 
         # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
         # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
-        # has been split into it's own class in 1.7.0
+        # has been split into it's own class in 1.9.0
         if type(instance) is AssetExecutionContext and cls is not AssetExecutionContext:
             deprecation_warning(
                 subject="AssetExecutionContext",
