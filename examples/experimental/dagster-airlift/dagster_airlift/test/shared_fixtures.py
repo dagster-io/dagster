@@ -31,7 +31,7 @@ def airflow_instance_fixture(setup: None) -> Generator[Any, None, None]:
     initial_time = get_current_timestamp()
 
     airflow_ready = False
-    while get_current_timestamp() - initial_time < 30:
+    while get_current_timestamp() - initial_time < 60:
         if airflow_is_ready():
             airflow_ready = True
             break
