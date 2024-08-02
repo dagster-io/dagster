@@ -106,10 +106,10 @@ class OpExecutionContextMetaClass(AbstractComputeMetaclass):
             deprecation_warning(
                 subject="AssetExecutionContext",
                 additional_warn_text=(
-                    "Starting in version 1.8.0 AssetExecutionContext will no longer be a subclass"
+                    "Starting in version 1.9.0 AssetExecutionContext will no longer be a subclass"
                     " of OpExecutionContext."
                 ),
-                breaking_version="1.8.0",
+                breaking_version="1.9.0",
                 stacklevel=1,
             )
         return super().__instancecheck__(instance)
