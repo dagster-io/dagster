@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     ForwardRef,
+    Literal,
     Mapping,
     NamedTuple,
     Optional,
@@ -282,6 +283,8 @@ def build_check_call_str(
             )
         else:
             return name  # no-op
+    elif origin is Literal:
+        return f'check.literal_param({name}, "{name}", {args})'
     else:
         if _is_annotated(origin, args):
             _process_annotated(ttype, args, eval_ctx)
