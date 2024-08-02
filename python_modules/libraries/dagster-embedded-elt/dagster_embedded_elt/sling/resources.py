@@ -16,7 +16,6 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     EnvVar,
-    MaterializeResult,
     OpExecutionContext,
     PermissiveConfig,
     get_dagster_logger,
@@ -33,6 +32,7 @@ from dagster_embedded_elt.sling.asset_decorator import (
     streams_with_default_dagster_meta,
 )
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_embedded_elt.sling.sling_event_iterator import SlingEventIterator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 logger = get_dagster_logger()
@@ -339,6 +339,7 @@ class SlingResource(ConfigurableResource):
             )
 
         prepared_environment = self.prepare_environment()
+        print(prepared_environment)
         with environ(prepared_environment):
             yield
 
@@ -429,7 +430,7 @@ class SlingResource(ConfigurableResource):
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> SlingEventIterator[AssetMaterialization]:
         """Runs a Sling replication from the given replication config.
 
         Args:
@@ -441,18 +442,36 @@ class SlingResource(ConfigurableResource):
         Returns:
             Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
         """
-        # attempt to retrieve params from asset context if not passed as a parameter
         if not (replication_config or dagster_sling_translator):
             metadata_by_key = context.assets_def.metadata_by_key
             first_asset_metadata = next(iter(metadata_by_key.values()))
             dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
             replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
 
+        replication_config_dict = dict(validate_replication(replication_config))
+        return SlingEventIterator(
+            self._replicate(
+                context=context,
+                replication_config=replication_config_dict,
+                dagster_sling_translator=dagster_sling_translator,
+                debug=debug,
+            ),
+            sling_cli=self,
+            replication_config=replication_config_dict,
+        )
+
+    def _replicate(
+        self,
+        *,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        replication_config: Dict[str, Any],
+        dagster_sling_translator: Optional[DagsterSlingTranslator],
+        debug: bool,
+    ) -> Iterator[AssetMaterialization]:
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
         dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
 
         # convert to dict to enable updating the index
-        replication_config = dict(validate_replication(replication_config))
         context_streams = self._get_replication_streams_for_context(context)
         if context_streams:
             replication_config.update({"streams": context_streams})
@@ -483,24 +502,20 @@ class SlingResource(ConfigurableResource):
                 return_output=True,
                 env=env,
             )
-        for row in results.split("\n"):
-            clean_line = self._clean_line(row)
-            sys.stdout.write(clean_line + "\n")
-            self._stdout.append(clean_line)
+            for row in results.split("\n"):
+                clean_line = self._clean_line(row)
+                sys.stdout.write(clean_line + "\n")
+                self._stdout.append(clean_line)
 
-        end_time = time.time()
+            end_time = time.time()
 
-        has_asset_def: bool = bool(context and context.has_assets_def)
-
-        for stream in stream_definition:
-            output_name = dagster_sling_translator.get_asset_key(stream)
-            if has_asset_def:
-                yield MaterializeResult(
-                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
-                )
-            else:
+            # TODO: In the future, it'd be nice to yield these materializations as they come in
+            # rather than waiting until the end of the replication
+            for stream in stream_definition:
+                output_name = dagster_sling_translator.get_asset_key(stream)
                 yield AssetMaterialization(
-                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+                    asset_key=output_name,
+                    metadata={"elapsed_time": end_time - start_time, "stream_name": stream["name"]},
                 )
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
