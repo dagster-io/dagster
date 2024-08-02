@@ -150,12 +150,12 @@ setup(
             "types-cryptography",  # version will be resolved against cryptography
             "types-mock",  # version will be resolved against mock
             "types-paramiko",  # version will be resolved against paramiko
-            "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
             "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
             "types-python-dateutil~=2.9.0.20240316",  # vendored python-dateutil version is 2.9.0
             "types-PyYAML",  # version will be resolved against PyYAML
             "types-pytz",  # version will be resolved against pytz
             "types-requests",  # version will be resolved against requests
+            "types-setuptools",  # version will be resolved against ... TODO
             "types-simplejson",  # version will be resolved against simplejson
             "types-six",  # needed but not specified by grpcio
             "types-sqlalchemy==1.4.53.34",  # later versions introduce odd errors
