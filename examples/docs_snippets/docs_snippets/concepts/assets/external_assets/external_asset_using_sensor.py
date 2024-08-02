@@ -6,7 +6,6 @@ from dagster import (
     Definitions,
     SensorEvaluationContext,
     SensorResult,
-    external_asset_from_spec,
     sensor,
 )
 
@@ -31,6 +30,6 @@ def keep_external_asset_a_up_to_date(context: SensorEvaluationContext) -> Sensor
 
 
 defs = Definitions(
-    assets=[external_asset_from_spec(AssetSpec("external_asset_a"))],
+    assets=[AssetSpec("external_asset_a")],
     sensors=[keep_external_asset_a_up_to_date],
 )
