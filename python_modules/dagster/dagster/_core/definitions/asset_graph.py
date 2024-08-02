@@ -5,7 +5,7 @@ from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
-    AssetExecutionType,
+    AssetResultType,
     AssetSpec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
@@ -141,8 +141,8 @@ class AssetNode(BaseAssetNode):
     ##### ASSET GRAPH SPECIFIC INTERFACE
 
     @property
-    def execution_type(self) -> AssetExecutionType:
-        return self.assets_def.execution_type
+    def result_type(self) -> AssetResultType:
+        return self.assets_def.result_type
 
     @property
     def io_manager_key(self) -> str:

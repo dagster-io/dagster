@@ -3,7 +3,7 @@ from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set,
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import (
     resolve_asset_key_and_name_for_decorator,
@@ -282,7 +282,7 @@ def multi_observable_source_asset(
         ),
         backfill_policy=None,
         decorator_name="@multi_observable_source_asset",
-        execution_type=AssetExecutionType.OBSERVATION,
+        result_type="observe",
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

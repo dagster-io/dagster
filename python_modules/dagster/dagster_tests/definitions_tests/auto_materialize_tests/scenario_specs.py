@@ -2,10 +2,7 @@ import datetime
 
 from dagster import AssetSpec, MultiPartitionKey, StaticPartitionsDefinition
 from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
-)
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
@@ -48,9 +45,7 @@ one_upstream_observable_asset = ScenarioSpec(
     [
         AssetSpec(
             "A",
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value
-            },
+            metadata={SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: "observe".value},
         ),
         AssetSpec("B", deps=["A"]),
     ]

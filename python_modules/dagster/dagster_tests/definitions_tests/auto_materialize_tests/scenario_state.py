@@ -29,7 +29,7 @@ from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
+    get_result_type_from_legacy_metadata_value,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
@@ -144,19 +144,21 @@ class ScenarioSpec:
 
                 assets.append(_multi_asset)
             else:
-                execution_type_str = spec.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-                execution_type = (
-                    AssetExecutionType[execution_type_str] if execution_type_str else None
+                result_type_str = spec.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+                result_type = (
+                    get_result_type_from_legacy_metadata_value(result_type_str)
+                    if result_type_str
+                    else None
                 )
                 # create an observable_source_asset or regular asset depending on the execution type
-                if execution_type == AssetExecutionType.OBSERVATION:
+                if result_type == "observe":
 
                     @op
                     def noop(): ...
 
                     osa = AssetsDefinition(
                         specs=[spec],
-                        execution_type=execution_type,
+                        result_type=result_type,
                         keys_by_output_name={"result": spec.key},
                         node_def=noop,
                     )

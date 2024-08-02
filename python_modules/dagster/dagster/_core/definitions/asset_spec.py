@@ -1,6 +1,5 @@
-from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -9,7 +8,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import validate_asset_owner
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
 
 from .auto_materialize_policy import AutoMaterializePolicy
@@ -58,11 +56,15 @@ SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES = "dagster/auto_observe_interv
 SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET = "dagster/auto_created_stub_asset"
 
 
-@whitelist_for_serdes
-class AssetExecutionType(Enum):
-    OBSERVATION = "OBSERVATION"
-    UNEXECUTABLE = "UNEXECUTABLE"
-    MATERIALIZATION = "MATERIALIZATION"
+AssetResultType = Literal["materialize", "observe", "unexecutable"]
+
+
+def get_result_type_from_legacy_metadata_value(value: str) -> str:
+    return {
+        "UNEXECUTABLE": "unexecutable",
+        "MATERIALIZATION": "materialize",
+        "OBSERVATION": "observe",
+    }[value]
 
 
 @experimental_param(param="owners")

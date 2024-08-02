@@ -13,7 +13,6 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.instance import DagsterInstance
 
 
@@ -46,7 +45,7 @@ def noop(): ...
 
 observable_a = AssetsDefinition(
     specs=[AssetSpec("a", automation_condition=AutomationCondition.cron_tick_passed("@daily"))],
-    execution_type=AssetExecutionType.OBSERVATION,
+    result_type="observe",
     node_def=noop,
     keys_by_output_name={"result": AssetKey("a")},
 )
@@ -58,7 +57,7 @@ observable_b = AssetsDefinition(
             automation_condition=AutomationCondition.cron_tick_passed("@daily"),
         )
     ],
-    execution_type=AssetExecutionType.OBSERVATION,
+    result_type="observe",
     node_def=noop,
     keys_by_output_name={"result": AssetKey("b")},
 )
@@ -70,7 +69,7 @@ materializable_c = AssetsDefinition(
             automation_condition=AutomationCondition.cron_tick_passed("@daily"),
         )
     ],
-    execution_type=AssetExecutionType.MATERIALIZATION,
+    result_type="materialize",
     node_def=noop,
     keys_by_output_name={"result": AssetKey("c")},
 )
