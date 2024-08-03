@@ -391,7 +391,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 external_asset_node.asset_key, repository_location.name, external_repository.name
             ),
             assetKey=external_asset_node.asset_key,
-            description=external_asset_node.op_description,
+            description=external_asset_node.description,
             opName=external_asset_node.op_name,
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
