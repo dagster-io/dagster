@@ -1,3 +1,5 @@
+from dbt.version import __version__ as dbt_version
+
 from .asset_decorator import dbt_assets as dbt_assets
 from .asset_specs import build_dbt_asset_specs as build_dbt_asset_specs
 from .asset_utils import (
@@ -55,6 +57,7 @@ from dagster._utils.warnings import deprecation_warning
 from typing_extensions import Final
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
+DagsterLibraryRegistry.register("dbt-core", dbt_version)
 
 
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {
