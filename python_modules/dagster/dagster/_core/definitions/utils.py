@@ -5,6 +5,7 @@ import warnings
 from glob import glob
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -427,3 +428,13 @@ T = TypeVar("T")
 def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
     """Dedupe definitions by reference equality."""
     return list({id(obj): obj for obj in objects}.values()) if objects is not None else []
+
+
+def make_alias_if_collision(original: str, used: AbstractSet[str]) -> str:
+    counter = 1
+    result = original
+    while result in used:
+        result = f"{original}_{counter}"
+        counter += 1
+
+    return result

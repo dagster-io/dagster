@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
 from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.errors import DagsterInvalidInvocationError
@@ -86,18 +86,11 @@ class AssetGraphComputation(IHaveNew):
         for output_name, key in itertools.chain(
             self.keys_by_output_name.items(), self.check_keys_by_output_name.items()
         ):
-            output_def, node_handle = self.full_node_def.resolve_output_to_origin(output_name, None)
-            result[NodeOutputHandle(node_handle=node_handle, output_name=output_def.name)] = key
+            if key in self.selected_asset_keys or key in self.selected_asset_check_keys:
+                output_def, node_handle = self.node_def.resolve_output_to_origin(output_name, None)
+                result[NodeOutputHandle(node_handle=node_handle, output_name=output_def.name)] = key
 
         return result
-
-    @property
-    def full_node_def(self) -> NodeDefinition:
-        node_def = self.node_def
-        while isinstance(node_def, SubselectedGraphDefinition):
-            node_def = node_def.parent_graph_def
-
-        return node_def
 
     def subset_for(
         self,
@@ -126,13 +119,41 @@ class AssetGraphComputation(IHaveNew):
         ):
             return self
         elif isinstance(self.node_def, GraphDefinition):  # Node is graph-backed asset
-            subsetted_node = self._subset_graph_backed_asset(
+            subsetted_graph_def = self._subset_graph_backed_asset(
                 asset_subselection, asset_check_subselection
             )
 
+            # When a subset excludes an asset key that's an input to another op inside the
+            # graph-backed asset, we need to make sure the produced AssetGraphComputation still
+            # tracks the correspondence between the "orphaned" input and the asset it's meant to be
+            # loaded from.
+            keys_by_inner_orphaned_input_handle: Dict[NodeInputHandle, AssetKey] = {}
+            unselected_asset_keys = self.selected_asset_keys - selected_asset_keys
+            for unselected_asset_key in unselected_asset_keys:
+                output_name = self.output_names_by_key[unselected_asset_key]
+                for destination in self.node_def.resolve_output_to_destinations(output_name, None):
+                    keys_by_inner_orphaned_input_handle[destination] = unselected_asset_key
+
+            if keys_by_inner_orphaned_input_handle:
+                subsetted_graph_def, outer_inputs_by_inner_input_handle = (
+                    subsetted_graph_def.with_inner_inputs_mapped_to_outer(
+                        keys_by_inner_orphaned_input_handle.keys(), None
+                    )
+                )
+                keys_by_input_name = {
+                    **self.keys_by_input_name,
+                    **{
+                        outer_input_name: keys_by_inner_orphaned_input_handle[inner_input_handle]
+                        for inner_input_handle, outer_input_name in outer_inputs_by_inner_input_handle.items()
+                    },
+                }
+            else:
+                keys_by_input_name = self.keys_by_input_name
+
             return copy(
                 self,
-                node_def=subsetted_node,
+                keys_by_input_name=keys_by_input_name,
+                node_def=subsetted_graph_def,
                 selected_asset_keys=selected_asset_keys & self.selected_asset_keys,
                 selected_asset_check_keys=asset_check_subselection,
                 is_subset=True,
@@ -215,13 +236,13 @@ class AssetGraphComputation(IHaveNew):
         path directly correspond to other assets.
         """
         asset_or_check_keys_by_op_output_handle = self.asset_or_check_keys_by_op_output_handle
-        if not isinstance(self.full_node_def, GraphDefinition):
+        if not isinstance(self.node_def, GraphDefinition):
             return {
                 key: {op_output_handle}
                 for key, op_output_handle in asset_or_check_keys_by_op_output_handle.items()
             }
 
-        op_output_graph = OpOutputHandleGraph.from_graph(self.full_node_def)
+        op_output_graph = OpOutputHandleGraph.from_graph(self.node_def)
         reverse_toposorted_op_outputs_handles = [
             *reversed(toposort_flatten(op_output_graph.upstream)),
             *(op_output_graph.op_output_handles - op_output_graph.upstream.keys()),

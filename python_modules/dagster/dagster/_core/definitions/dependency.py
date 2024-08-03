@@ -65,7 +65,7 @@ class NodeInvocation(
     """Identifies an instance of a node in a graph dependency structure.
 
     Args:
-        name (str): Name of the node of which this is an instance.
+        name (str): Name of the node definition of which this is an instance.
         alias (Optional[str]): Name specific to this instance of the node. Necessary when there are
             multiple instances of the same node.
         tags (Optional[Dict[str, Any]]): Optional tags values to extend or override those
@@ -111,6 +111,10 @@ class NodeInvocation(
         if not hasattr(self, "_hash"):
             self._hash = hash_collection(self)
         return self._hash
+
+    @property
+    def resolved_name(self) -> str:
+        return self.alias or self.name
 
 
 class Node(ABC):
@@ -566,6 +570,11 @@ class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDef
     @property
     def input_name(self) -> str:
         return self.input_def.name
+
+    def to_handle(self, parent: Optional[NodeHandle]) -> NodeInputHandle:
+        return NodeInputHandle(
+            node_handle=NodeHandle(name=self.node_name, parent=parent), input_name=self.input_name
+        )
 
 
 class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", OutputDefinition)])):

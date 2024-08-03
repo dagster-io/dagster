@@ -131,7 +131,7 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
     assert len(subbed.keys_by_output_name) == expected_outputs
 
     # the asset dependency structure should stay the same
-    assert subbed.asset_deps == abc_.asset_deps
+    assert subbed.asset_deps == {k: v for k, v in abc_.asset_deps.items() if k in subbed.keys}
 
 
 def test_subset_with_checks():
@@ -349,12 +349,6 @@ def test_chain_replace_and_subset_for():
             AssetKey(["foo", "in2"]),
         },
         AssetKey(["something", "bar_b"]): set(),
-        AssetKey("c"): {
-            AssetKey(["again", "foo", "foo_a"]),
-            AssetKey(["something", "bar_b"]),
-            AssetKey(["foo", "in2"]),
-            AssetKey(["foo", "in3"]),
-        },
     }
 
     subbed_2 = replaced_2.subset_for(
