@@ -1,0 +1,13 @@
+contents:
+  - key: asset1
+  - contents:
+      - key: asset2
+    metadata:
+      foo: bar
+    tags:
+      inner: tag
+
+metadata:
+  lorem: ipsum
+tags:
+  outer: tag
