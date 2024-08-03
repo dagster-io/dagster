@@ -547,7 +547,7 @@ class SnowflakeConnection:
             .. code-block:: python
 
                 @op
-                def drop_database(snowflake: SnowflakeResource):
+                def drop_database(snowflake: snowflake_resource):
                     snowflake.execute_query(
                         "DROP DATABASE IF EXISTS MY_DATABASE"
                     )
@@ -600,7 +600,7 @@ class SnowflakeConnection:
             .. code-block:: python
 
                 @op
-                def create_fresh_database(snowflake: SnowflakeResource):
+                def create_fresh_database(snowflake: snowflake_resource):
                     queries = ["DROP DATABASE IF EXISTS MY_DATABASE", "CREATE DATABASE MY_DATABASE"]
                     snowflake.execute_queries(
                         sql_queries=queries
