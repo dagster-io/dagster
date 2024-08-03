@@ -27,16 +27,8 @@ setup_local_env:
 	make wipe && \
 	mkdir -p $$AIRFLOW_HOME && \
 	mkdir -p $$DAGSTER_HOME && \
-	chmod +x ../../create_airflow_cfg.sh && \
-	../../create_airflow_cfg.sh $(MAKEFILE_DIR)/peering_with_dbt/airflow_dags && \
-	airflow db migrate && \
-	airflow users create \
-    --username admin \
-	--password admin \
-    --firstname Peter \
-    --lastname Parker \
-    --role Admin \
-    --email spiderman@superhero.org && \
+	chmod +x ../../airflow_setup.sh && \
+	../../airflow_setup.sh $(MAKEFILE_DIR)/peering_with_dbt/airflow_dags && \
 	make dbt_setup
 
 run_airflow: 
