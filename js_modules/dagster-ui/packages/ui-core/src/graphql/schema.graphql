@@ -1,18 +1,3 @@
-type ComputeLogFile {
-  path: String!
-  data: String
-  cursor: Int!
-  size: Int!
-  downloadUrl: String
-}
-
-type ComputeLogs {
-  runId: String!
-  stepKey: String!
-  stdout: ComputeLogFile
-  stderr: ComputeLogFile
-}
-
 interface DisplayableEvent {
   label: String
   description: String
@@ -1145,7 +1130,6 @@ interface PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
-  computeLogs(stepKey: String!): ComputeLogs!
   capturedLogs(fileKey: String!): CapturedLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -1398,7 +1382,6 @@ type Run implements PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
-  computeLogs(stepKey: String!): ComputeLogs!
   capturedLogs(fileKey: String!): CapturedLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -2397,7 +2380,6 @@ type Instance {
   executablePath: String!
   daemonHealth: DaemonHealth!
   hasInfo: Boolean!
-  hasCapturedLogManager: Boolean!
   autoMaterializePaused: Boolean!
   supportsConcurrencyLimits: Boolean!
   minConcurrencyLimitValue: Int!
@@ -3781,12 +3763,6 @@ type DeleteDynamicPartitionsSuccess {
 
 type Subscription {
   pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
-  computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
   capturedLogs(logKey: [String!]!, cursor: String): CapturedLogs!
   locationStateChangeEvents: LocationStateChangeSubscription!
-}
-
-enum ComputeIOType {
-  STDOUT
-  STDERR
 }
