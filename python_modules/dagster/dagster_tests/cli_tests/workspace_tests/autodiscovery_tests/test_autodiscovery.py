@@ -195,13 +195,20 @@ def test_single_def_any_name():
     assert symbol == "not_defs"
 
 
-def test_double_defs_in_file():
-    dagster_defs_path = file_relative_path(__file__, "double_defs.py")
+def test_double_defs_in_file_no_clear_choice():
+    dagster_defs_path = file_relative_path(__file__, "double_defs_no_clear_choice.py")
     with pytest.raises(
         DagsterInvariantViolationError,
         match="Cannot have more than one Definitions object defined at module scope",
     ):
         loadable_targets_from_python_file(dagster_defs_path)
+
+
+def test_double_defs_in_file_one_named_defs():
+    dagster_defs_path = file_relative_path(__file__, "double_defs.py")
+    loadable_targets = loadable_targets_from_python_file(dagster_defs_path)
+    assert len(loadable_targets) == 1
+    assert loadable_targets[0].attribute == "defs"
 
 
 def _current_test_directory_paths():
