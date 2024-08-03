@@ -2,7 +2,13 @@ import time
 from typing import cast
 
 import requests
-from dagster import JsonMetadataValue, MarkdownMetadataValue, SensorResult, build_sensor_context
+from dagster import (
+    AssetDep,
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    SensorResult,
+    build_sensor_context,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.test_utils import instance_for_test
 from dagster_airlift import (
@@ -25,10 +31,16 @@ def test_dag_peering(
                 dag_id="print_dag",
                 task_id="print_task",
                 key=AssetKey(["some", "key"]),
-            )
+            ),
+            TaskMapping(
+                dag_id="print_dag",
+                task_id="downstream_print_task",
+                key=AssetKey(["other", "key"]),
+                deps=[AssetDep(AssetKey(["some", "key"]))],
+            ),
         ],
     )
-    assert len(assets_defs) == 2
+    assert len(assets_defs) == 3
     dag_def = [  # noqa
         assets_def
         for assets_def in assets_defs
@@ -82,7 +94,7 @@ def test_dag_peering(
         sensor_context = build_sensor_context(instance=instance)
         sensor_result = sensor_def(sensor_context)
         assert isinstance(sensor_result, SensorResult)
-        assert len(sensor_result.asset_events) == 2
+        assert len(sensor_result.asset_events) == 3
         dag_mat = [  # noqa
             asset_mat
             for asset_mat in sensor_result.asset_events
@@ -110,4 +122,17 @@ def test_dag_peering(
         run_id = task_mat.metadata["Airflow Run ID"].value
         assert task_mat.metadata["Link to Run"] == MarkdownMetadataValue(
             f"[View Run](http://localhost:8080/dags/print_dag/grid?dag_run_id={run_id}&tab=details)"
+        )
+
+        other_mat = [  # noqa
+            asset_mat
+            for asset_mat in sensor_result.asset_events
+            if asset_mat.asset_key == AssetKey(["other", "key"])
+        ][0]
+
+        assert other_mat
+        # other mat should be downstream of task mat
+        assert (  # type: ignore
+            other_mat.metadata["Creation Timestamp"].value
+            >= task_mat.metadata["Creation Timestamp"].value
         )

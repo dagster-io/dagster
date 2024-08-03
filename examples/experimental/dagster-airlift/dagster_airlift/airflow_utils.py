@@ -19,7 +19,8 @@ from dagster import (
     multi_asset,
     sensor,
 )
-from dagster._time import datetime_from_timestamp, get_current_datetime
+from dagster._core.utils import toposort_flatten
+from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster_dbt import build_dbt_asset_specs
 from pydantic import BaseModel
 
@@ -217,9 +218,12 @@ def build_airflow_polling_sensor(
                                 "Link to Run": MarkdownMetadataValue(
                                     f"[View Run]({airflow_webserver_url}/dags/{dag_id}/grid?dag_run_id={dag_run['dag_run_id']}&tab=details)"
                                 ),
+                                "Creation Timestamp": TimestampMetadataValue(
+                                    get_current_timestamp()
+                                ),
                             },
                         )
-                        for spec in specs
+                        for spec in toposort_specs(specs)
                     ]
                 )
         context.update_cursor(str(current_date.timestamp()))
@@ -304,3 +308,13 @@ def get_leaf_specs(specs: List[AssetSpec]) -> List[AssetSpec]:
         if key not in downstreams_per_key
     ]
     return leaf_specs
+
+
+def toposort_specs(specs: List[AssetSpec]) -> List[AssetSpec]:
+    spec_per_key = {spec.key: spec for spec in specs}
+    return [
+        spec_per_key[key]
+        for key in toposort_flatten(
+            {spec.key: {dep.asset_key for dep in spec.deps} for spec in specs}
+        )
+    ]
