@@ -189,22 +189,23 @@ class _ObservableSourceAsset:
         )
         resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
 
-        return SourceAsset(
-            key=source_asset_key,
-            metadata=self.metadata,
-            io_manager_key=self.io_manager_key,
-            io_manager_def=self.io_manager_def,
-            description=self.description,
-            group_name=self.group_name,
-            _required_resource_keys=resolved_resource_keys,
-            resource_defs=self.resource_defs,
-            observe_fn=observe_fn,
-            op_tags=self.op_tags,
-            partitions_def=self.partitions_def,
-            auto_observe_interval_minutes=self.auto_observe_interval_minutes,
-            freshness_policy=self.freshness_policy,
-            tags=self.tags,
-        )
+        with disable_dagster_warnings():
+            return SourceAsset(
+                key=source_asset_key,
+                metadata=self.metadata,
+                io_manager_key=self.io_manager_key,
+                io_manager_def=self.io_manager_def,
+                description=self.description,
+                group_name=self.group_name,
+                _required_resource_keys=resolved_resource_keys,
+                resource_defs=self.resource_defs,
+                observe_fn=observe_fn,
+                op_tags=self.op_tags,
+                partitions_def=self.partitions_def,
+                auto_observe_interval_minutes=self.auto_observe_interval_minutes,
+                freshness_policy=self.freshness_policy,
+                tags=self.tags,
+            )
 
 
 @experimental
