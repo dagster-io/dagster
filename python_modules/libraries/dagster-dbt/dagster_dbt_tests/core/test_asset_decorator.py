@@ -589,6 +589,15 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> Non
         assert expected_specs_by_key[asset_key].tags["customized"] == "tag"
 
 
+def test_with_compute_kind(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(): ...
+
+    assert my_dbt_assets.op.tags.get(COMPUTE_KIND_TAG) == "dbt"
+    for spec in build_dbt_asset_specs(manifest=test_jaffle_shop_manifest):
+        assert spec.tags[COMPUTE_KIND_TAG] == "dbt"
+
+
 def test_with_storage_kind_tag_override(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_specs_with_no_override_by_key = {
         spec.key: spec for spec in build_dbt_asset_specs(manifest=test_jaffle_shop_manifest)
@@ -840,6 +849,7 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     assert expected_specs_by_key[AssetKey("customers")].tags == {
         "foo": "",
         "bar-baz": "",
+        COMPUTE_KIND_TAG: "dbt",
         **StorageKindTagSet(storage_kind="duckdb"),
     }
     assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {
@@ -849,7 +859,10 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     }
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
         assert my_dbt_assets.tags_by_key[asset_key] == {**StorageKindTagSet(storage_kind="duckdb")}
-        assert expected_specs_by_key[asset_key].tags == {**StorageKindTagSet(storage_kind="duckdb")}
+        assert expected_specs_by_key[asset_key].tags == {
+            COMPUTE_KIND_TAG: "dbt",
+            **StorageKindTagSet(storage_kind="duckdb"),
+        }
 
 
 def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
