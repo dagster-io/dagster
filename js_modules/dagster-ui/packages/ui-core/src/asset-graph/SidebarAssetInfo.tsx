@@ -189,7 +189,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
 
       {assetType && <TypeSidebarSection assetType={assetType} />}
 
-      {asset.partitionDefinition && !definition.isSource && (
+      {asset.partitionDefinition && definition.isMaterializable && (
         <SidebarSection title="Partitions">
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 16}}>
             <p>{asset.partitionDefinition.description}</p>

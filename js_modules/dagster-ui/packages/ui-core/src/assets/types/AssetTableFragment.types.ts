@@ -8,7 +8,7 @@ export type AssetTableDefinitionFragment = {
   changedReasons: Array<Types.ChangeReason>;
   groupName: string;
   opNames: Array<string>;
-  isSource: boolean;
+  isMaterializable: boolean;
   isObservable: boolean;
   isExecutable: boolean;
   computeKind: string | null;
@@ -37,7 +37,7 @@ export type AssetTableFragment = {
     changedReasons: Array<Types.ChangeReason>;
     groupName: string;
     opNames: Array<string>;
-    isSource: boolean;
+    isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
     computeKind: string | null;

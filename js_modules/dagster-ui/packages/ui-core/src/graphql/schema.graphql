@@ -665,8 +665,8 @@ type AssetNode {
   id: ID!
   isExecutable: Boolean!
   isObservable: Boolean!
+  isMaterializable: Boolean!
   isPartitioned: Boolean!
-  isSource: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!

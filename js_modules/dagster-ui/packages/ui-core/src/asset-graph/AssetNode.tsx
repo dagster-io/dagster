@@ -29,8 +29,6 @@ interface Props {
 }
 
 export const AssetNode = React.memo(({definition, selected, computeKindTagsFilter}: Props) => {
-  const isSource = definition.isSource;
-
   const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
@@ -45,7 +43,7 @@ export const AssetNode = React.memo(({definition, selected, computeKindTagsFilte
         />
       </Box>
       <AssetNodeContainer $selected={selected}>
-        <AssetNodeBox $selected={selected} $isSource={isSource}>
+        <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
           <AssetNameRow definition={definition} />
           <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
             {definition.description ? (
@@ -55,7 +53,7 @@ export const AssetNode = React.memo(({definition, selected, computeKindTagsFilte
             ) : (
               <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
             )}
-            {definition.isPartitioned && !definition.isSource && (
+            {definition.isPartitioned && definition.isMaterializable && (
               <PartitionCountTags definition={definition} liveData={liveData} />
             )}
           </Box>
@@ -81,13 +79,13 @@ export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
-    <AssetName $isSource={definition.isSource}>
+    <AssetName $isMaterializable={definition.isMaterializable}>
       <span style={{marginTop: 1}}>
-        <Icon name={definition.isSource ? 'source_asset' : 'asset'} />
+        <Icon name={definition.isMaterializable ? 'asset' : 'source_asset'} />
       </span>
       <div
         data-tooltip={displayName}
-        data-tooltip-style={definition.isSource ? NameTooltipStyleSource : NameTooltipStyle}
+        data-tooltip-style={definition.isMaterializable ? NameTooltipStyle : NameTooltipStyleSource}
         style={{overflow: 'hidden', textOverflow: 'ellipsis'}}
       >
         {withMiddleTruncation(displayName, {
@@ -191,7 +189,7 @@ export const AssetNodeMinimal = ({
   definition: AssetNodeFragment;
   height: number;
 }) => {
-  const {isSource, assetKey} = definition;
+  const {isMaterializable, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
 
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
@@ -214,7 +212,7 @@ export const AssetNodeMinimal = ({
         >
           <MinimalAssetNodeBox
             $selected={selected}
-            $isSource={isSource}
+            $isMaterializable={isMaterializable}
             $background={background}
             $border={border}
             $inProgress={!!inProgressRuns}
@@ -227,7 +225,7 @@ export const AssetNodeMinimal = ({
               />
             ) : null}
             {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
-            <MinimalName style={{fontSize: 24}} $isSource={isSource}>
+            <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
               {withMiddleTruncation(displayName, {maxLength: 18})}
             </MinimalName>
           </MinimalAssetNodeBox>
@@ -254,7 +252,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     computeKind
     isPartitioned
     isObservable
-    isSource
+    isMaterializable
     assetKey {
       ...AssetNodeKey
     }
@@ -290,12 +288,12 @@ const AssetNodeShowOnHover = styled.span`
 `;
 
 export const AssetNodeBox = styled.div<{
-  $isSource: boolean;
+  $isMaterializable: boolean;
   $selected: boolean;
   $noScale?: boolean;
 }>`
   ${(p) =>
-    p.$isSource
+    !p.$isMaterializable
       ? `border: 2px dashed ${p.$selected ? Colors.accentGrayHover() : Colors.accentGray()}`
       : `border: 2px solid ${
           p.$selected ? Colors.lineageNodeBorderSelected() : Colors.lineageNodeBorder()
@@ -343,11 +341,12 @@ const NameTooltipStyleSource = JSON.stringify({
   border: `none`,
 });
 
-const AssetName = styled.div<{$isSource: boolean}>`
+const AssetName = styled.div<{$isMaterializable: boolean}>`
   ${NameCSS};
   display: flex;
   gap: 4px;
-  background: ${(p) => (p.$isSource ? Colors.backgroundLight() : Colors.lineageNodeBackground())};
+  background: ${(p) =>
+    p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight()};
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
 `;
@@ -357,7 +356,7 @@ const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
 `;
 
 const MinimalAssetNodeBox = styled.div<{
-  $isSource: boolean;
+  $isMaterializable: boolean;
   $selected: boolean;
   $background: string;
   $border: string;
@@ -367,7 +366,7 @@ const MinimalAssetNodeBox = styled.div<{
   background: ${(p) => p.$background};
   overflow: hidden;
   ${(p) =>
-    p.$isSource
+    !p.$isMaterializable
       ? `border: 4px dashed ${p.$selected ? Colors.accentGray() : p.$border}`
       : `border: 4px solid ${p.$selected ? Colors.lineageNodeBorderSelected() : p.$border}`};
   ${(p) =>

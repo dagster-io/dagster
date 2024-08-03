@@ -75,10 +75,10 @@ export const AssetEvents = ({
     (json) => ({types: json?.types || ALL_EVENT_TYPES}),
   );
 
-  // Source assets never have materializations, so we don't want to show the type filter
-  const hideFilters = assetNode?.isSource;
-  // Source assets never have a partitions tab, so we shouldn't allow links to it
-  const hidePartitionLinks = assetNode?.isSource;
+  // No need to show the type filter for assets without materializations
+  const hideFilters = !assetNode?.isMaterializable;
+  // Non-materializable assets never have a partitions tab, so we shouldn't allow links to it
+  const hidePartitionLinks = !assetNode?.isMaterializable;
 
   const grouped = useGroupedEvents(
     xAxis,

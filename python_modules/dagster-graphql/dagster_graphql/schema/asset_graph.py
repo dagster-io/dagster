@@ -284,8 +284,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     isExecutable = graphene.NonNull(graphene.Boolean)
     isObservable = graphene.NonNull(graphene.Boolean)
+    isMaterializable = graphene.NonNull(graphene.Boolean)
     isPartitioned = graphene.NonNull(graphene.Boolean)
-    isSource = graphene.NonNull(graphene.Boolean)
     jobNames = non_null_list(graphene.String)
     jobs = non_null_list(GraphenePipeline)
     latestMaterializationByPartition = graphene.Field(
@@ -546,8 +546,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_graph_backed_asset(self) -> bool:
         return self.graphName is not None
 
-    def is_source_asset(self) -> bool:
-        return self._external_asset_node.is_source
+    @property
+    def is_executable(self) -> bool:
+        return self._external_asset_node.is_executable
 
     def resolve_hasMaterializePermission(
         self,
@@ -685,7 +686,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_configField(self, _graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
-        if self.is_source_asset():
+        if self.is_executable:
             return None
         external_pipeline = self.get_external_job()
         node_def_snap = self.get_node_definition_snap()
@@ -1028,11 +1029,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             if self._external_repository.has_external_job(job_name)
         ]
 
-    def resolve_isSource(self, _graphene_info: ResolveInfo) -> bool:
-        return self.is_source_asset()
-
     def resolve_isPartitioned(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.partitions_def_data is not None
+
+    def resolve_isMaterializable(self, _graphene_info: ResolveInfo) -> bool:
+        return self._external_asset_node.is_materializable
 
     def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.is_observable
@@ -1213,7 +1214,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_op(
         self, _graphene_info: ResolveInfo
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
-        if self.is_source_asset():
+        if not self.is_executable:
             return None
         external_pipeline = self.get_external_job()
         node_def_snap = self.get_node_definition_snap()
@@ -1292,7 +1293,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_required_resources(
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneResourceRequirement]:
-        if self.is_source_asset():
+        if not self.is_executable:
             return []
         node_def_snap = self.get_node_definition_snap()
         all_unique_keys = self.get_required_resource_keys(node_def_snap)
@@ -1305,7 +1306,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             "GrapheneListDagsterType", "GrapheneNullableDagsterType", "GrapheneRegularDagsterType"
         ]
     ]:
-        if self.is_source_asset():
+        if not self._external_asset_node.is_materializable:
             return None
         external_pipeline = self.get_external_job()
         output_name = self.external_asset_node.output_name

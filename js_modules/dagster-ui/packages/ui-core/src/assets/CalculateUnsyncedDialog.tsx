@@ -55,7 +55,7 @@ export const CalculateUnsyncedDialog = React.memo(
     const unsynced = React.useMemo(
       () =>
         (data?.assetNodes || [])
-          .filter((node) => !node.isSource && (isAssetStale(node) || isAssetMissing(node)))
+          .filter((node) => node.isMaterializable && (isAssetStale(node) || isAssetMissing(node)))
           .map(asAssetKeyInput),
       [data],
     );
@@ -208,7 +208,7 @@ const ASSET_STALE_STATUS_QUERY = gql`
       assetKey {
         path
       }
-      isSource
+      isMaterializable
       staleStatus
       partitionStats {
         numMaterialized

@@ -177,7 +177,7 @@ export const AssetView = ({
   };
 
   const renderPartitionsTab = () => {
-    if (definition?.isSource) {
+    if (!definition?.isMaterializable) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
@@ -567,11 +567,7 @@ const AssetViewPageHeaderTags = ({
           />
         </>
       ) : null}
-      {definition?.isSource ? (
-        <Tag>Source Asset</Tag>
-      ) : !definition?.isExecutable ? (
-        <Tag>External Asset</Tag>
-      ) : undefined}
+      {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
     </>
   );
 };
