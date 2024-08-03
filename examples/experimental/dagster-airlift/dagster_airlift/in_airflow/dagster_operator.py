@@ -1,7 +1,6 @@
 import os
 
 import requests
-from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION
@@ -77,5 +76,5 @@ def compute_fn() -> None:
     return None
 
 
-def build_dagster_task(task_id: str, dag: DAG, **kwargs):
-    return PythonOperator(task_id=task_id, dag=dag, python_callable=compute_fn, **kwargs)
+def build_dagster_task(task_id: str, **kwargs):
+    return PythonOperator(task_id=task_id, python_callable=compute_fn, **kwargs)

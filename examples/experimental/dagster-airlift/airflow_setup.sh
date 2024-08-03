@@ -14,10 +14,11 @@ if [[ "$DAGS_FOLDER" != /* ]]; then
   exit 1
 fi
 
-# Create the airflow.cfg file in $AIRFLOW_HOME
+# Create the airflow.cfg file in $AIRFLOW_HOME. We set a super high import timeout so that we can attach a debugger and mess around with the code.
 cat <<EOL > $AIRFLOW_HOME/airflow.cfg
 [core]
 dags_folder = $DAGS_FOLDER
+dagbag_import_timeout = 30000
 load_examples = False
 [api]
 auth_backend = airflow.api.auth.backend.basic_auth
