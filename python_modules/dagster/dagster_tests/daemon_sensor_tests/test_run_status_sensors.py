@@ -1746,4 +1746,4 @@ def test_logging_run_status_sensor(
         assert records
         record = records[0]
         assert record[LOG_RECORD_METADATA_ATTR]["orig_message"] == f"run succeeded: {run.run_id}"
-        instance.compute_log_manager.delete_logs(log_key=tick.log_key)  # type: ignore
+        instance.compute_log_manager.delete_logs(log_key=tick.log_key)
