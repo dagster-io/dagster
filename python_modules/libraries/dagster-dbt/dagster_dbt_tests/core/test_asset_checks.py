@@ -16,6 +16,7 @@ from dagster import (
     materialize,
 )
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.asset_utils import get_manifest_and_translator_from_dbt_assets
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
@@ -432,6 +433,29 @@ def test_materialize_checks_no_asset(
     # since we're not materializing the asset, we can't use indirect selection and therefore
     # don't run the singular or relationship tests
     assert len(result.get_asset_observation_events()) == 0
+
+
+def test_get_manifest_and_translator_only_checks(test_asset_checks_manifest: Dict[str, Any]):
+    my_translator = DagsterDbtTranslator()
+
+    @dbt_assets(manifest=test_asset_checks_manifest, dagster_dbt_translator=my_translator)
+    def my_dbt_assets(context, dbt: DbtCliResource): ...
+
+    assert len(list(my_dbt_assets.check_specs)) > 0
+
+    my_dbt_assets = AssetsDefinition(
+        **{
+            **my_dbt_assets.get_attributes_dict(),
+            "specs": [],
+            "keys_by_input_name": {},
+            "keys_by_output_name": {},
+            "selected_asset_keys": set(),
+        }
+    )
+    assert len(list(my_dbt_assets.check_specs)) > 0
+    manifest, translator = get_manifest_and_translator_from_dbt_assets([my_dbt_assets])
+    assert manifest == test_asset_checks_manifest
+    assert translator == my_translator
 
 
 def test_extra_checks(
