@@ -75,21 +75,21 @@ def _migration_regex(warning, current_revision, expected_revision=None):
 
 def _run_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+        "Raised an exception that may indicate that the Dagster database needs to be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _schedule_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+        "Raised an exception that may indicate that the Dagster database needs to be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _event_log_migration_regex(_run_id, current_revision, expected_revision=None):
     warning = re.escape(
-        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
+        "Raised an exception that may indicate that the Dagster database needs to be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
