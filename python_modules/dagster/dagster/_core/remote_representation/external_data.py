@@ -1335,6 +1335,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
         "description": "op_description",
+        "node_name": "op_name",
     },
     field_serializers={
         "metadata": MetadataFieldSerializer,
@@ -1353,7 +1354,7 @@ class ExternalAssetNode:
     depended_by: Sequence[ExternalAssetDependedBy]
     execution_type: AssetExecutionType
     compute_kind: Optional[str]
-    op_name: Optional[str]
+    node_name: Optional[str]
     op_names: Sequence[str]
     code_version: Optional[str]
     node_definition_name: Optional[str]
@@ -1385,7 +1386,7 @@ class ExternalAssetNode:
         depended_by: Sequence[ExternalAssetDependedBy],
         execution_type: Optional[AssetExecutionType] = None,
         compute_kind: Optional[str] = None,
-        op_name: Optional[str] = None,
+        node_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
         code_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
@@ -1444,7 +1445,7 @@ class ExternalAssetNode:
 
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
-            op_names = list(filter(None, [op_name]))
+            op_names = list(filter(None, [node_name]))
 
         # backcompat logic to handle ExternalAssetNodes serialzied without is_source
         if is_source is None:
@@ -1458,7 +1459,7 @@ class ExternalAssetNode:
             dependencies=dependencies or [],
             depended_by=depended_by or [],
             compute_kind=compute_kind,
-            op_name=op_name,
+            node_name=node_name,
             op_names=op_names or [],
             code_version=code_version,
             node_definition_name=node_definition_name,
@@ -1731,7 +1732,7 @@ def external_asset_nodes_from_defs(
                 root_node_handle.name if root_node_handle != output_handle.node_handle else None
             )
             op_names = sorted([str(handle) for handle in node_handles])
-            op_name = graph_name or next(iter(op_names), None) or node_def.name
+            node_name = graph_name or next(iter(op_names), None) or node_def.name
             job_names = sorted([jd.name for jd in job_defs_by_asset_key[key]])
             compute_kind = node_def.tags.get(COMPUTE_KIND_TAG)
             node_definition_name = node_def.name
@@ -1748,7 +1749,7 @@ def external_asset_nodes_from_defs(
         else:
             graph_name = None
             op_names = []
-            op_name = None
+            node_name = None
             job_names = []
             compute_kind = None
             node_definition_name = None
@@ -1780,7 +1781,7 @@ def external_asset_nodes_from_defs(
                 depended_by=[ExternalAssetDependedBy(k) for k in sorted(asset_node.child_keys)],
                 execution_type=asset_node.execution_type,
                 compute_kind=compute_kind,
-                op_name=op_name,
+                node_name=node_name,
                 op_names=op_names,
                 code_version=asset_node.code_version,
                 node_definition_name=node_definition_name,

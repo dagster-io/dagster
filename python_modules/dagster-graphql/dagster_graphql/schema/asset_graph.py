@@ -392,7 +392,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             ),
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.description,
-            opName=external_asset_node.op_name,
+            opName=external_asset_node.node_name,
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
             owners=[
@@ -453,7 +453,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 self._external_asset_node.node_definition_name
                 # nodes serialized using an older Dagster version may not have node_definition_name
                 or self._external_asset_node.graph_name
-                or self._external_asset_node.op_name
+                or self._external_asset_node.node_name
             )
             self._node_definition_snap = self.get_external_job().get_node_def_snap(node_key)
         # weird mypy bug causes mistyped _node_definition_snap

@@ -182,7 +182,7 @@ def get_asset_node_definition_collisions(
             is_defined = (
                 external_asset_node.node_definition_name
                 or external_asset_node.graph_name
-                or external_asset_node.op_name
+                or external_asset_node.node_name
             )
             if not is_defined:
                 continue

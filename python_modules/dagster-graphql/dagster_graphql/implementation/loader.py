@@ -203,7 +203,7 @@ class CrossRepoAssetDependedByLoader:
                 asset_nodes = external_repo.get_external_asset_nodes()
                 for asset_node in asset_nodes:
                     location_tuple = (location.name, repo_name)
-                    if not asset_node.op_name:  # is source asset
+                    if not asset_node.node_name:  # is source asset
                         depended_by_assets_by_location_by_source_asset[asset_node.asset_key][
                             location_tuple
                         ].extend(asset_node.depended_by)
