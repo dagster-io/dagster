@@ -156,6 +156,10 @@ class AssetLayer(NamedTuple):
         check.invariant(len(matching_handles) == 1)
         return matching_handles[0]
 
+    def get_output_name_for_asset_key(self, op_handle: NodeHandle, asset_key: AssetKey) -> str:
+        assets_def = self.assets_def_for_node(op_handle)
+        return check.not_none(assets_def).get_output_name_for_asset_key(asset_key)
+
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self.assets_defs_by_node_handle.get(node_handle)
 

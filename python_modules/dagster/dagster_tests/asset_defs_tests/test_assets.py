@@ -1059,7 +1059,8 @@ def test_multi_asset_materialize_result_unselected_asset():
         yield MaterializeResult(asset_key=("two"))
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Asset key two not found in AssetsDefinition"
+        DagsterInvariantViolationError,
+        match="Yielded MaterializeResult targets asset key 'two' that is not selected in the step.",
     ):
         materialize([assets], selection=[AssetKey("one")])
 
@@ -1776,7 +1777,7 @@ def test_return_materialization():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Asset key random not found in AssetsDefinition",
+        match="Yielded MaterializeResult targets asset key 'random' that is not selected in the step.",
     ):
         mats = _exec_asset(ret_mismatch)
 
