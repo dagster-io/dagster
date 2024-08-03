@@ -472,20 +472,6 @@ def test_crash_hard_multiprocessing():
             # Neither the stderr not the stdout spew will (reliably) make it to the compute logs --
             # documenting this behavior here though we may want to change it
 
-            # assert (
-            #     'Crashy output to stdout'
-            #     not in instance.compute_log_manager.read_logs_file(
-            #         result.run_id, 'segfault_solid', ComputeIOType.STDOUT
-            #     ).data
-            # )
-
-            # assert (
-            #     instance.compute_log_manager.read_logs_file(
-            #         result.run_id, 'sys_exit', ComputeIOType.STDERR
-            #     ).data
-            #     is None
-            # )
-
 
 def get_dynamic_resource_init_failure_job():
     return get_dynamic_job_resource_init_failure(multiprocess_executor)[0]

@@ -80,14 +80,6 @@ def test_compute_log_manager(gcs_bucket):
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check GCS directly
             stderr_gcs = (
                 storage.Client()
@@ -112,14 +104,6 @@ def test_compute_log_manager(gcs_bucket):
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 @pytest.mark.integration
@@ -172,14 +156,6 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 stdout = log_data.stdout.decode("utf-8")
                 assert stdout == HELLO_WORLD + SEPARATOR
 
-                # legacy API
-                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-                assert stdout.data == HELLO_WORLD + SEPARATOR
-
-                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-                for expected in EXPECTED_LOGS:
-                    assert expected in stderr.data
-
                 # Check GCS directly
                 stderr_gcs = (
                     storage.Client()
@@ -201,14 +177,6 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
                 log_data = manager.get_log_data(log_key)
                 stdout = log_data.stdout.decode("utf-8")
                 assert stdout == HELLO_WORLD + SEPARATOR
-
-                # legacy API
-                stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-                assert stdout.data == HELLO_WORLD + SEPARATOR
-
-                stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-                for expected in EXPECTED_LOGS:
-                    assert expected in stderr.data
 
 
 @pytest.mark.integration

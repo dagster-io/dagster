@@ -181,11 +181,10 @@ def test_blank_compute_logs(mock_s3_bucket):
         )
 
         # simulate subscription to an in-progress run, where there is no key in the bucket
-        stdout = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDOUT)
-        stderr = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDERR)
+        log_data = manager.get_log_data(["my_run_id", "compute_logs", "my_step_key"])
 
-        assert not stdout.data
-        assert not stderr.data
+        assert not log_data.stdout
+        assert not log_data.stderr
 
 
 def test_prefix_filter(mock_s3_bucket):
