@@ -11,6 +11,93 @@ When you import a project into Dagster+ from GitHub or Gitlab, a few `.yml` file
 
 ---
 
+## deploy.yml
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <tbody>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Name</strong>
+      </td>
+      <td>deploy.yml</td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Status</strong>
+      </td>
+      <td>Active</td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Required</strong>
+      </td>
+      <td>Required for Dagster+</td>
+    </tr>
+    <tr>
+      <td
+        style={{
+          width: "15%",
+        }}
+      >
+        <strong>Description</strong>
+      </td>
+      <td>
+        This file defines the steps required to:
+        <ul>
+          <li>
+            Deploy a project in Dagster+, including running checks, checking out
+            the project directory, and deploying the project.
+          </li>
+          <li>
+            Use{" "}
+            <a href="/dagster-plus/managing-deployments/branch-deployments">
+              Branch Deployments
+            </a>{" "}
+            (For Dagster+ accounts created after [TODO])
+          </li>
+        </ul>
+        Additionally, note the following:
+        <ul>
+          <li>
+            <strong>
+              If using a{" "}
+              <a href="/dagster-plus/deployment/hybrid">Hybrid deployment</a>
+            </strong>
+            , this file must be manually added to the repository.
+          </li>
+          <li>
+            <strong>If using dbt</strong>, some steps may need to be added to
+            successfully deploy your project. Refer to the{" "}
+            <a href="/integrations/dbt/using-dbt-with-dagster-plus#step-3-update-the-cicd-files">
+              Using dbt with Dagster+ guide
+            </a>{" "}
+            for more information.
+          </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
 ## branch_deployments.yml
 
 <table
@@ -64,86 +151,16 @@ When you import a project into Dagster+ from GitHub or Gitlab, a few `.yml` file
         <strong>Description</strong>
       </td>
       <td>
-        Defines the steps required to use Branch Deployments. <br />
+        Defines the steps required to use Branch Deployments.{" "}
+        <strong>For Dagster+ accounts created after [TODO]</strong>, the
+        contents of this file will be consolidated into the{" "}
+        <code>deploy.yml</code> file.
         <br />
-        <strong>Note</strong>: This file must be manually added to the
-        repository if using a{" "}
-        <a href="/dagster-plus/deployment/hybrid">Hybrid deployment</a>.
-      </td>
-    </tr>
-  </tbody>
-</table>
-
----
-
-## deploy.yml
-
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <tbody>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Name</strong>
-      </td>
-      <td>deploy.yml</td>
-    </tr>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Status</strong>
-      </td>
-      <td>Active</td>
-    </tr>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Required</strong>
-      </td>
-      <td>Required for Dagster+</td>
-    </tr>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Description</strong>
-      </td>
-      <td>
-        Defines the steps required to deploy a project in Dagster+, including
-        running checks, checking out the project directory, and deploying the
-        project. Additionally, note the following:
-        <ul>
-          <li>
-            <strong>
-              If using a{" "}
-              <a href="/dagster-plus/deployment/hybrid">Hybrid deployment</a>
-            </strong>
-            , this file must be manually added to the repository.
-          </li>
-          <li>
-            <strong>If using dbt</strong>, some steps may need to be added to
-            successfully deploy your project. Refer to the{" "}
-            <a href="/integrations/dbt/using-dbt-with-dagster-plus#step-3-update-the-cicd-files">
-              Using dbt with Dagster+ guide
-            </a>{" "}
-            for more information.
-          </li>
-        </ul>
+        <br />
+        <strong>Note</strong>: This file must be manually added to the repository
+        if using a <a href="/dagster-plus/deployment/hybrid">
+          Hybrid deployment
+        </a>.
       </td>
     </tr>
   </tbody>
