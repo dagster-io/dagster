@@ -272,6 +272,8 @@ def dagster_event_sequence_for_step(
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
+    materialized_asset_keys = set()
+
     try:
         if step_context.step_launcher and not force_local_execution:
             # info all on step_context - should deprecate second arg
@@ -280,6 +282,9 @@ def dagster_event_sequence_for_step(
             step_events = core_dagster_event_sequence_for_step(step_context)
 
         for step_event in check.generator(step_events):
+            if step_event.is_step_materialization():
+                materialized_asset_keys.add(step_event.asset_key)
+
             yield step_event
 
     # case (1) in top comment
