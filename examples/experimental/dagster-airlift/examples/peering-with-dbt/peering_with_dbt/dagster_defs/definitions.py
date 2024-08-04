@@ -2,6 +2,8 @@ import os
 
 from dagster import Definitions
 from dagster_airlift import (
+    AirflowInstance,
+    BasicAuthBackend,
     airflow_task_mappings_from_dbt_project,
     assets_defs_from_airflow_instance,
     build_airflow_polling_sensor,
@@ -17,11 +19,14 @@ PASSWORD = "admin"
 
 manifest_path = os.path.join(os.environ["DBT_PROJECT_DIR"], "target", "manifest.json")
 
+airflow_instance = AirflowInstance(
+    airflow_webserver_url=AIRFLOW_BASE_URL,
+    auth_backend=BasicAuthBackend(USERNAME, PASSWORD),
+    name=AIRFLOW_INSTANCE_NAME,
+)
 
 airflow_assets = assets_defs_from_airflow_instance(
-    airflow_webserver_url=AIRFLOW_BASE_URL,
-    auth=(USERNAME, PASSWORD),
-    instance_name=AIRFLOW_INSTANCE_NAME,
+    airflow_instance=airflow_instance,
     task_maps=[
         *airflow_task_mappings_from_dbt_project(
             dbt_manifest_path=manifest_path,
@@ -32,8 +37,7 @@ airflow_assets = assets_defs_from_airflow_instance(
     ],
 )
 airflow_sensor = build_airflow_polling_sensor(
-    airflow_webserver_url=AIRFLOW_BASE_URL,
-    auth=(USERNAME, PASSWORD),
+    airflow_instance=airflow_instance,
     airflow_asset_specs=[spec for asset in airflow_assets for spec in asset.specs],
 )
 
