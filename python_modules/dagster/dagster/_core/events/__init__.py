@@ -1121,12 +1121,14 @@ class DagsterEvent(
 
     @staticmethod
     def job_canceled(
-        job_context: IPlanContext, error_info: Optional[SerializableErrorInfo] = None
+        job_context: IPlanContext,
+        error_info: Optional[SerializableErrorInfo] = None,
+        message: Optional[str] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_job(
             DagsterEventType.RUN_CANCELED,
             job_context,
-            message=f'Execution of run for "{job_context.job_name}" canceled.',
+            message=message or f'Execution of run for "{job_context.job_name}" canceled.',
             event_specific_data=JobCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
             ),
