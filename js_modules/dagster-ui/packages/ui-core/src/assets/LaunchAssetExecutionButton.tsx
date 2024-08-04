@@ -181,11 +181,14 @@ export const LaunchAssetExecutionButton = ({
   showChangedAndMissingOption?: boolean;
   primary?: boolean;
   preferredJobName?: string;
-  additionalDropdownOptions?: {
-    label: string;
-    icon?: JSX.Element;
-    onClick: () => void;
-  }[];
+  additionalDropdownOptions?: (
+    | JSX.Element
+    | {
+        label: string;
+        icon?: JSX.Element;
+        onClick: () => void;
+      }
+  )[];
 }) => {
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
@@ -290,14 +293,18 @@ export const LaunchAssetExecutionButton = ({
                   onClick(firstOption.assetKeys, e, true);
                 }}
               />
-              {additionalDropdownOptions?.map((option) => (
-                <MenuItem
-                  key={option.label}
-                  text={option.label}
-                  icon={option.icon}
-                  onClick={option.onClick}
-                />
-              ))}
+              {additionalDropdownOptions?.map((option) =>
+                'label' in option ? (
+                  <MenuItem
+                    key={option.label}
+                    text={option.label}
+                    icon={option.icon}
+                    onClick={option.onClick}
+                  />
+                ) : (
+                  option
+                ),
+              )}
             </Menu>
           }
         >

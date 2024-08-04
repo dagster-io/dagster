@@ -234,6 +234,9 @@ export const TagSelectorContainer = styled.div`
   align-items: center;
 
   ${TextInputStyles}
+
+  min-height: 32px;
+  padding: 4px 8px;
 `;
 
 const Placeholder = styled.div`

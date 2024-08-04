@@ -315,9 +315,9 @@ class DbtCliResource(ConfigurableResource):
     @compat_model_validator(mode="before")
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the dbt version is supported."""
-        if version.parse(dbt_version) < version.parse("1.6.0"):
+        if version.parse(dbt_version) < version.parse("1.7.0"):
             raise ValueError(
-                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.6.0`. Currently,"
+                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.7.0`. Currently,"
                 f" you are using `dbt-core=={dbt_version}`. Please install a compatible dbt-core"
                 " version."
             )

@@ -25,7 +25,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Final, Self
 
 from dagster import (
@@ -55,6 +54,9 @@ from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
     GraphNode,
@@ -97,6 +99,7 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
+from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
 DEFAULT_MODE_NAME = "default"
@@ -815,21 +818,21 @@ class ExternalTimeWindowPartitionsDefinitionData(
         if self.cron_schedule is not None:
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
-                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
             )
         else:
             # backcompat case
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,
-                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
@@ -1523,6 +1526,13 @@ class ExternalAssetNode(
     def is_executable(self) -> bool:
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
+    @property
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        if self.auto_materialize_policy is not None:
+            return self.auto_materialize_policy.to_automation_condition()
+        else:
+            return None
+
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
 
@@ -2029,12 +2039,8 @@ def external_time_window_partitions_definition_from_def(
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
         cron_schedule=partitions_def.cron_schedule,
-        start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
-        end=(
-            pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp()
-            if partitions_def.end
-            else None
-        ),
+        start=partitions_def.start.timestamp(),
+        end=partitions_def.end.timestamp() if partitions_def.end else None,
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,

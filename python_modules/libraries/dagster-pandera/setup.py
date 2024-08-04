@@ -43,9 +43,10 @@ setup(
         "numpy<2",
     ],
     extras_require={
+        "polars": ["polars>=1"],
         "test": [
+            "polars>=1",
             "pytest",
-            "pyarrow",  # optional dep of dagster-pandera
         ],
     },
 )

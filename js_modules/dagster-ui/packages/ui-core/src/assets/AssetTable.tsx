@@ -38,7 +38,6 @@ interface Props {
   belowActionBarComponents: React.ReactNode;
   prefixPath: string[];
   displayPathForAsset: (asset: Asset) => string[];
-  requery?: RefetchQueriesFunction;
   searchPath: string;
   isFiltered: boolean;
   computeKindFilter?: StaticSetFilter<string>;
@@ -52,7 +51,6 @@ export const AssetTable = ({
   refreshState,
   prefixPath,
   displayPathForAsset,
-  requery,
   searchPath,
   isFiltered,
   view,
@@ -194,7 +192,7 @@ export const AssetTable = ({
         assetKeys={toWipe || []}
         isOpen={!!toWipe}
         onClose={() => setToWipe(undefined)}
-        requery={requery}
+        onComplete={() => refreshState.refetch()}
       />
     </>
   );

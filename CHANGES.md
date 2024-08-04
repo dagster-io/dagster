@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.7.16 (core) / 0.23.16 (libraries)
+
+### Experimental
+
+- [pipes] PipesGlueClient, an AWS Glue pipes client has been added to `dagster_aws`.
+
 # 1.7.15 (core) / 0.23.15 (libraries)
 
 ### New

@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
 
 import mock
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -25,6 +24,7 @@ from dagster import (
     SensorDefinition,
     asset,
     multi_asset,
+    op,
 )
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -33,7 +33,6 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -60,7 +59,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
-from dagster._time import parse_time_string
+from dagster._time import datetime_from_timestamp, get_current_datetime, parse_time_string
 from typing_extensions import Self
 
 from .base_scenario import run_request
@@ -127,7 +126,7 @@ class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
-    current_time: datetime.datetime = field(default_factory=lambda: pendulum.now("UTC"))
+    current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
     sensors: Sequence[SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
 
@@ -161,13 +160,24 @@ class ScenarioSpec:
                 )
                 # create an observable_source_asset or regular asset depending on the execution type
                 if execution_type == AssetExecutionType.OBSERVATION:
-                    # strip out the relevant paramters from the spec
-                    params = {"key", "group_name", "partitions_def", "metadata"}
+                    if isinstance(spec, AssetSpecWithPartitionsDef):
+                        sd = spec._asdict()
+                        partitions_def = sd.pop("partitions_def")
+                        specs = [AssetSpec(**sd)]
+                    else:
+                        partitions_def = None
+                        specs = [spec]
 
-                    @observable_source_asset(
-                        **{k: v for k, v in spec._asdict().items() if k in params},
+                    @op
+                    def noop(): ...
+
+                    osa = AssetsDefinition(
+                        specs=specs,
+                        partitions_def=partitions_def,
+                        execution_type=execution_type,
+                        keys_by_output_name={"result": spec.key},
+                        node_def=noop,
                     )
-                    def osa() -> None: ...
 
                     assets.append(osa)
                 else:
@@ -355,7 +365,7 @@ class ScenarioState:
         return dataclasses.replace(
             self,
             scenario_spec=self.scenario_spec.with_current_time(
-                pendulum.from_timestamp(test_time_fn())
+                datetime_from_timestamp(test_time_fn())
             ),
         )
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {RunTableRunFragment} from './types/RunTable.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {useRepositoryForRunWithoutSnapshot} from '../workspace/useRepositoryForRun';

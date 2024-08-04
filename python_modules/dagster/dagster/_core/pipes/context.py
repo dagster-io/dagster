@@ -25,7 +25,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster import DagsterEvent
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -54,7 +54,6 @@ if TYPE_CHECKING:
 PipesExecutionResult: TypeAlias = Union[MaterializeResult, AssetCheckResult]
 
 
-@experimental
 class PipesMessageHandler:
     """Class to process :py:obj:`PipesMessage` objects received from a pipes process.
 
@@ -239,7 +238,6 @@ class PipesMessageHandler:
         )
 
 
-@experimental
 @dataclass
 class PipesSession:
     """Object representing a pipes session.

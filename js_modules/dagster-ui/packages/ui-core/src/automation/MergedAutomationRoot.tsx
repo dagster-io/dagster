@@ -1,6 +1,7 @@
-import {Box, NonIdealState, SpinnerWithText, TextInput} from '@dagster-io/ui-components';
+import {Box, NonIdealState, SpinnerWithText, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
+import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
 import {AutomationsTable} from './AutomationsTable';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -46,6 +47,7 @@ export const MergedAutomationRoot = () => {
     visibleRepos,
     loading: workspaceLoading,
     data: cachedData,
+    refetch,
   } = useContext(WorkspaceContext);
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -151,10 +153,20 @@ export const MergedAutomationRoot = () => {
         return [
           ...sensors
             .filter(({sensorState}) => filterPermissionedInstigationState(sensorState))
-            .map(({name}) => ({repoAddress, name})),
+            .map(({name, sensorState}) => ({
+              repoAddress,
+              name,
+              type: 'sensor' as const,
+              instigationState: sensorState,
+            })),
           ...schedules
             .filter(({scheduleState}) => filterPermissionedInstigationState(scheduleState))
-            .map(({name}) => ({repoAddress, name})),
+            .map(({name, scheduleState}) => ({
+              repoAddress,
+              name,
+              type: 'schedule' as const,
+              instigationState: scheduleState,
+            })),
         ];
       })
       .flat();
@@ -197,6 +209,7 @@ export const MergedAutomationRoot = () => {
 
   const viewerHasAnyInstigationPermission = allPermissionedAutomationKeys.length > 0;
   const checkedCount = checkedAutomations.length;
+  const anyAutomationsVisible = permissionedKeysOnScreen.length > 0;
 
   const content = () => {
     if (workspaceLoading) {
@@ -289,6 +302,14 @@ export const MergedAutomationRoot = () => {
             style={{width: '340px'}}
           />
         </Box>
+        <Tooltip
+          content="You do not have permission to start or stop these schedules"
+          canShow={anyAutomationsVisible && !viewerHasAnyInstigationPermission}
+          placement="top-end"
+          useDisabledButtonTooltipFix
+        >
+          <AutomationBulkActionMenu automations={checkedAutomations} onDone={() => refetch()} />
+        </Tooltip>
       </Box>
       {activeFiltersJsx.length ? (
         <Box

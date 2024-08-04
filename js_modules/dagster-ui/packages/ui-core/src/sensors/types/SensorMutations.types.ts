@@ -22,7 +22,15 @@ export type StartSensorMutation = {
     | {
         __typename: 'Sensor';
         id: string;
-        sensorState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          name: string;
+          instigationType: Types.InstigationType;
+          status: Types.InstigationStatus;
+          runningCount: number;
+        };
       }
     | {__typename: 'SensorNotFoundError'; message: string}
     | {__typename: 'UnauthorizedError'; message: string};
@@ -50,7 +58,11 @@ export type StopRunningSensorMutation = {
         instigationState: {
           __typename: 'InstigationState';
           id: string;
+          selectorId: string;
+          name: string;
+          instigationType: Types.InstigationType;
           status: Types.InstigationStatus;
+          runningCount: number;
         } | null;
       }
     | {__typename: 'UnauthorizedError'; message: string};

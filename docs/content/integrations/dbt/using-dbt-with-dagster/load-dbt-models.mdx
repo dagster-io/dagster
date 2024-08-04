@@ -29,7 +29,7 @@ In this section, you'll finally begin integrating dbt with Dagster! To do this, 
 You can create a Dagster project that wraps your dbt project by using the `dagster-dbt` command line interface. Make sure you're in the directory where your `dbt_project.yml` is. If you're continuing from the previous section, then you'll already be in this directory. Then, run:
 
 ```shell
-dagster-dbt project scaffold --use-dbt-project --project-name jaffle_dagster
+dagster-dbt project scaffold --project-name jaffle_dagster
 ```
 
 This creates a directory called `jaffle_dagster/` inside the current directory. The `jaffle_dagster/` directory contains a set of files that define a Dagster project.

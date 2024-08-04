@@ -15,8 +15,6 @@ materialization it was derived from.
 import datetime
 from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.definitions.asset_selection import KeysAssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
@@ -34,7 +32,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._time import datetime_from_timestamp
+from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster._utils import make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -490,7 +488,7 @@ class CachingDataTimeResolver:
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
             record_tags=make_hashable(event.tags or {}),
-            current_time=current_time or pendulum.now("UTC"),
+            current_time=current_time or get_current_datetime(),
         )
 
     def get_current_data_time(

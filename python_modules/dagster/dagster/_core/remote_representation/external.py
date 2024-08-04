@@ -251,7 +251,10 @@ class ExternalRepository:
                     default_sensor_asset_keys.add(asset_key)
 
             for asset_key in asset_graph.observable_asset_keys:
-                if asset_graph.get(asset_key).auto_observe_interval_minutes is None:
+                if (
+                    asset_graph.get(asset_key).auto_observe_interval_minutes is None
+                    and asset_graph.get(asset_key).automation_condition is None
+                ):
                     continue
 
                 has_any_auto_observe_source_assets = True

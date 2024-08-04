@@ -399,7 +399,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._storage.event_log_storage.get_step_stats_for_run(run_id, step_keys)
 
-    def store_event(self, event: "EventLogEntry") -> None:
+    def store_event(self, event: "EventLogEntry") -> Optional[int]:
         return self._storage.event_log_storage.store_event(event)
 
     def delete_events(self, run_id: str) -> None:
@@ -487,6 +487,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Optional[PlannedMaterializationInfo]:
         return self._storage.event_log_storage.get_latest_planned_materialization_info(
             asset_key, partition
+        )
+
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_updated_data_version_partitions(
+            asset_key, partitions, since_storage_id
         )
 
     def get_asset_records(

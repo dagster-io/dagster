@@ -17,21 +17,22 @@ export type ScheduleSwitchFragment = {
 };
 
 export type ScheduleStateQueryVariables = Types.Exact<{
-  scheduleSelector: Types.ScheduleSelector;
+  id: Types.Scalars['String']['input'];
+  selector: Types.InstigationSelector;
 }>;
 
 export type ScheduleStateQuery = {
   __typename: 'Query';
-  scheduleOrError:
-    | {__typename: 'PythonError'}
+  instigationStateOrError:
     | {
-        __typename: 'Schedule';
+        __typename: 'InstigationState';
         id: string;
-        scheduleState: {
-          __typename: 'InstigationState';
-          id: string;
-          status: Types.InstigationStatus;
-        };
+        selectorId: string;
+        name: string;
+        instigationType: Types.InstigationType;
+        status: Types.InstigationStatus;
+        runningCount: number;
       }
-    | {__typename: 'ScheduleNotFoundError'};
+    | {__typename: 'InstigationStateNotFoundError'}
+    | {__typename: 'PythonError'};
 };

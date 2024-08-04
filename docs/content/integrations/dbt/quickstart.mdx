@@ -107,7 +107,7 @@ This approach uses the `dagster-dbt` CLI to create a new Dagster project and wra
 In our example, our command would look like this:
 
 ```shell
-dagster-dbt project scaffold --project-name my_dagster_project --dbt-project-dir ./my_dbt_project --use-dbt-project
+dagster-dbt project scaffold --project-name my_dagster_project --dbt-project-dir ./my_dbt_project
 ```
 
 This command will create a new directory called `my_dagster_project/` inside the current directory. The new `my_dagster_project/` directory will contain a set of files that define a Dagster project to load the dbt project provided in `./my_dbt_project`.

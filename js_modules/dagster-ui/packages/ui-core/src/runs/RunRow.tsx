@@ -12,7 +12,7 @@ import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
-import {RunTableRunFragment} from './types/RunTable.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useResolveRunTarget} from './useResolveRunTarget';
 import {RunStatus} from '../graphql/types';
 
