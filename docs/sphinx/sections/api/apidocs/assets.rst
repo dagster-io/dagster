@@ -72,6 +72,8 @@ Asset jobs
 
 .. autofunction:: define_asset_job
 
+.. autoclass:: UnresolvedAssetJobDefinition
+
 .. autoclass:: AssetSelection
 
 Code locations
