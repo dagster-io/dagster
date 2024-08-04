@@ -158,7 +158,7 @@ class SdfCliInvocation:
                 from dagster_sdf import SdfCliResource, sdf_assets
 
 
-                @sdf_assets(workspace_dir="/path/to/sdf/workspace")
+                @sdf_assets(workspace=SdfWorkspace(workspace_dir="/path/to/sdf/workspace"))
                 def my_sdf_assets(context, sdf: SdfCliResource):
                     yield from sdf.cli(["run"], context=context).stream()
         """

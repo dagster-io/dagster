@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Iterator, List, Literal, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 import polars as pl
@@ -15,21 +15,14 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._record import IHaveNew, record_custom
 
-from .asset_utils import dagster_name_fn
+from .asset_utils import dagster_name_fn, get_info_schema_dir, get_output_dir
 from .constants import (
     DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
     SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE,
     SDF_INFORMATION_SCHEMA_TABLES_STAGE_PARSE,
-    SDF_TARGET_DIR,
 )
 from .dagster_sdf_translator import DagsterSdfTranslator
 from .sdf_event_iterator import SdfDagsterEventType
-
-
-def get_info_schema_dir(target_dir: Path, environment: str) -> Path:
-    return target_dir.joinpath(
-        SDF_TARGET_DIR, environment, "data", "system", "information_schema::sdf"
-    )
 
 
 @record_custom(checked=False)
@@ -53,6 +46,8 @@ class SdfInformationSchema(IHaveNew):
     """
 
     workspace_dir: Path
+    target_dir: Path
+    environment: str
     information_schema_dir: Path
     information_schema: Dict[str, pl.DataFrame]
 
@@ -78,6 +73,8 @@ class SdfInformationSchema(IHaveNew):
         return super().__new__(
             cls,
             workspace_dir=workspace_dir,
+            target_dir=target_dir,
+            environment=environment,
             information_schema_dir=information_schema_dir,
             information_schema={},
         )
@@ -133,14 +130,23 @@ class SdfInformationSchema(IHaveNew):
         for table_row in table_deps.rows(named=True):
             asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
             output_name = dagster_name_fn(table_row["table_id"])
+            code_references = None
+            if dagster_sdf_translator.settings.enable_code_references:
+                code_references = self._extract_code_ref(table_row)
+            metadata = {**(code_references if code_references else {})}
             # If the table is a annotated as a dependency, we don't need to create an output for it
             if table_row["table_id"] not in table_id_to_dep:
                 outs[output_name] = AssetOut(
                     key=asset_key,
                     dagster_type=Nothing,
                     io_manager_key=io_manager_key,
-                    description=table_row["description"],
+                    description=dagster_sdf_translator.get_description(
+                        table_row,
+                        self.workspace_dir,
+                        get_output_dir(self.target_dir, self.environment),
+                    ),
                     is_required=False,
+                    metadata=metadata,
                 )
                 internal_asset_deps[output_name] = {
                     table_id_to_dep[dep]
@@ -151,7 +157,6 @@ class SdfInformationSchema(IHaveNew):
                     )  # Otherwise, use the translator to get the asset key
                     for dep in table_row["depends_on"]
                 }.union(table_id_to_upstream.get(table_row["table_id"], set()))
-
         return deps, outs, internal_asset_deps
 
     def get_columns(self) -> Dict[str, List[TableColumn]]:
@@ -172,6 +177,39 @@ class SdfInformationSchema(IHaveNew):
             )
         return table_columns
 
+    def _extract_code_ref(
+        self, table_row: Dict[str, Any]
+    ) -> Union[CodeReferencesMetadataSet, None]:
+        code_references = None
+        # Check if any of the source locations are .sql files, return the first one
+        loc = (
+            next(
+                (
+                    source_location
+                    for source_location in table_row["source_locations"]
+                    if source_location.endswith(".sql")
+                ),
+                None,
+            )
+            or next(
+                (
+                    source_location
+                    for source_location in table_row["source_locations"]
+                    if source_location.endswith(".sdf.yml")
+                ),
+                None,
+            )
+            or "workspace.sdf.yml"
+        )
+        code_references = CodeReferencesMetadataSet(
+            code_references=CodeReferencesMetadataValue(
+                code_references=[
+                    LocalFileCodeReference(file_path=os.fspath(self.workspace_dir.joinpath(loc)))
+                ]
+            )
+        )
+        return code_references
+
     def stream_asset_observations(
         self, dagster_sdf_translator: DagsterSdfTranslator
     ) -> Iterator[SdfDagsterEventType]:
@@ -182,19 +220,8 @@ class SdfInformationSchema(IHaveNew):
         for table_row in tables.rows(named=True):
             asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
             code_references = None
-            for source_location in table_row["source_locations"]:
-                if source_location.endswith(".sql"):
-                    code_references = CodeReferencesMetadataSet(
-                        code_references=CodeReferencesMetadataValue(
-                            code_references=[
-                                LocalFileCodeReference(
-                                    file_path=os.fspath(
-                                        self.workspace_dir.joinpath(source_location)
-                                    )
-                                )
-                            ]
-                        )
-                    )
+            if dagster_sdf_translator.settings.enable_code_references:
+                code_references = self._extract_code_ref(table_row)
             metadata = {
                 **TableMetadataSet(
                     column_schema=TableSchema(
@@ -205,7 +232,11 @@ class SdfInformationSchema(IHaveNew):
                 **(code_references if code_references else {}),
             }
             yield AssetObservation(
-                asset_key=asset_key, description=table_row["description"], metadata=metadata
+                asset_key=asset_key,
+                description=dagster_sdf_translator.get_description(
+                    table_row, self.workspace_dir, get_output_dir(self.target_dir, self.environment)
+                ),
+                metadata=metadata,
             )
 
     def is_compiled(self) -> bool:
