@@ -1,10 +1,10 @@
 import {TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
+import {useAssetDefinitionFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
-import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState.oss';
 import {useAssetSearch} from './useAssetSearch';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';

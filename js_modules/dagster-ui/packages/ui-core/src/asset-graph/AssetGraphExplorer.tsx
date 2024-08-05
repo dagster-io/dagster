@@ -15,6 +15,7 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useMemo} from 'react';
+import {useAssetGraphExplorerFilters} from 'src/asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
@@ -46,7 +47,6 @@ import {
   useAssetGraphData,
   useFullAssetGraphData,
 } from './useAssetGraphData';
-import {useAssetGraphExplorerFilters} from './useAssetGraphExplorerFilters.oss';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';

@@ -118,6 +118,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                   onClick={() => setVisibleDialog('queue-criteria')}
                 />
               ) : null}
+              {/* @ts-ignore - This can be null in OSS without cloud aliases */}
               {runMetricsEnabled && RunMetricsDialog ? (
                 <MenuItem
                   tagName="button"
