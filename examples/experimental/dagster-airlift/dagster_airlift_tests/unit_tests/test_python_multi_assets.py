@@ -1,5 +1,5 @@
 from dagster import AssetDep, AssetKey, AssetsDefinition, AssetSpec
-from dagster_airlift import PythonDefs
+from dagster_airlift import PythonFnDefs
 
 from dagster_airlift_tests.unit_tests.multi_asset_python import compute_fn
 
@@ -16,7 +16,7 @@ def test_python_multi_asset_factory() -> None:
         key=ak("my/asset"),
         deps=[AssetDep(ak("upstream/asset"))],
     )
-    defs = PythonDefs(
+    defs = PythonFnDefs(
         specs=[asset_spec],
         python_fn=compute_fn,
         name="test_dag__test_task",

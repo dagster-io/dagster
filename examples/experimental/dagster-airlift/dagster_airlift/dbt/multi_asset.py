@@ -10,7 +10,16 @@ from dagster_airlift.core.def_factory import DefsFactory
 
 
 @dataclass
-class DbtProjectDefs(DefsFactory):
+class DbtBuildProjectDefs(DefsFactory):
+    """Produce definitions that build a DBT project. Meant to replace, for example,
+    a `BashOperator` that invokes `dbt build` in your Airflow installation.
+
+    If you have further customization needs, we recommend that you subclass
+    `DefsFactory` directly and write `build_defs` such that it returns
+    a `Definitions` object with the desired assets and resources, constructed
+    using `dbt_assets`.
+    """
+
     dbt_project_path: Path
     name: str
     group: Optional[str] = None
