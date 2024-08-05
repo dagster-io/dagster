@@ -292,10 +292,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             # These are tested by an internal test without building the app.
             return [
                 Route("/favicon.png", lambda _: FileResponse(path="/favicon")),
-                Route(
-                    "/vendor/graphql-playground/index.css",
-                    lambda _: FileResponse(path="/vendor/graphql-playground/index.css"),
-                ),
             ]
 
         return routes

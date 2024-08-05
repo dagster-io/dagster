@@ -31,7 +31,7 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-from dagster_webserver.templates.playground import TEMPLATE
+from dagster_webserver.templates.graphiql import TEMPLATE
 
 if TYPE_CHECKING:
     from starlette.datastructures import QueryParams
