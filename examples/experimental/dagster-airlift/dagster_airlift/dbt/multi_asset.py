@@ -1,32 +1,24 @@
 import json
-import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Optional
 
 from dagster import AssetExecutionContext, Definitions
-from dagster_blueprints.blueprint import Blueprint
 from dagster_dbt import DbtCliResource, dbt_assets
-from pydantic import BaseModel
+
+from dagster_airlift.core.def_factory import DefsFactory
 
 
-class FromEnvVar(BaseModel):
-    env_var: str
-
-
-class DbtProjectDefs(Blueprint):
-    type: Literal["dbt_project"] = "dbt_project"
-    dbt_project_path: FromEnvVar
+@dataclass
+class DbtProjectDefs(DefsFactory):
+    dbt_project_path: Path
+    name: str
     group: Optional[str] = None
 
     def build_defs(self) -> Definitions:
-        source_file_name_without_ext = self.source_file_name.split(".")[0]
-        dbt_project_path = Path(os.environ[self.dbt_project_path.env_var])
-        dbt_manifest_path = dbt_project_path / "target" / "manifest.json"
+        dbt_manifest_path = self.dbt_project_path / "target" / "manifest.json"
 
-        @dbt_assets(
-            manifest=json.loads(dbt_manifest_path.read_text()),
-            name=source_file_name_without_ext,
-        )
+        @dbt_assets(manifest=json.loads(dbt_manifest_path.read_text()), name=self.name)
         def _dbt_asset(context: AssetExecutionContext, dbt: DbtCliResource):
             yield from dbt.cli(["build"], context=context).stream()
 
@@ -34,9 +26,12 @@ class DbtProjectDefs(Blueprint):
             _dbt_asset = _dbt_asset.with_attributes(
                 group_names_by_key={key: self.group for key in _dbt_asset.keys}
             )
+
         return Definitions(
             assets=[_dbt_asset],
             resources={
-                "dbt": DbtCliResource(project_dir=dbt_project_path, profiles_dir=dbt_project_path)
+                "dbt": DbtCliResource(
+                    project_dir=self.dbt_project_path, profiles_dir=self.dbt_project_path
+                )
             },
         )
