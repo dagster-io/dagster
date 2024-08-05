@@ -1,0 +1,178 @@
+---
+title: "Declarative Automation | Dagster Docs"
+description: "Dagster can automatically materialize assets when criteria are met, enabling a declarative approach to asset materialization."
+---
+
+# Declarative Automation
+
+Dagster can automatically materialize assets when criteria are met, enabling a declarative approach to asset materialization. Instead of defining explicit workflows to materialize assets, you describe the conditions under which they should be materialized and let the system kick off runs in response.
+
+Declarative Automation includes pre-built conditions to handle common use cases, such as on a periodic schedule or whenever an upstream dependency updates, but conditions can also be customized.
+
+---
+
+## Benefits
+
+Using Declarative Automation helps you:
+
+- Define the precise conditions under which an asset should be materialized
+- Define all logic related to an asset in a single place
+- Avoid thinking about specific workflow boundaries
+
+---
+
+## Prerequisites
+
+Before continuing, you should be familiar with:
+
+- [Asset definitions](/concepts/assets/software-defined-assets)
+- [Sensor definitions](/concepts/partitions-schedules-sensors/sensors)
+- [Code locations](/concepts/code-locations)
+
+---
+
+## How it works
+
+Declarative Automation is an automation method that kicks off runs when criteria are met and contains two main components:
+
+- **An automation condition (<PyObject object="AutomationCondition" />**), which represents when an individual asset should be executed.
+- **A sensor** which evaluates each <PyObject object="AutomationCondition" /> and launches runs in response to their status.
+
+### Automation conditions
+
+Dagster provides two pre-built conditions:
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        Name
+      </th>
+      <th
+        style={{
+          width: "40%",
+        }}
+      >
+        Description
+      </th>
+      <th>Useful for</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>AutomationCondition.eager()</strong>
+      </td>
+      <td>
+        This condition will materialize an asset:
+        <ul>
+          <li>If the asset has never been materialized before, or</li>
+          <li>
+            When the asset's parents update, as long as none of the parents are
+            currently missing or have an update in progress
+          </li>
+        </ul>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            Automatically propagating changes through the asset graph
+          </li>
+          <li>Ensuring assets remain up-to-date</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>AutomationCondition.cron(cron_schedule)</strong>
+      </td>
+      <td>
+        This condition will materialize an asset once per cron schedule tick,
+        after all of its parents have been updated since the tick
+      </td>
+      <td>
+        Regularly updating an asset without worrying about the specifics of how
+        its parents update
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+Automation conditions can be set on the <PyObject object="asset" decorator /> decorator or on an <PyObject object="AssetSpec" />:
+
+```python
+from dagster import AssetSpec, AutomationCondition, asset
+
+@asset(automation_condition=AutomationCondition.eager())
+def my_eager_asset(): ...
+
+AssetSpec("my_cron_asset", automation_condition=AutomationCondition.cron("@daily"))
+```
+
+The core <PyObject object="AutomationCondition" /> framework is extremely flexible, allowing you to build custom conditions from the ground up. Refer to the [Customizing automation conditions guide](TODO) for more information.
+
+### Sensors
+
+By default, a single sensor with the name `default_automation_condition_sensor` will be available for each code location, and will monitor all assets within that location. To use multiple sensors or change the properties of the default sensor, refer to the <PyObject object="AutomationConditionSensorDefinition" /> documentation.
+
+For an automation condition sensor to run, it must be turned on and an active [`dagster-daemon` process](/deployment/dagster-daemon) must be running. If you used [`dagster dev` to start the Dagster UI/webserver](/guides/running-dagster-locally), the daemon process will be automatically launched alongside the webserver.
+
+After these criteria are met, the sensor's evaluation history will be visible in the UI:
+
+<TODO>SCREENSHOT</TODO>
+
+You'll also be able to view a detailed history of each asset's evaluations on the asset's [**Asset Details** page](/concepts/webserver/ui#asset-details). This allows you to see why an asset was or wasn't materialized at different points in time:
+
+<TODO>SCREENSHOT</TODO>
+
+---
+
+## Getting started
+
+To use Declarative Automation, you'll need to enable the automation condition sensor in the Dagster UI:
+
+1. Navigate to **Deployment > Sensors**
+2. Locate the desired code location.
+3. Toggle the `default_automation_condition_sensor` sensor on to enable it.
+
+From here, you can:
+
+- Define custom automation conditions
+- See a history of each evaluation for this sensor
+- Navigate to individual assets to see a history of their evaluations
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Asset definitions"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Automation"
+    href="/concepts/automation"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Schedules"
+    href="/concepts/automation/schedules"
+  ></ArticleListItem>
+</ArticleList>
