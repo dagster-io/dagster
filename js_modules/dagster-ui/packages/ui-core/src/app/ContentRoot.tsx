@@ -11,7 +11,7 @@ const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
 const AutomationRoot = lazy(() => import('../automation/AutomationRoot'));
 const FallthroughRoot = lazy(() =>
-  import('./FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
+  import('src/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
 );
 const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
