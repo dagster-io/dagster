@@ -1,11 +1,12 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import requests
 from dagster import ConfigurableResource
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import PrivateAttr
 
-BASE_API_URL = "https://{pod}.online.tableau.com/api/3.4"
+BASE_API_URL = "https://{pod}.online.tableau.com/api"
+API_VERSION_URL = BASE_API_URL + "/3.4"
 
 
 class TableauSite(ConfigurableResource):
@@ -21,7 +22,9 @@ class TableauSite(ConfigurableResource):
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._api_token, self._site_id = self._fetch_api_token_and_site_id()
 
-    def fetch_json(self, endpoint: str, method: str = "GET") -> Dict[str, Any]:
+    def fetch_json(
+        self, endpoint: str, method: str = "GET", json: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Fetch JSON data from the Tableau API. Raises an exception if the request fails.
 
         Args:
@@ -36,9 +39,44 @@ class TableauSite(ConfigurableResource):
             "X-Tableau-Auth": f"{self._api_token}",
         }
         response = requests.request(
-            url=f"{BASE_API_URL.format(pod=self.tableau_pod)}/sites/{self._site_id}/{endpoint}",
+            url=f"{API_VERSION_URL.format(pod=self.tableau_pod)}/sites/{self._site_id}/{endpoint}",
             headers=headers,
             method=method,
+            json=json,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def get_workbooks_with_connections(self) -> Dict[str, Any]:
+        """Fetch a list of workbooks from the Tableau API, and also fetch their connections."""
+        workbooks = self.fetch_json(endpoint="workbooks")
+        for workbook in workbooks["workbooks"]["workbook"]:
+            connections = self.fetch_json(endpoint=f"workbooks/{workbook['id']}/connections")
+            workbook["connections"] = connections["connections"]
+
+        return workbooks
+
+    def get_datasources(self) -> Dict[str, Any]:
+        """Fetch a list of datasources from the Tableau API."""
+        datasources = self.fetch_json(endpoint="datasources")
+
+        return datasources
+
+    def fetch_gql(self, query: str, variables: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Fetch from the Tableau API using a GraphQL query."""
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-Tableau-Auth": f"{self._api_token}",
+        }
+        response = requests.request(
+            url=f"{BASE_API_URL.format(pod=self.tableau_pod)}/metadata/graphql",
+            headers=headers,
+            method="POST",
+            json={
+                "query": query,
+                "variables": variables,
+            },
         )
         response.raise_for_status()
         return response.json()
@@ -49,7 +87,7 @@ class TableauSite(ConfigurableResource):
             "Accept": "application/json",
         }
         response = requests.post(
-            url=f"{BASE_API_URL.format(pod=self.tableau_pod)}/auth/signin",
+            url=f"{API_VERSION_URL.format(pod=self.tableau_pod)}/auth/signin",
             headers=headers,
             json={
                 "credentials": {
