@@ -1,0 +1,23 @@
+{#
+  Macro: group_by(n)
+  Description: This macro builds a group by statement for fields 1...N
+  
+  Parameters:
+  n - The number of fields to group by
+
+  Returns:
+  A string representing a SQL GROUP BY clause with a list of incrementing integers.
+
+  Example usage:
+  {{ sdf_utils.group_by(5) }}
+
+  This will generate:
+  group by 1,2,3,4,5
+
+#}
+
+{%- macro group_by(n) -%}
+  group by {% for i in range(1, n + 1) -%}
+      {{ i }}{{ ',' if not loop.last else "" }}   
+   {%- endfor -%}
+{%- endmacro -%}

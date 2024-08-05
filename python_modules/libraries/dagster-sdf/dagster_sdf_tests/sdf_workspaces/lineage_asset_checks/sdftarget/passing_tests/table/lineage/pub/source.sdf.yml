@@ -1,0 +1,35 @@
+table:
+  name: lineage.pub.source
+  dialect: trino
+  materialization: view
+  purpose: model
+  depended-on-by:
+  - lineage.pub.middle
+  columns:
+  - name: user_id
+    datatype: integer
+    classifiers:
+    - DATA.uid
+    forward-lineage:
+      copy:
+      - lineage.pub.middle.user_id
+  - name: phone
+    datatype: varchar
+    classifiers:
+    - DATA.pii
+    forward-lineage:
+      copy:
+      - lineage.pub.middle.phone
+  - name: txn_date
+    datatype: varchar
+    forward-lineage:
+      copy:
+      - lineage.pub.middle.txn_date
+  - name: qty
+    datatype: integer
+    forward-lineage:
+      modify:
+      - lineage.pub.middle.qty
+  source-locations:
+  - path: workspace.sdf.yml
+  - path: models/source.sql

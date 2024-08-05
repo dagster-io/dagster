@@ -3,12 +3,13 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from dagster import (
+    AssetCheckKey,
     AssetKey,
     _check as check,
 )
 from dagster._annotations import public
 
-from .asset_utils import default_asset_key_fn, default_description_fn
+from .asset_utils import default_asset_check_key_fn, default_asset_key_fn, default_description_fn
 
 
 @dataclass(frozen=True)
@@ -17,7 +18,7 @@ class DagsterSdfTranslatorSettings:
 
     Args:
         enable_asset_checks (bool): Whether to load sdf table tests as Dagster asset checks.
-            Defaults to True.
+            Defaults to False.
         enable_code_references (bool): Whether to enable Dagster code references for sdf tables.
             Defaults to False.
         enable_raw_sql_description (bool): Whether to display sdf raw sql in Dagster descriptions.
@@ -27,7 +28,7 @@ class DagsterSdfTranslatorSettings:
 
     """
 
-    enable_asset_checks: bool = True
+    enable_asset_checks: bool = False
     enable_code_references: bool = False
     enable_raw_sql_description: bool = True
     enable_materialized_sql_description: bool = True
@@ -59,6 +60,10 @@ class DagsterSdfTranslator:
     @public
     def get_asset_key(self, fqn: str) -> AssetKey:
         return default_asset_key_fn(fqn)
+
+    @public
+    def get_check_key_for_test(self, fqn: str) -> AssetCheckKey:
+        return default_asset_check_key_fn(fqn)
 
     @public
     def get_description(

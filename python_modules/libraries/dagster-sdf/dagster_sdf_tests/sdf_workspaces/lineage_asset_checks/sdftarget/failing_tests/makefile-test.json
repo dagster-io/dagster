@@ -1,0 +1,164 @@
+{
+  "contents": {
+    "env_vars": "d751713988987e9331980363e24189ce",
+    "cli_vars": "99914b932bd37a50b983c5e7c90ae93b",
+    "credentials": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "prelude": [
+    {
+      "file": "workspace.sdf.yml",
+      "mtime": "2024-08-05T01:05:07.045224886Z"
+    },
+    {
+      "file": "failing_metadata/middle.sdf.yml",
+      "mtime": "2024-08-05T01:08:53.384925211Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_test/workspace.sdf.yml",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_utils/workspace.sdf.yml",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_mat/workspace.sdf.yml",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_test/macros/test.jinja",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_utils/macros/group_by.jinja",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_utils/macros/generate_surrogate_key.jinja",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_utils/macros/generate_date_values.jinja",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_utils/macros/generate_integer_values.jinja",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_utils/macros/date_spine.jinja",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    },
+    {
+      "file": "sdftarget/failing_tests/.lib/sdf_mat/macros/materialize.jinja",
+      "mtime": "2024-08-05T01:04:42.583960128Z"
+    }
+  ],
+  "deps": [
+    {
+      "target": "lineage.pub.source__tn__",
+      "deps": []
+    },
+    {
+      "target": "lineage.pub.middle__tn__",
+      "deps": [
+        "lineage.pub.source__tn__"
+      ]
+    },
+    {
+      "target": "lineage.pub.knis__tn__",
+      "deps": [
+        "lineage.pub.middle__tn__"
+      ]
+    },
+    {
+      "target": "lineage.pub.sink__tn__",
+      "deps": [
+        "lineage.pub.middle__tn__"
+      ]
+    },
+    {
+      "target": "lineage.pub.test_middle__tn__",
+      "deps": [
+        "lineage.pub.middle__tn__"
+      ]
+    }
+  ],
+  "source_files": {
+    "values": {
+      "lineage.pub.sink__tn__": [
+        {
+          "file": "models/sink.sql",
+          "mtime": "2024-08-05T00:27:24.448061243Z"
+        }
+      ],
+      "lineage.pub.middle__tn__": [
+        {
+          "file": "failing_metadata/middle.sdf.yml",
+          "mtime": "2024-08-05T01:08:53.384925211Z"
+        },
+        {
+          "file": "models/middle.sql",
+          "mtime": "2024-08-05T00:27:24.448061243Z"
+        }
+      ],
+      "lineage.pub.source__tn__": [
+        {
+          "file": "models/source.sql",
+          "mtime": "2024-08-05T00:27:24.448061243Z"
+        },
+        {
+          "file": "workspace.sdf.yml",
+          "mtime": "2024-08-05T01:05:07.045224886Z"
+        }
+      ],
+      "lineage.pub.knis__tn__": [
+        {
+          "file": "models/knis.sql",
+          "mtime": "2024-08-05T00:27:24.448061243Z"
+        }
+      ],
+      "lineage.pub.test_middle__tn__": [
+        {
+          "file": "failing_metadata/middle.sdf.yml",
+          "mtime": "2024-08-05T01:08:53.384925211Z"
+        },
+        {
+          "file": "models/middle.sql",
+          "mtime": "2024-08-05T00:27:24.448061243Z"
+        },
+        {
+          "file": "sdftarget/failing_tests/tests/lineage/pub/test_middle.sql",
+          "mtime": "2024-08-05T01:05:57.451830981Z"
+        }
+      ]
+    }
+  },
+  "incomplete_source_files": {
+    "values": []
+  },
+  "target_status": {
+    "values": {
+      "lineage.pub.middle__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "lineage.pub.sink__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "lineage.pub.source__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "lineage.pub.knis__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "lineage.pub.test_middle__tn__": {
+        "purpose": "test",
+        "status": "failed"
+      }
+    }
+  }
+}

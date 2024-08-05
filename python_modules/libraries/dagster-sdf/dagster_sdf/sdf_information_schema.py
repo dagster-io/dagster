@@ -4,7 +4,15 @@ from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Set, 
 
 import dagster._check as check
 import polars as pl
-from dagster import AssetDep, AssetKey, AssetObservation, AssetOut, Nothing, TableColumn
+from dagster import (
+    AssetCheckSpec,
+    AssetDep,
+    AssetKey,
+    AssetObservation,
+    AssetOut,
+    Nothing,
+    TableColumn,
+)
 from dagster._core.definitions.metadata import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -97,12 +105,18 @@ class SdfInformationSchema(IHaveNew):
 
     def build_sdf_multi_asset_args(
         self, io_manager_key: Optional[str], dagster_sdf_translator: DagsterSdfTranslator
-    ) -> Tuple[Sequence[AssetDep], Dict[str, AssetOut], Dict[str, Set[AssetKey]]]:
+    ) -> Tuple[
+        Sequence[AssetDep],
+        Dict[str, AssetOut],
+        Dict[str, Set[AssetKey]],
+        Sequence[AssetCheckSpec],
+    ]:
         deps: Sequence[AssetDep] = []
         table_id_to_dep: Dict[str, AssetKey] = {}
         table_id_to_upstream: Dict[str, Set[AssetKey]] = {}
         outs: Dict[str, AssetOut] = {}
         internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+        asset_checks: Sequence[AssetCheckSpec] = []
 
         # Step 0: Filter out system and external-system tables
         table_deps = self.read_table("table_deps").filter(
@@ -157,7 +171,17 @@ class SdfInformationSchema(IHaveNew):
                     )  # Otherwise, use the translator to get the asset key
                     for dep in table_row["depends_on"]
                 }.union(table_id_to_upstream.get(table_row["table_id"], set()))
-        return deps, outs, internal_asset_deps
+                # This registers an asset check on all inner tables, since SDF will execute all tests as a single query (greedy approach)
+                # If no table or column tests are registered, they will simply be skipped
+                test_name_prefix = "TEST_" if table_row["dialect"] == "snowflake" else "test_"
+                test_name = f"{table_row['catalog_name']}.{table_row['schema_name']}.{test_name_prefix}{table_row['table_name']}"
+                asset_checks.append(
+                    AssetCheckSpec(
+                        name=test_name,
+                        asset=asset_key,
+                    )
+                )
+        return deps, outs, internal_asset_deps, asset_checks
 
     def get_columns(self) -> Dict[str, List[TableColumn]]:
         columns = self.read_table("columns")[

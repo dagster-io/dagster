@@ -36,7 +36,7 @@ def sdf_assets(
         target_dir=workspace.target_dir,
         environment=workspace.environment,
     )
-    deps, outs, internal_asset_deps = information_schema.build_sdf_multi_asset_args(
+    (deps, outs, internal_asset_deps, check_specs) = information_schema.build_sdf_multi_asset_args(
         io_manager_key=io_manager_key,
         dagster_sdf_translator=dagster_sdf_translator,
     )
@@ -58,6 +58,7 @@ def sdf_assets(
         partitions_def=partitions_def,
         can_subset=True,
         op_tags=op_tags,
+        check_specs=check_specs,
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
     )

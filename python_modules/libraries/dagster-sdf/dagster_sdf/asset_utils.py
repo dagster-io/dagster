@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Sequence
 
 from dagster import (
+    AssetCheckKey,
     AssetKey,
     AssetsDefinition,
     AssetSelection,
@@ -22,6 +23,22 @@ def dagster_name_fn(table_id: str) -> str:
 def default_asset_key_fn(fqn: str) -> AssetKey:
     """Get the asset key for an sdf asset. An Sdf asset's key is its fully qualified name."""
     return AssetKey(fqn.split("."))
+
+
+def default_asset_check_key_fn(fqn: str) -> AssetCheckKey:
+    """Get the asset check key for an sdf asset. An Sdf asset's check key is its fully qualified name."""
+    asset_check_key = fqn.split(".")
+    # Get table name from the asset key
+    table_name = asset_check_key[-1]
+    # If table_name starts with "test_", this is a column or table test (to be updated with something more formal)
+    if table_name.lower().startswith("test_"):
+        asset_key = AssetKey(asset_check_key[:-1] + [table_name[5:]])
+    else:
+        asset_key = AssetKey(asset_check_key)
+    return AssetCheckKey(
+        name=fqn,
+        asset_key=asset_key,
+    )
 
 
 def build_schedule_from_sdf_selection(

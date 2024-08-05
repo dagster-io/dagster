@@ -1,0 +1,247 @@
+
+{% macro not_null(severity, column_name) -%}
+    COUNT(CASE WHEN {{ column_name }} IS NULL THEN 1 ELSE NULL END) > 0 
+    ==> 
+    '{{severity}}: column {{ column_name }} has NULL values' 
+{%- endmacro %}
+
+{% macro unique(severity, column_name) -%}
+    COUNT(DISTINCT {{ column_name }}) != COUNT({{ column_name }}) 
+    ==> 
+    '{{severity}}: column {{ column_name }} is NOT unique'
+{%- endmacro %}
+
+{% macro in_accepted_values(severity, column_name,value_list) -%}
+    {%- set condition_str = (value_list | join(', ')) | safe_str -%}
+     
+     COUNT(CASE WHEN {{ column_name }} NOT IN ({{ value_list | join(', ') }}) THEN 1 ELSE NULL END) > 0 
+    ==> 
+    '{{severity}}: column {{ column_name }} has values outside accepted values {{condition_str}}'
+{%- endmacro %}
+
+{% macro in_excluded_values(severity, column_name,value_list) -%}
+ {%- set condition_str = (value_list | join(', ')) | safe_str -%}
+    COUNT(CASE WHEN {{ column_name }} IN ({{ value_list | join(', ') }}) THEN 1 ELSE NULL END) > 0 
+    ==> 
+    '{{severity}}: column {{ column_name }} has unexpected values in {{condition_str}}'
+{%- endmacro %}
+
+
+{# should mention column_name in condition#}
+{% macro valid_scalar(severity, column_name, condition) -%}
+    COUNT(CASE WHEN NOT({{ condition }}) THEN 1 ELSE NULL END) > 0
+	==>
+	'{{severity}}: column {{ column_name }} violates condition ({{ condition | safe_str }})'
+{%- endmacro %}
+
+{# should mention column_name in condition#}
+{% macro valid_aggregate(severity, column_name, condition) -%}
+    NOT({{ condition }})
+	==>
+	'{{severity}}: column {{ column_name }} violates condition ({{ condition| safe_str }})'
+{%- endmacro %}
+
+
+{# ---------------------------------------------------------------------------------------------- #}
+{# number column checks: via  aggregate #}
+{% macro minimum(severity, column_name, value) -%}
+    NOT(MIN({{column_name}}) >= {{value}}) 
+	==>
+	'{{severity}}: column {{ column_name }} has values less than {{ value | safe_str }}'
+{%- endmacro %}
+
+{% macro maximum(severity, column_name, value) -%}
+    MAX({{column_name}}) > {{value}}
+	==>
+	'{{severity}}: column {{ column_name }} has values greater than {{ value | safe_str }}'
+{%- endmacro %}
+
+{% macro exclusive_minimum(severity, column_name, value) -%}
+    NOT(MIN({{column_name}}) > {{value}}) 
+	==>
+	'{{severity}}: column {{ column_name }} has values less than or equal to {{ value }}'
+{%- endmacro %}
+
+{% macro exclusive_maximum(severity, column_name, value) -%}
+    MAX({{column_name}}) >= {{value}}
+	==>
+	'{{severity}}: column {{ column_name }} has values greater than or equal to {{ value }}'
+{%- endmacro %}
+
+
+{% macro between(severity, column_name, min_value, max_value) -%}
+    NOT(MIN({{column_name}}) >= {{min_value}}) or  MAX({{column_name}}) > {{max_value}}
+	==>
+	'{{severity}}: column {{ column_name }} has values outside of {{min_value | safe_str()}}..{{max_value| safe_str()}}'
+{%- endmacro %}
+
+
+{# ---------------------------------------------------------------------------------------------- #}
+{# string column checks: via  aggregate #}
+{% macro max_length(severity, column_name, value) -%}
+     MAX(LENGTH({{column_name}})) > {{value}}
+	==>
+	'{{severity}}: column {{ column_name }} has string lengths greater than {{ value | safe_str }}'
+{%- endmacro %}
+
+{# string column checks: via  aggregate #}
+{% macro min_length(severity, column_name, value) -%}
+     MIN(LENGTH({{column_name}})) &lt; {{value}}
+	==>
+	'{{severity}}: column {{ column_name }} has string lengths shorter than {{ value | safe_str }}'
+{%- endmacro %}
+
+
+{# string column checks: via  aggregate #}
+{% macro like(severity, column_name, value) -%}
+    NOT(COUNT(CASE WHEN {{ column_name }} LIKE {{value}} THEN 1 ELSE NULL END)>0) 
+	==>
+	'{{severity}}: column {{ column_name }} has strings that are NOT like {{ value| safe_str }}'
+{%- endmacro %}
+
+{# string column checks: via  aggregate #}
+{% macro try_cast(severity, column_name, type_name) -%}
+    NOT(COUNT(CASE WHEN TRY_CAST({{column_name}} AS {{type_name}}) IS NOT NULL THEN 1 ELSE NULL END)>0) 
+	==>
+	'{{severity}}: column {{ column_name }} cannot be cast to {{ type_name| safe_str }}'
+{%- endmacro %}
+
+{# ---------------------------------------------------------------------------------------------- #}
+{# relation check: via aggregate #}
+{%- macro primary_key(severity, column_name) -%}
+    COUNT(CASE WHEN {{ column_name }} IS NULL THEN 1 ELSE NULL END) > 0 OR 
+    COUNT(DISTINCT {{ column_name }}) != COUNT({{ column_name }})
+	==>
+	'{{severity}}: column {{ column_name }} is no primary key'
+{%- endmacro %}
+
+
+
+{# ---------------------------------------------------------------------------------------------- #}
+{# dbt generic tests #}
+
+
+
+{%- macro equal_rowcount(severity, table_name, other_table_name) -%}
+
+{%- set verdict =  ('equal_rowcount_' ~ table_name ~ '_' ~ other_table_name) | safe_id  -%}
+{{verdict}} AS (
+    WITH RowCounts AS (
+    SELECT 
+        (SELECT COUNT(*) FROM {{table_name}}) AS stats_count,
+        (SELECT COUNT(*) FROM {{other_table_name}}) AS fresh_count
+    )
+    SELECT
+        CASE WHEN stats_count != fresh_count
+            THEN 'The number of rows of table {{table_name}} and {{other_table_name}} are NOT equal'
+        END AS reason
+    FROM RowCounts
+    WHERE stats_count != fresh_count
+)
+==>
+    SELECT reason FROM {{verdict}}
+{%- endmacro %}
+
+
+{# cardinality: Asserts that values in a given column have exactly the same cardinality 
+   as values from a different column in a different model 
+#}
+{%- macro cardinality(severity, table_name, column_name, other_table_name, other_column_name) -%}
+{%- set verdict =  ('cardinality_'~table_name ~ '_' ~column_name~ '_'~other_table_name~'_'~other_column_name) | safe_id   -%}
+{{verdict}} AS (
+    WITH RowCounts AS (
+    SELECT 
+        (SELECT COUNT(DISTINCT {{column_name}}) FROM {{table_name}}) AS stats_count,
+        (SELECT COUNT(DISTINCT {{other_column_name}}) FROM {{other_table_name}}) AS fresh_count
+    )
+    SELECT
+        CASE WHEN stats_count != fresh_count
+            THEN 'The cardinality of rows of table {{table_name}} and {{other_table_name}} are NOT equal'
+        END AS reason
+    FROM RowCounts
+    WHERE stats_count != fresh_count
+)
+==>
+    SELECT reason FROM {{verdict}}
+{%- endmacro %}
+
+
+{# ---------------------------------------------------------------------------------------------- #}
+{# table level checks #}
+
+{% macro unique_columns(severity, table_name, column_list) %}
+{%- set verdict =  table_name ~ '_' ~ column_list | join('_')  | safe_id -%}
+{{verdict}} AS (
+    SELECT
+        '{{severity}}: columns {{ (column_list | join(', '))| safe_str }} are NOT unique' AS reason
+    FROM (SELECT {{ column_list | join(', ')}} 
+          FROM {{table_name}}
+          GROUP BY {{ column_list | join(', ') }}
+          HAVING COUNT(*) > 1) _subquery
+)
+==>
+    SELECT reason FROM {{verdict}}
+{% endmacro %}
+
+
+{# ---------------------------------------------------------------------------------------------- #}
+{# generate column constraints #}
+
+{% macro generate_column_tests(table_name, constraints) -%}
+{%- set verdict =  (split(table_name,'.') | last) ~ '_' ~ 'constraints' -%}
+{{verdict}} AS (
+    SELECT
+    {%- for column_name in constraints -%}
+        {%- for constraint in constraints[column_name] -%}   
+            {%- set parts = split(constraint, '==>') -%}
+            {%- set condition = parts[0] -%}
+            {%- set message = parts[1] %}
+        CASE WHEN {{condition}}THEN {{message}} ELSE NULL END AS {{column_name}}_{{loop.index}}
+        {%- if not loop.last %}
+        , 
+        {%- endif -%}
+        {% endfor %}  
+        {%- if not loop.last %}
+        , 
+        {%- endif -%}       
+    {% endfor %}
+    FROM {{ table_name }}
+)
+==>
+{%- for column_name in constraints %}
+ {%- for constraint in constraints[column_name] %}   
+    SELECT {{column_name}}_{{loop.index}} as reason FROM {{verdict}} WHERE {{column_name}}_{{loop.index}} IS NOT NULL
+    {%- if not loop.last %}
+    UNION ALL
+    {%endif -%}
+    {% endfor %}
+    {%- if not loop.last %}
+    UNION ALL 
+    {% endif -%}  
+{% endfor %}
+{%- endmacro %}
+
+{# ---------------------------------------------------------------------------------------------- #}
+{# generate table constraints #}
+{% macro generate_table_tests(table_name,table_constraints) -%}
+WITH
+{% for name in table_constraints -%}
+    {%- set parts= split(table_constraints[name],'==>') -%}  
+    {%- set cte = parts[0]   -%}
+    {{ cte   }} 
+    {%- if not loop.last -%}, {%- endif -%}
+{% endfor %}
+SELECT reason 
+FROM (
+{% for name in table_constraints -%}
+    {%- set parts= split(table_constraints[name],'==>') -%}  
+    {%- set query = parts[1] -%}
+{{ query }} 
+    {% if not loop.last %}
+    UNION ALL
+    {%- endif -%}
+{%- endfor -%}
+) AS _combined_errors
+ORDER BY reason;
+{%- endmacro %}
+

@@ -1,0 +1,37 @@
+table:
+  name: lineage.pub.sink
+  dialect: trino
+  materialization: view
+  purpose: model
+  dependencies:
+  - lineage.pub.middle
+  columns:
+  - name: uid
+    datatype: integer
+    classifiers:
+    - DATA.uid
+    lineage:
+      copy:
+      - lineage.pub.middle.user_id
+  - name: phone
+    datatype: varchar
+    classifiers:
+    - DATA.pii
+    lineage:
+      copy:
+      - lineage.pub.middle.phone
+  - name: txn_date
+    datatype: varchar
+    lineage:
+      copy:
+      - lineage.pub.middle.txn_date
+  - name: qty
+    datatype: bigint
+    lineage:
+      copy:
+      - lineage.pub.middle.qty
+  lineage:
+    scan:
+    - lineage.pub.middle.qty
+  source-locations:
+  - path: models/sink.sql
