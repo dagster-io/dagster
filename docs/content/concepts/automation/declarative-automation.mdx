@@ -5,6 +5,10 @@ description: "Dagster can automatically materialize assets when criteria are met
 
 # Declarative Automation
 
+<Note>
+  This feature is currently <strong>experimental</strong>.
+</Note>
+
 Dagster can automatically materialize assets when criteria are met, enabling a declarative approach to asset materialization. Instead of defining explicit workflows to materialize assets, you describe the conditions under which they should be materialized and let the system kick off runs in response.
 
 Declarative Automation includes pre-built conditions to handle common use cases, such as on a periodic schedule or whenever an upstream dependency updates, but conditions can also be customized.
