@@ -49,7 +49,13 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
-from dagster._record import as_dict_for_new, get_record_annotations, has_generated_new, is_record
+from dagster._record import (
+    IHaveNew,
+    as_dict_for_new,
+    get_record_annotations,
+    has_generated_new,
+    is_record,
+)
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -89,6 +95,7 @@ PackableValue: TypeAlias = Union[
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
+    IHaveNew,  # indirect way of indicating @record_custom classes are packable
 ]
 
 UnpackedValue: TypeAlias = Union[
@@ -106,6 +113,7 @@ UnpackedValue: TypeAlias = Union[
     FrozenSet["PackableValue"],
     Enum,
     "UnknownSerdesValue",
+    IHaveNew,
 ]
 
 SerializableObject: TypeAlias = Union[
