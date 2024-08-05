@@ -4,7 +4,7 @@ import {useMemo} from 'react';
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
-import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
+import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState.oss';
 import {useAssetSearch} from './useAssetSearch';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';

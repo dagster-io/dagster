@@ -15,6 +15,7 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useMemo} from 'react';
+import {AssetFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -45,13 +46,12 @@ import {
   useAssetGraphData,
   useFullAssetGraphData,
 } from './useAssetGraphData';
-import {useAssetGraphExplorerFilters} from './useAssetGraphExplorerFilters';
+import {useAssetGraphExplorerFilters} from './useAssetGraphExplorerFilters.oss';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
-import {AssetFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';

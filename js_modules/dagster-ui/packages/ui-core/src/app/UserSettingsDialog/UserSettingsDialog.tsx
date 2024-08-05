@@ -12,7 +12,7 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {UserPreferences} from './UserPreferences';
+import {UserPreferences} from './UserPreferences.oss';
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from '../Flags';
 

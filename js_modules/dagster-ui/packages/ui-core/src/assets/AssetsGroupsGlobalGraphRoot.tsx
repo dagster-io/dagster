@@ -2,13 +2,13 @@ import {Page} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {AssetsGraphHeader} from './AssetsGraphHeader';
+import {AssetsGraphHeader} from './AssetsGraphHeader.oss';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
   globalAssetGraphPathFromString,
   globalAssetGraphPathToString,
 } from './globalAssetGraphPathToString';
-import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
+import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState.oss';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';

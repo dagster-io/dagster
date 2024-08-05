@@ -17,6 +17,7 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {RunMetricsDialog} from 'src/runs/RunMetricsDialog.oss';
 import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';
@@ -37,7 +38,6 @@ import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {InjectedComponentContext} from '../app/InjectedComponentContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -55,9 +55,6 @@ interface Props {
 }
 
 export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRun}: Props) => {
-  const {
-    components: {RunMetricsDialog},
-  } = React.useContext(InjectedComponentContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics'

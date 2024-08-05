@@ -1,16 +1,18 @@
 import {ErrorBoundary, MainContent} from '@dagster-io/ui-components';
 import {memo, useEffect, useRef} from 'react';
 import {Switch, useLocation} from 'react-router-dom';
+import {AssetsOverviewRoot} from 'src/assets/AssetsOverviewRoot.oss';
 
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
-import {AssetsOverview} from '../assets/AssetsOverview';
 import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
 const AutomationRoot = lazy(() => import('../automation/AutomationRoot'));
-const FallthroughRoot = lazy(() => import('./FallthroughRoot'));
+const FallthroughRoot = lazy(() =>
+  import('./FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
+);
 const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
@@ -41,7 +43,7 @@ export const ContentRoot = memo(() => {
           </Route>
           <Route path="/assets(/?.*)">
             <AssetFeatureProvider>
-              <AssetsOverview
+              <AssetsOverviewRoot
                 headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
                 documentTitlePrefix="Assets"
               />

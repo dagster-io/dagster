@@ -15,7 +15,7 @@ import groupBy from 'lodash/groupBy';
 import * as React from 'react';
 import {useContext, useMemo} from 'react';
 
-import {AssetWipeDialog} from './AssetWipeDialog';
+import {AssetWipeDialog} from './AssetWipeDialog.oss';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';

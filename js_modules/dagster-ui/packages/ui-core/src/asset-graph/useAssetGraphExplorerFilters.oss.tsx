@@ -1,9 +1,9 @@
 import React, {useContext, useEffect, useState} from 'react';
+import {AssetFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
 
 import {AssetGraphFilterBar} from './AssetGraphFilterBar';
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {AssetFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
