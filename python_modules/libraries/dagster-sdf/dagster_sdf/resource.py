@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
 
 from dagster import AssetExecutionContext, ConfigurableResource, OpExecutionContext
-from dagster._annotations import public
+from dagster._annotations import experimental, public
+from dagster._utils.warnings import suppress_dagster_warnings
 from pydantic import Field, validator
 
 from .constants import (
@@ -20,6 +21,8 @@ from .sdf_cli_invocation import SdfCliInvocation
 from .sdf_workspace import SdfWorkspace
 
 
+@suppress_dagster_warnings
+@experimental
 class SdfCliResource(ConfigurableResource):
     """A resource used to execute sdf CLI commands.
 
