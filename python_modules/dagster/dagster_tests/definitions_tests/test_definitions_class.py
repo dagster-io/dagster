@@ -45,7 +45,7 @@ from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
@@ -954,6 +954,12 @@ def test_get_all_asset_specs():
     )
     assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec("asset6", group_name="blag")
     assert asset_specs_by_key[AssetKey("asset7")] == asset7._replace(group_name="default")
+
+
+def test_asset_specs_different_partitions():
+    asset1 = AssetSpec("asset1", partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    asset2 = AssetSpec("asset2", partitions_def=StaticPartitionsDefinition(["1", "2"]))
+    Definitions.validate_loadable(Definitions(assets=[asset1, asset2]))
 
 
 def test_asset_spec_dependencies_in_graph() -> None:

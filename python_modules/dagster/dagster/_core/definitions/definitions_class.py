@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -314,11 +315,15 @@ def _create_repository_using_definitions_args(
 def _canonicalize_specs_to_assets_defs(
     assets: Iterable[Union[AssetsDefinition, AssetSpec, SourceAsset, CacheableAssetsDefinition]],
 ) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    asset_specs = [obj for obj in assets if isinstance(obj, AssetSpec)]
+    asset_specs_by_partitions_def = defaultdict(list)
+    for obj in assets:
+        if isinstance(obj, AssetSpec):
+            asset_specs_by_partitions_def[obj.partitions_def].append(obj)
     result = [obj for obj in assets if not isinstance(obj, AssetSpec)]
-    if asset_specs:
+
+    for specs in asset_specs_by_partitions_def.values():
         with disable_dagster_warnings():
-            result.append(AssetsDefinition(specs=asset_specs))
+            result.append(AssetsDefinition(specs=specs))
 
     return result
 
