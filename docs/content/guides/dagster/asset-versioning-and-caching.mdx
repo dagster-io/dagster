@@ -257,7 +257,7 @@ If `versioned_number` had used a Dagster-generated data version, the data versio
 
 In the real world, data pipelines depend on external upstream data. So far in this guide, we haven't used any external data; we've been substituting hardcoded data in the asset at the root of our graph and using a code version as a stand-in for the version of that data. We can do better than this.
 
-External data sources in Dagster are modeled by <PyObject object="SourceAsset" displayText="SourceAssets" />. We can add versioning to a `SourceAsset` by making it observable. An observable source asset has a user-defined function that computes and returns a data version.
+External data sources in Dagster are modeled by <PyObject object="AssetSpec" displayText="AssetSpecs" />. We can add versioning to a `SourceAsset` by making it observable. An observable source asset has a user-defined function that computes and returns a data version.
 
 Let's add an <PyObject object="observable_source_asset" decorator="true" /> called `input_number`. This will represent a file written by an external process upstream of our pipeline:
 
