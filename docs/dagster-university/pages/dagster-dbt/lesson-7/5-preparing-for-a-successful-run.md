@@ -90,9 +90,9 @@ dbt_project = DbtProject(
 
 ## Adding a prod target to deploy.yml
 
-After that, we need to update the dbt commands in the `.github/workflows/deploy.yml` file to target the new `prod` profile. This will ensure that dbt uses the correct connection details when the GitHub Action runs as part of our Dagster+ deployment.
+Next, we need to update the dbt commands in the `.github/workflows/deploy.yml` file to target the new `prod` profile. This will ensure that dbt uses the correct connection details when the GitHub Action runs as part of our Dagster+ deployment.
 
-Open the file, scroll to the environment variable sections, and set an environment variable named `DBT_TARGET` to `prod`. This command should be on or around line 12:
+Open the file, scroll to the environment variable section, and set an environment variable named `DBT_TARGET` to `prod`. This should be on or around line 12:
 
 ```bash
 env:

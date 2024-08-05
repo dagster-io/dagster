@@ -12,7 +12,7 @@ Building your manifest for your production deployment will be needed for both op
 
 Since your CI/CD will be running in a fresh environment, you'll need to install dbt and other dependencies before building your manifest.
 
-To get our deployment working, we need to add a step to our GitHub Actions workflow that runs the commands required to generate the `manifest.json`. Specifically, we need to run the `dbt project prepare-and-package` command, available in the `dagster_dbt` package discussed earlier.
+To get our deployment working, we need to add a step to our GitHub Actions workflow that runs the commands required to generate the `manifest.json`. Specifically, we need to run the `dbt project prepare-and-package` command, available in the `dagster_dbt` package.
 
 1. In your Dagster project, locate the `.github/workflows` directory.
 2. Open the `deploy.yml` file.

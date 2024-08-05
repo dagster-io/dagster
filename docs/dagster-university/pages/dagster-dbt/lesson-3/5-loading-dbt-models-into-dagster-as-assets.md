@@ -28,7 +28,7 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
 
 ## Loading the models as assets
 
-1. Navigate to the `assets/dbt.py` created earlier and open it.
+1. Open the `assets/dbt.py` file.
 
 2. Add the following imports to the top of the file:
 
@@ -37,13 +37,7 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
    from dagster_dbt import dbt_assets, DbtCliResource
    ```
 
-3. The `@dbt_assets` decorator requires a path to the project’s manifest file, which is within our `dbt_project` representation created earlier. The manifest path can be easily accessed with the code below:
-
-   ```python
-   dbt_project.manifest_path
-   ```
-
-4. Now, use the `@dbt_assets` decorator to create a new asset function and provide it with a reference to the manifest:
+3. Next, we'll use the `@dbt_assets` decorator to create a new asset function and provide it with a reference to the project's manifest file:
 
    ```python
    @dbt_assets(
@@ -52,7 +46,9 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
    def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
    ```
 
-5. Finally, add the following to the body of `dbt_analytics` function:
+   Here, we used `dbt_project.manifest_path` to provide the reference to the project's manifest file. This is possible because the `dbt_project` representation we created earlier contains the manifest path, accessible by using the `manifest_path` attribute.
+
+4. Finally, add the following to the body of `dbt_analytics` function:
 
    ```python
    yield from dbt.cli(["run"], context=context).stream()
