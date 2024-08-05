@@ -10,14 +10,14 @@ if TYPE_CHECKING:
 
 SlingEventType = AssetMaterialization
 
-# We define DbtEventIterator as a generic type for the sake of type hinting.
-# This is so that users who inspect the type of the return value of `DbtCliInvocation.stream()`
-# will be able to see the inner type of the iterator, rather than just `DbtEventIterator`.
+# We define SlingEventIterator as a generic type for the sake of type hinting.
+# This is so that users who inspect the type of the return value of `SlingResource.replicate()`
+# will be able to see the inner type of the iterator, rather than just `SlingEventIterator`.
 T = TypeVar("T", bound=SlingEventType)
 
 
 class SlingEventIterator(Generic[T], abc.Iterator):
-    """A wrapper around an iterator of ling events which contains additional methods for
+    """A wrapper around an iterator of Sling events which contains additional methods for
     post-processing the events, such as fetching column metadata.
     """
 
