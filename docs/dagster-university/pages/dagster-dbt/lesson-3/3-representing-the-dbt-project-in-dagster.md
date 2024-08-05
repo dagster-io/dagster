@@ -28,7 +28,7 @@ dbt_project = DbtProject(
 
 This code creates a representation of the dbt project called `dbt_project`. The code defining the location of the project directory might look a little complicated, so let’s break it down:
 
-- The location of the `dbt.py` file (via `__file__`) is used as a point of reference for finding the dbt project
+- The location of the `project.py` file (via `__file__`) is used as a point of reference for finding the dbt project
 - The arguments in `joinpath` point us towards our dbt project by appending the following to the current path:
    - Three directory levels up (`"..", "..", ".."`)
    - A directory named `analytics`, which is the directory containing our dbt project
