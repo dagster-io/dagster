@@ -2,14 +2,24 @@ import base64
 import json
 import os
 import random
+import signal
 import string
-import sys
 import time
 from contextlib import contextmanager
-from threading import Thread
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, List, Generator
-from typing import TypedDict
-import signal
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    TypedDict,
+)
+
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
@@ -171,9 +181,8 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
     """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
 
     def __init__(self, client: Optional[boto3.client] = None):
-        """
-        Args:
-            client (boto3.client): boto3 CloudWatch client.
+        """Args:
+        client (boto3.client): boto3 CloudWatch client.
         """
         self.client = client or boto3.client("logs")
 
@@ -190,17 +199,18 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
             self._handler = None
 
     def consume_cloudwatch_logs(
-        self, log_group: str, log_stream: str, start_time: Optional[int] = None, end_time: Optional[int] = None,
+        self,
+        log_group: str,
+        log_stream: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
     ) -> None:
         handler = check.not_none(
             self._handler, "Can only consume logs within context manager scope."
         )
 
         for events_batch in self._get_all_cloudwatch_events(
-            log_group=log_group,
-            log_stream=log_stream,
-            start_time=start_time,
-            end_time=end_time
+            log_group=log_group, log_stream=log_stream, start_time=start_time, end_time=end_time
         ):
             for event in events_batch:
                 for log_line in event["message"].splitlines():
@@ -210,15 +220,13 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
 
     def _get_all_cloudwatch_events(
-            self,
-            log_group: str,
-            log_stream: str,
-            start_time: Optional[int] = None,
-            end_time: Optional[int] = None
-        ) -> Generator[List[CloudWatchEvent], None, None]:
-        """
-        Returns batches of CloudWatch events until the stream is complete or end_time.
-        """
+        self,
+        log_group: str,
+        log_stream: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+    ) -> Generator[List[CloudWatchEvent], None, None]:
+        """Returns batches of CloudWatch events until the stream is complete or end_time."""
         params = {
             "logGroupName": log_group,
             "logStreamName": log_stream,
@@ -229,18 +237,14 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         if end_time is not None:
             params["endTime"] = end_time
 
-        response = self.client.get_log_events(
-            **params
-        )
+        response = self.client.get_log_events(**params)
 
         while events := response.get("events"):
             yield events
 
             params["nextToken"] = response["nextForwardToken"]
 
-            response = self.client.get_log_events(
-                **params
-            )
+            response = self.client.get_log_events(**params)
 
 
 class PipesLambdaEventContextInjector(PipesEnvContextInjector):
@@ -355,7 +359,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         context_injector: PipesContextInjector,
-        message_reader: Optional[PipesGlueLogsMessageReader] = None,
+        message_reader: Optional[PipesMessageReader] = None,
         client: Optional[boto3.client] = None,
     ):
         self._client = client or boto3.client("glue")
@@ -437,11 +441,11 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             # so we need to filter them out
             params = {k: v for k, v in params.items() if v is not None}
 
-            start_timestamp = time.time()
+            start_timestamp = time.time() * 1000  # unix time in milliseconds
 
             try:
                 response = self._client.start_job_run(**params)
-
+                run_id = response["JobRunId"]
 
             except ClientError as err:
                 context.log.error(
@@ -452,9 +456,9 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 )
                 raise
 
-            run_id = response["JobRunId"]
-
-            log_group = self._client.get_job_run(JobName=job_name, RunId=run_id)["JobRun"]["LogGroupName"]
+            log_group = self._client.get_job_run(JobName=job_name, RunId=run_id)["JobRun"][
+                "LogGroupName"
+            ]
             self._register_interruption_handler(context, job_name, run_id)
             context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
 
@@ -467,10 +471,11 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             else:
                 context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
 
-            if isinstance(self._message_reader, PipesGlueLogsMessageReader):
+            if isinstance(self._message_reader, PipesCloudWatchMessageReader):
                 # TODO: receive messages from a background thread in real-time
-                self._message_reader.consume_cloudwatch_logs(f"{log_group}/output", run_id,
-                                                             start_time=int(start_timestamp))
+                self._message_reader.consume_cloudwatch_logs(
+                    f"{log_group}/output", run_id, start_time=int(start_timestamp)
+                )
 
         return PipesClientCompletedInvocation(session)
 
@@ -481,23 +486,23 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 return response
             time.sleep(5)
 
-    def _register_interruption_handler(self, context: OpExecutionContext, job_name: str, run_id: str):
-        """
-        Creates a handler which will gracefully stop the Run in case of external termination.
+    def _register_interruption_handler(
+        self, context: OpExecutionContext, job_name: str, run_id: str
+    ):
+        """Creates a handler which will gracefully stop the Run in case of external termination.
         It will stop the Glue job before doing so.
         """
 
         def handler(signum, frame):
             context.log.warning(f"Dagster run interrupted! Stopping Glue job run {run_id}...")
-            response = self._client.batch_stop_job_run(
-                JobName=job_name,
-                JobRunIds=[run_id]
-            )
+            response = self._client.batch_stop_job_run(JobName=job_name, JobRunIds=[run_id])
             runs = response["SuccessfulSubmissions"]
             if len(runs) > 0:
                 context.log.warning(f"Successfully stopped Glue job run {run_id}.")
             else:
-                context.log.warning(f"Something went wrong during run termination: {response['errors']}")
+                context.log.warning(
+                    f"Something went wrong during run termination: {response['errors']}"
+                )
 
             raise KeyboardInterrupt
 
