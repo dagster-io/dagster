@@ -1,4 +1,0 @@
-type: dbt_project
-dbt_project_path:
-  env_var: DBT_PROJECT_DIR
-group: dbt

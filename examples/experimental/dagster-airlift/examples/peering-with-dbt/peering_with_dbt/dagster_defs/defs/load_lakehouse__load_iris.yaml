@@ -1,3 +1,0 @@
-type: multi_asset
-specs:
-  - key: iris_dataset/iris_lakehouse_table
