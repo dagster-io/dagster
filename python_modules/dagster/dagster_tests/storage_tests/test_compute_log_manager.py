@@ -1,9 +1,9 @@
 import tempfile
 from contextlib import contextmanager
-from typing import IO, Generator, Iterator, Optional, Sequence
+from typing import IO, Generator, Optional, Sequence
 
 import dagster._check as check
-from dagster import DagsterRun, job, op
+from dagster import job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -15,12 +15,7 @@ from dagster._core.storage.captured_log_manager import (
     CapturedLogSubscription,
     ComputeIOType,
 )
-from dagster._core.storage.compute_log_manager import (
-    MAX_BYTES_FILE_READ,
-    ComputeLogFileData,
-    ComputeLogManager,
-    ComputeLogSubscription,
-)
+from dagster._core.storage.compute_log_manager import ComputeLogManager
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
@@ -78,39 +73,6 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
 
     def unsubscribe(self, subscription: CapturedLogSubscription):
         return
-
-    def _watch_logs(
-        self, dagster_run: DagsterRun, step_key: Optional[str] = None
-    ) -> Iterator[None]:
-        raise NotImplementedError()
-
-    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
-        raise NotImplementedError()
-
-    def is_watch_completed(self, run_id: str, key: str) -> bool:
-        raise NotImplementedError()
-
-    def on_watch_start(self, dagster_run: DagsterRun, step_key: Optional[str]) -> None:
-        raise NotImplementedError()
-
-    def on_watch_finish(self, dagster_run: DagsterRun, step_key: Optional[str]) -> None:
-        raise NotImplementedError()
-
-    def download_url(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
-        raise NotImplementedError()
-
-    def read_logs_file(
-        self,
-        run_id: str,
-        key: str,
-        io_type: ComputeIOType,
-        cursor: int = 0,
-        max_bytes: int = MAX_BYTES_FILE_READ,
-    ) -> ComputeLogFileData:
-        raise NotImplementedError()
-
-    def on_subscribe(self, subscription: ComputeLogSubscription) -> None:
-        pass
 
 
 @contextmanager
