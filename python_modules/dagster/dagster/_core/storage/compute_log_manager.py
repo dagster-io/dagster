@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from enum import Enum
 from typing import Callable, Iterator, NamedTuple, Optional
 
 from typing_extensions import Self
@@ -9,13 +8,10 @@ import dagster._check as check
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 
+from .captured_log_manager import ComputeIOType
+
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
 MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
-
-
-class ComputeIOType(Enum):
-    STDOUT = "stdout"
-    STDERR = "stderr"
 
 
 class ComputeLogFileData(
