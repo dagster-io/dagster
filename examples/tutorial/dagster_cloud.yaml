@@ -1,4 +1,4 @@
 locations:
   - location_name: tutorial
     code_source:
-      package_name: tutorial
+      module_name: tutorial.definitions
