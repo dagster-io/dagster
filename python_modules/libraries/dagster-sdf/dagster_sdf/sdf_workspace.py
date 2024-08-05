@@ -6,6 +6,7 @@ from typing import Optional, Sequence, Union
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
+from dagster._utils.warnings import suppress_dagster_warnings
 
 from .constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT, SDF_EXECUTABLE, SDF_TARGET_DIR
 from .errors import (
@@ -92,6 +93,7 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
         )
 
 
+@suppress_dagster_warnings
 @experimental
 class SdfWorkspace(DagsterModel):
     """The SdfWorkspace is a representation of an sdf workspace that can be compiled and executed.
