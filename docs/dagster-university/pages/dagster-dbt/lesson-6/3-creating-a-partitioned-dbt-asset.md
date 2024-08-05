@@ -122,19 +122,14 @@ At this point, the `dagster_university/assets/dbt.py` file should look like this
 
 ```python
 import json
-from pathlib import Path
 
 from dagster import AssetExecutionContext, AssetKey
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 from ..partitions import daily_partition
+from ..project import dbt_project
 
 INCREMENTAL_SELECTOR = "config.materialized:incremental"
-
-dbt_project = DbtProject(
-   project_dir=Path(__file__).joinpath("..", "..", "..", "analytics").resolve(),
-)
-dbt_project.prepare_if_dev()
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):

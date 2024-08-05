@@ -28,13 +28,15 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
 
 ## Loading the models as assets
 
-1. Open the `assets/dbt.py` file.
+1. Create a new file in the `assets` directory called `dbt.py`.
 
 2. Add the following imports to the top of the file:
 
    ```python
    from dagster import AssetExecutionContext
    from dagster_dbt import dbt_assets, DbtCliResource
+   
+   from ..project import dbt_project
    ```
 
 3. Next, we'll use the `@dbt_assets` decorator to create a new asset function and provide it with a reference to the project's manifest file:
@@ -66,14 +68,10 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
 At this point, `dbt.py` should look like this:
 
 ```python
-from pathlib import Path
-
 from dagster import AssetExecutionContext
-from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+from dagster_dbt import DbtCliResource, dbt_assets
 
-dbt_project = DbtProject(
-   project_dir=Path(__file__).joinpath("..", "..", "..", "analytics").resolve(),
-)
+from ..project import dbt_project
 
 
 @dbt_assets(

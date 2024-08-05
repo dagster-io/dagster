@@ -63,7 +63,7 @@ Because we’re still using a DuckDB-backed database, our `type` will also be `d
 
 ## Adding a prod target to DbtProject
 
-Next, we need to update the `DbtProject` object in `dagster_university/assets/dbt.py` to specify what profile to target. To optimize the developer experience, let’s use an environment variable to specify the profile to target.
+Next, we need to update the `DbtProject` object in `dagster_university/project.py` to specify what profile to target. To optimize the developer experience, let’s use an environment variable to specify the profile to target.
 
 1. In the `.env` file, define an environment variable named `DBT_TARGET` and set it to `dev`:
 
@@ -71,7 +71,7 @@ Next, we need to update the `DbtProject` object in `dagster_university/assets/db
    DBT_TARGET=dev
    ```
 
-2. Next, import the `os` module at the top of the `dbt.py` file so the environment variable is accessible:
+2. Next, import the `os` module at the top of the `project.py` file so the environment variable is accessible:
 
    ```python
    import os
@@ -81,7 +81,7 @@ Next, we need to update the `DbtProject` object in `dagster_university/assets/db
 
 ```python
 dbt_project = DbtProject(
-   project_dir=Path(__file__).joinpath("..", "..", "..", "analytics").resolve(),
+   project_dir=Path(__file__).joinpath("..", "..", "analytics").resolve(),
    target=os.getenv("DBT_TARGET")
 )
 ```

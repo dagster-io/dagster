@@ -105,15 +105,10 @@ Open the `assets/dbt.py` file and do the following:
 At this point, your `dbt.py` file should match the following:
 
 ```python
-from pathlib import Path
-
 from dagster import AssetExecutionContext, AssetKey
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
-dbt_project = DbtProject(
-   project_dir=Path(__file__).joinpath("..", "..", "..", "analytics").resolve(),
-)
-dbt_project.prepare_if_dev()
+from ..project import dbt_project
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):

@@ -20,7 +20,7 @@ Navigate to the `dagster_university/resources/__init__.py`, which is where other
 ```python
 from dagster_dbt import DbtCliResource
 
-from ..assets.dbt import dbt_project
+from ..project import dbt_project
 # the import lines go at the top of the file
 
 # this can be defined anywhere below the imports

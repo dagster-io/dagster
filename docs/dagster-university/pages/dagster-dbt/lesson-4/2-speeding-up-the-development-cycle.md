@@ -16,7 +16,7 @@ Before we move on, we’ll reduce the number of steps in the feedback loop. We'l
 
 The first detail is that the `dbt_project` doesn’t need to be part of an asset to be executed. This means that once a `dbt_project` is defined, you can use it to execute commands when your code location is being built. Rather than manually running `dbt parse`, let’s use the `dbt_project` to prepare the manifest file for us.
 
-In `dbt.py`, after the code initializing `dbt_project`, add the following code:
+In `project.py`, after the code initializing `dbt_project`, add the following code:
 
 ```python
 dbt_project.prepare_if_dev()
