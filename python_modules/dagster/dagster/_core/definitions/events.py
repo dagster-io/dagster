@@ -106,8 +106,7 @@ class Output(Generic[T], EventWithMetadata):
 
     Args:
         value (Any): The value returned by the compute function.
-        output_name (Optional[str]): Name of the corresponding out. (default:
-            "result")
+        output_name (str): Name of the corresponding Out. (default: "result")
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -121,7 +120,7 @@ class Output(Generic[T], EventWithMetadata):
     def __init__(
         self,
         value: T,
-        output_name: Optional[str] = DEFAULT_OUTPUT,
+        output_name: str = DEFAULT_OUTPUT,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         data_version: Optional[DataVersion] = None,
         *,
