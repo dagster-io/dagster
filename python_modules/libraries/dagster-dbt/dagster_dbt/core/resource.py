@@ -11,6 +11,7 @@ from dagster import (
     AssetCheckKey,
     AssetExecutionContext,
     AssetsDefinition,
+    AssetKey,
     ConfigurableResource,
     OpExecutionContext,
     get_dagster_logger,
@@ -36,6 +37,7 @@ from ..asset_utils import (
     DAGSTER_DBT_SELECT_METADATA_KEY,
     dagster_name_fn,
     get_manifest_and_translator_from_dbt_assets,
+    default_code_version_fn,
 )
 from ..dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from ..dbt_manifest import DbtManifestParam, validate_manifest
@@ -758,6 +760,11 @@ def _get_subset_selection_for_context(
     is_checks_subset = (
         assets_def.check_specs_by_output_name != assets_def.node_check_specs_by_output_name
     )
+    current_code_version_by_key = assets_def.code_versions_by_key()
+    current_code_versions_by_output_name = {
+        output_name: current_code_version_by_key[asset_key]
+        for output_name, asset_key in assets_def.keys_by_output_name.items()
+    }
 
     # It's nice to use the default dbt selection arguments when not subsetting for readability. We
     # also use dbt indirect selection to avoid hitting cli arg length limits.
@@ -781,6 +788,7 @@ def _get_subset_selection_for_context(
         output_names=context.selected_output_names,
         dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
         dagster_dbt_translator=dagster_dbt_translator,
+        current_code_versions_by_output_name=current_code_versions_by_output_name,
     )
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
@@ -879,7 +887,37 @@ def get_dbt_resource_names_for_output_names(
     output_names: Iterable[str],
     dbt_resource_props_by_output_name: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
+    current_code_versions_by_output_name: Mapping[str, Optional[str]],
 ) -> Sequence[str]:
+    
+    if dagster_dbt_translator.settings.enable_selective_view_materialization:
+
+        dbt_resource_props_gen = {
+            output_name: dbt_resource_props_by_output_name[output_name]
+            for output_name in output_names
+            # output names corresponding to asset checks won't be in this dict
+            if output_name in dbt_resource_props_by_output_name
+        }
+
+        selected_views = [
+            dbt_resource_props
+            for output_name, dbt_resource_props in dbt_resource_props_gen.items()
+            if dbt_resource_props["resource_type"] == "model"
+                and dbt_resource_props.get("config").get("materialized") == "view"
+                and current_code_versions_by_output_name.get(output_name) != default_code_version_fn(dbt_resource_props)
+        ]
+
+        other_resources = [
+            dbt_resource_props
+            for dbt_resource_props in dbt_resource_props_gen.values()
+            if dbt_resource_props["resource_type"] != "model"
+                or (dbt_resource_props.get("config", {}).get("materialized") != "view")
+        ]
+
+        filtered_dbt_resource_props_gen = selected_views + other_resources
+
+        return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in filtered_dbt_resource_props_gen]
+
     dbt_resource_props_gen = (
         dbt_resource_props_by_output_name[output_name]
         for output_name in output_names
