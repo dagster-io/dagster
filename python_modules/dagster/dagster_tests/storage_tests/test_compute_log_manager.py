@@ -1,9 +1,9 @@
 import tempfile
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence
+from typing import IO, Generator, Iterator, Optional, Sequence
 
 import dagster._check as check
-from dagster import job, op
+from dagster import DagsterRun, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -13,12 +13,13 @@ from dagster._core.storage.captured_log_manager import (
     CapturedLogManager,
     CapturedLogMetadata,
     CapturedLogSubscription,
+    ComputeIOType,
 )
 from dagster._core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
-    ComputeIOType,
     ComputeLogFileData,
     ComputeLogManager,
+    ComputeLogSubscription,
 )
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
@@ -78,34 +79,37 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
     def unsubscribe(self, subscription: CapturedLogSubscription):
         return
 
-    @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        pass
+    def _watch_logs(
+        self, dagster_run: DagsterRun, step_key: Optional[str] = None
+    ) -> Iterator[None]:
+        raise NotImplementedError()
 
-    def get_local_path(self, run_id, key, io_type):
-        pass
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
+        raise NotImplementedError()
 
-    def is_watch_completed(self, run_id, key):
-        return True
+    def is_watch_completed(self, run_id: str, key: str) -> bool:
+        raise NotImplementedError()
 
-    def on_watch_start(self, pipeline_run, step_key):
-        pass
+    def on_watch_start(self, dagster_run: DagsterRun, step_key: Optional[str]) -> None:
+        raise NotImplementedError()
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        pass
+    def on_watch_finish(self, dagster_run: DagsterRun, step_key: Optional[str]) -> None:
+        raise NotImplementedError()
 
-    def download_url(self, run_id, key, io_type):
-        return None
+    def download_url(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
+        raise NotImplementedError()
 
     def read_logs_file(
-        self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ
+        self,
+        run_id: str,
+        key: str,
+        io_type: ComputeIOType,
+        cursor: int = 0,
+        max_bytes: int = MAX_BYTES_FILE_READ,
     ) -> ComputeLogFileData:
-        return ComputeLogFileData(path="", data=None, cursor=0, size=0, download_url=None)
+        raise NotImplementedError()
 
-    def on_subscribe(self, subscription):
-        pass
-
-    def on_unsubscribe(self, subscription):
+    def on_subscribe(self, subscription: ComputeLogSubscription) -> None:
         pass
 
 

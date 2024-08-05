@@ -8,7 +8,7 @@ from dagster import DagsterEventType, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
@@ -181,11 +181,10 @@ def test_blank_compute_logs(mock_s3_bucket):
         )
 
         # simulate subscription to an in-progress run, where there is no key in the bucket
-        stdout = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDOUT)
-        stderr = manager.read_logs_file("my_run_id", "my_step_key", ComputeIOType.STDERR)
+        log_data = manager.get_log_data(["my_run_id", "compute_logs", "my_step_key"])
 
-        assert not stdout.data
-        assert not stderr.data
+        assert not log_data.stdout
+        assert not log_data.stderr
 
 
 def test_prefix_filter(mock_s3_bucket):

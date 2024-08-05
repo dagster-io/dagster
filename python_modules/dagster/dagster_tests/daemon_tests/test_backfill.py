@@ -56,8 +56,7 @@ from dagster._core.remote_representation import (
     InProcessCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogManager, ComputeIOType
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
