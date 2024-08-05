@@ -362,6 +362,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/peering-with-dbt",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
     ),
 ]
 
@@ -484,10 +487,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             f"{deps_factor}-{command_factor}"
             for deps_factor in ["dbt17", "dbt18", "pydantic1"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
-        ],
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
         ],
     ),
     PackageSpec(
