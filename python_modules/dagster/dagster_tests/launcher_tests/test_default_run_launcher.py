@@ -701,6 +701,10 @@ def test_multi_op_selection_execution(
     }
 
 
+@pytest.mark.skipif(
+    _seven.IS_WINDOWS,
+    reason="Failure sequence manifests differently on windows",
+)
 def test_job_that_fails_run_worker(
     instance: DagsterInstance,
     workspace: WorkspaceRequestContext,
