@@ -38,22 +38,18 @@ setup(
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
     install_requires=[
         f"dagster{pin}",
-        f"dagster-dbt{pin}",
+        f"dagster-blueprints{pin}",
         "apache-airflow>=2.0.0,<2.8",
         # Flask-session 0.6 is incompatible with certain airflow-provided test
         # utilities.
         "flask-session<0.6.0",
         "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-        "dbt-duckdb",
         "pendulum>=2.0.0,<3.0.0",
     ],
     extras_require={
         "mwaa": ["boto3"],
+        "dbt": [f"dagster-dbt{pin}"],
+        "test": ["pytest", f"dagster-dbt{pin}", "dbt-duckdb", "boto3"],
     },
     zip_safe=False,
-    entry_points={
-        "console_scripts": [
-            "dagster-airlift = dagster_airlift.cli:main",
-        ]
-    },
 )

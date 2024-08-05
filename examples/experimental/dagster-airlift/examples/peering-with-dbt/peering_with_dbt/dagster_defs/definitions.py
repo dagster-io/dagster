@@ -1,23 +1,22 @@
-import os
-
 from dagster import Definitions
 from dagster_airlift import (
     AirflowInstance,
     BasicAuthBackend,
-    airflow_task_mappings_from_dbt_project,
-    assets_defs_from_airflow_instance,
-    build_airflow_polling_sensor,
+    PythonDefs,
+    create_defs_from_airflow_instance,
+    load_defs_from_yaml,
+    load_migration_state_from_yaml,
 )
+from dagster_airlift.dbt import DbtProjectDefs
 
-# Airflow instance running at localhost:8080
-AIRFLOW_BASE_URL = "http://localhost:8080"
-AIRFLOW_INSTANCE_NAME = "my_airflow_instance"
-
-# Authentication credentials (lol)
-USERNAME = "admin"
-PASSWORD = "admin"
-
-manifest_path = os.path.join(os.environ["DBT_PROJECT_DIR"], "target", "manifest.json")
+from .constants import (
+    AIRFLOW_BASE_URL,
+    AIRFLOW_INSTANCE_NAME,
+    ASSETS_PATH,
+    MIGRATION_STATE_PATH,
+    PASSWORD,
+    USERNAME,
+)
 
 airflow_instance = AirflowInstance(
     auth_backend=BasicAuthBackend(
@@ -26,23 +25,19 @@ airflow_instance = AirflowInstance(
     name=AIRFLOW_INSTANCE_NAME,
 )
 
-airflow_assets = assets_defs_from_airflow_instance(
+defs = create_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    task_maps=[
-        *airflow_task_mappings_from_dbt_project(
-            dbt_manifest_path=manifest_path,
-            airflow_instance_name=AIRFLOW_INSTANCE_NAME,
-            dag_id="dbt_dag",
-            task_id="build_dbt_models",
+    orchestrated_defs=Definitions.merge(
+        load_defs_from_yaml(
+            yaml_path=ASSETS_PATH / "python",
+            defs_cls=PythonDefs,
         ),
-    ],
-)
-airflow_sensor = build_airflow_polling_sensor(
-    airflow_instance=airflow_instance,
-    airflow_asset_specs=[spec for asset in airflow_assets for spec in asset.specs],
-)
-
-defs = Definitions(
-    assets=airflow_assets,
-    sensors=[airflow_sensor],
+        load_defs_from_yaml(
+            yaml_path=ASSETS_PATH / "dbt",
+            defs_cls=DbtProjectDefs,
+        ),
+    ),
+    migration_state_override=load_migration_state_from_yaml(
+        migration_yaml_path=MIGRATION_STATE_PATH
+    ),
 )

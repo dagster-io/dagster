@@ -24,8 +24,9 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-webserver{pin}",
-        f"dagster-airlift{pin}",
+        f"dagster-airlift[dbt]{pin}",
+        "dbt-duckdb",
         "pandas",
     ],
-    extras_require={"dev": ["pytest"]},
+    extras_require={"test": ["pytest"]},
 )

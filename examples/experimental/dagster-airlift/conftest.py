@@ -1,1 +1,1 @@
-pytest_plugins = ["dagster_airlift.shared_fixtures"]
+pytest_plugins = ["dagster_airlift.test.shared_fixtures"]
