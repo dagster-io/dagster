@@ -221,7 +221,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                 download
                 href={`${rootServerURI}/download_debug/${run.id}`}
               />
-              {/* @ts-ignore - This can be null in OSS without cloud aliases */}
               {runMetricsEnabled && RunMetricsDialog ? (
                 <MenuItem
                   tagName="button"
