@@ -640,48 +640,49 @@ class GrapheneMegaRun(graphene.ObjectType):
             else GrapheneRunType.BACKFILL,
         )
 
-    # TODO - return types
-    def resolve_runId(self, _graphene_info: ResolveInfo):
+    def resolve_runId(self, _graphene_info: ResolveInfo) -> str:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.runId
         return self.backfill.id
 
-    def resolve_status(self, _graphene_info: ResolveInfo):
+    def resolve_status(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.status
         return GrapheneBulkActionStatus(self.backfill.status).to_dagster_run_status()
 
-    def resolve_creationTime(self, graphene_info: ResolveInfo):
+    def resolve_creationTime(self, graphene_info: ResolveInfo) -> float:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.resolve_creationTime(graphene_info)
         return self.backfill.timestamp
 
-    def resolve_startTime(self, graphene_info: ResolveInfo):
+    def resolve_startTime(self, graphene_info: ResolveInfo) -> float:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.resolve_startTime(graphene_info)
         return self.backfill.timestamp
 
-    def resolve_endTime(self, graphene_info: ResolveInfo):
+    def resolve_endTime(self, graphene_info: ResolveInfo) -> float:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.resolve_endTime(graphene_info)
         return self.backfill.resolve_endTimestamp(graphene_info)
 
-    def resolve_tags(self, graphene_info: ResolveInfo):
+    def resolve_tags(self, graphene_info: ResolveInfo) -> Sequence[GraphenePipelineTag]:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.resolve_tags(graphene_info)
         return self.backfill.resolve_tags(graphene_info)
 
-    def resolve_jobName(self, graphene_info: ResolveInfo):
+    def resolve_jobName(self, graphene_info: ResolveInfo) -> str:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.resolve_jobName(graphene_info)
         return self.backfill.partitionSetName
 
-    def resolve_assetSelection(self, graphene_info: ResolveInfo):
+    def resolve_assetSelection(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetKey]:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.resolve_assetSelection(graphene_info)
         return self.backfill.assetSelection
 
-    def resolve_assetCheckSelection(self, graphene_info: ResolveInfo):
+    def resolve_assetCheckSelection(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneAssetCheckHandle]:
         if self.runType == GrapheneRunType.RUN:
             return self.singleRun.resolve_assetCheckSelection(graphene_info)
         return []

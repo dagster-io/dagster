@@ -18,6 +18,7 @@ from dagster import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.event_log.base import AssetRecord
@@ -399,6 +400,52 @@ def _fetch_runs_not_in_backfill(
     return runs[:limit]
 
 
+def _spicy_window_safe_sort(
+    runs: Sequence[RunRecord], backfills: Sequence[PartitionBackfill], limit: Optional[int]
+) -> Sequence[Union[RunRecord, PartitionBackfill]]:
+    """Merges a list of runs and backfills into a single list ordered by creation time, but maintains
+    the relative order of each list to account for spicy window shenanigans.
+
+    For example, if two runs are created at t1 and t2, but the spicy window stores the t2 run before the
+    t1 run, we need to ensure that the order of those runs relative to each other is maintianed.
+
+    DB ID   run    time
+    n       run2   t2
+    n+1     run1   t1
+
+    if we sorted just by creation time, run1 would come before run2. If run1 was the final run returned, the
+    user would pass run1 as the cursor for the next query, which means run2 would never get returned.
+
+    Instead we can do a special sort that ensures that run2 is always returned before run1 so that
+    all runs are returned to the user.
+    """
+    runs_idx = 0
+    backfills_idx = 0
+    sorted_runs = []
+
+    for _ in range(limit or len(runs) + len(backfills)):
+        if (
+            runs[runs_idx].create_timestamp.timestamp()
+            > backfills[backfills_idx].backfill_timestamp
+        ):
+            sorted_runs.append(runs[runs_idx])
+            runs_idx += 1
+        else:
+            sorted_runs.append(backfills[backfills_idx])
+            backfills_idx += 1
+
+        if limit and len(sorted_runs) == limit:
+            return sorted_runs
+        if runs_idx == len(runs):
+            sorted_runs.extend(backfills[backfills_idx:])
+            return sorted_runs[:limit]
+        if backfills_idx == len(backfills):
+            sorted_runs.extend(runs[runs_idx:])
+            return sorted_runs[:limit]
+
+    return sorted_runs
+
+
 def get_mega_runs(
     graphene_info: "ResolveInfo",
     cursor: Optional[str] = None,
@@ -424,13 +471,14 @@ def get_mega_runs(
 
     # order runs and backfills by create_time. typically we sort by storage id but that won't work here since
     # they are different tables
-    all_mega_runs = sorted(
-        backfills + runs,
-        key=lambda x: x.create_timestamp.timestamp()
-        if isinstance(x, RunRecord)
-        else x.backfill_timestamp,
-        reverse=True,
-    )
+    # all_mega_runs = sorted(
+    #     backfills + runs,
+    #     key=lambda x: x.create_timestamp.timestamp()
+    #     if isinstance(x, RunRecord)
+    #     else x.backfill_timestamp,
+    #     reverse=True,
+    # )
+    all_mega_runs = _spicy_window_safe_sort(runs=runs, backfills=backfills, limit=limit)
     if limit:
         all_mega_runs = all_mega_runs[:limit]
 
