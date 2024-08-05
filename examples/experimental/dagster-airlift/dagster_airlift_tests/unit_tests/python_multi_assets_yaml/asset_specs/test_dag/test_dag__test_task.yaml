@@ -1,0 +1,8 @@
+type: multi_asset
+specs:
+  - key: my/asset
+    deps:
+      - upstream/asset
+python_fn_pointer:
+  module_name: dagster_airlift_tests.unit_tests.multi_asset_python
+  fn_name: compute_fn

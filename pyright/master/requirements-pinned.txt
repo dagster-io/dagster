@@ -101,6 +101,7 @@ daff==1.3.46
 -e python_modules/libraries/dagster-airbyte
 -e python_modules/libraries/dagster-airflow
 -e examples/experimental/dagster-airlift
+-e examples/experimental/dagster-blueprints
 -e python_modules/libraries/dagster-aws
 -e python_modules/libraries/dagster-azure
 -e python_modules/libraries/dagster-celery

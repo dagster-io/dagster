@@ -84,7 +84,7 @@ def load_defs_from_yaml(
     Args:
         path (Path | str): The path to the YAML file or directory of YAML files containing the
             blueprints for Dagster definitions.
-        per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type
+        per_file_blueprint_type (Union[Type[Blueprint], Type[Sequence[Blueprint]]]): The type
             of blueprint that each of the YAML files are expected to conform to. If a sequence
             type is provided, the function will expect each YAML file to contain a list of
             blueprints.
