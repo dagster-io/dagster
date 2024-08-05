@@ -73,10 +73,13 @@ def exity_job():
 
 class SleepyOpConfig(Config):
     raise_keyboard_interrupt: bool = False
+    crash_after_termination: bool = False
 
 
 @op
 def sleepy_op(config: SleepyOpConfig):
+    assert not (config.raise_keyboard_interrupt and config.crash_after_termination)
+
     while True:
         try:
             time.sleep(0.1)
@@ -86,6 +89,9 @@ def sleepy_op(config: SleepyOpConfig):
                 # simulates a custom signal handler that has overridden ours
                 # to raise a normal KeyboardInterrupt
                 raise KeyboardInterrupt
+            elif config.crash_after_termination:
+                # simulates a crash after termination was initiated
+                os._exit(1)
             else:
                 raise
 
@@ -457,7 +463,17 @@ def test_exity_run(
     [
         None,  # multiprocess
         {"execution": {"config": {"in_process": {}}}},  # in-process
-        {"ops": {"sleepy_op": {"config": {"raise_keyboard_interrupt": True}}}},
+        {  # raise KeyboardInterrupt on termination
+            "ops": {"sleepy_op": {"config": {"raise_keyboard_interrupt": True}}}
+        },
+        pytest.param(
+            {  # crash on termination
+                "ops": {"sleepy_op": {"config": {"crash_after_termination": True}}}
+            },
+            marks=pytest.mark.skipif(
+                _seven.IS_WINDOWS, reason="Crashes manifest differently on windows"
+            ),
+        ),
     ],
 )
 def test_terminated_run(
@@ -525,6 +541,24 @@ def test_terminated_run(
                 (
                     "PIPELINE_CANCELED",
                     'Execution of run for "sleepy_job" canceled.',
+                ),
+                ("ENGINE_EVENT", "Process for run exited"),
+            ],
+        )
+    elif (
+        run_config.get("ops", {})
+        .get("sleepy_op", {})
+        .get("config", {})
+        .get("crash_after_termination")
+    ):
+        _check_event_log_contains(
+            run_logs,
+            [
+                ("PIPELINE_CANCELING", "Sending run termination request."),
+                ("STEP_FAILURE", 'Execution of step "sleepy_op" failed.'),
+                (
+                    "PIPELINE_CANCELED",
+                    "Run failed after it was requested to be terminated.",
                 ),
                 ("ENGINE_EVENT", "Process for run exited"),
             ],

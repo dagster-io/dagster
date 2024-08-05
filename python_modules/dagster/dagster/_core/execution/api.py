@@ -809,20 +809,37 @@ def job_execution_iterator(
                     error_info=job_canceled_info,
                 )
         elif job_exception_info:
-            event = DagsterEvent.job_failure(
-                job_context,
-                "An exception was thrown during execution.",
-                failure_reason=RunFailureReason.RUN_EXCEPTION,
-                error_info=job_exception_info,
-            )
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
+                event = DagsterEvent.job_canceled(
+                    job_context,
+                    error_info=job_exception_info,
+                    message="Run failed after it was requested to be terminated.",
+                )
+            else:
+                event = DagsterEvent.job_failure(
+                    job_context,
+                    "An exception was thrown during execution.",
+                    failure_reason=RunFailureReason.RUN_EXCEPTION,
+                    error_info=job_exception_info,
+                )
         elif failed_steps:
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
             failed_step_keys = [event.step_key for event in failed_steps]
-            event = DagsterEvent.job_failure(
-                job_context,
-                f"Steps failed: {failed_step_keys}.",
-                failure_reason=RunFailureReason.STEP_FAILURE,
-                first_step_failure_event=failed_steps[0],
-            )
+
+            if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
+                event = DagsterEvent.job_canceled(
+                    job_context,
+                    error_info=None,
+                    message=f"Run was canceled. Failed steps: {failed_step_keys}.",
+                )
+            else:
+                event = DagsterEvent.job_failure(
+                    job_context,
+                    f"Steps failed: {failed_step_keys}.",
+                    failure_reason=RunFailureReason.STEP_FAILURE,
+                    first_step_failure_event=failed_steps[0],
+                )
         else:
             event = DagsterEvent.job_success(job_context)
         if not generator_closed:
