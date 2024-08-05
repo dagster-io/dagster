@@ -3508,6 +3508,7 @@ export type PipelineRunComputeLogsArgs = {
 
 export type PipelineRunEventConnectionArgs = {
   afterCursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type PipelineRunConflict = {
@@ -4435,6 +4436,7 @@ export type RunComputeLogsArgs = {
 
 export type RunEventConnectionArgs = {
   afterCursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type RunCanceledEvent = MessageEvent &

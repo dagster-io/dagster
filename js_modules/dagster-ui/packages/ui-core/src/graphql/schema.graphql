@@ -1157,7 +1157,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): EventConnection!
+  eventConnection(afterCursor: String, limit: Int): EventConnection!
 }
 
 type CapturedLogs {
@@ -1410,7 +1410,7 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  eventConnection(afterCursor: String): EventConnection!
+  eventConnection(afterCursor: String, limit: Int): EventConnection!
   parentPipelineSnapshotId: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
