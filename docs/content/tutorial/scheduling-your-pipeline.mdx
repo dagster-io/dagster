@@ -18,7 +18,7 @@ By the end of this part of the tutorial, you'll be able to:
 
 A _job_ lets you target a selection of assets to materialize them together as a single action. Assets can belong to multiple jobs.
 
-Your Dagster repository has a file called `tutorial/__init__.py` that is used as a top-level definition for your project. Update the code in this file to add the job using the <PyObject object="define_asset_job"/> function:
+Your Dagster repository has a file called `tutorial/definitions.py` that is used as a top-level definition for your project. Update the code in this file to add the job using the <PyObject object="define_asset_job"/> function:
 
 ```python file=/tutorial/scheduling/with_job/with_job.py
 from dagster import (
@@ -70,7 +70,7 @@ Managing one type of definition, such as assets, is easy. However, it can quickl
 
 After defining a job, it can be attached to a schedule. A schedule's responsibility is to start a run of the assigned job at a specified time. Schedules are added with the <PyObject object="ScheduleDefinition" /> class.
 
-To regularly update the assets, add the new <PyObject object="ScheduleDefinition" /> import, create a new schedule for the `hackernews_job`, and add the schedule to the code location. The code below is how your `__init__.py` should look after making these changes:
+To regularly update the assets, add the new <PyObject object="ScheduleDefinition" /> import, create a new schedule for the `hackernews_job`, and add the schedule to the code location. The code below is how your `definitions.py` should look after making these changes:
 
 ```python file=/tutorial/scheduling/with_schedule/with_schedule.py
 from dagster import (

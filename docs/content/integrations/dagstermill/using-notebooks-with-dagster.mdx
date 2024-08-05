@@ -58,7 +58,7 @@ To complete this tutorial, you'll need:
 
   - **A template version of the tutorial project**, which you can use to follow along with the tutorial. This is the `tutorial_template` subfolder. In this folder, you'll also find:
 
-    - `assets`, a subfolder containing Dagster assets. We'll use `/assets/__init__.py` to write these.
+    - `assets`, a subfolder containing Dagster assets. We'll use `/assets.py` to write these.
     - `notebooks`, a subfolder containing Jupyter notebooks. We'll use `/notebooks/iris-kmeans.ipynb` to write a Jupyter notebook.
 
 ---
@@ -119,17 +119,17 @@ Like many notebooks, this example does some fairly sophisticated work, including
 
 By creating a Dagster asset from our notebook, we can integrate the notebook as part of our data platform. This enables us to make its contents more accessible to developers, stakeholders, and other assets in Dagster.
 
-To create a Dagster asset from a Jupyter notebook, we can use the <PyObject module="dagstermill" object="define_dagstermill_asset" /> function. In `/tutorial_template/assets/__init__.py` add the following code snippet:
+To create a Dagster asset from a Jupyter notebook, we can use the <PyObject module="dagstermill" object="define_dagstermill_asset" /> function. In `/tutorial_template/assets.py` add the following code snippet:
 
 ```python
-# /tutorial_template/assets/__init__.py
+# /tutorial_template/assets.py
 
 from dagstermill import define_dagstermill_asset
 from dagster import file_relative_path
 
 iris_kmeans_jupyter_notebook = define_dagstermill_asset(
     name="iris_kmeans_jupyter",
-    notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
+    notebook_path=file_relative_path(__file__, "notebooks/iris-kmeans.ipynb"),
     group_name="template_tutorial",
 )
 ```
@@ -152,18 +152,18 @@ We want to execute our Dagster asset and save the resulting notebook to a persis
 
 Additionally, we need to provide a [resource](/concepts/resources) to the notebook to tell Dagster how to store the resulting `.ipynb` file. We'll use an [I/O manager](/concepts/io-management/io-managers) to accomplish this.
 
-Open the `/tutorial_template/__init__.py` file and add the following code:
+Open the `/tutorial_template/definitions.py` file and add the following code:
 
 ```python
-# tutorial_template/__init__.py
+# tutorial_template/definitions.py
 
-from dagster import load_assets_from_package_module, Definitions
+from dagster import load_assets_from_modules, Definitions
 from dagstermill import ConfigurableLocalOutputNotebookIOManager
 
 from . import assets
 
 defs = Definitions(
-    assets=load_assets_from_package_module(assets),
+    assets=load_assets_from_modules([assets]),
     resources={
         "output_notebook_io_manager": ConfigurableLocalOutputNotebookIOManager()
     }
@@ -173,7 +173,7 @@ defs = Definitions(
 
 Let's take a look at what's happening here:
 
-- Using <PyObject object="load_assets_from_package_module" />, we've imported all assets in the `assets` module. This approach allows any new assets we create to be automatically added to the `Definitions` object instead of needing to manually add them one by one.
+- Using <PyObject object="load_assets_from_modules" />, we've imported all assets in the `assets` module. This approach allows any new assets we create to be automatically added to the `Definitions` object instead of needing to manually add them one by one.
 
 - We provided a dictionary of resources to the `resources` parameter. In this example, that's the <PyObject module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
 
@@ -255,10 +255,10 @@ In this step, you'll:
 
 ### Step 5.1: Create the Iris dataset asset
 
-To create an asset for the Iris dataset, add the following code to `/tutorial_template/assets/__init__.py`:
+To create an asset for the Iris dataset, add the following code to `/tutorial_template/assets.py`:
 
 ```python
-# /tutorial_template/assets/__init__.py
+# /tutorial_template/assets.py
 
 from dagstermill import define_dagstermill_asset
 from dagster import asset, file_relative_path
@@ -290,10 +290,10 @@ Let's go over what's happening in this code block:
 
 ### Step 5.2: Provide the iris_dataset asset to the notebook asset
 
-Next, we need to tell Dagster that the `iris_datset` asset is input data for the `iris-kmeans` notebook. To do this, add the `ins` parameter to the notebook asset:
+Next, we need to tell Dagster that the `iris_dataset` asset is input data for the `iris-kmeans` notebook. To do this, add the `ins` parameter to the notebook asset:
 
 ```python
-# tutorial_template/assets/__init__.py
+# tutorial_template/assets.py
 from dagstermill import define_dagstermill_asset
 from dagster import asset, file_relative_path, AssetIn
 import pandas as pd
@@ -302,7 +302,7 @@ import pandas as pd
 
 iris_kmeans_jupyter_notebook = define_dagstermill_asset(
     name="iris_kmeans_jupyter",
-    notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
+    notebook_path=file_relative_path(__file__, "notebooks/iris-kmeans.ipynb"),
     group_name="template_tutorial",
     ins={"iris": AssetIn("iris_dataset")}, # this is the new parameter!
 )
