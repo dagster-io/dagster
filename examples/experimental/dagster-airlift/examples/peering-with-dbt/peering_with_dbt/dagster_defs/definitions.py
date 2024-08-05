@@ -20,8 +20,9 @@ PASSWORD = "admin"
 manifest_path = os.path.join(os.environ["DBT_PROJECT_DIR"], "target", "manifest.json")
 
 airflow_instance = AirflowInstance(
-    airflow_webserver_url=AIRFLOW_BASE_URL,
-    auth_backend=BasicAuthBackend(USERNAME, PASSWORD),
+    auth_backend=BasicAuthBackend(
+        webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
+    ),
     name=AIRFLOW_INSTANCE_NAME,
 )
 

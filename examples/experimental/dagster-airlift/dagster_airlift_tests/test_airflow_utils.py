@@ -25,8 +25,9 @@ def test_dag_peering(
 ) -> None:
     """Test that dags can be correctly peered from airflow, and certain metadata properties are retained."""
     instance = AirflowInstance(
-        airflow_webserver_url="http://localhost:8080",
-        auth_backend=BasicAuthBackend(username="admin", password="admin"),
+        auth_backend=BasicAuthBackend(
+            webserver_url="http://localhost:8080", username="admin", password="admin"
+        ),
         name="airflow_instance",
     )
     assets_defs = assets_defs_from_airflow_instance(
