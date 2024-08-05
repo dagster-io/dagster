@@ -13,6 +13,7 @@ from dagster_airlift import (
 from dagster_airlift.core.def_factory import defs_from_factories
 from dagster_airlift.dbt import DbtProjectDefs
 
+from ..business_logic import load_csv_to_duckdb
 from .constants import (
     AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,
@@ -41,7 +42,7 @@ defs = create_defs_from_airflow_instance(
         PythonDefs(
             name="load_lakehouse__load_iris",
             specs=[AssetSpec(key=AssetKey.from_user_string("iris_dataset/iris_lakehouse_table"))],
-            python_fn=lambda: None,
+            python_fn=load_csv_to_duckdb,
         ),
         DbtProjectDefs(
             name="dbt_dag__build_dbt_models",
