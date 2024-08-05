@@ -329,7 +329,8 @@ class MultiprocessExecutor(Executor):
                 and (not active_iters)
                 and all(
                     [
-                        err_info.cls_name == "DagsterExecutionInterruptedError"
+                        err_info.cls_name
+                        in {"DagsterExecutionInterruptedError", "KeyboardInterrupt"}
                         for err_info in errs.values()
                     ]
                 )
