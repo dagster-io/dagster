@@ -9,8 +9,8 @@ import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._annotations import deprecated
 from dagster._core.debug import DebugRunPayload
+from dagster._core.storage.captured_log_manager import ComputeIOType
 from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
-from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
@@ -153,30 +153,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         html_exporter = HTMLExporter()
         (body, resources) = html_exporter.from_notebook_node(notebook)
         return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
-
-    async def download_compute_logs_endpoint(self, request: Request):
-        run_id = request.path_params["run_id"]
-        step_key = request.path_params["step_key"]
-        file_type = request.path_params["file_type"]
-        context = self.make_request_context(request)
-
-        file = context.instance.compute_log_manager.get_local_path(
-            run_id,
-            step_key,
-            ComputeIOType(file_type),
-        )
-
-        if not path.exists(file):
-            raise HTTPException(404, detail="No log files available for download")
-
-        return FileResponse(
-            context.instance.compute_log_manager.get_local_path(
-                run_id,
-                step_key,
-                ComputeIOType(file_type),
-            ),
-            filename=f"{run_id}_{step_key}.{file_type}",
-        )
 
     async def download_captured_logs_endpoint(self, request: Request):
         [*log_key, file_extension] = request.path_params["path"].split("/")
@@ -325,10 +301,6 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             + self.build_static_routes()
             + [
                 # download file endpoints
-                Route(
-                    "/download/{run_id:str}/{step_key:str}/{file_type:str}",
-                    self.download_compute_logs_endpoint,
-                ),
                 Route(
                     "/logs/{path:path}",
                     self.download_captured_logs_endpoint,
