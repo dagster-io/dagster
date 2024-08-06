@@ -259,9 +259,19 @@ def _build_status_cache(
         instance, asset_key, asset_record
     )
 
+    last_materialization_failure_storage_id = (
+        asset_record.asset_entry.last_materialization_failure_storage_id
+        if (
+            asset_record
+            and instance.event_log_storage.asset_records_have_last_materialization_failure_storage_id
+        )
+        else 0
+    )
+
     latest_storage_id = max(
         last_materialization_storage_id or 0,
         last_planned_materialization_storage_id or 0,
+        last_materialization_failure_storage_id or 0,
     )
     if not latest_storage_id:
         return None
@@ -284,6 +294,8 @@ def _build_status_cache(
         if stored_cache_value
         else None
     )
+
+    cached_latest_storage_id = stored_cache_value.latest_storage_id if stored_cache_value else None
 
     if stored_cache_value:
         # fetch the incremental new materialized partitions, and update the cached materialized
@@ -326,19 +338,36 @@ def _build_status_cache(
             )
         )
 
-    (
-        failed_subset,
-        in_progress_subset,
-        earliest_in_progress_materialization_event_id,
-    ) = build_failed_and_in_progress_partition_subset(
-        instance,
-        asset_key,
-        partitions_def,
-        dynamic_partitions_store,
-        last_planned_materialization_storage_id=last_planned_materialization_storage_id,
-        failed_subset=failed_subset,
-        after_storage_id=cached_in_progress_cursor,
-    )
+    # If we are tracking ASSET_MATERIALIZATION_FAILURE events on the AssetRecord, the storage ID
+    # will increase whenever some event has come in that might affect the failed and in progress
+    # subset (because only ASSET_MATERIALIZATION_PLANNED, ASSET_MATERIALIZATION,
+    # or ASSET_MATERIALIZATION_FAILURE events will affect the storage ID, and only those events
+    # can affect the in progress subset
+    if (
+        not instance.event_log_storage.asset_records_have_last_materialization_failure_storage_id
+        or (cached_latest_storage_id and latest_storage_id > cached_latest_storage_id)
+    ):
+        (
+            failed_subset,
+            in_progress_subset,
+            earliest_in_progress_materialization_event_id,
+        ) = build_failed_and_in_progress_partition_subset(
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_store,
+            last_planned_materialization_storage_id=last_planned_materialization_storage_id,
+            failed_subset=failed_subset,
+            after_storage_id=cached_in_progress_cursor,
+        )
+    else:
+        failed_subset = failed_subset or partitions_def.empty_subset()
+        in_progress_subset = (
+            partitions_def.deserialize_subset(stored_cache_value.serialized_failed_partition_subset)
+            if stored_cache_value and stored_cache_value.serialized_failed_partition_subset
+            else partitions_def.empty_subset()
+        )
+        earliest_in_progress_materialization_event_id = cached_in_progress_cursor
 
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,

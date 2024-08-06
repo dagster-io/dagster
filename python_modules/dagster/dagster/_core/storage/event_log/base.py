@@ -65,6 +65,8 @@ class AssetEntry(
             ("last_observation_record", Optional[EventLogRecord]),
             ("last_planned_materialization_storage_id", Optional[int]),
             ("last_planned_materialization_run_id", Optional[str]),
+            ("last_materialization_failure_storage_id", Optional[int]),
+            ("last_materialization_failure_run_id", Optional[str]),
         ],
     )
 ):
@@ -78,6 +80,8 @@ class AssetEntry(
         last_observation_record: Optional[EventLogRecord] = None,
         last_planned_materialization_storage_id: Optional[int] = None,
         last_planned_materialization_run_id: Optional[str] = None,
+        last_materialization_failure_storage_id: Optional[int] = None,
+        last_materialization_failure_run_id: Optional[str] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -102,6 +106,12 @@ class AssetEntry(
             last_planned_materialization_run_id=check.opt_str_param(
                 last_planned_materialization_run_id,
                 "last_planned_materialization_run_id",
+            ),
+            last_materialization_failure_storage_id=check.opt_int_param(
+                last_materialization_failure_storage_id, "last_materialization_failure_storage_id"
+            ),
+            last_materialization_failure_run_id=check.opt_str_param(
+                last_materialization_failure_run_id, "last_materialization_failure_run_id"
             ),
         )
 
@@ -331,6 +341,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @property
     def asset_records_have_last_planned_materialization_storage_id(self) -> bool:
+        return False
+
+    @property
+    def asset_records_have_last_materialization_failure_storage_id(self) -> bool:
         return False
 
     @abstractmethod
