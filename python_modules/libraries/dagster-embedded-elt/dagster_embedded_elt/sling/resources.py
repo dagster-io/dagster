@@ -21,7 +21,7 @@ from dagster import (
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, public
 from dagster._utils.env import environ
 from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
@@ -191,7 +191,6 @@ class SlingConnectionResource(PermissiveConfig):
     )
 
 
-@experimental
 class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package. This resource can be used to run Sling replications.
 
