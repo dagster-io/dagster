@@ -7,8 +7,7 @@ from typing import Any, Generator, Mapping, Sequence
 import pytest
 from dagster import job, op
 from dagster._core.events import DagsterEventType
-from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.test_utils import instance_for_test
