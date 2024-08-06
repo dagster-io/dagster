@@ -37,7 +37,7 @@ from ..dagster_types import (
 )
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
-from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeLogs, from_captured_log_data
+from ..logs.compute_logs import GrapheneCapturedLogs, from_captured_log_data
 from ..logs.events import (
     GrapheneDagsterRunEvent,
     GrapheneMaterializationEvent,
@@ -292,13 +292,6 @@ class GraphenePipelineRun(graphene.Interface):
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
-    computeLogs = graphene.Field(
-        graphene.NonNull(GrapheneComputeLogs),
-        stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
-        description="""
-        Compute logs are the stdout/stderr logs for a given solid step computation
-        """,
-    )
     capturedLogs = graphene.Field(
         graphene.NonNull(GrapheneCapturedLogs),
         fileKey=graphene.Argument(graphene.NonNull(graphene.String)),
@@ -342,13 +335,6 @@ class GrapheneRun(graphene.ObjectType):
     resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
-    computeLogs = graphene.Field(
-        graphene.NonNull(GrapheneComputeLogs),
-        stepKey=graphene.Argument(graphene.NonNull(graphene.String)),
-        description="""
-        Compute logs are the stdout/stderr logs for a given solid step computation
-        """,
-    )
     executionPlan = graphene.Field(GrapheneExecutionPlan)
     stepKeysToExecute = graphene.List(graphene.NonNull(graphene.String))
     runConfigYaml = graphene.NonNull(graphene.String)
@@ -467,9 +453,6 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_stepStats(self, graphene_info: ResolveInfo):
         return get_step_stats(graphene_info, self.run_id)
-
-    def resolve_computeLogs(self, _graphene_info: ResolveInfo, stepKey):
-        return GrapheneComputeLogs(runId=self.run_id, stepKey=stepKey)
 
     def resolve_capturedLogs(self, graphene_info: ResolveInfo, fileKey):
         compute_log_manager = get_compute_log_manager(graphene_info)

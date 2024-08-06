@@ -14,7 +14,6 @@ import {memo} from 'react';
 import styled from 'styled-components';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
-import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
@@ -38,7 +37,6 @@ import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
 interface RunProps {
@@ -210,7 +208,6 @@ const RunWithData = ({
       : [];
   }, [runtimeGraph, selectionQuery]);
 
-  const supportsCapturedLogs = useSupportsCapturedLogs();
   const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
     useComputeLogFileKeyForSelection({
       stepKeys,
@@ -369,19 +366,12 @@ const RunWithData = ({
               {logType !== LogType.structured ? (
                 !computeLogFileKey ? (
                   <NoStepSelectionState type={logType} />
-                ) : supportsCapturedLogs ? (
+                ) : (
                   <CapturedOrExternalLogPanel
                     logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
                     logCaptureInfo={logCaptureInfo}
                     visibleIOType={LogType[logType]}
                     onSetDownloadUrl={setComputeLogUrl}
-                  />
-                ) : (
-                  <ComputeLogPanel
-                    runId={runId}
-                    computeLogFileKey={stepKeys.length ? computeLogFileKey : undefined}
-                    ioType={LogType[logType]}
-                    setComputeLogUrl={setComputeLogUrl}
                   />
                 )
               ) : (

@@ -1143,9 +1143,6 @@ class GrapheneQuery(graphene.ObjectType):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> GrapheneCapturedLogs:
-        # Type-ignore because `get_log_data` returns a `ComputeLogManager` but in practice this is
-        # always also an instance of `CapturedLogManager`, which defines `get_log_data`. Probably
-        # `ComputeLogManager` should subclass `CapturedLogManager`.
         log_data = get_compute_log_manager(graphene_info).get_log_data(
             logKey, cursor=cursor, max_bytes=limit
         )
