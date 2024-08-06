@@ -104,7 +104,6 @@ setup(
         'tzdata; platform_system=="Windows"',
         "structlog",
         "sqlalchemy>=1.0,<3",
-        "toposort>=1.0",
         "watchdog>=0.8.3",
         'psutil>=1.0; platform_system=="Windows"',
         # https://github.com/mhammond/pywin32/issues/1439

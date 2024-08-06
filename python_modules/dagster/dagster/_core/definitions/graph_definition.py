@@ -18,7 +18,6 @@ from typing import (
     cast,
 )
 
-from toposort import CircularDependencyError
 from typing_extensions import Self
 
 import dagster._check as check
@@ -35,6 +34,7 @@ from dagster._core.types.dagster_type import (
 )
 from dagster._core.utils import toposort_flatten
 from dagster._utils.warnings import normalize_renamed_param
+from dagster._vendored.toposort.toposort import CircularDependencyError
 
 from .dependency import (
     DependencyMapping,

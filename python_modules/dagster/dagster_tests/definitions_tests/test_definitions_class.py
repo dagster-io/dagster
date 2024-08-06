@@ -739,7 +739,7 @@ def test_job_with_reserved_name():
 
 
 def test_asset_cycle():
-    from toposort import CircularDependencyError
+    from dagster._vendored.toposort.toposort import CircularDependencyError
 
     @asset
     def a(s, c):
