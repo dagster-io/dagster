@@ -37,6 +37,7 @@ def pipeline(month: Optional[str] = None):
         primary_key=["repo_id", "issue_id"], write_disposition="merge", data_from=repos
     )
     def repo_issues(repo):
+        """Extracted list of issues from repositories."""
         if repo["last_modified_dt"][:-3] == month or not month:
             yield MOCK_ISSUES[repo["id"]]
 

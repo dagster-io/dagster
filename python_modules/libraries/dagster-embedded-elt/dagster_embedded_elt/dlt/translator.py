@@ -70,6 +70,11 @@ class DagsterDltTranslator:
         Returns:
             Optional[str]: The Dagster description for the dlt resource.
         """
+        pipe = resource._pipe  # noqa: SLF001
+        # If the function underlying the resource is a single callable,
+        # return the docstring of the callable.
+        if len(pipe.steps) == 1 and callable(pipe.steps[0]):
+            return pipe.steps[0].__doc__
         return None
 
     @public
