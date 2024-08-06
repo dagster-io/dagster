@@ -5,10 +5,19 @@ setup(
     packages=find_packages(exclude=["use_case_repository_tests"]),
     install_requires=[
         "dagster",
-        "dagster-cloud",
-        "boto3",
-        "pandas",
-        "matplotlib",
+        "dagster-embedded-elt",
+        "dagster-pipes",
+        "python-frontmatter",
+        "pymdown-extensions",
+        "markdown",
+        "flask",
+        "sling",
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest"]},
+    extras_require={
+        "dev": [
+            "dagster-webserver",
+            "pytest",
+            "ruff",
+        ]
+    },
 )
