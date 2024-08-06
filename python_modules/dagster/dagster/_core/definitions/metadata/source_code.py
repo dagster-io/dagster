@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
 
@@ -160,8 +160,17 @@ class FilePathMapping(ABC):
     mapping function can be provided to handle these cases.
     """
 
+    @public
     @abstractmethod
-    def convert_to_source_control_path(self, local_path: Path) -> str: ...
+    def convert_to_source_control_path(self, local_path: Path) -> str:
+        """Maps a local file path to the corresponding path in a source control repository.
+
+        Args:
+            local_path (Path): The local file path to map.
+
+        Returns:
+            str: The corresponding path in the hosted source control repository, relative to the repository root.
+        """
 
 
 @experimental
@@ -192,7 +201,17 @@ class AnchorBasedFilePathMapping(FilePathMapping):
     local_file_anchor: Path
     file_anchor_path_in_repository: str
 
+    @public
     def convert_to_source_control_path(self, local_path: Path) -> str:
+        """Maps a local file path to the corresponding path in a source control repository
+        based on the anchor file and its corresponding path in the repository.
+
+        Args:
+            local_path (Path): The local file path to map.
+
+        Returns:
+            str: The corresponding path in the hosted source control repository, relative to the repository root.
+        """
         path_from_anchor_to_target = os.path.relpath(
             local_path,
             self.local_file_anchor,
