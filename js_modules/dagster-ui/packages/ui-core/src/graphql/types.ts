@@ -2528,29 +2528,6 @@ export type MaterializedPartitionRangeStatuses2D = {
   secondaryDim: PartitionStatus1D;
 };
 
-export type MegaRun = {
-  __typename: 'MegaRun';
-  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
-  assetSelection: Maybe<Array<AssetKey>>;
-  backfill: Maybe<PartitionBackfill>;
-  creationTime: Maybe<Scalars['Float']['output']>;
-  endTime: Maybe<Scalars['Float']['output']>;
-  jobName: Maybe<Scalars['String']['output']>;
-  runId: Scalars['String']['output'];
-  runType: RunType;
-  singleRun: Maybe<Run>;
-  startTime: Maybe<Scalars['Float']['output']>;
-  status: Maybe<RunStatus>;
-  tags: Array<PipelineTag>;
-};
-
-export type MegaRuns = {
-  __typename: 'MegaRuns';
-  results: Array<MegaRun>;
-};
-
-export type MegaRunsOrError = InvalidPipelineRunsFilterError | MegaRuns | PythonError;
-
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -3716,7 +3693,6 @@ export type Query = {
   isPipelineConfigValid: PipelineConfigValidationResult;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
-  megaRunsOrError: MegaRunsOrError;
   partitionBackfillOrError: PartitionBackfillOrError;
   partitionBackfillsOrError: PartitionBackfillsOrError;
   partitionSetOrError: PartitionSetOrError;
@@ -3872,11 +3848,6 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   runId: Scalars['ID']['input'];
-};
-
-export type QueryMegaRunsOrErrorArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type QueryPartitionBackfillOrErrorArgs = {
@@ -4717,11 +4688,6 @@ export type RunTags = {
 };
 
 export type RunTagsOrError = PythonError | RunTags;
-
-export enum RunType {
-  BACKFILL = 'BACKFILL',
-  RUN = 'RUN',
-}
 
 export type Runs = PipelineRuns & {
   __typename: 'Runs';
@@ -9865,58 +9831,6 @@ export const buildMaterializedPartitionRangeStatuses2D = (
   };
 };
 
-export const buildMegaRun = (
-  overrides?: Partial<MegaRun>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'MegaRun'} & MegaRun => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('MegaRun');
-  return {
-    __typename: 'MegaRun',
-    assetCheckSelection:
-      overrides && overrides.hasOwnProperty('assetCheckSelection')
-        ? overrides.assetCheckSelection!
-        : [],
-    assetSelection:
-      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
-    backfill:
-      overrides && overrides.hasOwnProperty('backfill')
-        ? overrides.backfill!
-        : relationshipsToOmit.has('PartitionBackfill')
-        ? ({} as PartitionBackfill)
-        : buildPartitionBackfill({}, relationshipsToOmit),
-    creationTime:
-      overrides && overrides.hasOwnProperty('creationTime') ? overrides.creationTime! : 1.1,
-    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 2.59,
-    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'rerum',
-    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nesciunt',
-    runType:
-      overrides && overrides.hasOwnProperty('runType') ? overrides.runType! : RunType.BACKFILL,
-    singleRun:
-      overrides && overrides.hasOwnProperty('singleRun')
-        ? overrides.singleRun!
-        : relationshipsToOmit.has('Run')
-        ? ({} as Run)
-        : buildRun({}, relationshipsToOmit),
-    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 7.11,
-    status:
-      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
-    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
-  };
-};
-
-export const buildMegaRuns = (
-  overrides?: Partial<MegaRuns>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'MegaRuns'} & MegaRuns => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('MegaRuns');
-  return {
-    __typename: 'MegaRuns',
-    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
-  };
-};
-
 export const buildMessageEvent = (
   overrides?: Partial<MessageEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -12001,12 +11915,6 @@ export const buildQuery = (
         : relationshipsToOmit.has('EventConnection')
         ? ({} as EventConnection)
         : buildEventConnection({}, relationshipsToOmit),
-    megaRunsOrError:
-      overrides && overrides.hasOwnProperty('megaRunsOrError')
-        ? overrides.megaRunsOrError!
-        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
-        ? ({} as InvalidPipelineRunsFilterError)
-        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
     partitionBackfillOrError:
       overrides && overrides.hasOwnProperty('partitionBackfillOrError')
         ? overrides.partitionBackfillOrError!

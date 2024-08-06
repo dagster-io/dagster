@@ -32,8 +32,9 @@ if TYPE_CHECKING:
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.execution import GrapheneExecutionPlan
     from ..schema.logs.events import GrapheneRunStepStats
+    from ..schema.mega_run import GrapheneMegaRun
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
-    from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneMegaRun, GrapheneRun
+    from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
     from ..schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
     from ..schema.util import ResolveInfo
@@ -408,7 +409,7 @@ def get_mega_runs(
 
     Cursor format: run_id;backfill_id
     """
-    from ..schema.pipelines.pipeline import GrapheneMegaRun
+    from ..schema.mega_run import GrapheneMegaRun
 
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")

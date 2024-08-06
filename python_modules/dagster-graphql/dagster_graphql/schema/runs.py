@@ -212,7 +212,7 @@ def parse_run_config_input(
 
 
 class GrapheneMegaRuns(graphene.ObjectType):
-    results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneMegaRun")
+    results = non_null_list("dagster_graphql.schema.mega_run.GrapheneMegaRun")
 
     class Meta:
         name = "MegaRuns"

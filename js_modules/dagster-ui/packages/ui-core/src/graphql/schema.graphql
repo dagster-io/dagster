@@ -1371,7 +1371,7 @@ type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   valueRep: String
 }
 
-type Run implements PipelineRun {
+type Run implements PipelineRun & MegaRun {
   id: ID!
   runId: String!
   pipelineSnapshotId: String
@@ -1395,14 +1395,15 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   eventConnection(afterCursor: String, limit: Int): EventConnection!
-  parentPipelineSnapshotId: String
-  assetSelection: [AssetKey!]
-  assetCheckSelection: [AssetCheckhandle!]
-  resolvedOpSelection: [String!]
-  assetMaterializations: [MaterializationEvent!]!
+  runStatus: RunStatus!
   creationTime: Float!
   startTime: Float
   endTime: Float
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
+  parentPipelineSnapshotId: String
+  resolvedOpSelection: [String!]
+  assetMaterializations: [MaterializationEvent!]!
   updateTime: Float
   hasReExecutePermission: Boolean!
   hasTerminatePermission: Boolean!
@@ -1410,6 +1411,18 @@ type Run implements PipelineRun {
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
   hasUnconstrainedRootNodes: Boolean!
+}
+
+interface MegaRun {
+  runId: String!
+  runStatus: RunStatus
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
 }
 
 type AssetCheckhandle {
@@ -2756,7 +2769,16 @@ type PartitionRun {
   run: Run
 }
 
-type PartitionBackfill {
+type PartitionBackfill implements MegaRun {
+  runId: String!
+  runStatus: RunStatus!
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
   id: String!
   status: BulkActionStatus!
   partitionNames: [String!]
@@ -2765,7 +2787,6 @@ type PartitionBackfill {
   numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]
-  assetSelection: [AssetKey!]
   partitionSetName: String
   timestamp: Float!
   endTimestamp: Float
@@ -2782,7 +2803,6 @@ type PartitionBackfill {
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
   user: String
-  tags: [PipelineTag!]!
   title: String
   description: String
   logEvents(cursor: String): InstigationEventConnection!
@@ -2954,26 +2974,6 @@ union MegaRunsOrError = MegaRuns | InvalidPipelineRunsFilterError | PythonError
 
 type MegaRuns {
   results: [MegaRun!]!
-}
-
-type MegaRun {
-  singleRun: Run
-  backfill: PartitionBackfill
-  runType: RunType!
-  runId: String!
-  status: RunStatus
-  creationTime: Float
-  startTime: Float
-  endTime: Float
-  tags: [PipelineTag!]!
-  jobName: String
-  assetSelection: [AssetKey!]
-  assetCheckSelection: [AssetCheckhandle!]
-}
-
-enum RunType {
-  RUN
-  BACKFILL
 }
 
 type Sensor {

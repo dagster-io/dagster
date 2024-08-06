@@ -47,6 +47,7 @@ from .errors import (
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
 )
+from .mega_run import GrapheneMegaRun
 from .pipelines.config import GrapheneRunConfigValidationInvalid
 from .util import ResolveInfo, non_null_list
 
@@ -54,6 +55,7 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.partition_sets import GraphenePartitionStatusCounts
 
     from ..schema.partition_sets import GraphenePartitionSet
+    from .asset_checks import GrapheneAssetCheckHandle
     from .pipelines.pipeline import GrapheneRun
 
 pipeline_execution_error_types = (
@@ -289,10 +291,16 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
 
 class GraphenePartitionBackfill(graphene.ObjectType):
     class Meta:
+        interfaces = (GrapheneMegaRun,)
+
         name = "PartitionBackfill"
 
     id = graphene.NonNull(graphene.String)
+    runId = graphene.NonNull(graphene.String)  # for MegaRun interface - dupe of id
     status = graphene.NonNull(GrapheneBulkActionStatus)
+    runStatus = graphene.NonNull(
+        GrapheneRunStatus
+    )  # for MegaRun interface - combines status with sub-run statuses
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
     numPartitions = graphene.Field(graphene.Int)
@@ -302,7 +310,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
+    creationTime = graphene.NonNull(graphene.Float)  # for MegaRun interface - dupe of timestamp
+    startTime = graphene.Float()  # for MegaRun interface - dupe of timestamp
     endTimestamp = graphene.Field(graphene.Float)
+    endTime = graphene.Float()  # for MegaRun interface - dupe of endTimestamp
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
@@ -339,6 +350,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         graphene.NonNull("dagster_graphql.schema.instigation.GrapheneInstigationEventConnection"),
         cursor=graphene.String(),
     )
+    jobName = graphene.String()  # for MegaRun interface - dupe of partitionSetName
+    assetCheckSelection = graphene.List(
+        graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
+    )
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -348,11 +363,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         super().__init__(
             id=backfill_job.backfill_id,
+            runId=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
+            jobName=backfill_job.partition_set_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
             timestamp=backfill_job.backfill_timestamp,
+            creationTime=backfill_job.backfill_timestamp,
+            startTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
         )
 
@@ -466,6 +485,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             if get_tag_type(key) != TagType.HIDDEN
         ]
 
+    def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
+        return self.status.to_dagster_run_status()
+
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
             # if it's still in progress then there is no end time
@@ -475,6 +497,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         for record in records:
             max_end_time = max(record.end_time or 0, max_end_time)
         return max_end_time
+
+    def resolve_endTime(self, graphene_info: ResolveInfo) -> Optional[float]:
+        return self.resolve_endTimestamp(graphene_info)
 
     def resolve_isValidSerialization(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_valid_serialization(_graphene_info.context)
@@ -636,6 +661,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             cursor=new_cursor.to_string() if new_cursor else "",
             hasMore=new_cursor.has_more_now if new_cursor else False,
         )
+
+    def resolve_assetCheckSelection(
+        self, _graphene_info: ResolveInfo
+    ) -> Sequence["GrapheneAssetCheckHandle"]:
+        return []
 
 
 class GrapheneBackfillNotFoundError(graphene.ObjectType):
