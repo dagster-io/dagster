@@ -46,6 +46,8 @@ import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
+import {PartitionDefinitionType} from '../graphql/types';
 
 interface Props {
   assetKey: AssetKey;
@@ -272,6 +274,20 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
       : null,
     refresh,
   );
+
+  const dynamicDimension = definition?.partitionDefinition?.dimensionTypes.some(
+    (d) => d.type === PartitionDefinitionType.DYNAMIC,
+  );
+  const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
+    dynamicDimension
+      ? {
+          partitionsDefName: dynamicDimension.dynamicPartitionsDefinitionName,
+          repository: definition.repository,
+        }
+      : null,
+    refresh,
+  );
+
   const reportEvents = useReportEventsModal(
     definition
       ? {
@@ -331,6 +347,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
             ) : undefined}
             {reportEvents.element}
             {wipe.element}
+            {dynamicPartitionsDelete.element}
           </Box>
         }
       />
@@ -470,6 +487,10 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     groupName
     partitionDefinition {
       description
+      dimensionTypes {
+        type
+        dynamicPartitionsDefinitionName
+      }
     }
     partitionKeysByDimension {
       name
