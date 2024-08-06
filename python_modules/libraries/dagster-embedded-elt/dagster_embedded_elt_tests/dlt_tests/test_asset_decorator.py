@@ -12,6 +12,8 @@ from dagster import (
     MonthlyPartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.metadata.metadata_value import TableSchemaMetadataValue
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
@@ -55,6 +57,28 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
 
         row = conn.execute("select count(*) from example.repo_issues").fetchone()
         assert row and row[0] == 7
+
+    materializations = [event.materialization for event in res.get_asset_materialization_events()]
+    assert all(
+        "dagster/column_schema" in materialization.metadata for materialization in materializations
+    )
+
+    repos_materialization = next(
+        materialization
+        for materialization in materializations
+        if materialization.asset_key == AssetKey("dlt_pipeline_repos")
+    )
+    assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
+        schema=TableSchema(
+            columns=[
+                TableColumn(name="id", type="bigint"),
+                TableColumn(name="name", type="text"),
+                TableColumn(name="last_modified_dt", type="text"),
+                TableColumn(name="_dlt_load_id", type="text"),
+                TableColumn(name="_dlt_id", type="text"),
+            ]
+        ),
+    )
 
 
 def test_multi_asset_names_do_not_conflict(dlt_pipeline: Pipeline) -> None:
