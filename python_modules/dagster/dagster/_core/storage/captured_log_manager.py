@@ -1,15 +1,20 @@
 import os
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from enum import Enum
 from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence, Tuple
 
 from typing_extensions import Final, Self
 
 import dagster._check as check
 from dagster._core.captured_log_api import LogLineCursor
-from dagster._core.storage.compute_log_manager import ComputeIOType
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
+
+
+class ComputeIOType(Enum):
+    STDOUT = "stdout"
+    STDERR = "stderr"
 
 
 class CapturedLogContext(
