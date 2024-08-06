@@ -1,3 +1,8 @@
+---
+title: "AWS S3 to Postgres Data Transfer with Dagster"
+description: "This use case demonstrates how to transfer data from AWS S3 to a Postgres database using Dagster. The objective is to automate the extraction of data from S3, perform necessary transformations, and load it into Postgres for further analysis or reporting."
+tags: ["aws", "s3", "postgres", "elt"]
+---
 ## AWS S3 to Postgres Data Pipeline
 
 ### Overview

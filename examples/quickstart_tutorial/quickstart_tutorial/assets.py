@@ -1,5 +1,4 @@
-from dagster import asset
-from dagster import AssetCheckResult, Definitions, asset, asset_check
+from dagster import AssetCheckResult, asset, asset_check
 
 
 @asset(group_name="simple_dependencies")

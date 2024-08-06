@@ -1,3 +1,9 @@
+---
+title: "AWS S3 to Redshift Data Transfer with Dagster"
+description: "This use case demonstrates how to transfer data from AWS S3 to Amazon Redshift using Dagster. The objective is to automate the extraction of data from S3, perform necessary transformations, and load it into Redshift for further analysis or reporting."
+tags: ["aws", "s3", "redshift", "elt"]
+---
+
 ## AWS S3 to Redshift Data Pipeline
 
 ### Overview
