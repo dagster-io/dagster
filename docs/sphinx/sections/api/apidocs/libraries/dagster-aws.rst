@@ -98,9 +98,28 @@ Resources which surface SecretsManager secrets for use in Dagster resources and 
 Pipes
 --------------
 
+Context Injectors
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_aws.pipes.PipesS3ContextInjector
+
+.. autoclass:: dagster_aws.pipes.PipesLambdaEventContextInjector
+
+Message Readers
+^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_aws.pipes.PipesS3MessageReader
+
+.. autoclass:: dagster_aws.pipes.PipesCloudWatchMessageReader
+   :members: consume_cloudwatch_logs
+
+Clients
+^^^^^^^
+
 .. autoclass:: dagster_aws.pipes.PipesLambdaClient
 
 .. autoclass:: dagster_aws.pipes.PipesGlueClient
+   :members: run
 
 Legacy
 --------

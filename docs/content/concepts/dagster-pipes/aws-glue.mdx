@@ -7,9 +7,7 @@ description: "Learn to integrate Dagster Pipes with AWS Glue to launch external 
 
 This tutorial gives a short overview on how to use [Dagster Pipes](/concepts/dagster-pipes) with [AWS Glue](https://aws.amazon.com/glue/).
 
-The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides the <PyObject object="PipesGlueClient" module="dagster_aws.pipes" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
-
----
+## The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides the <PyObject object="PipesGlueClient" module="dagster_aws.pipes" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
 
 ## Prerequisites
 
@@ -47,23 +45,24 @@ import boto3
 from dagster_pipes import (
     PipesCliArgsParamsLoader,
     PipesS3ContextLoader,
-    PipesS3MessageWriter,
     open_dagster_pipes,
 )
 
 client = boto3.client("s3")
 context_loader = PipesS3ContextLoader(client)
-message_writer = PipesS3MessageWriter(client)
 params_loader = PipesCliArgsParamsLoader()
 
 
 def main():
     with open_dagster_pipes(
         context_loader=context_loader,
-        message_writer=message_writer,
         params_loader=params_loader,
     ) as pipes:
         pipes.log.info("Hello from AWS Glue job!")
+        pipes.report_asset_materialization(
+            metadata={"some_metric": {"raw_value": 0, "type": "int"}},
+            data_version="alpha",
+        )
 
 
 if __name__ == "__main__":
@@ -107,7 +106,8 @@ Next, add the `PipesGlueClient` resource to your project's <PyObject object="Def
 
 ```python file=/guides/dagster/dagster_pipes/glue/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa
-from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
+from dagster_aws.pipes import PipesS3ContextInjector, PipesCloudWatchMessageReader
+
 
 bucket = os.environ["DAGSTER_GLUE_S3_CONTEXT_BUCKET"]
 
@@ -121,15 +121,15 @@ defs = Definitions(
                 client=boto3.client("s3"),
                 bucket=bucket,
             ),
-            message_reader=PipesS3MessageReader(
-                client=boto3.client("s3"), bucket=bucket
-            ),
+            message_reader=PipesCloudWatchMessageReader(client=boto3.client("logs")),
         )
     },
 )
 ```
 
 Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` asset.
+
+By default the client will be using the CloudWatch log stream (`.../output/<job-run-id>`) created by the Glue job to receive Dagster events and will forward this stream to `stdout`. If this is undesired, instead, the client can be configured to use <PyObject object="PipesS3MessageReader" module="dagster_aws.pipes" />, and the Glue job can use <PyObject object="PipesS3MessageWriter" module="dagster_pipes" /> .
 
 ---
 
