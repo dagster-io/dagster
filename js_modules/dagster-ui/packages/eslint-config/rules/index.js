@@ -3,6 +3,7 @@ const projectName = 'dagster-rules';
 
 const rules = {
   'missing-graphql-variables-type': require('./missing-graphql-variables-type').rule,
+  'no-oss-imports': require('./no-oss-imports'),
 };
 
 module.exports = {
@@ -12,6 +13,7 @@ module.exports = {
       plugins: [projectName],
       rules: {
         [`${projectName}/missing-graphql-variables-type`]: 'error',
+        [`${projectName}/no-oss-imports`]: 'error',
       },
     },
   },
