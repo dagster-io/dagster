@@ -72,10 +72,7 @@ export const AssetPageHeader = ({
   return (
     <PageHeader
       title={
-        <Box
-          flex={{alignItems: 'center', gap: 4}}
-          style={{maxWidth: '600px', overflow: 'hidden', marginBottom: 4}}
-        >
+        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px', marginBottom: 4}}>
           <Title>
             <BreadcrumbsWithSlashes
               items={breadcrumbs}

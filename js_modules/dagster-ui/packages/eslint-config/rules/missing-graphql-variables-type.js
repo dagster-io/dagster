@@ -22,6 +22,7 @@ const APIToEnding = {
   useQuery: 'Query',
   useMutation: 'Mutation',
   useSubscription: 'Subscription',
+  useLazyQuery: 'LazyQuery',
 };
 
 module.exports = {

@@ -293,8 +293,8 @@ class DagsterWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             return [
                 Route("/favicon.png", lambda _: FileResponse(path="/favicon")),
                 Route(
-                    "/vendor/graphql-playground/index.css",
-                    lambda _: FileResponse(path="/vendor/graphql-playground/index.css"),
+                    "/vendor/graphiql/graphiql.min.css",
+                    lambda _: FileResponse(path="/vendor/graphiql/graphiql.min.css"),
                 ),
             ]
 

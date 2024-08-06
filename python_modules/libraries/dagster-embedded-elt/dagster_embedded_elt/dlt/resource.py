@@ -10,6 +10,8 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental, public
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
@@ -94,6 +96,18 @@ class DagsterDltResource(ConfigurableResource):
             for job in load_package.get("jobs", [])
             if job.get("table_name") == resource.table_name
         ]
+
+        table_columns = [
+            TableColumn(name=column.get("name"), type=column.get("data_type"))
+            for pkg in load_info_dict.get("load_packages", [])
+            for table in pkg.get("tables", [])
+            for column in table.get("columns", [])
+            if table.get("name") == resource.table_name
+        ]
+        base_metadata = {
+            **base_metadata,
+            **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
+        }
 
         return base_metadata
 

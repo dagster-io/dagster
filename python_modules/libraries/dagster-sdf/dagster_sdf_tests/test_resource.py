@@ -8,7 +8,7 @@ import pytest
 from dagster import In, Nothing, Out, job, op
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster_sdf.constants import SDF_DAGSTER_OUTPUT_DIR
+from dagster_sdf.constants import SDF_DAGSTER_OUTPUT_DIR, SDF_TARGET_DIR
 from dagster_sdf.resource import SdfCliResource
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
@@ -29,6 +29,8 @@ def test_sdf_cli(global_config_flags: List[str]) -> None:
         "--log-level",
         "info",
         "compile",
+        "--save",
+        "table-deps",
         "--environment",
         "dbg",
         "--target-dir",
@@ -37,7 +39,7 @@ def test_sdf_cli(global_config_flags: List[str]) -> None:
     sdf = SdfCliResource(
         workspace_dir=os.fspath(moms_flower_shop_path), global_config_flags=global_config_flags
     )
-    sdf_cli_invocation = sdf.cli(["compile"])
+    sdf_cli_invocation = sdf.cli(["compile", "--save", "table-deps"])
     *_, target_dir = sdf_cli_invocation.process.args  # type: ignore
 
     assert sdf_cli_invocation.process.args == [*expected_sdf_cli_args, target_dir]
@@ -52,7 +54,7 @@ def test_sdf_cli_executable() -> None:
     sdf_executable = cast(str, shutil.which("sdf"))
     invocation = SdfCliResource(
         workspace_dir=os.fspath(moms_flower_shop_path), sdf_executable=sdf_executable
-    ).cli(["compile"])
+    ).cli(["compile", "--save", "table-deps"])
     assert invocation.is_successful()
     assert not invocation.get_error()
 
@@ -65,7 +67,7 @@ def test_sdf_cli_workspace_dir_path() -> None:
     sdf = SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
 
     assert Path(sdf.workspace_dir).is_absolute()
-    assert sdf.cli(["compile"]).is_successful()
+    assert sdf.cli(["compile", "--save", "table-deps"]).is_successful()
 
     # workspace directory must exist
     with pytest.raises(ValidationError, match="does not exist"):
@@ -122,12 +124,20 @@ def test_sdf_cli_get_artifact(sdf: SdfCliResource) -> None:
 def test_sdf_cli_target_dir(tmp_path: Path, sdf: SdfCliResource) -> None:
     sdf_cli_invocation_1 = sdf.cli(["compile"], target_dir=tmp_path).wait()
     manifest_st_mtime_1 = (
-        sdf_cli_invocation_1.output_dir.joinpath("makefile-compile.json").stat().st_mtime
+        sdf_cli_invocation_1.target_dir.joinpath(
+            SDF_TARGET_DIR, sdf_cli_invocation_1.environment, "makefile-compile.json"
+        )
+        .stat()
+        .st_mtime
     )
 
     sdf_cli_invocation_2 = sdf.cli(["compile"], target_dir=sdf_cli_invocation_1.target_dir).wait()
     manifest_st_mtime_2 = (
-        sdf_cli_invocation_2.output_dir.joinpath("makefile-compile.json").stat().st_mtime
+        sdf_cli_invocation_2.target_dir.joinpath(
+            SDF_TARGET_DIR, sdf_cli_invocation_2.environment, "makefile-compile.json"
+        )
+        .stat()
+        .st_mtime
     )
 
     # The target path should be the same for both invocations
@@ -158,11 +168,11 @@ def test_sdf_environment_configuration(sdf: SdfCliResource) -> None:
 def test_sdf_cli_op_execution(sdf: SdfCliResource) -> None:
     @op(out={})
     def my_sdf_op_yield_events(context: OpExecutionContext, sdf: SdfCliResource):
-        yield from sdf.cli(["run"], context=context).stream()
+        yield from sdf.cli(["run", "--save", "info-schema"], context=context).stream()
 
     @op(out=Out(Nothing))
     def my_sdf_op_yield_events_with_downstream(context: OpExecutionContext, sdf: SdfCliResource):
-        yield from sdf.cli(["run"], context=context).stream()
+        yield from sdf.cli(["run", "--save", "info-schema"], context=context).stream()
 
     @op(ins={"depends_on": In(dagster_type=Nothing)})
     def my_downstream_op(): ...
@@ -191,7 +201,7 @@ def test_custom_subclass():
 def test_metadata(sdf: SdfCliResource) -> None:
     @op(out={})
     def my_sdf_op_yield_events(context: OpExecutionContext, sdf: SdfCliResource):
-        yield from sdf.cli(["run"], context=context).stream()
+        yield from sdf.cli(["run", "--save", "info-schema"], context=context).stream()
 
     @job
     def my_sdf_job_yield_events():

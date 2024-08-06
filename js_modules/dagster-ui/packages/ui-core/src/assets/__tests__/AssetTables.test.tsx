@@ -4,18 +4,10 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
-import {AppTopNavRightOfLogo} from '../../app/AppTopNav/AppTopNavRightOfLogo';
-import {InjectedComponentContext} from '../../app/InjectedComponentContext';
-import {UserPreferences} from '../../app/UserSettingsDialog/UserPreferences.oss';
-import {useAssetGraphExplorerFilters} from '../../asset-graph/useAssetGraphExplorerFilters.oss';
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
-import {AssetPageHeader} from '../AssetPageHeader.oss';
-import {AssetWipeDialog} from '../AssetWipeDialog.oss';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
-import {AssetsGraphHeader} from '../AssetsGraphHeader.oss';
-import AssetsOverviewRoot from '../AssetsOverviewRoot.oss';
 import {
   AssetCatalogGroupTableMock,
   AssetCatalogTableMock,
@@ -24,8 +16,6 @@ import {
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryTrafficDashboard,
 } from '../__fixtures__/AssetTables.fixtures';
-import {useAssetCatalogFiltering} from '../useAssetCatalogFiltering.oss';
-import {useAssetDefinitionFilterState} from '../useAssetDefinitionFilterState.oss';
 
 const workspaceMocks = buildWorkspaceMocks([]);
 
@@ -57,33 +47,11 @@ describe('AssetTable', () => {
         return (
           <RecoilRoot>
             <MemoryRouter>
-              <InjectedComponentContext.Provider
-                value={{
-                  components: {
-                    AssetPageHeader,
-                    AssetWipeDialog,
-                    AppTopNavRightOfLogo,
-                    UserPreferences,
-                    AssetsOverview: AssetsOverviewRoot,
-                    FallthroughRoot: null,
-                    AssetsGraphHeader,
-                    OverviewPageAlerts: null,
-                    RunMetricsDialog: null,
-                    AssetCatalogTableBottomActionBar: () => null,
-                  },
-                  hooks: {
-                    useAssetDefinitionFilterState,
-                    useAssetCatalogFiltering,
-                    useAssetGraphExplorerFilters,
-                  },
-                }}
-              >
-                <MockedProvider mocks={MOCKS}>
-                  <WorkspaceProvider>
-                    <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
-                  </WorkspaceProvider>
-                </MockedProvider>
-              </InjectedComponentContext.Provider>
+              <MockedProvider mocks={MOCKS}>
+                <WorkspaceProvider>
+                  <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+                </WorkspaceProvider>
+              </MockedProvider>
             </MemoryRouter>
           </RecoilRoot>
         );

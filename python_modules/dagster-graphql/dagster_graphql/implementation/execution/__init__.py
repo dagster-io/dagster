@@ -24,8 +24,7 @@ from dagster._core.events import (
     EngineEventData,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
+from dagster._core.storage.captured_log_manager import CapturedLogData, CapturedLogManager
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -47,10 +46,7 @@ from .backfill import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.logs.compute_logs import (
-        GrapheneCapturedLogs,
-        GrapheneComputeLogFile,
-    )
+    from dagster_graphql.schema.logs.compute_logs import GrapheneCapturedLogs
     from dagster_graphql.schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionSuccess,
@@ -311,40 +307,6 @@ async def gen_events_for_run(
         instance.end_watch_event_logs(run_id, _enqueue)
 
 
-async def gen_compute_logs(
-    graphene_info: "ResolveInfo",
-    run_id: str,
-    step_key: str,
-    io_type: ComputeIOType,
-    cursor: Optional[str] = None,
-) -> AsyncIterator[Optional["GrapheneComputeLogFile"]]:
-    from ...schema.logs.compute_logs import from_compute_log_file
-
-    check.str_param(run_id, "run_id")
-    check.str_param(step_key, "step_key")
-    check.inst_param(io_type, "io_type", ComputeIOType)
-    check.opt_str_param(cursor, "cursor")
-    instance = graphene_info.context.instance
-
-    obs = instance.compute_log_manager.observable(run_id, step_key, io_type, cursor)
-
-    loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[ComputeLogFileData] = asyncio.Queue()
-
-    def _enqueue(new_event):
-        loop.call_soon_threadsafe(queue.put_nowait, new_event)
-
-    obs(_enqueue)
-    is_complete = False
-    try:
-        while not is_complete:
-            update = await queue.get()
-            yield from_compute_log_file(update)
-            is_complete = obs.is_complete
-    finally:
-        obs.dispose()
-
-
 async def gen_captured_log_data(
     graphene_info: "ResolveInfo", log_key: Sequence[str], cursor: Optional[str] = None
 ) -> AsyncIterator["GrapheneCapturedLogs"]:
@@ -359,7 +321,7 @@ async def gen_captured_log_data(
     subscription = compute_log_manager.subscribe(log_key, cursor)
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[ComputeLogFileData] = asyncio.Queue()
+    queue: asyncio.Queue[CapturedLogData] = asyncio.Queue()
 
     def _enqueue(new_event):
         loop.call_soon_threadsafe(queue.put_nowait, new_event)
@@ -369,7 +331,7 @@ async def gen_captured_log_data(
     try:
         while not is_complete:
             update = await queue.get()
-            yield from_captured_log_data(update)  # type: ignore
+            yield from_captured_log_data(update)
             is_complete = subscription.is_complete
     finally:
         subscription.dispose()

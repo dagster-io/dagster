@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Dict, List
 
 from dagster import AssetKey, AssetsDefinition
-from dagster_airlift import load_defs_from_yaml
 from dagster_airlift.dbt import DbtProjectDefs
 
 
@@ -12,8 +11,10 @@ def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
     assert os.environ["DBT_PROJECT_DIR"] == str(
         dbt_project_dir
     ), "Expected dbt project dir to be set as env var"
-    multi_asset_dir = Path(__file__).parent / "dbt_defs_from_yaml"
-    defs = load_defs_from_yaml(yaml_path=multi_asset_dir, defs_cls=DbtProjectDefs)
+    defs = DbtProjectDefs(
+        dbt_project_path=dbt_project_dir,
+        name="my_dbt_multi_asset",
+    ).build_defs()
     assert defs.assets
     all_assets = list(defs.assets)
     assert len(all_assets) == 1

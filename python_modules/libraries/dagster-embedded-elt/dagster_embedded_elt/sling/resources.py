@@ -2,13 +2,14 @@ import contextlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import time
 import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Union
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Sequence, Union
 
 import sling
 from dagster import (
@@ -16,12 +17,11 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     EnvVar,
-    MaterializeResult,
     OpExecutionContext,
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, public
 from dagster._utils.env import environ
 from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
@@ -33,6 +33,7 @@ from dagster_embedded_elt.sling.asset_decorator import (
     streams_with_default_dagster_meta,
 )
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_embedded_elt.sling.sling_event_iterator import SlingEventIterator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 logger = get_dagster_logger()
@@ -190,7 +191,6 @@ class SlingConnectionResource(PermissiveConfig):
     )
 
 
-@experimental
 class SlingResource(ConfigurableResource):
     """Resource for interacting with the Sling package. This resource can be used to run Sling replications.
 
@@ -422,6 +422,41 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
+    def _parse_json_table_output(self, table_output: Dict[str, Any]) -> List[Dict[str, str]]:
+        column_keys: List[str] = table_output["fields"]
+        column_values: List[List[str]] = table_output["rows"]
+
+        return [dict(zip(column_keys, column_values)) for column_values in column_values]
+
+    def get_column_info_for_table(self, target_name: str, table_name: str) -> List[Dict[str, str]]:
+        """Fetches column metadata for a given table in a Sling target and parses it into a list of
+        dictionaries, keyed by column name.
+
+        Args:
+            target_name (str): The name of the target connection to use.
+            table_name (str): The name of the table to fetch column metadata for.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries, keyed by column name, containing column metadata.
+        """
+        output = self.run_sling_cli(
+            ["conns", "discover", target_name, "--pattern", table_name, "--columns"],
+            force_json=True,
+        )
+        return self._parse_json_table_output(json.loads(output.strip()))
+
+    def run_sling_cli(self, args: Sequence[str], force_json: bool = False) -> str:
+        """Runs the Sling CLI with the given arguments and returns the output.
+
+        Args:
+            args (Sequence[str]): The arguments to pass to the Sling CLI.
+
+        Returns:
+            str: The output from the Sling CLI.
+        """
+        with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
+            return subprocess.check_output(args=[sling.SLING_BIN, *args], text=True)
+
     def replicate(
         self,
         *,
@@ -429,7 +464,7 @@ class SlingResource(ConfigurableResource):
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-    ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+    ) -> SlingEventIterator[AssetMaterialization]:
         """Runs a Sling replication from the given replication config.
 
         Args:
@@ -441,18 +476,37 @@ class SlingResource(ConfigurableResource):
         Returns:
             Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
         """
-        # attempt to retrieve params from asset context if not passed as a parameter
         if not (replication_config or dagster_sling_translator):
             metadata_by_key = context.assets_def.metadata_by_key
             first_asset_metadata = next(iter(metadata_by_key.values()))
             dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
             replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
 
-        # if translator has not been defined on metadata _or_ through param, then use the default constructor
         dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
+        replication_config_dict = dict(validate_replication(replication_config))
+        return SlingEventIterator(
+            self._replicate(
+                context=context,
+                replication_config=replication_config_dict,
+                dagster_sling_translator=dagster_sling_translator,
+                debug=debug,
+            ),
+            sling_cli=self,
+            replication_config=replication_config_dict,
+            context=context,
+        )
+
+    def _replicate(
+        self,
+        *,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        replication_config: Dict[str, Any],
+        dagster_sling_translator: DagsterSlingTranslator,
+        debug: bool,
+    ) -> Iterator[AssetMaterialization]:
+        # if translator has not been defined on metadata _or_ through param, then use the default constructor
 
         # convert to dict to enable updating the index
-        replication_config = dict(validate_replication(replication_config))
         context_streams = self._get_replication_streams_for_context(context)
         if context_streams:
             replication_config.update({"streams": context_streams})
@@ -483,24 +537,20 @@ class SlingResource(ConfigurableResource):
                 return_output=True,
                 env=env,
             )
-        for row in results.split("\n"):
-            clean_line = self._clean_line(row)
-            sys.stdout.write(clean_line + "\n")
-            self._stdout.append(clean_line)
+            for row in results.split("\n"):
+                clean_line = self._clean_line(row)
+                sys.stdout.write(clean_line + "\n")
+                self._stdout.append(clean_line)
 
-        end_time = time.time()
+            end_time = time.time()
 
-        has_asset_def: bool = bool(context and context.has_assets_def)
-
-        for stream in stream_definition:
-            output_name = dagster_sling_translator.get_asset_key(stream)
-            if has_asset_def:
-                yield MaterializeResult(
-                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
-                )
-            else:
+            # TODO: In the future, it'd be nice to yield these materializations as they come in
+            # rather than waiting until the end of the replication
+            for stream in stream_definition:
+                output_name = dagster_sling_translator.get_asset_key(stream)
                 yield AssetMaterialization(
-                    asset_key=output_name, metadata={"elapsed_time": end_time - start_time}
+                    asset_key=output_name,
+                    metadata={"elapsed_time": end_time - start_time, "stream_name": stream["name"]},
                 )
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
