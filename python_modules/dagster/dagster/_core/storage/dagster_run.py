@@ -651,8 +651,8 @@ class RunRecord(
         # this should be replaced with an async DB call
         records = instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
 
-        for run_record in records:
-            result_map[run_record.dagster_run.run_id] = run_record
+        for record in records:
+            result_map[record.dagster_run.run_id] = record
 
         return result_map.values()
 
