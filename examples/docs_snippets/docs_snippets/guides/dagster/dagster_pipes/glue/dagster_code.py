@@ -24,8 +24,7 @@ def glue_pipes_asset(
 # start_definitions_marker
 
 from dagster import Definitions  # noqa
-from dagster_aws.pipes import PipesGlueContextInjector, PipesS3MessageReader
-
+from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
 
 bucket = os.environ["DAGSTER_GLUE_S3_CONTEXT_BUCKET"]
 
@@ -35,7 +34,7 @@ defs = Definitions(
     resources={
         "pipes_glue_client": PipesGlueClient(
             client=boto3.client("glue"),
-            context_injector=PipesGlueContextInjector(
+            context_injector=PipesS3ContextInjector(
                 client=boto3.client("s3"),
                 bucket=bucket,
             ),

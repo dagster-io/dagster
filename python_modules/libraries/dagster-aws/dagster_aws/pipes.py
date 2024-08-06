@@ -334,24 +334,15 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         return PipesClientCompletedInvocation(session)
 
 
-class PipesGlueContextInjector(PipesS3ContextInjector):
-    def no_messages_debug_text(self) -> str:
-        return "Attempted to inject context via Glue job Arguments"
-
-
-class PipesGlueLogsMessageReader(PipesCloudWatchMessageReader):
-    pass
-
-
 @experimental
 class PipesGlueClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS Glue jobs.
 
     Args:
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
-            context into the Glue job, for example, :py:class:`PipesGlueContextInjector`.
+            context into the Glue job, for example, :py:class:`PipesS3ContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
-            from the glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
+            from the glue job run. Defaults to :py:class:`PipesCloudWatchsMessageReader`.
         client (Optional[boto3.client]): The boto Glue client used to launch the Glue job
     """
 
@@ -363,7 +354,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     ):
         self._client = client or boto3.client("glue")
         self._context_injector = context_injector
-        self._message_reader = message_reader or PipesGlueLogsMessageReader()
+        self._message_reader = message_reader or PipesCloudWatchMessageReader()
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
