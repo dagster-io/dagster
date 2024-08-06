@@ -4406,9 +4406,11 @@ export type RunEventConnectionArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type RunCanceledEvent = MessageEvent &
+export type RunCanceledEvent = ErrorEvent &
+  MessageEvent &
   RunEvent & {
     __typename: 'RunCanceledEvent';
+    error: Maybe<PythonError>;
     eventType: Maybe<DagsterEventType>;
     level: LogLevel;
     message: Scalars['String']['output'];
@@ -12864,6 +12866,12 @@ export const buildRunCanceledEvent = (
   relationshipsToOmit.add('RunCanceledEvent');
   return {
     __typename: 'RunCanceledEvent',
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!

@@ -79,7 +79,7 @@ def test_project_scaffold_command(
     )
 
     subprocess.run(
-        ["sdf", "compile", "--stage", "parse", "--target-dir", SDF_DAGSTER_OUTPUT_DIR],
+        ["sdf", "compile", "--save", "table-deps", "--target-dir", SDF_DAGSTER_OUTPUT_DIR],
         cwd=sdf_workspace_dir,
         check=True,
     )

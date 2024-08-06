@@ -5,6 +5,7 @@ import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-i
 import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {AssetPageHeader} from 'src/assets/AssetPageHeader.oss';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
@@ -12,7 +13,6 @@ import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDe
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './AssetNodeOverview';
-import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlotsPage} from './AssetPlotsPage';
 import {AssetTabs} from './AssetTabs';

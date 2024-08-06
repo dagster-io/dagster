@@ -1,13 +1,13 @@
 from collections import abc
 from typing import TYPE_CHECKING, Generic, Iterator, Union
 
-from dagster import AssetMaterialization, Output
+from dagster import AssetMaterialization, AssetObservation, Output
 from typing_extensions import TypeVar
 
 if TYPE_CHECKING:
     from .sdf_cli_invocation import SdfCliInvocation
 
-SdfDagsterEventType = Union[Output, AssetMaterialization]
+SdfDagsterEventType = Union[Output, AssetMaterialization, AssetObservation]
 
 # We define SdfEventIterator as a generic type for the sake of type hinting.
 # This is so that users who inspect the type of the return value of `SdfCliInvocation.stream()`
@@ -22,10 +22,10 @@ class SdfEventIterator(Generic[T], abc.Iterator):
 
     def __init__(
         self,
-        events: Iterator[T],
+        exec_events: Iterator[T],
         sdf_cli_invocation: "SdfCliInvocation",
     ) -> None:
-        self._inner_iterator = events
+        self._inner_iterator = exec_events
         self._sdf_cli_invocation = sdf_cli_invocation
 
     def __next__(self) -> T:

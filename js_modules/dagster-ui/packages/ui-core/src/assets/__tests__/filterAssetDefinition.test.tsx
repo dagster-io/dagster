@@ -1,4 +1,10 @@
 import {
+  AssetFilterBaseType,
+  AssetFilterType,
+  filterAssetDefinition,
+} from 'src/assets/useAssetDefinitionFilterState.oss';
+
+import {
   ChangeReason,
   buildAssetGroupSelector,
   buildDefinitionTag,
@@ -6,11 +12,6 @@ import {
   buildRepositoryLocation,
   buildTeamAssetOwner,
 } from '../../graphql/types';
-import {
-  AssetFilterBaseType,
-  AssetFilterType,
-  filterAssetDefinition,
-} from '../useAssetDefinitionFilterState.oss';
 
 describe('filterAssetDefinition', () => {
   it('returns false when no definition is provided', () => {

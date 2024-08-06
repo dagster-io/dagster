@@ -311,7 +311,7 @@ enum ObjectStoreOperationType {
   CP_OBJECT
 }
 
-type RunCanceledEvent implements MessageEvent & RunEvent {
+type RunCanceledEvent implements MessageEvent & RunEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -320,6 +320,7 @@ type RunCanceledEvent implements MessageEvent & RunEvent {
   solidHandleID: String
   eventType: DagsterEventType
   pipelineName: String!
+  error: PythonError
 }
 
 type RunCancelingEvent implements MessageEvent & RunEvent {

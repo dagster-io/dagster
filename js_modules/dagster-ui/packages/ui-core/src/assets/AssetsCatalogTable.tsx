@@ -4,8 +4,9 @@ import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {AssetCatalogTableBottomActionBar} from 'src/assets/AssetCatalogTableBottomActionBar.oss';
+import {useAssetCatalogFiltering} from 'src/assets/useAssetCatalogFiltering.oss';
 
-import {AssetCatalogTableBottomActionBar} from './AssetCatalogTableBottomActionBar';
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -17,7 +18,6 @@ import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from './types/AssetsCatalogTable.types';
-import {useAssetCatalogFiltering} from './useAssetCatalogFiltering';
 import {AssetViewType, useAssetView} from './useAssetView';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
