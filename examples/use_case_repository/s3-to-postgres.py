@@ -1,8 +1,9 @@
+import io
+
+import pandas as pd
 from dagster import Definitions, EnvVar, asset
 from dagster_aws.s3 import S3Resource
 from dagster_postgres import PostgresResource
-import pandas as pd
-import io
 
 # Step 2: Configure AWS S3 and Postgres Resources
 s3_resource = S3Resource(

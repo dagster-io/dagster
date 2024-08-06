@@ -1,0 +1,4 @@
+{
+    "ruff.lint.preview": true,
+    "editor.foldingImportsByDefault": true,
+}

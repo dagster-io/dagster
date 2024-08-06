@@ -1,11 +1,11 @@
 from dagster import Definitions, EnvVar, asset
 from dagster_embedded_elt.sling import (
+    AssetSpec,
+    SlingMode,
     SlingResource,
     SlingSourceConnection,
     SlingTargetConnection,
     build_sling_asset,
-    SlingMode,
-    AssetSpec,
 )
 
 # Step 1: Configure Connections
