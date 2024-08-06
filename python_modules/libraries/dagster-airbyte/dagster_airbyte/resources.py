@@ -5,6 +5,7 @@ import sys
 import time
 from abc import abstractmethod
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
@@ -244,7 +245,7 @@ class BaseAirbyteResource(ConfigurableResource):
 
 
 class AirbyteCloudResource(BaseAirbyteResource):
-    """This resource allows users to programatically interface with the Airbyte Cloud API to launch
+    """This resource allows users to programmatically interface with the Airbyte Cloud API to launch
     syncs and monitor their progress.
 
     **Examples:**
@@ -255,7 +256,8 @@ class AirbyteCloudResource(BaseAirbyteResource):
         from dagster_airbyte import AirbyteResource
 
         my_airbyte_resource = AirbyteCloudResource(
-            api_key=EnvVar("AIRBYTE_API_KEY"),
+            client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+            client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
         )
 
         airbyte_assets = build_airbyte_assets(
@@ -269,7 +271,12 @@ class AirbyteCloudResource(BaseAirbyteResource):
         )
     """
 
-    api_key: str = Field(..., description="The Airbyte Cloud API key.")
+    client_id: str = Field(..., description="The Airbyte Cloud client ID.")
+    client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
+    __access_token_value: str = Field(..., description="The Airbyte Cloud access token.")
+    __access_token_timestamp: float = Field(
+        ..., description="The creation timestamp of the Airbyte Cloud access token."
+    )
 
     @property
     def api_base_url(self) -> str:
@@ -277,7 +284,9 @@ class AirbyteCloudResource(BaseAirbyteResource):
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
-        return {"headers": {"Authorization": f"Bearer {self.api_key}", "User-Agent": "dagster"}}
+        return {
+            "headers": {"Authorization": f"Bearer {self.__access_token}", "User-Agent": "dagster"}
+        }
 
     def start_sync(self, connection_id: str) -> Mapping[str, object]:
         job_sync = check.not_none(
@@ -305,6 +314,26 @@ class AirbyteCloudResource(BaseAirbyteResource):
     def _should_forward_logs(self) -> bool:
         # Airbyte Cloud does not support streaming logs yet
         return False
+
+    @property
+    def __access_token(self) -> str:
+        # The access token expire every 3 minutes in Airbyte Cloud.
+        # Refresh after 2.5 minutes to avoid the "token expired" error message.
+        if not self.__access_token_value or self.__access_token_timestamp <= datetime.timestamp(
+            datetime.now() - timedelta(seconds=150)
+        ):
+            response = check.not_none(
+                self.make_request(
+                    endpoint="/applications/token",
+                    data={
+                        "client_id": self.client_id,
+                        "client_secret": self.client_secret,
+                    },
+                )
+            )
+            self.__access_token_value = str(response["access_token"])
+            self.__access_token_timestamp = datetime.now().timestamp()
+        return self.__access_token_value
 
 
 class AirbyteResource(BaseAirbyteResource):
