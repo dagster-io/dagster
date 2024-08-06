@@ -7,12 +7,14 @@ import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 import {useFeatureFlags} from '../app/Flags';
 import {Route} from '../app/Route';
+import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
 import {InstanceBackfillsRoot} from '../instance/InstanceBackfillsRoot';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const OverviewRoot = () => {
   const {flagSettingsPage} = useFeatureFlags();
+  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
   return (
     <Switch>
       <Route path="/overview/activity" isNestingRoute>
@@ -25,38 +27,25 @@ export const OverviewRoot = () => {
       <Route
         path="/overview/schedules"
         render={() =>
-          flagSettingsPage ? <Redirect to="/automation/schedules" /> : <OverviewSchedulesRoot />
+          flagSettingsPage ? <Redirect to="/automation" /> : <OverviewSchedulesRoot />
         }
       />
       <Route
         path="/overview/sensors"
-        render={() =>
-          flagSettingsPage ? <Redirect to="/automation/sensors" /> : <OverviewSensorsRoot />
-        }
+        render={() => (flagSettingsPage ? <Redirect to="/automation" /> : <OverviewSensorsRoot />)}
       />
       <Route
         path="/overview/automation"
         render={() =>
-          flagSettingsPage ? <Redirect to="/automation" /> : <AutomaterializationRoot />
-        }
-      />
-      <Route
-        path="/overview/backfills/:backfillId"
-        render={({match}) =>
-          flagSettingsPage ? (
-            <Redirect to={`/automation/backfills/${match.params.backfillId}`} />
+          flagSettingsPage && automaterializeSensorsFlagState !== 'has-global-amp' ? (
+            <Redirect to="/automation" />
           ) : (
-            <BackfillPage />
+            <AutomaterializationRoot />
           )
         }
       />
-      <Route
-        path="/overview/backfills"
-        exact
-        render={() =>
-          flagSettingsPage ? <Redirect to="/automation/backfills" /> : <InstanceBackfillsRoot />
-        }
-      />
+      <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
+      <Route path="/overview/backfills" exact render={() => <InstanceBackfillsRoot />} />
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
       </Route>

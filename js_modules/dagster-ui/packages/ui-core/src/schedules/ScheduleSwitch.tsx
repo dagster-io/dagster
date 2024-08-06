@@ -1,5 +1,5 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Box, Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {
@@ -93,7 +93,11 @@ export const ScheduleSwitch = (props: Props) => {
   let status = schedule.scheduleState.status;
 
   if (!data && loading) {
-    return <Spinner purpose="body-text" />;
+    return (
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{width: '30px'}}>
+        <Spinner purpose="body-text" />
+      </Box>
+    );
   }
   if (
     !['InstigationState', 'InstigationStateNotFoundError'].includes(

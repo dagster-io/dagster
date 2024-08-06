@@ -325,6 +325,9 @@ export const MergedAutomationRoot = () => {
   );
 };
 
+// eslint-disable-next-line import/no-default-export
+export default MergedAutomationRoot;
+
 const buildBuckets = (
   locationEntries: Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
 ) => {
