@@ -759,9 +759,12 @@ def _get_subset_selection_for_context(
     is_checks_subset = (
         assets_def.check_specs_by_output_name != assets_def.node_check_specs_by_output_name
     )
-    current_code_version_by_key = assets_def.code_versions_by_key
-    current_code_versions_by_output_name = {
-        output_name: current_code_version_by_key[asset_key]
+    latest_code_version_by_key = context.instance.get_latest_materialization_code_versions(assets_def.keys)
+    latest_code_versions_by_output_name = {
+        output_name: {
+            "code_version": latest_code_version_by_key[asset_key],
+            "has_ran_before": bool(context.instance.get_latest_materialization_event(asset_key))
+        }
         for output_name, asset_key in assets_def.keys_by_output_name.items()
     }
 
@@ -787,7 +790,7 @@ def _get_subset_selection_for_context(
         output_names=context.selected_output_names,
         dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
         dagster_dbt_translator=dagster_dbt_translator,
-        current_code_versions_by_output_name=current_code_versions_by_output_name,
+        latest_code_versions_by_output_name=latest_code_versions_by_output_name,
     )
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
@@ -886,7 +889,7 @@ def get_dbt_resource_names_for_output_names(
     output_names: Iterable[str],
     dbt_resource_props_by_output_name: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
-    current_code_versions_by_output_name: Mapping[str, Optional[str]],
+    latest_code_versions_by_output_name: Mapping[str, Mapping[str, Union[str, bool]]],
 ) -> Sequence[str]:
     
     if dagster_dbt_translator.settings.enable_selective_view_materialization:
@@ -904,7 +907,10 @@ def get_dbt_resource_names_for_output_names(
             for output_name, dbt_resource_props in dbt_resource_props_gen.items()
             if dbt_resource_props["resource_type"] == "model"
                 and dbt_resource_props.get("config").get("materialized") in _views
-                and current_code_versions_by_output_name.get(output_name) != default_code_version_fn(dbt_resource_props)
+                and (
+                    latest_code_versions_by_output_name.get(output_name, {}).get("code_version") != default_code_version_fn(dbt_resource_props)
+                    or latest_code_versions_by_output_name.get(output_name, {}).get("has_ran_before", False) == False
+                )
         ]
 
         other_resources = [
