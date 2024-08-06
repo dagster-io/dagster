@@ -400,3 +400,5 @@ schedules:
   num_workers: 8
 
 # end_marker_schedules
+
+auto_materialize:
