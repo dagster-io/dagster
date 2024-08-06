@@ -11,9 +11,9 @@ description: "Dagster can automatically materialize assets when criteria are met
 
 Dagster can automatically materialize assets when criteria are met, enabling a declarative approach to asset materialization. Instead of defining explicit workflows to materialize assets, you describe the conditions under which they should be materialized and let the system kick off runs in response.
 
-For example, you have an asset that's scheduled to execute every day at midnight. Instead of running whether there's new data or not, you can use Declarative Automation to materialize the asset only when its parent has been updated.
+For example, you have an asset that's scheduled to execute every day at midnight. Instead of executing whether there's new data or not, you can use Declarative Automation to materialize the asset only after its parent has been updated.
 
-Declarative Automation includes pre-built conditions to handle common use cases, such as on a periodic schedule or whenever an upstream dependency updates, but conditions can also be customized.
+Declarative Automation includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but conditions can also be customized.
 
 ---
 
@@ -133,7 +133,7 @@ def my_eager_asset(): ...
 AssetSpec("my_cron_asset", automation_condition=AutomationCondition.cron("@daily"))
 ```
 
-The core <PyObject object="AutomationCondition" /> framework is extremely flexible, allowing you to build custom conditions from the ground up. Refer to the [Customizing automation conditions guide](TODO) for more information.
+The core <PyObject object="AutomationCondition" /> framework is extremely flexible, allowing you to build custom conditions from the ground up. Refer to the Customizing automation conditions guide for more information.
 
 ### Sensors
 
