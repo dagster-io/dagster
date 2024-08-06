@@ -30,6 +30,7 @@ else:
     )
     instance.run_storage.set_cursor_values({FETCHED_KVS_KEY: str(get_definitions_called + 1)})
 
+    # Simulate fetching metadata from an external source
     metadata_value_cached_assets = [{"foo": "bar"}, {"baz": "qux"}]
 
 assert metadata_value_cached_assets == [
@@ -41,7 +42,7 @@ assert metadata_value_cached_assets == [
 @asset(
     metadata={
         CACHED_ASSET_ID_KEY: "my_cached_asset_id",
-        CACHED_ASSET_METADATA_KEY: {"foo": "bar"},
+        CACHED_ASSET_METADATA_KEY: metadata_value_cached_assets[0],
     }
 )
 def cached_asset():
@@ -51,7 +52,7 @@ def cached_asset():
 @asset(
     metadata={
         CACHED_ASSET_ID_KEY: "my_cached_asset_id",
-        CACHED_ASSET_METADATA_KEY: {"baz": "qux"},
+        CACHED_ASSET_METADATA_KEY: metadata_value_cached_assets[1],
     }
 )
 def other_cached_asset():
