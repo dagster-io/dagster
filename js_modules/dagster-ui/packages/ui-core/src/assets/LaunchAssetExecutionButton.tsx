@@ -12,7 +12,7 @@ import {
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {
@@ -40,15 +40,16 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {displayNameForAssetKey, sortAssetKeys, tokenForAssetKey} from '../asset-graph/Utils';
+import {LaunchBackfillParams, PipelineSelector} from '../graphql/types';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
-  displayNameForAssetKey,
-  isHiddenAssetGroupJob,
-  sortAssetKeys,
-  tokenForAssetKey,
-} from '../asset-graph/Utils';
-import {PipelineSelector} from '../graphql/types';
+  LaunchPartitionBackfillMutation,
+  LaunchPartitionBackfillMutationVariables,
+} from '../instance/backfill/types/BackfillUtils.types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
+import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/BackfillMessaging';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -81,6 +82,11 @@ type LaunchAssetsState =
   | {
       type: 'single-run';
       executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
+    }
+  | {
+      // same as type=partitions,target=pureAll, but the partitions modal is not presented.
+      type: 'single-run-via-backfill';
+      assets: LaunchAssetExecutionAssetNodeFragment[];
     };
 
 const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
@@ -328,6 +334,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
   const client = useApolloClient();
   const confirm = useConfirmation();
+  const history = useHistory();
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
@@ -400,6 +407,25 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     if (next.type === 'single-run') {
       await launchWithTelemetry({executionParams: next.executionParams}, 'toast');
       setState({type: 'none'});
+    } else if (next.type === 'single-run-via-backfill') {
+      const backfillParams: LaunchBackfillParams = {
+        assetSelection: assets.map(asAssetKeyInput),
+        allPartitions: true,
+      };
+      const {data} = await client.mutate<
+        LaunchPartitionBackfillMutation,
+        LaunchPartitionBackfillMutationVariables
+      >({
+        mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
+        variables: {backfillParams},
+      });
+
+      if (data?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
+        showBackfillSuccessToast(history, data?.launchPartitionBackfill.backfillId, true);
+      } else {
+        showBackfillErrorToast(data);
+      }
+      setState({type: 'none'});
     } else {
       setState(next);
     }
@@ -454,7 +480,7 @@ async function stateForLaunchingAssets(
   client: ApolloClient<any>,
   assets: LaunchAssetExecutionAssetNodeFragment[],
   forceLaunchpad: boolean,
-  preferredJobName?: string,
+  jobName?: string,
 ): Promise<LaunchAssetsState> {
   if (assets.some((x) => x.isObservable)) {
     return {
@@ -473,24 +499,19 @@ async function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
-  const jobName = getCommonJob(assets, preferredJobName);
+
   const partitionDefinition = assets.find((a) => !!a.partitionDefinition)?.partitionDefinition;
 
-  const inSameRepo = assets.every(
-    (a) =>
-      a.repository.name === repoAddress.name && a.repository.location.name === repoAddress.location,
-  );
-  const inSameOrNoPartitionSpace = assets.every(
-    (a) =>
-      !a.partitionDefinition ||
-      !partitionDefinition ||
-      partitionDefinitionsEqual(a.partitionDefinition, partitionDefinition),
-  );
-
-  if (!inSameRepo || !inSameOrNoPartitionSpace || !jobName) {
+  // When no job name is provided (eg: the user is on a group or graph view),
+  // we always launch runs using the "pure asset backfill" machinery
+  if (!jobName) {
     if (!partitionDefinition) {
-      return {type: 'error', error: ERROR_INVALID_ASSET_SELECTION};
+      return {
+        type: 'single-run-via-backfill',
+        assets,
+      };
     }
+
     const anchorAsset = getAnchorAssetForPartitionMappedBackfill(assets);
     if (!anchorAsset) {
       return {
@@ -510,6 +531,8 @@ async function stateForLaunchingAssets(
     };
   }
 
+  // Otherwise, identify whether the job name in context requires partitions or
+  // config and present the appropriate dialog.
   const resourceResult = await client.query<
     LaunchAssetLoaderResourceQuery,
     LaunchAssetLoaderResourceQueryVariables
@@ -517,8 +540,8 @@ async function stateForLaunchingAssets(
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
     variables: {
       pipelineName: jobName,
-      repositoryName: assets[0]!.repository.name,
-      repositoryLocationName: assets[0]!.repository.location.name,
+      repositoryName: repoAddress.name,
+      repositoryLocationName: repoAddress.location,
     },
   });
   const pipeline = resourceResult.data.pipelineOrError;
@@ -541,7 +564,7 @@ async function stateForLaunchingAssets(
   // Note: If a partition definition is present and we're launching a user-defined job,
   // we assume that any required config will be provided by a PartitionedConfig function
   // attached to the job. Otherwise backfills won't work and you'll know to add one!
-  const assumeConfigPresent = partitionDefinition && !isHiddenAssetGroupJob(jobName);
+  const assumeConfigPresent = !!partitionDefinition;
 
   const needLaunchpad =
     !assumeConfigPresent && (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig);
