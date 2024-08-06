@@ -834,28 +834,6 @@ export type CompositeSolidDefinitionSolidHandlesArgs = {
   parentHandleID?: InputMaybe<Scalars['String']['input']>;
 };
 
-export enum ComputeIoType {
-  STDERR = 'STDERR',
-  STDOUT = 'STDOUT',
-}
-
-export type ComputeLogFile = {
-  __typename: 'ComputeLogFile';
-  cursor: Scalars['Int']['output'];
-  data: Maybe<Scalars['String']['output']>;
-  downloadUrl: Maybe<Scalars['String']['output']>;
-  path: Scalars['String']['output'];
-  size: Scalars['Int']['output'];
-};
-
-export type ComputeLogs = {
-  __typename: 'ComputeLogs';
-  runId: Scalars['String']['output'];
-  stderr: Maybe<ComputeLogFile>;
-  stdout: Maybe<ComputeLogFile>;
-  stepKey: Scalars['String']['output'];
-};
-
 export type ConcurrencyKeyInfo = {
   __typename: 'ConcurrencyKeyInfo';
   activeRunIds: Array<Scalars['String']['output']>;
@@ -1912,7 +1890,6 @@ export type Instance = {
   concurrencyLimits: Array<ConcurrencyKeyInfo>;
   daemonHealth: DaemonHealth;
   executablePath: Scalars['String']['output'];
-  hasCapturedLogManager: Scalars['Boolean']['output'];
   hasInfo: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
   info: Maybe<Scalars['String']['output']>;
@@ -3475,7 +3452,6 @@ export type PipelineRun = {
   assets: Array<Asset>;
   canTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
-  computeLogs: ComputeLogs;
   eventConnection: EventConnection;
   executionPlan: Maybe<ExecutionPlan>;
   id: Scalars['ID']['output'];
@@ -3500,10 +3476,6 @@ export type PipelineRun = {
 
 export type PipelineRunCapturedLogsArgs = {
   fileKey: Scalars['String']['input'];
-};
-
-export type PipelineRunComputeLogsArgs = {
-  stepKey: Scalars['String']['input'];
 };
 
 export type PipelineRunEventConnectionArgs = {
@@ -4391,7 +4363,6 @@ export type Run = PipelineRun & {
   assets: Array<Asset>;
   canTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
-  computeLogs: ComputeLogs;
   creationTime: Scalars['Float']['output'];
   endTime: Maybe<Scalars['Float']['output']>;
   eventConnection: EventConnection;
@@ -4428,10 +4399,6 @@ export type Run = PipelineRun & {
 
 export type RunCapturedLogsArgs = {
   fileKey: Scalars['String']['input'];
-};
-
-export type RunComputeLogsArgs = {
-  stepKey: Scalars['String']['input'];
 };
 
 export type RunEventConnectionArgs = {
@@ -5253,7 +5220,6 @@ export type StopSensorMutationResultOrError =
 export type Subscription = {
   __typename: 'Subscription';
   capturedLogs: CapturedLogs;
-  computeLogs: ComputeLogFile;
   locationStateChangeEvents: LocationStateChangeSubscription;
   pipelineRunLogs: PipelineRunLogsSubscriptionPayload;
 };
@@ -5261,13 +5227,6 @@ export type Subscription = {
 export type SubscriptionCapturedLogsArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   logKey: Array<Scalars['String']['input']>;
-};
-
-export type SubscriptionComputeLogsArgs = {
-  cursor?: InputMaybe<Scalars['String']['input']>;
-  ioType: ComputeIoType;
-  runId: Scalars['ID']['input'];
-  stepKey: Scalars['String']['input'];
 };
 
 export type SubscriptionPipelineRunLogsArgs = {
@@ -7141,48 +7100,6 @@ export const buildCompositeSolidDefinition = (
   };
 };
 
-export const buildComputeLogFile = (
-  overrides?: Partial<ComputeLogFile>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'ComputeLogFile'} & ComputeLogFile => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('ComputeLogFile');
-  return {
-    __typename: 'ComputeLogFile',
-    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 1566,
-    data: overrides && overrides.hasOwnProperty('data') ? overrides.data! : 'quia',
-    downloadUrl:
-      overrides && overrides.hasOwnProperty('downloadUrl') ? overrides.downloadUrl! : 'sed',
-    path: overrides && overrides.hasOwnProperty('path') ? overrides.path! : 'beatae',
-    size: overrides && overrides.hasOwnProperty('size') ? overrides.size! : 7860,
-  };
-};
-
-export const buildComputeLogs = (
-  overrides?: Partial<ComputeLogs>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'ComputeLogs'} & ComputeLogs => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('ComputeLogs');
-  return {
-    __typename: 'ComputeLogs',
-    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'est',
-    stderr:
-      overrides && overrides.hasOwnProperty('stderr')
-        ? overrides.stderr!
-        : relationshipsToOmit.has('ComputeLogFile')
-        ? ({} as ComputeLogFile)
-        : buildComputeLogFile({}, relationshipsToOmit),
-    stdout:
-      overrides && overrides.hasOwnProperty('stdout')
-        ? overrides.stdout!
-        : relationshipsToOmit.has('ComputeLogFile')
-        ? ({} as ComputeLogFile)
-        : buildComputeLogFile({}, relationshipsToOmit),
-    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'cum',
-  };
-};
-
 export const buildConcurrencyKeyInfo = (
   overrides?: Partial<ConcurrencyKeyInfo>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8812,10 +8729,6 @@ export const buildInstance = (
         : buildDaemonHealth({}, relationshipsToOmit),
     executablePath:
       overrides && overrides.hasOwnProperty('executablePath') ? overrides.executablePath! : 'fuga',
-    hasCapturedLogManager:
-      overrides && overrides.hasOwnProperty('hasCapturedLogManager')
-        ? overrides.hasCapturedLogManager!
-        : true,
     hasInfo: overrides && overrides.hasOwnProperty('hasInfo') ? overrides.hasInfo! : true,
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'deleniti',
     info: overrides && overrides.hasOwnProperty('info') ? overrides.info! : 'qui',
@@ -11468,12 +11381,6 @@ export const buildPipelineRun = (
         : relationshipsToOmit.has('CapturedLogs')
         ? ({} as CapturedLogs)
         : buildCapturedLogs({}, relationshipsToOmit),
-    computeLogs:
-      overrides && overrides.hasOwnProperty('computeLogs')
-        ? overrides.computeLogs!
-        : relationshipsToOmit.has('ComputeLogs')
-        ? ({} as ComputeLogs)
-        : buildComputeLogs({}, relationshipsToOmit),
     eventConnection:
       overrides && overrides.hasOwnProperty('eventConnection')
         ? overrides.eventConnection!
@@ -12849,12 +12756,6 @@ export const buildRun = (
         : relationshipsToOmit.has('CapturedLogs')
         ? ({} as CapturedLogs)
         : buildCapturedLogs({}, relationshipsToOmit),
-    computeLogs:
-      overrides && overrides.hasOwnProperty('computeLogs')
-        ? overrides.computeLogs!
-        : relationshipsToOmit.has('ComputeLogs')
-        ? ({} as ComputeLogs)
-        : buildComputeLogs({}, relationshipsToOmit),
     creationTime:
       overrides && overrides.hasOwnProperty('creationTime') ? overrides.creationTime! : 5.95,
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 7.08,
@@ -14454,12 +14355,6 @@ export const buildSubscription = (
         : relationshipsToOmit.has('CapturedLogs')
         ? ({} as CapturedLogs)
         : buildCapturedLogs({}, relationshipsToOmit),
-    computeLogs:
-      overrides && overrides.hasOwnProperty('computeLogs')
-        ? overrides.computeLogs!
-        : relationshipsToOmit.has('ComputeLogFile')
-        ? ({} as ComputeLogFile)
-        : buildComputeLogFile({}, relationshipsToOmit),
     locationStateChangeEvents:
       overrides && overrides.hasOwnProperty('locationStateChangeEvents')
         ? overrides.locationStateChangeEvents!
