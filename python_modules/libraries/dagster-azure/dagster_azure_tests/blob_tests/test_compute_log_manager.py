@@ -8,7 +8,7 @@ from dagster import DagsterEventType, graph, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
@@ -89,14 +89,6 @@ def test_compute_log_manager(
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check ADLS2 directly
             adls2_object = fake_client.get_blob_client(
                 container=container,
@@ -118,14 +110,6 @@ def test_compute_log_manager(
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config(storage_account, container, credential):
@@ -366,14 +350,6 @@ def test_compute_log_manager_default_azure_credential(
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
-
             # Check ADLS2 directly
             adls2_object = fake_client.get_blob_client(
                 container=container,
@@ -395,14 +371,6 @@ def test_compute_log_manager_default_azure_credential(
             stderr = log_data.stderr.decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
-
-            # Legacy API
-            stdout = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDOUT)
-            assert stdout.data == HELLO_WORLD + SEPARATOR
-
-            stderr = manager.read_logs_file(result.run_id, file_key, ComputeIOType.STDERR)
-            for expected in EXPECTED_LOGS:
-                assert expected in stderr.data
 
 
 def test_compute_log_manager_from_config_default_azure_credential(storage_account, container):
