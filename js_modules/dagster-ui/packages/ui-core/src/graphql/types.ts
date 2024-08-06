@@ -2093,6 +2093,8 @@ export type Job = IPipelineSnapshot &
     modes: Array<Mode>;
     name: Scalars['String']['output'];
     parentSnapshotId: Maybe<Scalars['String']['output']>;
+    partition: Maybe<PartitionTagsAndConfig>;
+    partitionKeysOrError: PartitionKeys;
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
@@ -2107,6 +2109,18 @@ export type Job = IPipelineSnapshot &
 
 export type JobDagsterTypeOrErrorArgs = {
   dagsterTypeName: Scalars['String']['input'];
+};
+
+export type JobPartitionArgs = {
+  partitionName: Scalars['String']['input'];
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
+};
+
+export type JobPartitionKeysOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  reverse?: InputMaybe<Scalars['Boolean']['input']>;
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
 export type JobRunsArgs = {
@@ -3275,6 +3289,14 @@ export type PartitionTags = {
   results: Array<PipelineTag>;
 };
 
+export type PartitionTagsAndConfig = {
+  __typename: 'PartitionTagsAndConfig';
+  jobName: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  runConfigOrError: PartitionRunConfigOrError;
+  tagsOrError: PartitionTagsOrError;
+};
+
 export type PartitionTagsOrError = PartitionTags | PythonError;
 
 export type PartitionedAssetConditionEvaluationNode = {
@@ -3364,6 +3386,8 @@ export type Pipeline = IPipelineSnapshot &
     modes: Array<Mode>;
     name: Scalars['String']['output'];
     parentSnapshotId: Maybe<Scalars['String']['output']>;
+    partition: Maybe<PartitionTagsAndConfig>;
+    partitionKeysOrError: PartitionKeys;
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
@@ -3378,6 +3402,18 @@ export type Pipeline = IPipelineSnapshot &
 
 export type PipelineDagsterTypeOrErrorArgs = {
   dagsterTypeName: Scalars['String']['input'];
+};
+
+export type PipelinePartitionArgs = {
+  partitionName: Scalars['String']['input'];
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
+};
+
+export type PipelinePartitionKeysOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  reverse?: InputMaybe<Scalars['Boolean']['input']>;
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
 export type PipelineRunsArgs = {
@@ -9093,6 +9129,18 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
         : 'tempore',
+    partition:
+      overrides && overrides.hasOwnProperty('partition')
+        ? overrides.partition!
+        : relationshipsToOmit.has('PartitionTagsAndConfig')
+        ? ({} as PartitionTagsAndConfig)
+        : buildPartitionTagsAndConfig({}, relationshipsToOmit),
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
     pipelineSnapshotId:
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
@@ -11063,6 +11111,31 @@ export const buildPartitionTags = (
   };
 };
 
+export const buildPartitionTagsAndConfig = (
+  overrides?: Partial<PartitionTagsAndConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionTagsAndConfig'} & PartitionTagsAndConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionTagsAndConfig');
+  return {
+    __typename: 'PartitionTagsAndConfig',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'quia',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'eaque',
+    runConfigOrError:
+      overrides && overrides.hasOwnProperty('runConfigOrError')
+        ? overrides.runConfigOrError!
+        : relationshipsToOmit.has('PartitionRunConfig')
+        ? ({} as PartitionRunConfig)
+        : buildPartitionRunConfig({}, relationshipsToOmit),
+    tagsOrError:
+      overrides && overrides.hasOwnProperty('tagsOrError')
+        ? overrides.tagsOrError!
+        : relationshipsToOmit.has('PartitionTags')
+        ? ({} as PartitionTags)
+        : buildPartitionTags({}, relationshipsToOmit),
+  };
+};
+
 export const buildPartitionedAssetConditionEvaluationNode = (
   overrides?: Partial<PartitionedAssetConditionEvaluationNode>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11236,6 +11309,18 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
         : 'et',
+    partition:
+      overrides && overrides.hasOwnProperty('partition')
+        ? overrides.partition!
+        : relationshipsToOmit.has('PartitionTagsAndConfig')
+        ? ({} as PartitionTagsAndConfig)
+        : buildPartitionTagsAndConfig({}, relationshipsToOmit),
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
     pipelineSnapshotId:
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!

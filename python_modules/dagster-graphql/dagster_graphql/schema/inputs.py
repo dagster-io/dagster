@@ -1,4 +1,5 @@
 import graphene
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp
@@ -14,6 +15,9 @@ class GrapheneAssetKeyInput(graphene.InputObjectType):
 
     class Meta:
         name = "AssetKeyInput"
+
+    def to_asset_key(self) -> AssetKey:
+        return AssetKey(self.path)
 
 
 class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
