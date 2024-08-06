@@ -17,10 +17,14 @@ def _create_sdf_invocation(
         workspace_dir=os.fspath(workspace_dir), global_config_flags=["--log-form=nested"]
     )
 
-    sdf_invocation = sdf.cli(["compile", "--stage=parse"], environment=environment).wait()
+    sdf_invocation = sdf.cli(
+        ["compile", "--save", "table-deps"], environment=environment, raise_on_error=False
+    ).wait()
 
     if run_workspace:
-        sdf.cli(["run"], environment=environment, raise_on_error=False).wait()
+        sdf.cli(
+            ["run", "--save", "info-schema"], environment=environment, raise_on_error=True
+        ).wait()
 
     return sdf_invocation
 

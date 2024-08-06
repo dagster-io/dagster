@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Optional
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from dagster import (
     AssetKey,
@@ -7,12 +8,29 @@ from dagster import (
 )
 from dagster._annotations import public
 
-from .asset_utils import default_asset_key_fn
+from .asset_utils import default_asset_key_fn, default_description_fn
 
 
 @dataclass(frozen=True)
 class DagsterSdfTranslatorSettings:
-    """Settings to enable Dagster features for your sdf project."""
+    """Settings to enable Dagster features for your sdf project.
+
+    Args:
+        enable_asset_checks (bool): Whether to load sdf table tests as Dagster asset checks.
+            Defaults to True.
+        enable_code_references (bool): Whether to enable Dagster code references for sdf tables.
+            Defaults to False.
+        enable_raw_sql_description (bool): Whether to display sdf raw sql in Dagster descriptions.
+            Defaults to True.
+        enable_materialized_sql_description (bool): Whether to display sdf materialized sql in
+            Dagster descriptions. Defaults to True.
+
+    """
+
+    enable_asset_checks: bool = True
+    enable_code_references: bool = False
+    enable_raw_sql_description: bool = True
+    enable_materialized_sql_description: bool = True
 
 
 class DagsterSdfTranslator:
@@ -41,6 +59,42 @@ class DagsterSdfTranslator:
     @public
     def get_asset_key(self, fqn: str) -> AssetKey:
         return default_asset_key_fn(fqn)
+
+    @public
+    def get_description(
+        self, table_row: Dict[str, Any], workspace_dir: Optional[Path], output_dir: Optional[Path]
+    ) -> str:
+        """A function that takes a dictionary representing columns of an sdf table row in sdf's
+        information schema and returns the Dagster description for that table.
+
+        This method can be overridden to provide a custom description for an sdf resource.
+
+        Args:
+            table_row (Dict[str, Any]): A dictionary representing columns of an sdf table row.
+            workspace_dir (Optional[Path]): The path to the workspace directory.
+
+        Returns:
+            str: The description for the dbt resource.
+
+        Examples:
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster_sdf import DagsterSdfTranslator
+
+
+                class CustomDagsterSdfTranslator(DagsterSdfTranslator):
+                    def get_description(self, table_row: Dict[str, Any], workspace_dir: Optiona[Path], output_dir: Optional[Path]) -> str:
+                        return "custom description"
+        """
+        return default_description_fn(
+            table_row,
+            workspace_dir,
+            output_dir,
+            self.settings.enable_raw_sql_description,
+            self.settings.enable_materialized_sql_description,
+        )
 
 
 def validate_translator(dagster_sdf_translator: DagsterSdfTranslator) -> DagsterSdfTranslator:
