@@ -143,11 +143,25 @@ For an automation condition sensor to run, it must be turned on and an active [`
 
 After these criteria are met, the sensor's evaluation history will be visible in the UI:
 
-<TODO>SCREENSHOT</TODO>
+<!-- ![Default automation sensor evaluations in the Dagster UI](/images/concepts/automation/declarative-automation/default-automation-sensor.png) -->
+
+<Image
+alt="Default automation sensor evaluations in the Dagster UI"
+src="/images/concepts/automation/declarative-automation/default-automation-sensor.png"
+width={1898}
+height={863}
+/>
 
 You'll also be able to view a detailed history of each asset's evaluations on the asset's [**Asset Details** page](/concepts/webserver/ui#asset-details). This allows you to see why an asset was or wasn't materialized at different points in time:
 
-<TODO>SCREENSHOT</TODO>
+<!-- ![Automation condition evaluations in the Asset Details page](/images/concepts/automation/declarative-automation/evaluations-asset-details.png) -->
+
+<Image
+alt="Automation condition evaluations in the Asset Details page"
+src="/images/concepts/automation/declarative-automation/evaluations-asset-details.png"
+width={1577}
+height={765}
+/>
 
 ---
 
@@ -155,9 +169,9 @@ You'll also be able to view a detailed history of each asset's evaluations on th
 
 To use Declarative Automation, you'll need to enable the automation condition sensor in the Dagster UI:
 
-1. Navigate to **Deployment > Sensors**
+1. Navigate to **Overview > Sensors**
 2. Locate the desired code location.
-3. Toggle the `default_automation_condition_sensor` sensor on to enable it.
+3. In the code location, toggle the `default_automation_condition_sensor` sensor to on.
 
 From here, you can:
 
