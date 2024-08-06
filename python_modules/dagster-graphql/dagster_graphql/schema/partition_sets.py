@@ -1,10 +1,11 @@
-from typing import Optional, Sequence, cast
+from typing import AbstractSet, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
 from dagster import MultiPartitionsDefinition
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._core.remote_representation import ExternalJob, ExternalPartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import (
     ExternalDynamicPartitionsDefinitionData,
     ExternalMultiPartitionsDefinitionData,
@@ -182,6 +183,48 @@ class GraphenePartitionTagsOrError(graphene.Union):
     class Meta:
         types = (GraphenePartitionTags, GraphenePythonError)
         name = "PartitionTagsOrError"
+
+
+class GrapheneJobSelectionPartition(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    job_name = graphene.NonNull(graphene.String)
+    runConfigOrError = graphene.NonNull(GraphenePartitionRunConfigOrError)
+    tagsOrError = graphene.NonNull(GraphenePartitionTagsOrError)
+
+    class Meta:
+        name = "PartitionTagsAndConfig"
+
+    def __init__(
+        self,
+        external_job: ExternalJob,
+        partition_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ):
+        self._external_job = external_job
+        self._partition_name = partition_name
+        self._selected_asset_keys = selected_asset_keys
+
+        super().__init__(name=partition_name, job_name=external_job.name)
+
+    @capture_error
+    def resolve_runConfigOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionRunConfig:
+        return get_partition_config(
+            graphene_info,
+            self._external_job.repository_handle,
+            self._external_job.name,
+            self._partition_name,
+            selected_asset_keys=self._selected_asset_keys,
+        )
+
+    @capture_error
+    def resolve_tagsOrError(self, graphene_info: ResolveInfo) -> GraphenePartitionTags:
+        return get_partition_tags(
+            graphene_info,
+            self._external_job.repository_handle,
+            self._external_job.name,
+            self._partition_name,
+            selected_asset_keys=self._selected_asset_keys,
+        )
 
 
 class GraphenePartition(graphene.ObjectType):
