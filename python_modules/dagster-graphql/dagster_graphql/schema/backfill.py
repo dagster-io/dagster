@@ -124,16 +124,18 @@ class GrapheneBulkActionStatus(graphene.Enum):
         name = "BulkActionStatus"
 
     def to_dagster_run_status(self) -> GrapheneRunStatus:
-        if self == GrapheneBulkActionStatus.REQUESTED:
+        """Placeholder for this PR. Will do a more thurough pass to accurately convert backfill status
+        to DagsterRunStatus in a stacked branch.
+        """
+        if self.args[0] == GrapheneBulkActionStatus.REQUESTED.value:
             return GrapheneRunStatus.STARTED
-        if self == GrapheneBulkActionStatus.COMPLETED:
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:
             return GrapheneRunStatus.SUCCESS
-        if self == GrapheneBulkActionStatus.FAILED:
+        if self.args[0] == GrapheneBulkActionStatus.FAILED.value:
             return GrapheneRunStatus.FAILURE
-        if self == GrapheneBulkActionStatus.CANCELED:
+        if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:
             return GrapheneRunStatus.CANCELED
-        if self == GrapheneBulkActionStatus.CANCELING:
-            return GrapheneRunStatus.CANCELING
+        return GrapheneRunStatus.CANCELING
 
 
 class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):
@@ -370,7 +372,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
             timestamp=backfill_job.backfill_timestamp,
-            creationTime=backfill_job.backfill_timestamp,
+            # creationTime=backfill_job.backfill_timestamp,
             startTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
         )
@@ -458,6 +460,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         ]
 
+    def resolve_creationTime(self, graphene_info: ResolveInfo):
+        return self.timestamp
+
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
         from .pipelines.pipeline import GrapheneRun
 
@@ -486,7 +491,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         ]
 
     def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
-        return self.status.to_dagster_run_status()
+        return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
 
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
         if self._backfill_job.status == BulkActionStatus.REQUESTED:

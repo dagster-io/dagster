@@ -409,7 +409,8 @@ def get_mega_runs(
 
     Cursor format: run_id;backfill_id
     """
-    from ..schema.mega_run import GrapheneMegaRun
+    from ..schema.backfill import GraphenePartitionBackfill
+    from ..schema.pipelines.pipeline import GrapheneRun
 
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
@@ -423,16 +424,19 @@ def get_mega_runs(
     backfills = instance.get_backfills(cursor=backfill_cursor, limit=limit)
     runs = _fetch_runs_not_in_backfill(instance, cursor=run_cursor, limit=limit)
 
+    all_mega_runs = [GraphenePartitionBackfill(backfill) for backfill in backfills] + [
+        GrapheneRun(run) for run in runs
+    ]
+
     # order runs and backfills by create_time. typically we sort by storage id but that won't work here since
     # they are different tables
     all_mega_runs = sorted(
-        backfills + runs,
-        key=lambda x: x.create_timestamp.timestamp()
-        if isinstance(x, RunRecord)
-        else x.backfill_timestamp,
+        all_mega_runs,
+        key=lambda x: x.resolve_creationTime(graphene_info),  # ideally could just do .creationTime
         reverse=True,
     )
-    if limit:
-        all_mega_runs = all_mega_runs[:limit]
 
-    return [GrapheneMegaRun(record) for record in all_mega_runs]
+    if limit:
+        return all_mega_runs[:limit]
+
+    return all_mega_runs
