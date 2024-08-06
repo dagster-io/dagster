@@ -134,7 +134,7 @@ setup(
             "pytest>=8",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
-            "tox",
+            "tox>=4",
             "morefs[asynclocal]",
             "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
