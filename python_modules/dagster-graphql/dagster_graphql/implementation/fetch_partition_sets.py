@@ -1,7 +1,8 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
@@ -107,20 +108,18 @@ def get_partition_by_name(
 def get_partition_config(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
-    partition_set_name: str,
+    job_name: str,
     partition_name: str,
+    selected_asset_keys: Optional[AbstractSet[AssetKey]],
 ) -> "GraphenePartitionRunConfig":
     from ..schema.partition_sets import GraphenePartitionRunConfig
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.str_param(partition_set_name, "partition_set_name")
+    check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
     result = graphene_info.context.get_external_partition_config(
-        repository_handle,
-        partition_set_name,
-        partition_name,
-        graphene_info.context.instance,
+        repository_handle, job_name, partition_name, graphene_info.context.instance
     )
 
     if isinstance(result, ExternalPartitionExecutionErrorData):
@@ -132,18 +131,23 @@ def get_partition_config(
 def get_partition_tags(
     graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
-    partition_set_name: str,
+    job_name: str,
     partition_name: str,
+    selected_asset_keys: Optional[AbstractSet[AssetKey]],
 ) -> "GraphenePartitionTags":
     from ..schema.partition_sets import GraphenePartitionTags
     from ..schema.tags import GraphenePipelineTag
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-    check.str_param(partition_set_name, "partition_set_name")
+    check.str_param(job_name, "job_name")
     check.str_param(partition_name, "partition_name")
 
     result = graphene_info.context.get_external_partition_tags(
-        repository_handle, partition_set_name, partition_name, graphene_info.context.instance
+        repository_handle,
+        job_name,
+        partition_name,
+        graphene_info.context.instance,
+        selected_asset_keys=selected_asset_keys,
     )
 
     if isinstance(result, ExternalPartitionExecutionErrorData):
