@@ -1,17 +1,17 @@
 ---
 title: "Creating custom Declarative Automation conditions | Dagster Docs"
-description: ""
+description: "Learn to create your own custom Declarative Automation conditions."
 ---
 
 # Creating custom Declarative Automation conditions
 
 <Note>
-  This feature is currently <strong>experimental</strong>.
+  Declarative Automation is currently <strong>experimental</strong>.
 </Note>
 
-`AutomationConditions` can be precisely customized to suit different specific use cases. At the core, each `AutomationCondition` consists of a set of _operands_ which are combined together with various _operators._
+[Declarative Automation](/concepts/automation/declarative-automation) includes pre-built conditions to handle common use cases, such as executing on a periodic schedule or whenever an upstream dependency updates, but you can also customize conditions.
 
-Using the suite of operators and operands allows you to combine Dagster’s built-in `AutomationConditions` to produce specific behaviors.
+By the end of this guide, you'll understand how <PyObject object="AutomationCondition" pluralize /> work and how to create your own custom conditions.
 
 ---
 
@@ -26,26 +26,37 @@ Before continuing, you should be familiar with:
 
 ## How it works
 
-TODO
+Each <PyObject object="AutomationCondition" /> consists of a set of **operands** and various **operators**. To create conditions that suit your specific needs, you can combine the operators and operands listed below with Dagster's built-in <PyObject object="AutomationCondition" pluralize />. For example:
+
+```python
+from dagster import AutomationCondition
+
+any_parents_missing = AutomationCondition.any_deps_match(
+    AutomationCondition.in_progress() | AutomationCondition.failed()
+)
+```
+
+This condition translates to **Any upstream dependencies (parents) which are part of an in-progress run or failed during the latest run**.
 
 ### Operands
 
 Operands are base conditions which can be true or false about a given asset partition.
 
-| Operand                                     | Description                                                                                                                        |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `AutomationCondition.missing`               | This asset partition has never been materialized or observed                                                                       |
-| `AutomationCondition.in_progress`           | This asset partition is part of an in-progress run                                                                                 |
-| `AutomationCondition.failed`                | This asset partition failed to be materialized in its latest run                                                                   |
-| `AutomationCondition.newly_updated`         | This asset partition was materialized since the previous evaluation                                                                |
-| `AutomationCondition.newly_requested`       | This asset partition was requested on the previous evaluation                                                                      |
-| `AutomationCondition.code_version_changed`  | This asset has a new code version since the previous evaluation                                                                    |
-| `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                                    |
-| `AutomationCondition.in_latest_time_window` | This asset partition falls within the latest time window of the asset’s <PyObject object="PartitionsDefinition" />, if applicable. |
+| Operand                                     | Description                                                                                                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AutomationCondition.missing`               | Returns true if the asset partition has never been materialized or observed                                                                       |
+| `AutomationCondition.in_progress`           | Returns true if the asset partition is part of an in-progress run                                                                                 |
+| `AutomationCondition.failed`                | Returns true if the asset partition failed to be materialized in its latest run                                                                   |
+| `AutomationCondition.newly_updated`         | Returns true if the asset partition was materialized since the previous evaluation                                                                |
+| `AutomationCondition.newly_requested`       | Returns true if the asset partition was requested on the previous evaluation                                                                      |
+| `AutomationCondition.code_version_changed`  | Returns true if the asset has a new code version since the previous evaluation                                                                    |
+| `AutomationCondition.cron_tick_passed`      | Returns true if a new tick of the provided cron schedule occurred since the previous evaluation                                                   |
+| `AutomationCondition.in_latest_time_window` | Returns true if the asset partition falls within the latest time window of the asset’s <PyObject object="PartitionsDefinition" />, if applicable. |
+| `AutomationCondition.will_be_requested`     | Returns true if the asset partition will be requested in this tick                                                                                |
 
 ### Operators
 
-The above conditions can be built into more complex expression using the following operators.
+The above conditions can be built into more complex expressions using the following operators:
 
 <table
   className="table"
@@ -57,19 +68,12 @@ The above conditions can be built into more complex expression using the followi
     <tr>
       <th
         style={{
-          width: "30%",
+          width: "40%",
         }}
       >
         Operator
       </th>
-      <th
-        style={{
-          width: "40%",
-        }}
-      >
-        Description
-      </th>
-      <th>Example</th>
+      <th>Description</th>
     </tr>
   </thead>
   <tbody>
@@ -77,27 +81,24 @@ The above conditions can be built into more complex expression using the followi
       <td>
         <code>~</code> (tilde)
       </td>
-      <td>NOT; condition is not true</td>
       <td>
-        <code>~A</code>
+        NOT; condition is not true; ex: <code>~A</code>
       </td>
     </tr>
     <tr>
       <td>
         <code>|</code> (pipe)
       </td>
-      <td>OR; either condition must be true</td>
       <td>
-        <code>A | B</code>
+        OR; either condition must be true; ex: <code>A | B</code>
       </td>
     </tr>
     <tr>
       <td>
         <code>&</code> (ampersand)
       </td>
-      <td>AND; both conditions must be true</td>
       <td>
-        <code>A & B</code>
+        AND; both conditions must be true; ex: <code>A & B</code>
       </td>
     </tr>
     <tr>
@@ -105,42 +106,40 @@ The above conditions can be built into more complex expression using the followi
         <code>CONDITION.newly_true()</code>
       </td>
       <td>False on previous tick and is now true</td>
-      <td>
-        <code>A.newly_true()</code>
-      </td>
     </tr>
     <tr>
       <td>
         <code>CONDITION_1.since(CONDITION_2)</code>
       </td>
-      <td>Condition 1 became true more recently than Condition 2</td>
       <td>
-        <code>A.since(B)</code>
+        Condition 1 became true more recently than Condition 2. Refer to the{" "}
+        <a href="#using-statuses-and-events-in-conditions">
+          Using statuses and events in conditions
+        </a>{" "}
+        section for an example.
       </td>
     </tr>
     <tr>
       <td>
-        <code>AutomationCondition.any_deps_match(A)</code>
+        <code>AutomationCondition.any_deps_match(CONDITION)</code>
       </td>
       <td>
         True for any upstream partition. Can be used with <code>.allow()</code>{" "}
-        and <code>.ignore()</code> to target specific upstream assets.
-      </td>
-      <td>
-        <code>AutomationCondition.any_deps_match(A)</code>
+        and <code>.ignore()</code> to target specific upstream assets. Refer to
+        the <a href="#targeting-dependencies">Targeting dependencies</a> section
+        for an example.
       </td>
     </tr>
     <tr>
       <td>
-        <code>AutomationCondition.all_deps_match()</code>
+        <code>AutomationCondition.all_deps_match(CONDITION)</code>
       </td>
       <td>
         True for at least one partition of each upstream asset. Can be used with{" "}
         <code>.allow()</code> and <code>.ignore()</code> to target specific
-        upstream assets.
-      </td>
-      <td>
-        <code>AutomationCondition.all_deps_match(A)</code>
+        upstream assets. Refer to the{" "}
+        <a href="#targeting-dependencies">Targeting dependencies</a> section for
+        an example.
       </td>
     </tr>
     <tr>
@@ -151,7 +150,6 @@ The above conditions can be built into more complex expression using the followi
         Any <PyObject object="AutomationCondition" /> on a downstream asset
         evaluates to true
       </td>
-      <td></td>
     </tr>
   </tbody>
 </table>
@@ -215,9 +213,9 @@ In some cases, you may want to use statuses and events in your automation condit
 - **Statuses** are persistent states that are and will be true for some period of time. For example, the `AutomationCondition.missing()` condition will be true only if an asset partition has never been materialized or observed.
 - **Events** are transient and reflect something that may only be true for an instant. For example, the `AutomationCondition.newly_updated()` condition will be true only if an asset partition was materialized since the previous evaluation.
 
-Using the `<A>.since(<B>)` operator, you can create conditions that detect if one event has happened more recently than another. Think of this as converting two events to a status - in this case, `A has occurred more recently than B` - is persistent and will stay true for some period of time. This operator becomes true whenever `<A>` is true, and will remain true until `<B>` is also true.
+Using the `<A>.since(<B>)` operator, you can create conditions that detect if one event has happened more recently than another. Think of this as converting two events to a status - in this case, `A has occurred more recently than B` - as this will stay true for some period of time. This operator becomes true whenever `<A>` is true, and will remain true until `<B>` is also true.
 
-Conversely, it can also be useful to convert statuses to events. For example, the default `eager()` policy ensures that it only ever tries to materialize a missing asset partition a single time using the following sub-condition:
+Conversely, it can also be useful to convert statuses to events. For example, the default `eager()` condition ensures that Dagster only tries to materialize a missing asset partition once using the following sub-condition:
 
 ```python
 from dagster import AutomationCondition
@@ -233,7 +231,7 @@ By using the `<A>.newly_true()` operator, you can turn the status of _"being mis
 
 ## Using conditions to chain runs
 
-Dagster can group the execution of multiple assets into a single, logical run. For example, imagine you have a series of dependent assets, each with an `AutomationCondition.eager()`. When you update the first asset in the chain, the desired behavior is typically to have all downstream assets grouped into a single logical run, rather than executing each asset in order in individual run.
+Dagster can group the execution of multiple assets into a single, logical run. For example, imagine you have a series of dependent assets, each with an `AutomationCondition.eager()` condition. When you update the first asset in the chain, the desired behavior is typically to have all downstream assets grouped into a single run, rather than executing each asset in order in individual run.
 
 To create this scenario, you can use `AutomationCondition.will_be_requested()`. Because each <PyObject object="AutomationCondition" /> is evaluated in order, you can query if an upstream asset will be requested on the current tick. For example:
 
@@ -251,14 +249,39 @@ any_parent_missing = AutomationCondition.any_deps_match(
 
 ### Ignoring specific parents
 
-By default, `AutomationCondition.eager()` will materialize in response to _any_ parent update, and not materialize if _any_ parent is missing. We can create sub-expressions which
+By default, `AutomationCondition.eager()` will materialize in response to **any** parent update, and not materialize if **any** parent is missing.
 
 ### Updating in response to code version changes
 
-When you update the code version (TODO: link) of an asset, it’s often desirable to materialize the asset to have it reflect this change. The simplest way of doing this would be just:
+When you update the an asset's code version, you'll typical want to materialize the asset to reflect the change. To do this, you can use `AutomationCondition.code_version_changed()`:
 
 ```jsx
 automation_condition = AutomationCondition.code_version_changed();
 ```
 
-This would immediately materialize any asset as soon as a code version change was detected. A more principled approach, however, would allow for cases in which parent assets were not able to immediately kick off:
+This condition will immediately materialize any asset as soon as a code change is detected.
+
+---
+
+## Related
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Asset definitions"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Declarative Automation"
+    href="/concepts/automation/declarative-automation"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Automation"
+    href="/concepts/automation"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Schedules"
+    href="/concepts/automation/schedules"
+  ></ArticleListItem>
+</ArticleList>
