@@ -19,6 +19,8 @@ from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.schema.util import ResolveInfo
 
+from .utils import apply_cursor_limit_reverse
+
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
     from dagster_graphql.schema.partition_sets import (
@@ -175,7 +177,7 @@ def get_partitions(
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
 
-    partition_names = _apply_cursor_limit_reverse(partition_names, cursor, limit, reverse)
+    partition_names = apply_cursor_limit_reverse(partition_names, cursor, limit, reverse)
 
     return GraphenePartitions(
         results=[
@@ -187,30 +189,6 @@ def get_partitions(
             for partition_name in partition_names
         ]
     )
-
-
-def _apply_cursor_limit_reverse(
-    items: Sequence[str], cursor: Optional[str], limit: Optional[int], reverse: Optional[bool]
-) -> Sequence[str]:
-    start = 0
-    end = len(items)
-    index = 0
-
-    if cursor:
-        index = next((idx for (idx, item) in enumerate(items) if item == cursor))
-
-        if reverse:
-            end = index
-        else:
-            start = index + 1
-
-    if limit:
-        if reverse:
-            start = end - limit
-        else:
-            end = start + limit
-
-    return items[max(start, 0) : end]
 
 
 def get_partition_set_partition_statuses(

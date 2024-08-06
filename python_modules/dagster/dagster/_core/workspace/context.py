@@ -311,6 +311,20 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
             selected_asset_keys=selected_asset_keys,
         )
 
+    def get_external_partition_names_for_job(
+        self,
+        external_job: ExternalJob,
+    ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
+        code_location = self.get_code_location(external_job.repository_handle.location_name)
+        return code_location.get_external_partition_names_for_job(
+            JobSubsetSelector(
+                location_name=code_location.name,
+                repository_name=external_job.repository_handle.repository_name,
+                job_name=external_job.name,
+                op_selection=None,
+            )
+        )
+
     def get_external_partition_set_execution_param_data(
         self,
         repository_handle: RepositoryHandle,

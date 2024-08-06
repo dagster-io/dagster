@@ -15,30 +15,10 @@ from dagster_graphql.schema.errors import GrapheneError
 
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializeRule
+from .partition_keys import GraphenePartitionKeys, GraphenePartitionKeysOrError
 from .util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
-
-
-class GraphenePartitionKeys(graphene.ObjectType):
-    partitionKeys = non_null_list(graphene.String)
-
-    class Meta:
-        name = "PartitionKeys"
-
-
-class GraphenePartitionSubsetDeserializationError(graphene.ObjectType):
-    message = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneError,)
-        name = "PartitionSubsetDeserializationError"
-
-
-class GraphenePartitionKeysOrError(graphene.Union):
-    class Meta:
-        types = (GraphenePartitionKeys, GraphenePartitionSubsetDeserializationError)
-        name = "PartitionKeysOrError"
 
 
 class GrapheneTextRuleEvaluationData(graphene.ObjectType):
