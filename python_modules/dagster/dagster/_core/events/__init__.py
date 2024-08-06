@@ -826,6 +826,11 @@ class DagsterEvent(
         return cast(JobFailureData, self.event_specific_data)
 
     @property
+    def job_canceled_data(self) -> "JobCanceledData":
+        _assert_type("job_canceled_data", DagsterEventType.RUN_CANCELED, self.event_type)
+        return cast(JobCanceledData, self.event_specific_data)
+
+    @property
     def engine_event_data(self) -> "EngineEventData":
         _assert_type(
             "engine_event_data",
