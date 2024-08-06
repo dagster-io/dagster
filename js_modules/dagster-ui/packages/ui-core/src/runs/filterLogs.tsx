@@ -2,6 +2,7 @@ import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
+import {weakmapMemoize} from '../app/Util';
 
 export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
   const filteredNodes = logs.allNodes.filter((node) => {
@@ -40,7 +41,8 @@ export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStep
             if (f.token === 'type') {
               return node.eventType && f.value === eventTypeToDisplayType(node.eventType);
             }
-            return nodeTexts.some((text) => text.toLowerCase().includes(f.value.toLowerCase()));
+            const valueLower = f.value.toLowerCase();
+            return nodeTexts.some((text) => text.toLowerCase().includes(valueLower));
           })
         );
       })
@@ -58,16 +60,15 @@ export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStep
 // different top-level keys, such as "intValue", "mdStr" and "tableSchema", and
 // the searchable text is the value of these keys.
 //
-function metadataEntryKeyValueStrings(node: LogNode) {
+const metadataEntryKeyValueStrings = weakmapMemoize((node: LogNode) => {
   if (!('metadataEntries' in node)) {
     return [];
   }
   const s = node.metadataEntries.map(
-    // eslint-disable-next-line unused-imports/no-unused-vars
-    ({__typename, label, description, ...rest}) =>
+    ({__typename, label, description: _description, ...rest}) =>
       `${label}:${Object.values(rest)
         .map((v) => (typeof v === 'string' ? v : JSON.stringify(v)))
         .join(' ')}`,
   );
   return s;
-}
+});
