@@ -126,7 +126,9 @@ def fetch_column_metadata(
                 )
             )
         except Exception:
-            context.log.warning("Failed to fetch column metadata for stream %s: %s", stream_name, exc_info=True)
+            context.log.warning(
+                "Failed to fetch column metadata for stream %s", stream_name, exc_info=True
+            )
 
     return {}
 
