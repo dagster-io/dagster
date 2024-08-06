@@ -427,10 +427,7 @@ class SlingResource(ConfigurableResource):
         column_keys: List[str] = table_output["fields"]
         column_values: List[List[str]] = table_output["rows"]
 
-        return [
-            {column_keys[i]: column_values[i] for i in range(len(column_keys))}
-            for column_values in column_values
-        ]
+        return [dict(zip(column_keys, column_values)) for column_values in column_values]
 
     def get_column_info_for_table(self, target_name: str, table_name: str) -> List[Dict[str, str]]:
         """Fetches column metadata for a given table in a Sling target and parses it into a list of
@@ -459,7 +456,7 @@ class SlingResource(ConfigurableResource):
             str: The output from the Sling CLI.
         """
         with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
-            return subprocess.check_output(args=[sling.SLING_BIN, *args]).decode("utf-8")
+            return subprocess.check_output(args=[sling.SLING_BIN, *args], text=True)
 
     def replicate(
         self,
