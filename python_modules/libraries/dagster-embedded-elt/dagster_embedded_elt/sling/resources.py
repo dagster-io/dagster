@@ -2,13 +2,14 @@ import contextlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import time
 import uuid
 from enum import Enum
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Union
+from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Sequence, Union
 
 import sling
 from dagster import (
@@ -422,6 +423,41 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
+    def _parse_json_table_output(self, table_output: Dict[str, Any]) -> List[Dict[str, str]]:
+        column_keys: List[str] = table_output["fields"]
+        column_values: List[List[str]] = table_output["rows"]
+
+        return [dict(zip(column_keys, column_values)) for column_values in column_values]
+
+    def get_column_info_for_table(self, target_name: str, table_name: str) -> List[Dict[str, str]]:
+        """Fetches column metadata for a given table in a Sling target and parses it into a list of
+        dictionaries, keyed by column name.
+
+        Args:
+            target_name (str): The name of the target connection to use.
+            table_name (str): The name of the table to fetch column metadata for.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries, keyed by column name, containing column metadata.
+        """
+        output = self.run_sling_cli(
+            ["conns", "discover", target_name, "--pattern", table_name, "--columns"],
+            force_json=True,
+        )
+        return self._parse_json_table_output(json.loads(output.strip()))
+
+    def run_sling_cli(self, args: Sequence[str], force_json: bool = False) -> str:
+        """Runs the Sling CLI with the given arguments and returns the output.
+
+        Args:
+            args (Sequence[str]): The arguments to pass to the Sling CLI.
+
+        Returns:
+            str: The output from the Sling CLI.
+        """
+        with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
+            return subprocess.check_output(args=[sling.SLING_BIN, *args], text=True)
+
     def replicate(
         self,
         *,
@@ -447,6 +483,7 @@ class SlingResource(ConfigurableResource):
             dagster_sling_translator = first_asset_metadata.get(METADATA_KEY_TRANSLATOR)
             replication_config = first_asset_metadata.get(METADATA_KEY_REPLICATION_CONFIG)
 
+        dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
         replication_config_dict = dict(validate_replication(replication_config))
         return SlingEventIterator(
             self._replicate(
@@ -457,6 +494,7 @@ class SlingResource(ConfigurableResource):
             ),
             sling_cli=self,
             replication_config=replication_config_dict,
+            context=context,
         )
 
     def _replicate(
@@ -464,11 +502,10 @@ class SlingResource(ConfigurableResource):
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
         replication_config: Dict[str, Any],
-        dagster_sling_translator: Optional[DagsterSlingTranslator],
+        dagster_sling_translator: DagsterSlingTranslator,
         debug: bool,
     ) -> Iterator[AssetMaterialization]:
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
-        dagster_sling_translator = dagster_sling_translator or DagsterSlingTranslator()
 
         # convert to dict to enable updating the index
         context_streams = self._get_replication_streams_for_context(context)
