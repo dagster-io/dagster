@@ -98,7 +98,7 @@ from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
-from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._time import datetime_from_timestamp
@@ -267,7 +267,7 @@ class ExternalPresetData(IHaveNew):
     old_fields={"is_job": True},
 )
 @record
-class ExternalJobData(LegacyNamedTupleMixin):
+class ExternalJobData:
     name: str
     job_snapshot: JobSnapshot
     active_presets: Sequence[ExternalPresetData]
@@ -279,7 +279,7 @@ class ExternalJobData(LegacyNamedTupleMixin):
     storage_field_names={"external_job_data": "external_pipeline_data"},
 )
 @record
-class ExternalJobSubsetResult(LegacyNamedTupleMixin):
+class ExternalJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
     external_job_data: Optional[ExternalJobData] = None
