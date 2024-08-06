@@ -35,6 +35,21 @@ def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
     } == example_pipeline_assets.keys
 
 
+def test_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
+    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(context=context)
+
+    # Since repo_issues is a transform of the repo data, its upstream
+    # asset key should be the repo data asset key as well.
+    assert {
+        AssetKey("dlt_pipeline_repos"): {AssetKey("pipeline_repos")},
+        AssetKey("dlt_pipeline_repo_issues"): {AssetKey("pipeline_repos")},
+    } == example_pipeline_assets.asset_deps
+
+
 def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
     def example_pipeline_assets(

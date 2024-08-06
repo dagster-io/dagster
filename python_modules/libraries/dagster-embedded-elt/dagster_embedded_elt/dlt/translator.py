@@ -51,6 +51,11 @@ class DagsterDltTranslator:
             Iterable[AssetKey]: The Dagster asset keys upstream of `dlt_resource_key`.
 
         """
+        if resource.is_transformer:
+            pipe = resource._pipe  # noqa: SLF001
+            while pipe.has_parent:
+                pipe = pipe.parent
+            return [AssetKey(f"{resource.source_name}_{pipe.name}")]
         return [AssetKey(f"{resource.source_name}_{resource.name}")]
 
     @public
