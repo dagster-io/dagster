@@ -1,7 +1,8 @@
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.execution.plan.inputs import (
     StepInput,
@@ -92,6 +93,19 @@ class ExecutionPlanSnapshot(
                 repository_load_data, "repository_load_data", RepositoryLoadData
             ),
         )
+
+    @property
+    def asset_selection(self) -> AbstractSet[AssetKey]:
+        asset_keys = set()
+
+        for step in self.steps:
+            if step.key in self.step_keys_to_execute:
+                for output in step.outputs:
+                    asset_key = check.not_none(output.properties).asset_key
+                    if asset_key:
+                        asset_keys.add(asset_key)
+
+        return asset_keys
 
     @property
     def step_deps(self):

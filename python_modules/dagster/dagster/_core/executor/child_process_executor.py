@@ -60,7 +60,8 @@ class ChildProcessCommand(ABC):
 class ChildProcessCrashException(Exception):
     """Thrown when the child process crashes."""
 
-    def __init__(self, exit_code=None):
+    def __init__(self, pid, exit_code=None):
+        self.pid = pid
         self.exit_code = exit_code
         super().__init__()
 
@@ -169,7 +170,7 @@ def execute_child_process_command(
 
         if not completed_properly:
             # TODO Figure out what to do about stderr/stdout
-            raise ChildProcessCrashException(exit_code=process.exitcode)
+            raise ChildProcessCrashException(pid=process.pid, exit_code=process.exitcode)
 
         process.join()
     finally:

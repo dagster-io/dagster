@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 import pytest
 from dagster import (
+    Config,
     DagsterEvent,
     DagsterEventType,
     DefaultRunLauncher,
@@ -18,7 +19,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import op
-from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterLaunchFailedError
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
@@ -70,10 +71,29 @@ def exity_job():
     exity_op()
 
 
+class SleepyOpConfig(Config):
+    raise_keyboard_interrupt: bool = False
+    crash_after_termination: bool = False
+
+
 @op
-def sleepy_op(_):
+def sleepy_op(config: SleepyOpConfig):
+    assert not (config.raise_keyboard_interrupt and config.crash_after_termination)
+
     while True:
-        time.sleep(0.1)
+        try:
+            time.sleep(0.1)
+
+        except DagsterExecutionInterruptedError:
+            if config.raise_keyboard_interrupt:
+                # simulates a custom signal handler that has overridden ours
+                # to raise a normal KeyboardInterrupt
+                raise KeyboardInterrupt
+            elif config.crash_after_termination:
+                # simulates a crash after termination was initiated
+                os._exit(1)
+            else:
+                raise
 
 
 @job
@@ -250,7 +270,9 @@ def test_successful_run_from_pending(
         asset_selection=None,
         op_selection=None,
         asset_check_selection=None,
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
+        asset_graph=code_location.get_repository(
+            external_job.repository_handle.repository_name
+        ).asset_graph,
     )
 
     run_id = created_run.run_id
@@ -438,7 +460,21 @@ def test_exity_run(
 
 @pytest.mark.parametrize(
     "run_config",
-    run_configs(),
+    [
+        None,  # multiprocess
+        {"execution": {"config": {"in_process": {}}}},  # in-process
+        {  # raise KeyboardInterrupt on termination
+            "ops": {"sleepy_op": {"config": {"raise_keyboard_interrupt": True}}}
+        },
+        pytest.param(
+            {  # crash on termination
+                "ops": {"sleepy_op": {"config": {"crash_after_termination": True}}}
+            },
+            marks=pytest.mark.skipif(
+                _seven.IS_WINDOWS, reason="Crashes manifest differently on windows"
+            ),
+        ),
+    ],
 )
 def test_terminated_run(
     instance: DagsterInstance,
@@ -473,6 +509,9 @@ def test_terminated_run(
     terminated_run = instance.get_run_by_id(run_id)
     assert terminated_run and terminated_run.status == DagsterRunStatus.CANCELED
 
+    # termination is a no-op once run is finished
+    assert not launcher.terminate(run_id)
+
     poll_for_event(
         instance,
         run_id,
@@ -502,6 +541,24 @@ def test_terminated_run(
                 (
                     "PIPELINE_CANCELED",
                     'Execution of run for "sleepy_job" canceled.',
+                ),
+                ("ENGINE_EVENT", "Process for run exited"),
+            ],
+        )
+    elif (
+        run_config.get("ops", {})
+        .get("sleepy_op", {})
+        .get("config", {})
+        .get("crash_after_termination")
+    ):
+        _check_event_log_contains(
+            run_logs,
+            [
+                ("PIPELINE_CANCELING", "Sending run termination request."),
+                ("STEP_FAILURE", 'Execution of step "sleepy_op" failed.'),
+                (
+                    "PIPELINE_CANCELED",
+                    "Run failed after it was requested to be terminated.",
                 ),
                 ("ENGINE_EVENT", "Process for run exited"),
             ],
@@ -698,6 +755,10 @@ def test_multi_op_selection_execution(
     }
 
 
+@pytest.mark.skipif(
+    _seven.IS_WINDOWS,
+    reason="Failure sequence manifests differently on windows",
+)
 def test_job_that_fails_run_worker(
     instance: DagsterInstance,
     workspace: WorkspaceRequestContext,

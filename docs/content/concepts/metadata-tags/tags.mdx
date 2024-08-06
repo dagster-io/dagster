@@ -60,19 +60,13 @@ Tags are useful for organizing assets in non-hierarchical ways. Unlike [asset gr
 def leads(): ...
 ```
 
-Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, <PyObject object="AssetOut" />, and <PyObject object="graph_asset" decorator />.
-
-#### Standard asset tags reference
-
-The following table holds standard asset tag keys defined by Dagster. The `dagster` prefix indicates that the Dagster package takes responsibility for defining the meaning of these tags.
-
-| Key                    | Description                                                       |
-| ---------------------- | ----------------------------------------------------------------- |
-| `dagster/storage_kind` | The technology used to store the asset, e.g. "snowflake" or "s3". |
+Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, and the <PyObject object="graph_asset" decorator />.
 
 ### Jobs
 
 Adding tags to a job will attach them to every run executed by the job.
+
+In some cases, Dagster will automatically add tags to runs. Refer to the [System run tags reference](#system-run-tags) for a list of tags.
 
 <TabGroup>
 <TabItem name="Asset jobs">
@@ -108,20 +102,6 @@ my_second_job_with_tags = email_graph.to_job(tags={"domain": "marketing"})
 
 </TabItem>
 </TabGroup>
-
-#### System run tags
-
-In some cases, Dagster will automatically add tags to runs:
-
-| Tag                     | Description                         |
-| ----------------------- | ----------------------------------- |
-| `dagster/op_selection`  | The op selection for the run        |
-| `dagster/partition`     | The partition of the run            |
-| `dagster/schedule_name` | The schedule that triggered the run |
-| `dagster/sensor_name`   | The sensor that triggered the run   |
-| `dagster/backfill`      | The backfill ID                     |
-| `dagster/parent_run_id` | The parent run of a re-executed run |
-| `dagster/image`         | The Docker image tag                |
 
 ---
 
@@ -165,6 +145,24 @@ src="/images/concepts/ops-jobs-graphs/tag-adder.png"
 width={2880}
 height={1406}
 />
+
+---
+
+## References
+
+### System run tags
+
+The following table lists the tags Dagster will, on occasion, automatically add to runs.
+
+| Tag                     | Description                         |
+| ----------------------- | ----------------------------------- |
+| `dagster/op_selection`  | The op selection for the run        |
+| `dagster/partition`     | The partition of the run            |
+| `dagster/schedule_name` | The schedule that triggered the run |
+| `dagster/sensor_name`   | The sensor that triggered the run   |
+| `dagster/backfill`      | The backfill ID                     |
+| `dagster/parent_run_id` | The parent run of a re-executed run |
+| `dagster/image`         | The Docker image tag                |
 
 ---
 

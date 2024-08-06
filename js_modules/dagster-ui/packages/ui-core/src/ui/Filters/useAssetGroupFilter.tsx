@@ -1,5 +1,5 @@
 import {Box, Icon} from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {buildAssetGroupSelector} from '../../assets/AssetGroupSuggest';
 import {AssetGroupSelector, AssetNode} from '../../graphql/types';
@@ -16,26 +16,34 @@ export const useAssetGroupFilter = ({
   assetGroups?: AssetGroupSelector[] | null;
   setGroups?: null | ((groups: AssetGroupSelector[]) => void);
 }) => {
+  const allValues = useMemo(
+    () =>
+      (allAssetGroups || []).map((group) => ({
+        key: group.groupName,
+        value:
+          assetGroups?.find(
+            (visibleGroup) =>
+              visibleGroup.groupName === group.groupName &&
+              visibleGroup.repositoryName === group.repositoryName &&
+              visibleGroup.repositoryLocationName === group.repositoryLocationName,
+          ) ?? group,
+        match: [group.groupName],
+      })),
+    [allAssetGroups, assetGroups],
+  );
   return useStaticSetFilter<AssetGroupSelector>({
     ...BaseConfig,
-    allValues: (allAssetGroups || []).map((group) => ({
-      key: group.groupName,
-      value:
-        assetGroups?.find(
-          (visibleGroup) =>
-            visibleGroup.groupName === group.groupName &&
-            visibleGroup.repositoryName === group.repositoryName &&
-            visibleGroup.repositoryLocationName === group.repositoryLocationName,
-        ) ?? group,
-      match: [group.groupName],
-    })),
+    allValues,
     menuWidth: '300px',
     state: useMemo(() => new Set(assetGroups ?? []), [assetGroups]),
-    onStateChanged: (values) => {
-      if (setGroups) {
-        setGroups(Array.from(values));
-      }
-    },
+    onStateChanged: useCallback(
+      (values: Set<AssetGroupSelector>) => {
+        if (setGroups) {
+          setGroups(Array.from(values));
+        }
+      },
+      [setGroups],
+    ),
   });
 };
 

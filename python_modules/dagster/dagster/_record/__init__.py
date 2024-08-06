@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import dataclass_transform
+from typing_extensions import Self, dataclass_transform
 
 import dagster._check as check
 from dagster._check import EvalContext, build_check_call_str
@@ -87,7 +87,7 @@ def _namedtuple_record_transform(
             eval_ctx,
             1 if with_new else 0,
         )
-        base.__new__ = jit_checked_new  # type: ignore
+        base.__new__ = jit_checked_new
 
     elif defaults:
         # allow arbitrary ordering of default values by generating a kwarg only __new__ impl
@@ -245,7 +245,7 @@ class IHaveNew:
 
     if TYPE_CHECKING:
 
-        def __new__(cls, **kwargs): ...
+        def __new__(cls, **kwargs) -> Self: ...
 
 
 def is_record(obj) -> bool:

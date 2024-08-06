@@ -288,6 +288,7 @@ class MultiprocessExecutor(Executor):
                             active_execution.handle_event(step_failure_event)
                             yield step_failure_event
                             empty_iters.append(key)
+                            errors[crash.pid] = serializable_error
                         except StopIteration:
                             empty_iters.append(key)
 
@@ -329,7 +330,8 @@ class MultiprocessExecutor(Executor):
                 and (not active_iters)
                 and all(
                     [
-                        err_info.cls_name == "DagsterExecutionInterruptedError"
+                        err_info.cls_name
+                        in {"DagsterExecutionInterruptedError", "KeyboardInterrupt"}
                         for err_info in errs.values()
                     ]
                 )

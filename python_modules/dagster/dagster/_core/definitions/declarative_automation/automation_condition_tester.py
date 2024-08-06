@@ -55,7 +55,7 @@ class EvaluateAutomationConditionsResult:
 def evaluate_automation_conditions(
     defs: Union[Definitions, Sequence[AssetsDefinition]],
     instance: DagsterInstance,
-    asset_selection: AssetSelection = AssetSelection.all(),
+    asset_selection: Optional[AssetSelection] = None,
     evaluation_time: Optional[datetime.datetime] = None,
     cursor: Optional[AssetDaemonCursor] = None,
     request_backfills: bool = False,
@@ -69,7 +69,7 @@ def evaluate_automation_conditions(
         instance (DagsterInstance):
             The instance to evaluate against.
         asset_selection (AssetSelection):
-            The selection of assets within defs to evaluate against. Defaults to AssetSelection.all()
+            The selection of assets within defs to evaluate against. Defaults to all assets.
         evaluation_time (Optional[datetime.datetime]):
             The time to use for the evaluation. Defaults to the true current time.
         cursor (Optional[AssetDaemonCursor]):
@@ -108,6 +108,9 @@ def evaluate_automation_conditions(
     if not isinstance(defs, Definitions):
         defs = Definitions(assets=defs)
 
+    if asset_selection is None:
+        asset_selection = AssetSelection.all(include_sources=True)
+
     asset_graph_view = AssetGraphView.for_test(
         defs=defs,
         instance=instance,
@@ -120,7 +123,11 @@ def evaluate_automation_conditions(
     )
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
-        asset_keys=asset_selection.resolve(asset_graph),
+        asset_keys={
+            key
+            for key in asset_selection.resolve(asset_graph)
+            if asset_graph.get(key).automation_condition is not None
+        },
         asset_graph_view=asset_graph_view,
         logger=logging.getLogger("dagster.automation_condition_tester"),
         cursor=cursor or AssetDaemonCursor.empty(),

@@ -242,6 +242,37 @@ RUN_CONCURRENCY_QUERY = """
 }
 """
 
+RUN_LOGS_QUERY = """
+query RunLogsQuery($afterCursor:String, $limit:Int, $runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        eventConnection(limit: $limit, afterCursor: $afterCursor) {
+          cursor
+          hasMore
+          events {
+            ... on ExecutionStepFailureEvent {
+              stepKey
+              eventType
+              errorSource
+              error {
+                message
+                stack
+                causes {
+
+                  className
+                  stack
+                  message
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+}
+"""
+
 
 def _get_runs_data(result, run_id):
     for run_data in result.data["pipelineOrError"]["runs"]:
@@ -347,6 +378,24 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         tags_dict = {item["key"]: item["values"] for item in tags}
         assert len(tags_dict) == 1
         assert tags_dict["fruit"] == ["apple"]
+
+        run_logs_result = execute_dagster_graphql(
+            read_context, RUN_LOGS_QUERY, variables={"runId": run_id_one, "limit": 5}
+        )
+        run_log_events = run_logs_result.data["pipelineRunOrError"]["eventConnection"]["events"]
+        assert len(run_log_events) == 5
+        assert run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
+
+        cursor = run_logs_result.data["pipelineRunOrError"]["eventConnection"]["cursor"]
+        assert cursor
+
+        run_logs_result = execute_dagster_graphql(
+            read_context,
+            RUN_LOGS_QUERY,
+            variables={"runId": run_id_one, "limit": 5000, "afterCursor": cursor},
+        )
+
+        assert not run_logs_result.data["pipelineRunOrError"]["eventConnection"]["hasMore"]
 
         # delete the second run
         result = execute_dagster_graphql(

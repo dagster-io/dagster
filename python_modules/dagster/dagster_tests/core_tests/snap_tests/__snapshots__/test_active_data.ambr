@@ -2280,6 +2280,7 @@
     "external_schedule_datas": [
       {
         "__class__": "ExternalScheduleData",
+        "asset_selection": null,
         "cron_schedule": "@daily",
         "description": null,
         "environment_vars": {},

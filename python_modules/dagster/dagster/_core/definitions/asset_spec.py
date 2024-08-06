@@ -7,6 +7,7 @@ from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import validate_asset_owner
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
@@ -81,6 +82,7 @@ class AssetSpec(
             ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("owners", PublicAttr[Sequence[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
+            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
         ],
     ),
     IHasInternalInit,
@@ -130,6 +132,7 @@ class AssetSpec(
         tags: Optional[Mapping[str, str]] = None,
         # TODO: FOU-243
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -161,6 +164,9 @@ class AssetSpec(
             ),
             owners=owners,
             tags=validate_tags_strict(tags) or {},
+            partitions_def=check.opt_inst_param(
+                partitions_def, "partitions_def", PartitionsDefinition
+            ),
         )
 
     @staticmethod
@@ -178,6 +184,7 @@ class AssetSpec(
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
         auto_materialize_policy: Optional[AutoMaterializePolicy],
+        partitions_def: Optional[PartitionsDefinition],
     ) -> "AssetSpec":
         check.invariant(auto_materialize_policy is None)
         return AssetSpec(
@@ -192,6 +199,7 @@ class AssetSpec(
             automation_condition=automation_condition,
             owners=owners,
             tags=tags,
+            partitions_def=partitions_def,
         )
 
     @cached_property

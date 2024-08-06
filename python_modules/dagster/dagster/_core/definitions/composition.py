@@ -32,6 +32,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._utils import is_named_tuple_instance
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .config import ConfigMapping
 from .dependency import (
@@ -52,7 +53,6 @@ from .output import OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 from .utils import NormalizedTags, check_valid_name, normalize_tags
-from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -505,6 +505,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     def _process_argument_node(
         self, node_name: str, output_node, input_name: str, input_bindings, arg_desc: str
     ) -> None:
+        from .asset_spec import AssetSpec
         from .assets import AssetsDefinition
         from .external_asset import create_external_asset_from_source_asset
         from .source_asset import SourceAsset
@@ -518,6 +519,9 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
         if isinstance(output_node, SourceAsset):
             input_bindings[input_name] = create_external_asset_from_source_asset(output_node)
+        elif isinstance(output_node, AssetSpec):
+            with disable_dagster_warnings():
+                input_bindings[input_name] = AssetsDefinition(specs=[output_node])
         elif isinstance(
             output_node, (AssetsDefinition, InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn)
         ):
@@ -625,7 +629,6 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
-        version_strategy: Optional[VersionStrategy] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ) -> "JobDefinition":
@@ -652,7 +655,6 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             executor_def=executor_def,
             hooks=job_hooks,
             op_retry_policy=op_retry_policy,
-            version_strategy=version_strategy,
             partitions_def=partitions_def,
             input_values=input_values,
         )

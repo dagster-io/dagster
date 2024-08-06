@@ -13,7 +13,12 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import CodeLocation, ExternalJob, ExternalPartitionSet
 from dagster._core.remote_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import (
+    NOT_FINISHED_STATUSES,
+    DagsterRun,
+    DagsterRunStatus,
+    RunsFilter,
+)
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -56,6 +61,8 @@ def execute_job_backfill_iteration(
 
     has_more = True
     while has_more:
+        # refetch in case the backfill status has changed
+        backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
         if backfill.status != BulkActionStatus.REQUESTED:
             break
 
@@ -90,6 +97,18 @@ def execute_job_backfill_iteration(
             yield None
             time.sleep(CHECKPOINT_INTERVAL)
         else:
+            unfinished_runs = instance.get_runs(
+                RunsFilter(
+                    tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
+                    statuses=NOT_FINISHED_STATUSES,
+                ),
+                limit=1,
+            )
+            if unfinished_runs:
+                logger.info(
+                    f"Backfill {backfill.backfill_id} has unfinished runs. Status will be updated when all runs are finished."
+                )
+                return
             partition_names = cast(Sequence[str], backfill.partition_names)
             logger.info(
                 f"Backfill completed for {backfill.backfill_id} for"
@@ -171,6 +190,9 @@ def _get_partitions_chunk(
         partition_names.index(checkpoint) + 1 if checkpoint and checkpoint in partition_names else 0
     )
     partition_names = partition_names[initial_checkpoint:]
+    if len(partition_names) == 0:
+        # no more partitions to submit, return early
+        return [], checkpoint or "", False
 
     backfill_policy = partition_set.backfill_policy
     if backfill_policy and backfill_policy.max_partitions_per_run != 1:
@@ -418,7 +440,9 @@ def create_backfill_run(
             frozenset(backfill_job.asset_selection) if backfill_job.asset_selection else None
         ),
         asset_check_selection=None,
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_pipeline),
+        asset_graph=code_location.get_repository(
+            external_pipeline.repository_handle.repository_name
+        ).asset_graph,
     )
 
 

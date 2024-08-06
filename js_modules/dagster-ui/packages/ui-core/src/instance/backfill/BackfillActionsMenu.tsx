@@ -18,7 +18,7 @@ import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/B
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {showSharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {BulkActionStatus} from '../../graphql/types';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 
 export function backfillCanCancelSubmission(backfill: {
@@ -48,14 +48,12 @@ export function backfillCanResume(backfill: {
 
 export function backfillCanCancelRuns(
   backfill: {hasCancelPermission: boolean},
-  counts: {[runStatus: string]: number} | null,
+  hasCancelableRuns: boolean,
 ) {
-  if (!backfill.hasCancelPermission || !counts) {
+  if (!backfill.hasCancelPermission || !hasCancelableRuns) {
     return false;
   }
-  const queuedCount = counts[RunStatus.QUEUED] || 0;
-  const startedCount = counts[RunStatus.STARTED] || 0;
-  return queuedCount > 0 || startedCount > 0;
+  return hasCancelableRuns;
 }
 
 export const BackfillActionsMenu = ({

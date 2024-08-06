@@ -18,15 +18,12 @@ from .cloud import (
     dbt_cloud_run_op as dbt_cloud_run_op,
     load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
 )
-from .core import (
-    DbtCliEventMessage as DbtCliEventMessage,
-    DbtCliInvocation as DbtCliInvocation,
-    DbtCliResource as DbtCliResource,
-)
+from .core.dbt_cli_event import DbtCliEventMessage as DbtCliEventMessage
+from .core.dbt_cli_invocation import DbtCliInvocation as DbtCliInvocation
+from .core.resource import DbtCliResource as DbtCliResource
 from .dagster_dbt_translator import (
     DagsterDbtTranslator as DagsterDbtTranslator,
     DagsterDbtTranslatorSettings as DagsterDbtTranslatorSettings,
-    KeyPrefixDagsterDbtTranslator as KeyPrefixDagsterDbtTranslator,
 )
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .dbt_project import (

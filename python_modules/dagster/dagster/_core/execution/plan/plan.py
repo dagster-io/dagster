@@ -53,8 +53,6 @@ from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import toposort
 
-from ..context.output import get_output_context
-from ..resolve_versions import resolve_step_output_versions
 from .compute import create_step_outputs
 from .inputs import (
     FromConfig,
@@ -224,20 +222,6 @@ class _PlanBuilder:
             plan = plan.build_subset_plan(
                 self.step_keys_to_execute, self.job_def, self.resolved_run_config
             )
-
-        if (
-            self.job_def.is_using_memoization(self._tags)
-            # step_output_versions being filled out indicates if the memoization has already been calculated
-            and self.known_state.step_output_versions == {}
-        ):
-            if self._instance_ref is None:
-                raise DagsterInvariantViolationError(
-                    "Attempted to build memoized execution plan without providing a persistent "
-                    "DagsterInstance to create_execution_plan."
-                )
-            instance = DagsterInstance.from_ref(self._instance_ref)
-
-            plan = plan.build_memoized_plan(self.job_def, self.resolved_run_config, instance)
 
         return plan
 
@@ -902,105 +886,6 @@ class ExecutionPlan(
         self, step_output_handle: StepOutputHandle
     ) -> Optional[str]:
         return self.step_output_versions.get(step_output_handle)
-
-    def build_memoized_plan(
-        self,
-        job_def: JobDefinition,
-        resolved_run_config: ResolvedRunConfig,
-        instance: DagsterInstance,
-    ) -> "ExecutionPlan":
-        """Returns:
-        ExecutionPlan: Execution plan that runs only unmemoized steps.
-        """
-        from ...storage.memoizable_io_manager import MemoizableIOManager
-        from ..build_resources import build_resources, initialize_console_manager
-        from ..resources_init import get_dependencies, resolve_resource_dependencies
-
-        check.invariant(
-            self.known_state.step_output_versions == {},
-            "Should not be building memoized plan twice.",
-        )
-
-        # Memoization cannot be used with dynamic orchestration yet.
-        # Tracking: https://github.com/dagster-io/dagster/issues/4451
-        for node_def in job_def.all_node_defs:
-            if job_def.dependency_structure.is_dynamic_mapped(
-                node_def.name
-            ) or job_def.dependency_structure.has_dynamic_downstreams(node_def.name):
-                raise DagsterInvariantViolationError(
-                    "Attempted to use memoization with dynamic orchestration, which is not yet "
-                    "supported."
-                )
-
-        unmemoized_step_keys = set()
-
-        log_manager = initialize_console_manager(None)
-
-        step_output_versions = resolve_step_output_versions(job_def, self, resolved_run_config)
-
-        resource_defs_to_init = {}
-        io_manager_keys = {}  # Map step output handles to io manager keys
-
-        for step in self.steps:
-            for output_name in cast(ExecutionStepUnion, step).step_output_dict.keys():
-                step_output_handle = StepOutputHandle(step.key, output_name)
-
-                io_manager_key = self.get_manager_key(step_output_handle, job_def)
-                io_manager_keys[step_output_handle] = io_manager_key
-
-                resource_deps = resolve_resource_dependencies(job_def.resource_defs)
-                resource_keys_to_init = get_dependencies(io_manager_key, resource_deps)
-                for resource_key in resource_keys_to_init:
-                    resource_defs_to_init[resource_key] = job_def.resource_defs[resource_key]
-
-        all_resources_config = resolved_run_config.to_dict().get("resources", {})
-        resource_config = {
-            resource_key: config_val
-            for resource_key, config_val in all_resources_config.items()
-            if resource_key in resource_defs_to_init
-        }
-
-        with build_resources(
-            resources=resource_defs_to_init,
-            instance=instance,
-            resource_config=resource_config,
-            log_manager=log_manager,
-        ) as resources:
-            for step_output_handle, io_manager_key in io_manager_keys.items():
-                io_manager = getattr(resources, io_manager_key)
-                if not isinstance(io_manager, MemoizableIOManager):
-                    raise DagsterInvariantViolationError(
-                        f"{job_def.describe_target().capitalize()} uses memoization, but IO"
-                        " manager "
-                        f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
-                        "memoization, all io managers need to subclass MemoizableIOManager. "
-                        "Learn more about MemoizableIOManagers here: "
-                        "https://docs.dagster.io/_apidocs/internals#memoizable-io-manager-experimental."
-                    )
-                context = get_output_context(
-                    execution_plan=self,
-                    job_def=job_def,
-                    resolved_run_config=resolved_run_config,
-                    step_output_handle=step_output_handle,
-                    run_id=None,
-                    log_manager=log_manager,
-                    step_context=None,
-                    resources=resources,
-                    version=step_output_versions[step_output_handle],
-                )
-                if not io_manager.has_output(context):
-                    unmemoized_step_keys.add(step_output_handle.step_key)
-
-        step_keys_to_execute = [
-            key for key in self.step_keys_to_execute if key in unmemoized_step_keys
-        ]
-
-        return self.build_subset_plan(
-            step_keys_to_execute,
-            job_def,
-            resolved_run_config,
-            step_output_versions=step_output_versions,
-        )
 
     def start(
         self,

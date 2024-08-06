@@ -2,8 +2,6 @@ import datetime
 import logging
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import (
     AssetGraphView,
@@ -24,6 +22,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._time import get_current_datetime
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
@@ -111,8 +110,7 @@ class AutomationContext(NamedTuple):
         legacy_context: "LegacyRuleEvaluationContext",
     ) -> "AutomationContext":
         asset_graph = asset_graph_view.asset_graph
-        auto_materialize_policy = check.not_none(asset_graph.get(asset_key).auto_materialize_policy)
-        automation_condition = auto_materialize_policy.to_automation_condition()
+        automation_condition = check.not_none(asset_graph.get(asset_key).automation_condition)
 
         return AutomationContext(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
@@ -122,7 +120,7 @@ class AutomationContext(NamedTuple):
             ),
             asset_graph_view=asset_graph_view,
             parent_context=None,
-            create_time=pendulum.now("UTC"),
+            create_time=get_current_datetime(),
             logger=logger,
             cursor=condition_cursor,
             current_tick_results_by_key=current_tick_results_by_key,
@@ -144,7 +142,7 @@ class AutomationContext(NamedTuple):
             ),
             asset_graph_view=self.asset_graph_view,
             parent_context=self,
-            create_time=pendulum.now("UTC"),
+            create_time=get_current_datetime(),
             logger=self.logger,
             cursor=self.cursor,
             current_tick_results_by_key=self.current_tick_results_by_key,

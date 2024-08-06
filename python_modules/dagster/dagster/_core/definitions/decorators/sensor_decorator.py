@@ -90,7 +90,7 @@ def sensor(
         check.callable_param(fn, "fn")
 
         sensor_def = SensorDefinition.dagster_internal_init(
-            name=name,
+            name=name or fn.__name__,
             job_name=job_name,
             evaluation_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,

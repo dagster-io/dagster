@@ -1,6 +1,7 @@
-import {Box, Colors, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, NonIdealState, SpinnerWithText, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
+import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
 import {AutomationsTable} from './AutomationsTable';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -10,11 +11,32 @@ import {filterPermissionedInstigationState} from '../instigation/filterPermissio
 import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
+import {useFilters} from '../ui/BaseFilters';
+import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CheckAllBox} from '../ui/CheckAllBox';
+import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
+import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
+
+type AutomationType = 'schedules' | 'sensors';
+
+const AUTOMATION_TYPE_FILTERS = {
+  schedules: {
+    label: 'Schedules',
+    value: {type: 'schedules', label: 'Schedules'},
+    match: ['schedules'],
+  },
+  sensors: {
+    label: 'Sensors',
+    value: {type: 'sensors', label: 'Sensors'},
+    match: ['sensors'],
+  },
+};
+
+const ALL_AUTOMATION_VALUES = Object.values(AUTOMATION_TYPE_FILTERS);
 
 export const MergedAutomationRoot = () => {
   useTrackPageView();
@@ -25,12 +47,46 @@ export const MergedAutomationRoot = () => {
     visibleRepos,
     loading: workspaceLoading,
     data: cachedData,
+    refetch,
   } = useContext(WorkspaceContext);
 
-  const [searchValue] = useQueryPersistedState<string>({
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
   });
+
+  const [automationTypes, setAutomationTypes] = useQueryPersistedState<Set<AutomationType>>({
+    encode: (vals) => ({automationType: vals.size ? Array.from(vals).join(',') : undefined}),
+    decode: (qs) => new Set((qs.automationType?.split(',') as AutomationType[]) || []),
+  });
+
+  const automationFilterState = useMemo(() => {
+    return new Set(
+      Array.from(automationTypes).map(
+        (type) => AUTOMATION_TYPE_FILTERS[type as AutomationType].value,
+      ),
+    );
+  }, [automationTypes]);
+
+  const codeLocationFilter = useCodeLocationFilter();
+  const runningStateFilter = useInstigationStatusFilter();
+  const automationTypeFilter = useStaticSetFilter({
+    name: 'Automation type',
+    allValues: ALL_AUTOMATION_VALUES,
+    icon: 'auto_materialize_policy',
+    getStringValue: (value) => value.label,
+    state: automationFilterState,
+    renderLabel: ({value}) => <span>{value.label}</span>,
+    onStateChanged: (state) => {
+      setAutomationTypes(new Set(Array.from(state).map((value) => value.type as AutomationType)));
+    },
+  });
+
+  const filters = useMemo(
+    () => [codeLocationFilter, runningStateFilter, automationTypeFilter],
+    [codeLocationFilter, runningStateFilter, automationTypeFilter],
+  );
+  const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const repoBuckets = useMemo(() => {
     const cachedEntries = Object.values(cachedData).filter(
@@ -43,12 +99,40 @@ export const MergedAutomationRoot = () => {
     );
   }, [cachedData, visibleRepos]);
 
+  const {state: runningState} = runningStateFilter;
+
+  const filteredBuckets = useMemo(() => {
+    return repoBuckets.map(({sensors, schedules, ...rest}) => {
+      return {
+        ...rest,
+        sensors: sensors.filter(({sensorState}) => {
+          if (runningState.size && !runningState.has(sensorState.status)) {
+            return false;
+          }
+          if (automationTypes.size && !automationTypes.has('sensors')) {
+            return false;
+          }
+          return true;
+        }),
+        schedules: schedules.filter(({scheduleState}) => {
+          if (runningState.size && !runningState.has(scheduleState.status)) {
+            return false;
+          }
+          if (automationTypes.size && !automationTypes.has('schedules')) {
+            return false;
+          }
+          return true;
+        }),
+      };
+    });
+  }, [repoBuckets, automationTypes, runningState]);
+
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
   const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
-    return repoBuckets
+    return filteredBuckets
       .map(({repoAddress, schedules, sensors}) => ({
         repoAddress,
         schedules: schedules
@@ -59,24 +143,34 @@ export const MergedAutomationRoot = () => {
           .map(({name}) => name),
       }))
       .filter(({sensors, schedules}) => sensors.length > 0 || schedules.length > 0);
-  }, [repoBuckets, sanitizedSearch]);
+  }, [filteredBuckets, sanitizedSearch]);
 
   // Collect all automations across visible code locations that the viewer has permission
   // to start or stop.
   const allPermissionedAutomations = useMemo(() => {
-    return repoBuckets
+    return filteredBuckets
       .map(({repoAddress, schedules, sensors}) => {
         return [
           ...sensors
             .filter(({sensorState}) => filterPermissionedInstigationState(sensorState))
-            .map(({name}) => ({repoAddress, name})),
+            .map(({name, sensorState}) => ({
+              repoAddress,
+              name,
+              type: 'sensor' as const,
+              instigationState: sensorState,
+            })),
           ...schedules
             .filter(({scheduleState}) => filterPermissionedInstigationState(scheduleState))
-            .map(({name}) => ({repoAddress, name})),
+            .map(({name, scheduleState}) => ({
+              repoAddress,
+              name,
+              type: 'schedule' as const,
+              instigationState: scheduleState,
+            })),
         ];
       })
       .flat();
-  }, [repoBuckets]);
+  }, [filteredBuckets]);
 
   // Build a list of keys from the permissioned schedules for use in checkbox state.
   // This includes collapsed code locations.
@@ -115,15 +209,13 @@ export const MergedAutomationRoot = () => {
 
   const viewerHasAnyInstigationPermission = allPermissionedAutomationKeys.length > 0;
   const checkedCount = checkedAutomations.length;
+  const anyAutomationsVisible = permissionedKeysOnScreen.length > 0;
 
   const content = () => {
     if (workspaceLoading) {
       return (
-        <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-            <Spinner purpose="body-text" />
-            <div style={{color: Colors.textLight()}}>Loading automations…</div>
-          </Box>
+        <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{top: 64}}>
+          <SpinnerWithText label="Loading automations…" />
         </Box>
       );
     }
@@ -163,7 +255,7 @@ export const MergedAutomationRoot = () => {
             description={
               anyReposHidden
                 ? 'No automations were found in the selected code locations'
-                : 'No automations were found in your definitions'
+                : 'No matching automations'
             }
           />
         </Box>
@@ -190,6 +282,44 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <Box
+        padding={{horizontal: 24, vertical: 16}}
+        flex={{
+          direction: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          grow: 0,
+        }}
+      >
+        <Box flex={{direction: 'row', gap: 12}}>
+          {filterButton}
+          <TextInput
+            icon="search"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Filter by name…"
+            style={{width: '340px'}}
+          />
+        </Box>
+        <Tooltip
+          content="You do not have permission to start or stop these schedules"
+          canShow={anyAutomationsVisible && !viewerHasAnyInstigationPermission}
+          placement="top-end"
+          useDisabledButtonTooltipFix
+        >
+          <AutomationBulkActionMenu automations={checkedAutomations} onDone={() => refetch()} />
+        </Tooltip>
+      </Box>
+      {activeFiltersJsx.length ? (
+        <Box
+          padding={{vertical: 8, horizontal: 24}}
+          border="top-and-bottom"
+          flex={{direction: 'row', gap: 8}}
+        >
+          {activeFiltersJsx}
+        </Box>
+      ) : null}
       {content()}
     </Box>
   );

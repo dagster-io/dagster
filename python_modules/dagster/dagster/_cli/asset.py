@@ -9,7 +9,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey
-from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin
@@ -47,28 +47,28 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     asset_selection = AssetSelection.from_coercible(kwargs["select"].split(","))
     asset_keys = asset_selection.resolve(repo_def.asset_graph)
 
-    implicit_job_def = repo_def.get_implicit_job_def_for_assets(asset_keys)
-    # If we can't find an implicit job with all the given assets, it's because they couldn't be
-    # placed into the same implicit job, because of their conflicting PartitionsDefinitions.
-    if implicit_job_def is None:
-        raise DagsterInvalidSubsetError(
-            "All selected assets must share the same PartitionsDefinition or have no"
-            " PartitionsDefinition"
-        )
-
+    implicit_job_def = repo_def.get_implicit_global_asset_job_def()
     reconstructable_job = recon_job_from_origin(
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
     partition = kwargs.get("partition")
     if partition:
-        partitions_def = implicit_job_def.partitions_def
-        if partitions_def is None or all(
+        if all(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is None
             for asset_key in asset_keys
         ):
             check.failed("Provided '--partition' option, but none of the assets are partitioned")
 
-        tags = partitions_def.get_tags_for_partition_key(partition)
+        try:
+            tags = implicit_job_def.get_tags_for_partition_key(
+                partition, selected_asset_keys=asset_keys, dynamic_partitions_store=instance
+            )
+        except DagsterUnknownPartitionError:
+            raise DagsterInvalidSubsetError(
+                "All selected assets must have a PartitionsDefinition containing the passed"
+                f" partition key `{partition}` or have no PartitionsDefinition."
+            )
+
     else:
         if any(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is not None

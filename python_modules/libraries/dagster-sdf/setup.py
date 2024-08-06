@@ -37,13 +37,20 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_sdf_tests*"]),
+    include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        f"sdf-cli>=0.3.9,<{SDF_VERSION_UPPER_BOUND}",
+        f"sdf-cli>=0.3.12,<{SDF_VERSION_UPPER_BOUND}",
         "orjson",
         "polars",
+        "typer>=0.9.0",
     ],
+    entry_points={
+        "console_scripts": [
+            "dagster-sdf = dagster_sdf.cli.app:app",
+        ]
+    },
     zip_safe=False,
     extras_require={"test": []},
 )

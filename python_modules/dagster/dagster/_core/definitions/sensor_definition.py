@@ -54,7 +54,7 @@ from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection, CoercibleToAssetSelection, KeysAssetSelection
 from .dynamic_partitions_request import AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
 from .run_request import DagsterRunReaction, RunRequest, SensorResult, SkipReason
-from .target import AutomationTarget, ExecutableDefinition
+from .target import ANONYMOUS_ASSET_JOB_PREFIX, AutomationTarget, ExecutableDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -783,7 +783,7 @@ class SensorDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> ExecutableDefinition:
+    def job(self) -> Union[JobDefinition, "UnresolvedAssetJobDefinition"]:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
@@ -999,6 +999,16 @@ class SensorDefinition(IHasInternalInit):
                 )
 
             if run_request.partition_key and not run_request.has_resolved_partition():
+                if run_request.asset_selection:
+                    asset_graph = check.not_none(context.repository_def).asset_graph
+                    partitions_defs = {
+                        asset_graph.get(k).partitions_def for k in run_request.asset_selection
+                    }
+                    defined_partitions_defs = {pd for pd in partitions_defs if pd is not None}
+                    check.invariant(
+                        len({pd for pd in defined_partitions_defs if pd}) == 1,
+                        "All selected assets must have the same or no partitions definition",
+                    )
                 selected_job = _get_repo_job_by_name(
                     context, run_request.job_name if run_request.job_name else target_names[0]
                 )
@@ -1071,6 +1081,10 @@ class SensorDefinition(IHasInternalInit):
     @property
     def asset_selection(self) -> Optional[AssetSelection]:
         return self._asset_selection
+
+    @property
+    def has_anonymous_job(self) -> bool:
+        return bool(self._target and self._target.job_name.startswith(ANONYMOUS_ASSET_JOB_PREFIX))
 
 
 @whitelist_for_serdes(
@@ -1362,10 +1376,10 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
+        base_job = check.not_none(context.repository_def).get_implicit_global_asset_job_def()
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name,  # type: ignore  # (possible none)
+                job_name=base_job.name,
                 asset_selection=list(asset_keys),
             )
         )

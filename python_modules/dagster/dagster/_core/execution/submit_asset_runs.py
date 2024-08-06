@@ -4,9 +4,8 @@ import time
 from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_job import is_base_asset_job_name
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -24,17 +23,6 @@ EXECUTION_PLAN_CREATION_RETRIES = 1
 class RunRequestExecutionData(NamedTuple):
     external_job: ExternalJob
     external_execution_plan: ExternalExecutionPlan
-    partitions_def: Optional[PartitionsDefinition]
-
-
-def _get_implicit_job_name_for_assets(
-    asset_graph: RemoteAssetGraph, asset_keys: Sequence[AssetKey]
-) -> Optional[str]:
-    job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
-    for asset_key in asset_keys[1:]:
-        job_names &= set(asset_graph.get_materialization_job_names(asset_key))
-
-    return next((job_name for job_name in job_names if is_base_asset_job_name(job_name)), None)
 
 
 def _get_execution_plan_asset_keys(
@@ -61,14 +49,6 @@ def _get_job_execution_data_from_run_request(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
     )
     location_name = repo_handle.code_location_origin.location_name
-    job_name = _get_implicit_job_name_for_assets(
-        asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
-    )
-    if job_name is None:
-        check.failed(
-            "Could not find an implicit asset job for the given assets:"
-            f" {run_request.asset_selection}"
-        )
 
     if not run_request.asset_selection:
         check.failed("Expected RunRequest to have an asset selection")
@@ -76,7 +56,7 @@ def _get_job_execution_data_from_run_request(
     pipeline_selector = JobSubsetSelector(
         location_name=location_name,
         repository_name=repo_handle.repository_name,
-        job_name=job_name,
+        job_name=IMPLICIT_ASSET_JOB_NAME,
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
         op_selection=None,
@@ -96,12 +76,9 @@ def _get_job_execution_data_from_run_request(
             instance=instance,
         )
 
-        partitions_def = code_location.get_asset_job_partitions_def(external_job)
-
         run_request_execution_data_cache[selector_id] = RunRequestExecutionData(
             external_job,
             external_execution_plan,
-            partitions_def,
         )
 
     return run_request_execution_data_cache[selector_id]
@@ -180,7 +157,6 @@ def _create_asset_run(
         if not should_retry:
             external_job = check.not_none(execution_data).external_job
             external_execution_plan = check.not_none(execution_data).external_execution_plan
-            partitions_def = check.not_none(execution_data).partitions_def
 
             run = instance.create_run(
                 job_snapshot=external_job.job_snapshot,
@@ -200,7 +176,7 @@ def _create_asset_run(
                 job_code_origin=external_job.get_python_origin(),
                 asset_selection=frozenset(run_request.asset_selection),
                 asset_check_selection=None,
-                asset_job_partitions_def=partitions_def,
+                asset_graph=asset_graph,
             )
 
             return run

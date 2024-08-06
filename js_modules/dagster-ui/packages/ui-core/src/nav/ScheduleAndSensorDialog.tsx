@@ -66,11 +66,7 @@ export const ScheduleAndSensorDialog = ({
                   <tr key={schedule.name}>
                     {showSwitch ? (
                       <td>
-                        <ScheduleSwitch
-                          repoAddress={repoAddress}
-                          schedule={schedule}
-                          shouldFetchLatestState
-                        />
+                        <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
                       </td>
                     ) : null}
                     <td>
@@ -108,11 +104,7 @@ export const ScheduleAndSensorDialog = ({
                   <tr key={sensor.name}>
                     {showSwitch ? (
                       <td>
-                        <SensorSwitch
-                          repoAddress={repoAddress}
-                          sensor={sensor}
-                          shouldFetchLatestState
-                        />
+                        <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
                       </td>
                     ) : null}
                     <td>

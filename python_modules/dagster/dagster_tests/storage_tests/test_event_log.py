@@ -10,6 +10,9 @@ import pytest
 import sqlalchemy
 import sqlalchemy as db
 from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
@@ -17,6 +20,7 @@ from dagster._core.storage.event_log import (
     SqlEventLogStorageTable,
     SqliteEventLogStorage,
 )
+from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.schema import ConcurrencyLimitsTable, ConcurrencySlotsTable
 from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.sql import create_engine
@@ -62,6 +66,26 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
                 yield storage
             finally:
                 storage.dispose()
+
+    def test_no_storage_id_non_asset_events(
+        self, test_run_id, storage: EventLogStorage, instance
+    ) -> None:
+        assert len(storage.get_logs_for_run(test_run_id)) == 0
+        storage_id = storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=test_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.STEP_SUCCESS.value,
+                    "nonce",
+                    event_specific_data=StepSuccessData(duration_ms=100.0),
+                ),
+            )
+        )
+        assert storage_id is None
 
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///

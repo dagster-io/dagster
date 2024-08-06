@@ -14,13 +14,13 @@ from dagster import (
     OutputContext,
     _check as check,
 )
-from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
+from dagster._core.storage.io_manager import IOManager
 
 if TYPE_CHECKING:
     from upath import UPath
 
 
-class UPathIOManager(MemoizableIOManager):
+class UPathIOManager(IOManager):
     """Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 
     Features:

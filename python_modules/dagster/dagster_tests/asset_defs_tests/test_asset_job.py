@@ -4,27 +4,20 @@ from typing import Dict
 
 import pytest
 from dagster import (
-    AssetCheckKey,
-    AssetCheckSpec,
     AssetKey,
     AssetOut,
     AssetsDefinition,
-    AssetSpec,
     DagsterEventType,
     DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
-    DataVersionsByPartition,
     Definitions,
     DependencyDefinition,
     Field,
     GraphIn,
     GraphOut,
-    HourlyPartitionsDefinition,
     In,
     InputContext,
     IOManager,
     Nothing,
-    ObserveResult,
     Out,
     Output,
     OutputContext,
@@ -36,7 +29,6 @@ from dagster import (
     io_manager,
     materialize_to_memory,
     multi_asset,
-    multi_observable_source_asset,
     observable_source_asset,
     op,
     resource,
@@ -46,13 +38,11 @@ from dagster._config import StringSource
 from dagster._core.definitions import AssetIn, SourceAsset, asset
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import get_base_asset_jobs
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
@@ -264,6 +254,7 @@ def test_asset_key_for_asset_with_key_prefix_str():
     assert _asset_keys_for_node(result, "hello__asset_foo") == {AssetKey(["hello", "asset_foo"])}
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset():
     @asset
     def asset1(source1):
@@ -308,6 +299,7 @@ def test_source_asset():
     assert _asset_keys_for_node(result, "asset1") == {AssetKey("asset1")}
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_missing_io_manager():
     @asset
     def asset1(source1):
@@ -1560,6 +1552,7 @@ def test_multi_all():
         assert materialization_events[2].asset_key == AssetKey("foo")
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_subset_with_source_asset():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1684,6 +1677,7 @@ def test_graph_output_is_input_within_graph():
     assert result.output_for_node("complicated_graph", "asset_3") == 4
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
@@ -1710,6 +1704,7 @@ def test_source_asset_io_manager_def():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset_io_manager_not_provided():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1738,6 +1733,7 @@ def test_source_asset_io_manager_not_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_source_asset_io_manager_key_provided():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1766,6 +1762,7 @@ def test_source_asset_io_manager_key_provided():
     assert result.output_for_node("my_derived_asset") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `resource_defs` .* is experimental")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_source_asset_requires_resource_defs():
@@ -1855,6 +1852,7 @@ def test_transitive_resource_deps_provided():
     assert the_job.execute_in_process().success
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `io_manager_def` .* is experimental")
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})
@@ -1938,176 +1936,6 @@ def test_resolve_dependency_multi_asset_different_groups():
             materialize_to_memory([upstream, assets])
 
 
-def test_get_base_asset_jobs_multiple_partitions_defs():
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
-    def daily_asset(): ...
-
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
-    def daily_asset2(): ...
-
-    @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-05-05"))
-    def daily_asset_different_start_date(): ...
-
-    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2021-05-05-00:00"))
-    def hourly_asset(): ...
-
-    @asset
-    def unpartitioned_asset(): ...
-
-    jobs = get_base_asset_jobs(
-        asset_graph=AssetGraph.from_assets(
-            [
-                daily_asset,
-                daily_asset2,
-                daily_asset_different_start_date,
-                hourly_asset,
-                unpartitioned_asset,
-            ]
-        ),
-        executor_def=None,
-        resource_defs={},
-        logger_defs={},
-    )
-    assert len(jobs) == 3
-    assert jobs.keys() == {"__ASSET_JOB_0", "__ASSET_JOB_1", "__ASSET_JOB_2"}
-
-    resolved_jobs = {job_name: job_lambda() for job_name, job_lambda in jobs.items()}
-
-    assert {job_def.name for job_name, job_def in resolved_jobs.items()} == {
-        "__ASSET_JOB_0",
-        "__ASSET_JOB_1",
-        "__ASSET_JOB_2",
-    }
-    assert {
-        frozenset([node_def.name for node_def in job_def.all_node_defs])
-        for job_name, job_def in resolved_jobs.items()
-    } == {
-        frozenset(["daily_asset", "daily_asset2", "unpartitioned_asset"]),
-        frozenset(["hourly_asset", "unpartitioned_asset"]),
-        frozenset(["daily_asset_different_start_date", "unpartitioned_asset"]),
-    }
-
-
-@ignore_warning("Function `observable_source_asset` is experimental")
-def test_get_base_asset_jobs_multiple_partitions_defs_and_observable_assets():
-    class B: ...
-
-    partitions_a = StaticPartitionsDefinition(["a1"])
-
-    @observable_source_asset(partitions_def=partitions_a)
-    def asset_a(): ...
-
-    partitions_b = StaticPartitionsDefinition(["b1"])
-
-    @observable_source_asset(partitions_def=partitions_b)
-    def asset_b(): ...
-
-    @asset(partitions_def=partitions_b)
-    def asset_x(asset_b: B): ...
-
-    jobs = get_base_asset_jobs(
-        asset_graph=AssetGraph.from_assets(
-            [
-                asset_x,
-                create_external_asset_from_source_asset(asset_a),
-                create_external_asset_from_source_asset(asset_b),
-            ]
-        ),
-        executor_def=None,
-        resource_defs={},
-        logger_defs={},
-    )
-    assert len(jobs) == 2
-    assert jobs.keys() == {"__ASSET_JOB_0", "__ASSET_JOB_1"}
-
-
-def test_get_base_asset_jobs_multiple_partitions_defs_and_asset_checks_and_observables():
-    with disable_dagster_warnings():
-        partitions_1 = StaticPartitionsDefinition(["2020-01-01", "2020-01-02"])
-
-        @asset(
-            partitions_def=partitions_1,
-            check_specs=[AssetCheckSpec(name="p1_check1", asset="p1_asset")],
-        )
-        def p1_asset():
-            return 1
-
-        @asset_check(asset="p1_asset")
-        def p1_check2():
-            return AssetCheckResult(passed=True)
-
-        @observable_source_asset(partitions_def=partitions_1)
-        def p1_observable():
-            return DataVersionsByPartition({"2020-01-01": "alpha"})
-
-        @asset_check(asset=p1_observable.key)
-        def p1_observable_check():
-            return AssetCheckResult(passed=True)
-
-        partitions_2 = StaticPartitionsDefinition(["2020-01-01", "2020-01-03"])
-
-        @asset(
-            partitions_def=partitions_2,
-            check_specs=[AssetCheckSpec(name="p2_check1", asset="p2_asset")],
-        )
-        def p2_asset():
-            return 1
-
-        @asset_check(asset="p2_asset")
-        def p2_check2():
-            return AssetCheckResult(passed=True)
-
-        @multi_observable_source_asset(
-            partitions_def=partitions_2,
-            specs=[AssetSpec("p2_observable")],
-            check_specs=[AssetCheckSpec(name="p2_observable_check1", asset="p2_observable")],
-        )
-        def p2_observable():
-            yield ObserveResult(asset_key="p2_observable")
-            yield AssetCheckResult(passed=True)
-
-        @asset_check(asset="p2_observable")
-        def p2_observable_check2():
-            return AssetCheckResult(passed=True)
-
-        @asset_check(asset="external_asset")
-        def orphan_check():
-            return AssetCheckResult(passed=True)
-
-    defs = Definitions(
-        assets=[p1_asset, p2_asset, p1_observable, p2_observable],
-        asset_checks=[
-            p1_check2,
-            p2_check2,
-            orphan_check,
-            p1_observable_check,
-            p2_observable_check2,
-        ],
-    )
-    p1_key = AssetKey("p1_asset")
-    p1_observable_key = AssetKey("p1_observable")
-    p2_key = AssetKey("p2_asset")
-    p2_observable_key = AssetKey("p2_observable")
-    external_key = AssetKey("external_asset")
-
-    p1_job_def = defs.get_implicit_job_def_for_assets([p1_key])
-    assert p1_job_def.asset_layer.asset_graph.asset_check_keys == {
-        AssetCheckKey(p1_key, "p1_check1"),
-        AssetCheckKey(p1_key, "p1_check2"),
-        AssetCheckKey(p1_observable_key, "p1_observable_check"),
-        AssetCheckKey(external_key, "orphan_check"),
-    }
-
-    p2_job_def = defs.get_implicit_job_def_for_assets([p2_key])
-    assert p2_job_def.asset_layer.asset_graph.asset_check_keys == {
-        AssetCheckKey(p2_key, "p2_check1"),
-        AssetCheckKey(p2_key, "p2_check2"),
-        AssetCheckKey(p2_observable_key, "p2_observable_check1"),
-        AssetCheckKey(p2_observable_key, "p2_observable_check2"),
-        AssetCheckKey(external_key, "orphan_check"),
-    }
-
-
 def test_coerce_resource_asset_job() -> None:
     executed = {}
 
@@ -2168,6 +1996,7 @@ def test_async_multi_asset():
     assert result.success
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_selection_multi_component():
     source_asset = SourceAsset(["apple", "banana"])
 
@@ -2773,6 +2602,7 @@ def test_subset_cycle_resolution_complex():
     assert result.output_for_node("foo_3", "f") == 9
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_subset_cycle_resolution_basic():
     """Ops:
         foo produces: a, b
@@ -2840,6 +2670,7 @@ def test_subset_cycle_resolution_basic():
     }
 
 
+@ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_subset_cycle_resolution_with_asset_check():
     """Ops:
         foo produces: a, b

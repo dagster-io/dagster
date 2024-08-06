@@ -227,7 +227,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 execution_type=execution_type or AssetExecutionType.MATERIALIZATION,
             )
 
-        self._partitions_def = partitions_def
+        self._partitions_def = _resolve_partitions_def(specs, partitions_def)
 
         self._resource_defs = wrap_resources_for_execution(
             check.opt_mapping_param(resource_defs, "resource_defs")
@@ -345,6 +345,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     metadata=metadata,
                     description=description,
                     skippable=skippable,
+                    partitions_def=self._partitions_def,
                 )
             )
 
@@ -1400,6 +1401,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 tags=spec.tags,
             )
 
+    @public
+    def get_asset_spec(self, key: Optional[AssetKey] = None) -> AssetSpec:
+        return self._specs_by_key[key or self.key]
+
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
         if self._computation is None:
             return self._specs_by_key[key].metadata.get(
@@ -1729,6 +1734,7 @@ def _asset_specs_from_attr_key_params(
                     # NodeDefinition
                     skippable=False,
                     auto_materialize_policy=None,
+                    partitions_def=None,
                 )
             )
 
@@ -1787,6 +1793,38 @@ def get_self_dep_time_window_partition_mapping(
 
         return time_partition_mapping.partition_mapping
     return None
+
+
+def _resolve_partitions_def(
+    specs: Optional[Sequence[AssetSpec]], partitions_def: Optional[PartitionsDefinition]
+) -> Optional[PartitionsDefinition]:
+    if specs:
+        asset_keys_by_partitions_def = defaultdict(set)
+        for spec in specs:
+            asset_keys_by_partitions_def[spec.partitions_def].add(spec.key)
+        if len(asset_keys_by_partitions_def) > 1:
+            partition_1_asset_keys, partition_2_asset_keys, *_ = (
+                asset_keys_by_partitions_def.values()
+            )
+            check.failed(
+                f"All AssetSpecs must have the same partitions_def, but "
+                f"{next(iter(partition_1_asset_keys)).to_user_string()} and "
+                f"{next(iter(partition_2_asset_keys)).to_user_string()} have different "
+                "partitions_defs."
+            )
+        common_partitions_def = next(iter(asset_keys_by_partitions_def.keys()))
+        if (
+            common_partitions_def is not None
+            and partitions_def is not None
+            and common_partitions_def != partitions_def
+        ):
+            check.failed(
+                f"AssetSpec for {next(iter(specs)).key.to_user_string()} has partitions_def which is different "
+                "than the partitions_def provided to AssetsDefinition.",
+            )
+        return partitions_def or common_partitions_def
+    else:
+        return partitions_def
 
 
 def get_partition_mappings_from_deps(

@@ -18,7 +18,6 @@ from dagster import (
     List,
     Output,
     RetryRequested,
-    VersionStrategy,
     file_relative_path,
     graph,
     job,
@@ -81,15 +80,6 @@ def define_job(
         return lambda: apply_platform_settings(job_def, platform, extra_resources or {})
     else:
         return job_def
-
-
-# keep this separate because we need to call it externally for cleanup in some lib tests
-def define_memoization_job(platform: str) -> Callable[[], JobDefinition]:
-    return define_job(
-        graph_def=memoization_graph,
-        platform=platform,
-        version_strategy=BasicVersionStrategy(),
-    )
 
 
 def apply_platform_settings(
@@ -540,16 +530,6 @@ def foo_op():
     return "foo"
 
 
-class BasicVersionStrategy(VersionStrategy):
-    def get_op_version(self, _):
-        return "foo"
-
-
-@graph
-def memoization_graph():
-    foo_op()
-
-
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -581,8 +561,6 @@ def define_demo_execution_repo():
                 "volume_mount_job_k8s": define_job(volume_mount_graph, "k8s"),
                 "large_job_celery": define_job(large_graph, "celery"),
                 "long_running_job_celery_k8s": define_job(long_running_graph, "celery_k8s"),
-                "memoization_job_celery_k8s": define_memoization_job("celery_k8s"),
-                "memoization_job_k8s": define_memoization_job("k8s"),
                 "optional_outputs_job": define_job(optional_outputs_graph),
                 "resources_limit_job_k8s": define_job(
                     resources_limit_graph, "k8s", tags=resources_limit_tags

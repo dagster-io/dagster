@@ -120,7 +120,6 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         )
 
 
-@experimental
 class PipesLambdaLogsMessageReader(PipesMessageReader):
     """Message reader that consumes buffered pipes messages that were flushed on exit from the
     final 4k of logs that are returned from issuing a sync lambda invocation. This means messages
@@ -183,13 +182,11 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
 
 
-@experimental
 class PipesLambdaEventContextInjector(PipesEnvContextInjector):
     def no_messages_debug_text(self) -> str:
         return "Attempted to inject context via the lambda event input."
 
 
-@experimental
 class PipesLambdaClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS lambda.
 

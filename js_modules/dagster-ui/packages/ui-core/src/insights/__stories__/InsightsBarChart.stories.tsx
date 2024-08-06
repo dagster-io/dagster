@@ -3,6 +3,7 @@ import {faker} from '@faker-js/faker';
 import {Meta} from '@storybook/react';
 import {useEffect, useMemo, useState} from 'react';
 
+import {TimeContext, TimeContextValue} from '../../app/time/TimeContext';
 import {InsightsBarChart} from '../InsightsBarChart';
 import {ReportingUnitType} from '../types';
 
@@ -61,6 +62,58 @@ export const Default = () => {
         costMultiplier={null}
       />
     </div>
+  );
+};
+
+export const ArbitraryTimezone = () => {
+  const numDates = 50;
+
+  const datapoint = useMemo(() => {
+    const barValues = new Array(numDates).fill(null).map(() => {
+      const key = faker.random.alphaNumeric(8);
+      return {
+        value: randomDataPoint(MIN, MAX),
+        key,
+        href: `/runs/${key}`,
+        label: `Run ${key}`,
+      };
+    });
+
+    return {
+      barColor: Colors.dataVizBlurple(),
+      type: 'asset-group' as const,
+      label: faker.random.words(3).replaceAll(' ', '-').toLowerCase(),
+      values: barValues,
+    };
+  }, []);
+
+  const timestamps = useMemo(() => {
+    return new Array(numDates).fill(null).map((_, ii) => JUNE_1_2023_EDT + TWO_HOURS * ii);
+  }, [numDates]);
+
+  const timeContext: TimeContextValue = useMemo(
+    () => ({
+      timezone: ['Asia/Kolkata', () => 'Asia/Kolkata', () => {}],
+      hourCycle: ['h23', () => 'h23', () => {}],
+    }),
+    [],
+  );
+
+  return (
+    <TimeContext.Provider value={timeContext}>
+      <div style={{height: '600px'}}>
+        <InsightsBarChart
+          datapointType="asset-group"
+          datapoint={datapoint}
+          loading={false}
+          metricLabel="Dagster credits"
+          metricName="__dagster_dagster_credits"
+          unitType={ReportingUnitType.INTEGER}
+          timestamps={timestamps}
+          costMultiplier={null}
+        />
+      </div>
+    </TimeContext.Provider>
   );
 };
 

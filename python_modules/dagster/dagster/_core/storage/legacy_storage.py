@@ -399,7 +399,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._storage.event_log_storage.get_step_stats_for_run(run_id, step_keys)
 
-    def store_event(self, event: "EventLogEntry") -> None:
+    def store_event(self, event: "EventLogEntry") -> Optional[int]:
         return self._storage.event_log_storage.store_event(event)
 
     def delete_events(self, run_id: str) -> None:
@@ -489,6 +489,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, partition
         )
 
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_updated_data_version_partitions(
+            asset_key, partitions, since_storage_id
+        )
+
     def get_asset_records(
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
@@ -520,6 +527,12 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def wipe_asset(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset(asset_key)
+
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
+        raise NotImplementedError(
+            "Partitioned asset wipe is not supported yet for this event log storage."
+        )
 
     def get_materialized_partitions(
         self,

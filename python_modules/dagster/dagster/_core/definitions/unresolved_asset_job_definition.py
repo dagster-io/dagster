@@ -4,7 +4,7 @@ from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, deprecated_param
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -226,9 +226,15 @@ class UnresolvedAssetJobDefinition(
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,
             resource_defs=resource_defs,
+            allow_different_partitions_defs=False,
         )
 
 
+@deprecated_param(
+    param="partitions_def",
+    breaking_version="2.0.0",
+    additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",
+)
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
@@ -291,16 +297,15 @@ def define_asset_job(
             returned by a MetadataValue static method.
         description (Optional[str]):
             A description for the Job.
-        partitions_def (Optional[PartitionsDefinition]):
-            Defines the set of partitions for this job. All AssetDefinitions selected for this job
-            must have a matching PartitionsDefinition. If no PartitionsDefinition is provided, the
-            PartitionsDefinition will be inferred from the selected AssetDefinitions.
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
             default mode of execution is multi-process.
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops that compute assets in this job.
             Only used if retry policy is not defined on the asset definition.
+        partitions_def (Optional[PartitionsDefinition]): (Deprecated)
+            Defines the set of partitions for this job. Deprecated because partitioning is inferred
+            from the selected assets, so setting this is redundant.
 
 
     Returns:

@@ -18,6 +18,7 @@ import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
@@ -27,7 +28,6 @@ import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
 import {SENSOR_SWITCH_FRAGMENT, SensorSwitch} from '../sensors/SensorSwitch';
-import {SensorTargetList} from '../sensors/SensorTargetList';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
@@ -136,6 +136,11 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   const sensorType = sensorData?.sensorType;
   const sensorInfo = sensorType ? SENSOR_TYPE_META[sensorType] : null;
 
+  const selectedAssets =
+    sensorAssetSelectionQueryResult.data?.sensorOrError.__typename === 'Sensor'
+      ? sensorAssetSelectionQueryResult.data.sensorOrError.assetSelection
+      : null;
+
   return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
@@ -189,16 +194,16 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
           </div>
         </RowCell>
         <RowCell>
-          <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-            {sensorData ? (
-              <SensorTargetList
+          {sensorData ? (
+            <div>
+              <AutomationTargetList
                 targets={sensorData.targets}
                 repoAddress={repoAddress}
-                selectionQueryResult={sensorAssetSelectionQueryResult}
-                sensorType={sensorData.sensorType}
+                assetSelection={selectedAssets}
+                automationType={sensorData.sensorType}
               />
-            ) : null}
-          </Box>
+            </div>
+          ) : null}
         </RowCell>
         <RowCell>
           {sensorData ? (

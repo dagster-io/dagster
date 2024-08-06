@@ -152,6 +152,7 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
             ),
         },
         enum_serializers=_WHITELIST_MAP.enum_serializers,
+        object_type_map=_WHITELIST_MAP.object_type_map,
     )
 
     return deserialize_value(

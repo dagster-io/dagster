@@ -57,5 +57,4 @@ export const BaseConfig: StaticBaseConfig<string> = {
     </Box>
   ),
   getStringValue: (value: string) => value,
-  matchType: 'all-of',
 };

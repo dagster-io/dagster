@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 
-import {RUN_TABLE_RUN_FRAGMENT} from './RunTable';
+import {RUN_TABLE_RUN_FRAGMENT} from './RunTableRunFragment';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/usePaginatedRunsTableRuns.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

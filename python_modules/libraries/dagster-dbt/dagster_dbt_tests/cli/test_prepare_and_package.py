@@ -9,7 +9,7 @@ import pytest
 import yaml
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dbt_project import DbtProject
 from typer.testing import CliRunner
 
@@ -34,7 +34,6 @@ def test_prepare_and_package(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 
@@ -78,7 +77,6 @@ def test_prepare_and_package_with_dependencies(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 
@@ -136,7 +134,6 @@ def test_prepare_and_package_with_packages(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-dbt-project",
         ],
     )
 

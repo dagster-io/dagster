@@ -20,7 +20,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental_param, public
+from dagster._annotations import deprecated, public
 from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
@@ -52,7 +52,6 @@ from dagster._core.storage.io_manager import (
     dagster_maintained_io_manager,
     io_manager,
 )
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
@@ -70,7 +69,6 @@ from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
 from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
-from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
@@ -87,7 +85,6 @@ if TYPE_CHECKING:
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
 
-@experimental_param(param="version_strategy")
 class JobDefinition(IHasInternalInit):
     """Defines a Dagster job."""
 
@@ -103,7 +100,6 @@ class JobDefinition(IHasInternalInit):
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
-    _version_strategy: VersionStrategy
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
 
@@ -124,7 +120,6 @@ class JobDefinition(IHasInternalInit):
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
-        version_strategy: Optional[VersionStrategy] = None,
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
@@ -171,9 +166,6 @@ class JobDefinition(IHasInternalInit):
         self._op_retry_policy = check.opt_inst_param(
             op_retry_policy, "op_retry_policy", RetryPolicy
         )
-        self.version_strategy = check.opt_inst_param(
-            version_strategy, "version_strategy", VersionStrategy
-        )
 
         _subset_selection_data = check.opt_inst_param(
             _subset_selection_data, "_subset_selection_data", (OpSelectionData, AssetSelectionData)
@@ -212,6 +204,16 @@ class JobDefinition(IHasInternalInit):
                 self._config_mapping = config
             elif isinstance(config, PartitionedConfig):
                 self._partitioned_config = config
+                if asset_layer:
+                    for asset_key in asset_layer.asset_keys_by_node_output_handle.values():
+                        asset_partitions_def = asset_layer.get(asset_key).partitions_def
+                        check.invariant(
+                            asset_partitions_def is None
+                            or asset_partitions_def == config.partitions_def,
+                            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
+                            f" than supplied for a target asset 'partitions_def'. Asset: {asset_key.to_user_string()}",
+                        )
+
             elif isinstance(config, dict):
                 self._run_config = config
                 # Using config mapping here is a trick to make it so that the preset will be used even
@@ -259,7 +261,6 @@ class JobDefinition(IHasInternalInit):
         metadata: Optional[Mapping[str, RawMetadataValue]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         op_retry_policy: Optional[RetryPolicy],
-        version_strategy: Optional[VersionStrategy],
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
         asset_layer: Optional[AssetLayer],
         input_values: Optional[Mapping[str, object]],
@@ -278,7 +279,6 @@ class JobDefinition(IHasInternalInit):
             metadata=metadata,
             hook_defs=hook_defs,
             op_retry_policy=op_retry_policy,
-            version_strategy=version_strategy,
             _subset_selection_data=_subset_selection_data,
             asset_layer=asset_layer,
             input_values=input_values,
@@ -479,16 +479,6 @@ class JobDefinition(IHasInternalInit):
     def describe_target(self) -> str:
         return f"job '{self.name}'"
 
-    def is_using_memoization(self, run_tags: Mapping[str, str]) -> bool:
-        tags = merge_dicts(self.tags, run_tags)
-        # If someone provides a false value for memoized run tag, then they are intentionally
-        # switching off memoization.
-        if tags.get(MEMOIZED_RUN_TAG) == "false":
-            return False
-        return (
-            MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
-        ) or self.version_strategy is not None
-
     def get_required_resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return {
             resource_key: resource
@@ -678,7 +668,6 @@ class JobDefinition(IHasInternalInit):
             config=self.config_mapping or self.partitioned_config or self.run_config,
             tags=self.tags,
             op_retry_policy=self._op_retry_policy,
-            version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
             description=self.description,
@@ -695,22 +684,23 @@ class JobDefinition(IHasInternalInit):
 
         merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
-            if not (self.partitions_def and self.partitioned_config):
-                check.failed("Attempted to execute a partitioned run for a non-partitioned job")
-            self.partitions_def.validate_partition_key(
-                partition_key, dynamic_partitions_store=instance
+            tags_for_partition_key = ephemeral_job.get_tags_for_partition_key(
+                partition_key,
+                selected_asset_keys=asset_selection,
+                dynamic_partitions_store=instance,
             )
 
-            run_config = (
-                run_config
-                if run_config
-                else self.partitioned_config.get_run_config_for_partition_key(partition_key)
-            )
-            merged_tags.update(
-                self.partitioned_config.get_tags_for_partition_key(
-                    partition_key, job_name=self.name
+            if not run_config and self.partitioned_config:
+                run_config = self.partitioned_config.get_run_config_for_partition_key(partition_key)
+
+            if self.partitioned_config:
+                merged_tags.update(
+                    self.partitioned_config.get_tags_for_partition_key(
+                        partition_key, job_name=self.name
+                    )
                 )
-            )
+            else:
+                merged_tags.update(tags_for_partition_key)
 
         return core_execute_in_process(
             ephemeral_job=ephemeral_job,
@@ -722,6 +712,51 @@ class JobDefinition(IHasInternalInit):
             run_id=run_id,
             asset_selection=frozenset(asset_selection),
         )
+
+    def get_tags_for_partition_key(
+        self,
+        partition_key: str,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
+        selected_asset_keys: Optional[Iterable[AssetKey]],
+    ) -> Mapping[str, str]:
+        """Gets tags for the given partition key and ensures that it's a member of the PartitionsDefinition
+        corresponding to every asset in the selection.
+        """
+        partitions_def = None
+        if self.partitions_def:
+            partitions_def = self.partitions_def
+        elif self.asset_layer:
+            if selected_asset_keys:
+                resolved_selected_asset_keys = selected_asset_keys
+            elif self.asset_selection:
+                resolved_selected_asset_keys = self.asset_selection
+            else:
+                resolved_selected_asset_keys = [
+                    key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
+                ]
+
+            unique_partitions_defs = {
+                self.asset_layer.get(asset_key).partitions_def
+                for asset_key in resolved_selected_asset_keys
+            } - {None}
+            if len(unique_partitions_defs) == 1:
+                partitions_def = next(iter(unique_partitions_defs))
+            elif len(unique_partitions_defs) > 1:
+                check.failed("Attempted to execute a run for assets with different partitions")
+
+        if partitions_def is None:
+            check.failed("Attempted to execute a partitioned run for a non-partitioned job")
+
+        partitions_def.validate_partition_key(
+            partition_key, dynamic_partitions_store=dynamic_partitions_store
+        )
+        return partitions_def.get_tags_for_partition_key(partition_key)
+
+    def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:
+        if self._partitioned_config:
+            return self._partitioned_config.get_run_config_for_partition_key(partition_key)
+        else:
+            return {}
 
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
@@ -781,7 +816,9 @@ class JobDefinition(IHasInternalInit):
                 *selection_data.asset_check_selection
             )
 
-        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+        job_asset_graph = get_asset_graph_for_job(
+            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+        )
 
         return build_asset_job(
             name=self.name,
@@ -792,6 +829,7 @@ class JobDefinition(IHasInternalInit):
             tags=self.tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
+            allow_different_partitions_defs=True,
         )
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
@@ -959,7 +997,6 @@ class JobDefinition(IHasInternalInit):
             metadata=self._metadata,
             hook_defs=self.hook_defs,
             op_retry_policy=self._op_retry_policy,
-            version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
@@ -1016,10 +1053,7 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: JobDe
     """
     from dagster._core.storage.mem_io_manager import mem_io_manager
 
-    if (
-        resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]
-        and job.version_strategy is None
-    ):
+    if resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]:
         updated_resources = dict(resources)
         updated_resources[DEFAULT_IO_MANAGER_KEY] = mem_io_manager
         return updated_resources

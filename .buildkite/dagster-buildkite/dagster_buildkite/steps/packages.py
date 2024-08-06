@@ -353,6 +353,16 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-blueprints",
     ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_8,
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/peering-with-dbt",
+    ),
 ]
 
 
@@ -361,10 +371,6 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
         return [AvailablePythonVersion.V3_11, AvailablePythonVersion.V3_12]
 
     if tox_factor in {
-        "definitions_tests_pendulum_1",
-        "definitions_tests_pendulum_2",
-        "scheduler_tests_pendulum_1",
-        "scheduler_tests_pendulum_2",
         "type_signature_tests",
     }:
         return [AvailablePythonVersion.V3_12]
@@ -413,8 +419,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests",
-            "definitions_tests_pendulum_1",
-            "definitions_tests_pendulum_2",
             "general_tests",
             "general_tests_old_protobuf",
             "launcher_tests",
@@ -422,8 +426,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "model_tests_pydantic1",
             "model_tests_pydantic2",
             "scheduler_tests",
-            "scheduler_tests_pendulum_1",
-            "scheduler_tests_pendulum_2",
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",
@@ -480,7 +482,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-dbt",
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
-            for deps_factor in ["dbt16", "dbt17", "dbt18", "pydantic1"]
+            for deps_factor in ["dbt17", "dbt18", "pydantic1"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
         unsupported_python_versions=[

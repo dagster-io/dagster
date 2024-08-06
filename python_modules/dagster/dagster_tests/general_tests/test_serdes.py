@@ -948,7 +948,7 @@ def test_record() -> None:
 
     m = LegacyModel(nums=[1, 2, 3])
 
-    m_str = serialize_value(m, whitelist_map=test_env)  # type: ignore # with_new not seen as packable
+    m_str = serialize_value(m, whitelist_map=test_env)
     m2_str = m_str.replace("nums", "old_nums")
     assert m == deserialize_value(m2_str, whitelist_map=test_env)
 
@@ -1056,7 +1056,7 @@ def test_record_kwargs():
     )
 
 
-def test_record_remap():
+def test_record_remap() -> None:
     test_env = WhitelistMap.create()
 
     # time 1: record object created with non-serializable field

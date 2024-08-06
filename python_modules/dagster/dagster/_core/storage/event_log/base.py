@@ -228,16 +228,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return build_run_step_stats_from_events(run_id, logs)
 
     @abstractmethod
-    def store_event(self, event: "EventLogEntry") -> None:
+    def store_event(self, event: "EventLogEntry") -> Optional[int]:
         """Store an event corresponding to a pipeline run.
 
         Args:
             event (EventLogEntry): The event to store.
         """
 
-    def store_event_batch(self, events: Sequence["EventLogEntry"]) -> None:
-        for event in events:
-            self.store_event(event)
+    def store_event_batch(self, events: Sequence["EventLogEntry"]) -> Sequence[Optional[int]]:
+        return [self.store_event(event) for event in events]
 
     @abstractmethod
     def delete_events(self, run_id: str) -> None:
@@ -419,6 +418,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey) -> None:
         """Remove asset index history from event log for given asset_key."""
+
+    @abstractmethod
+    def wipe_asset_partitions(self, asset_key: AssetKey, partition_keys: Sequence[str]) -> None:
+        """Remove asset index history from event log for given asset partitions."""
 
     @abstractmethod
     def get_materialized_partitions(
@@ -605,4 +608,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         asset_key: AssetKey,
         partition: Optional[str] = None,
     ) -> Optional[PlannedMaterializationInfo]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
         raise NotImplementedError()

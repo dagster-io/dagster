@@ -5,6 +5,10 @@ from typing import Optional, TypedDict
 
 from dagster._time import get_current_timestamp
 
+# When cgroup memory is not constrained, the limit value will be a high value close to 2^63 - 1,
+# Ex: AWS ECS returns 2^63 - 2^10 = 9223372036854000000
+UNCONSTRAINED_CGROUP_MEMORY_LIMIT = 9223372036854000000
+
 
 def cpu_usage_path_cgroup_v1():
     """Path to the cgroup file containing the CPU time in nanoseconds.

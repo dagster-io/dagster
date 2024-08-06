@@ -38,6 +38,8 @@ The property of being resolvable to a JobDefinition is what unites all of the en
 AutomationTarget can wrap.
 """
 
+ANONYMOUS_ASSET_JOB_PREFIX = "__anonymous_asset_job"
+
 
 class AutomationTarget(
     NamedTuple(
@@ -135,7 +137,7 @@ class AutomationTarget(
 
 
 def _make_anonymous_asset_job_name(automation_name: str) -> str:
-    return f"__anonymous_asset_job_{automation_name}"
+    return f"{ANONYMOUS_ASSET_JOB_PREFIX}_{automation_name}"
 
 
 def _make_invalid_target_error_message(target: object) -> str:

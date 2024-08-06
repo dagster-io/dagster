@@ -10,6 +10,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -1647,6 +1648,8 @@ BUILD_CASES = [
     (TypeVar("T", bound=Foo), [Foo(), SubFoo()], [Bar()]),
     (TypeVar("T", bound=Optional[Foo]), [None], [Bar()]),
     (TypeVar("T"), [Foo(), None], []),
+    (Literal["apple"], ["apple"], ["banana"]),
+    (Literal["apple", "manzana"], ["apple", "manzana"], ["banana"]),
     # fwd refs
     ("Foo", [Foo()], [Bar()]),
     (Optional["Foo"], [Foo()], [Bar()]),

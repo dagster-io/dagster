@@ -100,6 +100,14 @@ FINISHED_STATUSES = [
     DagsterRunStatus.CANCELED,
 ]
 
+NOT_FINISHED_STATUSES = [
+    DagsterRunStatus.STARTING,
+    DagsterRunStatus.STARTED,
+    DagsterRunStatus.CANCELING,
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.NOT_STARTED,
+]
+
 # Run statuses for runs that can be safely canceled.
 # Does not include the other unfinished statuses for the following reasons:
 # STARTING: Control has been ceded to the run worker, which will eventually move the run to a STARTED.
@@ -437,6 +445,12 @@ class DagsterRun(
     def is_finished(self) -> bool:
         """bool: If this run has completely finished execution."""
         return self.status in FINISHED_STATUSES
+
+    @public
+    @property
+    def is_cancelable(self) -> bool:
+        """bool: If this run an be canceled."""
+        return self.status in CANCELABLE_RUN_STATUSES
 
     @public
     @property

@@ -4,13 +4,11 @@ import json
 import logging
 import os
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
 
 import mock
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -25,6 +23,7 @@ from dagster import (
     SensorDefinition,
     asset,
     multi_asset,
+    op,
 )
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -33,7 +32,6 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -60,7 +58,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
-from dagster._time import parse_time_string
+from dagster._time import datetime_from_timestamp, get_current_datetime, parse_time_string
 from typing_extensions import Self
 
 from .base_scenario import run_request
@@ -107,15 +105,6 @@ def _get_code_location_origin_from_repository(repository: RepositoryDefinition, 
     )
 
 
-class AssetSpecWithPartitionsDef(
-    namedtuple(
-        "AssetSpecWithPartitionsDef",
-        AssetSpec._fields + ("partitions_def",),
-        defaults=(None,) * (1 + len(AssetSpec._fields)),
-    )
-): ...
-
-
 class MultiAssetSpec(NamedTuple):
     specs: Sequence[AssetSpec]
     partitions_def: Optional[PartitionsDefinition] = None
@@ -126,8 +115,8 @@ class MultiAssetSpec(NamedTuple):
 class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
-    asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
-    current_time: datetime.datetime = field(default_factory=lambda: pendulum.now("UTC"))
+    asset_specs: Sequence[Union[AssetSpec, MultiAssetSpec]]
+    current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
     sensors: Sequence[SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
 
@@ -161,13 +150,16 @@ class ScenarioSpec:
                 )
                 # create an observable_source_asset or regular asset depending on the execution type
                 if execution_type == AssetExecutionType.OBSERVATION:
-                    # strip out the relevant paramters from the spec
-                    params = {"key", "group_name", "partitions_def", "metadata"}
 
-                    @observable_source_asset(
-                        **{k: v for k, v in spec._asdict().items() if k in params},
+                    @op
+                    def noop(): ...
+
+                    osa = AssetsDefinition(
+                        specs=[spec],
+                        execution_type=execution_type,
+                        keys_by_output_name={"result": spec.key},
+                        node_def=noop,
                     )
-                    def osa() -> None: ...
 
                     assets.append(osa)
                 else:
@@ -243,13 +235,7 @@ class ScenarioSpec:
                 )
             else:
                 if keys is None or spec.key in {AssetKey.from_coercible(key) for key in keys}:
-                    if "partitions_def" in kwargs:
-                        # partitions_def is not a field on AssetSpec, so we need to do this hack
-                        new_asset_specs.append(
-                            AssetSpecWithPartitionsDef(**{**spec._asdict(), **kwargs})
-                        )
-                    else:
-                        new_asset_specs.append(spec._replace(**kwargs))
+                    new_asset_specs.append(spec._replace(**kwargs))
                 else:
                     new_asset_specs.append(spec)
         return dataclasses.replace(self, asset_specs=new_asset_specs)
@@ -301,9 +287,7 @@ class ScenarioState:
     ) -> Self:
         run_id = make_new_run_id()
         with freeze_time(self.current_time):
-            job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
-                asset_keys=list(asset_keys)
-            )
+            job_def = self.scenario_spec.defs.get_implicit_global_asset_job_def()
             assert job_def
             execution_plan = create_execution_plan(job_def, run_config={})
             self.instance.create_run_for_job(
@@ -355,7 +339,7 @@ class ScenarioState:
         return dataclasses.replace(
             self,
             scenario_spec=self.scenario_spec.with_current_time(
-                pendulum.from_timestamp(test_time_fn())
+                datetime_from_timestamp(test_time_fn())
             ),
         )
 

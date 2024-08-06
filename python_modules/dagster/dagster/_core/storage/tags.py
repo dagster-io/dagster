@@ -35,8 +35,6 @@ ROOT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}root_run_id"
 
 RESUME_RETRY_TAG = f"{SYSTEM_TAG_PREFIX}is_resume_retry"
 
-MEMOIZED_RUN_TAG = f"{SYSTEM_TAG_PREFIX}is_memoized_run"
-
 STEP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}step_selection"
 
 OP_SELECTION_TAG = f"{SYSTEM_TAG_PREFIX}solid_selection"

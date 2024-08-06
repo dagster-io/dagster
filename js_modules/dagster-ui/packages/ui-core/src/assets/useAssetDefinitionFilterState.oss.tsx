@@ -30,7 +30,7 @@ export type AssetFilterBaseType = {
   changedInBranch: ChangeReason[];
   owners: AssetOwner[];
   tags: DefinitionTag[];
-  repos: RepoAddress[];
+  codeLocations: RepoAddress[];
 };
 
 export type AssetFilterType = AssetFilterBaseType & {
@@ -46,7 +46,7 @@ export const useAssetDefinitionFilterState = () => {
       changedInBranch,
       owners,
       tags,
-      repos,
+      codeLocations,
       selectAllFilters,
     }) => ({
       groups: groups?.length ? JSON.stringify(groups) : undefined,
@@ -55,7 +55,7 @@ export const useAssetDefinitionFilterState = () => {
       changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
       owners: owners?.length ? JSON.stringify(owners) : undefined,
       tags: tags?.length ? JSON.stringify(tags) : undefined,
-      repos: repos?.length ? JSON.stringify(repos) : undefined,
+      codeLocations: codeLocations?.length ? JSON.stringify(codeLocations) : undefined,
       selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
     }),
     decode: (qs) => ({
@@ -65,8 +65,8 @@ export const useAssetDefinitionFilterState = () => {
       changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
       owners: qs.owners ? JSON.parse(qs.owners) : [],
       tags: qs.tags ? JSON.parse(qs.tags) : [],
-      repos: qs.repos
-        ? JSON.parse(qs.repos).map((repo: RepoAddress) =>
+      codeLocations: qs.codeLocations
+        ? JSON.parse(qs.codeLocations).map((repo: RepoAddress) =>
             buildRepoAddress(repo.name, repo.location),
           )
         : [],
@@ -86,7 +86,7 @@ export const useAssetDefinitionFilterState = () => {
     setChangedInBranch,
     setOwners,
     setAssetTags,
-    setRepos,
+    setCodeLocations,
     setSelectAllFilters,
   } = useMemo(() => {
     function makeSetter<T extends keyof AssetFilterType>(field: T) {
@@ -104,7 +104,7 @@ export const useAssetDefinitionFilterState = () => {
       setChangedInBranch: makeSetter('changedInBranch'),
       setOwners: makeSetter('owners'),
       setAssetTags: makeSetter('tags'),
-      setRepos: makeSetter('repos'),
+      setCodeLocations: makeSetter('codeLocations'),
       setSelectAllFilters: makeSetter('selectAllFilters'),
     };
   }, [setFilters]);
@@ -119,7 +119,7 @@ export const useAssetDefinitionFilterState = () => {
     setChangedInBranch,
     setOwners,
     setAssetTags,
-    setRepos,
+    setCodeLocations,
     setSelectAllFilters,
   };
 };
@@ -130,8 +130,8 @@ export function filterAssetDefinition(
   filters: Partial<AssetFilterState['filters']>,
   definition?: FilterableAssetDefinition | null,
 ) {
-  if (filters.repos?.length) {
-    const isAllReposSelected = filters.selectAllFilters?.includes('repos');
+  if (filters.codeLocations?.length) {
+    const isAllReposSelected = filters.selectAllFilters?.includes('codeLocations');
     if (isAllReposSelected) {
       if (!definition?.repository) {
         return false;
@@ -139,7 +139,7 @@ export function filterAssetDefinition(
     } else if (
       !definition ||
       !definition.repository ||
-      !filters.repos.some(
+      !filters.codeLocations.some(
         (repo) =>
           repo.location === definition?.repository?.location.name &&
           repo.name === definition?.repository.name,
@@ -162,7 +162,15 @@ export function filterAssetDefinition(
       return false;
     }
     const nodeGroup = buildAssetGroupSelector({definition: {groupName, repository}});
-    if (!filters.groups.some((g) => isEqual(g, nodeGroup))) {
+    if (
+      !filters.groups.some((g) => {
+        return (
+          g.groupName === nodeGroup?.groupName &&
+          g.repositoryLocationName === nodeGroup.repositoryLocationName &&
+          g.repositoryName === nodeGroup.repositoryName
+        );
+      })
+    ) {
       return false;
     }
   }

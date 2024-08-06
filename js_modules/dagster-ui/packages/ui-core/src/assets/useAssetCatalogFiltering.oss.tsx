@@ -1,5 +1,6 @@
 import {TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useMemo} from 'react';
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
@@ -38,7 +39,7 @@ export function useAssetCatalogFiltering(
     setComputeKindTags,
     setGroups,
     setOwners,
-    setRepos,
+    setCodeLocations,
     setStorageKindTags,
   } = useAssetDefinitionFilterState();
 
@@ -82,8 +83,11 @@ export function useAssetCatalogFiltering(
   });
 
   const tags = useAssetTagsForAssets(pathMatches);
-  const storageKindTags = tags.filter(isCanonicalStorageKindTag);
-  const nonStorageKindTags = tags.filter((tag) => !isCanonicalStorageKindTag(tag));
+  const storageKindTags = useMemo(() => tags.filter(isCanonicalStorageKindTag), [tags]);
+  const nonStorageKindTags = useMemo(
+    () => tags.filter((tag) => !isCanonicalStorageKindTag(tag)),
+    [tags],
+  );
 
   const tagsFilter = useAssetTagFilter({
     allAssetTags: nonStorageKindTags,
@@ -96,23 +100,40 @@ export function useAssetCatalogFiltering(
     setStorageKindTags,
   });
 
-  const uiFilters: FilterObject[] = [
-    groupsFilter,
-    computeKindFilter,
-    storageKindFilter,
-    ownersFilter,
-    tagsFilter,
-  ];
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
-  if (isBranchDeployment) {
-    uiFilters.push(changedInBranchFilter);
-  }
   const {allRepos} = React.useContext(WorkspaceContext);
 
-  const reposFilter = useCodeLocationFilter({repos: filters.repos, setRepos});
-  if (allRepos.length > 1) {
-    uiFilters.unshift(reposFilter);
-  }
+  const reposFilter = useCodeLocationFilter({
+    codeLocations: filters.codeLocations,
+    setCodeLocations,
+  });
+
+  const uiFilters = React.useMemo(() => {
+    const uiFilters: FilterObject[] = [
+      groupsFilter,
+      computeKindFilter,
+      storageKindFilter,
+      ownersFilter,
+      tagsFilter,
+    ];
+    if (isBranchDeployment) {
+      uiFilters.push(changedInBranchFilter);
+    }
+    if (allRepos.length > 1) {
+      uiFilters.unshift(reposFilter);
+    }
+    return uiFilters;
+  }, [
+    allRepos.length,
+    changedInBranchFilter,
+    computeKindFilter,
+    groupsFilter,
+    isBranchDeployment,
+    ownersFilter,
+    reposFilter,
+    storageKindFilter,
+    tagsFilter,
+  ]);
   const components = useFilters({filters: uiFilters});
 
   const filterInput = (
@@ -132,7 +153,7 @@ export function useAssetCatalogFiltering(
     filters.storageKindTags?.length ||
     filters.groups?.length ||
     filters.owners?.length ||
-    filters.repos?.length
+    filters.codeLocations?.length
   );
 
   return {
@@ -144,5 +165,6 @@ export function useAssetCatalogFiltering(
     filtered,
     computeKindFilter,
     storageKindFilter,
+    renderFilterButton: components.renderButton,
   };
 }

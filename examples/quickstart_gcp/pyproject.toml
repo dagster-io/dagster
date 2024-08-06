@@ -3,4 +3,5 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "quickstart_gcp"
+module_name = "quickstart_gcp.definitions"
+code_location_name = "quickstart_gcp"

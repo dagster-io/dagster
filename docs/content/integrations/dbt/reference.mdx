@@ -55,7 +55,7 @@ For a step-by-step implementation walkthrough, refer to the [Using dbt with Dags
 You can create a Dagster project that wraps your dbt project by using the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command line interface.
 
 ```shell
-dagster-dbt project scaffold --use-dbt-project --project-name project_dagster --dbt-project-dir path/to/dbt/project
+dagster-dbt project scaffold --project-name project_dagster --dbt-project-dir path/to/dbt/project
 ```
 
 This creates a directory called `project_dagster/` inside the current directory. The `project_dagster/` directory contains a set of files that define a Dagster project that loads the dbt project at the path defined by `--dbt-project-dir`. The path to the dbt project must contain a `dbt_project.yml`.
@@ -81,25 +81,11 @@ The manifest can be created in two ways:
 
 When deploying your Dagster project to production, **we recommend generating the manifest at build time** to avoid the overhead of recompiling your dbt project every time your Dagster code is executed. A `manifest.json` should be precompiled and included in the Python package for your Dagster code.
 
-<TabGroup>
-<TabItem name="Select an option">
-
-Select one of the following to handle the creation of your manifest:
-
-- [**Option 1:**](#option-1-using-dbtproject) Using `DbtProject`
-- [**Option 2:**](#option-2-using-dbtcliresource) Using `DbtCliResource`
-
-</TabItem>
-<TabItem name="Option 1 (recommended): Using DbtProject">
-
-### Option 1: Using DbtProject
-
 The easiest way to handle the creation of your manifest file is to use <PyObject object="DbtProject" module="dagster_dbt" />.
 
-In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command, the creation of your manifest is handled during development:
+In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command, the creation of your manifest is handled at run time during development:
 
 ```python startafter=start_compile_dbt_manifest_with_dbt_project endbefore=end_compile_dbt_manifest_with_dbt_project file=/integrations/dbt/dbt.py dedent=4
-"""✅ This is recommended!"""
 from pathlib import Path
 
 from dagster_dbt import DbtProject
@@ -122,80 +108,6 @@ dagster dev
 ```
 
 In production, a precompiled manifest should be used. Using <PyObject object="DbtProject" module="dagster_dbt" />, the manifest can be created at build time by running the [`dagster-dbt project prepare-and-package`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-prepare-and-package) command in your CI/CD workflow. For more information, see the [Deploying a Dagster project with a dbt project](#deploying-a-dagster-project-with-a-dbt-project) section.
-
-</TabItem>
-<TabItem name="Option 2: Using DbtCliResource">
-
-### Option 2: Using DbtCliResource
-
-Creating the manifest can be done by running `dbt parse` using the CLI with <PyObject object="DbtCliResource" module="dagster_dbt" />.
-
-Creating the manifest at runtime in production is known to cause issues and is not recommended. This is often caused by the following code and should be avoided.
-
-```python startafter=start_troubleshooting_dbt_manifest endbefore=end_troubleshooting_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
-"""❌ This is not recommended."""
-from pathlib import Path
-
-from dagster_dbt import DbtCliResource
-
-dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-dbt = DbtCliResource(project_dir=dbt_project_dir)
-
-# A manifest will always be created at runtime.
-dbt_manifest_path = (
-    dbt.cli(
-        ["--quiet", "parse"],
-        target_path=Path("target"),
-    )
-    .wait()
-    .target_path.joinpath("manifest.json")
-)
-```
-
-To avoid any issues, we recommend that the manifest is created at run time only during local development. In production, the manifest should be created at build time.
-
-In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command line interface, we offer you both ways to load your dbt models:
-
-```python startafter=start_compile_dbt_manifest endbefore=end_compile_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
-"""✅ This is recommended!"""
-import os
-from pathlib import Path
-
-from dagster_dbt import DbtCliResource
-
-dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
-dbt = DbtCliResource(project_dir=dbt_project_dir)
-
-# If DAGSTER_DBT_PARSE_PROJECT_ON_LOAD is set, a manifest will be created at runtime.
-# Otherwise, we expect a manifest to be present in the project's target directory.
-if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
-    dbt_manifest_path = (
-        dbt.cli(
-            ["--quiet", "parse"],
-            target_path=Path("target"),
-        )
-        .wait()
-        .target_path.joinpath("manifest.json")
-    )
-else:
-    dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
-```
-
-As the comment explains, the code gives you a choice about how to create this dbt manifest. Based on the `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` environment variable, either:
-
-1. **At run time**: This code generates the `manifest.json` for you. This is the easiest option during development because you never need to worry about the file being out-of-date with your dbt project, or
-2. **At build time**: This code leaves it up to you to generate the `manifest.json` file on your own, and this code just reads it.
-
-When developing locally, you can run the following command to generate the manifest at run time for your dbt and Dagster project:
-
-```shell
-DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
-```
-
-In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your project uses the precompiled manifest.
-
-</TabItem>
-</TabGroup>
 
 ---
 
@@ -220,14 +132,10 @@ In your CI/CD workflows for your Dagster project:
 
 1. Include any secrets that are required by your dbt project in your CI/CD environment.
 2. Clone the dbt project repository as a subdirectory of your Dagster project.
-3. Depending on whether <PyObject object="DbtCliProject" module="dagster_dbt" /> is used, this step will vary:
-   - **For projects using `DbtProject`**, run `dagster-dbt project prepare-and-package --file path/to/project.py` to
-     - Build your dbt project's dependencies,
-     - Create a dbt manifest for your Dagster project, and
-     - Package your dbt project
-   - **For projects using `DbtCliResource`**:
-     - Run `dbt deps` to build your dbt project's dependencies
-     - Run `dbt parse` to create a dbt manifest for your Dagster project
+3. Run `dagster-dbt project prepare-and-package --file path/to/project.py` to
+   - Build your dbt project's dependencies,
+   - Create a dbt manifest for your Dagster project, and
+   - Package your dbt project
 
 In the CI/CD workflows for your dbt project, set up a dispatch action to trigger a deployment of your Dagster project when your dbt project changes.
 
@@ -244,14 +152,10 @@ If you are managing your Dagster project in the same git repository as your dbt 
 In your CI/CD workflows for your Dagster and dbt project:
 
 1. Include any secrets that are required by your dbt project in your CI/CD environment.
-2. Depending on whether <PyObject object="DbtCliProject" module="dagster_dbt" /> is used, this step will vary:
-   - **For projects using `DbtProject`**, run `dagster-dbt project prepare-and-package --file path/to/project.py` to
-     - Build your dbt project's dependencies,
-     - Create a dbt manifest for your Dagster project, and
-     - Package your dbt project
-   - **For projects using `DbtCliResource`**:
-     - Run `dbt deps` to build your dbt project's dependencies
-     - Run `dbt parse` to create a dbt manifest for your Dagster project
+2. Run `dagster-dbt project prepare-and-package --file path/to/project.py` to
+   - Build your dbt project's dependencies,
+   - Create a dbt manifest for your Dagster project, and
+   - Package your dbt project
 
 ---
 
@@ -805,7 +709,7 @@ Dagster supports fetching additional metadata at dbt execution time to attach as
 
 Dagster can automatically fetch [row counts](/concepts/metadata-tags/asset-metadata/table-metadata#attaching-row-count) for dbt-generated tables and emit them as [materialization metadata](/concepts/metadata-tags/asset-metadata) to be displayed in the Dagster UI.
 
-Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_row_counts" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_row_counts()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.resources_v2" /> returned by the `stream()` dbt CLI call:
+Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_row_counts" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_row_counts()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.dbt_cli_invocation" /> returned by the `stream()` dbt CLI call:
 
 ```python startafter=start_fetch_row_count endbefore=end_fetch_row_count file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
@@ -839,7 +743,7 @@ Dagster allows you to emit column-level metadata, like [column schema](/concepts
 
 With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
 
-Column-level metadata is fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_column_metadata" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_column_metadata()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.resources_v2" /> returned by the `stream()` dbt CLI call:
+Column-level metadata is fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_column_metadata" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_column_metadata()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.dbt_cli_invocation" /> returned by the `stream()` dbt CLI call:
 
 ```python startafter=start_fetch_column_metadata endbefore=end_fetch_column_metadata file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
@@ -859,7 +763,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Composing metadata fetching methods
 
-Metadata fetching methods such as <PyObject object="fetch_column_metadata" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_column_metadata()" /> can be chained with other metadata fetching methods like <PyObject object="fetch_row_counts" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_row_counts()" />:
+Metadata fetching methods such as <PyObject object="fetch_column_metadata" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_column_metadata()" /> can be chained with other metadata fetching methods like <PyObject object="fetch_row_counts" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="fetch_row_counts()" />:
 
 ```python startafter=start_fetch_column_metadata_chain endbefore=end_fetch_column_metadata_chain file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path

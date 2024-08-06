@@ -485,7 +485,7 @@ def test_implicit_global_job():
 
     defs = Definitions(assets=[asset_one])
 
-    assert defs.has_implicit_global_asset_job_def()
+    assert defs.get_implicit_global_asset_job_def()
     assert len(defs.get_all_job_defs()) == 1
 
 
@@ -496,7 +496,7 @@ def test_implicit_global_job_with_job_defined():
 
     defs = Definitions(assets=[asset_one], jobs=[define_asset_job("all_assets_job", selection="*")])
 
-    assert defs.has_implicit_global_asset_job_def()
+    assert defs.get_implicit_global_asset_job_def()
     assert defs.get_job_def("all_assets_job")
     assert defs.get_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
 
@@ -520,18 +520,8 @@ def test_implicit_global_job_with_partitioned_asset():
         assets=[daily_partition_asset, unpartitioned_asset, hourly_partition_asset],
     )
 
-    assert len(defs.get_all_job_defs()) == 2
-
-    assert defs.get_implicit_job_def_for_assets(
-        [AssetKey("daily_partition_asset"), AssetKey("unpartitioned_asset")]
-    )
-
-    assert defs.get_implicit_job_def_for_assets(
-        [AssetKey("hourly_partition_asset"), AssetKey("unpartitioned_asset")]
-    )
-
-    with pytest.raises(DagsterInvariantViolationError):
-        defs.get_implicit_global_asset_job_def()
+    assert len(defs.get_all_job_defs()) == 1
+    defs.get_implicit_global_asset_job_def()
 
 
 def test_implicit_job_with_source_assets():
@@ -544,8 +534,6 @@ def test_implicit_job_with_source_assets():
     defs = Definitions(assets=[source_asset, downstream_of_source])
     assert defs.get_all_job_defs()
     assert len(defs.get_all_job_defs()) == 1
-    assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
-    assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
 
 
@@ -836,27 +824,35 @@ def test_merge():
     )
 
     merged = Definitions.merge(defs1, defs2)
-    assert merged.original_args == {
-        "assets": [asset1, asset2],
-        "jobs": [job1, job2],
-        "schedules": [schedule1, schedule2],
-        "sensors": [sensor1, sensor2],
-        "resources": {"resource1": resource1, "resource2": resource2},
-        "loggers": {"logger1": logger1, "logger2": logger2},
-        "executor": in_process_executor,
-        "asset_checks": [],
-    }
+    assert merged == Definitions(
+        assets=[asset1, asset2],
+        jobs=[job1, job2],
+        schedules=[schedule1, schedule2],
+        sensors=[sensor1, sensor2],
+        resources={"resource1": resource1, "resource2": resource2},
+        loggers={"logger1": logger1, "logger2": logger2},
+        executor=in_process_executor,
+        asset_checks=[],
+    )
 
 
 def test_resource_conflict_on_merge():
     defs1 = Definitions(resources={"resource1": 4})
-    defs2 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 5})
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a resource with key 'resource1'",
+        match="Definitions objects 0 and 1 have different resources with same key 'resource1'",
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_resource_conflict_on_merge_same_value():
+    defs1 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 4})
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.resources == {"resource1": 4}
 
 
 def test_logger_conflict_on_merge():
@@ -864,14 +860,30 @@ def test_logger_conflict_on_merge():
     def logger1(_):
         raise Exception("not executed")
 
+    @logger
+    def logger2(_):
+        raise Exception("also not executed")
+
     defs1 = Definitions(loggers={"logger1": logger1})
-    defs2 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger2})
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a logger with key 'logger1'",
+        match="Definitions objects 0 and 1 have different loggers with same key 'logger1'",
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_logger_conflict_on_merge_same_vlaue():
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger1})
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.loggers == {"logger1": logger1}
 
 
 def test_executor_conflict_on_merge():
@@ -882,6 +894,13 @@ def test_executor_conflict_on_merge():
         DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_executor_conflict_on_merge_same_value():
+    defs1 = Definitions(executor=in_process_executor)
+    defs2 = Definitions(executor=in_process_executor)
+
+    assert Definitions.merge(defs1, defs2).executor == in_process_executor
 
 
 def test_get_all_asset_specs():
@@ -899,12 +918,14 @@ def test_get_all_asset_specs():
     @observable_source_asset(group_name="blag")
     def asset6(): ...
 
-    defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6])
+    asset7 = AssetSpec("asset7", tags={"apple": "banana"})
+
+    defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6, asset7])
     all_asset_specs = defs.get_all_asset_specs()
-    assert len(all_asset_specs) == 6
+    assert len(all_asset_specs) == 7
     asset_specs_by_key = {spec.key: spec for spec in all_asset_specs}
     assert asset_specs_by_key.keys() == {
-        AssetKey(s) for s in ["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]
+        AssetKey(s) for s in ["asset1", "asset2", "asset3", "asset4", "asset5", "asset6", "asset7"]
     }
     assert asset_specs_by_key[AssetKey("asset1")] == AssetSpec(
         "asset1", tags={"foo": "fooval"}, group_name="default"
@@ -920,6 +941,18 @@ def test_get_all_asset_specs():
         tags={"biz": "boz"},
     )
     assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec("asset6", group_name="blag")
+    assert asset_specs_by_key[AssetKey("asset7")] == asset7._replace(group_name="default")
+
+
+def test_asset_spec_dependencies_in_graph() -> None:
+    upstream_asset = AssetSpec("upstream_asset")
+    downstream_asset = AssetSpec("downstream_asset", deps=[upstream_asset])
+
+    defs = Definitions(assets=[upstream_asset, downstream_asset])
+
+    assert defs.get_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
+        upstream_asset.key
+    }
 
 
 def test_invalid_partitions_subclass():
@@ -1022,8 +1055,8 @@ def test_definitions_dedupe_reference_equality():
     assert len(list(underlying_repo.schedule_defs)) == 1
 
     # properties on the definitions object do not dedupe
-    assert len(defs.original_args["assets"]) == 2
-    assert len(defs.original_args["asset_checks"]) == 2
-    assert len(defs.original_args["jobs"]) == 2
-    assert len(defs.original_args["sensors"]) == 2
-    assert len(defs.original_args["schedules"]) == 2
+    assert len(defs.assets) == 2
+    assert len(defs.asset_checks) == 2
+    assert len(defs.jobs) == 2
+    assert len(defs.sensors) == 2
+    assert len(defs.schedules) == 2

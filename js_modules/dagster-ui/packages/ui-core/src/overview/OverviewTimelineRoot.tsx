@@ -2,8 +2,9 @@ import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui
 import * as React from 'react';
 import {useDeferredValue, useMemo} from 'react';
 
+import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
 import {groupRunsByAutomation} from './groupRunsByAutomation';
-import {useFeatureFlags} from '../app/Flags';
+import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
 import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -87,10 +88,9 @@ export function useTimelineRange({
   return {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow};
 }
 
-export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
+export const OverviewTimelineRoot = ({Header}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
-  const {flagSettingsPage} = useFeatureFlags();
   const trace = usePageLoadTrace('OverviewTimelineRoot');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
@@ -101,17 +101,16 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     queryKey: 'search',
     defaults: {search: ''},
   });
+  const [groupRunsBy, setGroupRunsBy] = useGroupTimelineRunsBy();
 
   const runsForTimelineRet = useRunsForTimeline({rangeMs});
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
   const {jobs, loading, refreshState} = useDeferredValue(runsForTimelineRet);
 
-  // If we're in the IA flag, re-bucket the grouped rows by their automation.
-  // todo dish: Ship the change, remove the flag.
   const rows = useMemo(() => {
-    return flagSettingsPage ? groupRunsByAutomation(jobs) : jobs;
-  }, [flagSettingsPage, jobs]);
+    return groupRunsBy === 'automation' ? groupRunsByAutomation(jobs) : jobs;
+  }, [groupRunsBy, jobs]);
 
   React.useEffect(() => {
     if (!loading) {
@@ -150,10 +149,9 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
       <Header refreshState={refreshState} />
       <Box
         padding={{horizontal: 24, vertical: 16}}
-        flex={{alignItems: 'center', justifyContent: 'space-between'}}
+        flex={{alignItems: 'center', justifyContent: 'space-between', gap: 16}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>
-          {TabButton && <TabButton selected="timeline" />}
           {allRepos.length > 1 && <RepoFilterButton />}
           <TextInput
             icon="search"
@@ -164,6 +162,10 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
           />
         </Box>
         <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
+          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <div style={{whiteSpace: 'nowrap'}}>Group by</div>
+            <GroupTimelineRunsBySelect value={groupRunsBy} onSelect={setGroupRunsBy} />
+          </Box>
           <ButtonGroup<HourWindow>
             activeItems={new Set([hourWindow])}
             buttons={[

@@ -16,7 +16,6 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     Config,
-    DagsterEventType,
     DagsterInstance,
     DailyPartitionsDefinition,
     Field,
@@ -37,6 +36,7 @@ from dagster import (
 )
 from dagster._core.definitions import StaticPartitionsDefinition
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionedConfig
@@ -58,14 +58,25 @@ from dagster._core.remote_representation import (
 )
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import (
+    IN_PROGRESS_RUN_STATUSES,
+    DagsterRun,
+    DagsterRunStatus,
+    RunsFilter,
+)
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.test_utils import environ, step_did_not_run, step_failed, step_succeeded
+from dagster._core.test_utils import (
+    create_run_for_test,
+    environ,
+    step_did_not_run,
+    step_failed,
+    step_succeeded,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
@@ -447,6 +458,10 @@ def the_repo():
             "bp_none_asset_job",
             selection=[bp_none],
         ),
+        define_asset_job(
+            "standard_partitioned_asset_job",
+            selection=AssetSelection.assets("foo", "a1", "bar"),
+        ),
     ]
 
 
@@ -658,6 +673,63 @@ def test_failure_backfill(
     assert step_did_not_run(instance, one, "always_succeed")
     assert step_succeeded(instance, one, "conditionally_fail")
     assert step_succeeded(instance, one, "after_failure")
+
+
+def test_job_backfill_status(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id="simple",
+            partition_set_origin=external_partition_set.get_external_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+    assert instance.get_runs_count() == 0
+
+    # seed an in progress run so that this run won't get launched by the backfill daemon and will
+    # remain in the in progress state
+    fake_run = create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.STARTED,
+        tags={
+            **DagsterRun.tags_for_backfill_id("simple"),
+            PARTITION_NAME_TAG: "one",
+        },
+    )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 3
+    backfill = instance.get_backfill("simple")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    # manually update the run to be in a finished state, backfill should be marked complete on next iteration
+    instance.delete_run(fake_run.run_id)
+    create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.SUCCESS,
+        tags={
+            **DagsterRun.tags_for_backfill_id("simple"),
+            PARTITION_NAME_TAG: "one",
+        },
+    )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 3
+    backfill = instance.get_backfill("simple")
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
@@ -1028,7 +1100,7 @@ def test_backfill_with_asset_selection(
 ):
     partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
-    job_def = the_repo.get_implicit_job_def_for_assets(asset_selection)
+    job_def = the_repo.get_job("standard_partitioned_asset_job")
     assert job_def
     asset_job_name = job_def.name
     partition_set_name = f"{asset_job_name}_partition_set"
@@ -2381,75 +2453,6 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
     assert "DefaultPartitionsSubset(subset={'foo_b'})" in logs
     assert "latest_storage_id=None" in logs
     assert "AssetBackfillData" in logs
-
-
-def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
-    caplog,
-    instance: DagsterInstance,
-    base_job_name_changes_location_1_workspace_context,
-    base_job_name_changes_location_2_workspace_context,
-):
-    location_1_asset_graph = (
-        base_job_name_changes_location_1_workspace_context.create_request_context().asset_graph
-    )
-    location_2_asset_graph = (
-        base_job_name_changes_location_2_workspace_context.create_request_context().asset_graph
-    )
-
-    backfill_id = "hourly_asset_backfill"
-    backfill = PartitionBackfill.from_asset_partitions(
-        asset_graph=location_1_asset_graph,
-        backfill_id=backfill_id,
-        tags={},
-        backfill_timestamp=get_current_timestamp(),
-        asset_selection=[AssetKey(["hourly_asset"])],
-        partition_names=["2023-01-01-00:00"],
-        dynamic_partitions_store=instance,
-        all_partitions=False,
-        title=None,
-        description=None,
-    )
-    instance.add_backfill(backfill)
-
-    assert instance.get_runs_count() == 0
-    backfill = instance.get_backfill(backfill_id)
-    assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
-    with mock.patch(
-        "dagster._core.workspace.workspace.IWorkspace.asset_graph",
-        new_callable=mock.PropertyMock,
-    ) as asset_graph_mock:
-        asset_graph_mock.side_effect = [
-            location_2_asset_graph,  # On first fetch, return location 2 asset graph,
-            location_1_asset_graph,  # then return location 1 asset graph for subsequent fetch
-        ]
-
-        assert all(
-            not error
-            for error in list(
-                execute_backfill_iteration(
-                    base_job_name_changes_location_1_workspace_context,
-                    get_default_daemon_logger("BackfillDaemon"),
-                )
-            )
-        )
-
-    logs = caplog.text
-    assert (
-        "Error while generating the execution plan, possibly because the code server is out of sync with the daemon"
-        in logs
-    )
-
-    assert instance.get_runs_count() == 1
-    run_id = instance.get_run_ids(limit=1)[0]
-    records = instance.get_records_for_run(
-        run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-    ).records
-    planned_events = [record.event_log_entry.dagster_event for record in records]
-    assert len(planned_events) == 1
-    planned_event = planned_events[0]
-    assert planned_event and planned_event.is_asset_materialization_planned
-    assert planned_event.asset_key == AssetKey(["hourly_asset"])
 
 
 def test_backfill_with_title_and_description(

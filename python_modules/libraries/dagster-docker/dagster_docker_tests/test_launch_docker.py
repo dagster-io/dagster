@@ -448,3 +448,6 @@ def _test_launch(
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
                 assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED
+
+                # termination is a no-op once run is finished
+                assert not launcher.terminate(run.run_id)

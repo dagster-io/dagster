@@ -25,7 +25,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Final, Self
 
 from dagster import (
@@ -47,7 +46,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import is_base_asset_job_name
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -55,6 +54,9 @@ from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
     GraphNode,
@@ -87,6 +89,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
@@ -94,8 +97,10 @@ from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
+from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
+from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
 DEFAULT_MODE_NAME = "default"
@@ -430,6 +435,7 @@ class ScheduleSnap(
             ("execution_timezone", Optional[str]),
             ("description", Optional[str]),
             ("default_status", Optional[DefaultScheduleStatus]),
+            ("asset_selection", Optional[AssetSelection]),
         ],
     )
 ):
@@ -445,10 +451,18 @@ class ScheduleSnap(
         execution_timezone: Optional[str],
         description: Optional[str] = None,
         default_status: Optional[DefaultScheduleStatus] = None,
+        asset_selection: Optional[AssetSelection] = None,
     ):
         cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(cron_schedule, str):
             cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
+
+        if asset_selection is not None:
+            check.opt_inst_param(asset_selection, "asset_selection", AssetSelection)
+            check.invariant(
+                is_whitelisted_for_serdes_object(asset_selection),
+                "asset_selection must be serializable",
+            )
 
         return super(ScheduleSnap, cls).__new__(
             cls,
@@ -467,10 +481,27 @@ class ScheduleSnap(
                 if default_status == DefaultScheduleStatus.RUNNING
                 else None
             ),
+            asset_selection=check.opt_inst_param(
+                asset_selection, "asset_selection", AssetSelection
+            ),
         )
 
     @classmethod
-    def from_def(cls, schedule_def: ScheduleDefinition) -> Self:
+    def from_def(
+        cls, schedule_def: ScheduleDefinition, repository_def: RepositoryDefinition
+    ) -> Self:
+        if schedule_def.has_anonymous_job:
+            job_def = check.inst(
+                schedule_def.job,
+                UnresolvedAssetJobDefinition,
+                "Anonymous job should be UnresolvedAssetJobDefinition",
+            )
+            serializable_asset_selection = job_def.selection.to_serializable_asset_selection(
+                repository_def.asset_graph
+            )
+        else:
+            serializable_asset_selection = None
+
         return cls(
             name=schedule_def.name,
             cron_schedule=schedule_def.cron_schedule,
@@ -482,6 +513,7 @@ class ScheduleSnap(
             execution_timezone=schedule_def.execution_timezone,
             description=schedule_def.description,
             default_status=schedule_def.default_status,
+            asset_selection=serializable_asset_selection,
         )
 
 
@@ -623,10 +655,9 @@ class SensorSnap(
 
         if sensor_def.asset_selection is not None:
             target_dict = {
-                base_asset_job_name: ExternalTargetData(
-                    job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
+                IMPLICIT_ASSET_JOB_NAME: ExternalTargetData(
+                    job_name=IMPLICIT_ASSET_JOB_NAME, mode=DEFAULT_MODE_NAME, op_selection=None
                 )
-                for base_asset_job_name in repository_def.get_implicit_asset_job_names()
             }
 
             serializable_asset_selection = (
@@ -644,7 +675,17 @@ class SensorSnap(
                 for target in sensor_def.targets
             }
 
-            serializable_asset_selection = None
+            if sensor_def.has_anonymous_job:
+                job_def = check.inst(
+                    sensor_def.job,
+                    UnresolvedAssetJobDefinition,
+                    "Anonymous job should be UnresolvedAssetJobDefinition",
+                )
+                serializable_asset_selection = job_def.selection.to_serializable_asset_selection(
+                    repository_def.asset_graph
+                )
+            else:
+                serializable_asset_selection = None
 
         return cls(
             name=sensor_def.name,
@@ -777,21 +818,21 @@ class ExternalTimeWindowPartitionsDefinitionData(
         if self.cron_schedule is not None:
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
-                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
             )
         else:
             # backcompat case
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,
-                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                start=datetime_from_timestamp(self.start, tz=self.timezone),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
@@ -1299,49 +1340,45 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         "owners": BackcompatTeamOwnerFieldDeserializer,
     },
 )
-class ExternalAssetNode(
-    NamedTuple(
-        "_ExternalAssetNode",
-        [
-            ("asset_key", AssetKey),
-            ("dependencies", Sequence[ExternalAssetDependency]),
-            ("depended_by", Sequence[ExternalAssetDependedBy]),
-            ("execution_type", AssetExecutionType),
-            ("compute_kind", Optional[str]),
-            ("op_name", Optional[str]),
-            ("op_names", Sequence[str]),
-            ("code_version", Optional[str]),
-            ("node_definition_name", Optional[str]),
-            ("graph_name", Optional[str]),
-            # op_description is a misleading name - this is the description for the asset, not for
-            # the op
-            ("op_description", Optional[str]),
-            ("job_names", Sequence[str]),
-            ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
-            ("output_name", Optional[str]),
-            ("output_description", Optional[str]),
-            ("metadata", Mapping[str, MetadataValue]),
-            ("tags", Optional[Mapping[str, str]]),
-            ("group_name", str),
-            ("freshness_policy", Optional[FreshnessPolicy]),
-            ("is_source", bool),
-            ("is_observable", bool),
-            # If a set of assets can't be materialized independently from each other, they will all
-            # have the same execution_set_identifier. This ID should be stable across reloads and
-            # unique deployment-wide.
-            ("execution_set_identifier", Optional[str]),
-            ("required_top_level_resources", Optional[Sequence[str]]),
-            ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
-            ("backfill_policy", Optional[BackfillPolicy]),
-            ("auto_observe_interval_minutes", Optional[float]),
-            ("owners", Optional[Sequence[str]]),
-        ],
-    )
-):
+@record_custom
+class ExternalAssetNode(IHaveNew):
     """A definition of a node in the logical asset graph.
 
     A function for computing the asset and an identifier for that asset.
     """
+
+    asset_key: AssetKey
+    dependencies: Sequence[ExternalAssetDependency]
+    depended_by: Sequence[ExternalAssetDependedBy]
+    execution_type: AssetExecutionType
+    compute_kind: Optional[str]
+    op_name: Optional[str]
+    op_names: Sequence[str]
+    code_version: Optional[str]
+    node_definition_name: Optional[str]
+    graph_name: Optional[str]
+    # op_description is a misleading name - this is the description for the asset, not for
+    # the op
+    op_description: Optional[str]
+    job_names: Sequence[str]
+    partitions_def_data: Optional[ExternalPartitionsDefinitionData]
+    output_name: Optional[str]
+    output_description: Optional[str]
+    metadata: Mapping[str, MetadataValue]
+    tags: Optional[Mapping[str, str]]
+    group_name: str
+    freshness_policy: Optional[FreshnessPolicy]
+    is_source: bool
+    is_observable: bool
+    # If a set of assets can't be materialized independently from each other, they will all
+    # have the same execution_set_identifier. This ID should be stable across reloads and
+    # unique deployment-wide.
+    execution_set_identifier: Optional[str]
+    required_top_level_resources: Optional[Sequence[str]]
+    auto_materialize_policy: Optional[AutoMaterializePolicy]
+    backfill_policy: Optional[BackfillPolicy]
+    auto_observe_interval_minutes: Optional[Union[float, int]]
+    owners: Optional[Sequence[str]]
 
     def __new__(
         cls,
@@ -1370,7 +1407,7 @@ class ExternalAssetNode(
         required_top_level_resources: Optional[Sequence[str]] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
-        auto_observe_interval_minutes: Optional[float] = None,
+        auto_observe_interval_minutes: Optional[Union[float, int]] = None,
         owners: Optional[Sequence[str]] = None,
     ):
         metadata = normalize_metadata(
@@ -1418,59 +1455,37 @@ class ExternalAssetNode(
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
 
-        return super(ExternalAssetNode, cls).__new__(
+        return super().__new__(
             cls,
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            dependencies=check.opt_sequence_param(
-                dependencies, "dependencies", of_type=ExternalAssetDependency
-            ),
-            depended_by=check.opt_sequence_param(
-                depended_by, "depended_by", of_type=ExternalAssetDependedBy
-            ),
-            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
-            op_name=check.opt_str_param(op_name, "op_name"),
-            op_names=check.opt_sequence_param(op_names, "op_names"),
-            code_version=check.opt_str_param(code_version, "code_version"),
-            node_definition_name=check.opt_str_param(node_definition_name, "node_definition_name"),
-            graph_name=check.opt_str_param(graph_name, "graph_name"),
-            op_description=check.opt_str_param(
-                op_description or output_description, "op_description"
-            ),
-            job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
-            partitions_def_data=check.opt_inst_param(
-                partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
-            ),
-            output_name=check.opt_str_param(output_name, "output_name"),
-            output_description=check.opt_str_param(output_description, "output_description"),
+            asset_key=asset_key,
+            dependencies=dependencies or [],
+            depended_by=depended_by or [],
+            compute_kind=compute_kind,
+            op_name=op_name,
+            op_names=op_names or [],
+            code_version=code_version,
+            node_definition_name=node_definition_name,
+            graph_name=graph_name,
+            op_description=op_description or output_description,
+            job_names=job_names or [],
+            partitions_def_data=partitions_def_data,
+            output_name=output_name,
+            output_description=output_description,
             metadata=metadata,
-            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+            tags=tags or {},
             # Newer code always passes a string group name when constructing these, but we assign
             # the default here for backcompat.
-            group_name=check.opt_str_param(group_name, "group_name") or DEFAULT_GROUP_NAME,
-            freshness_policy=check.opt_inst_param(
-                freshness_policy, "freshness_policy", FreshnessPolicy
-            ),
-            is_source=check.bool_param(is_source, "is_source"),
-            is_observable=check.bool_param(is_observable, "is_observable"),
-            execution_set_identifier=check.opt_str_param(
-                execution_set_identifier, "execution_set_identifier"
-            ),
-            required_top_level_resources=check.opt_sequence_param(
-                required_top_level_resources, "required_top_level_resources", of_type=str
-            ),
-            auto_materialize_policy=check.opt_inst_param(
-                auto_materialize_policy,
-                "auto_materialize_policy",
-                AutoMaterializePolicy,
-            ),
-            backfill_policy=check.opt_inst_param(
-                backfill_policy, "backfill_policy", BackfillPolicy
-            ),
-            auto_observe_interval_minutes=check.opt_numeric_param(
-                auto_observe_interval_minutes, "auto_observe_interval_minutes"
-            ),
-            owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            execution_type=check.inst_param(execution_type, "execution_type", AssetExecutionType),
+            group_name=group_name or DEFAULT_GROUP_NAME,
+            freshness_policy=freshness_policy,
+            is_source=is_source,
+            is_observable=is_observable,
+            execution_set_identifier=execution_set_identifier,
+            required_top_level_resources=required_top_level_resources or [],
+            auto_materialize_policy=auto_materialize_policy,
+            backfill_policy=backfill_policy,
+            auto_observe_interval_minutes=auto_observe_interval_minutes,
+            owners=owners or [],
+            execution_type=execution_type,
         )
 
     @property
@@ -1484,6 +1499,13 @@ class ExternalAssetNode(
     @property
     def is_executable(self) -> bool:
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
+
+    @property
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        if self.auto_materialize_policy is not None:
+            return self.auto_materialize_policy.to_automation_condition()
+        else:
+            return None
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
@@ -1513,7 +1535,7 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
 
     for job_def in job_defs:
         job_name = job_def.name
-        if is_base_asset_job_name(job_name):
+        if job_name == IMPLICIT_ASSET_JOB_NAME:
             continue
 
         resource_usage: List[NodeHandleResourceUse] = []
@@ -1591,7 +1613,10 @@ def external_repository_data_from_def(
     return ExternalRepositoryData(
         name=repository_def.name,
         external_schedule_datas=sorted(
-            [ScheduleSnap.from_def(schedule_def) for schedule_def in repository_def.schedule_defs],
+            [
+                ScheduleSnap.from_def(schedule_def, repository_def)
+                for schedule_def in repository_def.schedule_defs
+            ],
             key=lambda sd: sd.name,
         ),
         # `PartitionSetDefinition` has been deleted, so we now construct `PartitionSetSnap`
@@ -1964,22 +1989,6 @@ def external_resource_data_from_def(
     )
 
 
-def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ScheduleSnap:
-    check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
-    return ScheduleSnap(
-        name=schedule_def.name,
-        cron_schedule=schedule_def.cron_schedule,
-        job_name=schedule_def.job_name,
-        op_selection=schedule_def.target.op_selection,
-        mode=DEFAULT_MODE_NAME,
-        environment_vars=schedule_def.environment_vars,
-        partition_set_name=None,
-        execution_timezone=schedule_def.execution_timezone,
-        description=schedule_def.description,
-        default_status=schedule_def.default_status,
-    )
-
-
 def external_partitions_definition_from_def(
     partitions_def: PartitionsDefinition,
 ) -> ExternalPartitionsDefinitionData:
@@ -2004,12 +2013,8 @@ def external_time_window_partitions_definition_from_def(
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
         cron_schedule=partitions_def.cron_schedule,
-        start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
-        end=(
-            pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp()
-            if partitions_def.end
-            else None
-        ),
+        start=partitions_def.start.timestamp(),
+        end=partitions_def.end.timestamp() if partitions_def.end else None,
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,

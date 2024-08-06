@@ -76,7 +76,7 @@ import {
   showBackfillErrorToast,
   showBackfillSuccessToast,
 } from '../partitions/BackfillMessaging';
-import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
+import {DimensionRangeWizards} from '../partitions/DimensionRangeWizards';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
@@ -502,50 +502,14 @@ const LaunchAssetChoosePartitionsDialogBody = ({
                 <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
               </Box>
             )}
-            {selections.map((range, idx) => (
-              <Box
-                key={range.dimension.name}
-                border={idx < selections.length - 1 ? 'bottom' : undefined}
-                padding={{vertical: 12, horizontal: 20}}
-              >
-                <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
-                  <Icon name="partition" />
-                  {range.dimension.name}
-                </Box>
-                <Box>
-                  Select partitions to materialize.{' '}
-                  {range.dimension.type === PartitionDefinitionType.TIME_WINDOW
-                    ? 'Click and drag to select a range on the timeline.'
-                    : null}
-                </Box>
-                <DimensionRangeWizard
-                  partitionKeys={range.dimension.partitionKeys}
-                  health={{
-                    ranges: displayedHealth.rangesForSingleDimension(
-                      idx,
-                      selections.length === 2 ? selections[1 - idx]!.selectedRanges : undefined,
-                    ),
-                  }}
-                  dimensionType={range.dimension.type}
-                  selected={range.selectedKeys}
-                  setSelected={(selectedKeys) =>
-                    setSelections((selections) =>
-                      selections.map((r) =>
-                        r.dimension === range.dimension ? {...r, selectedKeys} : r,
-                      ),
-                    )
-                  }
-                  partitionDefinitionName={
-                    displayedPartitionDefinition?.name ||
-                    displayedBaseAsset?.partitionDefinition?.dimensionTypes.find(
-                      (d) => d.name === range.dimension.name,
-                    )?.dynamicPartitionsDefinitionName
-                  }
-                  repoAddress={repoAddress}
-                  refetch={refetch}
-                />
-              </Box>
-            ))}
+            <DimensionRangeWizards
+              repoAddress={repoAddress}
+              refetch={refetch}
+              selections={selections}
+              setSelections={setSelections}
+              displayedHealth={displayedHealth}
+              displayedPartitionDefinition={displayedPartitionDefinition}
+            />
           </ToggleableSection>
         )}
         <ToggleableSection

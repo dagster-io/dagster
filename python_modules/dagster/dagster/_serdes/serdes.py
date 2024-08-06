@@ -28,6 +28,7 @@ from typing import (
     Dict,
     FrozenSet,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -48,7 +49,13 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
-from dagster._record import as_dict_for_new, get_record_annotations, has_generated_new, is_record
+from dagster._record import (
+    IHaveNew,
+    as_dict_for_new,
+    get_record_annotations,
+    has_generated_new,
+    is_record,
+)
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -88,6 +95,7 @@ PackableValue: TypeAlias = Union[
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
+    IHaveNew,  # indirect way of indicating @record_custom classes are packable
 ]
 
 UnpackedValue: TypeAlias = Union[
@@ -105,6 +113,7 @@ UnpackedValue: TypeAlias = Union[
     FrozenSet["PackableValue"],
     Enum,
     "UnknownSerdesValue",
+    IHaveNew,
 ]
 
 SerializableObject: TypeAlias = Union[
@@ -148,6 +157,7 @@ class WhitelistMap(NamedTuple):
     object_serializers: Dict[str, "ObjectSerializer"]
     object_deserializers: Dict[str, "ObjectSerializer"]
     enum_serializers: Dict[str, "EnumSerializer"]
+    object_type_map: Dict[str, Type]
 
     def register_object(
         self,
@@ -194,6 +204,8 @@ class WhitelistMap(NamedTuple):
             for old_storage_name in old_storage_names:
                 self.object_deserializers[old_storage_name] = serializer
 
+        self.object_type_map[name] = serializer.klass
+
     def register_enum(
         self,
         name: str,
@@ -216,11 +228,12 @@ class WhitelistMap(NamedTuple):
 
     @staticmethod
     def create() -> "WhitelistMap":
-        return WhitelistMap(object_serializers={}, object_deserializers={}, enum_serializers={})
-
-    def get_type_map(self) -> Mapping[str, Type]:
-        # Return string name -> type mapping of all registered types
-        return {name: ser.klass for name, ser in self.object_serializers.items()}
+        return WhitelistMap(
+            object_serializers={},
+            object_deserializers={},
+            enum_serializers={},
+            object_type_map={},
+        )
 
 
 _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
@@ -511,7 +524,12 @@ class EnumSerializer(Serializer, Generic[T_Enum]):
         return self.storage_name or self.klass.__name__
 
 
-EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (None, [], {}, set())
+EMPTY_VALUES_TO_SKIP: Tuple[None, List[Any], Dict[Any, Any], Set[Any]] = (
+    None,
+    [],
+    {},
+    set(),
+)
 
 
 class ObjectSerializer(Serializer, Generic[T]):
@@ -754,7 +772,10 @@ class SetToSequenceFieldSerializer(FieldSerializer):
         return set(sequence_value) if sequence_value is not None else None
 
     def pack(
-        self, set_value: Optional[AbstractSet[Any]], whitelist_map: WhitelistMap, descent_path: str
+        self,
+        set_value: Optional[AbstractSet[Any]],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
     ) -> Optional[Sequence[Any]]:
         return (
             sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
@@ -1073,25 +1094,65 @@ def deserialize_value(
     """
     check.str_param(val, "val")
 
-    # Never issue warnings when deserializing deprecated objects.
-    with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
-        whitelist_map.get_type_map()
-    ):
-        context = UnpackContext()
-        unpacked_value = seven.json.loads(
-            val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)
-        )
-        unpacked_value = context.finalize_unpack(unpacked_value)
-        if as_type and not (
-            is_named_tuple_instance(unpacked_value)
-            if as_type is NamedTuple
-            else isinstance(unpacked_value, as_type)
-        ):
-            raise DeserializationError(
-                f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
-            )
+    return deserialize_values([val], as_type, whitelist_map)[0]
 
-    return unpacked_value
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Type[T_PackableValue],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[T_PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: None = ...,
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[PackableValue]: ...
+
+
+@overload
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ],
+    whitelist_map: WhitelistMap = ...,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]: ...
+
+
+def deserialize_values(
+    vals: Iterable[str],
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ] = None,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
+    """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
+    with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
+        whitelist_map.object_type_map
+    ):
+        unpacked_values = []
+        for val in vals:
+            context = UnpackContext()
+            unpacked_value = seven.json.loads(
+                val,
+                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
+            )
+            unpacked_value = context.finalize_unpack(unpacked_value)
+            if as_type and not (
+                is_named_tuple_instance(unpacked_value)
+                if as_type is NamedTuple
+                else isinstance(unpacked_value, as_type)
+            ):
+                raise DeserializationError(
+                    f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
+                )
+            unpacked_values.append(unpacked_value)
+
+    return unpacked_values
 
 
 class UnknownSerdesValue:

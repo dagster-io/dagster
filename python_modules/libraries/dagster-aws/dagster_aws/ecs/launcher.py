@@ -346,7 +346,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
             raise Exception("Cannot override system ECS tag: dagster/run_id")
 
-        return [{"key": "dagster/run_id", "value": run.run_id}, *container_context.run_ecs_tags]
+        return [
+            {"key": "dagster/run_id", "value": run.run_id},
+            {"key": "dagster/job_name", "value": run.job_name},
+            *container_context.run_ecs_tags,
+        ]
 
     def _get_run_tags(self, run_id):
         run = self._instance.get_run_by_id(run_id)
@@ -517,7 +521,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         tags = self._get_run_tags(run_id)
 
         run = self._instance.get_run_by_id(run_id)
-        if not run:
+        if not run or run.is_finished:
             return False
 
         self._instance.report_run_canceling(run)
