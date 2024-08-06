@@ -66,8 +66,8 @@ def _get_target_table_name(stream_name: str, sling_cli: "SlingResource") -> Opti
     return _strip_quotes_target_table_name(target_table_name)
 
 
-COLUMN_NAME_COL = "COLUMN"
-COLUMN_TYPE_COL = "GENERAL TYPE"
+COLUMN_NAME_COL = "Column"
+COLUMN_TYPE_COL = "General Type"
 
 SLING_COLUMN_PREFIX = "_sling_"
 
@@ -126,6 +126,7 @@ def fetch_column_metadata(
                 )
             )
         except Exception as e:
+            raise e
             context.log.warning("Failed to fetch column metadata for stream %s: %s", stream_name, e)
 
     return {}

@@ -423,12 +423,9 @@ class SlingResource(ConfigurableResource):
 
             yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
-    def _parse_pretty_table_output(self, table_output: str) -> List[Dict[str, str]]:
-        table_rows = [row.strip()[1:-1] for row in table_output.split("\n") if row.startswith("|")]
-        tabular_data = [[x.strip() for x in row.split("|")] for row in table_rows]
-
-        column_keys = tabular_data[0]
-        column_values = tabular_data[1:]
+    def _parse_json_table_output(self, table_output: Dict[str, Any]) -> List[Dict[str, str]]:
+        column_keys: List[str] = table_output["fields"]
+        column_values: List[List[str]] = table_output["rows"]
 
         return [
             {column_keys[i]: column_values[i] for i in range(len(column_keys))}
@@ -447,11 +444,12 @@ class SlingResource(ConfigurableResource):
             List[Dict[str, str]]: A list of dictionaries, keyed by column name, containing column metadata.
         """
         output = self.run_sling_cli(
-            ["conns", "discover", target_name, "--pattern", table_name, "--columns"]
+            ["conns", "discover", target_name, "--pattern", table_name, "--columns"],
+            force_json=True,
         )
-        return self._parse_pretty_table_output(output)
+        return self._parse_json_table_output(json.loads(output.strip()))
 
-    def run_sling_cli(self, args: Sequence[str]) -> str:
+    def run_sling_cli(self, args: Sequence[str], force_json: bool = False) -> str:
         """Runs the Sling CLI with the given arguments and returns the output.
 
         Args:
@@ -460,7 +458,8 @@ class SlingResource(ConfigurableResource):
         Returns:
             str: The output from the Sling CLI.
         """
-        return subprocess.check_output(args=[sling.SLING_BIN, *args]).decode("utf-8")
+        with environ({"SLING_OUTPUT": "json"}) if force_json else contextlib.nullcontext():
+            return subprocess.check_output(args=[sling.SLING_BIN, *args]).decode("utf-8")
 
     def replicate(
         self,
