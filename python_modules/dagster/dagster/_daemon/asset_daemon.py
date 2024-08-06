@@ -48,6 +48,7 @@ from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
     AUTO_OBSERVE_TAG,
+    AUTOMATION_CONDITION_TAG,
     SENSOR_NAME_TAG,
 )
 from dagster._core.utils import (
@@ -1054,6 +1055,7 @@ class AssetDaemon(DagsterDaemon):
                             tags={
                                 **run_request.tags,
                                 AUTO_MATERIALIZE_TAG: "true",
+                                AUTOMATION_CONDITION_TAG: "true",
                                 ASSET_EVALUATION_ID_TAG: str(evaluation_id),
                             },
                             title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
@@ -1069,6 +1071,7 @@ class AssetDaemon(DagsterDaemon):
                         tags={
                             **run_request.tags,
                             AUTO_MATERIALIZE_TAG: "true",
+                            AUTOMATION_CONDITION_TAG: "true",
                             ASSET_EVALUATION_ID_TAG: str(evaluation_id),
                         }
                     ),
