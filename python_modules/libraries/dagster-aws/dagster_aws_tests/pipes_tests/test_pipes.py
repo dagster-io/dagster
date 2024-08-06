@@ -6,7 +6,7 @@ import shutil
 import textwrap
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Literal
 
 import boto3
 import pytest
@@ -24,6 +24,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._core.pipes.utils import PipesEnvContextInjector
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster_aws.pipes import (
+    PipesCloudWatchMessageReader,
     PipesGlueClient,
     PipesLambdaClient,
     PipesLambdaLogsMessageReader,
@@ -283,6 +284,7 @@ GLUE_JOB_NAME = "test-job"
 def external_s3_glue_script(s3_client) -> Iterator[str]:
     # This is called in an external process and so cannot access outer scope
     def script_fn():
+        import os
         import time
 
         import boto3
@@ -293,12 +295,18 @@ def external_s3_glue_script(s3_client) -> Iterator[str]:
             open_dagster_pipes,
         )
 
-        client = boto3.client("s3", region_name="us-east-1", endpoint_url="http://localhost:5193")
-        context_loader = PipesS3ContextLoader(client=client)
-        message_writer = PipesS3MessageWriter(client, interval=0.001)
+        s3_client = boto3.client(
+            "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
+        )
+
+        messages_backend = os.environ["TESTING_PIPES_MESSAGES_BACKEND"]
+        if messages_backend == "s3":
+            message_writer = PipesS3MessageWriter(s3_client, interval=0.001)
+        else:
+            message_writer = None
 
         with open_dagster_pipes(
-            context_loader=context_loader,
+            context_loader=PipesS3ContextLoader(client=s3_client),
             message_writer=message_writer,
             params_loader=PipesCliArgsParamsLoader(),
         ) as context:
@@ -341,9 +349,25 @@ def glue_client(moto_server, external_s3_glue_script, s3_client) -> boto3.client
     return client
 
 
-def test_glue_s3_pipes(capsys, s3_client, glue_client):
+@pytest.fixture
+def cloudwatch_client(moto_server, external_s3_glue_script, s3_client) -> boto3.client:
+    return boto3.client("logs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
+
+
+@pytest.mark.parametrize("pipes_messages_backend", ["s3", "cloudwatch"])
+def test_glue_pipes(
+    capsys,
+    s3_client,
+    glue_client,
+    cloudwatch_client,
+    pipes_messages_backend: Literal["s3", "cloudwatch"],
+):
     context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
-    message_reader = PipesS3MessageReader(bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001)
+    message_reader = (
+        PipesS3MessageReader(bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001)
+        if pipes_messages_backend == "s3"
+        else PipesCloudWatchMessageReader(client=cloudwatch_client)
+    )
 
     @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
     def foo(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
@@ -355,7 +379,13 @@ def test_glue_s3_pipes(capsys, s3_client, glue_client):
         return results
 
     pipes_glue_client = PipesGlueClient(
-        client=LocalGlueMockClient(glue_client=glue_client, s3_client=s3_client),
+        client=LocalGlueMockClient(
+            aws_endpoint_url=_MOTO_SERVER_URL,
+            glue_client=glue_client,
+            s3_client=s3_client,
+            cloudwatch_client=cloudwatch_client,
+            pipes_messages_backend=pipes_messages_backend,
+        ),
         context_injector=context_injector,
         message_reader=message_reader,
     )

@@ -5,7 +5,19 @@ import random
 import string
 import time
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Literal, Mapping, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    TypedDict,
+)
 
 import boto3
 import dagster._check as check
@@ -157,9 +169,21 @@ class PipesLambdaLogsMessageReader(PipesMessageReader):
         )
 
 
+class CloudWatchEvent(TypedDict):
+    timestamp: int
+    message: str
+    ingestionTime: int
+
+
 @experimental
 class PipesCloudWatchMessageReader(PipesMessageReader):
     """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
+
+    def __init__(self, client: Optional[boto3.client] = None):
+        """Args:
+        client (boto3.client): boto3 CloudWatch client.
+        """
+        self.client = client or boto3.client("logs")
 
     @contextmanager
     def read_messages(
@@ -174,12 +198,52 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
             self._handler = None
 
     def consume_cloudwatch_logs(
-        self, client: boto3.client, log_group: str, log_stream: str
+        self,
+        log_group: str,
+        log_stream: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
     ) -> None:
-        raise NotImplementedError("CloudWatch logs are not yet supported in the pipes protocol.")
+        handler = check.not_none(
+            self._handler, "Can only consume logs within context manager scope."
+        )
+
+        for events_batch in self._get_all_cloudwatch_events(
+            log_group=log_group, log_stream=log_stream, start_time=start_time, end_time=end_time
+        ):
+            for event in events_batch:
+                for log_line in event["message"].splitlines():
+                    extract_message_or_forward_to_stdout(handler, log_line)
 
     def no_messages_debug_text(self) -> str:
         return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
+
+    def _get_all_cloudwatch_events(
+        self,
+        log_group: str,
+        log_stream: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+    ) -> Generator[List[CloudWatchEvent], None, None]:
+        """Returns batches of CloudWatch events until the stream is complete or end_time."""
+        params: Dict[str, Any] = {
+            "logGroupName": log_group,
+            "logStreamName": log_stream,
+        }
+
+        if start_time is not None:
+            params["startTime"] = start_time
+        if end_time is not None:
+            params["endTime"] = end_time
+
+        response = self.client.get_log_events(**params)
+
+        while events := response.get("events"):
+            yield events
+
+            params["nextToken"] = response["nextForwardToken"]
+
+            response = self.client.get_log_events(**params)
 
 
 class PipesLambdaEventContextInjector(PipesEnvContextInjector):
@@ -203,11 +267,11 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        client: boto3.client,
+        client: Optional[boto3.client] = None,
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
     ):
-        self._client = client
+        self._client = client or boto3.client("lambda")
         self._message_reader = message_reader or PipesLambdaLogsMessageReader()
         self._context_injector = context_injector or PipesLambdaEventContextInjector()
 
@@ -272,12 +336,11 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
 class PipesGlueContextInjector(PipesS3ContextInjector):
     def no_messages_debug_text(self) -> str:
-        return "Attempted to inject context via Glue job arguments."
+        return "Attempted to inject context via Glue job Arguments"
 
 
 class PipesGlueLogsMessageReader(PipesCloudWatchMessageReader):
-    def no_messages_debug_text(self) -> str:
-        return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
+    pass
 
 
 @experimental
@@ -285,22 +348,22 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS Glue jobs.
 
     Args:
-        client (boto3.client): The boto Glue client used to call invoke.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the Glue job, for example, :py:class:`PipesGlueContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
+        client (Optional[boto3.client]): The boto Glue client used to launch the Glue job
     """
 
     def __init__(
         self,
-        client: boto3.client,
         context_injector: PipesContextInjector,
         message_reader: Optional[PipesMessageReader] = None,
+        client: Optional[boto3.client] = None,
     ):
-        self._client = client
+        self._client = client or boto3.client("glue")
         self._context_injector = context_injector
-        self._message_reader = message_reader or PipesCloudWatchMessageReader()
+        self._message_reader = message_reader or PipesGlueLogsMessageReader()
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -377,19 +440,10 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             # so we need to filter them out
             params = {k: v for k, v in params.items() if v is not None}
 
+            start_timestamp = time.time() * 1000  # unix time in ms
+
             try:
-                response = self._client.start_job_run(**params)
-                run_id = response["JobRunId"]
-                context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
-                response = self._wait_for_job_run_completion(job_name, run_id)
-
-                if response["JobRun"]["JobRunState"] == "FAILED":
-                    raise RuntimeError(
-                        f"Glue job {job_name} run {run_id} failed:\n{response['JobRun']['ErrorMessage']}"
-                    )
-                else:
-                    context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
-
+                run_id = self._client.start_job_run(**params)["JobRunId"]
             except ClientError as err:
                 context.log.error(
                     "Couldn't create job %s. Here's why: %s: %s",
@@ -399,11 +453,27 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 )
                 raise
 
-        # TODO: get logs from CloudWatch. there are 2 separate streams for stdout and driver stderr to read from
-        # the log group can be found in the response from start_job_run, and the log stream is the job run id
-        # worker logs have log streams like: <job_id>_<worker_id> but we probably don't need to read those
+            response = self._client.get_job_run(JobName=job_name, RunId=run_id)
+            log_group = response["JobRun"]["LogGroupName"]
+            context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
 
-        # should probably have a way to return the lambda result payload
+            response = self._wait_for_job_run_completion(job_name, run_id)
+
+            if response["JobRun"]["JobRunState"] == "FAILED":
+                raise RuntimeError(
+                    f"Glue job {job_name} run {run_id} failed:\n{response['JobRun']['ErrorMessage']}"
+                )
+            else:
+                context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
+
+            if isinstance(self._message_reader, PipesCloudWatchMessageReader):
+                # TODO: consume messages in real-time via a background thread
+                # so we don't have to wait for the job run to complete 
+                # before receiving any logs 
+                self._message_reader.consume_cloudwatch_logs(
+                    f"{log_group}/output", run_id, start_time=int(start_timestamp)
+                )
+
         return PipesClientCompletedInvocation(session)
 
     def _wait_for_job_run_completion(self, job_name: str, run_id: str) -> Dict[str, Any]:
