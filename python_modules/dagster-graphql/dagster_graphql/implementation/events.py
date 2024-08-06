@@ -341,7 +341,12 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         DagsterEventType.RUN_CANCELED,
         DagsterEventType.PIPELINE_CANCELED,
     ):
-        return GrapheneRunCanceledEvent(pipelineName=pipeline_name, **basic_params)
+        data = dagster_event.job_canceled_data
+        return GrapheneRunCanceledEvent(
+            pipelineName=pipeline_name,
+            error=GraphenePythonError(data.error) if (data and data.error) else None,
+            **basic_params,
+        )
     elif dagster_event.event_type in (
         DagsterEventType.RUN_START,
         DagsterEventType.PIPELINE_START,
