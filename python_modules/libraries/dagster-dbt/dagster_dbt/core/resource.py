@@ -11,7 +11,6 @@ from dagster import (
     AssetCheckKey,
     AssetExecutionContext,
     AssetsDefinition,
-    AssetKey,
     ConfigurableResource,
     OpExecutionContext,
     get_dagster_logger,
@@ -760,7 +759,7 @@ def _get_subset_selection_for_context(
     is_checks_subset = (
         assets_def.check_specs_by_output_name != assets_def.node_check_specs_by_output_name
     )
-    current_code_version_by_key = assets_def.code_versions_by_key()
+    current_code_version_by_key = assets_def.code_versions_by_key
     current_code_versions_by_output_name = {
         output_name: current_code_version_by_key[asset_key]
         for output_name, asset_key in assets_def.keys_by_output_name.items()
@@ -899,11 +898,12 @@ def get_dbt_resource_names_for_output_names(
             if output_name in dbt_resource_props_by_output_name
         }
 
+        _views = ("view", "materialized view")
         selected_views = [
             dbt_resource_props
             for output_name, dbt_resource_props in dbt_resource_props_gen.items()
             if dbt_resource_props["resource_type"] == "model"
-                and dbt_resource_props.get("config").get("materialized") == "view"
+                and dbt_resource_props.get("config").get("materialized") in _views
                 and current_code_versions_by_output_name.get(output_name) != default_code_version_fn(dbt_resource_props)
         ]
 
@@ -911,7 +911,7 @@ def get_dbt_resource_names_for_output_names(
             dbt_resource_props
             for dbt_resource_props in dbt_resource_props_gen.values()
             if dbt_resource_props["resource_type"] != "model"
-                or (dbt_resource_props.get("config", {}).get("materialized") != "view")
+                or (dbt_resource_props.get("config", {}).get("materialized") not in _views)
         ]
 
         filtered_dbt_resource_props_gen = selected_views + other_resources
