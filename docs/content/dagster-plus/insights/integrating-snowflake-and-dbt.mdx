@@ -35,7 +35,7 @@ To complete the steps in this guide, you'll need:
 <TabGroup>
 <TabItem name="Using assets">
 
-First, append <PyObject object="with_insights" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="with_insights()" /> to the dbt CLI call in your Dagster <PyObject module="dagster_dbt" object="dbt_assets" decorator /> function:
+First, append <PyObject object="with_insights" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="with_insights()" /> to the dbt CLI call in your Dagster <PyObject module="dagster_dbt" object="dbt_assets" decorator /> function:
 
 ```python
 @dbt_assets(...)
@@ -49,7 +49,7 @@ This passes through all underlying events and emits an <PyObject object="AssetOb
 </TabItem>
 <TabItem name="Using ops and jobs">
 
-First, append <PyObject object="with_insights" module="dagster_cloud.dagster_insights" displayText="with_insights()" /> to the dbt CLI call in your Dagster op function:
+First, append <PyObject object="with_insights" module="dagster_dbt.core.dbt_cli_invocation.DbtEventIterator" displayText="with_insights()" /> to the dbt CLI call in your Dagster op function:
 
 ```python
 @op(out={})
