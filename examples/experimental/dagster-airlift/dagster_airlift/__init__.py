@@ -4,4 +4,4 @@ from .core.defs_from_airflow import (
     create_defs_from_airflow_instance as create_defs_from_airflow_instance,
 )
 from .core.migration_state import load_migration_state_from_yaml as load_migration_state_from_yaml
-from .core.multi_asset import PythonDefs as PythonDefs
+from .core.multi_asset import PythonFnDefs as PythonFnDefs

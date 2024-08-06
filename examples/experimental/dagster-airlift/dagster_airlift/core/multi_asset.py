@@ -7,7 +7,11 @@ from .def_factory import DefsFactory
 
 
 @dataclass
-class PythonDefs(DefsFactory):
+class PythonFnDefs(DefsFactory):
+    """Create definitions that are backed by a Python function. Meant to
+    replace `PythonOperator` in your Airflow installation.
+    """
+
     specs: List[AssetSpec]
     name: str
     python_fn: Optional[Callable] = None
