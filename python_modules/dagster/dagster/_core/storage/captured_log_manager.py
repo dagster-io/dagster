@@ -250,10 +250,9 @@ class CapturedLogManager(ABC):
             log_key (List[String]): The log key identifying the captured logs
             cursor (Optional[String]): The string cursor marking the position within the log stream
         Returns:
-            ComputeLogSubscription
+            CapturedLogSubscription
         """
 
-    @abstractmethod
     def unsubscribe(self, subscription: CapturedLogSubscription) -> None:
         """Deregisters an observable object from receiving log updates.
 
@@ -261,6 +260,7 @@ class CapturedLogManager(ABC):
             subscription (CapturedLogSubscription): subscription object which manages when to send
                 back data to the subscriber
         """
+        pass
 
     def build_log_key_for_run(self, run_id: str, step_key: str) -> Sequence[str]:
         """Legacy adapter to translate run_id/key to captured log manager-based log_key."""
