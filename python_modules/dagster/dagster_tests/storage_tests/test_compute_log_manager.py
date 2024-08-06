@@ -1,10 +1,9 @@
 import tempfile
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence
+from typing import IO, Generator, Iterator, Optional, Sequence
 
 import dagster._check as check
-import pytest
-from dagster import job, op
+from dagster import DagsterRun, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -14,12 +13,13 @@ from dagster._core.storage.captured_log_manager import (
     CapturedLogManager,
     CapturedLogMetadata,
     CapturedLogSubscription,
+    ComputeIOType,
 )
 from dagster._core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
-    ComputeIOType,
     ComputeLogFileData,
     ComputeLogManager,
+    ComputeLogSubscription,
 )
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
@@ -79,88 +79,38 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
     def unsubscribe(self, subscription: CapturedLogSubscription):
         return
 
-    @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        pass
+    def _watch_logs(
+        self, dagster_run: DagsterRun, step_key: Optional[str] = None
+    ) -> Iterator[None]:
+        raise NotImplementedError()
 
-    def get_local_path(self, run_id, key, io_type):
-        pass
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
+        raise NotImplementedError()
 
-    def is_watch_completed(self, run_id, key):
-        return True
+    def is_watch_completed(self, run_id: str, key: str) -> bool:
+        raise NotImplementedError()
 
-    def on_watch_start(self, pipeline_run, step_key):
-        pass
+    def on_watch_start(self, dagster_run: DagsterRun, step_key: Optional[str]) -> None:
+        raise NotImplementedError()
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        pass
+    def on_watch_finish(self, dagster_run: DagsterRun, step_key: Optional[str]) -> None:
+        raise NotImplementedError()
 
-    def download_url(self, run_id, key, io_type):
-        return None
+    def download_url(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
+        raise NotImplementedError()
 
     def read_logs_file(
-        self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ
+        self,
+        run_id: str,
+        key: str,
+        io_type: ComputeIOType,
+        cursor: int = 0,
+        max_bytes: int = MAX_BYTES_FILE_READ,
     ) -> ComputeLogFileData:
-        return ComputeLogFileData(path="", data=None, cursor=0, size=0, download_url=None)
+        raise NotImplementedError()
 
-    def on_subscribe(self, subscription):
+    def on_subscribe(self, subscription: ComputeLogSubscription) -> None:
         pass
-
-    def on_unsubscribe(self, subscription):
-        pass
-
-
-class BrokenComputeLogManager(ComputeLogManager):
-    def __init__(self, fail_on_setup=False, fail_on_teardown=False):
-        self._fail_on_setup = check.opt_bool_param(fail_on_setup, "fail_on_setup")
-        self._fail_on_teardown = check.opt_bool_param(fail_on_teardown, "fail_on_teardown")
-
-    @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        yield
-
-    def is_watch_completed(self, run_id, key):
-        return True
-
-    def on_watch_start(self, pipeline_run, step_key):
-        if self._fail_on_setup:
-            raise Exception("wahhh")
-
-    def on_watch_finish(self, pipeline_run, step_key):
-        if self._fail_on_teardown:
-            raise Exception("blahhh")
-
-    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType):
-        pass
-
-    def download_url(self, run_id, key, io_type):
-        return None
-
-    def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
-        return ComputeLogFileData(
-            path=f"{key}.{io_type}", data=None, cursor=0, size=0, download_url=None
-        )
-
-    def on_subscribe(self, subscription):
-        pass
-
-
-@contextmanager
-def broken_compute_log_manager_instance(fail_on_setup=False, fail_on_teardown=False):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with environ({"DAGSTER_HOME": temp_dir}):
-            yield DagsterInstance(
-                instance_type=InstanceType.PERSISTENT,
-                local_artifact_storage=LocalArtifactStorage(temp_dir),
-                run_storage=SqliteRunStorage.from_local(temp_dir),
-                event_storage=SqliteEventLogStorage(temp_dir),
-                compute_log_manager=BrokenComputeLogManager(
-                    fail_on_setup=fail_on_setup, fail_on_teardown=fail_on_teardown
-                ),
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=DefaultRunLauncher(),
-                ref=InstanceRef.from_dir(temp_dir),
-            )
 
 
 @contextmanager
@@ -179,14 +129,6 @@ def broken_captured_log_manager_instance(fail_on_setup=False, fail_on_teardown=F
                 run_launcher=DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
             )
-
-
-@pytest.fixture(
-    name="instance_cm",
-    params=[broken_compute_log_manager_instance, broken_captured_log_manager_instance],
-)
-def instance_cm_fixture(request):
-    return request.param
 
 
 def _has_setup_exception(execute_result):
@@ -231,8 +173,8 @@ def boo_job():
     boo()
 
 
-def test_broken_compute_log_manager(instance_cm):
-    with instance_cm(fail_on_setup=True) as instance:
+def test_broken_compute_log_manager():
+    with broken_captured_log_manager_instance(fail_on_setup=True) as instance:
         yay_result = yay_job.execute_in_process(instance=instance)
         assert yay_result.success
         assert _has_setup_exception(yay_result)
@@ -241,7 +183,7 @@ def test_broken_compute_log_manager(instance_cm):
         assert not boo_result.success
         assert _has_setup_exception(boo_result)
 
-    with instance_cm(fail_on_teardown=True) as instance:
+    with broken_captured_log_manager_instance(fail_on_teardown=True) as instance:
         yay_result = yay_job.execute_in_process(instance=instance)
         assert yay_result.success
         assert _has_teardown_exception(yay_result)
@@ -251,7 +193,7 @@ def test_broken_compute_log_manager(instance_cm):
         assert not boo_result.success
         assert _has_teardown_exception(boo_result)
 
-    with instance_cm() as instance:
+    with broken_captured_log_manager_instance() as instance:
         yay_result = yay_job.execute_in_process(instance=instance)
         assert yay_result.success
         assert not _has_setup_exception(yay_result)

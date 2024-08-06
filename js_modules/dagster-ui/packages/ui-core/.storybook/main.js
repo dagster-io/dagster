@@ -14,8 +14,7 @@ const config = {
     getAbsolutePath('@storybook/addon-themes'),
     getAbsolutePath('@storybook/addon-links'),
     getAbsolutePath('@storybook/addon-essentials'),
-    getAbsolutePath('@storybook/addon-mdx-gfm'),
-    '@chromatic-com/storybook',
+    getAbsolutePath('@chromatic-com/storybook'),
   ],
   typescript: {
     reactDocgen: false,

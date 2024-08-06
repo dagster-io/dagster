@@ -3,8 +3,6 @@ import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {AppTopNav} from '../AppTopNav/AppTopNav';
-import {AppTopNavRightOfLogo} from '../AppTopNav/AppTopNavRightOfLogo.oss';
-import {InjectedComponentContext} from '../InjectedComponentContext';
 
 // We don't need to render the search input here.
 jest.mock('../../search/SearchDialog', () => ({
@@ -14,20 +12,11 @@ jest.mock('../../search/SearchDialog', () => ({
 describe('AppTopNav', () => {
   it('renders links and controls', async () => {
     render(
-      <InjectedComponentContext.Provider
-        value={{
-          components: {
-            AppTopNavRightOfLogo,
-          } as any,
-          hooks: {} as any,
-        }}
-      >
-        <MockedProvider>
-          <MemoryRouter>
-            <AppTopNav />
-          </MemoryRouter>
-        </MockedProvider>
-      </InjectedComponentContext.Provider>,
+      <MockedProvider>
+        <MemoryRouter>
+          <AppTopNav />
+        </MemoryRouter>
+      </MockedProvider>,
     );
 
     await screen.findByRole('link', {name: /runs/i});

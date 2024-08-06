@@ -1,15 +1,27 @@
-from pathlib import Path
+from dagster import AssetDep, AssetKey, AssetsDefinition, AssetSpec
+from dagster_airlift import PythonDefs
 
-from dagster import AssetDep, AssetKey, AssetsDefinition
-from dagster_airlift import PythonDefs, load_defs_from_yaml
+from dagster_airlift_tests.unit_tests.multi_asset_python import compute_fn
 
 
-def test_load_defs_from_yaml() -> None:
+def ak(key: str) -> AssetKey:
+    return AssetKey.from_user_string(key)
+
+
+def test_python_multi_asset_factory() -> None:
     from .multi_asset_python import compute_called
 
     assert not compute_called[0]
-    multi_asset_dir = Path(__file__).parent / "python_multi_assets_yaml"
-    defs = load_defs_from_yaml(multi_asset_dir, defs_cls=PythonDefs)
+    asset_spec = AssetSpec(
+        key=ak("my/asset"),
+        deps=[AssetDep(ak("upstream/asset"))],
+    )
+    defs = PythonDefs(
+        specs=[asset_spec],
+        python_fn=compute_fn,
+        name="test_dag__test_task",
+    ).build_defs()
+
     assert len(defs.assets) == 1  # type: ignore
     assets_def: AssetsDefinition = defs.assets[0]  # type: ignore
     assert assets_def.is_executable

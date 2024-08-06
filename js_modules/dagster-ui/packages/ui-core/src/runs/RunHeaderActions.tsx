@@ -2,6 +2,7 @@ import {useMutation} from '@apollo/client';
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {RunMetricsDialog} from 'src/runs/RunMetricsDialog.oss';
 
 import {DeletionDialog} from './DeletionDialog';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
@@ -13,7 +14,6 @@ import {TerminationDialog} from './TerminationDialog';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {InjectedComponentContext} from '../app/InjectedComponentContext';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
@@ -41,9 +41,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   const {rootServerURI} = useContext(AppContext);
   const {refetch} = useContext(RunsQueryRefetchContext);
-  const {
-    components: {RunMetricsDialog},
-  } = useContext(InjectedComponentContext);
 
   const copy = useCopyToClipboard();
   const history = useHistory();

@@ -38,7 +38,6 @@ setup(
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
     install_requires=[
         f"dagster{pin}",
-        f"dagster-blueprints{pin}",
         "apache-airflow>=2.0.0,<2.8",
         # Flask-session 0.6 is incompatible with certain airflow-provided test
         # utilities.

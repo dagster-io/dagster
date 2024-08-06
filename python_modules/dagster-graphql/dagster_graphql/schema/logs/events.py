@@ -106,7 +106,7 @@ class GrapheneRunCancelingEvent(graphene.ObjectType):
 
 class GrapheneRunCanceledEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent, GrapheneErrorEvent)
         name = "RunCanceledEvent"
 
 
