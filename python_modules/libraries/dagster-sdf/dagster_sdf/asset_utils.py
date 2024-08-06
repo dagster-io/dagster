@@ -152,12 +152,12 @@ def get_materialized_sql_dir(target_dir: Path, environment: str) -> Path:
 
 
 def get_table_path_from_parts(catalog_name: str, schema_name: str, table_name: str) -> Path:
-    return Path(catalog_name, schema_name, table_name)
+    return Path(catalog_name.lower(), schema_name.lower(), table_name.lower())
 
 
 def _read_sql_file(path_to_file: Path) -> str:
     with open(path_to_file, "r") as file:
-        return textwrap.indent(file.read(), "    ")
+        return textwrap.indent(file.read().strip(), "    ")
 
 
 def default_description_fn(
