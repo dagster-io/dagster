@@ -92,7 +92,7 @@ def shell_op(context: OpExecutionContext, shell_command: str, config: ShellOpCon
     return output
 
 
-@deprecated(breaking_version="1.9", additional_warn_text="Use PipesSubprocessClient instead.")
+@deprecated(breaking_version="0.25", additional_warn_text="Use PipesSubprocessClient instead.")
 def create_shell_command_op(
     shell_command: str,
     name: str,
@@ -168,7 +168,7 @@ def create_shell_command_op(
     return _shell_fn
 
 
-@deprecated(breaking_version="1.9", additional_warn_text="Use PipesSubprocessClient instead.")
+@deprecated(breaking_version="0.25", additional_warn_text="Use PipesSubprocessClient instead.")
 def create_shell_script_op(
     shell_script_path,
     name="create_shell_script_op",
