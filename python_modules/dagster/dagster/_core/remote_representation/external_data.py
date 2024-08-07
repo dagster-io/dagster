@@ -102,6 +102,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.warnings import suppress_dagster_warnings
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"
@@ -1014,6 +1015,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         "owners": BackcompatTeamOwnerFieldDeserializer,
     },
 )
+@suppress_dagster_warnings
 @record_custom
 class ExternalAssetNode(IHaveNew):
     """A definition of a node in the logical asset graph.
