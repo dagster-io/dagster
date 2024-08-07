@@ -45,24 +45,16 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {PageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 interface Props {
   assetKey: AssetKey;
-  trace?: PageLoadTrace;
   headerBreadcrumbs: BreadcrumbProps[];
   writeAssetVisit?: (assetKey: AssetKey) => void;
   currentPath: string[];
 }
 
-export const AssetView = ({
-  assetKey,
-  trace,
-  headerBreadcrumbs,
-  writeAssetVisit,
-  currentPath,
-}: Props) => {
+export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
@@ -109,12 +101,6 @@ export const AssetView = ({
   const dataRefreshHint = liveData
     ? healthRefreshHintFromLiveData(liveData)
     : lastMaterialization?.timestamp;
-
-  useEffect(() => {
-    if (!definitionQueryResult.loading && liveData) {
-      trace?.endTrace();
-    }
-  }, [definitionQueryResult, liveData, trace]);
 
   const isLoading =
     definitionQueryResult.loading &&

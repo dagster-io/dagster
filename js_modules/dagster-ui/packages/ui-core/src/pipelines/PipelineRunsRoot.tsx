@@ -10,7 +10,7 @@ import {
   TokenizingFieldValue,
   tokenToString,
 } from '@dagster-io/ui-components';
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {explorerPathFromString} from './PipelinePathUtils';
@@ -26,7 +26,6 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {usePageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunTable} from '../runs/RunTable';
 import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
@@ -73,8 +72,6 @@ export const PipelineRunsRoot = (props: Props) => {
   const isJob = isThisThingAJob(repo, pipelineName);
 
   useJobTitle(explorerPath, isJob);
-
-  const trace = usePageLoadTrace('PipelineRunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
   const permanentTokens = useMemo(() => {
@@ -135,12 +132,6 @@ export const PipelineRunsRoot = (props: Props) => {
     onChange: setFilterTokens,
     loading: queryResult.loading,
   });
-
-  useEffect(() => {
-    if (!queryResult.loading) {
-      trace.endTrace();
-    }
-  }, [queryResult.loading, trace]);
 
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
