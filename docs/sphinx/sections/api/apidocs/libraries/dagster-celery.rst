@@ -47,7 +47,10 @@ the celery_executor.
 Monitoring your Celery tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We advise using [Flower](https://celery.readthedocs.io/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor):
+We advise using `Flower <https://celery.readthedocs.io/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor>`_
+for real-time monitoring of tasks.
+
+Run the flower web-monitor:
 
 .. code-block:: bash
 
