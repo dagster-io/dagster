@@ -20,10 +20,10 @@ from dagster._utils import hash_collection
 
 # Cached data can be stored directly on AssetsDefinitions passed to a repository/Definitions
 # object. Any asset which has CACHED_ASSET_ID_KEY specified will have its metadata stored
-# in the cache under the key CACHED_ASSET_PREFIX + id. This allows for the metadata
-# to be retrieved in subsequent loads.
-CACHED_ASSET_ID_KEY = "dagster/cached_asset_id"
-CACHED_ASSET_METADATA_KEY = "dagster/cached_asset_metadata"
+# in RepositoryLoadData's cached data under the key CACHED_ASSET_PREFIX + id.
+# This allows for the metadata to be retrieved in subsequent loads.
+CACHED_ASSET_ID_KEY = "dagster/repo_load_data_cached_asset_id"
+CACHED_ASSET_METADATA_KEY = "dagster/repo_load_data_cached_asset_metadata"
 CACHED_ASSET_PREFIX = "cached_asset/"
 
 
