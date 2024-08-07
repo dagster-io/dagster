@@ -2,6 +2,7 @@ from typing import Any, Dict, Sequence, Type
 
 import requests
 from dagster import ConfigurableResource
+from dagster._annotations import public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import extract_from_current_repository_load_data
 from dagster._utils.cached_method import cached_method
@@ -18,6 +19,7 @@ from .translator import (
 BASE_API_URL = "https://api.powerbi.com/v1.0/myorg/"
 
 
+@public
 class PowerBIWorkspace(ConfigurableResource):
     """Represents a workspace in PowerBI and provides utilities
     to interact with the PowerBI API.
@@ -119,6 +121,7 @@ class PowerBIWorkspace(ConfigurableResource):
             dashboards + reports + semantic_models + list(data_sources_by_id.values()),
         )
 
+    @public
     def build_asset_specs(
         self,
         dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,

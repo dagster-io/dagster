@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, Dict, Generic, Mapping, Sequence
 
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
@@ -115,6 +116,7 @@ class PowerBIWorkspaceData:
         )
 
 
+@public
 class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWorkspaceData]):
     """Translator class which converts raw response data from the PowerBI API into AssetSpecs.
     Subclass this class to implement custom logic for each type of PowerBI content.
