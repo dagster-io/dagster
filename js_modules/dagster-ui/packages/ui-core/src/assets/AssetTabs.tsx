@@ -65,7 +65,7 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
       id: 'partitions',
       title: 'Partitions',
       to: buildAssetViewParams({...params, view: 'partitions'}),
-      hidden: !definition?.partitionDefinition || !definition?.isMaterializable,
+      hidden: !definition?.partitionDefinition || !definition?.isMaterializable === false,
     } as AssetTabConfig,
     checks: {
       id: 'checks',
