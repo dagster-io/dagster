@@ -21,9 +21,8 @@ from dagster import (
     PermissiveConfig,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, public
+from dagster._annotations import public
 from dagster._utils.env import environ
-from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
 
 from dagster_embedded_elt.sling.asset_decorator import (
@@ -39,7 +38,6 @@ from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, 
 logger = get_dagster_logger()
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-DEPRECATION_WARNING_TEXT = "{name} has been deprecated, use `SlingConnectionResource` for both source and target connections."
 
 
 @public
@@ -54,83 +52,6 @@ class SlingMode(str, Enum):
     FULL_REFRESH = "full-refresh"
     SNAPSHOT = "snapshot"
     BACKFILL = "backfill"
-
-
-@deprecated(
-    breaking_version="0.23.0",
-    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingSourceConnection"),
-)
-class SlingSourceConnection(PermissiveConfig):
-    """A Sling Source Connection defines the source connection used by :py:class:`~dagster_elt.sling.SlingResource`.
-
-    Examples:
-        Creating a Sling Source for a file, such as CSV or JSON:
-
-        .. code-block:: python
-
-             source = SlingSourceConnection(type="file")
-
-        Create a Sling Source for a Postgres database, using a connection string:
-
-        .. code-block:: python
-
-            source = SlingTargetConnection(type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
-            source = SlingSourceConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema")
-
-        Create a Sling Source for a Postgres database, using keyword arguments, as described here:
-        https://docs.slingdata.io/connections/database-connections/postgres
-
-        .. code-block:: python
-
-            source = SlingTargetConnection(type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
-
-    """
-
-    type: str = Field(description="Type of the source connection. Use 'file' for local storage.")
-    connection_string: Optional[str] = Field(
-        description="The connection string for the source database.",
-        default=None,
-    )
-
-
-@deprecated(
-    breaking_version="0.23.0",
-    additional_warn_text=DEPRECATION_WARNING_TEXT.format(name="SlingTargetConnection"),
-)
-class SlingTargetConnection(PermissiveConfig):
-    """A Sling Target Connection defines the target connection used by :py:class:`~dagster_elt.sling.SlingResource`.
-
-    Examples:
-        Creating a Sling Target for a file, such as CSV or JSON:
-
-        .. code-block:: python
-
-             source = SlingTargetConnection(type="file")
-
-        Create a Sling Source for a Postgres database, using a connection string:
-
-        .. code-block:: python
-
-            source = SlingTargetConnection(type="postgres", connection_string="postgresql://user:password@host:port/schema"
-            source = SlingTargetConnection(type="postgres", connection_string=EnvVar("POSTGRES_CONNECTION_STRING"))
-
-        Create a Sling Source for a Postgres database, using keyword arguments, as described here:
-        https://docs.slingdata.io/connections/database-connections/postgres
-
-        .. code-block::python
-
-            source = SlingTargetConnection(type="postgres", host="host", user="hunter42", password=EnvVar("POSTGRES_PASSWORD"))
-
-
-    """
-
-    type: str = Field(
-        description="Type of the destination connection. Use 'file' for local storage."
-    )
-    connection_string: Optional[str] = Field(
-        description="The connection string for the target database.",
-        default=None,
-    )
 
 
 @public
@@ -196,8 +117,6 @@ class SlingResource(ConfigurableResource):
 
     Args:
         connections (List[SlingConnectionResource]): A list of connections to use for the replication.
-        source_connection (Optional[SlingSourceConnection]): Deprecated, use `connections` instead.
-        target_connection (Optional[SlingTargetConnection]): Deprecated, use `connections` instead.
 
     Examples:
         .. code-block:: python
@@ -224,8 +143,6 @@ class SlingResource(ConfigurableResource):
             )
     """
 
-    source_connection: Optional[SlingSourceConnection] = None
-    target_connection: Optional[SlingTargetConnection] = None
     connections: List[SlingConnectionResource] = []
     _stdout: List[str] = []
 
@@ -297,21 +214,7 @@ class SlingResource(ConfigurableResource):
         return d
 
     def prepare_environment(self) -> Dict[str, Any]:
-        sling_source = None
-        sling_target = None
-
-        if self.source_connection:
-            sling_source = self._clean_connection_dict(dict(self.source_connection))
-        if self.target_connection:
-            sling_target = self._clean_connection_dict(dict(self.target_connection))
-
         env = {}
-
-        if sling_source:
-            env["SLING_SOURCE"] = json.dumps(sling_source)
-
-        if sling_target:
-            env["SLING_TARGET"] = json.dumps(sling_target)
 
         for conn in self.connections:
             d = self._clean_connection_dict(dict(conn))
@@ -322,22 +225,6 @@ class SlingResource(ConfigurableResource):
     @contextlib.contextmanager
     def _setup_config(self) -> Generator[None, None, None]:
         """Uses environment variables to set the Sling source and target connections."""
-        if self.source_connection:
-            deprecation_warning(
-                "source_connection",
-                "0.23",
-                "source_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
-                stacklevel=4,
-            )
-
-        if self.target_connection:
-            deprecation_warning(
-                "target_connection",
-                "0.23",
-                "target_connection has been deprecated, provide a list of SlingConnectionResource to the `connections` parameter instead.",
-                stacklevel=4,
-            )
-
         prepared_environment = self.prepare_environment()
         with environ(prepared_environment):
             yield
@@ -364,63 +251,6 @@ class SlingResource(ConfigurableResource):
             proc.wait()
             if proc.returncode != 0:
                 raise Exception("Sling command failed with error code %s", proc.returncode)
-
-    @deprecated(
-        breaking_version="0.23.0",
-        additional_warn_text="sync has been deprecated, use `replicate` instead.",
-    )
-    def sync(
-        self,
-        source_stream: str,
-        target_object: str,
-        mode: SlingMode = SlingMode.FULL_REFRESH,
-        primary_key: Optional[List[str]] = None,
-        update_key: Optional[str] = None,
-        source_options: Optional[Dict[str, Any]] = None,
-        target_options: Optional[Dict[str, Any]] = None,
-        encoding: str = "utf8",
-    ) -> Generator[str, None, None]:
-        """Runs a Sling sync from the given source table to the given destination table. Generates
-        output lines from the Sling CLI. Deprecated, use `replicate` instead.
-        """
-        if (
-            self.source_connection
-            and self.source_connection.type == "file"
-            and not source_stream.startswith("file://")
-        ):
-            source_stream = "file://" + source_stream
-
-        if (
-            self.target_connection
-            and self.target_connection.type == "file"
-            and not target_object.startswith("file://")
-        ):
-            target_object = "file://" + target_object
-
-        with self._setup_config():
-            config = {
-                "mode": mode,
-                "source": {
-                    "conn": "SLING_SOURCE",
-                    "stream": source_stream,
-                    "primary_key": primary_key,
-                    "update_key": update_key,
-                    "options": source_options,
-                },
-                "target": {
-                    "conn": "SLING_TARGET",
-                    "object": target_object,
-                    "options": target_options,
-                },
-            }
-            config["source"] = {k: v for k, v in config["source"].items() if v is not None}
-            config["target"] = {k: v for k, v in config["target"].items() if v is not None}
-
-            sling_cli = sling.Sling(**config)
-            logger.info("Starting Sling sync with mode: %s", mode)
-            cmd = sling_cli._prep_cmd()  # noqa: SLF001
-
-            yield from self._exec_sling_cmd(cmd, encoding=encoding)
 
     def _parse_json_table_output(self, table_output: Dict[str, Any]) -> List[Dict[str, str]]:
         column_keys: List[str] = table_output["fields"]

@@ -5,12 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 from dagster import file_relative_path
-from dagster_embedded_elt.sling import (
-    SlingConnectionResource,
-    SlingResource,
-    SlingSourceConnection,
-    SlingTargetConnection,
-)
+from dagster_embedded_elt.sling import SlingConnectionResource, SlingResource
 
 base_replication_config_path = (
     Path(__file__).joinpath("..", "replication_configs/base_config/replication.yaml").resolve()
@@ -31,9 +26,11 @@ def path_to_temp_sqlite_db(tmp_path):
 @pytest.fixture
 def sling_sqlite_resource(path_to_temp_sqlite_db):
     return SlingResource(
-        source_connection=SlingSourceConnection(type="file"),
-        target_connection=SlingTargetConnection(
-            type="sqlite", connection_string=f"sqlite://{path_to_temp_sqlite_db}"
+        source_connection=SlingConnectionResource(name="file_source", type="file"),
+        target_connection=SlingConnectionResource(
+            name="sqlite_target",
+            type="sqlite",
+            connection_string=f"sqlite://{path_to_temp_sqlite_db}",
         ),
     )
 

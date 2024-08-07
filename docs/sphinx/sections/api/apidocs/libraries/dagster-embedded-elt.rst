@@ -27,18 +27,13 @@ Assets (Sling)
 
 .. autoclass:: DagsterSlingTranslator
 
-.. autofunction:: build_sling_asset
-
 Resources (Sling)
 =================
 
 .. autoclass:: SlingResource
-    :members: sync, replicate
+    :members: replicate
 
 .. autoclass:: SlingConnectionResource
-
-.. autoclass:: dagster_embedded_elt.sling.resources.SlingSourceConnection
-.. autoclass:: dagster_embedded_elt.sling.resources.SlingTargetConnection
 
 ----
 
