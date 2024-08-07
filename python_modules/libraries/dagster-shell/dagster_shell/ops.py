@@ -92,7 +92,7 @@ def shell_op(context: OpExecutionContext, shell_command: str, config: ShellOpCon
     return output
 
 
-@deprecated(breaking_version="1.9", additional_warn_text="Use Dagster Pipes subprocess instead.")
+@deprecated(breaking_version="1.9", additional_warn_text="Use PipesSubprocessClient instead.")
 def create_shell_command_op(
     shell_command: str,
     name: str,
@@ -100,7 +100,7 @@ def create_shell_command_op(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> OpDefinition:
-    """DEPRECATED: Use Dagster Pipes subprocess instead.
+    """DEPRECATED: Use PipesSubprocessClient instead.
 
     This function is a factory that constructs ops to execute a shell command.
 
@@ -168,14 +168,14 @@ def create_shell_command_op(
     return _shell_fn
 
 
-@deprecated(breaking_version="1.9", additional_warn_text="Use Dagster Pipes subprocess instead.")
+@deprecated(breaking_version="1.9", additional_warn_text="Use PipesSubprocessClient instead.")
 def create_shell_script_op(
     shell_script_path,
     name="create_shell_script_op",
     ins: Optional[Mapping[str, In]] = None,
     **kwargs: Any,
 ) -> OpDefinition:
-    """DEPRECATED: Use Dagster Pipes subprocess instead.
+    """DEPRECATED: Use PipesSubprocessClient instead.
 
     This function is a factory which constructs an op that will execute a shell command read
     from a script file.

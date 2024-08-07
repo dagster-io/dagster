@@ -181,8 +181,8 @@ def test_shell_script_op_run_time_config_composite(factory, monkeypatch):
 
 
 def test_shell_op_deprecation():
-    with pytest.warns(DeprecationWarning, match="Use Dagster Pipes subprocess instead."):
+    with pytest.warns(DeprecationWarning, match="Use PipesSubprocessClient instead."):
         create_shell_command_op("echo 'hello world'", name="my_op")
 
-    with pytest.warns(DeprecationWarning, match="Use Dagster Pipes subprocess instead."):
+    with pytest.warns(DeprecationWarning, match="Use PipesSubprocessClient instead."):
         create_shell_script_op("test.sh", name="my_op")
