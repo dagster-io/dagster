@@ -144,17 +144,10 @@ async function stateForObservingAssets(
   _forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<ObserveAssetsState> {
-  if (assets.some((x) => !x.isSource)) {
-    return {
-      type: 'error',
-      error: 'One or more non-source assets are selected and cannot be observed.',
-    };
-  }
-
   if (assets.some((x) => !x.isObservable)) {
     return {
       type: 'error',
-      error: 'One or more of the selected source assets is not an observable asset.',
+      error: 'One or more of the selected assets is not an observable asset.',
     };
   }
   const repoAddress = buildRepoAddress(

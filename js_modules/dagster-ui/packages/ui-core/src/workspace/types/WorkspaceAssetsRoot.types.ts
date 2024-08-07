@@ -29,7 +29,7 @@ export type WorkspaceAssetsQuery = {
           groupName: string;
           changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
-          isSource: boolean;
+          isMaterializable: boolean;
           isObservable: boolean;
           isExecutable: boolean;
           computeKind: string | null;

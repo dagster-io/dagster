@@ -11,7 +11,7 @@ export type LaunchAssetWarningsQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    isSource: boolean;
+    isMaterializable: boolean;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionDefinition: {
       __typename: 'PartitionDefinition';

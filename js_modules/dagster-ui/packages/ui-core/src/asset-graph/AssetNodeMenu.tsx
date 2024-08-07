@@ -20,7 +20,7 @@ export type AssetNodeMenuNode = {
   id: string;
   assetKey: AssetKeyInput;
   definition: {
-    isSource: boolean;
+    isMaterializable: boolean;
     isObservable: boolean;
     isExecutable: boolean;
     hasMaterializePermission: boolean;
