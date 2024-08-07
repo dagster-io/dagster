@@ -30,7 +30,7 @@ When updating a use case, please make sure to modify both the Markdown and Pytho
 
 ### Local Preview
 
-To preview your changes locally before committing, you can start a local webserver by running the following command in your terminal: 
+To preview your changes locally before committing, you can start a local webserver by running the following command in your terminal:
 
 ```
 make webserver

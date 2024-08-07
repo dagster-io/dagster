@@ -3,6 +3,7 @@ title: "Using Dagster Pipes Subprocess to Run a CLI Command"
 description: "This use case demonstrates how to use Dagster Pipes to run a CLI command within a Dagster asset. The objective is to execute non-Python workloads and integrate their outputs into Dagster's data pipeline."
 tags: ["dagster pipes", "subprocess", "CLI"]
 ---
+
 ## Running CLI Commands with Dagster Pipes
 
 ### Overview
@@ -17,6 +18,7 @@ This guide demonstrates how to use Dagster Pipes to run a CLI command within a D
 ### What You’ll Learn
 
 You will learn how to:
+
 - Define a Dagster asset that invokes a CLI command.
 - Use Dagster Pipes to manage subprocess execution.
 - Capture and utilize the output of the CLI command within Dagster.
@@ -24,42 +26,46 @@ You will learn how to:
 ### Steps to Implement With Dagster
 
 1. **Step 1: Define the CLI Command Script**
-    - Create a script that contains the CLI command you want to run. For example, create a file named `external_script.sh` with the following content:
-    ```bash
-    #!/bin/bash
-    echo "Hello from CLI"
-    ```
+
+   - Create a script that contains the CLI command you want to run. For example, create a file named `external_script.sh` with the following content:
+
+   ```bash
+   #!/bin/bash
+   echo "Hello from CLI"
+   ```
 
 2. **Step 2: Define the Dagster Asset**
-    - Define a Dagster asset that uses `PipesSubprocessClient` to run the CLI command. Include any necessary environment variables or additional parameters.
-    ```python
-    import shutil
-    from dagster import asset, Definitions, AssetExecutionContext
-    from dagster_pipes import PipesSubprocessClient
 
-    @asset
-    def cli_command_asset(
-        context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-    ):
-        cmd = [shutil.which("bash"), "external_script.sh"]
-        return pipes_subprocess_client.run(
-            command=cmd,
-            context=context,
-            env={"MY_ENV_VAR": "example_value"},
-        ).get_materialize_result()
+   - Define a Dagster asset that uses `PipesSubprocessClient` to run the CLI command. Include any necessary environment variables or additional parameters.
 
-    defs = Definitions(
-        assets=[cli_command_asset],
-        resources={"pipes_subprocess_client": PipesSubprocessClient()},
-    )
-    ```
+   ```python
+   import shutil
+   from dagster import asset, Definitions, AssetExecutionContext
+   from dagster_pipes import PipesSubprocessClient
+
+   @asset
+   def cli_command_asset(
+       context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
+   ):
+       cmd = [shutil.which("bash"), "external_script.sh"]
+       return pipes_subprocess_client.run(
+           command=cmd,
+           context=context,
+           env={"MY_ENV_VAR": "example_value"},
+       ).get_materialize_result()
+
+   defs = Definitions(
+       assets=[cli_command_asset],
+       resources={"pipes_subprocess_client": PipesSubprocessClient()},
+   )
+   ```
 
 3. **Step 3: Configure and Run the Asset**
-    - Ensure the script is executable and run the Dagster asset to see the output.
-    ```bash
-    chmod +x external_script.sh
-    dagit -f path_to_your_dagster_file.py
-    ```
+   - Ensure the script is executable and run the Dagster asset to see the output.
+   ```bash
+   chmod +x external_script.sh
+   dagit -f path_to_your_dagster_file.py
+   ```
 
 ### Expected Outcomes
 

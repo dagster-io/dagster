@@ -8,7 +8,7 @@ from pygments.formatters import HtmlFormatter
 
 app = Flask(__name__)
 
-USE_CASES_DIR = file_relative_path(__file__, "../use_case_repository")
+USE_CASES_DIR = file_relative_path(__file__, "../use_case_repository/guides")
 
 
 @app.route("/")
@@ -256,4 +256,4 @@ def use_case(slug):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=3001)
