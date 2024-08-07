@@ -148,6 +148,7 @@ from ..logs.compute_logs import (
     GrapheneCapturedLogsMetadata,
     from_captured_log_data,
 )
+from ..mega_run import GrapheneMegaRuns, GrapheneMegaRunsOrError
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
@@ -156,8 +157,6 @@ from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
 from ..resources import GrapheneResourceDetailsListOrError, GrapheneResourceDetailsOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
-    GrapheneMegaRuns,
-    GrapheneMegaRunsOrError,
     GrapheneRunConfigData,
     GrapheneRunGroupOrError,
     GrapheneRunIds,

@@ -47,7 +47,7 @@ from .errors import (
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
 )
-from .mega_run import GrapheneMegaRun
+from .mega_run import GrapheneMegaRun, GrapheneMegaRunType
 from .pipelines.config import GrapheneRunConfigValidationInvalid
 from .util import ResolveInfo, non_null_list
 
@@ -356,6 +356,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
     )
+    runType = graphene.NonNull(GrapheneMegaRunType)
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -375,6 +376,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             # creationTime=backfill_job.backfill_timestamp,
             startTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
+            runType=GrapheneMegaRunType.BACKFILL,
         )
 
     def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[ExternalPartitionSet]:

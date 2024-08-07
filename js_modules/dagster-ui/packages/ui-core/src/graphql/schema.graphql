@@ -1401,6 +1401,7 @@ type Run implements PipelineRun & MegaRun {
   endTime: Float
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
+  runType: MegaRunType!
   parentPipelineSnapshotId: String
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -1423,11 +1424,17 @@ interface MegaRun {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
+  runType: MegaRunType!
 }
 
 type AssetCheckhandle {
   name: String!
   assetKey: AssetKey!
+}
+
+enum MegaRunType {
+  BACKFILL
+  RUN
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -2779,6 +2786,7 @@ type PartitionBackfill implements MegaRun {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
+  runType: MegaRunType!
   id: String!
   status: BulkActionStatus!
   partitionNames: [String!]
@@ -2968,12 +2976,6 @@ union RunGroupOrError = RunGroup | RunGroupNotFoundError | PythonError
 
 type RunGroups {
   results: [RunGroup!]!
-}
-
-union MegaRunsOrError = MegaRuns | InvalidPipelineRunsFilterError | PythonError
-
-type MegaRuns {
-  results: [MegaRun!]!
 }
 
 type Sensor {
@@ -3390,6 +3392,18 @@ type EnvVarConsumer {
 
 enum EnvVarConsumerType {
   RESOURCE
+}
+
+union MegaRunsOrError = MegaRuns | InvalidPipelineRunsFilterError | PythonError
+
+type MegaRuns {
+  results: MegaRunsConnection!
+}
+
+type MegaRunsConnection {
+  results: [MegaRun!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 union RunTagKeysOrError = PythonError | RunTagKeys

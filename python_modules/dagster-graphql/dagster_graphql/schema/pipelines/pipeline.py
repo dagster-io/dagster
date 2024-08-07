@@ -44,7 +44,7 @@ from ..logs.events import (
     GrapheneObservationEvent,
     GrapheneRunStepStats,
 )
-from ..mega_run import GrapheneMegaRun
+from ..mega_run import GrapheneMegaRun, GrapheneMegaRunType
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..runs import GrapheneRunConfigData
 from ..schedules.schedules import GrapheneSchedule
@@ -364,6 +364,7 @@ class GrapheneRun(graphene.ObjectType):
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
     rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
+    runType = graphene.NonNull(GrapheneMegaRunType)
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneMegaRun)
@@ -377,6 +378,7 @@ class GrapheneRun(graphene.ObjectType):
             status=dagster_run.status.value,
             runStatus=dagster_run.status.value,
             mode=DEFAULT_MODE_NAME,
+            runType=GrapheneMegaRunType.RUN,
         )
         self.dagster_run = dagster_run
         self._run_record = record
