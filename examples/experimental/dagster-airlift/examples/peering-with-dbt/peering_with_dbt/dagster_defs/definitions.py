@@ -7,7 +7,7 @@ from dagster_airlift import (
     AirflowInstance,
     BasicAuthBackend,
     PythonDefs,
-    create_defs_from_airflow_instance,
+    build_defs_from_airflow_instance,
     load_migration_state_from_yaml,
 )
 from dagster_airlift.core.def_factory import defs_from_factories
@@ -35,7 +35,7 @@ def dbt_project_path() -> Path:
     return Path(env_val)
 
 
-defs = create_defs_from_airflow_instance(
+defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     orchestrated_defs=defs_from_factories(
         PythonDefs(
