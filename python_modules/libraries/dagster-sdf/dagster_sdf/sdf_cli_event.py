@@ -1,7 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, Optional
 
-from dagster import AssetMaterialization, OpExecutionContext, Output
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetMaterialization,
+    OpExecutionContext,
+    Output,
+)
 from dagster._annotations import public
 
 from .asset_utils import dagster_name_fn
@@ -61,19 +67,42 @@ class SdfCliEventMessage:
             "table_id": table_id,
             "Execution Duration": self.raw_event["ev_dur_ms"] / 1000,
         }
-
-        has_asset_def = bool(context and context.has_assets_def)
-        event = (
-            Output(
-                value=None,
-                output_name=dagster_name_fn(table_id),
-                metadata=default_metadata,
+        asset_key = dagster_sdf_translator.get_asset_key(table_id)
+        if self.raw_event["ev_table_purpose"] == "model":
+            has_asset_def = bool(context and context.has_assets_def)
+            event = (
+                Output(
+                    value=None,
+                    output_name=dagster_name_fn(table_id),
+                    metadata=default_metadata,
+                )
+                if has_asset_def
+                else AssetMaterialization(
+                    asset_key=asset_key,
+                    metadata=default_metadata,
+                )
             )
-            if has_asset_def
-            else AssetMaterialization(
-                asset_key=dagster_sdf_translator.get_asset_key(table_id),
-                metadata=default_metadata,
-            )
-        )
 
-        yield event
+            yield event
+        elif (
+            self.raw_event["ev_table_purpose"] == "test"
+            and dagster_sdf_translator.settings.enable_asset_checks
+        ):
+            passed = self.raw_event["status_verdict"] == "Passed"
+            asset_check_key = dagster_sdf_translator.get_check_key_for_test(table_id)
+            # if the asset key is the same as the asset check key, then the test is not a table / column test
+            if asset_key == asset_check_key.asset_key:
+                return
+            metadata = {
+                **default_metadata,
+                "status_verdict": self.raw_event["status_verdict"],
+            }
+            yield AssetCheckResult(
+                passed=passed,
+                asset_key=asset_check_key.asset_key,
+                check_name=asset_check_key.name,
+                metadata=metadata,
+                severity=AssetCheckSeverity.ERROR,
+            )
+        else:
+            return

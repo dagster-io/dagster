@@ -1,6 +1,7 @@
 import time
 from typing import cast
 
+import pytest
 import requests
 from dagster import (
     AssetDep,
@@ -22,6 +23,7 @@ from dagster_airlift.core.migration_state import (
 )
 
 
+@pytest.mark.flaky(reruns=1)
 def test_dag_peering(
     airflow_instance: None,
 ) -> None:

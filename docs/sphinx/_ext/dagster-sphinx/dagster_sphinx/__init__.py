@@ -17,7 +17,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
     ClassDocumenter,
-    ObjectMembers,  # type: ignore  # (bad stubs)
+    ObjectMember,
     Options as AutodocOptions,
 )
 from sphinx.util import logging
@@ -86,7 +86,7 @@ class DagsterClassDocumenter(ClassDocumenter):
 
     objtype = "class"
 
-    def get_object_members(self, want_all: bool) -> Tuple[bool, ObjectMembers]:
+    def get_object_members(self, want_all: bool) -> Tuple[bool, List[ObjectMember]]:
         # the @record transform creates a new outer class, so redirect
         # sphinx to target the original class for scraping members out of __dict__
         if is_record(self.object):
@@ -99,10 +99,11 @@ class DagsterClassDocumenter(ClassDocumenter):
         filtered_members = [
             m
             for m in unfiltered_members
-            if m[0] in self.object.__dict__ and self._is_member_public(self.object.__dict__[m[0]])
+            if m.__name__ in self.object.__dict__
+            and self._is_member_public(self.object.__dict__[m.__name__])
         ]
         for member in filtered_members:
-            check_public_method_has_docstring(self.env, member[0], member[1])
+            check_public_method_has_docstring(self.env, member.__name__, member.object)
         return False, filtered_members
 
     def _is_member_public(self, member: object) -> bool:

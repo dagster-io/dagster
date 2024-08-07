@@ -272,11 +272,11 @@ def test_download_compute(instance, test_client: TestClient):
     logs = instance.all_logs(run_id, of_type=DagsterEventType.LOGS_CAPTURED)
     entry = logs[0]
     file_key = entry.dagster_event.logs_captured_data.file_key
-    response = test_client.get(f"/download/{run_id}/{file_key}/stdout")
+    response = test_client.get(f"/logs/{run_id}/compute_logs/{file_key}/out")
     assert response.status_code == 200
     assert "STDOUT RULEZ" in str(response.content)
 
-    response = test_client.get(f"/download/{run_id}/jonx/stdout")
+    response = test_client.get(f"/logs/{run_id}/compute_logs/jonx/stdout")
     assert response.status_code == 404
 
 

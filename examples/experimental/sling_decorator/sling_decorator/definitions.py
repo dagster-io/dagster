@@ -22,7 +22,7 @@ sling_resource = SlingResource(
 
 @sling_assets(replication_config=replication_config)
 def my_assets(context, sling: SlingResource):
-    yield from sling.replicate(context=context)
+    yield from sling.replicate(context=context).fetch_column_metadata()
     for row in sling.stream_raw_logs():
         context.log.info(row)
 
