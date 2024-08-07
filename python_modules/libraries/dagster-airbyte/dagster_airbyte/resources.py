@@ -96,7 +96,11 @@ class BaseAirbyteResource(ConfigurableResource):
         raise NotImplementedError()
 
     def make_request(
-        self, endpoint: str, data: Optional[Mapping[str, object]] = None, method: str = "POST"
+        self,
+        endpoint: str,
+        data: Optional[Mapping[str, object]] = None,
+        method: str = "POST",
+        include_additional_request_params: bool = True,
     ) -> Optional[Mapping[str, object]]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
 
@@ -122,10 +126,11 @@ class BaseAirbyteResource(ConfigurableResource):
                 if data:
                     request_args["json"] = data
 
-                request_args = deep_merge_dicts(
-                    request_args,
-                    self.all_additional_request_params,
-                )
+                if include_additional_request_params:
+                    request_args = deep_merge_dicts(
+                        request_args,
+                        self.all_additional_request_params,
+                    )
 
                 response = requests.request(
                     **request_args,
@@ -275,8 +280,8 @@ class AirbyteCloudResource(BaseAirbyteResource):
     client_id: str = Field(..., description="The Airbyte Cloud client ID.")
     client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
 
-    _access_token_value: str = PrivateAttr()
-    _access_token_timestamp: float = PrivateAttr()
+    _access_token_value: Optional[str] = PrivateAttr(default=None)
+    _access_token_timestamp: Optional[float] = PrivateAttr(default=None)
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         # Refresh access token when the resource is initialized
@@ -288,7 +293,7 @@ class AirbyteCloudResource(BaseAirbyteResource):
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
-        # Make sure the access token is refreshed before using it.
+        # Make sure the access token is refreshed before using it when calling the API.
         if self._needs_refreshed_access_token():
             self._refresh_access_token()
         return {
@@ -333,6 +338,8 @@ class AirbyteCloudResource(BaseAirbyteResource):
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
                 },
+                # Must not pass the bearer access token when refreshing it.
+                include_additional_request_params=False,
             )
         )
         self._access_token_value = str(response["access_token"])
