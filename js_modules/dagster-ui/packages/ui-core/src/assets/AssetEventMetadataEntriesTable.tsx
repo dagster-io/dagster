@@ -26,6 +26,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {
   HIDDEN_METADATA_ENTRY_LABELS,
   MetadataEntry,
+  MetadataEntryLabelOnly,
   isCanonicalRowCountMetadataEntry,
 } from '../metadata/MetadataEntry';
 import {
@@ -135,14 +136,7 @@ export const AssetEventMetadataEntriesTable = ({
     () =>
       allRows
         .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
-        .filter(
-          (row) =>
-            !HIDDEN_METADATA_ENTRY_LABELS.has(row.entry.label) &&
-            !(isCanonicalColumnSchemaEntry(row.entry) && hideTableSchema) &&
-            !isCanonicalColumnLineageEntry(row.entry) &&
-            !isCanonicalRowCountMetadataEntry(row.entry) &&
-            !isCanonicalCodeSourceEntry(row.entry),
-        ),
+        .filter((row) => !isEntryHidden(row.entry, {hideTableSchema})),
     [allRows, filter, hideTableSchema],
   );
 
@@ -331,3 +325,16 @@ export const StyledTableWithHeader = styled.table`
     }
   }
 `;
+
+function isEntryHidden(
+  entry: MetadataEntryLabelOnly,
+  {hideTableSchema}: {hideTableSchema: boolean | undefined},
+) {
+  return (
+    HIDDEN_METADATA_ENTRY_LABELS.has(entry.label) ||
+    (isCanonicalColumnSchemaEntry(entry) && hideTableSchema) ||
+    isCanonicalColumnLineageEntry(entry) ||
+    isCanonicalRowCountMetadataEntry(entry) ||
+    isCanonicalCodeSourceEntry(entry)
+  );
+}
