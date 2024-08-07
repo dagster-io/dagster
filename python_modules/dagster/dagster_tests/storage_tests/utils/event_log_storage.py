@@ -499,9 +499,7 @@ class TestEventLogStorage:
         with mock.patch.object(storage, "get_asset_tags_to_index", passthrough_all_tags):
             yield
 
-    def test_event_log_storage_store_events_and_wipe(
-        self, test_run_id, storage: EventLogStorage, instance
-    ):
+    def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage: EventLogStorage):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         storage.store_event(
             EventLogEntry(
@@ -517,47 +515,12 @@ class TestEventLogStorage:
                 ),
             )
         )
-
         assert len(storage.get_logs_for_run(test_run_id)) == 1
         assert storage.get_stats_for_run(test_run_id)
 
         if self.can_wipe():
             storage.wipe()
             assert len(storage.get_logs_for_run(test_run_id)) == 0
-
-    def test_event_log_storage_lookup_by_id(self, test_run_id, storage: EventLogStorage, instance):
-        assert len(storage.get_logs_for_run(test_run_id)) == 0
-        storage_id = storage.store_event(
-            EventLogEntry(
-                error_info=None,
-                level="debug",
-                user_message="",
-                run_id=test_run_id,
-                timestamp=time.time(),
-                dagster_event=DagsterEvent(
-                    DagsterEventType.ASSET_MATERIALIZATION.value,
-                    "nonce",
-                    event_specific_data=StepMaterializationData(
-                        AssetMaterialization(asset_key=AssetKey("foo"), partition="foo")
-                    ),
-                ),
-            )
-        )
-        assert storage_id
-        # Ensure we can query the event log by storage ID
-        assert (
-            len(
-                storage.get_event_records(
-                    event_records_filter=EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION, storage_ids=[storage_id]
-                    )
-                )
-            )
-            == 1
-        )
-
-        if self.can_wipe():
-            storage.wipe()
 
     def test_event_log_storage_store_with_multiple_runs(
         self,

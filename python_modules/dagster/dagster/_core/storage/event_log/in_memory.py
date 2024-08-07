@@ -80,8 +80,8 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def upgrade(self):
         pass
 
-    def store_event(self, event) -> Optional[int]:
-        event_id = super(InMemoryEventLogStorage, self).store_event(event)
+    def store_event(self, event):
+        super(InMemoryEventLogStorage, self).store_event(event)
         self._storage_id += 1
 
         handlers = list(self._handlers[event.run_id])
@@ -90,8 +90,6 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 handler(event, str(EventLogCursor.from_storage_id(self._storage_id)))
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", event.run_id)
-
-        return event_id
 
     def watch(self, run_id: str, cursor: str, callback: Callable[..., Any]):
         self._handlers[run_id].add(callback)

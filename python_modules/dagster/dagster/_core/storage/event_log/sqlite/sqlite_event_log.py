@@ -225,7 +225,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def index_connection(self) -> ContextManager[Connection]:
         return self._connect(INDEX_SHARD_NAME)
 
-    def store_event(self, event: EventLogEntry) -> Optional[int]:
+    def store_event(self, event: EventLogEntry) -> None:
         """Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
         cross-run asset queries.
 
@@ -236,7 +236,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         insert_event_statement = self.prepare_insert_event(event)
         run_id = event.run_id
 
-        event_id = None
         with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
 
@@ -246,6 +245,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 "Can only store asset materializations, materialization_planned, and"
                 " observations in index database",
             )
+
+            event_id = None
 
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
@@ -268,8 +269,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             # should mirror run status change events in the index shard
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
-
-        return event_id
 
     def get_event_records(
         self,
