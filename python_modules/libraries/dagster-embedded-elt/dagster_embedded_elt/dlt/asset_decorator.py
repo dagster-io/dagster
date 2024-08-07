@@ -61,7 +61,7 @@ def build_dlt_asset_specs(
 
 @deprecated_param(
     param="dlt_dagster_translator",
-    breaking_version="1.8",
+    breaking_version="1.9",
     additional_warn_text="Use `dagster_dlt_translator` instead.",
 )
 def dlt_assets(
