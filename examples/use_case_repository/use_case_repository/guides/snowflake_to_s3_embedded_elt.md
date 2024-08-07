@@ -33,10 +33,10 @@ By following this guide, you will learn how to:
 1. **Step 1: Install Required Packages**
 
    - Ensure you have the necessary Python packages installed.
-   - Install Dagster and dagster-embedded-elt using pip.
+   - Install Dagster and the Dagster UI (`dagster-webserver`) and dagster-embedded-elt using pip. Refer to the [Installation guide](https://docs.dagster.io/getting-started/install) for more info
 
    ```bash
-   pip install dagster dagster-embedded-elt
+   pip install dagster dagster-embedded-elt dagster-webserver
    ```
 
 2. **Step 2: Define Sling Connections**
@@ -75,7 +75,7 @@ By following this guide, you will learn how to:
    - Configure the replication settings to specify the source and target.
 
    ```python
-   from dagster import asset, Definitions
+   from dagster import Definitions
    from dagster_embedded_elt.sling import sling_assets
 
    replication_config = {

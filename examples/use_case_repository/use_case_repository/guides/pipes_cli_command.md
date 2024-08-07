@@ -13,7 +13,6 @@ This guide demonstrates how to use Dagster Pipes to run a CLI command within a D
 ### Prerequisites
 
 - Dagster and Dagster UI (`dagster-webserver`) installed. Refer to the [Installation guide](https://docs.dagster.io/getting-started/install) for more info.
-- An existing CLI command or script that you want to run.
 
 ### What You’ll Learn
 
@@ -32,16 +31,19 @@ You will learn how to:
    ```bash
    #!/bin/bash
    echo "Hello from CLI"
+   echo "My env var is: ${MY_ENV_VAR}"
    ```
 
 2. **Step 2: Define the Dagster Asset**
 
    - Define a Dagster asset that uses `PipesSubprocessClient` to run the CLI command. Include any necessary environment variables or additional parameters.
 
-   ```python
+    Save the following file to `dagster_pipes_cli.py`
+
+   ```python 
    import shutil
-   from dagster import asset, Definitions, AssetExecutionContext
-   from dagster_pipes import PipesSubprocessClient
+
+   from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
 
    @asset
    def cli_command_asset(
@@ -64,7 +66,7 @@ You will learn how to:
    - Ensure the script is executable and run the Dagster asset to see the output.
    ```bash
    chmod +x external_script.sh
-   dagit -f path_to_your_dagster_file.py
+   dagster dev -f path_to_your_dagster_file.py
    ```
 
 ### Expected Outcomes
@@ -84,27 +86,3 @@ By following these steps, you will have a Dagster asset that successfully runs a
 ### Next Steps
 
 Explore more advanced use cases with Dagster Pipes, such as integrating with other command-line tools or handling more complex workflows.
-
-The Steps MUST always be pythonic Dagster code. If the documentation includes @solids or @ops and repository, discard it. The documentation should only use the new Dagster APIs, such as @asset and Definitions.
-
-Use as many steps as necessary. 3 is the minimum number of steps.
-
-Do not add an `if name == __main__` block. Do not call the `materialize` function. Only provide the definition for the assets. Avoid the following words: certainly, simply, robust, ensure
-
-Here is a minimal Dagster code:
-
-```python
-from dagster import asset, Definitions, materialize
-
-@asset
-def example_asset():
-    return "Example output"
-
-@asset(deps=[example_asset])
-def another_asset():
-    return "Example output"
-
-defs = Definitions(
-    assets=[example_asset]
-)
-```
