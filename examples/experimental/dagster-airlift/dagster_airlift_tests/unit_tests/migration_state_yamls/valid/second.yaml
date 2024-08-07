@@ -1,0 +1,5 @@
+tasks: 
+  some_task: 
+    migrated: True
+  other_task: 
+    migrated: False
