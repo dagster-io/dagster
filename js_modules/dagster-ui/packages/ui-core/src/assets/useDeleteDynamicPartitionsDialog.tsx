@@ -4,43 +4,67 @@ import {useContext, useState} from 'react';
 import {DeleteDynamicPartitionsDialog} from './DeleteDynamicPartitionsDialog';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {usePermissionsForLocation} from '../app/Permissions';
+import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
+import {RepoAddress} from '../workspace/types';
 
 export function useDeleteDynamicPartitionsDialog(
-  opts: {partitionsDefName: string; repository: {name: string; location: {name: string}}} | null,
-  refresh: () => void,
+  opts: {
+    repoAddress: RepoAddress;
+    assetKey: AssetKeyInput;
+    definition: {
+      partitionDefinition: {
+        dimensionTypes:
+          | {type: PartitionDefinitionType; dynamicPartitionsDefinitionName: string | null}[]
+          | null;
+      } | null;
+    };
+  } | null,
+  refresh?: () => void,
 ) {
   const [showing, setShowing] = useState(false);
   const {
     permissions: {canWipeAssets},
-  } = usePermissionsForLocation(opts ? opts.repository.location.name : null);
+  } = usePermissionsForLocation(opts ? opts.repoAddress.location : null);
 
   const {
     featureContext: {canSeeWipeMaterializationAction},
   } = useContext(CloudOSSContext);
 
+  const dynamicDimension = opts?.definition.partitionDefinition?.dimensionTypes?.find(
+    (d) => d.type === PartitionDefinitionType.DYNAMIC,
+  );
+
+  if (
+    !opts ||
+    !dynamicDimension?.dynamicPartitionsDefinitionName ||
+    !canSeeWipeMaterializationAction
+  ) {
+    return {
+      element: <span />,
+      dropdownOptions: [] as JSX.Element[],
+    };
+  }
+
   return {
-    element: opts ? (
+    element: (
       <DeleteDynamicPartitionsDialog
-        partitionsDefName={opts.partitionsDefName}
-        repository={opts.repository}
+        repoAddress={opts.repoAddress}
+        assetKey={opts.assetKey}
+        partitionsDefName={dynamicDimension.dynamicPartitionsDefinitionName}
         isOpen={showing}
         onClose={() => setShowing(false)}
         onComplete={refresh}
       />
-    ) : (
-      <span />
     ),
-    dropdownOptions: canSeeWipeMaterializationAction
-      ? [
-          <MenuItem
-            key="delete"
-            text="Delete dynamic partitions"
-            icon={<Icon name="delete" color={Colors.accentRed()} />}
-            disabled={!canWipeAssets}
-            intent="danger"
-            onClick={() => setShowing(true)}
-          />,
-        ]
-      : ([] as JSX.Element[]),
+    dropdownOptions: [
+      <MenuItem
+        key="delete"
+        text="Delete partitions"
+        icon={<Icon name="delete" color={Colors.accentRed()} />}
+        disabled={!canWipeAssets}
+        intent="danger"
+        onClick={() => setShowing(true)}
+      />,
+    ],
   };
 }

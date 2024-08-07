@@ -15,7 +15,15 @@ export type RepoAssetTableFragment = {
   hasMaterializePermission: boolean;
   description: string | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;

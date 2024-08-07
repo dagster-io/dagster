@@ -29,6 +29,7 @@ import {
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
 } from './types/AssetView.types';
+import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
 import {useWipeModal} from './useWipeModal';
@@ -46,8 +47,7 @@ import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
-import {PartitionDefinitionType} from '../graphql/types';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface Props {
   assetKey: AssetKey;
@@ -259,6 +259,14 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     }
   };
 
+  const repoAddress = useMemo(
+    () =>
+      definition
+        ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+        : null,
+    [definition],
+  );
+
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
   useEffect(() => {
@@ -266,35 +274,21 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   }, [path, selectedTab, setCurrentPage]);
 
   const wipe = useWipeModal(
-    definition
-      ? {
-          assetKey: definition.assetKey,
-          repository: definition.repository,
-        }
-      : null,
+    definition ? {assetKey: definition.assetKey, repository: definition.repository} : null,
     refresh,
   );
 
-  const dynamicDimension = definition?.partitionDefinition?.dimensionTypes.some(
-    (d) => d.type === PartitionDefinitionType.DYNAMIC,
-  );
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
-    dynamicDimension
-      ? {
-          partitionsDefName: dynamicDimension.dynamicPartitionsDefinitionName,
-          repository: definition.repository,
-        }
-      : null,
-    refresh,
+    definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
+    () => {
+      definitionQueryResult.refetch();
+      refresh();
+    },
   );
 
   const reportEvents = useReportEventsModal(
-    definition
-      ? {
-          assetKey: definition.assetKey,
-          isPartitioned: definition.isPartitioned,
-          repository: definition.repository,
-        }
+    definition && repoAddress
+      ? {assetKey: definition.assetKey, isPartitioned: definition.isPartitioned, repoAddress}
       : null,
     refresh,
   );
@@ -342,6 +336,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
                 additionalDropdownOptions={[
                   ...reportEvents.dropdownOptions,
                   ...wipe.dropdownOptions,
+                  ...dynamicPartitionsDelete.dropdownOptions,
                 ]}
               />
             ) : undefined}

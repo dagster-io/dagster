@@ -19,7 +19,7 @@ interface Props {
   groups: {[displayKey: string]: AssetTableFragment[]};
   checkedDisplayKeys: Set<string>;
   onToggleFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
-  onWipe: (assets: AssetKeyInput[]) => void;
+  onRefresh: () => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
   computeKindFilter?: StaticSetFilter<string>;
@@ -33,7 +33,7 @@ export const VirtualizedAssetTable = (props: Props) => {
     groups,
     checkedDisplayKeys,
     onToggleFactory,
-    onWipe,
+    onRefresh,
     showRepoColumn,
     view = 'flat',
     computeKindFilter,
@@ -100,7 +100,7 @@ export const VirtualizedAssetTable = (props: Props) => {
                 start={start}
                 checked={checkedDisplayKeys.has(row.displayKey)}
                 onToggleChecked={onToggleFactory(row.displayKey)}
-                onWipe={() => onWipe(wipeableAssets.map((a) => a.key))}
+                onRefresh={onRefresh}
                 computeKindFilter={computeKindFilter}
                 storageKindFilter={storageKindFilter}
               />

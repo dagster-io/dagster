@@ -1,13 +1,4 @@
-import {
-  Button,
-  Icon,
-  Menu,
-  MenuDivider,
-  MenuItem,
-  Popover,
-  Spinner,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {
@@ -17,11 +8,11 @@ import {
 import {useObserveAction} from './LaunchAssetObservationButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
+import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {useReportEventsModal} from './useReportEventsModal';
+import {useWipeModal} from './useWipeModal';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {usePermissionsForLocation} from '../app/Permissions';
-import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -30,34 +21,42 @@ interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
   repoAddress: RepoAddress | null;
-  onWipe?: (assets: AssetKeyInput[]) => void;
+  onRefresh?: () => void;
 }
 
 export const AssetActionMenu = (props: Props) => {
-  const {repoAddress, path, definition, onWipe} = props;
+  const {repoAddress, path, definition, onRefresh} = props;
   const {
-    permissions: {canWipeAssets},
-  } = usePermissionsForLocation(repoAddress?.location);
-
-  const {
-    featureContext: {canSeeWipeMaterializationAction, canSeeMaterializeAction},
+    featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
 
   const {executeItem, launchpadElement} = useExecuteAssetMenuItem(path, definition);
+
+  const deletePartitions = useDeleteDynamicPartitionsDialog(
+    repoAddress && definition ? {repoAddress, assetKey: {path}, definition} : null,
+    onRefresh,
+  );
+
+  const wipe = useWipeModal(
+    repoAddress && definition ? {repository: definition.repository, assetKey: {path}} : null,
+    onRefresh,
+  );
 
   const reportEvents = useReportEventsModal(
     repoAddress
       ? {
           assetKey: {path},
           isPartitioned: !!definition?.partitionDefinition,
-          repository: {name: repoAddress.name, location: {name: repoAddress.location}},
+          repoAddress,
         }
       : null,
   );
   return (
     <>
       {launchpadElement}
+      {wipe.element}
       {reportEvents.element}
+      {deletePartitions.element}
       <Popover
         position="bottom-right"
         content={
@@ -108,16 +107,8 @@ export const AssetActionMenu = (props: Props) => {
                   />
                 ))
               : undefined}
-            {canSeeWipeMaterializationAction ? <MenuDivider /> : undefined}
-            {canSeeWipeMaterializationAction ? (
-              <MenuItem
-                text="Wipe materializations"
-                icon="delete"
-                disabled={!onWipe || !canWipeAssets}
-                intent="danger"
-                onClick={() => canWipeAssets && onWipe && onWipe([{path}])}
-              />
-            ) : null}
+            {wipe.dropdownOptions}
+            {deletePartitions.dropdownOptions}
           </Menu>
         }
       >

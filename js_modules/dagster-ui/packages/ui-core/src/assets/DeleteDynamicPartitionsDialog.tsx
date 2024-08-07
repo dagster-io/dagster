@@ -1,108 +1,160 @@
-import {RefetchQueriesFunction} from '@apollo/client';
+import {RefetchQueriesFunction, gql, useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
-import {ProgressBar} from '@blueprintjs/core';
-import {Body1, Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
-import {memo, useMemo} from 'react';
+import {
+  Body2,
+  Box,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Spinner,
+} from '@dagster-io/ui-components';
+import {memo, useCallback, useMemo, useState} from 'react';
 
-import {asAssetPartitionRangeInput} from './asInput';
-import {useWipeAssets} from './useWipeAssets';
-import {AssetKeyInput} from '../graphql/types';
-import {NavigationBlock} from '../runs/NavigationBlock';
-import {numberFormatter} from '../ui/formatters';
+import {
+  DeleteDynamicPartitionsMutation,
+  DeleteDynamicPartitionsMutationVariables,
+} from './types/DeleteDynamicPartitionsDialog.types';
+import {usePartitionHealthData} from './usePartitionHealthData';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
+import {OrdinalPartitionSelector} from '../partitions/OrdinalPartitionSelector';
 import {RepoAddress} from '../workspace/types';
 
 export interface DeleteDynamicPartitionsDialogProps {
-  repo: RepoAddress;
-  partitionsDefName: string;
   assetKey: AssetKeyInput;
+  repoAddress: RepoAddress;
+  partitionsDefName: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onComplete?: () => void;
+  requery?: RefetchQueriesFunction;
 }
 
-export const DeleteDynamicPartitionsDialog = memo(
-  (props: {
-    isOpen: boolean;
-    onClose: () => void;
-    onComplete?: () => void;
-    requery?: RefetchQueriesFunction;
-  }) => {
-    return (
-      <Dialog
-        isOpen={props.isOpen}
-        title={`Delete ${props.partitionsDefName} partitions`}
-        onClose={props.onClose}
-        style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
-      >
-        <DeleteDynamicPartitionsModalInner {...props} />
-      </Dialog>
-    );
-  },
-);
+export const DeleteDynamicPartitionsDialog = memo((props: DeleteDynamicPartitionsDialogProps) => {
+  return (
+    <Dialog
+      isOpen={props.isOpen}
+      title={`Delete ${props.partitionsDefName} partitions`}
+      onClose={props.onClose}
+      style={{width: '50vw', minWidth: 500, maxWidth: 700}}
+    >
+      <DeleteDynamicPartitionsModalInner {...props} />
+    </Dialog>
+  );
+});
 
 export const DeleteDynamicPartitionsModalInner = memo(
   ({
-    repo,
+    repoAddress,
+    assetKey,
     partitionsDefName,
     onClose,
     onComplete,
     requery,
-  }: {
-    repo: {name: string; location: {name: string}};
-    partitionsDefName: string;
-    onClose: () => void;
-    onComplete?: () => void;
-    requery?: RefetchQueriesFunction;
-  }) => {
-    const {wipeAssets, isWiping, isDone, wipedCount, failedCount} = useWipeAssets({
-      refetchQueries: requery,
-      onClose,
-      onComplete,
-    });
+  }: DeleteDynamicPartitionsDialogProps) => {
+    const [deleting, setDeleting] = useState(false);
+    const [result, setResult] = useState<
+      DeleteDynamicPartitionsMutation['deleteDynamicPartitions'] | undefined
+    >();
+    const [selectedPartitions, setSelectedPartitions] = useState<string[]>([]);
+    const [health] = usePartitionHealthData([assetKey]);
 
-    const health = use;
+    const dynamicHealth = health?.dimensions.find(
+      (d) => d.type === PartitionDefinitionType.DYNAMIC,
+    );
+
+    const [deletePartitions] = useMutation<
+      DeleteDynamicPartitionsMutation,
+      DeleteDynamicPartitionsMutationVariables
+    >(DELETE_DYNAMIC_PARTITIONS_MUTATION, {refetchQueries: requery});
+
+    const onDelete = useCallback(
+      async (partitionKeys: string[]) => {
+        setDeleting(true);
+        const resp = await deletePartitions({
+          variables: {
+            repositorySelector: {
+              repositoryLocationName: repoAddress.location,
+              repositoryName: repoAddress.name,
+            },
+            partitionsDefName,
+            partitionKeys,
+          },
+        });
+        setResult(resp.data?.deleteDynamicPartitions);
+        setDeleting(false);
+        onComplete?.();
+      },
+      [deletePartitions, onComplete, partitionsDefName, repoAddress.location, repoAddress.name],
+    );
+
     const content = useMemo(() => {
-      if (isDone) {
+      if (result) {
         return (
           <Box flex={{direction: 'column'}}>
-            {wipedCount ? <Body1>{numberFormatter.format(wipedCount)} Wiped</Body1> : null}
-            {failedCount ? <Body1>{numberFormatter.format(failedCount)} Failed</Body1> : null}
-          </Box>
-        );
-      } else if (!isWiping) {
-        return (
-          <Box>
-            <div>
-              Choose partitions to delete below. Materialization events for these partitions will
-              also be wiped.
-            </div>
-            <OrdinalPartitionSelector />
-            <strong>This action cannot be undone.</strong>
+            {result.__typename === 'DeleteDynamicPartitionsSuccess' ? (
+              <Body2>
+                The selected partitions of <strong>{partitionsDefName}</strong> and associated
+                materializations have been deleted.
+              </Body2>
+            ) : (
+              <PythonErrorInfo error={result} />
+            )}
           </Box>
         );
       }
-      const value = assetKeys.length > 0 ? (wipedCount + failedCount) / assetKeys.length : 1;
+      if (deleting) {
+        return (
+          <Box flex={{gap: 8, direction: 'column'}}>
+            <div>Wiping...</div>
+          </Box>
+        );
+      }
       return (
-        <Box flex={{gap: 8, direction: 'column'}}>
-          <div>Wiping...</div>
-          <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
-          <NavigationBlock message="Wiping in progress, please do not navigate away yet." />
+        <Box flex={{direction: 'column', gap: 6}}>
+          <Body2>
+            Select partition keys of the <strong>{partitionsDefName}</strong> partition definition
+            to delete.
+          </Body2>
+          {health && dynamicHealth ? (
+            <OrdinalPartitionSelector
+              allPartitions={dynamicHealth?.partitionKeys}
+              selectedPartitions={selectedPartitions}
+              setSelectedPartitions={setSelectedPartitions}
+              health={health}
+              isDynamic={true}
+            />
+          ) : (
+            <Spinner purpose="section" />
+          )}
+          <Body2 style={{marginTop: 10}}>
+            Deleting partitions impacts all assets that share this partition definition.
+            Materialization events for these partitions will be wiped.{' '}
+            <strong>This action cannot be undone.</strong>
+          </Body2>
         </Box>
       );
-    }, [isDone, isWiping, assetKeys, wipedCount, failedCount]);
+    }, [deleting, dynamicHealth, health, partitionsDefName, result, selectedPartitions]);
 
     return (
       <>
         <DialogBody>{content}</DialogBody>
         <DialogFooter topBorder>
-          <Button intent={isDone ? 'primary' : 'none'} onClick={onClose}>
-            {isDone ? 'Done' : 'Cancel'}
+          <Button intent={result ? 'primary' : 'none'} onClick={onClose}>
+            {result ? 'Done' : 'Cancel'}
           </Button>
-          {isDone ? null : (
+          {result ? null : (
             <Button
               intent="danger"
-              onClick={() => wipeAssets(assetKeys.map((key) => asAssetPartitionRangeInput(key)))}
-              disabled={isWiping}
-              loading={isWiping}
+              onClick={() => onDelete(selectedPartitions)}
+              disabled={deleting || selectedPartitions.length === 0}
+              loading={deleting}
             >
-              Wipe
+              {selectedPartitions.length === 1
+                ? 'Delete 1 partition'
+                : `Delete ${selectedPartitions.length} partitions`}
             </Button>
           )}
         </DialogFooter>
@@ -110,3 +162,28 @@ export const DeleteDynamicPartitionsModalInner = memo(
     );
   },
 );
+
+const DELETE_DYNAMIC_PARTITIONS_MUTATION = gql`
+  mutation DeleteDynamicPartitionsMutation(
+    $partitionKeys: [String!]!
+    $partitionsDefName: String!
+    $repositorySelector: RepositorySelector!
+  ) {
+    deleteDynamicPartitions(
+      partitionKeys: $partitionKeys
+      partitionsDefName: $partitionsDefName
+      repositorySelector: $repositorySelector
+    ) {
+      ... on DeleteDynamicPartitionsSuccess {
+        __typename
+      }
+      ... on UnauthorizedError {
+        message
+        __typename
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
