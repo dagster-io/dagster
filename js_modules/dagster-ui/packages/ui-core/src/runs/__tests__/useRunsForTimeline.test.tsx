@@ -28,6 +28,7 @@ import {
   COMPLETED_RUN_TIMELINE_QUERY,
   FUTURE_TICKS_QUERY,
   ONGOING_RUN_TIMELINE_QUERY,
+  QUERY_VERSION,
   useRunsForTimeline,
 } from '../useRunsForTimeline';
 
@@ -573,32 +574,35 @@ describe('useRunsForTimeline', () => {
 
     const startHour = Math.floor(start / ONE_HOUR_S);
     mockedCache.get.mockResolvedValue({
-      value: new Map([
-        [
-          startHour,
+      value: {
+        version: QUERY_VERSION,
+        cache: new Map([
           [
-            {
-              start: cachedRange[0],
-              end: cachedRange[1],
-              data: [
-                buildRun({
-                  id: 'cached-run',
-                  pipelineName: 'pipeline0',
-                  repositoryOrigin: buildRepositoryOrigin({
-                    id: '1-1',
-                    repositoryName: 'repo1',
-                    repositoryLocationName: 'repo1',
+            startHour,
+            [
+              {
+                start: cachedRange[0],
+                end: cachedRange[1],
+                data: [
+                  buildRun({
+                    id: 'cached-run',
+                    pipelineName: 'pipeline0',
+                    repositoryOrigin: buildRepositoryOrigin({
+                      id: '1-1',
+                      repositoryName: 'repo1',
+                      repositoryLocationName: 'repo1',
+                    }),
+                    startTime: initialRange[0],
+                    endTime: initialRange[1],
+                    updateTime: initialRange[1],
+                    status: RunStatus.SUCCESS,
                   }),
-                  startTime: initialRange[0],
-                  endTime: initialRange[1],
-                  updateTime: initialRange[1],
-                  status: RunStatus.SUCCESS,
-                }),
-              ],
-            },
+                ],
+              },
+            ],
           ],
-        ],
-      ]),
+        ]),
+      },
     });
 
     const {result} = renderHook(

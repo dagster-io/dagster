@@ -30,6 +30,8 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const BATCH_LIMIT = 500;
 
+export const QUERY_VERSION = 1;
+
 export const useRunsForTimeline = ({
   rangeMs,
   filter,
@@ -61,15 +63,17 @@ export const useRunsForTimeline = ({
   const {localCacheIdPrefix} = useContext(AppContext);
   const completedRunsCache = useMemo(() => {
     if (filter) {
-      return new HourlyDataCache<RunTimelineFragment>(
-        localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
-        JSON.stringify(filter),
-        3,
-      );
+      return new HourlyDataCache<RunTimelineFragment>({
+        id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
+        keyPrefix: JSON.stringify(filter),
+        keyMaxCount: 3,
+        version: QUERY_VERSION,
+      });
     }
-    return new HourlyDataCache<RunTimelineFragment>(
-      localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
-    );
+    return new HourlyDataCache<RunTimelineFragment>({
+      id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
+      version: QUERY_VERSION,
+    });
   }, [filter, localCacheIdPrefix]);
   const [completedRuns, setCompletedRuns] = useState<RunTimelineFragment[]>([]);
 
