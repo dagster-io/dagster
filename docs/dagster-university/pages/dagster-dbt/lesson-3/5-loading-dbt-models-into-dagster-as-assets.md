@@ -35,30 +35,22 @@ We’ll only create one `@dbt_assets` definition for now, but in a later lesson,
    ```python
    from dagster import AssetExecutionContext
    from dagster_dbt import dbt_assets, DbtCliResource
-
-   import os
-
-   from .constants import DBT_DIRECTORY
+   
+   from ..project import dbt_project
    ```
 
-3. The `@dbt_assets` decorator requires a path to the project’s manifest file, which is within our `DBT_DIRECTORY`. Use that constant to create a path to the `manifest.json` by copying and pasting the code below:
-
-   ```python
-   dbt_manifest_path = os.path.join(DBT_DIRECTORY, "target", "manifest.json")
-   ```
-
-   Similar to how we used `joinpath` earlier to point to the dbt project’s directory, we’re using it once again to reference `target/manifest.json` more precisely.
-
-4. Now, use the `@dbt_assets` decorator to create a new asset function and provide it with a reference to the manifest:
+3. Next, we'll use the `@dbt_assets` decorator to create a new asset function and provide it with a reference to the project's manifest file:
 
    ```python
    @dbt_assets(
-       manifest=dbt_manifest_path,
+       manifest=dbt_project.manifest_path,
    )
    def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
    ```
 
-5. Finally, add the following to the body of `dbt_analytics` function:
+   Here, we used `dbt_project.manifest_path` to provide the reference to the project's manifest file. This is possible because the `dbt_project` representation we created earlier contains the manifest path, accessible by using the `manifest_path` attribute.
+
+4. Finally, add the following to the body of `dbt_analytics` function:
 
    ```python
    yield from dbt.cli(["run"], context=context).stream()
@@ -77,16 +69,13 @@ At this point, `dbt.py` should look like this:
 
 ```python
 from dagster import AssetExecutionContext
-from dagster_dbt import dbt_assets, DbtCliResource
+from dagster_dbt import DbtCliResource, dbt_assets
 
-from .constants import DBT_DIRECTORY
-
-
-dbt_manifest_path = DBT_DIRECTORY.joinpath("target", "manifest.json")
+from ..project import dbt_project
 
 
 @dbt_assets(
-    manifest=dbt_manifest_path,
+    manifest=dbt_project.manifest_path,
 )
 def dbt_analytics(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["run"], context=context).stream()
