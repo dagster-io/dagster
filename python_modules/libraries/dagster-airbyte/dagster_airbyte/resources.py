@@ -7,7 +7,6 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Mapping, Optional, cast
-from pydantic import PrivateAttr
 
 import requests
 from dagster import (
@@ -22,7 +21,7 @@ from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 
 from dagster_airbyte.types import AirbyteOutput
@@ -293,7 +292,10 @@ class AirbyteCloudResource(BaseAirbyteResource):
         if self._needs_refreshed_access_token():
             self._refresh_access_token()
         return {
-            "headers": {"Authorization": f"Bearer {self._access_token_value}", "User-Agent": "dagster"}
+            "headers": {
+                "Authorization": f"Bearer {self._access_token_value}",
+                "User-Agent": "dagster",
+            }
         }
 
     def start_sync(self, connection_id: str) -> Mapping[str, object]:
@@ -340,7 +342,7 @@ class AirbyteCloudResource(BaseAirbyteResource):
         # The access token expire every 3 minutes in Airbyte Cloud.
         # Refresh is needed after 2.5 minutes to avoid the "token expired" error message.
         return not self._access_token_value or self._access_token_timestamp <= datetime.timestamp(
-                datetime.now() - timedelta(seconds=150)
+            datetime.now() - timedelta(seconds=150)
         )
 
 
