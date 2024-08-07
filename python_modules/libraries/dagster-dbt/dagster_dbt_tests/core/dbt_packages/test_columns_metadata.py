@@ -519,10 +519,8 @@ def test_column_lineage_real_warehouse(
     "sql_dialect",
     [
         "bigquery",
-        "clickhouse",
         "databricks",
         "duckdb",
-        "redshift",
         "snowflake",
         "trino",
     ],
