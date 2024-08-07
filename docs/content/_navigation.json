@@ -1349,10 +1349,6 @@
             "path": "/_apidocs/libraries/dagster-airbyte"
           },
           {
-            "title": "Airflow (dagster-airflow)",
-            "path": "/_apidocs/libraries/dagster-airflow"
-          },
-          {
             "title": "Amazon Web Services (AWS) (dagster-aws)",
             "path": "/_apidocs/libraries/dagster-aws"
           },
