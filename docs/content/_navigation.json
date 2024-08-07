@@ -171,7 +171,16 @@
           },
           {
             "title": "Declarative Automation (Experimental)",
-            "path": "/concepts/automation/declarative-automation"
+            "children": [
+              {
+                "title": "Overview",
+                "path": "/concepts/automation/declarative-automation"
+              },
+              {
+                "title": "Customizing automation conditions",
+                "path": "/concepts/automation/declarative-automation/customizing-automation-conditions"
+              }
+            ]
           },
           {
             "title": "Asset Sensors",
