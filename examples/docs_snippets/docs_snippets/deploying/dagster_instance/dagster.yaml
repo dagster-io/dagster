@@ -401,10 +401,6 @@ schedules:
 
 # end_marker_schedules
 
-# start_marker_auto_materialize
-
 auto_materialize:
   run_tags:
     key: value
-
-# end_marker_auto_materialize

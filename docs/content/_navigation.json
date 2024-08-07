@@ -170,8 +170,8 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
-            "title": "Auto-materialization policies",
-            "path": "/concepts/assets/asset-auto-execution"
+            "title": "Declarative Automation (Experimental)",
+            "path": "/concepts/automation/declarative-automation"
           },
           {
             "title": "Asset Sensors",
