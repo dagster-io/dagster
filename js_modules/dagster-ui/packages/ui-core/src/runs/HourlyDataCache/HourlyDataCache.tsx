@@ -10,24 +10,38 @@ export const defaultOptions = {
   expiry: new Date('3030-01-01'), // never expire,
 };
 
+type CacheType<T> = {
+  version: string | number;
+  cache: InstanceType<typeof HourlyDataCache<T>>['cache'];
+};
+
 export class HourlyDataCache<T> {
   private cache: Map<number, Array<TimeWindow<T>>> = new Map();
   private subscriptions: Array<{hour: number; callback: Subscription<T>}> = [];
-  private indexedDBCache?: ReturnType<typeof cache<string, typeof this.cache>>;
+  private indexedDBCache?: ReturnType<typeof cache<string, CacheType<T>>>;
   private indexedDBKey: string;
+  private version: string | number;
 
   /**
    * @param id A unique ID for the hourly data cache in this deployment
    * @param [keyPrefix=''] A unique key identifying the timeline view [incorporating filters, etc.]
    */
-  constructor(id?: string | false, keyPrefix = '', keyMaxCount = 1) {
+  constructor({
+    id,
+    keyPrefix = '',
+    keyMaxCount = 1,
+    version = '-1',
+  }: {
+    id?: string | false;
+    keyPrefix?: string;
+    keyMaxCount?: number;
+    version?: string | number;
+  }) {
+    this.version = version;
     this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
 
-    // Delete old database from before the prefix, remove this at some point
-    indexedDB.deleteDatabase('HourlyDataCache:useRunsForTimeline');
-
     if (id) {
-      this.indexedDBCache = cache<string, typeof this.cache>({
+      this.indexedDBCache = cache<string, CacheType<T>>({
         dbName: `HourlyDataCache:${id}`,
         maxCount: keyMaxCount,
       });
@@ -54,8 +68,8 @@ export class HourlyDataCache<T> {
         return;
       }
       const cachedData = await this.indexedDBCache.get(this.indexedDBKey);
-      if (cachedData) {
-        this.cache = new Map(cachedData.value);
+      if (cachedData && cachedData.value.version === this.version) {
+        this.cache = new Map(cachedData.value.cache);
       }
       res();
     });
@@ -69,7 +83,11 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+      this.indexedDBCache.set(
+        this.indexedDBKey,
+        {version: this.version, cache: this.cache},
+        defaultOptions,
+      );
       return;
     }
     clearTimeout(this.saveTimeout);
@@ -77,7 +95,11 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+      this.indexedDBCache.set(
+        this.indexedDBKey,
+        {version: this.version, cache: this.cache},
+        defaultOptions,
+      );
     }, 10000);
     if (!this.registeredUnload) {
       this.registeredUnload = true;
@@ -85,7 +107,11 @@ export class HourlyDataCache<T> {
         if (!this.indexedDBCache) {
           return;
         }
-        this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+        this.indexedDBCache.set(
+          this.indexedDBKey,
+          {version: this.version, cache: this.cache},
+          defaultOptions,
+        );
       });
     }
   }
