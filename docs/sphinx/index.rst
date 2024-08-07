@@ -28,7 +28,6 @@
    sections/api/apidocs/types
    sections/api/apidocs/utilities
    sections/api/apidocs/libraries/dagster-airbyte
-   sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws
    sections/api/apidocs/libraries/dagster-azure
    sections/api/apidocs/libraries/dagster-celery
