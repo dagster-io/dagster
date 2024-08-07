@@ -1,4 +1,5 @@
-from dagster import Definitions, graph, job, op
+from dagster import Definitions, asset, graph, job, op
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster_graphql import DagsterGraphQLClient
 
 
@@ -31,8 +32,21 @@ def test_graphql():
     ping_dagster_webserver()
 
 
+@asset
+def foo():
+    return 1
+
+
+@asset
+def bar(foo):
+    return foo + 1
+
+
+asset_job = define_asset_job("asset_job", [foo, bar])
+
 the_job = basic.to_job(name="the_job")
 
 defs = Definitions(
-    jobs=[the_job, test_graphql],
+    assets=[foo, bar],
+    jobs=[the_job, test_graphql, asset_job],
 )
