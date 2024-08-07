@@ -30,7 +30,7 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const BATCH_LIMIT = 500;
 
-const QUERY_VERSION = 1;
+export const QUERY_VERSION = 1;
 
 export const useRunsForTimeline = ({
   rangeMs,
