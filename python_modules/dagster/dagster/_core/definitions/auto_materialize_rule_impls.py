@@ -49,12 +49,7 @@ if TYPE_CHECKING:
     from .declarative_automation.automation_context import AutomationContext
 
 
-@deprecated(
-    breaking_version="1.8",
-    additional_warn_text="Lazy auto-materialize is deprecated, in favor of explicit cron-based "
-    "scheduling rules. Additional alternatives to replicate more of the lazy auto-materialize "
-    "behavior will be provided before this is fully removed.",
-)
+@deprecated(breaking_version="1.9")
 @whitelist_for_serdes
 class MaterializeOnRequiredForFreshnessRule(
     AutoMaterializeRule, NamedTuple("_MaterializeOnRequiredForFreshnessRule", [])
