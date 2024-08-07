@@ -23,6 +23,9 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
+from dagster._core.definitions.repository_definition.repository_definition import (
+    repository_load_context,
+)
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
@@ -156,24 +159,25 @@ def execute_run_iterator(
     if isinstance(job, ReconstructableJob):
         job = job.with_repository_load_data(execution_plan.repository_load_data)
 
-    return iter(
-        ExecuteRunWithPlanIterable(
-            execution_plan=execution_plan,
-            iterator=job_execution_iterator,
-            execution_context_manager=PlanOrchestrationContextManager(
-                context_event_generator=orchestration_context_event_generator,
-                job=job,
+    with repository_load_context(execution_plan.repository_load_data):
+        return iter(
+            ExecuteRunWithPlanIterable(
                 execution_plan=execution_plan,
-                dagster_run=dagster_run,
-                instance=instance,
-                run_config=dagster_run.run_config,
-                raise_on_error=False,
-                executor_defs=None,
-                output_capture=None,
-                resume_from_failure=resume_from_failure,
-            ),
+                iterator=job_execution_iterator,
+                execution_context_manager=PlanOrchestrationContextManager(
+                    context_event_generator=orchestration_context_event_generator,
+                    job=job,
+                    execution_plan=execution_plan,
+                    dagster_run=dagster_run,
+                    instance=instance,
+                    run_config=dagster_run.run_config,
+                    raise_on_error=False,
+                    executor_defs=None,
+                    output_capture=None,
+                    resume_from_failure=resume_from_failure,
+                ),
+            )
         )
-    )
 
 
 def execute_run(
@@ -243,40 +247,41 @@ def execute_run(
     if isinstance(job, ReconstructableJob):
         job = job.with_repository_load_data(execution_plan.repository_load_data)
 
-    output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
+    with repository_load_context(execution_plan.repository_load_data):
+        output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
-    _execute_run_iterable = ExecuteRunWithPlanIterable(
-        execution_plan=execution_plan,
-        iterator=job_execution_iterator,
-        execution_context_manager=PlanOrchestrationContextManager(
-            context_event_generator=orchestration_context_event_generator,
-            job=job,
+        _execute_run_iterable = ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            dagster_run=dagster_run,
-            instance=instance,
-            run_config=dagster_run.run_config,
-            raise_on_error=raise_on_error,
-            executor_defs=None,
-            output_capture=output_capture,
-        ),
-    )
-    event_list = list(_execute_run_iterable)
+            iterator=job_execution_iterator,
+            execution_context_manager=PlanOrchestrationContextManager(
+                context_event_generator=orchestration_context_event_generator,
+                job=job,
+                execution_plan=execution_plan,
+                dagster_run=dagster_run,
+                instance=instance,
+                run_config=dagster_run.run_config,
+                raise_on_error=raise_on_error,
+                executor_defs=None,
+                output_capture=output_capture,
+            ),
+        )
+        event_list = list(_execute_run_iterable)
 
-    # We need to reload the run object after execution for it to be accurate
-    reloaded_dagster_run = check.not_none(instance.get_run_by_id(dagster_run.run_id))
+        # We need to reload the run object after execution for it to be accurate
+        reloaded_dagster_run = check.not_none(instance.get_run_by_id(dagster_run.run_id))
 
-    return JobExecutionResult(
-        job.get_definition(),
-        scoped_job_context(
-            execution_plan,
-            job,
-            reloaded_dagster_run.run_config,
+        return JobExecutionResult(
+            job.get_definition(),
+            scoped_job_context(
+                execution_plan,
+                job,
+                reloaded_dagster_run.run_config,
+                reloaded_dagster_run,
+                instance,
+            ),
+            event_list,
             reloaded_dagster_run,
-            instance,
-        ),
-        event_list,
-        reloaded_dagster_run,
-    )
+        )
 
 
 @contextmanager
@@ -435,35 +440,36 @@ def execute_job(
     check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
     # get the repository load data here because we call job.get_definition() later in this fn
-    job_def, _ = _job_with_repository_load_data(job)
+    job_def, repository_load_data = _job_with_repository_load_data(job)
 
-    if reexecution_options is not None and op_selection is not None:
-        raise DagsterInvariantViolationError(
-            "re-execution and op selection cannot be used together at this time."
-        )
+    with repository_load_context(repository_load_data):
+        if reexecution_options is not None and op_selection is not None:
+            raise DagsterInvariantViolationError(
+                "re-execution and op selection cannot be used together at this time."
+            )
 
-    if reexecution_options:
-        if run_config is None:
-            run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
-            run_config = run.run_config
-        return _reexecute_job(
-            job_arg=job_def,
-            run_config=run_config,
-            reexecution_options=reexecution_options,
-            tags=tags,
-            instance=instance,
-            raise_on_error=raise_on_error,
-        )
-    else:
-        return _logged_execute_job(
-            job_arg=job_def,
-            instance=instance,
-            run_config=run_config,
-            tags=tags,
-            op_selection=op_selection,
-            raise_on_error=raise_on_error,
-            asset_selection=asset_selection,
-        )
+        if reexecution_options:
+            if run_config is None:
+                run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
+                run_config = run.run_config
+            return _reexecute_job(
+                job_arg=job_def,
+                run_config=run_config,
+                reexecution_options=reexecution_options,
+                tags=tags,
+                instance=instance,
+                raise_on_error=raise_on_error,
+            )
+        else:
+            return _logged_execute_job(
+                job_arg=job_def,
+                instance=instance,
+                run_config=run_config,
+                tags=tags,
+                op_selection=op_selection,
+                raise_on_error=raise_on_error,
+                asset_selection=asset_selection,
+            )
 
 
 @telemetry_wrapper
@@ -480,40 +486,41 @@ def _logged_execute_job(
 
     job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
 
-    (
-        job_arg,
-        run_config,
-        tags,
-        resolved_op_selection,
-        op_selection,
-    ) = _check_execute_job_args(
-        job_arg=job_arg,
-        run_config=run_config,
-        tags=tags,
-        op_selection=op_selection,
-    )
+    with repository_load_context(repository_load_data):
+        (
+            job_arg,
+            run_config,
+            tags,
+            resolved_op_selection,
+            op_selection,
+        ) = _check_execute_job_args(
+            job_arg=job_arg,
+            run_config=run_config,
+            tags=tags,
+            op_selection=op_selection,
+        )
 
-    log_repo_stats(instance=instance, job=job_arg, source="execute_pipeline")
+        log_repo_stats(instance=instance, job=job_arg, source="execute_pipeline")
 
-    dagster_run = instance.create_run_for_job(
-        job_def=job_arg.get_definition(),
-        run_config=run_config,
-        op_selection=op_selection,
-        resolved_op_selection=resolved_op_selection,
-        tags=tags,
-        job_code_origin=(
-            job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
-        ),
-        repository_load_data=repository_load_data,
-        asset_selection=frozenset(asset_selection) if asset_selection else None,
-    )
+        dagster_run = instance.create_run_for_job(
+            job_def=job_arg.get_definition(),
+            run_config=run_config,
+            op_selection=op_selection,
+            resolved_op_selection=resolved_op_selection,
+            tags=tags,
+            job_code_origin=(
+                job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
+            ),
+            repository_load_data=repository_load_data,
+            asset_selection=frozenset(asset_selection) if asset_selection else None,
+        )
 
-    return execute_run(
-        job_arg,
-        dagster_run,
-        instance,
-        raise_on_error=raise_on_error,
-    )
+        return execute_run(
+            job_arg,
+            dagster_run,
+            instance,
+            raise_on_error=raise_on_error,
+        )
 
 
 def _reexecute_job(
@@ -528,69 +535,70 @@ def _reexecute_job(
     with ephemeral_instance_if_missing(instance) as execute_instance:
         job_arg, repository_load_data = _job_with_repository_load_data(job_arg)
 
-        (job_arg, run_config, tags, _, _) = _check_execute_job_args(
-            job_arg=job_arg,
-            run_config=run_config,
-            tags=tags,
-        )
-
-        parent_dagster_run = execute_instance.get_run_by_id(reexecution_options.parent_run_id)
-        if parent_dagster_run is None:
-            check.failed(
-                f"No parent run with id {reexecution_options.parent_run_id} found in instance.",
+        with repository_load_context(repository_load_data):
+            (job_arg, run_config, tags, _, _) = _check_execute_job_args(
+                job_arg=job_arg,
+                run_config=run_config,
+                tags=tags,
             )
 
-        execution_plan: Optional[ExecutionPlan] = None
-        # resolve step selection DSL queries using parent execution information
-        if isinstance(reexecution_options, ReexecuteFromFailureOption):
-            step_keys, known_state = KnownExecutionState.build_resume_retry_reexecution(
-                instance=instance,
-                parent_run=parent_dagster_run,
+            parent_dagster_run = execute_instance.get_run_by_id(reexecution_options.parent_run_id)
+            if parent_dagster_run is None:
+                check.failed(
+                    f"No parent run with id {reexecution_options.parent_run_id} found in instance.",
+                )
+
+            execution_plan: Optional[ExecutionPlan] = None
+            # resolve step selection DSL queries using parent execution information
+            if isinstance(reexecution_options, ReexecuteFromFailureOption):
+                step_keys, known_state = KnownExecutionState.build_resume_retry_reexecution(
+                    instance=instance,
+                    parent_run=parent_dagster_run,
+                )
+                execution_plan = create_execution_plan(
+                    job_arg,
+                    run_config,
+                    step_keys_to_execute=step_keys,
+                    known_state=known_state,
+                    tags=parent_dagster_run.tags,
+                )
+            elif reexecution_options.step_selection:
+                execution_plan = _resolve_reexecute_step_selection(
+                    execute_instance,
+                    job_arg,
+                    run_config,
+                    cast(DagsterRun, parent_dagster_run),
+                    reexecution_options.step_selection,
+                )
+            # else all steps will be executed and parent state is not needed
+
+            if parent_dagster_run.asset_selection:
+                job_arg = job_arg.get_subset(
+                    op_selection=None, asset_selection=parent_dagster_run.asset_selection
+                )
+
+            dagster_run = execute_instance.create_run_for_job(
+                job_def=job_arg.get_definition(),
+                execution_plan=execution_plan,
+                run_config=run_config,
+                tags=tags,
+                op_selection=parent_dagster_run.op_selection,
+                asset_selection=parent_dagster_run.asset_selection,
+                resolved_op_selection=parent_dagster_run.resolved_op_selection,
+                root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
+                parent_run_id=parent_dagster_run.run_id,
+                job_code_origin=(
+                    job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
+                ),
+                repository_load_data=repository_load_data,
             )
-            execution_plan = create_execution_plan(
+
+            return execute_run(
                 job_arg,
-                run_config,
-                step_keys_to_execute=step_keys,
-                known_state=known_state,
-                tags=parent_dagster_run.tags,
-            )
-        elif reexecution_options.step_selection:
-            execution_plan = _resolve_reexecute_step_selection(
+                dagster_run,
                 execute_instance,
-                job_arg,
-                run_config,
-                cast(DagsterRun, parent_dagster_run),
-                reexecution_options.step_selection,
+                raise_on_error=raise_on_error,
             )
-        # else all steps will be executed and parent state is not needed
-
-        if parent_dagster_run.asset_selection:
-            job_arg = job_arg.get_subset(
-                op_selection=None, asset_selection=parent_dagster_run.asset_selection
-            )
-
-        dagster_run = execute_instance.create_run_for_job(
-            job_def=job_arg.get_definition(),
-            execution_plan=execution_plan,
-            run_config=run_config,
-            tags=tags,
-            op_selection=parent_dagster_run.op_selection,
-            asset_selection=parent_dagster_run.asset_selection,
-            resolved_op_selection=parent_dagster_run.resolved_op_selection,
-            root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
-            parent_run_id=parent_dagster_run.run_id,
-            job_code_origin=(
-                job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
-            ),
-            repository_load_data=repository_load_data,
-        )
-
-        return execute_run(
-            job_arg,
-            dagster_run,
-            execute_instance,
-            raise_on_error=raise_on_error,
-        )
 
 
 def execute_plan_iterator(
@@ -611,20 +619,21 @@ def execute_plan_iterator(
     if isinstance(job, ReconstructableJob):
         job = job.with_repository_load_data(execution_plan.repository_load_data)
 
-    return iter(
-        ExecuteRunWithPlanIterable(
-            execution_plan=execution_plan,
-            iterator=inner_plan_execution_iterator,
-            execution_context_manager=PlanExecutionContextManager(
-                job=job,
-                retry_mode=retry_mode,
+    with repository_load_context(execution_plan.repository_load_data):
+        return iter(
+            ExecuteRunWithPlanIterable(
                 execution_plan=execution_plan,
-                run_config=run_config,
-                dagster_run=dagster_run,
-                instance=instance,
-            ),
+                iterator=inner_plan_execution_iterator,
+                execution_context_manager=PlanExecutionContextManager(
+                    job=job,
+                    retry_mode=retry_mode,
+                    execution_plan=execution_plan,
+                    run_config=run_config,
+                    dagster_run=dagster_run,
+                    instance=instance,
+                ),
+            )
         )
-    )
 
 
 def execute_plan(
@@ -692,39 +701,40 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-    if isinstance(job, IJob):
-        # If you have repository_load_data, make sure to use it when building plan
-        if isinstance(job, ReconstructableJob) and repository_load_data is not None:
-            job = job.with_repository_load_data(repository_load_data)
-        job_def = job.get_definition()
-    else:
-        job_def = job
+    with repository_load_context(repository_load_data):
+        if isinstance(job, IJob):
+            # If you have repository_load_data, make sure to use it when building plan
+            if isinstance(job, ReconstructableJob) and repository_load_data is not None:
+                job = job.with_repository_load_data(repository_load_data)
+            job_def = job.get_definition()
+        else:
+            job_def = job
 
-    run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
-    check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-    check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
-    tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
-    known_state = check.opt_inst_param(
-        known_state,
-        "known_state",
-        KnownExecutionState,
-        default=KnownExecutionState(),
-    )
-    repository_load_data = check.opt_inst_param(
-        repository_load_data, "repository_load_data", RepositoryLoadData
-    )
+        run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
+        check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+        tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
+        known_state = check.opt_inst_param(
+            known_state,
+            "known_state",
+            KnownExecutionState,
+            default=KnownExecutionState(),
+        )
+        repository_load_data = check.opt_inst_param(
+            repository_load_data, "repository_load_data", RepositoryLoadData
+        )
 
-    resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
+        resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
-    return ExecutionPlan.build(
-        job_def,
-        resolved_run_config,
-        step_keys_to_execute=step_keys_to_execute,
-        known_state=known_state,
-        instance_ref=instance_ref,
-        tags=tags,
-        repository_load_data=repository_load_data,
-    )
+        return ExecutionPlan.build(
+            job_def,
+            resolved_run_config,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+            instance_ref=instance_ref,
+            tags=tags,
+            repository_load_data=repository_load_data,
+        )
 
 
 def job_execution_iterator(

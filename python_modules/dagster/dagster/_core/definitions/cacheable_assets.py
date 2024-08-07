@@ -27,6 +27,31 @@ CACHED_ASSET_METADATA_KEY = "dagster/repo_load_data_cached_asset_metadata"
 CACHED_ASSET_PREFIX = "cached_asset/"
 
 
+def extract_from_current_repository_load_data(key: str) -> Optional[Sequence[Mapping[Any, Any]]]:
+    """Extracts cached asset metadata from the current repository load data, if it exists.
+
+    Args:
+        key (str): The key to look up in the current repository load data, appended to
+            CACHED_ASSET_PREFIX.
+
+    Returns:
+        Optional[Sequence[Mapping[Any, Any]]]: The cached asset metadata, if it exists.
+    """
+    from dagster._core.definitions.repository_definition.repository_definition import (
+        current_repository_load_data,
+    )
+
+    data = current_repository_load_data.get()
+    if not data:
+        return None
+
+    return [
+        data.extra_metadata
+        for data in data.cached_data_by_key.get(f"{CACHED_ASSET_PREFIX}{key}", [])
+        if data.extra_metadata
+    ]
+
+
 @whitelist_for_serdes
 class AssetsDefinitionCacheableData(
     NamedTuple(

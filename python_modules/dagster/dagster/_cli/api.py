@@ -423,6 +423,10 @@ def execute_step_command(input_json, compressed_input_json):
 def _execute_step_command_body(
     args: ExecuteStepArgs, instance: DagsterInstance, dagster_run: DagsterRun
 ):
+    from dagster._core.definitions.repository_definition.repository_definition import (
+        repository_load_context,
+    )
+
     single_step_key = (
         args.step_keys_to_execute[0]
         if args.step_keys_to_execute and len(args.step_keys_to_execute) == 1
@@ -470,32 +474,33 @@ def _execute_step_command_body(
         else:
             repository_load_data = None
 
-        recon_job = (
-            recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
-            .with_repository_load_data(repository_load_data)
-            .get_subset(
-                op_selection=dagster_run.resolved_op_selection,
-                asset_selection=dagster_run.asset_selection,
-                asset_check_selection=dagster_run.asset_check_selection,
+        with repository_load_context(repository_load_data):
+            recon_job = (
+                recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+                .with_repository_load_data(repository_load_data)
+                .get_subset(
+                    op_selection=dagster_run.resolved_op_selection,
+                    asset_selection=dagster_run.asset_selection,
+                    asset_check_selection=dagster_run.asset_check_selection,
+                )
             )
-        )
 
-        execution_plan = create_execution_plan(
-            recon_job,
-            run_config=dagster_run.run_config,
-            step_keys_to_execute=args.step_keys_to_execute,
-            known_state=args.known_state,
-            repository_load_data=repository_load_data,
-        )
+            execution_plan = create_execution_plan(
+                recon_job,
+                run_config=dagster_run.run_config,
+                step_keys_to_execute=args.step_keys_to_execute,
+                known_state=args.known_state,
+                repository_load_data=repository_load_data,
+            )
 
-        yield from execute_plan_iterator(
-            execution_plan,
-            recon_job,
-            dagster_run,
-            instance,
-            run_config=dagster_run.run_config,
-            retry_mode=args.retry_mode,
-        )
+            yield from execute_plan_iterator(
+                execution_plan,
+                recon_job,
+                dagster_run,
+                instance,
+                run_config=dagster_run.run_config,
+                retry_mode=args.retry_mode,
+            )
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield instance.report_engine_event(
             message="Step execution terminated by interrupt",
