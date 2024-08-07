@@ -242,25 +242,6 @@ any_parent_missing = AutomationCondition.any_deps_match(
     AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
 )
 ```
-
----
-
-## Examples
-
-### Ignoring specific parents
-
-By default, `AutomationCondition.eager()` will materialize in response to **any** parent update, and not materialize if **any** parent is missing.
-
-### Updating in response to code version changes
-
-When you update the an asset's code version, you'll typical want to materialize the asset to reflect the change. To do this, you can use `AutomationCondition.code_version_changed()`:
-
-```jsx
-automation_condition = AutomationCondition.code_version_changed();
-```
-
-This condition will immediately materialize any asset as soon as a code change is detected.
-
 ---
 
 ## Related
