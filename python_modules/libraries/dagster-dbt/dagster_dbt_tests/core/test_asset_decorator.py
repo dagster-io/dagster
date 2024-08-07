@@ -6,7 +6,6 @@ import pytest
 from dagster import (
     AssetKey,
     AutoMaterializePolicy,
-    BackfillPolicy,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     Definitions,
@@ -19,12 +18,12 @@ from dagster import (
     PartitionMapping,
     PartitionsDefinition,
     RetryPolicy,
-    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     materialize,
 )
 from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -266,59 +265,6 @@ def test_io_manager_key(
         else:  # asset checks don't use io managers
             assert output_def.name in my_dbt_assets.check_specs_by_output_name
             assert output_def.io_manager_key == DEFAULT_IO_MANAGER_KEY
-
-
-@pytest.mark.parametrize(
-    ["partitions_def", "backfill_policy", "expected_backfill_policy"],
-    [
-        (
-            DailyPartitionsDefinition(start_date="2023-01-01"),
-            BackfillPolicy.multi_run(),
-            BackfillPolicy.multi_run(),
-        ),
-        (
-            DailyPartitionsDefinition(start_date="2023-01-01"),
-            None,
-            BackfillPolicy.single_run(),
-        ),
-        (
-            StaticPartitionsDefinition(partition_keys=["A", "B"]),
-            None,
-            None,
-        ),
-        (
-            StaticPartitionsDefinition(partition_keys=["A", "B"]),
-            BackfillPolicy.single_run(),
-            BackfillPolicy.single_run(),
-        ),
-    ],
-    ids=[
-        "use explicit backfill policy for time window",
-        "time window defaults to single run",
-        "non time window has no default backfill policy",
-        "non time window backfill policy is respected",
-    ],
-)
-def test_backfill_policy(
-    test_jaffle_shop_manifest: Dict[str, Any],
-    partitions_def: PartitionsDefinition,
-    backfill_policy: BackfillPolicy,
-    expected_backfill_policy: BackfillPolicy,
-) -> None:
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-            # Disable freshness policies when using static partitions
-            return None
-
-    @dbt_assets(
-        manifest=test_jaffle_shop_manifest,
-        partitions_def=partitions_def,
-        backfill_policy=backfill_policy,
-        dagster_dbt_translator=CustomDagsterDbtTranslator(),
-    )
-    def my_dbt_assets(): ...
-
-    assert my_dbt_assets.backfill_policy == expected_backfill_policy
 
 
 @pytest.mark.parametrize(
@@ -1182,3 +1128,19 @@ def test_dbt_with_duplicate_source_asset_keys(
         AssetKey(["customers"]),
         AssetKey(["orders"]),
     }
+
+
+def test_partitioned_dbt_asset_with_regular_partitioned_asset_in_asset_job(
+    test_jaffle_shop_manifest: Dict[str, Any],
+) -> None:
+    partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def foo() -> int: ...
+
+    @dbt_assets(partitions_def=partitions_def, manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(): ...
+
+    asset_job = define_asset_job("asset_job", [foo, my_dbt_assets])
+
+    assert Definitions(assets=[foo, my_dbt_assets], jobs=[asset_job]).get_job_def("asset_job")
