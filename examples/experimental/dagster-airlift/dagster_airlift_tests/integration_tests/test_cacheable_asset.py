@@ -55,15 +55,8 @@ def test_cacheable_asset(airflow_instance: None) -> None:
     def print_dag__downstream_print_task():
         return 1
 
-    cacheable_assets = AirflowCacheableAssetsDefinition(
-        airflow_instance=instance,
-        orchestrated_defs=Definitions(
-            assets=[
-                first_asset,
-                print_dag__downstream_print_task,
-            ]
-        ),
-        migration_state_override=AirflowMigrationState(
+    for migration_state in [
+        AirflowMigrationState(
             dags={
                 "print_dag": DagMigrationState(
                     tasks={
@@ -73,35 +66,46 @@ def test_cacheable_asset(airflow_instance: None) -> None:
                 )
             }
         ),
-        poll_interval=1,
-    )
+        None,
+    ]:
+        cacheable_assets = AirflowCacheableAssetsDefinition(
+            airflow_instance=instance,
+            orchestrated_defs=Definitions(
+                assets=[
+                    first_asset,
+                    print_dag__downstream_print_task,
+                ]
+            ),
+            migration_state_override=migration_state,
+            poll_interval=1,
+        )
 
-    defs = Definitions(assets=[cacheable_assets])
-    repository_def = defs.get_repository_def()
-    assets_defs = repository_def.assets_defs_by_key
-    assert len(assets_defs) == 3
-    assert AssetKey(["airflow_instance", "dag", "print_dag"]) in assets_defs
-    assert AssetKey(["some", "key"]) in assets_defs
-    assert AssetKey(["other", "key"]) in assets_defs
-    some_key_def = assets_defs[AssetKey(["some", "key"])]
-    assert len(list(some_key_def.specs)) == 1
-    assert next(iter(some_key_def.specs)).metadata.keys() == {
-        "Task Info (raw)",
-        "Dag ID",
-        "Link to Task",
-        "Computed in Task ID",
-    }
-    assert next(iter(some_key_def.specs)).tags["airlift/task_id"] == "print_task"
-    assert next(iter(some_key_def.specs)).tags["airlift/dag_id"] == "print_dag"
+        defs = Definitions(assets=[cacheable_assets])
+        repository_def = defs.get_repository_def()
+        assets_defs = repository_def.assets_defs_by_key
+        assert len(assets_defs) == 3
+        assert AssetKey(["airflow_instance", "dag", "print_dag"]) in assets_defs
+        assert AssetKey(["some", "key"]) in assets_defs
+        assert AssetKey(["other", "key"]) in assets_defs
+        some_key_def = assets_defs[AssetKey(["some", "key"])]
+        assert len(list(some_key_def.specs)) == 1
+        assert next(iter(some_key_def.specs)).metadata.keys() == {
+            "Task Info (raw)",
+            "Dag ID",
+            "Link to Task",
+            "Computed in Task ID",
+        }
+        assert next(iter(some_key_def.specs)).tags["airlift/task_id"] == "print_task"
+        assert next(iter(some_key_def.specs)).tags["airlift/dag_id"] == "print_dag"
 
-    other_key_def = assets_defs[AssetKey(["other", "key"])]
-    assert len(list(other_key_def.specs)) == 1
-    assert next(iter(other_key_def.specs)).metadata.keys() == {
-        "Task Info (raw)",
-        "Dag ID",
-        "Link to Task",
-        "Computed in Task ID",
-    }
-    assert next(iter(other_key_def.specs)).tags["airlift/task_id"] == "downstream_print_task"
-    assert next(iter(other_key_def.specs)).tags["airlift/dag_id"] == "print_dag"
-    assert next(iter(other_key_def.specs)).deps == [AssetDep(AssetKey(["some", "key"]))]
+        other_key_def = assets_defs[AssetKey(["other", "key"])]
+        assert len(list(other_key_def.specs)) == 1
+        assert next(iter(other_key_def.specs)).metadata.keys() == {
+            "Task Info (raw)",
+            "Dag ID",
+            "Link to Task",
+            "Computed in Task ID",
+        }
+        assert next(iter(other_key_def.specs)).tags["airlift/task_id"] == "downstream_print_task"
+        assert next(iter(other_key_def.specs)).tags["airlift/dag_id"] == "print_dag"
+        assert next(iter(other_key_def.specs)).deps == [AssetDep(AssetKey(["some", "key"]))]

@@ -268,9 +268,6 @@ def construct_cacheable_assets_and_infer_dependencies(
     all_asset_keys_per_dag_id: Dict[str, Set[AssetKey]] = defaultdict(set)
     if not definitions or not definitions.assets:
         return _CacheableData()
-    migration_state = check.not_none(
-        migration_state, "Expected migration state to be set if orchestrated defs are set."
-    )
     for asset in definitions.assets:
         assets_def = check.inst(
             asset, AssetsDefinition, "Expected orchestrated defs to all be AssetsDefinitions."
@@ -284,8 +281,8 @@ def construct_cacheable_assets_and_infer_dependencies(
                 f"[View Task]({airflow_instance.get_task_url(task_info.dag_id, task_info.task_id)})"
             ),
         }
-        migration_state_for_task = migration_state.get_migration_state_for_task(
-            task_info.dag_id, task_info.task_id
+        migration_state_for_task = _get_migration_state_for_task(
+            migration_state, task_info.dag_id, task_info.task_id
         )
         task_level_metadata[
             "Computed in Task ID" if migration_state_for_task is False else "Triggered by Task ID"
@@ -429,3 +426,11 @@ def get_leaf_assets_for_dag(
         )
         == set()
     ]
+
+
+def _get_migration_state_for_task(
+    migration_state: Optional[AirflowMigrationState], dag_id: str, task_id: str
+) -> bool:
+    if migration_state:
+        return migration_state.get_migration_state_for_task(dag_id, task_id)
+    return False
