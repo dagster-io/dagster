@@ -786,7 +786,8 @@ class GraphDefinition(NodeDefinition):
         return False
 
     def get_resource_requirements(
-        self, asset_layer: Optional["AssetLayer"] = None
+        self,
+        asset_layer: Optional["AssetLayer"],
     ) -> Iterator[ResourceRequirement]:
         for node in self.node_dict.values():
             yield from node.get_resource_requirements(outer_container=self, asset_layer=asset_layer)

@@ -24,7 +24,7 @@ def hook_invocation_result(
 
     ensure_requirements_satisfied(
         hook_context._resource_defs,  # noqa: SLF001
-        list(hook_def.get_resource_requirements()),
+        list(hook_def.get_resource_requirements(attached_to=None)),
     )
 
     bound_context = BoundHookContext(

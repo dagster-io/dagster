@@ -400,16 +400,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def get_resource_requirements(
         self,
-        outer_context: Optional[object] = None,
+        handle: Optional[NodeHandle],
+        asset_layer: Optional["AssetLayer"],
     ) -> Iterator[ResourceRequirement]:
-        # Outer requiree in this context is the outer-calling node handle. If not provided, then
-        # just use the op name.
-        outer_context = cast(Optional[Tuple[NodeHandle, Optional["AssetLayer"]]], outer_context)
-        if not outer_context:
-            handle = None
-            asset_layer = None
-        else:
-            handle, asset_layer = outer_context
         node_description = f"{self.node_type_str} '{handle or self.name}'"
         for resource_key in sorted(list(self.required_resource_keys)):
             yield OpDefinitionResourceRequirement(

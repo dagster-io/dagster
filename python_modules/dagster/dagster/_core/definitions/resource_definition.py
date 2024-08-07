@@ -36,11 +36,7 @@ from .definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from .resource_invocation import resource_invocation_result
-from .resource_requirement import (
-    RequiresResources,
-    ResourceDependencyRequirement,
-    ResourceRequirement,
-)
+from .resource_requirement import ResourceDependencyRequirement, ResourceRequirement
 from .scoped_resources_builder import (  # re-exported
     IContainsGenerator as IContainsGenerator,
     Resources as Resources,
@@ -59,7 +55,7 @@ ResourceFunction: TypeAlias = Union[
 
 
 @experimental_param(param="version")
-class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHasInternalInit):
+class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -291,9 +287,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources, IHa
             return resource_invocation_result(self, None)
 
     def get_resource_requirements(
-        self, outer_context: Optional[object] = None
+        self,
+        source_key: Optional[str],
     ) -> Iterator[ResourceRequirement]:
-        source_key = cast(str, outer_context)
         for resource_key in sorted(list(self.required_resource_keys)):
             yield ResourceDependencyRequirement(key=resource_key, source_key=source_key)
 
