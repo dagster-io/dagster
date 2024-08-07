@@ -17,6 +17,7 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.warnings import suppress_dagster_warnings
 
 from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
 
@@ -324,6 +325,7 @@ class NodeDefsSnapshot(
         )
 
 
+@suppress_dagster_warnings
 def build_node_defs_snapshot(job_def: JobDefinition) -> NodeDefsSnapshot:
     check.inst_param(job_def, "job_def", JobDefinition)
     op_def_snaps = []
