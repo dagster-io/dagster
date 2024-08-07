@@ -15,7 +15,7 @@ export type AssetNodeFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  isMaterializable: boolean;
+  isSource: boolean;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
 };

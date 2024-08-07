@@ -655,7 +655,7 @@ async function upstreamAssetsWithNoMaterializations(
   });
 
   return result.data.assetNodes
-    .filter((a) => a.isMaterializable && a.assetMaterializations.length === 0)
+    .filter((a) => !a.isSource && a.assetMaterializations.length === 0)
     .map((a) => a.assetKey);
 }
 
@@ -789,7 +789,7 @@ const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     }
     isObservable
     isExecutable
-    isMaterializable
+    isSource
     assetKey {
       path
     }
@@ -936,7 +936,7 @@ export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
       assetKey {
         path
       }
-      isMaterializable
+      isSource
       opNames
       graphName
       assetMaterializations(limit: 1) {

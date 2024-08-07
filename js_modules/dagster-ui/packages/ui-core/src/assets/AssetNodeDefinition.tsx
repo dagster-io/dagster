@@ -296,7 +296,9 @@ const DescriptionAnnotations = ({
         </Mono>
       ))}
     <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} />
-    {!assetNode.isMaterializable ? (
+    {assetNode.isSource ? (
+      <Caption style={{lineHeight: '16px'}}>Source Asset</Caption>
+    ) : !assetNode.isExecutable ? (
       <Caption style={{lineHeight: '16px'}}>External Asset</Caption>
     ) : undefined}
   </Box>
@@ -311,7 +313,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     opNames
     opVersion
     jobNames
-    isMaterializable
+    isSource
     isExecutable
     tags {
       key

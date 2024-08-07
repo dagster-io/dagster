@@ -706,7 +706,7 @@ export const LAUNCH_ASSET_WARNINGS_QUERY = gql`
   query LaunchAssetWarningsQuery($upstreamAssetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $upstreamAssetKeys) {
       id
-      isMaterializable
+      isSource
       assetKey {
         path
       }
@@ -755,7 +755,7 @@ const Warnings = ({
       (upstreamAssets || [])
         .filter(
           (a) =>
-            a.isMaterializable &&
+            !a.isSource &&
             a.partitionDefinition &&
             displayedPartitionDefinition &&
             partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition),

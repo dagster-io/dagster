@@ -22,7 +22,7 @@ export type AssetCatalogTableQuery = {
             changedReasons: Array<Types.ChangeReason>;
             groupName: string;
             opNames: Array<string>;
-            isMaterializable: boolean;
+            isSource: boolean;
             isObservable: boolean;
             isExecutable: boolean;
             computeKind: string | null;
@@ -67,7 +67,7 @@ export type AssetCatalogGroupTableQuery = {
     changedReasons: Array<Types.ChangeReason>;
     groupName: string;
     opNames: Array<string>;
-    isMaterializable: boolean;
+    isSource: boolean;
     isObservable: boolean;
     isExecutable: boolean;
     computeKind: string | null;
@@ -94,7 +94,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   changedReasons: Array<Types.ChangeReason>;
   groupName: string;
   opNames: Array<string>;
-  isMaterializable: boolean;
+  isSource: boolean;
   isObservable: boolean;
   isExecutable: boolean;
   computeKind: string | null;

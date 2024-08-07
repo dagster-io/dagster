@@ -61,7 +61,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
   id: '["asset1"]',
   isObservable: false,
   isPartitioned: false,
-  isMaterializable: true,
+  isSource: false,
   jobNames: ['job1'],
   opNames: ['asset1'],
   opVersion: '1',
@@ -82,13 +82,13 @@ export const AssetNodeFragmentSource = buildAssetNode({
   description: 'This is a test source asset',
   id: '["source_asset"]',
   isObservable: true,
-  isMaterializable: false,
+  isSource: true,
   jobNames: [],
   opNames: [],
 });
 
 export const AssetNodeFragmentSourceOverdue = buildAssetNode({
-  isMaterializable: false,
+  isSource: true,
   isObservable: false,
   freshnessInfo: buildAssetFreshnessInfo({
     currentMinutesLate: 12,

@@ -343,7 +343,7 @@ export const ASSET_NODE_NAME_MAX_LENGTH = 38;
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
   opNames: string[];
-  isMaterializable: boolean;
+  isSource: boolean;
   isObservable: boolean;
   isPartitioned: boolean;
   graphName: string | null;
@@ -355,7 +355,7 @@ export const getAssetNodeDimensions = (def: {
 
   let height = 106; // top tags area + name + description
 
-  if (!def.isMaterializable && def.isObservable) {
+  if (def.isSource && def.isObservable) {
     height += 30; // status row
   } else {
     height += 28; // status row

@@ -442,9 +442,9 @@ export type AssetNode = {
   hasMaterializePermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   isExecutable: Scalars['Boolean']['output'];
-  isMaterializable: Scalars['Boolean']['output'];
   isObservable: Scalars['Boolean']['output'];
   isPartitioned: Scalars['Boolean']['output'];
+  isSource: Scalars['Boolean']['output'];
   jobNames: Array<Scalars['String']['output']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
@@ -6439,14 +6439,11 @@ export const buildAssetNode = (
         : '006fc1b6-3c6e-432d-ac6a-c1c16c0c05b9',
     isExecutable:
       overrides && overrides.hasOwnProperty('isExecutable') ? overrides.isExecutable! : false,
-    isMaterializable:
-      overrides && overrides.hasOwnProperty('isMaterializable')
-        ? overrides.isMaterializable!
-        : true,
     isObservable:
       overrides && overrides.hasOwnProperty('isObservable') ? overrides.isObservable! : false,
     isPartitioned:
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
+    isSource: overrides && overrides.hasOwnProperty('isSource') ? overrides.isSource! : false,
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     jobs: overrides && overrides.hasOwnProperty('jobs') ? overrides.jobs! : [],
     latestMaterializationByPartition:

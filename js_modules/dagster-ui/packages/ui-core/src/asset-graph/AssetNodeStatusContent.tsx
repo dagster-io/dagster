@@ -51,7 +51,7 @@ const LOADING_STATUS_CONTENT = {
 
 export type StatusContentArgs = {
   assetKey: AssetKeyInput;
-  definition: {opNames: string[]; isMaterializable: boolean; isObservable: boolean};
+  definition: {opNames: string[]; isSource: boolean; isObservable: boolean};
   liveData: LiveDataForNode | null | undefined;
   expanded?: boolean;
 };
@@ -400,7 +400,7 @@ export function _buildAssetNodeStatusContent({
     };
   }
 
-  if (!lastMaterialization && !definition.isMaterializable) {
+  if (!lastMaterialization && definition.isSource) {
     return {
       case: StatusCase.SOURCE_NO_STATE as const,
       background: Colors.backgroundLight(),

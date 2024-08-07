@@ -53,7 +53,7 @@ const buildGraphNodeMock = (definitionOverrides: Partial<AssetNode>): GraphNode 
     graphName: null,
     isPartitioned: false,
     isObservable: false,
-    isMaterializable: true,
+    isSource: false,
     ...definitionOverrides,
   }),
 });
@@ -329,9 +329,7 @@ export const AssetWithDifferentOpName = () => {
 export const ObservableSourceAsset = () => {
   return (
     <TestContainer>
-      <SidebarAssetInfo
-        graphNode={buildGraphNodeMock({isObservable: true, isMaterializable: false})}
-      />
+      <SidebarAssetInfo graphNode={buildGraphNodeMock({isObservable: true, isSource: true})} />
     </TestContainer>
   );
 };

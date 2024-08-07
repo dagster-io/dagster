@@ -24,7 +24,7 @@ export type AssetGraphQuery = {
     computeKind: string | null;
     isPartitioned: boolean;
     isObservable: boolean;
-    isMaterializable: boolean;
+    isSource: boolean;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
@@ -56,7 +56,7 @@ export type AssetNodeForGraphQueryFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  isMaterializable: boolean;
+  isSource: boolean;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}

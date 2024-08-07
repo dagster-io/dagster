@@ -11,7 +11,7 @@ export type AssetNodeDefinitionFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
-  isMaterializable: boolean;
+  isSource: boolean;
   isExecutable: boolean;
   hasMaterializePermission: boolean;
   changedReasons: Array<Types.ChangeReason>;

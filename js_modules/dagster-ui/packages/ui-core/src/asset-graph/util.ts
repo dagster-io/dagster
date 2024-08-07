@@ -6,7 +6,7 @@ import {AssetKeyInput} from '../graphql/types';
 export function groupAssetsByStatus<
   T extends {
     key: AssetKeyInput;
-    definition?: {opNames: string[]; isMaterializable: boolean; isObservable: boolean} | null;
+    definition?: {opNames: string[]; isSource: boolean; isObservable: boolean} | null;
   },
 >(assets: T[], liveDataByNode: Record<string, LiveDataForNode>) {
   type StatusesType = {

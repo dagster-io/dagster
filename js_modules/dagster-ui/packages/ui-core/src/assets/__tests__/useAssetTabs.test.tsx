@@ -59,7 +59,7 @@ describe('buildAssetTabs', () => {
     isPartitioned: true,
     isObservable: false,
     isExecutable: true,
-    isMaterializable: true,
+    isSource: false,
     assetKey: buildAssetKey({
       path: ['eager_downstream_3_partitioned'],
     }),
@@ -150,7 +150,7 @@ describe('buildAssetTabs', () => {
     isPartitioned: false,
     isObservable: false,
     isExecutable: true,
-    isMaterializable: true,
+    isSource: false,
     assetKey: buildAssetKey({
       path: ['lazy_downstream_1'],
     }),

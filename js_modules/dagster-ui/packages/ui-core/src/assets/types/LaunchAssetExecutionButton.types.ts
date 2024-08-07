@@ -30,7 +30,7 @@ export type LaunchAssetExecutionAssetNodeFragment = {
   hasMaterializePermission: boolean;
   isObservable: boolean;
   isExecutable: boolean;
-  isMaterializable: boolean;
+  isSource: boolean;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -639,7 +639,7 @@ export type LaunchAssetLoaderQuery = {
     hasMaterializePermission: boolean;
     isObservable: boolean;
     isExecutable: boolean;
-    isMaterializable: boolean;
+    isSource: boolean;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -1264,7 +1264,7 @@ export type LaunchAssetLoaderJobQuery = {
     hasMaterializePermission: boolean;
     isObservable: boolean;
     isExecutable: boolean;
-    isMaterializable: boolean;
+    isSource: boolean;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
@@ -2462,7 +2462,7 @@ export type LaunchAssetCheckUpstreamQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    isMaterializable: boolean;
+    isSource: boolean;
     opNames: Array<string>;
     graphName: string | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
