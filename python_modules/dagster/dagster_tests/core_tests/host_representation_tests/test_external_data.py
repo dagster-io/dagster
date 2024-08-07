@@ -739,7 +739,7 @@ def test_inter_op_dependency():
     ]
 
 
-def test_source_asset_with_op():
+def test_source_asset_with_op() -> None:
     foo = SourceAsset(key=AssetKey("foo"), description=None)
 
     @asset
@@ -760,7 +760,7 @@ def test_source_asset_with_op():
             graph_name=None,
             op_names=["bar"],
             op_description=None,
-            dependencies=[ExternalAssetDependency(AssetKey("foo"))],
+            dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey("foo"))],
             depended_by=[],
             job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
@@ -771,7 +771,7 @@ def test_source_asset_with_op():
             execution_type=AssetExecutionType.UNEXECUTABLE,
             op_description=None,
             dependencies=[],
-            depended_by=[ExternalAssetDependedBy(AssetKey("bar"))],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("bar"))],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
         ),
@@ -853,7 +853,7 @@ def test_used_source_asset():
     ]
 
 
-def test_graph_output_metadata_and_description():
+def test_graph_output_metadata_and_description() -> None:
     asset_metadata = {
         "int": 1,
         "string": "baz",
@@ -894,7 +894,7 @@ def test_graph_output_metadata_and_description():
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey(["three"]),
-            dependencies=[ExternalAssetDependency(AssetKey(["zero"]))],
+            dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["zero"]))],
             depended_by=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="three",
@@ -910,7 +910,7 @@ def test_graph_output_metadata_and_description():
         ExternalAssetNode(
             asset_key=AssetKey(["zero"]),
             dependencies=[],
-            depended_by=[ExternalAssetDependedBy(AssetKey(["three"]))],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["three"]))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="zero",
             node_definition_name="zero",
@@ -925,7 +925,7 @@ def test_graph_output_metadata_and_description():
     ]
 
 
-def test_nasty_nested_graph_asset():
+def test_nasty_nested_graph_asset() -> None:
     @op
     def add_one(i):
         return i + 1
@@ -997,11 +997,11 @@ def test_nasty_nested_graph_asset():
         ExternalAssetNode(
             asset_key=AssetKey(["thirteen"]),
             dependencies=[
-                ExternalAssetDependency(AssetKey(["eight"])),
-                ExternalAssetDependency(AssetKey(["five"])),
-                ExternalAssetDependency(AssetKey(["zero"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["eight"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["five"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["zero"])),
             ],
-            depended_by=[ExternalAssetDependedBy(AssetKey(["twenty"]))],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey(["twenty"]))],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="create_thirteen_and_six",
             node_definition_name="add_one",
@@ -1022,8 +1022,8 @@ def test_nasty_nested_graph_asset():
         ExternalAssetNode(
             asset_key=AssetKey(["twenty"]),
             dependencies=[
-                ExternalAssetDependency(AssetKey(["six"])),
-                ExternalAssetDependency(AssetKey(["thirteen"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["six"])),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["thirteen"])),
             ],
             depended_by=[],
             execution_type=AssetExecutionType.MATERIALIZATION,
@@ -1041,10 +1041,10 @@ def test_nasty_nested_graph_asset():
             asset_key=AssetKey(["zero"]),
             dependencies=[],
             depended_by=[
-                ExternalAssetDependedBy(AssetKey(["eight"])),
-                ExternalAssetDependedBy(AssetKey(["five"])),
-                ExternalAssetDependedBy(AssetKey(["six"])),
-                ExternalAssetDependedBy(AssetKey(["thirteen"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["eight"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["five"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["six"])),
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["thirteen"])),
             ],
             execution_type=AssetExecutionType.MATERIALIZATION,
             op_name="zero",

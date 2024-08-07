@@ -625,7 +625,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             serialized_response = serialize_value(
                 ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -664,7 +664,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             serialized_data = serialize_value(
                 ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -689,7 +689,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             serialized_data = serialize_value(
                 ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -718,7 +718,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             serialized_data = serialize_value(
                 ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -774,7 +774,9 @@ class DagsterApiServer(DagsterApiServicer):
             )
         except Exception:
             return serialize_value(
-                ExternalRepositoryErrorData(serializable_error_info_from_exc_info(sys.exc_info()))
+                ExternalRepositoryErrorData(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
+                )
             )
 
     def ExternalRepository(
@@ -879,7 +881,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             return serialize_value(
                 ExternalScheduleExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
@@ -906,7 +908,7 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             return serialize_value(
                 ExternalSensorExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
