@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
-import {useLayoutEffect, useMemo} from 'react';
+import {useMemo} from 'react';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {useRepository} from './WorkspaceContext';
@@ -15,14 +15,12 @@ import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {usePageLoadTrace} from '../performance';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 
 const NO_REPOS_EMPTY_ARR: any[] = [];
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
-  const trace = usePageLoadTrace('WorkspaceJobsRoot');
   useTrackPageView();
 
   const repo = useRepository(repoAddress);
@@ -63,11 +61,6 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
 
   const loading = jobs === NO_REPOS_EMPTY_ARR;
 
-  useLayoutEffect(() => {
-    if (!loading) {
-      trace.endTrace();
-    }
-  }, [loading, trace]);
   useBlockTraceUntilTrue('WorkspaceJobs', !loading);
 
   const filteredBySearch = useMemo(() => {

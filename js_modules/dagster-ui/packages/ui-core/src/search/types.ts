@@ -34,6 +34,7 @@ export enum AssetFilterSearchResultType {
   Owner = 'AssetFilterSearchResultType.Owner',
   AssetGroup = 'AssetFilterSearchResultType.AssetGroup',
   StorageKind = 'AssetFilterSearchResultType.StorageKind',
+  Column = 'AssetFilterSearchResultType.Column',
 }
 
 export function isAssetFilterSearchResultType(
@@ -45,7 +46,8 @@ export function isAssetFilterSearchResultType(
     type === AssetFilterSearchResultType.ComputeKind ||
     type === AssetFilterSearchResultType.StorageKind ||
     type === AssetFilterSearchResultType.Owner ||
-    type === AssetFilterSearchResultType.Tag
+    type === AssetFilterSearchResultType.Tag ||
+    type === AssetFilterSearchResultType.Column
   );
 }
 

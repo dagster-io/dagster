@@ -20,7 +20,6 @@ import {LogType, LogsToolbar} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunRootTrace} from './RunRootTrace';
 import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
 import {
   matchingComputeLogKeyFromStepKey,
@@ -42,7 +41,6 @@ import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
-  trace: RunRootTrace;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -61,7 +59,7 @@ const runStatusFavicon = (status: RunStatus) => {
 };
 
 export const Run = memo((props: RunProps) => {
-  const {run, runId, trace} = props;
+  const {run, runId} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
@@ -105,7 +103,7 @@ export const Run = memo((props: RunProps) => {
       <LogsProvider key={runId} runId={runId}>
         {(logs) => (
           <>
-            <OnLogsLoaded trace={trace} dependency={logsDependency} />
+            <OnLogsLoaded dependency={logsDependency} />
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
                 <RunWithData
@@ -128,17 +126,10 @@ export const Run = memo((props: RunProps) => {
   );
 });
 
-const OnLogsLoaded = ({
-  trace,
-  dependency,
-}: {
-  trace: RunRootTrace;
-  dependency: ReturnType<typeof useTraceDependency>;
-}) => {
+const OnLogsLoaded = ({dependency}: {dependency: ReturnType<typeof useTraceDependency>}) => {
   React.useLayoutEffect(() => {
-    trace.onLogsLoaded();
     dependency.completeDependency(CompletionType.SUCCESS);
-  }, [dependency, trace]);
+  }, [dependency]);
   return null;
 };
 

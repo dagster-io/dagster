@@ -10,7 +10,6 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {usePageLoadTrace} from '../performance';
 import {RunTimeline} from '../runs/RunTimeline';
 import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {useRunsForTimeline} from '../runs/useRunsForTimeline';
@@ -91,7 +90,6 @@ export function useTimelineRange({
 export const OverviewTimelineRoot = ({Header}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
-  const trace = usePageLoadTrace('OverviewTimelineRoot');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
@@ -111,12 +109,6 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
   const rows = useMemo(() => {
     return groupRunsBy === 'automation' ? groupRunsByAutomation(jobs) : jobs;
   }, [groupRunsBy, jobs]);
-
-  React.useEffect(() => {
-    if (!loading) {
-      trace.endTrace();
-    }
-  }, [loading, trace]);
 
   const visibleRepoKeys = useMemo(() => {
     return new Set(

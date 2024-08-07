@@ -14,7 +14,6 @@ import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {usePageLoadTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsOverviewRoot = ({
@@ -49,10 +48,6 @@ export const AssetsOverviewRoot = ({
       : documentTitlePrefix,
   );
 
-  const trace = usePageLoadTrace(
-    currentPath && currentPath.length === 0 ? 'AssetsOverviewRoot' : 'AssetCatalogAssetView',
-  );
-
   if (currentPath.length === 0 || searchParams.view === 'folder') {
     return (
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
@@ -70,7 +65,6 @@ export const AssetsOverviewRoot = ({
         <AssetsCatalogTable
           prefixPath={currentPath}
           setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}
-          trace={trace}
         />
       </Box>
     );
@@ -79,7 +73,6 @@ export const AssetsOverviewRoot = ({
   return (
     <AssetView
       assetKey={assetKey}
-      trace={trace}
       headerBreadcrumbs={headerBreadcrumbs}
       writeAssetVisit={writeAssetVisit}
       currentPath={currentPath}

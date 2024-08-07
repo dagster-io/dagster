@@ -10,7 +10,7 @@ import {
   tokenToString,
 } from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
-import {useCallback, useLayoutEffect, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
 import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {useRunListTabs, useSelectedRunsTab} from './RunListTabs';
@@ -34,7 +34,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
-import {usePageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
@@ -43,7 +42,6 @@ const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
   useTrackPageView();
-  const trace = usePageLoadTrace('RunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
@@ -203,7 +201,6 @@ export const RunsRoot = () => {
 
             return (
               <>
-                <RunsRootPerformanceEmitter trace={trace} />
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
@@ -239,13 +236,6 @@ export const RunsRoot = () => {
       </RunsQueryRefetchContext.Provider>
     </Page>
   );
-};
-
-const RunsRootPerformanceEmitter = ({trace}: {trace: ReturnType<typeof usePageLoadTrace>}) => {
-  useLayoutEffect(() => {
-    trace.endTrace();
-  }, [trace]);
-  return null;
 };
 
 // Imported via React.lazy, which requires a default export.

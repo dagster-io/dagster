@@ -27,7 +27,6 @@ import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
-import {PageLoadTrace} from '../performance';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
 import {CacheManager} from '../search/useIndexedDBCachedQuery';
@@ -180,14 +179,12 @@ interface AssetCatalogTableProps {
   prefixPath: string[];
   setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
-  trace?: PageLoadTrace;
 }
 
 export const AssetsCatalogTable = ({
   prefixPath,
   setPrefixPath,
   groupSelector,
-  trace,
 }: AssetCatalogTableProps) => {
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
@@ -226,11 +223,6 @@ export const AssetsCatalogTable = ({
   });
 
   const loaded = !!assets;
-  useEffect(() => {
-    if (loaded) {
-      trace?.endTrace();
-    }
-  }, [loaded, trace]);
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {
