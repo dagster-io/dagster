@@ -30,12 +30,12 @@ export class HourlyDataCache<T> {
     id,
     keyPrefix = '',
     keyMaxCount = 1,
-    version = '-1',
+    version,
   }: {
     id?: string | false;
     keyPrefix?: string;
     keyMaxCount?: number;
-    version?: string | number;
+    version: string | number;
   }) {
     this.version = version;
     this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
