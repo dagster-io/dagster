@@ -16,7 +16,7 @@ from dagster import (
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.test_utils import instance_for_test
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
-from dagster_airlift.core.migration_state import (
+from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
     TaskMigrationState,
