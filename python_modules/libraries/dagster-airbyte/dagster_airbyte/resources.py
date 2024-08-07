@@ -7,11 +7,13 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Mapping, Optional, cast
+from pydantic import PrivateAttr
 
 import requests
 from dagster import (
     ConfigurableResource,
     Failure,
+    InitResourceContext,
     _check as check,
     get_dagster_logger,
     resource,
@@ -273,10 +275,13 @@ class AirbyteCloudResource(BaseAirbyteResource):
 
     client_id: str = Field(..., description="The Airbyte Cloud client ID.")
     client_secret: str = Field(..., description="The Airbyte Cloud client secret.")
-    __access_token_value: str = Field(..., description="The Airbyte Cloud access token.")
-    __access_token_timestamp: float = Field(
-        ..., description="The creation timestamp of the Airbyte Cloud access token."
-    )
+
+    _access_token_value: str = PrivateAttr()
+    _access_token_timestamp: float = PrivateAttr()
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        # Refresh access token when the resource is initialized
+        self._refresh_access_token()
 
     @property
     def api_base_url(self) -> str:
@@ -284,8 +289,11 @@ class AirbyteCloudResource(BaseAirbyteResource):
 
     @property
     def all_additional_request_params(self) -> Mapping[str, Any]:
+        # Make sure the access token is refreshed before using it.
+        if self._needs_refreshed_access_token():
+            self._refresh_access_token()
         return {
-            "headers": {"Authorization": f"Bearer {self.__access_token}", "User-Agent": "dagster"}
+            "headers": {"Authorization": f"Bearer {self._access_token_value}", "User-Agent": "dagster"}
         }
 
     def start_sync(self, connection_id: str) -> Mapping[str, object]:
@@ -315,25 +323,25 @@ class AirbyteCloudResource(BaseAirbyteResource):
         # Airbyte Cloud does not support streaming logs yet
         return False
 
-    @property
-    def __access_token(self) -> str:
-        # The access token expire every 3 minutes in Airbyte Cloud.
-        # Refresh after 2.5 minutes to avoid the "token expired" error message.
-        if not self.__access_token_value or self.__access_token_timestamp <= datetime.timestamp(
-            datetime.now() - timedelta(seconds=150)
-        ):
-            response = check.not_none(
-                self.make_request(
-                    endpoint="/applications/token",
-                    data={
-                        "client_id": self.client_id,
-                        "client_secret": self.client_secret,
-                    },
-                )
+    def _refresh_access_token(self) -> None:
+        response = check.not_none(
+            self.make_request(
+                endpoint="/applications/token",
+                data={
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                },
             )
-            self.__access_token_value = str(response["access_token"])
-            self.__access_token_timestamp = datetime.now().timestamp()
-        return self.__access_token_value
+        )
+        self._access_token_value = str(response["access_token"])
+        self._access_token_timestamp = datetime.now().timestamp()
+
+    def _needs_refreshed_access_token(self) -> bool:
+        # The access token expire every 3 minutes in Airbyte Cloud.
+        # Refresh is needed after 2.5 minutes to avoid the "token expired" error message.
+        return not self._access_token_value or self._access_token_timestamp <= datetime.timestamp(
+                datetime.now() - timedelta(seconds=150)
+        )
 
 
 class AirbyteResource(BaseAirbyteResource):
