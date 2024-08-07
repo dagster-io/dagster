@@ -223,7 +223,7 @@ Previously we mentioned that there was no way for an end-user to customize the a
 
 This class provides end-users with a way to override the translation between a configuration file, and how that maps to concepts in Dagster.
 
-To start, we will define a translator method to map the table specification to a Dagster asset key associated, however, this approach can be mapped to many other attributes such as: dependencies, group name, metadata, and more. You can reference the implementation for other integrations for a full example.
+To start, we will define a translator method to map the table specification to a Dagster asset key associated, however, this approach can be mapped to many other attributes such as: dependencies, group name, metadata, and more. You can reference the implementation for other integrations for a full example. It is important to expose all use-cases when defining the parameters passed to the asset decorator, along with methods implemented on the translator.
 
 ```python
 from dagster import AssetKey, _check as check
@@ -273,7 +273,7 @@ def custom_replication_assets(
 
 Finally, we have to update our resource to use the translator, and project that was provided on the metadata. We are using the `check` method provided by `dagster._check` to ensure that the type of the object is appropriate as we retrieve it from the metadata.
 
-Now, we can use the same `translator.get_asset_key`when yielding the asset materialization, thus ensuring that our asset declarations match our asset materializations.
+Now, we can use the same `translator.get_asset_key` when yielding the asset materialization, thus ensuring that our asset declarations match our asset materializations.
 
 ```python
 class ReplicationResource(ConfigurableResource):
@@ -306,4 +306,23 @@ In this guide we walked through how to define a custom multi-asset decorator, a 
 
 Defining integrations with this approach aligns nicely with the overall development paradigm of Dagster, and is suitable for tools that generate many assets.
 
-For more examples on how to build a multi-asset decorator, please reference the implementations for [dbt](https://docs.dagster.io/integrations/dbt), [dlt](https://docs.dagster.io/integrations/embedded-elt/dlt), and [Sling](https://docs.dagster.io/integrations/embedded-elt/sling).
+## References
+
+<ArticleList>
+  <ArticleListItem
+    title="Unlocking Flexible Pipelines: Customizing the Asset Decorator"
+    href="https://dagster.io/blog/unlocking-flexible-pipelines-customizing-asset-decorator"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dbt multi-asset integration example"
+    href="/integrations/dbt"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dlt multi-asset integration example"
+    href="/integrations/embedded-elt/dlt"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Sling multi-asset integration example"
+    href="/integrations/embedded-elt/sling"
+  ></ArticleListItem>
+</ArticleList>
