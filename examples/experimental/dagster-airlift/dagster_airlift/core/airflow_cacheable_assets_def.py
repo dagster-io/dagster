@@ -30,7 +30,7 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 
-from dagster_airlift.core.migration_state import AirflowMigrationState
+from dagster_airlift.migration_state import AirflowMigrationState
 
 from .airflow_instance import AirflowInstance, DagInfo, TaskInfo
 from .utils import get_dag_id_from_asset, get_task_id_from_asset
