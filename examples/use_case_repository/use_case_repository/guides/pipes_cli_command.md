@@ -38,9 +38,9 @@ You will learn how to:
 
    - Define a Dagster asset that uses `PipesSubprocessClient` to run the CLI command. Include any necessary environment variables or additional parameters.
 
-    Save the following file to `dagster_pipes_cli.py`
+   Save the following file to `dagster_pipes_cli.py`
 
-   ```python 
+   ```python
    import shutil
 
    from dagster import AssetExecutionContext, Definitions, PipesSubprocessClient, asset
