@@ -227,6 +227,33 @@ class ExternalRepositoryData(IHaveNew):
         check.failed("Could not find sensor data named " + name)
 
 
+@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
+@record_custom
+class ExternalPresetData(IHaveNew):
+    name: str
+    run_config: Mapping[str, object]
+    op_selection: Optional[Sequence[str]]
+    mode: str
+    tags: Mapping[str, str]
+
+    def __new__(
+        cls,
+        name: str,
+        run_config: Optional[Mapping[str, object]],
+        op_selection: Optional[Sequence[str]],
+        mode: str,
+        tags: Optional[Mapping[str, str]],
+    ):
+        return super().__new__(
+            cls,
+            name=name,
+            run_config=run_config or {},
+            op_selection=op_selection,
+            mode=mode,
+            tags=tags or {},
+        )
+
+
 @whitelist_for_serdes(
     storage_name="ExternalPipelineData",
     storage_field_names={
@@ -242,7 +269,7 @@ class ExternalRepositoryData(IHaveNew):
 class ExternalJobData(LegacyNamedTupleMixin):
     name: str
     job_snapshot: JobSnapshot
-    active_presets: Sequence["ExternalPresetData"]
+    active_presets: Sequence[ExternalPresetData]
     parent_job_snapshot: Optional[JobSnapshot]
 
 
@@ -285,35 +312,8 @@ class NestedResource(NamedTuple):
 class ExternalJobRef:
     name: str
     snapshot_id: str
-    active_presets: Sequence["ExternalPresetData"]
+    active_presets: Sequence[ExternalPresetData]
     parent_snapshot_id: Optional[str]
-
-
-@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
-@record_custom
-class ExternalPresetData(IHaveNew):
-    name: str
-    run_config: Mapping[str, object]
-    op_selection: Optional[Sequence[str]]
-    mode: str
-    tags: Mapping[str, str]
-
-    def __new__(
-        cls,
-        name: str,
-        run_config: Optional[Mapping[str, object]],
-        op_selection: Optional[Sequence[str]],
-        mode: str,
-        tags: Optional[Mapping[str, str]],
-    ):
-        return super().__new__(
-            cls,
-            name=name,
-            run_config=run_config or {},
-            op_selection=op_selection,
-            mode=mode,
-            tags=tags or {},
-        )
 
 
 @whitelist_for_serdes(
