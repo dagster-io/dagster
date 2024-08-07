@@ -5,7 +5,7 @@ import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedA
 import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {AssetKeyInput, DefinitionTag} from '../graphql/types';
+import {DefinitionTag} from '../graphql/types';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
@@ -83,8 +83,6 @@ export const VirtualizedAssetTable = (props: Props) => {
               const repository = row.asset.definition.repository;
               return buildRepoAddress(repository.name, repository.location.name);
             };
-
-            const wipeableAssets = row.type === 'folder' ? row.assets : [row.asset];
 
             return (
               <VirtualizedAssetRow
