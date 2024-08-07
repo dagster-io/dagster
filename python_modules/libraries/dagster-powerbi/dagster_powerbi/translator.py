@@ -1,13 +1,19 @@
 import re
 import urllib.parse
 from enum import Enum
-from typing import Any, Dict, Generic
+from typing import Any, Dict, Generic, Mapping, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.cacheable_assets import (
+    CACHED_ASSET_ID_KEY,
+    CACHED_ASSET_METADATA_KEY,
+)
 from dagster._record import record
 from typing_extensions import TypeVar
+
+POWERBI_PREFIX = "powerbi/"
 
 
 def _get_last_filepath_component(path: str) -> str:
@@ -56,6 +62,16 @@ class PowerBIContentData:
     content_type: PowerBIContentType
     properties: Dict[str, Any]
 
+    def to_cached_data(self) -> Dict[str, Any]:
+        return {"content_type": self.content_type.value, "properties": self.properties}
+
+    @classmethod
+    def from_cached_data(cls, data: Mapping[Any, Any]) -> "PowerBIContentData":
+        return cls(
+            content_type=PowerBIContentType(data["content_type"]),
+            properties=data["properties"],
+        )
+
 
 @record
 class PowerBIWorkspaceData:
@@ -64,10 +80,39 @@ class PowerBIWorkspaceData:
     Provided as context for the translator so that it can resolve dependencies between content.
     """
 
+    workspace_id: str
     dashboards_by_id: Dict[str, PowerBIContentData]
     reports_by_id: Dict[str, PowerBIContentData]
     semantic_models_by_id: Dict[str, PowerBIContentData]
     data_sources_by_id: Dict[str, PowerBIContentData]
+
+    @classmethod
+    def from_content_data(
+        cls, workspace_id: str, content_data: Sequence[PowerBIContentData]
+    ) -> "PowerBIWorkspaceData":
+        return cls(
+            workspace_id=workspace_id,
+            dashboards_by_id={
+                dashboard.properties["id"]: dashboard
+                for dashboard in content_data
+                if dashboard.content_type == PowerBIContentType.DASHBOARD
+            },
+            reports_by_id={
+                report.properties["id"]: report
+                for report in content_data
+                if report.content_type == PowerBIContentType.REPORT
+            },
+            semantic_models_by_id={
+                dataset.properties["id"]: dataset
+                for dataset in content_data
+                if dataset.content_type == PowerBIContentType.SEMANTIC_MODEL
+            },
+            data_sources_by_id={
+                data_source.properties["datasourceId"]: data_source
+                for data_source in content_data
+                if data_source.content_type == PowerBIContentType.DATA_SOURCE
+            },
+        )
 
 
 class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWorkspaceData]):
@@ -109,6 +154,10 @@ class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWork
             key=self.get_dashboard_asset_key(data),
             tags={"dagster/storage_kind": "powerbi"},
             deps=report_keys,
+            metadata={
+                CACHED_ASSET_ID_KEY: f"{POWERBI_PREFIX}{self.workspace_data.workspace_id}",
+                CACHED_ASSET_METADATA_KEY: data.to_cached_data(),
+            },
         )
 
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -123,6 +172,10 @@ class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWork
             key=self.get_report_asset_key(data),
             deps=[dataset_key] if dataset_key else None,
             tags={"dagster/storage_kind": "powerbi"},
+            metadata={
+                CACHED_ASSET_ID_KEY: f"{POWERBI_PREFIX}{self.workspace_data.workspace_id}",
+                CACHED_ASSET_METADATA_KEY: data.to_cached_data(),
+            },
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -139,6 +192,10 @@ class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWork
             key=self.get_semantic_model_asset_key(data),
             tags={"dagster/storage_kind": "powerbi"},
             deps=source_keys,
+            metadata={
+                CACHED_ASSET_ID_KEY: f"{POWERBI_PREFIX}{self.workspace_data.workspace_id}",
+                CACHED_ASSET_METADATA_KEY: data.to_cached_data(),
+            },
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -157,4 +214,8 @@ class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWork
         return AssetSpec(
             key=self.get_data_source_asset_key(data),
             tags={"dagster/storage_kind": "powerbi"},
+            metadata={
+                CACHED_ASSET_ID_KEY: f"{POWERBI_PREFIX}{self.workspace_data.workspace_id}",
+                CACHED_ASSET_METADATA_KEY: data.to_cached_data(),
+            },
         )

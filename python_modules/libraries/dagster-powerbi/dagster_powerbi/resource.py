@@ -3,10 +3,12 @@ from typing import Any, Dict, Sequence, Type
 import requests
 from dagster import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.cacheable_assets import extract_from_current_repository_load_data
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from .translator import (
+    POWERBI_PREFIX,
     DagsterPowerBITranslator,
     PowerBIContentData,
     PowerBIContentType,
@@ -112,13 +114,9 @@ class PowerBIWorkspace(ConfigurableResource):
             PowerBIContentData(content_type=PowerBIContentType.SEMANTIC_MODEL, properties=dataset)
             for dataset in semantic_models_data
         ]
-        return PowerBIWorkspaceData(
-            dashboards_by_id={dashboard.properties["id"]: dashboard for dashboard in dashboards},
-            reports_by_id={report.properties["id"]: report for report in reports},
-            semantic_models_by_id={
-                dataset.properties["id"]: dataset for dataset in semantic_models
-            },
-            data_sources_by_id=data_sources_by_id,
+        return PowerBIWorkspaceData.from_content_data(
+            self.workspace_id,
+            dashboards + reports + semantic_models + list(data_sources_by_id.values()),
         )
 
     def build_asset_specs(
@@ -136,7 +134,17 @@ class PowerBIWorkspace(ConfigurableResource):
         Returns:
             Sequence[AssetSpec]: A list of AssetSpecs representing the Power BI content.
         """
-        workspace_data = self.fetch_powerbi_workspace_data()
+        cached_workspace_data = extract_from_current_repository_load_data(
+            f"{POWERBI_PREFIX}{self.workspace_id}"
+        )
+        if cached_workspace_data:
+            workspace_data = PowerBIWorkspaceData.from_content_data(
+                self.workspace_id,
+                [PowerBIContentData.from_cached_data(data) for data in cached_workspace_data],
+            )
+        else:
+            workspace_data = self.fetch_powerbi_workspace_data()
+
         translator = dagster_powerbi_translator(context=workspace_data)
 
         all_content = [

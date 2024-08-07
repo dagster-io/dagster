@@ -76,10 +76,15 @@ SAMPLE_DATA_SOURCES = [
 ]
 
 
+@pytest.fixture(name="workspace_id")
+def workspace_id_fixture() -> str:
+    return "a2122b8f-d7e1-42e8-be2b-a5e636ca3221"
+
+
 @pytest.fixture(
     name="workspace_data",
 )
-def workspace_data_fixture() -> PowerBIWorkspaceData:
+def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
     sample_dash = SAMPLE_DASH.copy()
     # Response from tiles API, which we add to the dashboard data
     sample_dash["tiles"] = SAMPLE_DASH_TILES
@@ -90,6 +95,7 @@ def workspace_data_fixture() -> PowerBIWorkspaceData:
     sample_semantic_model["sources"] = [ds["datasourceId"] for ds in sample_data_sources]
 
     return PowerBIWorkspaceData(
+        workspace_id=workspace_id,
         dashboards_by_id={
             sample_dash["id"]: PowerBIContentData(
                 content_type=PowerBIContentType.DASHBOARD, properties=sample_dash
@@ -114,15 +120,10 @@ def workspace_data_fixture() -> PowerBIWorkspaceData:
     )
 
 
-@pytest.fixture(name="workspace_id")
-def workspace_id_fixture() -> str:
-    return "a2122b8f-d7e1-42e8-be2b-a5e636ca3221"
-
-
 @pytest.fixture(
     name="workspace_data_api_mocks",
 )
-def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[None]:
+def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.RequestsMock]:
     with responses.RequestsMock() as response:
         response.add(
             method=responses.GET,
@@ -159,4 +160,4 @@ def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[None]:
             status=200,
         )
 
-        yield
+        yield response
