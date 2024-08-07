@@ -26,17 +26,17 @@ Before continuing, you should be familiar with:
 
 ## How it works
 
-Each <PyObject object="AutomationCondition" /> consists of a set of **operands** and various **operators**. To create conditions that suit your specific needs, you can combine the operators and operands listed below with Dagster's built-in <PyObject object="AutomationCondition" pluralize />. For example:
+Each <PyObject object="AutomationCondition" /> consists of a set of **operands** and various **operators**. To create conditions that suit your specific needs, you can combine the operators and operands listed below. For example:
 
 ```python
 from dagster import AutomationCondition
 
-any_parents_missing = AutomationCondition.any_deps_match(
+in_progress_or_failed_parents = AutomationCondition.any_deps_match(
     AutomationCondition.in_progress() | AutomationCondition.failed()
 )
 ```
 
-This condition translates to **Any upstream dependencies (parents) which are part of an in-progress run or failed during the latest run**.
+This condition translates to **Any upstream dependencies (parents) part of an in-progress run or failed during the latest run**.
 
 ### Operands
 
@@ -191,18 +191,32 @@ Arbitrary string labels can be attached to any node in the <PyObject object="Aut
 ```python
 from dagster import AutomationCondition
 
-any_parents_missing = AutomationCondition.any_deps_match(
+in_progress_or_failed_parents = AutomationCondition.any_deps_match(
     AutomationCondition.in_progress() | AutomationCondition.failed()
 ).with_label("Any parents in progress or failed")
 ```
 
-Then, in the UI, the label will display:
+Then, when viewing evaluation results in the UI, the label will display next to the condition:
 
-<TODO>SCREENSHOT</TODO>
+<!-- ![Any parents in progress or failed condition label in the Dagster UI](/images/concepts/automation/declarative-automation/condition-label.png) -->
 
-Hovering over this label will reveal the more complex sub-expressions:
+<Image
+alt="Any parents in progress or failed condition label in the Dagster UI"
+src="/images/concepts/automation/declarative-automation/condition-label.png"
+width={1576}
+height={418}
+/>
 
-<TODO>SCREENSHOT</TODO>
+Hovering over or expanding the label will display its sub-conditions:
+
+<!-- ![Expanded Any parents in progress or failed condition label with a list of sub-conditions in the Dagster UI](/images/concepts/automation/declarative-automation/condition-label-expanded.png) -->
+
+<Image
+alt="Expanded Any parents in progress or failed condition label with a list of sub-conditions in the Dagster UI"
+src="/images/concepts/automation/declarative-automation/condition-label-expanded.png"
+width={1576}
+height={593}
+/>
 
 ---
 
