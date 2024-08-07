@@ -103,16 +103,16 @@ The above conditions can be built into more complex expressions using the follow
     </tr>
     <tr>
       <td>
-        <code>CONDITION.newly_true()</code>
+        <code>A.newly_true()</code>
       </td>
       <td>False on previous tick and is now true</td>
     </tr>
     <tr>
       <td>
-        <code>CONDITION_1.since(CONDITION_2)</code>
+        <code>A.since(B)</code>
       </td>
       <td>
-        Condition 1 became true more recently than Condition 2. Refer to the{" "}
+        Condition A became true more recently than Condition B. Refer to the{" "}
         <a href="#using-statuses-and-events-in-conditions">
           Using statuses and events in conditions
         </a>{" "}
@@ -121,7 +121,7 @@ The above conditions can be built into more complex expressions using the follow
     </tr>
     <tr>
       <td>
-        <code>AutomationCondition.any_deps_match(CONDITION)</code>
+        <code>AutomationCondition.any_deps_match(A)</code>
       </td>
       <td>
         True for any upstream partition. Can be used with <code>.allow()</code>{" "}
@@ -132,7 +132,7 @@ The above conditions can be built into more complex expressions using the follow
     </tr>
     <tr>
       <td>
-        <code>AutomationCondition.all_deps_match(CONDITION)</code>
+        <code>AutomationCondition.all_deps_match(A)</code>
       </td>
       <td>
         True for at least one partition of each upstream asset. Can be used with{" "}
@@ -242,6 +242,7 @@ any_parent_missing = AutomationCondition.any_deps_match(
     AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
 )
 ```
+
 ---
 
 ## Related
