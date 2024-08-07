@@ -30,6 +30,8 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const BATCH_LIMIT = 500;
 
+const QUERY_VERSION = 1;
+
 export const useRunsForTimeline = ({
   rangeMs,
   filter,
@@ -65,12 +67,12 @@ export const useRunsForTimeline = ({
         id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
         keyPrefix: JSON.stringify(filter),
         keyMaxCount: 3,
-        version: 1,
+        version: QUERY_VERSION,
       });
     }
     return new HourlyDataCache<RunTimelineFragment>({
       id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
-      version: 1,
+      version: QUERY_VERSION,
     });
   }, [filter, localCacheIdPrefix]);
   const [completedRuns, setCompletedRuns] = useState<RunTimelineFragment[]>([]);
