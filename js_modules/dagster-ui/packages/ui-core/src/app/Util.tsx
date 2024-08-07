@@ -1,8 +1,9 @@
 import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
+import {FeatureFlag} from 'src/app/FeatureFlags.oss';
 
-import {FeatureFlag, featureEnabled} from './Flags';
+import {featureEnabled} from './Flags';
 import {timeByParts} from './timeByParts';
 
 function twoDigit(v: number) {
