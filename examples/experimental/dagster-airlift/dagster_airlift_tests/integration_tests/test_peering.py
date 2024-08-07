@@ -16,7 +16,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.test_utils import instance_for_test
-from dagster_airlift import AirflowInstance, BasicAuthBackend, create_defs_from_airflow_instance
+from dagster_airlift import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 from dagster_airlift.core.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
@@ -53,7 +53,7 @@ def test_dag_peering(
     def print_dag__downstream_print_task():
         pass
 
-    defs = create_defs_from_airflow_instance(
+    defs = build_defs_from_airflow_instance(
         airflow_instance=instance,
         orchestrated_defs=Definitions(
             assets=[
