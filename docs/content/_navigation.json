@@ -1090,6 +1090,19 @@
           {
             "title": "Testing with Branch Deployments",
             "path": "/guides/dagster/branch_deployments"
+          },
+          {
+            "title": "Integrations",
+            "children": [
+              {
+                "title": "Approaches to writing integrations",
+                "path": "/guides/integrations/approaches-to-writing-integrations"
+              },
+              {
+                "title": "Writing a multi-asset decorator integration",
+                "path": "/guides/integrations/writing-a-multi-asset-decorator-integration"
+              }
+            ]
           }
         ]
       },
