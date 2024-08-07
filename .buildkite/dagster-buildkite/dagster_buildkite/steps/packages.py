@@ -519,9 +519,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
         pytest_extra_cmds=airflow_extra_cmds,
         pytest_tox_factors=[
-            "default-airflow1",
-            "localdb-airflow1",
-            "persistentdb-airflow1",
             "default-airflow2",
             "localdb-airflow2",
             "persistentdb-airflow2",
