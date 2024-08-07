@@ -8,7 +8,7 @@ from pydantic import Field
 BASE_API_URL = "https://api.powerbi.com/v1.0/myorg/"
 
 
-class PowerBiWorkspace(ConfigurableResource):
+class PowerBIWorkspace(ConfigurableResource):
     """Represents a workspace in PowerBI and provides utilities
     to interact with the PowerBI API.
     """
