@@ -242,7 +242,7 @@ class GraphQLServer(ABC):
         request_context = self.make_request_context(request)
 
         def _graphql_request():
-            with self.wrap_graphql_execution(request):
+            with self.graphql_request_context(request):
                 return run(
                     self._graphql_schema.execute_async(
                         query,
@@ -256,7 +256,7 @@ class GraphQLServer(ABC):
         return await run_in_threadpool(_graphql_request)
 
     @contextmanager
-    def wrap_graphql_execution(self, request: Request):
+    def graphql_request_context(self, request: Request):
         """This context manager executes within the threadpool and can be used to wrap logic around a single graphql request."""
         yield
 
