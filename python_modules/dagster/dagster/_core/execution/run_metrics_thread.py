@@ -10,7 +10,10 @@ import dagster._check as check
 from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._utils.container import retrieve_containerized_utilization_metrics
+from dagster._utils.container import (
+    UNCONSTRAINED_CGROUP_MEMORY_LIMIT,
+    retrieve_containerized_utilization_metrics,
+)
 
 DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 30.0
 DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 15
@@ -63,41 +66,48 @@ def _get_container_metrics(
     cpu_usage = metrics.get("cpu_usage")
     cpu_usage_ms = None
     if cpu_usage is not None:
-        cpu_usage_ms = cpu_usage * 1000  # convert from seconds to milliseconds
+        cpu_usage_ms = check.not_none(cpu_usage) * 1000  # convert from seconds to milliseconds
 
     cpu_limit_ms = None
     if cpu_quota_us and cpu_quota_us > 0 and cpu_period_us and cpu_period_us > 0:
         # Why the 1000 factor is a bit counterintuitive:
         # quota / period -> fraction of cpu per unit of time
         # 1000 * quota / period -> ms/sec of cpu
-        cpu_limit_ms = (1000.0 * cpu_quota_us) / cpu_period_us
+        cpu_limit_ms = (1000.0 * check.not_none(cpu_quota_us)) / check.not_none(cpu_period_us)
 
     cpu_usage_rate_ms = None
     measurement_timestamp = metrics.get("measurement_timestamp")
-    if (
-        previous_cpu_usage_ms
-        and cpu_usage_ms
-        and previous_measurement_timestamp
+    if (previous_cpu_usage_ms and cpu_usage_ms and cpu_usage_ms > previous_cpu_usage_ms) and (
+        previous_measurement_timestamp
         and measurement_timestamp
+        and measurement_timestamp > previous_measurement_timestamp
     ):
         cpu_usage_rate_ms = (cpu_usage_ms - previous_cpu_usage_ms) / (
             measurement_timestamp - previous_measurement_timestamp
         )
 
     cpu_percent = None
-    if cpu_limit_ms and cpu_limit_ms > 0 and cpu_usage_rate_ms and cpu_usage_rate_ms > 0:
-        cpu_percent = 100.0 * cpu_usage_rate_ms / cpu_limit_ms
+    if (cpu_limit_ms and cpu_limit_ms > 0) and (cpu_usage_rate_ms and cpu_usage_rate_ms > 0):
+        cpu_percent = 100.0 * check.not_none(cpu_usage_rate_ms) / check.not_none(cpu_limit_ms)
 
     memory_percent = None
-    memory_limit = metrics.get("memory_limit")
+    memory_limit = None
+    cgroup_memory_limit = metrics.get("memory_limit")
     memory_usage = metrics.get("memory_usage")
-    if memory_limit and memory_limit > 0 and memory_usage and memory_usage > 0:
-        memory_percent = 100.0 * memory_usage / memory_limit
+    if (cgroup_memory_limit and 0 < cgroup_memory_limit < UNCONSTRAINED_CGROUP_MEMORY_LIMIT) and (
+        memory_usage and memory_usage >= 0
+    ):
+        memory_limit = cgroup_memory_limit
+        memory_percent = 100.0 * check.not_none(memory_usage) / check.not_none(memory_limit)
 
     return {
+        # TODO - eventually we should replace and remove cpu_usage_ms and only send cpu_usage_rate_ms
+        #  We need to ensure that the UI and GraphQL queries can handle the change
+        #  and that we have 15 days of runs to ensure continuity.
+        #  Why? the derivative calculated by datadog on cpu_usage_ms is sometimes wonky, resulting
+        #  in a perplexing graph for the end user.
         "container.cpu_usage_ms": cpu_usage_ms,
-        "container.cpu_cfs_period_us": cpu_period_us,
-        "container.cpu_cfs_quota_us": cpu_quota_us,
+        "container.cpu_usage_rate_ms": cpu_usage_rate_ms,
         "container.cpu_limit_ms": cpu_limit_ms,
         "container.cpu_percent": cpu_percent,
         "container.memory_usage": memory_usage,
