@@ -1,5 +1,7 @@
 # Changelog
 
+# 1.8.0 (core) / 0.24.0 (libraries)
+
 ## Major changes since 1.7.0 (core) / 0.22.0 (libraries)
 
 ### Core definition APIs
