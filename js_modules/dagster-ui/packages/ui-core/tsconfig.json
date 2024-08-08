@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
+      "src/*": ["./src/*"],
       "@dagster-io/ui-components": ["../ui-components/src"]
     },
     "module": "es2022",
