@@ -12,8 +12,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.container import retrieve_containerized_utilization_metrics
 
-DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 15.0
-DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 30
+DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 30.0
+DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 15.0
 
 
 def _get_platform_name() -> str:
