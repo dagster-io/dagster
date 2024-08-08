@@ -25,7 +25,7 @@ from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME, get_base_asset_job_lambda
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph

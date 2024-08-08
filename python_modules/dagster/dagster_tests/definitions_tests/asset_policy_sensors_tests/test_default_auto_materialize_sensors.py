@@ -11,7 +11,7 @@ from dagster import (
     sensor,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.sensor_definition import SensorType
