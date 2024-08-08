@@ -331,6 +331,7 @@ export enum AssetConditionEvaluationStatus {
 
 export type AssetConnection = {
   __typename: 'AssetConnection';
+  cursor: Maybe<Scalars['String']['output']>;
   nodes: Array<Asset>;
 };
 
@@ -6111,6 +6112,7 @@ export const buildAssetConnection = (
   relationshipsToOmit.add('AssetConnection');
   return {
     __typename: 'AssetConnection',
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'quo',
     nodes: overrides && overrides.hasOwnProperty('nodes') ? overrides.nodes! : [],
   };
 };

@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import time
 from typing import Dict, List, Optional, Sequence
@@ -45,16 +46,18 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ReadonlyGraphQLContextTestMatrix,
 )
 
-GET_ASSET_KEY_QUERY = """
-    query AssetKeyQuery {
-        assetsOrError {
+GET_ASSETS_QUERY = """
+    query AssetKeyQuery($cursor: String, $limit: Int) {
+        assetsOrError(cursor: $cursor, limit: $limit) {
             __typename
             ...on AssetConnection {
                 nodes {
+                    id
                     key {
                         path
                     }
                 }
+                cursor
             }
         }
     }
@@ -858,7 +861,7 @@ def _get_sorted_materialization_events(
 class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_all_asset_keys(self, graphql_context: WorkspaceRequestContext, snapshot):
         _create_run(graphql_context, "multi_asset_job")
-        result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
+        result = execute_dagster_graphql(graphql_context, GET_ASSETS_QUERY)
         assert result.data
         assert result.data["assetsOrError"]
         assert result.data["assetsOrError"]["nodes"]
@@ -867,6 +870,71 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result.data["assetsOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
 
         snapshot.assert_match(result.data)
+
+    def test_asset_key_pagination(self, graphql_context: WorkspaceRequestContext):
+        _create_run(graphql_context, "multi_asset_job")
+
+        result = execute_dagster_graphql(graphql_context, GET_ASSETS_QUERY)
+        assert result.data
+        assert result.data["assetsOrError"]
+
+        nodes = result.data["assetsOrError"]["nodes"]
+        assert len(nodes) > 0
+
+        assert (
+            result.data["assetsOrError"]["cursor"]
+            == AssetKey(result.data["assetsOrError"]["nodes"][-1]["key"]["path"]).to_string()
+        )
+
+        all_asset_keys = [
+            json.dumps(node["key"]["path"]) for node in result.data["assetsOrError"]["nodes"]
+        ]
+
+        limit = 5
+
+        # Paginate after asset not in graph
+        asset_b_index = all_asset_keys.index(AssetKey("b").to_string())
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_QUERY,
+            variables={"limit": 5, "cursor": AssetKey("b").to_string()},
+        )
+
+        assert (
+            result.data["assetsOrError"]["nodes"]
+            == nodes[asset_b_index + 1 : asset_b_index + 1 + limit]
+        )
+
+        cursor = result.data["assetsOrError"]["cursor"]
+        assert (
+            cursor
+            == AssetKey(result.data["assetsOrError"]["nodes"][limit - 1]["key"]["path"]).to_string()
+        )
+
+        # Paginate after asset in graph
+
+        cursor = AssetKey("asset_2").to_string()
+
+        asset_2_index = all_asset_keys.index(cursor)
+        assert asset_2_index > 0
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSETS_QUERY,
+            variables={"limit": 5, "cursor": cursor},
+        )
+
+        assert (
+            result.data["assetsOrError"]["nodes"]
+            == nodes[asset_2_index + 1 : asset_2_index + 1 + limit]
+        )
+
+        cursor = result.data["assetsOrError"]["cursor"]
+        assert (
+            cursor
+            == AssetKey(result.data["assetsOrError"]["nodes"][limit - 1]["key"]["path"]).to_string()
+        )
 
     def test_get_asset_key_materialization(
         self, graphql_context: WorkspaceRequestContext, snapshot

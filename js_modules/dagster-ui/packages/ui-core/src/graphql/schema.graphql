@@ -1431,6 +1431,7 @@ type UnknownPipeline implements PipelineReference {
 
 type AssetConnection {
   nodes: [Asset!]!
+  cursor: String
 }
 
 union AssetOrError = Asset | AssetNotFoundError
