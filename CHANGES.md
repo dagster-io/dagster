@@ -53,6 +53,7 @@
 - The `assets` argument on `Definitions` now accepts `AssetSpec`s.
 - The new `merge` method on `Definitions` enables combining multiple `Definitions` object into a single larger `Definition`s object with their combined contents.
 - Runs requested through the Declarative Automation system now have a `dagster/from_automation_condition: true` tag applied to them.
+- Changed the run tags query to be more performant. Thanks [@egordm](https://github.com/egordm)!
 - Dagster Pipes and its integrations with Lambda, Kubernetes, and Databricks are no longer experimental.
 - The `Definitions` constructor will no longer raise errors when the provided definitions aren’t mutually resolve-able – e.g. when there are conflicting definitions with the same name, unsatisfied resource dependencies, etc. These errors will still be raised at code location load time. The new `Definitions.validate_loadable` static method also allows performing the validation steps that used to occur in constructor.
 - `AssetsDefinitions` object provided to a `Definitions` object will now be deduped by reference equality. That is, the following will now work:
@@ -74,7 +75,7 @@
 
 - Dagster now raises an error when an op yields an output corresponding to an unselected asset.
 - Fixed a bug that caused downstream ops within a graph-backed asset to be skipped when they were downstream of assets within the graph-backed assets that aren’t part of the selection for the current run.
-- Fixed a bug where code references did not work properly for self-hosted GitLab instances. Thanks, @cooperellidge!
+- Fixed a bug where code references did not work properly for self-hosted GitLab instances. Thanks [@cooperellidge](https://github.com/cooperellidge)!
 - [ui] When engine events with errors appear in run logs, their metadata entries are now rendered correctly.
 - [ui] The asset catalog greeting now uses your first name from your identity provider.
 - [ui] The create alert modal now links to the alerting documentation, and links to the documentation have been updated.
@@ -119,7 +120,7 @@
 
 - The Asset Checks concept overview page now includes a table with all the built-in asset checks.
 - The Asset Metadata page concept page now includes a table with all the standard “dagster/” metadata keys.
-- Fixed a typo in the documentation for `MonthlyPartitionsDefinition` (thanks `@zero_stroke`!).
+- Fixed a typo in the documentation for `MonthlyPartitionsDefinition`. Thanks [@zero_stroke](https://github.com/zero_stroke)!
 - Added a new page about Declarative Automation and a guide about customizing automation conditions
 - Fixed a link in the Limiting concurrency guide.
 
