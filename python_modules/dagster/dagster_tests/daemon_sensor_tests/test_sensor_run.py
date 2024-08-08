@@ -94,6 +94,7 @@ from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iter
 from dagster._record import copy
 from dagster._time import create_datetime, get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from mock import patch
 
 from .conftest import create_workspace_load_target
 
@@ -218,6 +219,13 @@ def always_on_sensor(_context):
 @sensor(job_name="the_job")
 def run_key_sensor(_context):
     return RunRequest(run_key="only_once", run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def only_once_cursor_sensor(context):
+    if not context.cursor:
+        context.update_cursor(str("cursor"))
+        return RunRequest()
 
 
 @sensor(job_name="the_job")
@@ -803,6 +811,7 @@ def the_repo():
         wrong_config_sensor,
         always_on_sensor,
         run_key_sensor,
+        only_once_cursor_sensor,
         custom_interval_sensor,
         skip_cursor_sensor,
         run_cursor_sensor,
@@ -1459,7 +1468,9 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         second=59,
     )
 
-    with freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime), patch.object(
+        DagsterInstance, "get_ticks", wraps=instance.get_ticks
+    ) as mock_get_ticks:
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -1469,12 +1480,19 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
             )
         )
         assert instance.get_runs_count() == 0
+
+        assert mock_get_ticks.call_count == 0
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
+        assert mock_get_ticks.call_count == 1
         assert len(ticks) == 0
 
         evaluate_sensors(workspace_context, executor)
+
+        # call another time to get previous tick
+        assert mock_get_ticks.call_count == 2
+
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 1
@@ -1482,6 +1500,8 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
+        assert mock_get_ticks.call_count == 3
+
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -1493,12 +1513,18 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
 
     # run again (after 30 seconds), to ensure that the run key maintains idempotence
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime), patch.object(
+        DagsterInstance, "get_ticks", wraps=instance.get_ticks
+    ) as mock_get_ticks:
         evaluate_sensors(workspace_context, executor)
+        # did not need to get ticks on this call, as the preivous tick evaluated successfully
+        assert mock_get_ticks.call_count == 0
+
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
+
         assert len(ticks) == 2
         validate_tick(
             ticks[0],
@@ -1526,8 +1552,13 @@ def test_launch_once(caplog, executor, instance, workspace_context, external_rep
 
         # Sensor loop still executes
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
-    with freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime), patch.object(
+        DagsterInstance, "get_ticks", wraps=instance.get_ticks
+    ) as mock_get_ticks:
         evaluate_sensors(workspace_context, executor)
+        # did not need to get ticks on this call either
+        assert mock_get_ticks.call_count == 0
+
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )

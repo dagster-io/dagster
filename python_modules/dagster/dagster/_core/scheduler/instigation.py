@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 from typing_extensions import TypeAlias
 
@@ -108,6 +108,9 @@ class SensorInstigatorData(
             # the last time the sensor was started
             ("last_sensor_start_timestamp", Optional[float]),
             ("sensor_type", Optional[SensorType]),
+            # the last time the tick completed evaluation, used to detect cases where ticks are
+            # interrupted part way through
+            ("last_tick_success_timestamp", Optional[float]),
         ],
     )
 ):
@@ -120,6 +123,7 @@ class SensorInstigatorData(
         last_tick_start_timestamp: Optional[float] = None,
         last_sensor_start_timestamp: Optional[float] = None,
         sensor_type: Optional[SensorType] = None,
+        last_tick_success_timestamp: Optional[float] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -130,6 +134,7 @@ class SensorInstigatorData(
             check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
             check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
             check.opt_inst_param(sensor_type, "sensor_type", SensorType),
+            check.opt_float_param(last_tick_success_timestamp, "last_tick_success_timestamp"),
         )
 
     def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
@@ -142,6 +147,7 @@ class SensorInstigatorData(
             self.last_tick_start_timestamp,
             start_timestamp,
             self.sensor_type,
+            self.last_tick_success_timestamp,
         )
 
 
@@ -490,6 +496,16 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def run_requests(self) -> Optional[Sequence[RunRequest]]:
         return self.tick_data.run_requests
+
+    @property
+    def unsubmitted_run_ids_with_requests(self) -> Sequence[Tuple[str, RunRequest]]:
+        reserved_run_ids = self.tick_data.reserved_run_ids or []
+        unrequested_run_ids = set(reserved_run_ids) - set(self.tick_data.run_ids)
+        return [
+            (run_id, run_request)
+            for run_id, run_request in zip(reserved_run_ids, self.run_requests or [])
+            if run_id in unrequested_run_ids
+        ]
 
 
 @whitelist_for_serdes(
