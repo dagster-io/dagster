@@ -1,6 +1,6 @@
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
-import {FeatureFlag} from 'src/app/FeatureFlags.oss';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {getJSONForKey} from '../hooks/useStateWithStorage';
 

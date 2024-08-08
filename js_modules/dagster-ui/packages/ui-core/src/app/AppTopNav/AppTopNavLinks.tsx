@@ -1,7 +1,7 @@
 import {Box} from '@dagster-io/ui-components';
 import {ReactNode} from 'react';
 import {useHistory} from 'react-router-dom';
-import {FeatureFlag} from 'src/app/FeatureFlags.oss';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {TopNavLink} from './AppTopNav';
 import {

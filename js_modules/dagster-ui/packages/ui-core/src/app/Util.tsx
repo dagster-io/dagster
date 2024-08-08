@@ -1,7 +1,7 @@
 import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
-import {FeatureFlag} from 'src/app/FeatureFlags.oss';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {featureEnabled} from './Flags';
 import {timeByParts} from './timeByParts';

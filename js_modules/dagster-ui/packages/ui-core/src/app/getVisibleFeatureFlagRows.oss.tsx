@@ -1,4 +1,4 @@
-import {FeatureFlag} from 'src/app/FeatureFlags.oss';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 /**
  * Open-source feature flags to be displayed in Dagster UI "User settings"
