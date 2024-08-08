@@ -25,6 +25,10 @@ from typing_extensions import Self
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluation,
+    AutomationConditionEvaluationWithRunIds,
+)
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -743,8 +747,22 @@ def _resume_tick(
 ):
     instance = workspace_process_context.instance
 
+    if (
+        instance.schedule_storage
+        and instance.schedule_storage.supports_auto_materialize_asset_evaluations
+    ):
+        evaluations = [
+            record.get_evaluation_with_run_ids(None)
+            for record in instance.schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
+                evaluation_id=tick.tick_id
+            )
+        ]
+    else:
+        evaluations = []
+
     yield from _submit_run_requests(
         tick.unsubmitted_run_ids_with_requests,
+        evaluations,
         instance=instance,
         context=context,
         external_sensor=external_sensor,
@@ -807,7 +825,9 @@ def _evaluate_sensor(
         _handle_dynamic_partitions_requests(
             sensor_runtime_data.dynamic_partitions_requests, instance, context
         )
-    if not sensor_runtime_data.run_requests:
+    if not (
+        sensor_runtime_data.run_requests or sensor_runtime_data.automation_condition_evaluations
+    ):
         if sensor_runtime_data.dagster_run_reactions:
             _handle_run_reactions(
                 sensor_runtime_data.dagster_run_reactions,
@@ -831,8 +851,9 @@ def _evaluate_sensor(
 
         yield
     else:
-        yield from _handle_run_requests(
-            raw_run_requests=sensor_runtime_data.run_requests,
+        yield from _handle_run_requests_and_automation_condition_evaluations(
+            raw_run_requests=sensor_runtime_data.run_requests or [],
+            automation_condition_evaluations=sensor_runtime_data.automation_condition_evaluations,
             cursor=sensor_runtime_data.cursor,
             context=context,
             instance=instance,
@@ -999,8 +1020,9 @@ def _resolve_run_requests(
     return resolved_run_ids_with_requests
 
 
-def _handle_run_requests(
+def _handle_run_requests_and_automation_condition_evaluations(
     raw_run_requests: Sequence[RunRequest],
+    automation_condition_evaluations: Sequence[AutomationConditionEvaluation],
     cursor: Optional[str],
     instance: DagsterInstance,
     context: SensorLaunchContext,
@@ -1009,6 +1031,20 @@ def _handle_run_requests(
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
+    # first, write out any evaluations without any run ids
+    evaluations = [
+        evaluation.with_run_ids(set()) for evaluation in automation_condition_evaluations
+    ]
+    if (
+        instance.schedule_storage
+        and instance.schedule_storage.supports_auto_materialize_asset_evaluations
+    ):
+        instance.schedule_storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=int(context.tick_id), asset_evaluations=evaluations
+        )
+
+    check_for_debug_crash(sensor_debug_crash_flags, "AUTOMATION_EVALUATIONS_ADDED")
+
     def reserved_run_id(run_request: RunRequest) -> str:
         if run_request.requires_backfill_daemon():
             return make_new_backfill_id()
@@ -1028,6 +1064,7 @@ def _handle_run_requests(
     run_ids_with_run_requests = list(zip(reserved_run_ids, raw_run_requests))
     yield from _submit_run_requests(
         run_ids_with_run_requests,
+        evaluations,
         instance,
         context,
         external_sensor,
@@ -1039,6 +1076,7 @@ def _handle_run_requests(
 
 def _submit_run_requests(
     raw_run_ids_with_requests: Sequence[Tuple[str, RunRequest]],
+    automation_condition_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     instance: DagsterInstance,
     context: SensorLaunchContext,
     external_sensor: ExternalSensor,
@@ -1078,10 +1116,15 @@ def _submit_run_requests(
         gen_run_request_results = map(submit_run_request, resolved_run_ids_with_requests)
 
     skipped_runs: List[SkippedSensorRun] = []
+    evaluations_by_asset_key = {
+        evaluation.asset_key: evaluation for evaluation in automation_condition_evaluations
+    }
+    updated_evaluation_keys = set()
     for run_request_result in gen_run_request_results:
         yield run_request_result.error_info
 
         run = run_request_result.run
+        asset_keys = set()
 
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
@@ -1090,6 +1133,26 @@ def _submit_run_requests(
             context.add_run_info(run_id=run.backfill_id)
         else:
             context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
+            asset_keys = run.asset_selection or set()
+            for key in asset_keys:
+                if key in evaluations_by_asset_key:
+                    evaluation = evaluations_by_asset_key[key]
+                    evaluations_by_asset_key[key] = evaluation._replace(
+                        run_ids=evaluation.run_ids | {run.run_id}
+                    )
+                    updated_evaluation_keys.add(key)
+
+    if (
+        updated_evaluation_keys
+        and instance.schedule_storage
+        and instance.schedule_storage.supports_auto_materialize_asset_evaluations
+    ):
+        instance.schedule_storage.add_auto_materialize_asset_evaluations(
+            evaluation_id=int(context.tick_id),
+            asset_evaluations=[evaluations_by_asset_key[key] for key in updated_evaluation_keys],
+        )
+
+    check_for_debug_crash(sensor_debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
 
     if skipped_runs:
         run_keys = [skipped.run_key for skipped in skipped_runs]
