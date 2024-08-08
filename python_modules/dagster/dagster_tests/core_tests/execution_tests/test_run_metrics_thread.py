@@ -135,31 +135,33 @@ def test_start_run_metrics_thread(dagster_instance, dagster_run, mock_container_
     logger = logging.getLogger("test_run_metrics")
     logger.setLevel(logging.DEBUG)
 
-    with patch(
-        "dagster._core.execution.run_metrics_thread._get_container_metrics",
-        return_value=mock_container_metrics,
-    ):
+    with patch.object(dagster_instance.run_storage, "supports_run_telemetry", return_value=True):
         with patch(
-            "dagster._core.execution.run_metrics_thread._process_is_containerized",
-            return_value=True,
+            "dagster._core.execution.run_metrics_thread._get_container_metrics",
+            return_value=mock_container_metrics,
         ):
-            thread, shutdown = run_metrics_thread.start_run_metrics_thread(
-                dagster_instance,
-                dagster_run,
-                logger=logger,
-                polling_interval=2.0,
-            )
+            with patch(
+                "dagster._core.execution.run_metrics_thread._process_is_containerized",
+                return_value=True,
+            ):
+                thread, shutdown = run_metrics_thread.start_run_metrics_thread(
+                    dagster_instance,
+                    dagster_run,
+                    logger=logger,
+                    polling_interval=2.0,
+                )
 
-            time.sleep(0.1)
+                time.sleep(0.1)
 
-            assert thread.is_alive()
+                assert thread.is_alive()
+                assert "Starting run metrics thread" in caplog.messages[0]
 
-            time.sleep(0.1)
-            shutdown.set()
+                time.sleep(0.1)
+                shutdown.set()
 
-            thread.join()
-            assert thread.is_alive() is False
-            assert "Starting run metrics thread" in caplog.messages[0]
+                thread.join()
+                assert thread.is_alive() is False
+                assert "Shutting down metrics capture thread" in caplog.messages[-1]
 
 
 def test_report_run_metrics(dagster_instance: DagsterInstance, dagster_run: DagsterRun):
