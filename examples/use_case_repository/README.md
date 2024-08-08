@@ -6,7 +6,7 @@ This repository contains a collection of use cases that demonstrate various appl
 
 The use cases in this repository serve two main purposes:
 
-1. They are used to populate the list of available use cases on the Dagster.io website.
+1. They're used to populate the list of available use cases on the Dagster.io website.
 2. They provide practical examples for developers and data engineers working with Dagster.
 
 ### Integration with Dagster.io
@@ -23,6 +23,9 @@ Each use case consists of two main components:
 2. A Python (.py) file: Contains the actual implementation code as a single file.
 
 Both files are utilized on the Dagster.io website. However, only the Python files are subject to automated testing.
+
+The TEMPLATE.md file is used to create new use cases. The actual template lives on our external
+Scout platform. 
 
 ### Important Note
 

@@ -15,7 +15,7 @@ USE_CASES_DIR = file_relative_path(__file__, "../use_case_repository/guides")
 def index():
     use_cases = []
     for filename in os.listdir(USE_CASES_DIR):
-        if filename.endswith(".md"):
+        if filename.endswith(".md") and not filename.startswith("_"):
             with open(os.path.join(USE_CASES_DIR, filename), "r") as f:
                 post = frontmatter.load(f)
                 use_cases.append(
