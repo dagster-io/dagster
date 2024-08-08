@@ -30,7 +30,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
 )
 from dagster._core.definitions.run_request import DagsterRunReaction, InstigatorType, RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, split_run_requests
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
 from dagster._core.execution.backfill import PartitionBackfill
@@ -77,6 +77,12 @@ class SkippedSensorRun(NamedTuple):
 
     run_key: Optional[str]
     existing_run: DagsterRun
+
+
+class BackfillSubmission(NamedTuple):
+    """Placeholder for launched backfills."""
+
+    backfill_id: str
 
 
 class SensorLaunchContext(AbstractContextManager):
@@ -524,7 +530,7 @@ def mark_sensor_state_for_tick(
 class SubmitRunRequestResult(NamedTuple):
     run_key: Optional[str]
     error_info: Optional[SerializableErrorInfo]
-    run: Union[SkippedSensorRun, DagsterRun]
+    run: Union[SkippedSensorRun, DagsterRun, BackfillSubmission]
 
 
 def _submit_run_request(
@@ -663,24 +669,16 @@ def _evaluate_sensor(
 
         yield
     else:
-        run_requests_for_backfill_daemon, run_requests_for_single_runs = split_run_requests(
-            sensor_runtime_data.run_requests
+        yield from _handle_run_requests(
+            raw_run_requests=sensor_runtime_data.run_requests,
+            context=context,
+            instance=instance,
+            external_sensor=external_sensor,
+            workspace_process_context=workspace_process_context,
+            submit_threadpool_executor=submit_threadpool_executor,
+            sensor_debug_crash_flags=sensor_debug_crash_flags,
         )
 
-        if run_requests_for_single_runs:
-            yield from _handle_run_requests(
-                run_requests=run_requests_for_single_runs,
-                context=context,
-                instance=instance,
-                external_sensor=external_sensor,
-                workspace_process_context=workspace_process_context,
-                submit_threadpool_executor=submit_threadpool_executor,
-                sensor_debug_crash_flags=sensor_debug_crash_flags,
-            )
-        if run_requests_for_backfill_daemon:
-            _handle_backfill_requests(
-                run_requests=run_requests_for_backfill_daemon, instance=instance, context=context
-            )
         if context.run_count:
             context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
         else:
@@ -804,18 +802,12 @@ def _handle_run_reactions(
             )
 
 
-def _handle_run_requests(
-    run_requests: Sequence[RunRequest],
-    instance: DagsterInstance,
+def _resolve_run_requests(
+    workspace_process_context: IWorkspaceProcessContext,
     context: SensorLaunchContext,
     external_sensor: ExternalSensor,
-    workspace_process_context: IWorkspaceProcessContext,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
-):
-    skipped_runs = []
-    existing_runs_by_key = _fetch_existing_runs(instance, external_sensor, run_requests)
-
+    run_requests: Sequence[RunRequest],
+) -> Sequence[RunRequest]:
     resolved_run_requests = []
 
     for raw_run_request in run_requests:
@@ -841,16 +833,35 @@ def _handle_run_requests(
                 )
 
         resolved_run_requests.append(run_request)
+    return resolved_run_requests
 
-    def submit_run_request(run_request) -> SubmitRunRequestResult:
-        return _submit_run_request(
-            run_request,
-            workspace_process_context,
-            external_sensor,
-            existing_runs_by_key,
-            context.logger,
-            sensor_debug_crash_flags,
-        )
+
+def _handle_run_requests(
+    raw_run_requests: Sequence[RunRequest],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+    external_sensor: ExternalSensor,
+    workspace_process_context: IWorkspaceProcessContext,
+    submit_threadpool_executor: Optional[ThreadPoolExecutor],
+    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+):
+    resolved_run_requests = _resolve_run_requests(
+        workspace_process_context, context, external_sensor, raw_run_requests
+    )
+    existing_runs_by_key = _fetch_existing_runs(instance, external_sensor, resolved_run_requests)
+
+    def submit_run_request(run_request: RunRequest) -> SubmitRunRequestResult:
+        if run_request.requires_backfill_daemon():
+            return _submit_backfill_request(run_request, instance, context)
+        else:
+            return _submit_run_request(
+                run_request,
+                workspace_process_context,
+                external_sensor,
+                existing_runs_by_key,
+                context.logger,
+                sensor_debug_crash_flags,
+            )
 
     if submit_threadpool_executor:
         gen_run_request_results = submit_threadpool_executor.map(
@@ -859,6 +870,7 @@ def _handle_run_requests(
     else:
         gen_run_request_results = map(submit_run_request, resolved_run_requests)
 
+    skipped_runs: List[SkippedSensorRun] = []
     for run_request_result in gen_run_request_results:
         yield run_request_result.error_info
 
@@ -867,6 +879,8 @@ def _handle_run_requests(
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
             context.add_run_info(run_id=None, run_key=run_request_result.run_key)
+        elif isinstance(run, BackfillSubmission):
+            context.add_run_info(run_id=run.backfill_id)
         else:
             context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
 
@@ -880,26 +894,27 @@ def _handle_run_requests(
     yield
 
 
-def _handle_backfill_requests(
-    run_requests: Sequence[RunRequest],
+def _submit_backfill_request(
+    run_request: RunRequest,
     instance: DagsterInstance,
     context: SensorLaunchContext,
-) -> None:
-    for run_request in run_requests:
-        backfill_id = make_new_backfill_id()
-        instance.add_backfill(
-            PartitionBackfill.from_asset_graph_subset(
-                backfill_id=backfill_id,
-                dynamic_partitions_store=instance,
-                backfill_timestamp=get_current_timestamp(),
-                asset_graph_subset=check.inst(run_request.asset_graph_subset, AssetGraphSubset),
-                tags=run_request.tags or {},
-                # would need to add these as params to RunRequest
-                title=None,
-                description=None,
-            )
+) -> SubmitRunRequestResult:
+    backfill_id = make_new_backfill_id()
+    instance.add_backfill(
+        PartitionBackfill.from_asset_graph_subset(
+            backfill_id=backfill_id,
+            dynamic_partitions_store=instance,
+            backfill_timestamp=get_current_timestamp(),
+            asset_graph_subset=check.inst(run_request.asset_graph_subset, AssetGraphSubset),
+            tags=run_request.tags or {},
+            # would need to add these as params to RunRequest
+            title=None,
+            description=None,
         )
-        context.add_run_info(run_id=backfill_id, run_key=run_request.run_key)
+    )
+    return SubmitRunRequestResult(
+        run_key=None, error_info=None, run=BackfillSubmission(backfill_id=backfill_id)
+    )
 
 
 def is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:
