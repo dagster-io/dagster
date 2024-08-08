@@ -1,5 +1,10 @@
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
-from dagster._core.remote_representation.external_data import external_repository_data_from_def
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.remote_representation.external_data import (
+    ExternalRepositoryData,
+    external_repository_data_from_def,
+)
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 
@@ -85,6 +90,32 @@ def test_serialize_definitions_with_asset_condition() -> None:
         external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
     assert isinstance(serialized, str)
+
+
+def test_serialize_definitions_with_user_code_asset_condition() -> None:
+    class MyAutomationCondition(AutomationCondition):
+        def evaluate(self, context: AutomationContext) -> AutomationResult:
+            return AutomationResult.create(
+                context, context.asset_graph_view.get_asset_slice(asset_key=context.asset_key)
+            )
+
+    automation_condition = AutomationCondition.eager() | MyAutomationCondition()
+
+    @asset(automation_condition=automation_condition)
+    def my_asset() -> int:
+        return 0
+
+    serialized = serialize_value(
+        external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
+    )
+    assert isinstance(serialized, str)
+    deserialized = deserialize_value(serialized)
+    assert isinstance(deserialized, ExternalRepositoryData)
+    external_assets = deserialized.external_asset_graph_data
+    assert len(external_assets) == 1
+    automation_condition = external_assets[0].automation_condition
+    # it does not make its way onto the ExternalAssetNode
+    assert automation_condition is None
 
 
 def test_deserialize_definitions_with_asset_condition() -> None:
