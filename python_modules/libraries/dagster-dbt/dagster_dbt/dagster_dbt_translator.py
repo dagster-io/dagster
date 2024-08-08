@@ -41,7 +41,6 @@ class DagsterDbtTranslatorSettings:
     enable_duplicate_source_asset_keys: bool = False
     enable_code_references: bool = False
     enable_dbt_selection_by_name: bool = False
-    enable_selective_view_materialization: bool = False
 
 
 class DagsterDbtTranslator:
