@@ -1,10 +1,10 @@
 from pandas import read_sql
 
-from dagster import Definitions, SourceAsset, asset, define_asset_job
+from dagster import AssetSpec, Definitions, asset, define_asset_job
 
 from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
 
-raw_users = SourceAsset(key="raw_users")
+raw_users = AssetSpec(key="raw_users")
 
 
 @asset(deps=[raw_users])
