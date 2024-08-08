@@ -1,9 +1,9 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useLocation} from 'react-router-dom';
+import {getVisibleFeatureFlagRows} from 'shared/app/getVisibleFeatureFlagRows.oss';
 
 import {UserSettingsDialog} from '../app/UserSettingsDialog/UserSettingsDialog';
-import {getVisibleFeatureFlagRows} from '../app/getVisibleFeatureFlagRows';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
 
 const items: SideNavItemConfig[] = [

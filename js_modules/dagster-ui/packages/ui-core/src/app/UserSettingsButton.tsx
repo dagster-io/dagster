@@ -1,10 +1,10 @@
 import {Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {getVisibleFeatureFlagRows} from 'shared/app/getVisibleFeatureFlagRows.oss';
 
 import {useFeatureFlags} from './Flags';
 import {TopNavButton} from './TopNavButton';
 import {UserSettingsDialog} from './UserSettingsDialog/UserSettingsDialog';
-import {getVisibleFeatureFlagRows} from './getVisibleFeatureFlagRows';
 
 export const UserSettingsButton = () => {
   const {flagSettingsPage} = useFeatureFlags();

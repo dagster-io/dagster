@@ -11,13 +11,14 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
-import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from '../Flags';
+import {getFeatureFlags, setFeatureFlags} from '../Flags';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
-type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlagType};
+type VisibleFlag = {key: string; label?: React.ReactNode; flagType: FeatureFlag};
 
 interface DialogProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export const UserSettingsDialog = ({isOpen, onClose, visibleFlags}: DialogProps)
 
 interface DialogContentProps {
   onClose: OnCloseFn;
-  visibleFlags: {key: string; label?: React.ReactNode; flagType: FeatureFlagType}[];
+  visibleFlags: {key: string; label?: React.ReactNode; flagType: FeatureFlag}[];
 }
 
 /**
@@ -48,7 +49,7 @@ interface DialogContentProps {
  * we want to render it.
  */
 const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) => {
-  const [flags, setFlags] = React.useState<FeatureFlagType[]>(() => getFeatureFlags());
+  const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());
   const [reloading, setReloading] = React.useState(false);
 
   const initialFlagState = React.useRef(JSON.stringify([...getFeatureFlags().sort()]));
@@ -57,7 +58,7 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
     setFeatureFlags(flags);
   });
 
-  const toggleFlag = (flag: FeatureFlagType) => {
+  const toggleFlag = (flag: FeatureFlag) => {
     setFlags(flags.includes(flag) ? flags.filter((f) => f !== flag) : [...flags, flag]);
   };
 
