@@ -104,7 +104,10 @@ class _Repository:
         ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
-        from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+        from dagster._core.definitions.cacheable_assets import (
+            CACHED_ASSET_ID_KEY,
+            CacheableAssetsDefinition,
+        )
 
         check.callable_param(fn, "fn")
 
@@ -136,6 +139,12 @@ class _Repository:
                 ):
                     bad_defns.append((i, type(definition)))
                 else:
+                    if isinstance(definition, AssetsDefinition):
+                        if any(
+                            CACHED_ASSET_ID_KEY in meta
+                            for meta in definition.metadata_by_key.values()
+                        ):
+                            defer_repository_data = True
                     repository_defns.append(definition)
 
             if bad_defns:
