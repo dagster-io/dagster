@@ -2,10 +2,12 @@ import time
 from typing import Any, Dict, Literal, Mapping, Optional
 
 import boto3
+import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import PipesClient
 from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -13,7 +15,6 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import open_pipes_session
-import dagster._check as check
 
 from dagster_aws.pipes.context_injectors import PipesS3ContextInjector
 from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
