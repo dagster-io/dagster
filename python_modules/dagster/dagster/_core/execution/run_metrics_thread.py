@@ -12,8 +12,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.container import retrieve_containerized_utilization_metrics
 
-DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 15.0
-DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 30
+DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 30.0
+DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 15
 
 
 def _get_platform_name() -> str:
@@ -137,6 +137,8 @@ def _report_run_metrics(
 
     telemetry_data = RunTelemetryData(run_id=dagster_run.run_id, datapoints=datapoints)
 
+    # TODO - this should throw an exception or return a control value if the telemetry is not enabled server side
+    #   so that we can catch and stop the thread.
     instance._run_storage.add_run_telemetry(  # noqa: SLF001
         telemetry_data, tags=run_tags
     )
@@ -211,22 +213,26 @@ def _capture_metrics(
 def start_run_metrics_thread(
     instance: DagsterInstance,
     dagster_run: DagsterRun,
-    container_metrics_enabled: Optional[bool] = True,
     python_metrics_enabled: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
     polling_interval: float = DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
-) -> Tuple[threading.Thread, threading.Event]:
+) -> Tuple[Optional[threading.Thread], Optional[threading.Event]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.opt_inst_param(logger, "logger", logging.Logger)
-    check.opt_bool_param(container_metrics_enabled, "container_metrics_enabled")
     check.opt_bool_param(python_metrics_enabled, "python_metrics_enabled")
     check.float_param(polling_interval, "polling_interval")
 
-    container_metrics_enabled = container_metrics_enabled and _process_is_containerized()
+    if not instance.run_storage.supports_run_telemetry():
+        if logger:
+            logger.debug("Run telemetry is not supported, skipping run metrics thread")
+        return None, None
 
-    # TODO - ensure at least one metrics source is enabled
-    assert container_metrics_enabled or python_metrics_enabled, "No metrics enabled"
+    container_metrics_enabled = _process_is_containerized()
+    if not container_metrics_enabled and not python_metrics_enabled:
+        if logger:
+            logger.debug("No collectable metrics, skipping run metrics thread")
+        return None, None
 
     if logger:
         logger.debug("Starting run metrics thread")
