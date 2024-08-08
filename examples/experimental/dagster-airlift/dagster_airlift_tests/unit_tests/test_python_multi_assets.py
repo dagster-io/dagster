@@ -1,5 +1,5 @@
 from dagster import AssetDep, AssetKey, AssetsDefinition, AssetSpec
-from dagster_airlift import PythonDefs
+from dagster_airlift.core import PythonDefs
 
 from dagster_airlift_tests.unit_tests.multi_asset_python import compute_fn
 

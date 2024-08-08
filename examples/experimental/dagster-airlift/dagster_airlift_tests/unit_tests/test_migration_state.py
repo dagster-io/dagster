@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster_airlift import load_migration_state_from_yaml
+from dagster_airlift.core import load_migration_state_from_yaml
 from dagster_airlift.core.migration_state import (
     AirflowMigrationState,
     DagMigrationState,

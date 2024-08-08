@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster_airlift import (
+from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
     PythonDefs,
