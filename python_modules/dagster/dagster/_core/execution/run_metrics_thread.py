@@ -137,6 +137,8 @@ def _report_run_metrics(
 
     telemetry_data = RunTelemetryData(run_id=dagster_run.run_id, datapoints=datapoints)
 
+    # TODO - this should throw an exception or return a control value if the telemetry is not enabled server side
+    #   so that we can catch and stop the thread.
     instance._run_storage.add_run_telemetry(  # noqa: SLF001
         telemetry_data, tags=run_tags
     )

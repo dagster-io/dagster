@@ -147,7 +147,6 @@ def test_start_run_metrics_thread(dagster_instance, dagster_run, mock_container_
                 dagster_instance,
                 dagster_run,
                 logger=logger,
-                container_metrics_enabled=True,
                 polling_interval=2.0,
             )
 
