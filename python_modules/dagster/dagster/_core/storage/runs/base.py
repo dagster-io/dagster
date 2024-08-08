@@ -353,6 +353,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         """Latest heartbeats of all daemon types."""
 
+    def supports_run_telemetry(self) -> bool:
+        """Whether the storage supports run telemetry."""
+        return False
+
     def add_run_telemetry(
         self,
         run_telemetry: RunTelemetryData,

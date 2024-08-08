@@ -223,6 +223,11 @@ def start_run_metrics_thread(
     check.opt_bool_param(python_metrics_enabled, "python_metrics_enabled")
     check.float_param(polling_interval, "polling_interval")
 
+    if not instance.run_storage.supports_run_telemetry():
+        if logger:
+            logger.debug("Run telemetry is not supported, skipping run metrics thread")
+        return None, None
+
     container_metrics_enabled = _process_is_containerized()
     if not container_metrics_enabled and not python_metrics_enabled:
         if logger:
