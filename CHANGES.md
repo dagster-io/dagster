@@ -1,5 +1,131 @@
 # Changelog
 
+## Major changes since 1.7.0 (core) / 0.22.0 (libraries)
+
+### Core definition APIs
+
+- You can now pass `AssetSpec` objects to the `assets` argument of `Definitions`, to let Dagster know about assets without associated materialization functions. This replaces the experimental `external_assets_from_specs` API, as well as `SourceAsset`s, which are now deprecated. Unlike `SourceAsset`s, `AssetSpec`s can be used for non-materializable assets with dependencies on Dagster assets, such as BI dashboards that live downstream of warehouse tables that are orchestrated by Dagster. [[docs](https://docs.dagster.io/concepts/assets/external-assets)].
+- [Experimental] You can now merge `Definitions` objects together into a single larger `Definitions` object, using the new `Definitions.merge` API ([doc](https://docs.dagster.io/_apidocs/definitions#dagster.Definitions.merge)). This makes it easier to structure large Dagster projects, as you can construct a `Definitions` object for each sub-domain and then merge them together at the top level.
+
+### Partitions and backfills
+
+- `BackfillPolicy`s assigned to assets are now respected for backfills launched from jobs that target those assets.
+- You can now wipe materializations for individual asset partitions.
+
+### Automation
+
+- [Experimental] You can now add `AutomationCondition`s to your assets to have them automatically executed in response to specific conditions ([docs](https://docs.dagster.io/concepts/automation/declarative-automation)). These serve as a drop-in replacement and improvement over the `AutoMaterializePolicy` system, which is being marked as deprecated.
+- [Experimental] Sensors and schedules can now directly target assets, via the new `target` parameter, instead of needing to construct a job.
+- [Experimental] The Timeline page can now be grouped by job or automation. When grouped by automation, all runs launched by a sensor responsible for evaluating automation conditions will get bucketed to that sensor in the timeline instead of the "Ad-hoc materializations" row. Enable this by opting in to the `Experimental navigation` feature flag in user settings.
+
+### Catalog
+
+- The Asset Details page now prominently displays row count and relation identifier (table name, schema, database), when corresponding asset metadata values are provided. For more information, see the [metadata and tags docs](https://docs.dagster.io/concepts/metadata-tags#metadata--tags).
+- Introduced code reference metadata which can be used to open local files in your editor, or files in source control in your browser. Dagster can automatically attach code references to your assets’ Python source. For more information, see the [docs](https://docs.dagster.io/guides/dagster/code-references).
+
+### Data quality and reliability
+
+- [Experimental] Metadata bound checks – The new `build_metadata_bounds_checks` API [[doc](https://docs.dagster.io/_apidocs/asset-checks#dagster.build_metadata_bounds_checks)] enables easily defining asset checks that fail if a numeric asset metadata value falls outside given bounds.
+- [Experimental] Freshness checks from dbt config - Freshness checks can now be set on dbt assets, straight from dbt. Check out the API docs for [build_freshness_checks_from_dbt_assets](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.build_freshness_checks_from_dbt_assets) for more.
+
+### Integrations
+
+- Dagster Pipes (`PipesSubprocessClient`) and its integrations with Lambda (`PipesLambdaClient`), Kubernetes (`PipesK8sClient`), and Databricks (`PipesDatabricksClient`) are no longer experimental.
+- The new `DbtProject` class ([docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject)) makes it simpler to define dbt assets that can be constructed in both development and production. `DbtProject.prepare_if_dev()` eliminates boilerplate for local development, and the `dagster-dbt project prepare-and-package` CLI can helps pull deps and generate the manifest at build time.
+- [Experimental] The `dagster-looker` package can be used to define a set of Dagster assets from a Looker project that is defined in LookML and is backed by git. See the [GitHub discussion](https://github.com/dagster-io/dagster/discussions/23479) for more details.
+
+### Dagster Plus
+
+- Catalog views — In Dagster+, selections into the catalog can now be saved and shared across an organization as catalog views. Catalog views have a name and description, and can be applied to scope the catalog, asset health, and global asset lineage pages against the view’s saved selection.
+- Code location history — Dagster+ now stores a history of code location deploys, including the ability to revert to a previously deployed configuration.
+
+## Changes since 1.7.16 (core) / 0.22.16 (libraries)
+
+### New
+
+- The target of both schedules and sensors can now be set using an experimental `target` parameter that accepts an `AssetSelection` or list of assets. Any assets passed this way will also be included automatically in the `assets` list of the containing `Definitions` object.
+- `ScheduleDefinition` and `SensorDefinition` now have a `target` argument that can accept an `AssetSelection`.
+- You can now wipe materializations for individual asset partitions.
+- `AssetSpec` now has a `partitions_def` attribute. All the `AssetSpec`s provided to a `@multi_asset` must have the same `partitions_def`.
+- The `assets` argument on `materialize` now accepts `AssetSpec`s.
+- The `assets` argument on `Definitions` now accepts `AssetSpec`s.
+- The new `merge` method on `Definitions` enables combining multiple `Definitions` object into a single larger `Definition`s object with their combined contents.
+- Runs requested through the Declarative Automation system now have a `dagster/from_automation_condition: true` tag applied to them.
+- Dagster Pipes and its integrations with Lambda, Kubernetes, and Databricks are no longer experimental.
+- The `Definitions` constructor will no longer raise errors when the provided definitions aren’t mutually resolve-able – e.g. when there are conflicting definitions with the same name, unsatisfied resource dependencies, etc. These errors will still be raised at code location load time. The new `Definitions.validate_loadable` static method also allows performing the validation steps that used to occur in constructor.
+- `AssetsDefinitions` object provided to a `Definitions` object will now be deduped by reference equality. That is, the following will now work:
+
+  ```python
+  from dagster import asset, Definitions
+
+  @asset
+  def my_asset(): ...
+
+  defs = Definitions(assets=[my_asset, my_asset]) # Deduped into just one AssetsDefinition.
+  ```
+
+- [dagster-embedded-elt] Adds translator options for dlt integration to override auto materialize policy, group name, owners, and tags
+- [dagster-sdf] Introducing the dagster-sdf integration for data modeling and transformations powered by sdf.
+- [dagster-dbt] Added a new `with_insights()` method which can be used to more easily attach Dagster+ Insights metrics to dbt executions: `dbt.cli(...).stream().with_insights()`
+
+### Bugfixes
+
+- Dagster now raises an error when an op yields an output corresponding to an unselected asset.
+- Fixed a bug that caused downstream ops within a graph-backed asset to be skipped when they were downstream of assets within the graph-backed assets that aren’t part of the selection for the current run.
+- Fixed a bug where code references did not work properly for self-hosted GitLab instances. Thanks, @cooperellidge!
+- [ui] When engine events with errors appear in run logs, their metadata entries are now rendered correctly.
+- [ui] The asset catalog greeting now uses your first name from your identity provider.
+- [ui] The create alert modal now links to the alerting documentation, and links to the documentation have been updated.
+- [ui] Fixed an issue introduced in the 1.7.13 release where some asset jobs were only displaying their ops in the Dagster UI instead of their assets.
+- Fixed an issue where terminating a run while it was using the Snowflake python connector would sometimes move it into a FAILURE state instead of a CANCELED state.
+- Fixed an issue where backfills would sometimes move into a FAILURE state instead of a CANCELED state when the backfill was canceled.
+
+### Breaking Changes
+
+- The experimental and deprecated `build_asset_with_blocking_check` has been removed. Use the `blocking` argument on `@asset_check` instead.
+- Users with `mypy` and `pydantic` 1 may now experience a “metaclass conflict” error when using `Config`. Previously this would occur when using pydantic 2.
+- `AutoMaterializeSensorDefinition` has been renamed `AutomationConditionSensorDefinition`.
+- The deprecated methods of the `ComputeLogManager` have been removed. Custom `ComputeLogManager` implementations must also implement the `CapturedLogManager` interface. This will not affect any of the core implementations available in the core `dagster` package or the library packages.
+- By default, an `AutomationConditionSensorDefinition` with the name `“default_automation_condition_sensor”` will be constructed for each code location, and will handle evaluating and launching runs for all `AutomationConditions` and `AutoMaterializePolicies` within that code location. You can restore the previous behavior by setting:
+  ```yaml
+  auto_materialize:
+    use_sensors: False
+  ```
+  in your dagster.yaml file.
+- [dagster-dbt] Support for `dbt-core==1.6.*` has been removed because the version is now end-of-life.
+- [dagster-dbt] The following deprecated APIs have been removed:
+  - `KeyPrefixDagsterDbtTranslator` has been removed. To modify the asset keys for a set of dbt assets, implement`DagsterDbtTranslator.get_asset_key()` instead.
+  - Support for setting freshness policies through dbt metadata on field `+meta.dagster_freshness_policy` has been removed. Use `+meta.dagster.freshness_policy` instead.
+  - Support for setting auto-materialize policies through dbt metadata on field `+meta.dagster_auto_materialize_policy` has been removed. Use `+meta.dagster.auto_materialize_policy` instead.
+  - Support for `load_assets_from_dbt_project`, `load_assets_from_dbt_manifest`, and `dbt_cli_resource` has been removed. Use `@dbt_assets`, `DbtCliResource`, and `DbtProject` instead to define how to load dbt assets from a dbt project and to execute them.
+  - Support for rebuilt ops like `dbt_run_op`, `dbt_compile_op`, etc has been removed. Use `@op` and `DbtCliResource` directly to execute dbt commands in an op.
+- Properties on `AssetExecutionContext` , `OpExecutionContext` , and `ScheduleExecutionContext` that include `datetime`s now return standard Python `datetime` objects instead of [Pendulum datetimes](https://pendulum.eustace.io/docs/). The types in the public API for these properties have always been `datetime` and this change should not be breaking in the majority of cases, but Pendulum datetimes include some additional methods that are not present on standard Python `datetime`s, and any code that was using those methods will need to be updated to either no longer use those methods or transform the `datetime` into a Pendulum datetime. See the 1.8 migration guide for more information and examples.
+- `MemoizableIOManager`, `VersionStrategy`, `SourceHashVersionStrategy`, `OpVersionContext`, `ResourceVersionContext`, and `MEMOIZED_RUN_TAG`, which have been deprecated and experimental since pre-1.0, have been removed.
+
+### Deprecations
+
+- The Run Status column of the Backfills page has been removed. This column was only populated for backfills of jobs. To see the run statuses for job backfills, click on the backfill ID to get to the Backfill Details page.
+- The experimental `external_assets_from_specs` API has been deprecated. Instead, you can directly pass `AssetSpec` objects to the `assets` argument of the `Definitions` constructor.
+- `AutoMaterializePolicy` has been marked as deprecated in favor of `AutomationCondition` , which provides a significantly more flexible and customizable interface for expressing when an asset should be executed. More details on how to migrate your `AutoMaterializePolicies` can be found in the Migration Guide.
+- `SourceAsset` has been deprecated. See the major changes section and migration guide for more details.
+- The `asset_partition_key_for_output`, `asset_partition_keys_for_output`, and `asset_partition_key_range_for_output`, and `asset_partitions_time_window_for_output` methods on `OpExecutionContext` have been deprecated. Instead, use the corresponding property: `partition_key`, `partition_keys`, `partition_key_range`, or `partition_time_window`.
+- The `partitions_def` parameter on `define_asset_job` is now deprecated. The `partitions_def` for an asset job is determined from the `partitions_def` attributes on the assets it targets, so this parameter is redundant.
+- [dagster-shell] `create_shell_command_op` and `create_shell_script_op` have been marked as deprecated in favor of `PipesSubprocessClient` (see details in [Dagster Pipes subprocess reference](https://docs.dagster.io/concepts/dagster-pipes/subprocess/reference))
+- [dagster-airbyte] `load_assets_from_airbyte_project` is now deprecated, because the Octavia CLI that it relies on is an experimental feature that is no longer supported. Use `build_airbyte_assets` or `load_assets_from_airbyte_project` instead.
+
+### Documentation
+
+- The Asset Checks concept overview page now includes a table with all the built-in asset checks.
+- The Asset Metadata page concept page now includes a table with all the standard “dagster/” metadata keys.
+- Fixed a typo in the documentation for `MonthlyPartitionsDefinition` (thanks `@zero_stroke`!).
+- Added a new page about Declarative Automation and a guide about customizing automation conditions
+- Fixed a link in the Limiting concurrency guide.
+
+### Dagster Plus
+
+- In Dagster+, selections into the catalog can now be saved and shared across an organization as catalog views. Catalog views have a name and description, and can be applied to scope the catalog, asset health, and global asset lineage pages against the view’s saved selection.
+- In Dagster+ run alerts, if you are running Dagster 1.8 or greater in your user code, you will now receive exception-level information in the alert body.
+
 # 1.7.16 (core) / 0.23.16 (libraries)
 
 ### Experimental
