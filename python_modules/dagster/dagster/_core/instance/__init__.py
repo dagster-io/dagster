@@ -1839,6 +1839,14 @@ class DagsterInstance(DynamicPartitionsStore):
             filters, limit, order_by, ascending, cursor, bucket_by
         )
 
+    def get_mega_runs(
+        self,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        ascending: bool = False,
+    ):
+        return self._run_storage.get_mega_runs(cursor, limit, ascending)
+
     @traced
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""

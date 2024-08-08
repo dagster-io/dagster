@@ -12,6 +12,7 @@ from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
@@ -36,6 +37,18 @@ class BulkActionStatus(Enum):
     @staticmethod
     def from_graphql_input(graphql_str):
         return BulkActionStatus(graphql_str)
+
+    def to_dagster_run_status(self) -> DagsterRunStatus:
+        if self == BulkActionStatus.REQUESTED:
+            return DagsterRunStatus.STARTED
+        elif self == BulkActionStatus.COMPLETED:
+            return DagsterRunStatus.SUCCESS
+        elif self == BulkActionStatus.FAILED:
+            return DagsterRunStatus.FAILURE
+        elif self == BulkActionStatus.CANCELING:
+            return DagsterRunStatus.CANCELING
+        elif self == BulkActionStatus.CANCELED:
+            return DagsterRunStatus.CANCELED
 
 
 @whitelist_for_serdes

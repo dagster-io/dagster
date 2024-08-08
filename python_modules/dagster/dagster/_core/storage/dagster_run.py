@@ -24,6 +24,7 @@ from dagster._core.loader import InstanceLoadableBy
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
+from dagster._record import record
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 from .tags import (
@@ -600,6 +601,17 @@ class TagBucket(NamedTuple):
     bucket_limit: Optional[int]
 
 
+@record
+class MegaRun:
+    run_id: str
+    status: DagsterRunStatus
+    create_timestamp: datetime
+    start_time: Optional[float]
+    end_time: Optional[float]
+    target: Union[str, AbstractSet[Union[AssetKey, AssetCheckKey]]]
+    tags: Mapping[str, str]
+
+
 class RunRecord(
     NamedTuple(
         "_RunRecord",
@@ -651,8 +663,8 @@ class RunRecord(
         # this should be replaced with an async DB call
         records = instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
 
-        for record in records:
-            result_map[record.dagster_run.run_id] = record
+        for run_record in records:
+            result_map[run_record.dagster_run.run_id] = run_record
 
         return result_map.values()
 
