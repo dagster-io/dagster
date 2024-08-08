@@ -1,6 +1,6 @@
 import {Box, Heading, PageHeader} from '@dagster-io/ui-components';
 import React from 'react';
-import {OverviewPageAlerts} from 'src/overview/OverviewPageAlerts.oss';
+import {OverviewPageAlerts} from 'shared/overview/OverviewPageAlerts.oss';
 
 import {OverviewTabs} from './OverviewTabs';
 

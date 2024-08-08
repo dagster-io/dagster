@@ -15,8 +15,8 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {useAssetGraphExplorerFilters} from 'src/asset-graph/useAssetGraphExplorerFilters.oss';
-import {AssetFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
+import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
+import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';

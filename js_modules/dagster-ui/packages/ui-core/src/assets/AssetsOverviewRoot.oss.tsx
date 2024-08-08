@@ -4,7 +4,7 @@ import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-import {AssetGlobalLineageLink, AssetPageHeader} from 'src/assets/AssetPageHeader.oss';
+import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';

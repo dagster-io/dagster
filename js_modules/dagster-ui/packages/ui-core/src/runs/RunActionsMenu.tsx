@@ -17,7 +17,7 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {RunMetricsDialog} from 'src/runs/RunMetricsDialog.oss';
+import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';

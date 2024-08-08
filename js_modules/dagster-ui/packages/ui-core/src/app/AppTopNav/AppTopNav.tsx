@@ -1,7 +1,7 @@
 import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link, NavLink} from 'react-router-dom';
-import {AppTopNavRightOfLogo} from 'src/app/AppTopNav/AppTopNavRightOfLogo.oss';
+import {AppTopNavRightOfLogo} from 'shared/app/AppTopNav/AppTopNavRightOfLogo.oss';
 import styled from 'styled-components';
 
 import {VersionNumber} from '../../nav/VersionNumber';

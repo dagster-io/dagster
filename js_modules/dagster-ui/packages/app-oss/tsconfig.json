@@ -3,7 +3,7 @@
     "paths": {
       "@dagster-io/ui-core/*": ["../ui-core/src/*"],
       "@dagster-io/ui-components": ["../ui-components/src"],
-      "src/*": ["../ui-core/src/*"]
+      "shared/*": ["../ui-core/src/*"]
     },
     "module": "esnext",
     "target": "es2022",
