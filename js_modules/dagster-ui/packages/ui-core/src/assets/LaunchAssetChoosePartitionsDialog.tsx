@@ -48,11 +48,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {
-  displayNameForAssetKey,
-  isHiddenAssetGroupJob,
-  itemWithAssetKey,
-} from '../asset-graph/Utils';
+import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
@@ -344,7 +340,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
 
   const onLaunchAsBackfill = async () => {
     const backfillParams: LaunchBackfillParams =
-      target.type === 'job' && !isHiddenAssetGroupJob(target.jobName)
+      target.type === 'job'
         ? {
             tags,
             assetSelection: assets.map(asAssetKeyInput),
