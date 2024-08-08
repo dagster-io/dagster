@@ -37,7 +37,6 @@ setup(
         f"dagster{pin}",
         f"dagster-pipes{pin}",
         f"dagster-pyspark{pin}",
-        "databricks-cli~=0.17",  # TODO: Remove this dependency in the next minor release.
         "databricks-sdk<=0.17.0",  # dbt-databricks is pinned to this version
     ],
     zip_safe=False,
