@@ -33,11 +33,11 @@ if TYPE_CHECKING:
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.execution import GrapheneExecutionPlan
     from ..schema.logs.events import GrapheneRunStepStats
-    from ..schema.mega_run import GrapheneMegaRun
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
     from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
     from ..schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
+    from ..schema.runs_feed import GrapheneRunsFeedConnection
     from ..schema.util import ResolveInfo
 
 
@@ -388,7 +388,7 @@ _DELIMITER = "::"
 
 
 @record
-class MegaRunCursor:
+class RunsFeedCursor:
     run_cursor: Optional[str]
     backfill_cursor: Optional[str]
 
@@ -398,7 +398,7 @@ class MegaRunCursor:
     @staticmethod
     def from_string(serialized: Optional[str]):
         if serialized is None:
-            return MegaRunCursor(
+            return RunsFeedCursor(
                 run_cursor=None,
                 backfill_cursor=None,
             )
@@ -406,7 +406,7 @@ class MegaRunCursor:
         if len(parts) != 2:
             raise DagsterInvariantViolationError(f"Invalid cursor for querying runs: {serialized}")
 
-        return MegaRunCursor(
+        return RunsFeedCursor(
             run_cursor=parts[0] if parts[0] else None,
             backfill_cursor=parts[1] if parts[1] else None,
         )
@@ -430,30 +430,31 @@ def _fetch_runs_not_in_backfill(
     return runs[:limit]
 
 
-def get_mega_runs(
+def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
-) -> Tuple[Sequence["GrapheneMegaRun"], str, bool]:
+) -> "GrapheneRunsFeedConnection":
     """Returns a merged list of backfills and single runs (runs that are not part of a backfill),
     the cursor to fetch the next page, and a boolean indicating if there are more results to fetch.
 
-    Cursor format: run_id;backfill_id - see MegaRunCursor
+    Cursor format: run_id;backfill_id - see RunsFeedCursor
     """
     from ..schema.backfill import GraphenePartitionBackfill
     from ..schema.pipelines.pipeline import GrapheneRun
+    from ..schema.runs_feed import GrapheneRunsFeedConnection
 
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
 
     instance = graphene_info.context.instance
-    mega_run_cursor = MegaRunCursor.from_string(cursor)
+    runs_feed_cursor = RunsFeedCursor.from_string(cursor)
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
     fetch_limit = limit + 1 if limit else None
-    backfills = instance.get_backfills(cursor=mega_run_cursor.backfill_cursor, limit=fetch_limit)
+    backfills = instance.get_backfills(cursor=runs_feed_cursor.backfill_cursor, limit=fetch_limit)
     runs = _fetch_runs_not_in_backfill(
-        instance, cursor=mega_run_cursor.run_cursor, limit=fetch_limit
+        instance, cursor=runs_feed_cursor.run_cursor, limit=fetch_limit
     )
 
     if (
@@ -471,40 +472,42 @@ def get_mega_runs(
         # case when limit was not passed, so we fetched all of the results
         has_more = False
 
-    all_mega_runs = [GraphenePartitionBackfill(backfill) for backfill in backfills] + [
+    all_runs = [GraphenePartitionBackfill(backfill) for backfill in backfills] + [
         GrapheneRun(run) for run in runs
     ]
 
     # order runs and backfills by create_time. typically we sort by storage id but that won't work here since
     # they are different tables
-    all_mega_runs = sorted(
-        all_mega_runs,
+    all_runs = sorted(
+        all_runs,
         key=lambda x: x.resolve_creationTime(graphene_info),  # ideally could just do .creationTime
         reverse=True,
     )
 
     if limit:
-        to_return = all_mega_runs[:limit]
+        to_return = all_runs[:limit]
     else:
-        to_return = all_mega_runs
+        to_return = all_runs
 
     new_run_cursor = None
     new_backfill_cursor = None
-    for mega_run in reversed(to_return):
+    for run in reversed(to_return):
         if new_run_cursor is not None and new_backfill_cursor is not None:
             break
-        if new_backfill_cursor is None and isinstance(mega_run, GraphenePartitionBackfill):
-            new_backfill_cursor = mega_run.id
-        if new_run_cursor is None and isinstance(mega_run, GrapheneRun):
-            new_run_cursor = mega_run.runId
+        if new_backfill_cursor is None and isinstance(run, GraphenePartitionBackfill):
+            new_backfill_cursor = run.id
+        if new_run_cursor is None and isinstance(run, GrapheneRun):
+            new_run_cursor = run.runId
 
     # if either of the new cursors are None, replace with the cursor passed in so the next call doesn't
     # restart at the top the table.
-    final_cursor = MegaRunCursor(
-        run_cursor=new_run_cursor if new_run_cursor else mega_run_cursor.run_cursor,
+    final_cursor = RunsFeedCursor(
+        run_cursor=new_run_cursor if new_run_cursor else runs_feed_cursor.run_cursor,
         backfill_cursor=new_backfill_cursor
         if new_backfill_cursor
-        else mega_run_cursor.backfill_cursor,
+        else runs_feed_cursor.backfill_cursor,
     )
 
-    return to_return, final_cursor.to_string(), has_more
+    return GrapheneRunsFeedConnection(
+        results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
+    )

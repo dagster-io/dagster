@@ -1371,7 +1371,7 @@ type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   valueRep: String
 }
 
-type Run implements PipelineRun & MegaRun {
+type Run implements PipelineRun & RunsFeedEntry {
   id: ID!
   runId: String!
   pipelineSnapshotId: String
@@ -1401,7 +1401,7 @@ type Run implements PipelineRun & MegaRun {
   endTime: Float
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  runType: MegaRunType!
+  runType: RunsFeedType!
   parentPipelineSnapshotId: String
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -1414,7 +1414,7 @@ type Run implements PipelineRun & MegaRun {
   hasUnconstrainedRootNodes: Boolean!
 }
 
-interface MegaRun {
+interface RunsFeedEntry {
   runId: String!
   runStatus: RunStatus
   creationTime: Float!
@@ -1424,7 +1424,7 @@ interface MegaRun {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  runType: MegaRunType!
+  runType: RunsFeedType!
 }
 
 type AssetCheckhandle {
@@ -1432,7 +1432,7 @@ type AssetCheckhandle {
   assetKey: AssetKey!
 }
 
-enum MegaRunType {
+enum RunsFeedType {
   BACKFILL
   RUN
 }
@@ -2776,7 +2776,7 @@ type PartitionRun {
   run: Run
 }
 
-type PartitionBackfill implements MegaRun {
+type PartitionBackfill implements RunsFeedEntry {
   runId: String!
   runStatus: RunStatus!
   creationTime: Float!
@@ -2786,7 +2786,7 @@ type PartitionBackfill implements MegaRun {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  runType: MegaRunType!
+  runType: RunsFeedType!
   id: String!
   status: BulkActionStatus!
   partitionNames: [String!]
@@ -3244,7 +3244,7 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  megaRunsOrError(cursor: String, limit: Int): MegaRunsOrError!
+  runsFeedOrError(cursor: String, limit: Int): RunsFeedConnectionOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3394,14 +3394,10 @@ enum EnvVarConsumerType {
   RESOURCE
 }
 
-union MegaRunsOrError = MegaRuns | InvalidPipelineRunsFilterError | PythonError
+union RunsFeedConnectionOrError = RunsFeedConnection | PythonError
 
-type MegaRuns {
-  results: MegaRunsConnection!
-}
-
-type MegaRunsConnection {
-  results: [MegaRun!]!
+type RunsFeedConnection {
+  results: [RunsFeedEntry!]!
   cursor: String!
   hasMore: Boolean!
 }

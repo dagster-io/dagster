@@ -47,8 +47,8 @@ from .errors import (
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
 )
-from .mega_run import GrapheneMegaRun, GrapheneMegaRunType
 from .pipelines.config import GrapheneRunConfigValidationInvalid
+from .runs_feed import GrapheneRunsFeedEntry, GrapheneRunsFeedEntryType
 from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
@@ -293,16 +293,16 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
 
 class GraphenePartitionBackfill(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMegaRun,)
+        interfaces = (GrapheneRunsFeedEntry,)
 
         name = "PartitionBackfill"
 
     id = graphene.NonNull(graphene.String)
-    runId = graphene.NonNull(graphene.String)  # for MegaRun interface - dupe of id
+    runId = graphene.NonNull(graphene.String)  # for RunsFeedEntry interface - dupe of id
     status = graphene.NonNull(GrapheneBulkActionStatus)
     runStatus = graphene.NonNull(
         GrapheneRunStatus
-    )  # for MegaRun interface - combines status with sub-run statuses
+    )  # for RunsFeedEntry interface - combines status with sub-run statuses
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
     numPartitions = graphene.Field(graphene.Int)
@@ -312,10 +312,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
-    creationTime = graphene.NonNull(graphene.Float)  # for MegaRun interface - dupe of timestamp
-    startTime = graphene.Float()  # for MegaRun interface - dupe of timestamp
+    creationTime = graphene.NonNull(
+        graphene.Float
+    )  # for RunsFeedEntry interface - dupe of timestamp
+    startTime = graphene.Float()  # for RunsFeedEntry interface - dupe of timestamp
     endTimestamp = graphene.Field(graphene.Float)
-    endTime = graphene.Float()  # for MegaRun interface - dupe of endTimestamp
+    endTime = graphene.Float()  # for RunsFeedEntry interface - dupe of endTimestamp
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
@@ -352,11 +354,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         graphene.NonNull("dagster_graphql.schema.instigation.GrapheneInstigationEventConnection"),
         cursor=graphene.String(),
     )
-    jobName = graphene.String()  # for MegaRun interface - dupe of partitionSetName
+    jobName = graphene.String()  # for RunsFeedEntry interface - dupe of partitionSetName
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
     )
-    runType = graphene.NonNull(GrapheneMegaRunType)
+    runType = graphene.NonNull(GrapheneRunsFeedEntryType)
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -376,7 +378,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             # creationTime=backfill_job.backfill_timestamp,
             startTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
-            runType=GrapheneMegaRunType.BACKFILL,
+            runType=GrapheneRunsFeedEntryType.BACKFILL,
         )
 
     def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[ExternalPartitionSet]:

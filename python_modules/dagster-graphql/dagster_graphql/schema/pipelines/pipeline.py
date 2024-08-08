@@ -44,9 +44,9 @@ from ..logs.events import (
     GrapheneObservationEvent,
     GrapheneRunStepStats,
 )
-from ..mega_run import GrapheneMegaRun, GrapheneMegaRunType
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..runs import GrapheneRunConfigData
+from ..runs_feed import GrapheneRunsFeedEntry, GrapheneRunsFeedEntryType
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
 from ..solids import (
@@ -328,7 +328,7 @@ class GrapheneRun(graphene.ObjectType):
     parentPipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
     status = graphene.NonNull(GrapheneRunStatus)
-    runStatus = graphene.NonNull(GrapheneRunStatus)  # for MegaRun interface - dupe of status
+    runStatus = graphene.NonNull(GrapheneRunStatus)  # for RunsFeedEntry interface - dupe of status
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
@@ -364,10 +364,10 @@ class GrapheneRun(graphene.ObjectType):
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
     rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
-    runType = graphene.NonNull(GrapheneMegaRunType)
+    runType = graphene.NonNull(GrapheneRunsFeedEntryType)
 
     class Meta:
-        interfaces = (GraphenePipelineRun, GrapheneMegaRun)
+        interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
         name = "Run"
 
     def __init__(self, record: RunRecord):
@@ -378,7 +378,7 @@ class GrapheneRun(graphene.ObjectType):
             status=dagster_run.status.value,
             runStatus=dagster_run.status.value,
             mode=DEFAULT_MODE_NAME,
-            runType=GrapheneMegaRunType.RUN,
+            runType=GrapheneRunsFeedEntryType.RUN,
         )
         self.dagster_run = dagster_run
         self._run_record = record
