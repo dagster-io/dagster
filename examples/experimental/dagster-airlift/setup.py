@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="dagster-airlift",
-    version="0.0.1",
+    version="0.0.3",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
