@@ -25,7 +25,7 @@ from botocore.exceptions import ClientError
 from dagster import PipesClient
 from dagster._annotations import experimental
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
     PipesClientCompletedInvocation,
@@ -351,7 +351,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     Args:
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the Glue job, for example, :py:class:`PipesGlueContextInjector`.
-        message_reader (Optional[PipesGlueMessageReader]): A message reader to use to read messages
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
         client (Optional[boto3.client]): The boto Glue client used to launch the Glue job
         forward_termination (bool): Whether to cancel the Glue job run when the Dagster process receives a termination signal.
@@ -362,12 +362,20 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         context_injector: PipesContextInjector,
         message_reader: Optional[PipesMessageReader] = None,
         client: Optional[boto3.client] = None,
-        forward_termination: bool = False,
+        forward_termination: bool = True,
     ):
         self._client = client or boto3.client("glue")
         self._context_injector = context_injector
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
+
+        self._last_job_run_id: Optional[str] = None
+
+    @property
+    def last_job_run_id(self) -> str:
+        if not self._last_job_run_id:
+            raise DagsterInvariantViolationError("No AWS Glue jobs were started using this client")
+        return self._last_job_run_id
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -448,6 +456,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
 
             try:
                 run_id = self._client.start_job_run(**params)["JobRunId"]
+                self.__last_job_run_id = run_id
             except ClientError as err:
                 context.log.error(
                     "Couldn't create job %s. Here's why: %s: %s",
@@ -468,15 +477,18 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                     self._terminate_job_run(context=context, job_name=job_name, run_id=run_id)
                 raise
 
-            if response["JobRun"]["JobRunState"] == "FAILED":
+            if status := response["JobRun"]["JobRunState"] != "SUCCEEDED":
                 raise RuntimeError(
-                    f"Glue job {job_name} run {run_id} failed:\n{response['JobRun']['ErrorMessage']}"
+                    f"Glue job {job_name} run {run_id} completed with status {status} :\n{response['JobRun'].get('ErrorMessage')}"
                 )
             else:
                 context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
 
             if isinstance(self._message_reader, PipesCloudWatchMessageReader):
-                # TODO: receive messages from a background thread in real-time
+                # TODO: consume messages in real-time via a background thread
+                # so we don't have to wait for the job run to complete
+                # before receiving any logs
+
                 self._message_reader.consume_cloudwatch_logs(
                     f"{log_group}/output", run_id, start_time=int(start_timestamp)
                 )
@@ -486,7 +498,14 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def _wait_for_job_run_completion(self, job_name: str, run_id: str) -> Dict[str, Any]:
         while True:
             response = self._client.get_job_run(JobName=job_name, RunId=run_id)
-            if response["JobRun"]["JobRunState"] in ["FAILED", "SUCCEEDED"]:
+            # https://docs.aws.amazon.com/glue/latest/dg/job-run-statuses.html
+            if response["JobRun"]["JobRunState"] in [
+                "FAILED",
+                "SUCCEEDED",
+                "STOPPED",
+                "TIMEOUT",
+                "ERROR",
+            ]:
                 return response
             time.sleep(5)
 
