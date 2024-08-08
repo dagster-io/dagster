@@ -123,7 +123,7 @@ class GrapheneBulkActionStatus(graphene.Enum):
     class Meta:
         name = "BulkActionStatus"
 
-    def to_dagster_run_status(self) -> GrapheneRunStatus:
+    def to_dagster_run_status(self):
         """Placeholder for this PR. Will do a more thurough pass to accurately convert backfill status
         to DagsterRunStatus in a stacked branch.
         """

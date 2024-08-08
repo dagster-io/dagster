@@ -46,8 +46,13 @@ query MegaRunsQuery($cursor: String, $limit: Int!) {
       }
     }
 }
-
 """
+
+# when runs are inserted into the database, sqlite uses CURRENT_TIMESTAMP to set the creation time.
+# CURRENT_TIMESTAMP only has second precision for sqlite, so if we create runs and backfills without any delay
+# the resulting list is a chunk of runs and then a chunk of backfills when ordered by time. Adding a small
+# delay between creating a run and a backfill makes the resulting list more interwoven
+CREATE_DELAY = 0.5
 
 
 def _create_run(graphql_context) -> DagsterRun:
@@ -83,7 +88,7 @@ class TestMegaRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_mega_runs(self, graphql_context):
         for _ in range(10):
             _create_run(graphql_context)
-            time.sleep(1)
+            time.sleep(CREATE_DELAY)
             _create_backfill(graphql_context)
 
         result = execute_dagster_graphql(
@@ -129,7 +134,7 @@ class TestMegaRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_mega_runs_ignores_backfill_runs(self, graphql_context):
         for _ in range(10):
             _create_run_for_backfill(graphql_context, backfill_id="foo")
-            time.sleep(1)
+            time.sleep(CREATE_DELAY)
             _create_backfill(graphql_context)
 
         result = execute_dagster_graphql(
@@ -157,7 +162,7 @@ class TestMegaRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_mega_runs_inexact_limit(self, graphql_context):
         for _ in range(10):
             _create_run(graphql_context)
-            time.sleep(1)
+            time.sleep(CREATE_DELAY)
             _create_backfill(graphql_context)
 
         result = execute_dagster_graphql(
@@ -218,7 +223,7 @@ class TestMegaRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_mega_runs_cursor_respected(self, graphql_context):
         for _ in range(10):
             _create_run(graphql_context)
-            time.sleep(1)
+            time.sleep(CREATE_DELAY)
             _create_backfill(graphql_context)
 
         result = execute_dagster_graphql(
@@ -272,7 +277,7 @@ class TestMegaRuns(ExecutingGraphQLContextTestMatrix):
 
     def test_get_mega_runs_one_backfill_long_ago(self, graphql_context):
         backfill_id = _create_backfill(graphql_context)
-        time.sleep(2)  # to ensure that all runs are more recent than the backfill
+        time.sleep(1)  # to ensure that all runs are more recent than the backfill
         for _ in range(15):
             _create_run(graphql_context)
 
@@ -336,7 +341,7 @@ class TestMegaRuns(ExecutingGraphQLContextTestMatrix):
         for _ in range(15):
             _create_run(graphql_context)
 
-        time.sleep(2)  # to ensure that all runs are older than the backfill
+        time.sleep(1)  # to ensure that all runs are older than the backfill
         backfill_id = _create_backfill(graphql_context)
 
         result = execute_dagster_graphql(

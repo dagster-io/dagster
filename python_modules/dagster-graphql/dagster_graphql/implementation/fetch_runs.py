@@ -456,7 +456,9 @@ def get_mega_runs(
         instance, cursor=mega_run_cursor.run_cursor, limit=fetch_limit
     )
 
-    if fetch_limit:
+    if (
+        fetch_limit and limit
+    ):  # if fetch_limit is non-None then limit must also be non-None, but check for pyright
         # if we fetched limit+1 of either runs or backfills, we know there must be more results
         # to fetch on the next call since we will return limit results for this call. Additionally,
         # if we fetched more than limit of runs and backfill combined, we know there are more results
