@@ -17,6 +17,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._record import copy
+from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
@@ -93,21 +94,19 @@ class AutomationCondition(ABC):
         return []
 
     @property
-    @abstractmethod
     def description(self) -> str:
         """Human-readable description of when this condition is true."""
-        raise NotImplementedError()
+        return ""
 
     @property
-    @abstractmethod
     def label(self) -> Optional[str]:
         """User-provided label subjectively describing the purpose of this condition in the broader evaluation tree."""
-        raise NotImplementedError()
+        return None
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str:
         """Formal name of this specific condition, generally aligning with its static constructor."""
-        return None
+        return self.__class__.__name__
 
     def get_snapshot(self, unique_id: str) -> AutomationConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
@@ -137,18 +136,24 @@ class AutomationCondition(ABC):
     def __hash__(self) -> int:
         return self.get_hash()
 
-    def as_auto_materialize_policy(self) -> "AutoMaterializePolicy":
-        """Returns an AutoMaterializePolicy which contains this condition."""
-        from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-
-        return AutoMaterializePolicy.from_automation_condition(self)
-
-    def is_rule_condition(self):
+    def is_rule_condition(self) -> bool:
         from .legacy import RuleCondition
 
         if isinstance(self, RuleCondition):
             return True
         return any(child.is_rule_condition() for child in self.children)
+
+    @property
+    def is_serializable(self) -> bool:
+        if not is_whitelisted_for_serdes_object(self):
+            return False
+        return all(child.is_serializable for child in self.children)
+
+    def as_auto_materialize_policy(self) -> "AutoMaterializePolicy":
+        """Returns an AutoMaterializePolicy which contains this condition."""
+        from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+
+        return AutoMaterializePolicy.from_automation_condition(self)
 
     @abstractmethod
     def evaluate(self, context: "AutomationContext") -> "AutomationResult":
