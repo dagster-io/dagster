@@ -1019,6 +1019,11 @@
         ]
       },
       {
+        "title": "Looker",
+        "path": "https://github.com/dagster-io/dagster/discussions/23479",
+        "isExternalLink": true
+      },
+      {
         "title": "OpenAI",
         "path": "/integrations/openai"
       },
