@@ -211,22 +211,21 @@ def _capture_metrics(
 def start_run_metrics_thread(
     instance: DagsterInstance,
     dagster_run: DagsterRun,
-    container_metrics_enabled: Optional[bool] = True,
     python_metrics_enabled: Optional[bool] = False,
     logger: Optional[logging.Logger] = None,
     polling_interval: float = DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
-) -> Tuple[threading.Thread, threading.Event]:
+) -> Tuple[Optional[threading.Thread], Optional[threading.Event]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.opt_inst_param(logger, "logger", logging.Logger)
-    check.opt_bool_param(container_metrics_enabled, "container_metrics_enabled")
     check.opt_bool_param(python_metrics_enabled, "python_metrics_enabled")
     check.float_param(polling_interval, "polling_interval")
 
-    container_metrics_enabled = container_metrics_enabled and _process_is_containerized()
-
-    # TODO - ensure at least one metrics source is enabled
-    assert container_metrics_enabled or python_metrics_enabled, "No metrics enabled"
+    container_metrics_enabled = _process_is_containerized()
+    if not container_metrics_enabled and not python_metrics_enabled:
+        if logger:
+            logger.debug("No collectable metrics, skipping run metrics thread")
+        return None, None
 
     if logger:
         logger.debug("Starting run metrics thread")
