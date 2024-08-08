@@ -101,7 +101,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
     )
 
 
-def not_supported(context):
+def not_supported(context) -> None:
     raise NotImplementedError(
         "Automation policy sensors cannot be evaluated like regular user-space sensors."
     )
@@ -134,13 +134,15 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
+        **kwargs,
     ):
+        self._user_code = kwargs.get("user_code", False)
         self._run_tags = normalize_tags(run_tags).tags
 
         super().__init__(
             name=check_valid_name(name),
             job_name=None,
-            evaluation_fn=not_supported,
+            evaluation_fn=evaluate_automation_conditions if self._user_code else not_supported,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=None,
@@ -160,42 +162,4 @@ class AutomationConditionSensorDefinition(SensorDefinition):
 
     @property
     def sensor_type(self) -> SensorType:
-        return SensorType.AUTO_MATERIALIZE
-
-
-@experimental
-class UserCodeAutomationConditionSensorDefinition(SensorDefinition):
-    def __init__(
-        self,
-        name: str,
-        *,
-        asset_selection: CoercibleToAssetSelection,
-        run_tags: Optional[Mapping[str, Any]] = None,
-        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        minimum_interval_seconds: Optional[int] = None,
-    ):
-        """Variant of AutomationConditionSensorDefinition that evaluates automation conditions in
-        user code.
-        """
-        self._run_tags = normalize_tags(run_tags).tags
-
-        super().__init__(
-            name=check_valid_name(name),
-            job_name=None,
-            evaluation_fn=evaluate_automation_conditions,
-            minimum_interval_seconds=minimum_interval_seconds,
-            default_status=default_status,
-            asset_selection=asset_selection,
-        )
-
-    @property
-    def run_tags(self) -> Mapping[str, str]:
-        return self._run_tags
-
-    @property
-    def asset_selection(self) -> AssetSelection:
-        return cast(AssetSelection, super().asset_selection)
-
-    @property
-    def sensor_type(self) -> SensorType:
-        return SensorType.AUTOMATION
+        return SensorType.AUTOMATION if self._user_code else SensorType.AUTO_MATERIALIZE

@@ -1,6 +1,6 @@
 import pytest
 from dagster import AssetSelection, DefaultSensorStatus, build_sensor_context
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 
