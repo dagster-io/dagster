@@ -91,6 +91,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.daemon import SpanMarker
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster._record import copy
 from dagster._time import create_datetime, get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
@@ -2679,8 +2680,9 @@ def test_status_in_code_sensor(executor, instance):
             assert reset_instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
 
             running_to_not_running_sensor = ExternalSensor(
-                external_sensor_data=running_sensor._external_sensor_data._replace(  # noqa: SLF001
-                    default_status=DefaultSensorStatus.STOPPED
+                external_sensor_data=copy(
+                    running_sensor._external_sensor_data,  # noqa: SLF001
+                    default_status=DefaultSensorStatus.STOPPED,
                 ),
                 handle=running_sensor.handle.repository_handle,
             )

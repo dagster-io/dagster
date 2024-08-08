@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict
 
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 from pydantic import BaseModel
 
@@ -21,21 +22,19 @@ class AirflowMigrationState(BaseModel):
 
 
 def load_migration_state_from_yaml(migration_yaml_path: Path) -> AirflowMigrationState:
-    # Expect migration_yaml_path to be a directory, where each subdir represents a dag, and each
-    # file in the subdir represents a task. The file for each task should consist of a single bit:
+    # Expect migration_yaml_path to be a directory, where each file represents a dag, and each
+    # file in the subdir represents a task. The dictionary each task should consist of a single bit:
     # migrated: true/false.
-    # The task_id can be inferred from the filename.
-    dags = {}
-    for dag_dir in migration_yaml_path.iterdir():
-        if not dag_dir.is_dir():
-            continue
-        tasks = {}
-        for task_file in dag_dir.iterdir():
-            if not task_file.is_file():
+    dag_migration_states = {}
+    try:
+        for dag_file in migration_yaml_path.iterdir():
+            # Check that the file is a yaml file or yml file
+            if dag_file.suffix not in [".yaml", ".yml"]:
                 continue
-            task_id = task_file.stem
-            # make sure to remove extensions from the file name
-            task_state = parse_yaml_file_to_pydantic(TaskMigrationState, task_file.read_text())
-            tasks[task_id] = task_state
-        dags[dag_dir.name] = DagMigrationState(tasks=tasks)
-    return AirflowMigrationState(dags=dags)
+            dag_id = dag_file.stem
+            dag_migration_states[dag_id] = parse_yaml_file_to_pydantic(
+                DagMigrationState, dag_file.read_text(), str(dag_file)
+            )
+    except Exception as e:
+        raise DagsterInvalidDefinitionError("Error parsing migration yaml") from e
+    return AirflowMigrationState(dags=dag_migration_states)

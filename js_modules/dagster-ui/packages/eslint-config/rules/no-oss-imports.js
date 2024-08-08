@@ -22,10 +22,12 @@ module.exports = {
             node,
             message: 'Relative importing files that end with ".oss" is not allowed.',
             fix: (fixer) => {
-              const absolutePath = path.relative(
-                context.getCwd(),
-                path.resolve(path.dirname(context.getFilename()), node.source.value),
-              );
+              const absolutePath = path
+                .relative(
+                  context.getCwd(),
+                  path.resolve(path.dirname(context.getFilename()), node.source.value),
+                )
+                .replace(/^src/, 'shared');
               return fixer.replaceText(node.source, `'${absolutePath}'`);
             },
           });
@@ -37,10 +39,12 @@ module.exports = {
             node,
             message: 'Relative dynamic importing files that end with ".oss.tsx" is not allowed.',
             fix: (fixer) => {
-              const absolutePath = path.relative(
-                context.getCwd(),
-                path.resolve(path.dirname(context.getFilename()), node.source.value),
-              );
+              const absolutePath = path
+                .relative(
+                  context.getCwd(),
+                  path.resolve(path.dirname(context.getFilename()), node.source.value),
+                )
+                .replace(/^src/, 'shared');
               return fixer.replaceText(node.source, `'${absolutePath}'`);
             },
           });

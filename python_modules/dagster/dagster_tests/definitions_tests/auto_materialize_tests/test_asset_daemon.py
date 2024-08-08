@@ -29,6 +29,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTO_MATERIALIZE_TAG,
+    AUTOMATION_CONDITION_TAG,
     SENSOR_NAME_TAG,
     TICK_ID_TAG,
 )
@@ -640,6 +641,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             assert len(runs) == 1
             run = runs[0]
             assert run.tags[AUTO_MATERIALIZE_TAG] == "true"
+            assert run.tags[AUTOMATION_CONDITION_TAG] == "true"
             assert run.tags["foo_tag"] == "bar_val"
             assert int(run.tags[ASSET_EVALUATION_ID_TAG]) > pre_sensor_evaluation_id
             assert run.tags[SENSOR_NAME_TAG] == "auto_materialize_sensor_a"

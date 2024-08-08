@@ -64,6 +64,7 @@ from dagster._grpc.impl import (
     get_partition_tags,
 )
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
+from dagster._record import copy
 from dagster._serdes import deserialize_value
 from dagster._utils.merger import merge_dicts
 
@@ -813,10 +814,11 @@ class GrpcServerCodeLocation(CodeLocation):
             full_job = self.get_repository(selector.repository_name).get_full_external_job(
                 selector.job_name
             )
-            subset = subset._replace(
-                external_job_data=subset.external_job_data._replace(
-                    parent_job_snapshot=full_job.job_snapshot
-                )
+            subset = copy(
+                subset,
+                external_job_data=copy(
+                    subset.external_job_data, parent_job_snapshot=full_job.job_snapshot
+                ),
             )
 
         return subset

@@ -6,7 +6,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     changedReasons
     groupName
     opNames
-    isSource
+    isMaterializable
     isObservable
     isExecutable
     computeKind

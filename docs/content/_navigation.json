@@ -171,7 +171,16 @@
           },
           {
             "title": "Declarative Automation (Experimental)",
-            "path": "/concepts/automation/declarative-automation"
+            "children": [
+              {
+                "title": "Overview",
+                "path": "/concepts/automation/declarative-automation"
+              },
+              {
+                "title": "Customizing automation conditions",
+                "path": "/concepts/automation/declarative-automation/customizing-automation-conditions"
+              }
+            ]
           },
           {
             "title": "Asset Sensors",
@@ -1347,10 +1356,6 @@
           {
             "title": "Airbyte (dagster-airbyte)",
             "path": "/_apidocs/libraries/dagster-airbyte"
-          },
-          {
-            "title": "Airflow (dagster-airflow)",
-            "path": "/_apidocs/libraries/dagster-airflow"
           },
           {
             "title": "Amazon Web Services (AWS) (dagster-aws)",

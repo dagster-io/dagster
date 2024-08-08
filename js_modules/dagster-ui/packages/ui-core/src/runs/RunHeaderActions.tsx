@@ -2,7 +2,7 @@ import {useMutation} from '@apollo/client';
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
-import {RunMetricsDialog} from 'src/runs/RunMetricsDialog.oss';
+import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
 import {DeletionDialog} from './DeletionDialog';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';

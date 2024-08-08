@@ -1,6 +1,8 @@
 import {Meta} from '@storybook/react';
 import {useState} from 'react';
 
+import {Box} from '../Box';
+import {Button} from '../Button';
 import {Colors} from '../Color';
 import {Icon} from '../Icon';
 import {TextInput} from '../TextInput';
@@ -57,5 +59,21 @@ export const RightElement = () => {
       onChange={(e) => setValue(e.target.value)}
       rightElement={<Icon name="info" color={Colors.accentPrimary()} />}
     />
+  );
+};
+
+export const NextToButton = () => {
+  const [value, setValue] = useState('');
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <TextInput
+        icon="layers"
+        placeholder="Type anything…"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        rightElement={<Icon name="info" color={Colors.accentPrimary()} />}
+      />
+      <Button>Hello</Button>
+    </Box>
   );
 };

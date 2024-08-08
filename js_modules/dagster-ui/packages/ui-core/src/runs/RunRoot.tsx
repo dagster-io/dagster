@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
-import {useLayoutEffect, useMemo} from 'react';
+import {useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
@@ -8,7 +8,6 @@ import {Run} from './Run';
 import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
-import {RunRootTrace, useRunRootTrace} from './RunRootTrace';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
@@ -29,7 +28,6 @@ import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryF
 export const RunRoot = () => {
   useTrackPageView();
 
-  const trace = useRunRootTrace();
   const {runId} = useParams<{runId: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
@@ -56,12 +54,6 @@ export const RunRoot = () => {
     () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
     [run],
   );
-
-  useLayoutEffect(() => {
-    if (!loading) {
-      trace.onRunLoaded();
-    }
-  }, [loading, trace]);
 
   const tickDetails = useMemo(() => {
     if (repoAddress) {
@@ -158,7 +150,7 @@ export const RunRoot = () => {
           right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
         />
       </Box>
-      <RunById data={data} runId={runId} trace={trace} />
+      <RunById data={data} runId={runId} />
     </div>
   );
 };
@@ -167,11 +159,11 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: RunRootTrace}) => {
-  const {data, runId, trace} = props;
+const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
+  const {data, runId} = props;
 
   if (!data || !data.pipelineRunOrError) {
-    return <Run run={undefined} runId={runId} trace={trace} />;
+    return <Run run={undefined} runId={runId} />;
   }
 
   if (data.pipelineRunOrError.__typename !== 'Run') {
@@ -186,7 +178,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string; trace: R
     );
   }
 
-  return <Run run={data.pipelineRunOrError} runId={runId} trace={trace} />;
+  return <Run run={data.pipelineRunOrError} runId={runId} />;
 };
 
 const RUN_ROOT_QUERY = gql`

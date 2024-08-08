@@ -5,7 +5,6 @@ from .active_run_scenarios import active_run_scenarios
 from .auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 from .auto_observe_scenarios import auto_observe_scenarios
 from .basic_scenarios import basic_scenarios
-from .blocking_check_scenarios import blocking_check_scenarios
 from .definition_change_scenarios import definition_change_scenarios
 from .freshness_policy_scenarios import freshness_policy_scenarios
 from .multi_code_location_scenarios import multi_code_location_scenarios
@@ -22,7 +21,6 @@ ASSET_RECONCILIATION_SCENARIOS = {
     **definition_change_scenarios,
     **active_run_scenarios,
     **version_scenarios,
-    **blocking_check_scenarios,
 }
 
 DAEMON_ONLY_SCENARIOS = {

@@ -1,9 +1,10 @@
 import asyncio
+import contextlib
 import logging
 import os
 import sys
 import textwrap
-from typing import Optional
+from typing import AsyncIterator, Optional
 
 import click
 import dagster._check as check
@@ -232,7 +233,8 @@ def dagster_webserver(
             )
 
 
-async def _lifespan(app):
+@contextlib.asynccontextmanager
+async def _lifespan(app) -> AsyncIterator:
     # workaround from https://github.com/encode/uvicorn/issues/1160 for termination
     try:
         yield

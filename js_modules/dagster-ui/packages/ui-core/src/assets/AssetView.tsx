@@ -5,7 +5,7 @@ import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-i
 import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {AssetPageHeader} from 'src/assets/AssetPageHeader.oss';
+import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
@@ -45,24 +45,16 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {PageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 interface Props {
   assetKey: AssetKey;
-  trace?: PageLoadTrace;
   headerBreadcrumbs: BreadcrumbProps[];
   writeAssetVisit?: (assetKey: AssetKey) => void;
   currentPath: string[];
 }
 
-export const AssetView = ({
-  assetKey,
-  trace,
-  headerBreadcrumbs,
-  writeAssetVisit,
-  currentPath,
-}: Props) => {
+export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
@@ -109,12 +101,6 @@ export const AssetView = ({
   const dataRefreshHint = liveData
     ? healthRefreshHintFromLiveData(liveData)
     : lastMaterialization?.timestamp;
-
-  useEffect(() => {
-    if (!definitionQueryResult.loading && liveData) {
-      trace?.endTrace();
-    }
-  }, [definitionQueryResult, liveData, trace]);
 
   const isLoading =
     definitionQueryResult.loading &&
@@ -177,7 +163,7 @@ export const AssetView = ({
   };
 
   const renderPartitionsTab = () => {
-    if (definition?.isSource) {
+    if (!definition?.isMaterializable) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
@@ -567,11 +553,7 @@ const AssetViewPageHeaderTags = ({
           />
         </>
       ) : null}
-      {definition?.isSource ? (
-        <Tag>Source Asset</Tag>
-      ) : !definition?.isExecutable ? (
-        <Tag>External Asset</Tag>
-      ) : undefined}
+      {!definition?.isMaterializable ? <Tag>External Asset</Tag> : undefined}
     </>
   );
 };

@@ -349,7 +349,7 @@ def get_external_schedule_execution(
                 return schedule_def.evaluate_tick(schedule_context)
     except Exception:
         return ExternalScheduleExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -400,7 +400,7 @@ def get_external_sensor_execution(
                 return sensor_def.evaluate_tick(sensor_context)
     except Exception:
         return ExternalSensorExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -456,7 +456,7 @@ def get_partition_config(
                 return ExternalPartitionConfigData(name=partition_key, run_config=run_config)
     except Exception:
         return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -481,7 +481,7 @@ def get_partition_names(
             return ExternalPartitionNamesData(partition_names=partitions_def.get_partition_keys())
     except Exception:
         return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -519,7 +519,7 @@ def get_partition_tags(
 
     except Exception:
         return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 
@@ -604,7 +604,7 @@ def get_partition_set_execution_param_data(
 
     except Exception:
         return ExternalPartitionExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
+            error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 
 

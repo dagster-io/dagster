@@ -22,7 +22,6 @@ paths = [
     "../../python_modules/dagit",
     "../../python_modules/dagster-webserver",
     "../../python_modules/libraries/dagster-airbyte",
-    "../../python_modules/libraries/dagster-airflow",
     "../../python_modules/libraries/dagster-aws",
     "../../python_modules/libraries/dagster-azure",
     "../../python_modules/libraries/dagster-celery",

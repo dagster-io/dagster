@@ -506,7 +506,7 @@ class JobDefinition(IHasInternalInit):
             *[
                 req
                 for hook_def in self._hook_defs
-                for req in hook_def.get_resource_requirements(outer_context=f"job '{self._name}'")
+                for req in hook_def.get_resource_requirements(attached_to=f"job '{self._name}'")
             ],
         ]
 

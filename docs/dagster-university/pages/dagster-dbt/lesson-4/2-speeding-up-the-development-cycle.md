@@ -24,7 +24,9 @@ dbt_project.prepare_if_dev()
 
 If you look at the dbt project’s `/target` directory, you’ll see it stores the artifacts. When you use `dagster dev` in local development and you reload your code, you'll see that a new manifest file is generated.
 
-Reload your code location in the Dagster UI, and you’ll see that everything should still work: the dbt models are still shown as assets and you can manually materialize any of the models. The key difference is that you no longer have to manually run `dbt parse` anymore!
+The `prepare_if_dev()` method automatically prepares your dbt project at run time during development, meaning you no longer have to run `dbt parse`! The preparation process works by pulling the dbt project's dependencies and reloading the manifest file to detect any changes.
+
+Reload your code location in the Dagster UI, and you’ll see that everything should still work: the dbt models are still shown as assets and you can manually materialize any of the models. 
 
 ---
 

@@ -2,7 +2,7 @@ import {
   AssetFilterBaseType,
   AssetFilterType,
   filterAssetDefinition,
-} from 'src/assets/useAssetDefinitionFilterState.oss';
+} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {
   ChangeReason,

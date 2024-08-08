@@ -35,7 +35,6 @@ import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
-import {PerformancePageNavigationListener} from '../performance';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 import './blueprint.css';
@@ -177,7 +176,6 @@ export const AppProvider = (props: AppProviderProps) => {
             <PermissionsProvider>
               <BrowserRouter basename={basePath || ''}>
                 <CompatRouter>
-                  <PerformancePageNavigationListener />
                   <TimeProvider>
                     <CodeLinkProtocolProvider>
                       <WorkspaceProvider>

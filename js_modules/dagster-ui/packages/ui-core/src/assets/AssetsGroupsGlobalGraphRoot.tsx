@@ -1,8 +1,8 @@
 import {Page} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-import {AssetsGraphHeader} from 'src/assets/AssetsGraphHeader.oss';
-import {useAssetDefinitionFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
+import {AssetsGraphHeader} from 'shared/assets/AssetsGraphHeader.oss';
+import {useAssetDefinitionFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
@@ -14,7 +14,6 @@ import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {usePageLoadTrace} from '../performance';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 
 interface AssetGroupRootParams {
@@ -29,7 +28,6 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   const assetFilterState = useAssetDefinitionFilterState();
 
   useDocumentTitle(`Global Asset Lineage`);
-  const trace = usePageLoadTrace('GlobalAssetGraph');
 
   const onChangeExplorerPath = useCallback(
     (path: ExplorerPath, mode: 'push' | 'replace') => {
@@ -75,7 +73,6 @@ export const AssetsGroupsGlobalGraphRoot = () => {
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
         isGlobalGraph
-        trace={trace}
       />
     </Page>
   );

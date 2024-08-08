@@ -44,7 +44,6 @@ from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.resource_requirement import (
     ExternalAssetIOManagerRequirement,
-    RequiresResources,
     ResourceAddable,
     ResourceRequirement,
     merge_resource_defs,
@@ -84,7 +83,7 @@ if TYPE_CHECKING:
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
-class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
+class AssetsDefinition(ResourceAddable, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 
     AssetsDefinitions are typically not instantiated directly, but rather produced using the
@@ -1421,8 +1420,18 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
+        from .graph_definition import GraphDefinition
+
         if self.is_executable:
-            yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
+            if isinstance(self.node_def, GraphDefinition):
+                yield from self.node_def.get_resource_requirements(
+                    asset_layer=None,
+                )
+            elif isinstance(self.node_def, OpDefinition):
+                yield from self.node_def.get_resource_requirements(
+                    handle=None,
+                    asset_layer=None,
+                )
         else:
             for key in self.keys:
                 # This matches how SourceAsset emit requirements except we emit
@@ -1432,7 +1441,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     asset_key=key.to_string(),
                 )
         for source_key, resource_def in self.resource_defs.items():
-            yield from resource_def.get_resource_requirements(outer_context=source_key)
+            yield from resource_def.get_resource_requirements(source_key=source_key)
 
     @public
     @property

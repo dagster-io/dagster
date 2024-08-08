@@ -315,7 +315,8 @@ class OpNode(Node):
         cur_node_handle = NodeHandle(self.name, parent_handle)
 
         for requirement in self.definition.get_resource_requirements(
-            (cur_node_handle, asset_layer)
+            handle=cur_node_handle,
+            asset_layer=asset_layer,
         ):
             # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
             if (

@@ -362,6 +362,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/peering-with-dbt",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
     ),
 ]
 
@@ -485,10 +488,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             for deps_factor in ["dbt17", "dbt18", "pydantic1"]
             for command_factor in ["cloud", "core-main", "core-derived-metadata"]
         ],
-        unsupported_python_versions=[
-            # duckdb
-            AvailablePythonVersion.V3_12,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake",
@@ -520,9 +519,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
         pytest_extra_cmds=airflow_extra_cmds,
         pytest_tox_factors=[
-            "default-airflow1",
-            "localdb-airflow1",
-            "persistentdb-airflow1",
             "default-airflow2",
             "localdb-airflow2",
             "persistentdb-airflow2",

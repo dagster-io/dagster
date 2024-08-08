@@ -96,7 +96,7 @@ export const TextInputStyles = css`
   line-height: 20px;
   padding: 6px 6px 6px 12px;
   margin: 0;
-  transition: box-shadow linear 150ms;
+  transition: box-shadow 150ms;
 
   ::placeholder {
     color: ${Colors.textLighter()};
@@ -118,7 +118,7 @@ export const TextInputStyles = css`
     box-shadow:
       ${Colors.borderDefault()} inset 0px 0px 0px 1px,
       ${Colors.keylineDefault()} inset 2px 2px 1.5px,
-      ${Colors.focusRing()} 0 0 0 3px;
+      ${Colors.focusRing()} 0 0 0 2px;
     outline: none;
   }
 `;
@@ -141,17 +141,17 @@ const StyledInput = styled.input<StyledInputProps>`
         `
       : null}
 
-  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} 0px 0px 0px 1px;
+  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} inset 0px 0px 0px 1px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
 
   :hover {
-    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} 0px 0px 0px 1px;
+    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px;
   }
 
   :focus {
     box-shadow:
-      ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} 0px 0px 0px 1px,
-      ${Colors.focusRing()} 0 0 0 3px;
+      ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px,
+      ${Colors.focusRing()} 0 0 0 2px;
     background-color: ${Colors.backgroundDefaultHover()};
   }
 `;
@@ -164,17 +164,16 @@ interface TextAreaProps {
 export const TextArea = styled.textarea<TextAreaProps>`
   ${TextInputStyles}
 
-  box-shadow: ${Colors.borderDefault()} inset 0px 0px 0px 1px;
+  box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} inset 0px 0px 0px 1px;
 
   :hover {
-    box-shadow: ${Colors.borderHover()} inset 0px 0px 0px 1px;
+    box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px;
   }
 
-  :hover {
-    box-shadow: ${Colors.borderHover()} inset 0px 0px 0px 1px;
-  }
   :focus {
-    box-shadow: ${Colors.focusRing()} 0px 0px 0px 1px;
+    box-shadow:
+      ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px,
+      ${Colors.focusRing()} 0px 0px 0px 2px;
     background-color: ${Colors.backgroundDefaultHover()};
   }
 

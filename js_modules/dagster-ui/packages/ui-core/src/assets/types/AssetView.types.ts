@@ -27,7 +27,7 @@ export type AssetViewDefinitionQuery = {
           opNames: Array<string>;
           opVersion: string | null;
           jobNames: Array<string>;
-          isSource: boolean;
+          isMaterializable: boolean;
           isExecutable: boolean;
           hasMaterializePermission: boolean;
           changedReasons: Array<Types.ChangeReason>;
@@ -16298,7 +16298,7 @@ export type AssetViewDefinitionNodeFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
-  isSource: boolean;
+  isMaterializable: boolean;
   isExecutable: boolean;
   hasMaterializePermission: boolean;
   changedReasons: Array<Types.ChangeReason>;

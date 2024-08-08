@@ -428,12 +428,15 @@ class SourceAsset(ResourceAddable):
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
         if self.node_def is not None:
-            yield from self.node_def.get_resource_requirements()
+            yield from self.node_def.get_resource_requirements(
+                asset_layer=None,
+                handle=None,
+            )
         yield SourceAssetIOManagerRequirement(
             key=self.get_io_manager_key(), asset_key=self.key.to_string()
         )
         for source_key, resource_def in self.resource_defs.items():
-            yield from resource_def.get_resource_requirements(outer_context=source_key)
+            yield from resource_def.get_resource_requirements(source_key=source_key)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SourceAsset):

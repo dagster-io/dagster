@@ -15,8 +15,8 @@ import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {useAssetGraphExplorerFilters} from 'src/asset-graph/useAssetGraphExplorerFilters.oss';
-import {AssetFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
+import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
+import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -56,7 +56,6 @@ import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
-import {PageLoadTrace} from '../performance';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -86,7 +85,6 @@ type Props = {
     node: AssetLocation,
   ) => void;
   isGlobalGraph?: boolean;
-  trace?: PageLoadTrace;
 };
 
 export const MINIMAL_SCALE = 0.6;
@@ -169,7 +167,6 @@ type WithDataProps = Props & {
   filterButton?: React.ReactNode;
   filterBar?: React.ReactNode;
   isGlobalGraph?: boolean;
-  trace?: PageLoadTrace;
   computeKindTagsFilter?: StaticSetFilter<string>;
 };
 
@@ -189,7 +186,6 @@ const AssetGraphExplorerWithData = ({
   assetFilterState,
   isGlobalGraph = false,
   computeKindTagsFilter,
-  trace,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
@@ -220,12 +216,6 @@ const AssetGraphExplorerWithData = ({
     expandedGroups,
     useMemo(() => ({direction}), [direction]),
   );
-
-  React.useEffect(() => {
-    if (!loading) {
-      trace?.endTrace();
-    }
-  }, [loading, trace]);
 
   const viewportEl = React.useRef<SVGViewport>();
 

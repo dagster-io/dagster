@@ -1,0 +1,3 @@
+tasks:
+  build_dbt_models:
+    migrated: True

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional
 
 from typing_extensions import TypeAlias
 
@@ -37,9 +37,9 @@ class DagsterTypeLoader(ABC):
         return frozenset()
 
     def get_resource_requirements(
-        self, outer_context: Optional[object] = None
+        self,
+        type_display_name: str,
     ) -> Iterator[ResourceRequirement]:
-        type_display_name = cast(str, outer_context)
         for resource_key in sorted(list(self.required_resource_keys())):
             yield TypeLoaderResourceRequirement(
                 key=resource_key, type_display_name=type_display_name

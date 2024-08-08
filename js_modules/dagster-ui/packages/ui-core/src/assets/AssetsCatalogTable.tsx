@@ -4,8 +4,8 @@ import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
-import {AssetCatalogTableBottomActionBar} from 'src/assets/AssetCatalogTableBottomActionBar.oss';
-import {useAssetCatalogFiltering} from 'src/assets/useAssetCatalogFiltering.oss';
+import {AssetCatalogTableBottomActionBar} from 'shared/assets/AssetCatalogTableBottomActionBar.oss';
+import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
@@ -27,7 +27,6 @@ import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
-import {PageLoadTrace} from '../performance';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
 import {CacheManager} from '../search/useIndexedDBCachedQuery';
@@ -180,14 +179,12 @@ interface AssetCatalogTableProps {
   prefixPath: string[];
   setPrefixPath: (prefixPath: string[]) => void;
   groupSelector?: AssetGroupSelector;
-  trace?: PageLoadTrace;
 }
 
 export const AssetsCatalogTable = ({
   prefixPath,
   setPrefixPath,
   groupSelector,
-  trace,
 }: AssetCatalogTableProps) => {
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
@@ -224,13 +221,6 @@ export const AssetsCatalogTable = ({
     intervalMs: FIFTEEN_SECONDS,
     leading: true,
   });
-
-  const loaded = !!assets;
-  useEffect(() => {
-    if (loaded) {
-      trace?.endTrace();
-    }
-  }, [loaded, trace]);
 
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {

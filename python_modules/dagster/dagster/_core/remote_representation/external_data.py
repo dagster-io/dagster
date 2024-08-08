@@ -97,11 +97,12 @@ from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
-from dagster._record import IHaveNew, record_custom
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.warnings import suppress_dagster_warnings
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"
@@ -112,24 +113,20 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
 
 @whitelist_for_serdes(storage_field_names={"external_job_datas": "external_pipeline_datas"})
-class ExternalRepositoryData(
-    NamedTuple(
-        "_ExternalRepositoryData",
-        [
-            ("name", str),
-            ("external_schedule_datas", Sequence["ScheduleSnap"]),
-            ("external_partition_set_datas", Sequence["PartitionSetSnap"]),
-            ("external_sensor_datas", Sequence["SensorSnap"]),
-            ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
-            ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
-            ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
-            ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
-            ("external_asset_checks", Optional[Sequence["ExternalAssetCheck"]]),
-            ("metadata", Optional[MetadataMapping]),
-            ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
-        ],
-    )
-):
+@record_custom
+class ExternalRepositoryData(IHaveNew):
+    name: str
+    external_schedule_datas: Sequence["ScheduleSnap"]
+    external_partition_set_datas: Sequence["PartitionSetSnap"]
+    external_sensor_datas: Sequence["SensorSnap"]
+    external_asset_graph_data: Sequence["ExternalAssetNode"]
+    external_job_datas: Optional[Sequence["ExternalJobData"]]
+    external_job_refs: Optional[Sequence["ExternalJobRef"]]
+    external_resource_data: Optional[Sequence["ExternalResourceData"]]
+    external_asset_checks: Optional[Sequence["ExternalAssetCheck"]]
+    metadata: Optional[MetadataMapping]
+    utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]]
+
     def __new__(
         cls,
         name: str,
@@ -144,47 +141,19 @@ class ExternalRepositoryData(
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
-        return super(ExternalRepositoryData, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            external_schedule_datas=check.sequence_param(
-                external_schedule_datas, "external_schedule_datas", of_type=ScheduleSnap
-            ),
-            external_partition_set_datas=check.sequence_param(
-                external_partition_set_datas,
-                "external_partition_set_datas",
-                of_type=PartitionSetSnap,
-            ),
-            external_sensor_datas=check.opt_sequence_param(
-                external_sensor_datas,
-                "external_sensor_datas",
-                of_type=SensorSnap,
-            ),
-            external_asset_graph_data=check.opt_sequence_param(
-                external_asset_graph_data,
-                "external_asset_graph_dats",
-                of_type=ExternalAssetNode,
-            ),
-            external_job_datas=check.opt_nullable_sequence_param(
-                external_job_datas, "external_job_datas", of_type=ExternalJobData
-            ),
-            external_job_refs=check.opt_nullable_sequence_param(
-                external_job_refs, "external_job_refs", of_type=ExternalJobRef
-            ),
-            external_resource_data=check.opt_nullable_sequence_param(
-                external_resource_data, "external_resource_data", of_type=ExternalResourceData
-            ),
-            external_asset_checks=check.opt_nullable_sequence_param(
-                external_asset_checks,
-                "external_asset_checks",
-                of_type=ExternalAssetCheck,
-            ),
-            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            utilized_env_vars=check.opt_nullable_mapping_param(
-                utilized_env_vars,
-                "utilized_env_vars",
-                key_type=str,
-            ),
+            name=name,
+            external_schedule_datas=external_schedule_datas,
+            external_partition_set_datas=external_partition_set_datas,
+            external_sensor_datas=external_sensor_datas or [],
+            external_asset_graph_data=external_asset_graph_data or [],
+            external_job_datas=external_job_datas,
+            external_job_refs=external_job_refs,
+            external_resource_data=external_resource_data,
+            external_asset_checks=external_asset_checks,
+            metadata=metadata or {},
+            utilized_env_vars=utilized_env_vars,
         )
 
     def has_job_data(self):
@@ -258,33 +227,30 @@ class ExternalRepositoryData(
         check.failed("Could not find sensor data named " + name)
 
 
-@whitelist_for_serdes(
-    storage_name="ExternalPipelineSubsetResult",
-    storage_field_names={"external_job_data": "external_pipeline_data"},
-)
-class ExternalJobSubsetResult(
-    NamedTuple(
-        "_ExternalJobSubsetResult",
-        [
-            ("success", bool),
-            ("error", Optional[SerializableErrorInfo]),
-            ("external_job_data", Optional["ExternalJobData"]),
-        ],
-    )
-):
+@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
+@record_custom
+class ExternalPresetData(IHaveNew):
+    name: str
+    run_config: Mapping[str, object]
+    op_selection: Optional[Sequence[str]]
+    mode: str
+    tags: Mapping[str, str]
+
     def __new__(
         cls,
-        success: bool,
-        error: Optional[SerializableErrorInfo] = None,
-        external_job_data: Optional["ExternalJobData"] = None,
+        name: str,
+        run_config: Optional[Mapping[str, object]],
+        op_selection: Optional[Sequence[str]],
+        mode: str,
+        tags: Optional[Mapping[str, str]],
     ):
-        return super(ExternalJobSubsetResult, cls).__new__(
+        return super().__new__(
             cls,
-            success=check.bool_param(success, "success"),
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-            external_job_data=check.opt_inst_param(
-                external_job_data, "external_job_data", ExternalJobData
-            ),
+            name=name,
+            run_config=run_config or {},
+            op_selection=op_selection,
+            mode=mode,
+            tags=tags or {},
         )
 
 
@@ -299,35 +265,23 @@ class ExternalJobSubsetResult(
     # cases on this class.
     old_fields={"is_job": True},
 )
-class ExternalJobData(
-    NamedTuple(
-        "_ExternalJobData",
-        [
-            ("name", str),
-            ("job_snapshot", JobSnapshot),
-            ("active_presets", Sequence["ExternalPresetData"]),
-            ("parent_job_snapshot", Optional[JobSnapshot]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        name: str,
-        job_snapshot: JobSnapshot,
-        active_presets: Sequence["ExternalPresetData"],
-        parent_job_snapshot: Optional[JobSnapshot],
-    ):
-        return super(ExternalJobData, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            job_snapshot=check.inst_param(job_snapshot, "job_snapshot", JobSnapshot),
-            parent_job_snapshot=check.opt_inst_param(
-                parent_job_snapshot, "parent_job_snapshot", JobSnapshot
-            ),
-            active_presets=check.sequence_param(
-                active_presets, "active_presets", of_type=ExternalPresetData
-            ),
-        )
+@record
+class ExternalJobData(LegacyNamedTupleMixin):
+    name: str
+    job_snapshot: JobSnapshot
+    active_presets: Sequence[ExternalPresetData]
+    parent_job_snapshot: Optional[JobSnapshot]
+
+
+@whitelist_for_serdes(
+    storage_name="ExternalPipelineSubsetResult",
+    storage_field_names={"external_job_data": "external_pipeline_data"},
+)
+@record
+class ExternalJobSubsetResult(LegacyNamedTupleMixin):
+    success: bool
+    error: Optional[SerializableErrorInfo] = None
+    external_job_data: Optional[ExternalJobData] = None
 
 
 @whitelist_for_serdes
@@ -354,66 +308,12 @@ class NestedResource(NamedTuple):
 
 
 @whitelist_for_serdes(old_fields={"is_legacy_pipeline": False})
-class ExternalJobRef(
-    NamedTuple(
-        "_ExternalJobRef",
-        [
-            ("name", str),
-            ("snapshot_id", str),
-            ("active_presets", Sequence["ExternalPresetData"]),
-            ("parent_snapshot_id", Optional[str]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        name: str,
-        snapshot_id: str,
-        active_presets: Sequence["ExternalPresetData"],
-        parent_snapshot_id: Optional[str],
-    ):
-        return super(ExternalJobRef, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            snapshot_id=check.str_param(snapshot_id, "snapshot_id"),
-            active_presets=check.sequence_param(
-                active_presets, "active_presets", of_type=ExternalPresetData
-            ),
-            parent_snapshot_id=check.opt_str_param(parent_snapshot_id, "parent_snapshot_id"),
-        )
-
-
-@whitelist_for_serdes(storage_field_names={"op_selection": "solid_selection"})
-class ExternalPresetData(
-    NamedTuple(
-        "_ExternalPresetData",
-        [
-            ("name", str),
-            ("run_config", Mapping[str, object]),
-            ("op_selection", Optional[Sequence[str]]),
-            ("mode", str),
-            ("tags", Mapping[str, str]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        name: str,
-        run_config: Optional[Mapping[str, object]],
-        op_selection: Optional[Sequence[str]],
-        mode: str,
-        tags: Mapping[str, str],
-    ):
-        return super(ExternalPresetData, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
-            op_selection=check.opt_nullable_sequence_param(
-                op_selection, "op_selection", of_type=str
-            ),
-            mode=check.str_param(mode, "mode"),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
-        )
+@record
+class ExternalJobRef:
+    name: str
+    snapshot_id: str
+    active_presets: Sequence[ExternalPresetData]
+    parent_snapshot_id: Optional[str]
 
 
 @whitelist_for_serdes(
@@ -421,24 +321,20 @@ class ExternalPresetData(
     storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
     skip_when_empty_fields={"default_status"},
 )
-class ScheduleSnap(
-    NamedTuple(
-        "_ScheduleSnap",
-        [
-            ("name", str),
-            ("cron_schedule", Union[str, Sequence[str]]),
-            ("job_name", str),
-            ("op_selection", Optional[Sequence[str]]),
-            ("mode", Optional[str]),
-            ("environment_vars", Mapping[str, str]),
-            ("partition_set_name", Optional[str]),
-            ("execution_timezone", Optional[str]),
-            ("description", Optional[str]),
-            ("default_status", Optional[DefaultScheduleStatus]),
-            ("asset_selection", Optional[AssetSelection]),
-        ],
-    )
-):
+@record_custom
+class ScheduleSnap(IHaveNew):
+    name: str
+    cron_schedule: Union[str, Sequence[str]]
+    job_name: str
+    op_selection: Optional[Sequence[str]]
+    mode: Optional[str]
+    environment_vars: Mapping[str, str]
+    partition_set_name: Optional[str]
+    execution_timezone: Optional[str]
+    description: Optional[str]
+    default_status: Optional[DefaultScheduleStatus]
+    asset_selection: Optional[AssetSelection]
+
     def __new__(
         cls,
         name: str,
@@ -453,37 +349,30 @@ class ScheduleSnap(
         default_status: Optional[DefaultScheduleStatus] = None,
         asset_selection: Optional[AssetSelection] = None,
     ):
-        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
-        if not isinstance(cron_schedule, str):
-            cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
-
         if asset_selection is not None:
-            check.opt_inst_param(asset_selection, "asset_selection", AssetSelection)
             check.invariant(
                 is_whitelisted_for_serdes_object(asset_selection),
                 "asset_selection must be serializable",
             )
 
-        return super(ScheduleSnap, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
+            name=name,
             cron_schedule=cron_schedule,
-            job_name=check.str_param(job_name, "job_name"),
-            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
-            mode=check.opt_str_param(mode, "mode"),
-            environment_vars=check.opt_mapping_param(environment_vars, "environment_vars"),
-            partition_set_name=check.opt_str_param(partition_set_name, "partition_set_name"),
-            execution_timezone=check.opt_str_param(execution_timezone, "execution_timezone"),
-            description=check.opt_str_param(description, "description"),
+            job_name=job_name,
+            op_selection=op_selection,
+            mode=mode,
+            environment_vars=environment_vars or {},
+            partition_set_name=partition_set_name,
+            execution_timezone=execution_timezone,
+            description=description,
             # Leave default_status as None if it's STOPPED to maintain stable back-compat IDs
             default_status=(
                 DefaultScheduleStatus.RUNNING
                 if default_status == DefaultScheduleStatus.RUNNING
                 else None
             ),
-            asset_selection=check.opt_inst_param(
-                asset_selection, "asset_selection", AssetSelection
-            ),
+            asset_selection=asset_selection,
         )
 
     @classmethod
@@ -518,47 +407,27 @@ class ScheduleSnap(
 
 
 @whitelist_for_serdes
-class ExternalScheduleExecutionErrorData(
-    NamedTuple("_ExternalScheduleExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
-):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalScheduleExecutionErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-        )
+@record
+class ExternalScheduleExecutionErrorData:
+    error: Optional[SerializableErrorInfo]
 
 
 @whitelist_for_serdes(
     storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"}
 )
-class ExternalTargetData(
-    NamedTuple(
-        "_ExternalTargetData",
-        [("job_name", str), ("mode", str), ("op_selection", Optional[Sequence[str]])],
-    )
-):
-    def __new__(cls, job_name: str, mode: str, op_selection: Optional[Sequence[str]]):
-        return super(ExternalTargetData, cls).__new__(
-            cls,
-            job_name=check.str_param(job_name, "job_name"),
-            mode=mode,
-            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
-        )
+@record
+class ExternalTargetData:
+    job_name: str
+    mode: str
+    op_selection: Optional[Sequence[str]]
 
 
 @whitelist_for_serdes
-class ExternalSensorMetadata(
-    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[Sequence[AssetKey]])])
-):
+@record
+class ExternalSensorMetadata:
     """Stores additional sensor metadata which is available in the Dagster UI."""
 
-    def __new__(cls, asset_keys: Optional[Sequence[AssetKey]] = None):
-        return super(ExternalSensorMetadata, cls).__new__(
-            cls,
-            asset_keys=check.opt_nullable_sequence_param(
-                asset_keys, "asset_keys", of_type=AssetKey
-            ),
-        )
+    asset_keys: Optional[Sequence[AssetKey]]
 
 
 @whitelist_for_serdes(
@@ -566,25 +435,21 @@ class ExternalSensorMetadata(
     storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
     skip_when_empty_fields={"default_status", "sensor_type"},
 )
-class SensorSnap(
-    NamedTuple(
-        "_SensorSnap",
-        [
-            ("name", str),
-            ("job_name", Optional[str]),
-            ("op_selection", Optional[Sequence[str]]),
-            ("mode", Optional[str]),
-            ("min_interval", Optional[int]),
-            ("description", Optional[str]),
-            ("target_dict", Mapping[str, ExternalTargetData]),
-            ("metadata", Optional[ExternalSensorMetadata]),
-            ("default_status", Optional[DefaultSensorStatus]),
-            ("sensor_type", Optional[SensorType]),
-            ("asset_selection", Optional[AssetSelection]),
-            ("run_tags", Mapping[str, str]),
-        ],
-    )
-):
+@record_custom
+class SensorSnap(IHaveNew):
+    name: str
+    job_name: Optional[str]
+    op_selection: Optional[Sequence[str]]
+    mode: Optional[str]
+    min_interval: Optional[int]
+    description: Optional[str]
+    target_dict: Mapping[str, ExternalTargetData]
+    metadata: Optional[ExternalSensorMetadata]
+    default_status: Optional[DefaultSensorStatus]
+    sensor_type: Optional[SensorType]
+    asset_selection: Optional[AssetSelection]
+    run_tags: Mapping[str, str]
+
     def __new__(
         cls,
         name: str,
@@ -614,26 +479,21 @@ class SensorSnap(
             }
 
         if asset_selection is not None:
-            check.opt_inst_param(asset_selection, "asset_selection", AssetSelection)
             check.invariant(
                 is_whitelisted_for_serdes_object(asset_selection),
                 "asset_selection must be serializable",
             )
 
-        return super(SensorSnap, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            job_name=check.opt_str_param(job_name, "job_name"),  # keep legacy field populated
-            op_selection=check.opt_nullable_sequence_param(
-                op_selection, "op_selection", str
-            ),  # keep legacy field populated
-            mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
-            min_interval=check.opt_int_param(min_interval, "min_interval"),
-            description=check.opt_str_param(description, "description"),
-            target_dict=check.opt_mapping_param(
-                target_dict, "target_dict", str, ExternalTargetData
-            ),
-            metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
+            name=name,
+            job_name=job_name,  # keep legacy field populated
+            op_selection=op_selection,  # keep legacy field populated
+            mode=mode,  # keep legacy field populated
+            min_interval=min_interval,
+            description=description,
+            target_dict=target_dict,
+            metadata=metadata,
             # Leave default_status as None if it's STOPPED to maintain stable back-compat IDs
             default_status=(
                 DefaultSensorStatus.RUNNING
@@ -708,55 +568,39 @@ class SensorSnap(
 
 
 @whitelist_for_serdes
-class ExternalRepositoryErrorData(
-    NamedTuple("_ExternalRepositoryErrorData", [("error", Optional[SerializableErrorInfo])])
-):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalRepositoryErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-        )
+@record
+class ExternalRepositoryErrorData:
+    error: Optional[SerializableErrorInfo]
 
 
 @whitelist_for_serdes
-class ExternalSensorExecutionErrorData(
-    NamedTuple("_ExternalSensorExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
-):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalSensorExecutionErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-        )
+@record
+class ExternalSensorExecutionErrorData:
+    error: Optional[SerializableErrorInfo]
 
 
 @whitelist_for_serdes
-class ExternalExecutionParamsData(
-    NamedTuple(
-        "_ExternalExecutionParamsData",
-        [("run_config", Mapping[str, object]), ("tags", Mapping[str, str])],
-    )
-):
+@record_custom
+class ExternalExecutionParamsData(IHaveNew):
+    run_config: Mapping[str, object]
+    tags: Mapping[str, str]
+
     def __new__(
         cls,
         run_config: Optional[Mapping[str, object]] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
-        return super(ExternalExecutionParamsData, cls).__new__(
+        return super().__new__(
             cls,
-            run_config=check.opt_mapping_param(run_config, "run_config"),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+            run_config=run_config or {},
+            tags=tags or {},
         )
 
 
 @whitelist_for_serdes
-class ExternalExecutionParamsErrorData(
-    NamedTuple("_ExternalExecutionParamsErrorData", [("error", Optional[SerializableErrorInfo])])
-):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalExecutionParamsErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-        )
+@record
+class ExternalExecutionParamsErrorData:
+    error: Optional[SerializableErrorInfo]
 
 
 class ExternalPartitionsDefinitionData(ABC):
@@ -765,54 +609,22 @@ class ExternalPartitionsDefinitionData(ABC):
 
 
 @whitelist_for_serdes
-class ExternalTimeWindowPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
-    NamedTuple(
-        "_ExternalTimeWindowPartitionsDefinitionData",
-        [
-            ("start", float),
-            ("timezone", Optional[str]),
-            ("fmt", str),
-            ("end_offset", int),
-            ("end", Optional[float]),
-            ("cron_schedule", Optional[str]),
-            # superseded by cron_schedule, but kept around for backcompat
-            ("schedule_type", Optional[ScheduleType]),
-            # superseded by cron_schedule, but kept around for backcompat
-            ("minute_offset", Optional[int]),
-            # superseded by cron_schedule, but kept around for backcompat
-            ("hour_offset", Optional[int]),
-            # superseded by cron_schedule, but kept around for backcompat
-            ("day_offset", Optional[int]),
-        ],
-    ),
-):
-    def __new__(
-        cls,
-        start: float,
-        timezone: Optional[str],
-        fmt: str,
-        end_offset: int,
-        end: Optional[float] = None,
-        cron_schedule: Optional[str] = None,
-        schedule_type: Optional[ScheduleType] = None,
-        minute_offset: Optional[int] = None,
-        hour_offset: Optional[int] = None,
-        day_offset: Optional[int] = None,
-    ):
-        return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
-            cls,
-            schedule_type=check.opt_inst_param(schedule_type, "schedule_type", ScheduleType),
-            start=check.float_param(start, "start"),
-            timezone=check.opt_str_param(timezone, "timezone"),
-            fmt=check.str_param(fmt, "fmt"),
-            end_offset=check.int_param(end_offset, "end_offset"),
-            end=check.opt_float_param(end, "end"),
-            minute_offset=check.opt_int_param(minute_offset, "minute_offset"),
-            hour_offset=check.opt_int_param(hour_offset, "hour_offset"),
-            day_offset=check.opt_int_param(day_offset, "day_offset"),
-            cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
-        )
+@record
+class ExternalTimeWindowPartitionsDefinitionData(ExternalPartitionsDefinitionData):
+    start: float
+    timezone: Optional[str]
+    fmt: str
+    end_offset: int
+    end: Optional[float] = None
+    cron_schedule: Optional[str] = None
+    # superseded by cron_schedule, but kept around for backcompat
+    schedule_type: Optional[ScheduleType] = None
+    # superseded by cron_schedule, but kept around for backcompat
+    minute_offset: Optional[int] = None
+    # superseded by cron_schedule, but kept around for backcompat
+    hour_offset: Optional[int] = None
+    # superseded by cron_schedule, but kept around for backcompat
+    day_offset: Optional[int] = None
 
     def get_partitions_definition(self):
         if self.cron_schedule is not None:
@@ -852,14 +664,9 @@ def _dedup_partition_keys(keys: Sequence[str]):
 
 
 @whitelist_for_serdes
-class ExternalStaticPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
-    NamedTuple("_ExternalStaticPartitionsDefinitionData", [("partition_keys", Sequence[str])]),
-):
-    def __new__(cls, partition_keys: Sequence[str]):
-        return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
-            cls, partition_keys=check.sequence_param(partition_keys, "partition_keys", str)
-        )
+@record
+class ExternalStaticPartitionsDefinitionData(ExternalPartitionsDefinitionData):
+    partition_keys: Sequence[str]
 
     def get_partitions_definition(self):
         # v1.4 made `StaticPartitionsDefinition` error if given duplicate keys. This caused
@@ -870,44 +677,17 @@ class ExternalStaticPartitionsDefinitionData(
 
 
 @whitelist_for_serdes
-class ExternalPartitionDimensionDefinition(
-    NamedTuple(
-        "_ExternalPartitionDimensionDefinition",
-        [
-            ("name", str),
-            ("external_partitions_def_data", ExternalPartitionsDefinitionData),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        name: str,
-        external_partitions_def_data: ExternalPartitionsDefinitionData,
-    ):
-        return super(ExternalPartitionDimensionDefinition, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            external_partitions_def_data=check.inst_param(
-                external_partitions_def_data,
-                "external_partitions_def_data",
-                ExternalPartitionsDefinitionData,
-            ),
-        )
+@record
+class ExternalPartitionDimensionDefinition:
+    name: str
+    external_partitions_def_data: ExternalPartitionsDefinitionData
 
 
 @whitelist_for_serdes
-class ExternalMultiPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
-    NamedTuple(
-        "_ExternalMultiPartitionsDefinitionData",
-        [
-            (
-                "external_partition_dimension_definitions",
-                Sequence[ExternalPartitionDimensionDefinition],
-            )
-        ],
-    ),
-):
+@record
+class ExternalMultiPartitionsDefinitionData(ExternalPartitionsDefinitionData):
+    external_partition_dimension_definitions: Sequence[ExternalPartitionDimensionDefinition]
+
     def get_partitions_definition(self):
         return MultiPartitionsDefinition(
             {
@@ -920,10 +700,10 @@ class ExternalMultiPartitionsDefinitionData(
 
 
 @whitelist_for_serdes
-class ExternalDynamicPartitionsDefinitionData(
-    ExternalPartitionsDefinitionData,
-    NamedTuple("_ExternalDynamicPartitionsDefinitionData", [("name", str)]),
-):
+@record
+class ExternalDynamicPartitionsDefinitionData(ExternalPartitionsDefinitionData):
+    name: str
+
     def get_partitions_definition(self):
         return DynamicPartitionsDefinition(name=self.name)
 
@@ -932,43 +712,14 @@ class ExternalDynamicPartitionsDefinitionData(
     storage_name="ExternalPartitionSetData",
     storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
 )
-class PartitionSetSnap(
-    NamedTuple(
-        "_PartitionSetSnap",
-        [
-            ("name", str),
-            ("job_name", str),
-            ("op_selection", Optional[Sequence[str]]),
-            ("mode", Optional[str]),
-            ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
-            ("backfill_policy", Optional[BackfillPolicy]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        name: str,
-        job_name: str,
-        op_selection: Optional[Sequence[str]],
-        mode: Optional[str],
-        external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
-    ):
-        return super(PartitionSetSnap, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            job_name=check.str_param(job_name, "job_name"),
-            op_selection=check.opt_nullable_sequence_param(op_selection, "op_selection", str),
-            mode=check.opt_str_param(mode, "mode"),
-            external_partitions_data=check.opt_inst_param(
-                external_partitions_data,
-                "external_partitions_data",
-                ExternalPartitionsDefinitionData,
-            ),
-            backfill_policy=check.opt_inst_param(
-                backfill_policy, "backfill_policy", BackfillPolicy
-            ),
-        )
+@record
+class PartitionSetSnap:
+    name: str
+    job_name: str
+    op_selection: Optional[Sequence[str]]
+    mode: Optional[str]
+    external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None
+    backfill_policy: Optional[BackfillPolicy] = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
@@ -1003,152 +754,97 @@ class PartitionSetSnap(
 
 
 @whitelist_for_serdes
-class ExternalPartitionNamesData(
-    NamedTuple("_ExternalPartitionNamesData", [("partition_names", Sequence[str])])
-):
+@record_custom
+class ExternalPartitionNamesData(IHaveNew):
+    partition_names: Sequence[str]
+
     def __new__(cls, partition_names: Optional[Sequence[str]] = None):
-        return super(ExternalPartitionNamesData, cls).__new__(
+        return super().__new__(
             cls,
-            partition_names=check.opt_sequence_param(partition_names, "partition_names", str),
+            partition_names=partition_names or [],
         )
 
 
 @whitelist_for_serdes
-class ExternalPartitionConfigData(
-    NamedTuple(
-        "_ExternalPartitionConfigData", [("name", str), ("run_config", Mapping[str, object])]
-    )
-):
+@record_custom
+class ExternalPartitionConfigData(IHaveNew):
+    name: str
+    run_config: Mapping[str, object]
+
     def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
-        return super(ExternalPartitionConfigData, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            run_config=check.opt_mapping_param(run_config, "run_config"),
+            name=name,
+            run_config=run_config or {},
         )
 
 
 @whitelist_for_serdes
-class ExternalPartitionTagsData(
-    NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Mapping[str, object])])
-):
+@record_custom
+class ExternalPartitionTagsData(IHaveNew):
+    name: str
+    tags: Mapping[str, object]
+
     def __new__(cls, name: str, tags: Optional[Mapping[str, str]] = None):
-        return super(ExternalPartitionTagsData, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            tags=check.opt_mapping_param(tags, "tags"),
+            name=name,
+            tags=tags or {},
         )
 
 
 @whitelist_for_serdes
-class ExternalPartitionExecutionParamData(
-    NamedTuple(
-        "_ExternalPartitionExecutionParamData",
-        [("name", str), ("tags", Mapping[str, str]), ("run_config", Mapping[str, object])],
-    )
-):
-    def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):
-        return super(ExternalPartitionExecutionParamData, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            tags=check.mapping_param(tags, "tags"),
-            run_config=check.opt_mapping_param(run_config, "run_config"),
-        )
+@record
+class ExternalPartitionExecutionParamData:
+    name: str
+    tags: Mapping[str, str]
+    run_config: Mapping[str, object]
 
 
 @whitelist_for_serdes
-class ExternalPartitionSetExecutionParamData(
-    NamedTuple(
-        "_ExternalPartitionSetExecutionParamData",
-        [("partition_data", Sequence[ExternalPartitionExecutionParamData])],
-    )
-):
-    def __new__(cls, partition_data: Sequence[ExternalPartitionExecutionParamData]):
-        return super(ExternalPartitionSetExecutionParamData, cls).__new__(
-            cls,
-            partition_data=check.sequence_param(
-                partition_data, "partition_data", of_type=ExternalPartitionExecutionParamData
-            ),
-        )
+@record
+class ExternalPartitionSetExecutionParamData:
+    partition_data: Sequence[ExternalPartitionExecutionParamData]
 
 
 @whitelist_for_serdes
-class ExternalPartitionExecutionErrorData(
-    NamedTuple("_ExternalPartitionExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
-):
-    def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExternalPartitionExecutionErrorData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-        )
+@record
+class ExternalPartitionExecutionErrorData:
+    error: Optional[SerializableErrorInfo]
 
 
 @whitelist_for_serdes
-class ExternalAssetDependency(
-    NamedTuple(
-        "_ExternalAssetDependency",
-        [
-            ("upstream_asset_key", AssetKey),
-            ("input_name", Optional[str]),
-            ("output_name", Optional[str]),
-            ("partition_mapping", Optional[PartitionMapping]),
-        ],
-    )
-):
+@record
+class ExternalAssetDependency:
     """A definition of a directed edge in the logical asset graph.
 
     An upstream asset that's depended on, and the corresponding input name in the downstream asset
     that depends on it.
     """
 
-    def __new__(
-        cls,
-        upstream_asset_key: AssetKey,
-        input_name: Optional[str] = None,
-        output_name: Optional[str] = None,
-        partition_mapping: Optional[PartitionMapping] = None,
-    ):
-        return super(ExternalAssetDependency, cls).__new__(
-            cls,
-            upstream_asset_key=upstream_asset_key,
-            input_name=input_name,
-            output_name=output_name,
-            partition_mapping=partition_mapping,
-        )
+    upstream_asset_key: AssetKey
+    input_name: Optional[str] = None
+    output_name: Optional[str] = None
+    partition_mapping: Optional[PartitionMapping] = None
 
 
 @whitelist_for_serdes
-class ExternalAssetDependedBy(
-    NamedTuple(
-        "_ExternalAssetDependedBy",
-        [
-            ("downstream_asset_key", AssetKey),
-            ("input_name", Optional[str]),
-            ("output_name", Optional[str]),
-        ],
-    )
-):
+@record
+class ExternalAssetDependedBy:
     """A definition of a directed edge in the logical asset graph.
 
     An downstream asset that's depended by, and the corresponding input name in the upstream
     asset that it depends on.
     """
 
-    def __new__(
-        cls,
-        downstream_asset_key: AssetKey,
-        input_name: Optional[str] = None,
-        output_name: Optional[str] = None,
-    ):
-        return super(ExternalAssetDependedBy, cls).__new__(
-            cls,
-            downstream_asset_key=downstream_asset_key,
-            input_name=input_name,
-            output_name=output_name,
-        )
+    downstream_asset_key: AssetKey
+    input_name: Optional[str] = None
+    output_name: Optional[str] = None
 
 
 @whitelist_for_serdes
-class ExternalResourceConfigEnvVar(NamedTuple):
+@record
+class ExternalResourceConfigEnvVar:
     name: str
 
 
@@ -1159,7 +855,8 @@ UNKNOWN_RESOURCE_TYPE = "Unknown"
 
 
 @whitelist_for_serdes
-class ResourceJobUsageEntry(NamedTuple):
+@record
+class ResourceJobUsageEntry:
     """Stores information about where a resource is used in a job."""
 
     job_name: str
@@ -1167,31 +864,27 @@ class ResourceJobUsageEntry(NamedTuple):
 
 
 @whitelist_for_serdes
-class ExternalResourceData(
-    NamedTuple(
-        "_ExternalResourceData",
-        [
-            ("name", str),
-            ("resource_snapshot", ResourceDefSnap),
-            ("configured_values", Dict[str, ExternalResourceValue]),
-            ("config_field_snaps", List[ConfigFieldSnap]),
-            ("config_schema_snap", ConfigSchemaSnapshot),
-            ("nested_resources", Dict[str, NestedResource]),
-            ("parent_resources", Dict[str, str]),
-            ("resource_type", str),
-            ("is_top_level", bool),
-            ("asset_keys_using", List[AssetKey]),
-            ("job_ops_using", List[ResourceJobUsageEntry]),
-            ("dagster_maintained", bool),
-            ("schedules_using", List[str]),
-            ("sensors_using", List[str]),
-        ],
-    )
-):
+@record_custom
+class ExternalResourceData(IHaveNew):
     """Serializable data associated with a top-level resource in a Repository, e.g. one bound using the Definitions API.
 
     Includes information about the resource definition and config schema, user-passed values, etc.
     """
+
+    name: str
+    resource_snapshot: ResourceDefSnap
+    configured_values: Dict[str, ExternalResourceValue]
+    config_field_snaps: List[ConfigFieldSnap]
+    config_schema_snap: ConfigSchemaSnapshot
+    nested_resources: Dict[str, NestedResource]
+    parent_resources: Dict[str, str]
+    resource_type: str
+    is_top_level: bool
+    asset_keys_using: List[AssetKey]
+    job_ops_using: List[ResourceJobUsageEntry]
+    dagster_maintained: bool
+    schedules_using: List[str]
+    sensors_using: List[str]
 
     def __new__(
         cls,
@@ -1210,12 +903,10 @@ class ExternalResourceData(
         schedules_using: Optional[Sequence[str]] = None,
         sensors_using: Optional[Sequence[str]] = None,
     ):
-        return super(ExternalResourceData, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            resource_snapshot=check.inst_param(
-                resource_snapshot, "resource_snapshot", ResourceDefSnap
-            ),
+            name=name,
+            resource_snapshot=resource_snapshot,
             configured_values=dict(
                 check.mapping_param(
                     configured_values,
@@ -1224,36 +915,28 @@ class ExternalResourceData(
                     value_type=(str, ExternalResourceConfigEnvVar),
                 )
             ),
-            config_field_snaps=check.list_param(
-                config_field_snaps, "config_field_snaps", of_type=ConfigFieldSnap
-            ),
-            config_schema_snap=check.inst_param(
-                config_schema_snap, "config_schema_snap", ConfigSchemaSnapshot
-            ),
+            config_field_snaps=config_field_snaps,
+            config_schema_snap=config_schema_snap,
             nested_resources=dict(
                 check.opt_mapping_param(
                     nested_resources, "nested_resources", key_type=str, value_type=NestedResource
                 )
-                or {}
             ),
             parent_resources=dict(
                 check.opt_mapping_param(
                     parent_resources, "parent_resources", key_type=str, value_type=str
                 )
-                or {}
             ),
-            is_top_level=check.bool_param(is_top_level, "is_top_level"),
-            resource_type=check.str_param(resource_type, "resource_type"),
+            is_top_level=is_top_level,
+            resource_type=resource_type,
             asset_keys_using=list(
                 check.opt_sequence_param(asset_keys_using, "asset_keys_using", of_type=AssetKey)
-            )
-            or [],
+            ),
             job_ops_using=list(
                 check.opt_sequence_param(
                     job_ops_using, "job_ops_using", of_type=ResourceJobUsageEntry
                 )
-            )
-            or [],
+            ),
             dagster_maintained=dagster_maintained,
             schedules_using=list(
                 check.opt_sequence_param(schedules_using, "schedules_using", of_type=str)
@@ -1265,21 +948,17 @@ class ExternalResourceData(
 
 
 @whitelist_for_serdes(storage_field_names={"execution_set_identifier": "atomic_execution_unit_id"})
-class ExternalAssetCheck(
-    NamedTuple(
-        "_ExternalAssetCheck",
-        [
-            ("name", str),
-            ("asset_key", AssetKey),
-            ("description", Optional[str]),
-            ("execution_set_identifier", Optional[str]),
-            ("job_names", Sequence[str]),
-            ("blocking", bool),
-            ("additional_asset_keys", Sequence[AssetKey]),
-        ],
-    )
-):
+@record_custom
+class ExternalAssetCheck(IHaveNew):
     """Serializable data associated with an asset check."""
+
+    name: str
+    asset_key: AssetKey
+    description: Optional[str]
+    execution_set_identifier: Optional[str]
+    job_names: Sequence[str]
+    blocking: bool
+    additional_asset_keys: Sequence[AssetKey]
 
     def __new__(
         cls,
@@ -1291,19 +970,15 @@ class ExternalAssetCheck(
         blocking: bool = False,
         additional_asset_keys: Optional[Sequence[AssetKey]] = None,
     ):
-        return super(ExternalAssetCheck, cls).__new__(
+        return super().__new__(
             cls,
-            name=check.str_param(name, "name"),
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            description=check.opt_str_param(description, "description"),
-            execution_set_identifier=check.opt_str_param(
-                execution_set_identifier, "execution_set_identifier"
-            ),
-            job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
-            blocking=check.bool_param(blocking, "blocking"),
-            additional_asset_keys=check.opt_sequence_param(
-                additional_asset_keys, "additional_asset_keys", of_type=AssetKey
-            ),
+            name=name,
+            asset_key=asset_key,
+            description=description,
+            execution_set_identifier=execution_set_identifier,
+            job_names=job_names or [],
+            blocking=blocking,
+            additional_asset_keys=additional_asset_keys or [],
         )
 
     @property
@@ -1340,6 +1015,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         "owners": BackcompatTeamOwnerFieldDeserializer,
     },
 )
+@suppress_dagster_warnings
 @record_custom
 class ExternalAssetNode(IHaveNew):
     """A definition of a node in the logical asset graph.
@@ -1546,7 +1222,9 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
             node_use_by_key[use.resource_key].append(use.node_handle)
         for resource_key in node_use_by_key:
             resource_job_usage_map[resource_key].append(
-                ResourceJobUsageEntry(job_def.name, node_use_by_key[resource_key])
+                ResourceJobUsageEntry(
+                    job_name=job_def.name, node_handles=node_use_by_key[resource_key]
+                )
             )
 
     return resource_job_usage_map
@@ -1781,7 +1459,10 @@ def external_asset_nodes_from_defs(
                     )
                     for pk in sorted(asset_node.parent_keys)
                 ],
-                depended_by=[ExternalAssetDependedBy(k) for k in sorted(asset_node.child_keys)],
+                depended_by=[
+                    ExternalAssetDependedBy(downstream_asset_key=k)
+                    for k in sorted(asset_node.child_keys)
+                ],
                 execution_type=asset_node.execution_type,
                 compute_kind=compute_kind,
                 op_name=op_name,
@@ -2038,8 +1719,10 @@ def external_multi_partitions_definition_from_def(
     return ExternalMultiPartitionsDefinitionData(
         external_partition_dimension_definitions=[
             ExternalPartitionDimensionDefinition(
-                dimension.name,
-                external_partitions_definition_from_def(dimension.partitions_def),
+                name=dimension.name,
+                external_partitions_def_data=external_partitions_definition_from_def(
+                    dimension.partitions_def
+                ),
             )
             for dimension in partitions_def.partitions_defs
         ]
