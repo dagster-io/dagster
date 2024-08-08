@@ -1,6 +1,9 @@
-from dagster import AutomationCondition, DefaultSensorStatus, Definitions, asset
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    UserCodeAutomationConditionSensorDefinition,
+from dagster import (
+    AutomationCondition,
+    AutomationConditionSensorDefinition,
+    DefaultSensorStatus,
+    Definitions,
+    asset,
 )
 
 eager_policy = AutomationCondition.eager().as_auto_materialize_policy()
@@ -17,10 +20,11 @@ def upstream() -> None: ...
 def downstream() -> None: ...
 
 
-amp_sensor = UserCodeAutomationConditionSensorDefinition(
+amp_sensor = AutomationConditionSensorDefinition(
     "amp_sensor",
     asset_selection="*",
     default_status=DefaultSensorStatus.RUNNING,
+    user_code=True,
 )
 
 defs = Definitions(
