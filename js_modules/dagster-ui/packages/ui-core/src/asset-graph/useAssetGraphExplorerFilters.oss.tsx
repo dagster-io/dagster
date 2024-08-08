@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {AssetFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
+import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {AssetGraphFilterBar} from './AssetGraphFilterBar';
 import {GraphNode} from './Utils';

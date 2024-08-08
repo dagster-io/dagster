@@ -2,8 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
-import {AssetGlobalLineageLink} from 'src/assets/AssetPageHeader.oss';
-import {useAssetDefinitionFilterState} from 'src/assets/useAssetDefinitionFilterState.oss';
+import {AssetGlobalLineageLink} from 'shared/assets/AssetPageHeader.oss';
+import {useAssetDefinitionFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';

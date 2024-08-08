@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {UserPreferences} from 'src/app/UserSettingsDialog/UserPreferences.oss';
+import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from '../Flags';
