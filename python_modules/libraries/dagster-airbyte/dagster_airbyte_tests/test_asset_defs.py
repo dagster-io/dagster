@@ -224,6 +224,11 @@ def test_assets_cloud() -> None:
     with responses.RequestsMock() as rsps:
         rsps.add(
             rsps.POST,
+            f"{ab_url}/applications/token",
+            json={"access_token": "some_access_token"},
+        )
+        rsps.add(
+            rsps.POST,
             f"{ab_url}/jobs",
             json={"jobId": 1, "status": "pending", "jobType": "sync"},
         )
@@ -237,11 +242,6 @@ def test_assets_cloud() -> None:
             rsps.GET,
             f"{ab_url}/jobs/1",
             json={"jobId": 1, "status": "succeeded", "jobType": "sync"},
-        )
-        rsps.add(
-            rsps.POST,
-            f"{ab_url}/applications/token",
-            json={"access_token": "some_access_token"},
         )
 
         res = materialize_to_memory(

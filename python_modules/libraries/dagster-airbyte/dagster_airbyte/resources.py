@@ -348,8 +348,11 @@ class AirbyteCloudResource(BaseAirbyteResource):
     def _needs_refreshed_access_token(self) -> bool:
         # The access token expire every 3 minutes in Airbyte Cloud.
         # Refresh is needed after 2.5 minutes to avoid the "token expired" error message.
-        return not self._access_token_value or self._access_token_timestamp <= datetime.timestamp(
-            datetime.now() - timedelta(seconds=150)
+        return (
+            not self._access_token_value
+            or not self._access_token_timestamp
+            or self._access_token_timestamp
+            <= datetime.timestamp(datetime.now() - timedelta(seconds=150))
         )
 
 

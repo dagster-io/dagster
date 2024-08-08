@@ -8,7 +8,12 @@ from dagster_airbyte import AirbyteCloudResource, AirbyteOutput, AirbyteState
 
 @responses.activate
 def test_trigger_connection() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
+    ab_resource = AirbyteCloudResource(client_id="some_client_id", client_secret="some_client_secret", poll_interval=0)
+    responses.add(
+        responses.POST,
+        f"{ab_resource.api_base_url}/applications/token",
+        json={"access_token": "some_access_token"},
+    )
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs",
@@ -19,8 +24,17 @@ def test_trigger_connection() -> None:
     assert resp == {"job": {"id": 1, "status": "pending"}}
 
 
+@responses.activate
 def test_trigger_connection_fail() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_resource = AirbyteCloudResource(
+        client_id="some_client_id", client_secret="some_client_secret"
+    )
+    responses.add(
+        responses.POST,
+        f"{ab_resource.api_base_url}/applications/token",
+        json={"access_token": "some_access_token"},
+    )
+
     with pytest.raises(
         Failure,
         match=re.escape("Max retries (3) exceeded with url: https://api.airbyte.com/v1/jobs."),
@@ -34,7 +48,13 @@ def test_trigger_connection_fail() -> None:
     [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
 )
 def test_sync_and_poll(state) -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
+    ab_resource = AirbyteCloudResource(client_id="some_client_id", client_secret="some_client_secret", poll_interval=0)
+
+    responses.add(
+        responses.POST,
+        f"{ab_resource.api_base_url}/applications/token",
+        json={"access_token": "some_access_token"},
+    )
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs",
@@ -78,8 +98,13 @@ def test_sync_and_poll(state) -> None:
 
 @responses.activate
 def test_start_sync_bad_out_fail() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
+    ab_resource = AirbyteCloudResource(client_id="some_client_id", client_secret="some_client_secret", poll_interval=0)
 
+    responses.add(
+        responses.POST,
+        f"{ab_resource.api_base_url}/applications/token",
+        json={"access_token": "some_access_token"},
+    )
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs",
