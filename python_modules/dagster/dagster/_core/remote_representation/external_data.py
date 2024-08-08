@@ -1130,6 +1130,15 @@ class ExternalAssetNode(IHaveNew):
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
 
+        # do not include automation conditions containing user-defined info on the ExternalAssetNode
+        # TODO: include a snapshot of the condition on this class instead
+        if (
+            auto_materialize_policy
+            and auto_materialize_policy.asset_condition
+            and not auto_materialize_policy.asset_condition.is_serializable
+        ):
+            auto_materialize_policy = None
+
         return super().__new__(
             cls,
             asset_key=asset_key,
