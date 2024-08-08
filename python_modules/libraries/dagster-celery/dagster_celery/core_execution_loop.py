@@ -70,7 +70,7 @@ def core_celery_execution_loop(job_context, execution_plan, step_execution_fn):
                 stopping = True
                 active_execution.mark_interrupted()
                 for result in step_results.values():
-                    result.revoke(terminate=True, signal='SIGKILL')
+                    result.revoke(terminate=True)
             results_to_pop = []
             for step_key, result in sorted(
                 step_results.items(), key=lambda x: priority_for_key(x[0])
