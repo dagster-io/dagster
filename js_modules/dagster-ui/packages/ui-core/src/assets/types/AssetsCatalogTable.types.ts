@@ -12,6 +12,7 @@ export type AssetCatalogTableQuery = {
   assetsOrError:
     | {
         __typename: 'AssetConnection';
+        cursor: string | null;
         nodes: Array<{
           __typename: 'Asset';
           id: string;

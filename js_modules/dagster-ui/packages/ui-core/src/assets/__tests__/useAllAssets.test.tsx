@@ -32,10 +32,12 @@ jest.mock('idb-lru-cache', () => {
 
 const createMock = ({
   nodes,
+  returnedCursor,
   cursor,
   limit = 2,
 }: {
   limit?: number;
+  returnedCursor: string | null;
   cursor?: string;
   nodes: Asset[];
 }) =>
@@ -48,6 +50,7 @@ const createMock = ({
     data: {
       assetsOrError: buildAssetConnection({
         nodes,
+        cursor: returnedCursor,
       }),
     },
     delay: 100,
@@ -57,14 +60,17 @@ describe('useAllAssets', () => {
   it('Paginates correctly', async () => {
     const mock = createMock({
       nodes: [buildAsset({id: 'asset-id-1'}), buildAsset({id: 'asset-id-2'})],
+      returnedCursor: 'asset-key-2',
     });
     const mock2 = createMock({
-      cursor: 'asset-id-2',
+      cursor: 'asset-key-2',
       nodes: [buildAsset({id: 'asset-id-3'}), buildAsset({id: 'asset-id-4'})],
+      returnedCursor: 'asset-key-4',
     });
     const mock3 = createMock({
-      cursor: 'asset-id-4',
+      cursor: 'asset-key-4',
       nodes: [buildAsset({id: 'asset-id-5'})],
+      returnedCursor: null,
     });
 
     const {result} = renderHook(() => useAllAssets({batchLimit: 2}), {
@@ -90,14 +96,17 @@ describe('useAllAssets', () => {
     });
     const mock = createMock({
       nodes: [buildAsset({id: 'asset-id-1'}), buildAsset({id: 'asset-id-2'})],
+      returnedCursor: 'asset-key-2',
     });
     const mock2 = createMock({
-      cursor: 'asset-id-2',
+      cursor: 'asset-key-2',
       nodes: [buildAsset({id: 'asset-id-3'}), buildAsset({id: 'asset-id-4'})],
+      returnedCursor: 'asset-key-4',
     });
     const mock3 = createMock({
-      cursor: 'asset-id-4',
+      cursor: 'asset-key-4',
       nodes: [buildAsset({id: 'asset-id-5'})],
+      returnedCursor: null,
     });
 
     const {result} = renderHook(() => useAllAssets({batchLimit: 2}), {

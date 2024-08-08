@@ -118,7 +118,8 @@ def get_assets(
                 definition=asset_nodes_by_asset_key.get(asset_key),
             )
             for asset_key in asset_keys
-        ]
+        ],
+        cursor=asset_keys[-1].to_string() if asset_keys else None,
     )
 
 

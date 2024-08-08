@@ -91,7 +91,7 @@ export function useAllAssets({
   const fetchAssets = useCallback(async () => {
     try {
       const data = await fetchPaginatedData({
-        async fetchData(cursor: string | undefined) {
+        async fetchData(cursor: string | null | undefined) {
           const {data} = await client.query<
             AssetCatalogTableQuery,
             AssetCatalogTableQueryVariables
@@ -114,7 +114,7 @@ export function useAllAssets({
           }
           const assets = data.assetsOrError.nodes;
           const hasMoreData = assets.length === batchLimit;
-          const nextCursor = hasMoreData ? assets[assets.length - 1]!.id : undefined;
+          const nextCursor = data.assetsOrError.cursor;
           return {
             data: assets,
             cursor: nextCursor,
@@ -289,6 +289,7 @@ export const ASSET_CATALOG_TABLE_QUERY = gql`
           id
           ...AssetTableFragment
         }
+        cursor
       }
       ...PythonErrorFragment
     }
