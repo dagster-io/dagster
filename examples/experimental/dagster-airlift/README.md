@@ -7,18 +7,18 @@ Airlift is a toolkit for observing Airflow instances from within Dagster and for
 - Observe Airflow DAGs and their execution history with no changes to Airflow code
 - Model and observe assets orchestrated by Airflow with no changes to Airflow code
 - (Future) Enable a migration process that
-    - Can be done task-by-task in any order with minimal coordination
-    - Has task-by-task rollback to reduce risk
-    - That retains Airflow DAG structure and execution history during the migration
+  - Can be done task-by-task in any order with minimal coordination
+  - Has task-by-task rollback to reduce risk
+  - That retains Airflow DAG structure and execution history during the migration
 
 ## Process
 
 - **Peer**
-    - Observe an Airflow instance from within a Dagster Deployment via the Airflow REST API.
-    - This loads every Airflow DAG as an asset definition and creates a sensor that polls Airflow for execution history.
+  - Observe an Airflow instance from within a Dagster Deployment via the Airflow REST API.
+  - This loads every Airflow DAG as an asset definition and creates a sensor that polls Airflow for execution history.
 - **Observe**
-    - Add a mapping that maps the airflow dag and task id to a basket of definitions that you want to observe. (e.g. render the full lineage the dbt models an Airflow task orchestrates)
-    - The sensor used for peering also polls for task execution history, and adds materializations to an observed asset when its corresponding task successfully executes
+  - Add a mapping that maps the airflow dag and task id to a basket of definitions that you want to observe. (e.g. render the full lineage the dbt models an Airflow task orchestrates)
+  - The sensor used for peering also polls for task execution history, and adds materializations to an observed asset when its corresponding task successfully executes
 
 ## REST API Availability
 
@@ -26,8 +26,8 @@ Airlift depends on the the availability of Airflow’s REST API. Airflow’s RES
 
 - **OSS:** Stable as of 2.00
 - **MWAA**
-    - Note: only available in Airflow 2.4.3 or later on MWAA.
-    - Doesn’t appear to be a well-defined reason other than pure conservatism according to [ChatGPT](https://chatgpt.com/c/220cd63e-2111-4b32-bd83-87d95e2390d7).
+  - Note: only available in Airflow 2.4.3 or later on MWAA.
+  - Doesn’t appear to be a well-defined reason other than pure conservatism according to [ChatGPT](https://chatgpt.com/c/220cd63e-2111-4b32-bd83-87d95e2390d7).
 - **Cloud Composer:** No limitations as far as we know.
 - **Astronomer:** No limitations as far as we know.
 
@@ -105,7 +105,7 @@ We have an included example at `examples/experimental/dagster-airlift/examples/p
 
 To add definitions that an Airlift-enabled deployment will observed, you need to use the `orchestrated_defs` argument to `build_defs_from_airflow_instance`
 
-*Note: This also accepts an object of type `Definitions`. We have recently added a function, `Definitions.merge`, which allows users to combine and compose `Definitions` objects, which this utilizes.*
+_Note: This also accepts an object of type `Definitions`. We have recently added a function, `Definitions.merge`, which allows users to combine and compose `Definitions` objects, which this utilizes._
 
 For most projects we anticipate the following process:
 
@@ -165,10 +165,10 @@ defs = build_defs_from_airflow_instance(
 
 We default to a "convention over configuration" approach to affiliate Dagster assets with Airflow tasks.
 
-Note the naming convention `dbt_dag__build_dbt_models`. By default we use this convention to encode the dag name (`dbt_dag`) and task id (`build_dbt_models`) of the Airflow task actually orchestrating the computation. 
+Note the naming convention `dbt_dag__build_dbt_models`. By default we use this convention to encode the dag name (`dbt_dag`) and task id (`build_dbt_models`) of the Airflow task actually orchestrating the computation.
 
 This name gets parsed and set corresponding tags (`airlift/dag_id` and `airlift/task_id`). Alternatively you can set those tags explicitly if you don’t want to rely on the naming convention.
 
 Once this is done you should be able to reload your definitions and the see the full dbt project. Once you run the corresponding Airflow Dag and task, each task completion will corresponding to an asset materialization in any asset that is orchestrated by that task.
 
-*Note: There will be some delay as this process is managed by a Dagster sensor that polls the Airflow instance for task history. This is every 30 seconds by default, so there will be some delay.*
+_Note: There will be some delay as this process is managed by a Dagster sensor that polls the Airflow instance for task history. This is every 30 seconds by default, so there will be some delay._
