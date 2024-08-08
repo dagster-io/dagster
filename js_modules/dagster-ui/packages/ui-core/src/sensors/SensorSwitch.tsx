@@ -58,17 +58,17 @@ export const SensorSwitch = (props: Props) => {
 
   const {id, name} = sensor;
 
+  const variables = {
+    id: sensor.id,
+    selector: {
+      ...repoAddressSelector,
+      name,
+    },
+  };
+
   const {data, loading} = useQuery<SensorStateQuery, SensorStateQueryVariables>(
     SENSOR_STATE_QUERY,
-    {
-      variables: {
-        id: sensor.id,
-        selector: {
-          ...repoAddressSelector,
-          name,
-        },
-      },
-    },
+    {variables},
   );
 
   const [startSensor, {loading: toggleOnInFlight}] = useMutation<
@@ -76,18 +76,7 @@ export const SensorSwitch = (props: Props) => {
     StartSensorMutationVariables
   >(START_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
-    refetchQueries: [
-      {
-        variables: {
-          id: sensor.id,
-          selector: {
-            ...repoAddressSelector,
-            name,
-          },
-        },
-        query: SENSOR_STATE_QUERY,
-      },
-    ],
+    refetchQueries: [{variables, query: SENSOR_STATE_QUERY}],
     awaitRefetchQueries: true,
   });
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
@@ -95,7 +84,7 @@ export const SensorSwitch = (props: Props) => {
     StopRunningSensorMutationVariables
   >(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
-    refetchQueries: [{variables: {id: sensor.id}, query: SENSOR_STATE_QUERY}],
+    refetchQueries: [{variables, query: SENSOR_STATE_QUERY}],
     awaitRefetchQueries: true,
   });
   const [setSensorCursor, {loading: cursorMutationInFlight}] = useMutation<
