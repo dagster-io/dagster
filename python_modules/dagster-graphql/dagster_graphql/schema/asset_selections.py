@@ -51,7 +51,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
     def resolve_assetsOrError(self, graphene_info) -> "GrapheneAssetConnection":
         from .roots.assets import GrapheneAssetConnection
 
-        return GrapheneAssetConnection(nodes=self._get_assets(graphene_info))
+        return GrapheneAssetConnection(nodes=self._get_assets(graphene_info), cursor=None)
 
     class Meta:
         name = "AssetSelection"
