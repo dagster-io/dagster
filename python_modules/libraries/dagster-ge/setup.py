@@ -33,8 +33,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-pandas{pin}",
+        "dagster==1.8.0",
+        "dagster-pandas==0.24.0",
         "pandas",
         "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27, <0.17.12",
     ],
