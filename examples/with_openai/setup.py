@@ -9,7 +9,7 @@ setup(
         "dagster-openai",
         "faiss-cpu==1.8.0",
         "filelock",
-        "langchain==0.2.7",
+        "langchain==0.2.9",
         "langchain-community==0.2.9",
         "langchain-openai==0.1.14",
     ],
