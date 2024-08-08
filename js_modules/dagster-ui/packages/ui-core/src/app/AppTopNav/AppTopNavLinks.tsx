@@ -114,7 +114,7 @@ export const navLinks = () => {
         </TopNavLink>
       ),
     };
-    return [overview, assets, jobs, automation, runs, deployment];
+    return [overview, runs, assets, jobs, automation, deployment];
   }
 
   const deployment = {

@@ -35,7 +35,7 @@ import {
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
-const TEMPLATE_COLUMNS = '1.5fr 150px 1fr 76px 120px 148px 180px';
+const TEMPLATE_COLUMNS = '1.5fr 180px 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
 
 interface SensorRowProps {
@@ -283,45 +283,45 @@ export const SENSOR_TYPE_META: Record<
   {name: string; icon: IconName; description: string | null}
 > = {
   [SensorType.ASSET]: {
-    name: 'Asset',
-    icon: 'asset',
+    name: 'Asset sensor',
+    icon: 'sensors',
     description: 'Asset sensors instigate runs when a materialization occurs',
   },
   [SensorType.AUTO_MATERIALIZE]: {
-    name: 'Auto-materialize',
-    icon: 'materialization',
+    name: 'Automation condition sensor',
+    icon: 'auto_materialize_policy',
     description:
       'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
   },
   [SensorType.AUTOMATION]: {
-    name: 'Automation',
-    icon: 'materialization',
+    name: 'Automation condition sensor',
+    icon: 'auto_materialize_policy',
     description: 'Automation sensors trigger runs based on conditions defined on assets.',
   },
   [SensorType.FRESHNESS_POLICY]: {
-    name: 'Freshness policy',
-    icon: 'hourglass',
+    name: 'Freshness policy sensor',
+    icon: 'sensors',
     description:
       'Freshness sensors check the freshness of assets on each tick, then perform an action in response to that status',
   },
   [SensorType.MULTI_ASSET]: {
-    name: 'Multi-asset',
-    icon: 'multi_asset',
+    name: 'Multi-asset sensor',
+    icon: 'sensors',
     description:
       'Multi asset sensors trigger job executions based on multiple asset materialization event streams',
   },
   [SensorType.RUN_STATUS]: {
-    name: 'Run status',
-    icon: 'alternate_email',
+    name: 'Run status sensor',
+    icon: 'sensors',
     description: 'Run status sensors react to run status',
   },
   [SensorType.STANDARD]: {
-    name: 'Standard',
+    name: 'Standard sensor',
     icon: 'sensors',
     description: null,
   },
   [SensorType.UNKNOWN]: {
-    name: 'Standard',
+    name: 'Standard sensor',
     icon: 'sensors',
     description: null,
   },

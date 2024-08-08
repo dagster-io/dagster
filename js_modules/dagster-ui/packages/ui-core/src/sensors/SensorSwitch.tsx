@@ -126,7 +126,11 @@ export const SensorSwitch = (props: Props) => {
   };
 
   if (!data && loading) {
-    return <Spinner purpose="body-text" />;
+    return (
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{width: '30px'}}>
+        <Spinner purpose="body-text" />
+      </Box>
+    );
   }
 
   // Status according to sensor object passed in (may be outdated if its from the workspace snapshot)
