@@ -78,7 +78,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
     () => groupedAssets.flatMap((group) => group.assets.map((asset) => asset.key)) ?? [],
     [groupedAssets],
   );
-  const {liveDataByNode} = useAssetsBaseData(orderedAssets, 'OverviewAssetsRoot');
+  useAssetsBaseData(orderedAssets, 'OverviewAssetsRoot');
 
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 

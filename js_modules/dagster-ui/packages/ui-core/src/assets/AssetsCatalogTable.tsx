@@ -222,8 +222,6 @@ export const AssetsCatalogTable = ({
     leading: true,
   });
 
-  const loaded = !!assets;
-
   React.useEffect(() => {
     if (view !== 'directory' && prefixPath.length) {
       setView('directory');
