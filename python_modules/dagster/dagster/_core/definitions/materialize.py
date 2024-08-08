@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
+from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._utils.merger import merge_dicts
 
@@ -213,6 +214,8 @@ def _get_required_io_manager_keys(
     for asset in assets:
         if isinstance(asset, (AssetsDefinition, SourceAsset)):
             for requirement in asset.get_resource_requirements():
-                if requirement.expected_type == IOManagerDefinition:
+                if requirement.expected_type == IOManagerDefinition and isinstance(
+                    requirement, ResourceKeyRequirement
+                ):
                     io_manager_keys.add(requirement.key)
     return io_manager_keys

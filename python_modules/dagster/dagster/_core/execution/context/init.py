@@ -32,13 +32,15 @@ class InitResourceContext:
         self,
         resource_config: Any,
         resources: Resources,
-        resource_def: Optional[ResourceDefinition] = None,
+        resource_def: Optional[ResourceDefinition],
+        all_resource_defs: Mapping[str, ResourceDefinition],
         instance: Optional[DagsterInstance] = None,
         dagster_run: Optional[DagsterRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
     ):
         self._resource_config = resource_config
         self._resource_def = resource_def
+        self._all_resource_defs = all_resource_defs
         self._log_manager = log_manager
         self._instance = instance
         self._resources = resources
@@ -55,14 +57,14 @@ class InitResourceContext:
 
     @public
     @property
-    def resource_def(self) -> Optional[ResourceDefinition]:
+    def resource_def(self) -> ResourceDefinition:
         """The definition of the resource currently being constructed."""
-        return self._resource_def
+        return check.not_none(self._resource_def)
 
     @public
     @property
     def resources(self) -> Resources:
-        """The resources that are available to the resource that we are initalizing."""
+        """The resources that are available to the resource that we are initializing."""
         return self._resources
 
     @public
@@ -97,12 +99,17 @@ class InitResourceContext:
         """
         return self.dagster_run.run_id if self.dagster_run else None
 
+    @property
+    def all_resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self._all_resource_defs
+
     def replace_config(self, config: Any) -> "InitResourceContext":
         return InitResourceContext(
             resource_config=config,
             resources=self.resources,
             instance=self.instance,
             resource_def=self.resource_def,
+            all_resource_defs=self.all_resource_defs,
             dagster_run=self.dagster_run,
             log_manager=self.log,
         )
@@ -156,6 +163,7 @@ class UnboundInitResourceContext(InitResourceContext):
             resource_config=resource_config,
             resources=resources,
             resource_def=None,
+            all_resource_defs={},
             instance=instance,
             dagster_run=None,
             log_manager=initialize_console_manager(None),
@@ -183,7 +191,7 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def resource_def(self) -> Optional[ResourceDefinition]:
         raise DagsterInvariantViolationError(
-            "UnboundInitLoggerContext has not been validated against a logger definition."
+            "UnboundInitResourceContext has not been bound to resource definition."
         )
 
     @property

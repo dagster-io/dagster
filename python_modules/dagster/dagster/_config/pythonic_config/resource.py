@@ -1,12 +1,14 @@
 import contextlib
 import inspect
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
     Dict,
     Generator,
     Generic,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -60,179 +62,81 @@ from dagster._core.definitions.resource_definition import (
     ResourceFunctionWithoutContext,
     has_at_least_one_parameter,
 )
-from dagster._core.storage.io_manager import IOManagerDefinition
 
 from .config import Config, MakeConfigCacheable, infer_schema_from_config_class
 from .conversion_utils import TResValue, _curry_config_schema
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.resource_requirement import ResourceRequirement
+
 T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int
 
 
-class AllowDelayedDependencies:
-    _nested_partial_resources: Mapping[str, ResourceDefinition] = {}
+class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
+    @property
+    @abstractmethod
+    def nested_partial_resources(self) -> Mapping[str, "CoercibleToResource"]: ...
 
-    def _resolve_required_resource_keys(
-        self, resource_mapping: Mapping[int, str]
+    @property
+    @abstractmethod
+    def nested_resources(self) -> Mapping[str, Any]: ...
+
+    @property
+    @abstractmethod
+    def configurable_resource_cls(self) -> Type: ...
+
+    def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:
+        from dagster._core.definitions.resource_requirement import (
+            PartialResourceDependencyRequirement,
+        )
+
+        for attr_name, partial_resource in self.nested_partial_resources.items():
+            yield PartialResourceDependencyRequirement(
+                class_name=self.configurable_resource_cls.__name__,
+                attr_name=attr_name,
+                partial_resource=partial_resource,
+            )
+
+        for inner_key, resource in self.nested_resources.items():
+            if is_coercible_to_resource(resource):
+                yield from coerce_to_resource(resource).get_resource_requirements(inner_key)
+
+        yield from super().get_resource_requirements(source_key)
+
+    def get_required_resource_keys(
+        self, resource_defs: Mapping[str, ResourceDefinition]
     ) -> AbstractSet[str]:
-        from dagster._core.execution.build_resources import wrap_resource_for_execution
-
-        # All dependent resources which are not fully configured
-        # must be specified to the Definitions object so that the
-        # resource can be configured at runtime by the user
-        nested_partial_resource_keys = {
-            attr_name: resource_mapping.get(id(resource_def))
-            for attr_name, resource_def in self._nested_partial_resources.items()
-        }
-        check.invariant(
-            all(pointer_key is not None for pointer_key in nested_partial_resource_keys.values()),
-            "Any partially configured, nested resources must be provided to Definitions"
-            f" object: {nested_partial_resource_keys}",
-        )
-
-        # Recursively get all nested resource keys
-        nested_resource_required_keys: Set[str] = set()
-        for v in self._nested_partial_resources.values():
-            nested_resource_required_keys.update(
-                _resolve_required_resource_keys_for_resource(v, resource_mapping)
-            )
-
-        resources, _ = separate_resource_params(
-            cast(Type[BaseModel], self.__class__), self.__dict__
-        )
-        for v in resources.values():
-            nested_resource_required_keys.update(
-                _resolve_required_resource_keys_for_resource(
-                    wrap_resource_for_execution(v), resource_mapping
+        resolved_keys = set(self.required_resource_keys)
+        for attr_name, partial_resource in self.nested_partial_resources.items():
+            if is_coercible_to_resource(partial_resource):
+                resolved_keys.add(
+                    _resolve_partial_resource_to_key(attr_name, partial_resource, resource_defs)
                 )
-            )
+            else:
+                check.failed(
+                    f"Unexpected nested partial resource of type {type(partial_resource)} is not coercible to resource"
+                )
 
-        out = set(cast(Set[str], nested_partial_resource_keys.values())).union(
-            nested_resource_required_keys
-        )
-        return out
+        for resource in self.nested_resources.values():
+            if is_coercible_to_resource(resource):
+                resolved_keys.update(
+                    coerce_to_resource(resource).get_required_resource_keys(resource_defs)
+                )
 
-
-class InitResourceContextWithKeyMapping(InitResourceContext):
-    """Passes along a mapping from ResourceDefinition id to resource key alongside the
-    InitResourceContext. This is used to resolve the required resource keys for
-    resources which may hold nested partial resources.
-    """
-
-    def __init__(
-        self,
-        context: InitResourceContext,
-        resource_id_to_key_mapping: Mapping[ResourceId, str],
-    ):
-        super().__init__(
-            resource_config=context.resource_config,
-            resources=context.resources,
-            instance=context.instance,
-            resource_def=context.resource_def,
-            dagster_run=context.dagster_run,
-            log_manager=context.log,
-        )
-        self._resource_id_to_key_mapping = resource_id_to_key_mapping
-        self._resources_by_id = {
-            resource_id: getattr(context.resources, resource_key, None)
-            for resource_id, resource_key in resource_id_to_key_mapping.items()
-        }
-
-    @property
-    def resources_by_id(self) -> Mapping[ResourceId, Any]:
-        return self._resources_by_id
-
-    def replace_config(self, config: Any) -> "InitResourceContext":
-        return InitResourceContextWithKeyMapping(
-            super().replace_config(config), self._resource_id_to_key_mapping
-        )
+        return resolved_keys
 
 
-class ResourceWithKeyMapping(ResourceDefinition):
-    """Wrapper around a ResourceDefinition which helps the inner resource resolve its required
-    resource keys. This is useful for resources which may hold nested resources. At construction
-    time, they are unaware of the resource keys of their nested resources - the resource id to
-    key mapping is used to resolve this.
-    """
-
-    def __init__(
-        self,
-        resource: ResourceDefinition,
-        resource_id_to_key_mapping: Dict[ResourceId, str],
-    ):
-        self._resource = resource
-        self._resource_id_to_key_mapping = resource_id_to_key_mapping
-
-        ResourceDefinition.__init__(
-            self,
-            resource_fn=self.setup_context_resources_and_call,
-            config_schema=resource.config_schema,
-            description=resource.description,
-            version=resource.version,
-        )
-
-    def setup_context_resources_and_call(self, context: InitResourceContext):
-        """Wrapper around the wrapped resource's resource_fn which attaches its
-        resource id to key mapping to the context, and then calls the nested resource's resource_fn.
-        """
-        context_with_key_mapping = InitResourceContextWithKeyMapping(
-            context, self._resource_id_to_key_mapping
-        )
-
-        if has_at_least_one_parameter(self._resource.resource_fn):
-            return self._resource.resource_fn(context_with_key_mapping)
-        else:
-            return cast(ResourceFunctionWithoutContext, self._resource.resource_fn)()
-
-    @property
-    def required_resource_keys(self) -> AbstractSet[str]:
-        return _resolve_required_resource_keys_for_resource(
-            self._resource, self._resource_id_to_key_mapping
-        )
-
-    @property
-    def wrapped_resource(self) -> ResourceDefinition:
-        return self._resource
-
-    @property
-    def inner_resource(self):
-        return self._resource
-
-
-def attach_resource_id_to_key_mapping(
-    resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
-) -> Any:
-    from .io_manager import IOManagerWithKeyMapping
-
-    if isinstance(resource_def, (ConfigurableResourceFactory, PartialResource)):
-        defn = resource_def.get_resource_definition()
-        return (
-            IOManagerWithKeyMapping(defn, resource_id_to_key_mapping)
-            if isinstance(defn, IOManagerDefinition)
-            else ResourceWithKeyMapping(defn, resource_id_to_key_mapping)
-        )
-    return resource_def
-
-
-CoercibleToResource: TypeAlias = Union[
-    ResourceDefinition, "ConfigurableResourceFactory", "PartialResource"
-]
-
-
-def is_coercible_to_resource(val: Any) -> TypeGuard[CoercibleToResource]:
-    return isinstance(val, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
-
-
-class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDelayedDependencies):
+class ConfigurableResourceFactoryResourceDefinition(NestedResourcesResourceDefinition):
     def __init__(
         self,
         configurable_resource_cls: Type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
-        resolve_resource_keys: Callable[[Mapping[int, str]], AbstractSet[str]],
         nested_resources: Mapping[str, Any],
+        nested_partial_resources: Mapping[str, Any],
         dagster_maintained: bool = False,
     ):
         super().__init__(
@@ -241,7 +145,7 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
             description=description,
         )
         self._configurable_resource_cls = configurable_resource_cls
-        self._resolve_resource_keys = resolve_resource_keys
+        self._nested_partial_resources = nested_partial_resources
         self._nested_resources = nested_resources
         self._dagster_maintained = dagster_maintained
 
@@ -255,10 +159,11 @@ class ConfigurableResourceFactoryResourceDefinition(ResourceDefinition, AllowDel
     ) -> Mapping[str, Any]:
         return self._nested_resources
 
-    def _resolve_required_resource_keys(
-        self, resource_mapping: Mapping[int, str]
-    ) -> AbstractSet[str]:
-        return self._resolve_resource_keys(resource_mapping)
+    @property
+    def nested_partial_resources(
+        self,
+    ) -> Mapping[str, "CoercibleToResource"]:
+        return self._nested_partial_resources
 
     def _is_dagster_maintained(self) -> bool:
         return self._dagster_maintained
@@ -276,7 +181,6 @@ class ConfigurableResourceFactoryState(NamedTuple):
 class ConfigurableResourceFactory(
     Config,
     TypecheckAllowPartialResourceInitParams,
-    AllowDelayedDependencies,
     Generic[TResValue],
     ABC,
     metaclass=BaseResourceMeta,
@@ -403,15 +307,15 @@ class ConfigurableResourceFactory(
     def _get_initialize_and_run_fn(self) -> Callable:
         return self._initialize_and_run_cm if self._is_cm_resource else self._initialize_and_run
 
-    @cached_method
+    @cached_method  # resource resolution depends on always resolving to the same ResourceDefinition instance
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
             self.__class__,
             resource_fn=self._get_initialize_and_run_fn(),
             config_schema=self._config_schema,
             description=self.__doc__,
-            resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
+            nested_partial_resources=self._nested_partial_resources,
             dagster_maintained=self._is_dagster_maintained(),
         )
 
@@ -469,17 +373,12 @@ class ConfigurableResourceFactory(
 
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
-            context_with_mapping = check.inst(
-                context,
-                InitResourceContextWithKeyMapping,
-                "This ConfiguredResource contains unresolved partially-specified nested"
-                " resources, and so can only be initialized using a"
-                " InitResourceContextWithKeyMapping",
-            )
-            partial_resources_to_update = {
-                attr_name: context_with_mapping.resources_by_id[id(resource)]
-                for attr_name, resource in self._nested_partial_resources.items()
-            }
+            for attr_name, resource in self._nested_partial_resources.items():
+                key = _resolve_partial_resource_to_key(
+                    attr_name, resource, context.all_resource_defs
+                )
+                resolved_resource = getattr(context.resources, key)
+                partial_resources_to_update[attr_name] = resolved_resource
 
         # Also evaluate any resources that are not partial
         with contextlib.ExitStack() as stack:
@@ -711,7 +610,7 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         return cast(TResValue, self)
 
 
-def _is_fully_configured(resource: CoercibleToResource) -> bool:
+def _is_fully_configured(resource: "CoercibleToResource") -> bool:
     from dagster._core.execution.build_resources import wrap_resource_for_execution
 
     actual_resource = wrap_resource_for_execution(resource)
@@ -739,7 +638,6 @@ class PartialResourceState(NamedTuple):
 
 
 class PartialResource(
-    AllowDelayedDependencies,
     MakeConfigCacheable,
     Generic[TResValue],
 ):
@@ -791,15 +689,15 @@ class PartialResource(
     ) -> Mapping[str, Any]:
         return self._state__internal__.nested_resources
 
-    @cached_method
+    @cached_method  # resource resolution depends on always resolving to the same ResourceDefinition instance
     def get_resource_definition(self) -> ConfigurableResourceFactoryResourceDefinition:
         return ConfigurableResourceFactoryResourceDefinition(
             self.resource_cls,
             resource_fn=self._state__internal__.resource_fn,
             config_schema=self._state__internal__.config_schema,
             description=self._state__internal__.description,
-            resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
+            nested_partial_resources=self._nested_partial_resources,
             dagster_maintained=self.resource_cls._is_dagster_maintained(),  # noqa: SLF001
         )
 
@@ -868,8 +766,8 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
             resource_fn=self.wrapped_resource.resource_fn,
             config_schema=self._config_schema,
             description=self.__doc__,
-            resolve_resource_keys=self._resolve_required_resource_keys,
             nested_resources=self.nested_resources,
+            nested_partial_resources=self._nested_partial_resources,
             dagster_maintained=self._is_dagster_maintained(),
         )
 
@@ -1048,13 +946,31 @@ def validate_resource_annotated_function(fn) -> None:
         )
 
 
-def _resolve_required_resource_keys_for_resource(
-    resource: ResourceDefinition, resource_id_to_key_mapping: Mapping[ResourceId, str]
-) -> AbstractSet[str]:
-    """Gets the required resource keys for the provided resource, with the assistance of the passed
-    resource-id-to-key mapping. For resources which may hold nested partial resources,
-    this mapping is used to obtain the top-level resource keys to depend on.
-    """
-    if isinstance(resource, AllowDelayedDependencies):
-        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)  # noqa: SLF001
-    return resource.required_resource_keys
+CoercibleToResource: TypeAlias = Union[
+    ResourceDefinition, ConfigurableResourceFactory, PartialResource
+]
+
+
+def is_coercible_to_resource(val: Any) -> TypeGuard[CoercibleToResource]:
+    return isinstance(val, (ResourceDefinition, ConfigurableResourceFactory, PartialResource))
+
+
+def coerce_to_resource(val: CoercibleToResource):
+    if isinstance(val, ResourceDefinition):
+        return val
+    else:
+        return val.get_resource_definition()
+
+
+def _resolve_partial_resource_to_key(
+    attr_name: str,
+    partial_resource: CoercibleToResource,
+    resource_defs: Mapping[str, ResourceDefinition],
+) -> str:
+    partial_def = coerce_to_resource(partial_resource)
+    matches = [key for key, resource_def in resource_defs.items() if resource_def is partial_def]
+    check.invariant(
+        len(matches) == 1,
+        f"Failed to find resource for {attr_name}, expected this to be caught when resource requirements where evaluated.",
+    )
+    return matches[0]

@@ -21,8 +21,6 @@ from .resource import (
     ConfigurableResourceFactoryResourceDefinition as ConfigurableResourceFactoryResourceDefinition,
     PartialResource as PartialResource,
     ResourceDependency as ResourceDependency,
-    ResourceWithKeyMapping as ResourceWithKeyMapping,
-    attach_resource_id_to_key_mapping as attach_resource_id_to_key_mapping,
     is_coercible_to_resource as is_coercible_to_resource,
     validate_resource_annotated_function as validate_resource_annotated_function,
 )

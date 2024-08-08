@@ -45,6 +45,7 @@ from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.resource_requirement import (
     ExternalAssetIOManagerRequirement,
     ResourceAddable,
+    ResourceKeyRequirement,
     ResourceRequirement,
     merge_resource_defs,
 )
@@ -1447,7 +1448,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     @property
     def required_resource_keys(self) -> Set[str]:
         """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition."""
-        return {requirement.key for requirement in self.get_resource_requirements()}
+        return {
+            requirement.key
+            for requirement in self.get_resource_requirements()
+            if requirement
+            if isinstance(requirement, ResourceKeyRequirement)
+        }
 
     def __str__(self):
         if len(self.keys) == 1:
