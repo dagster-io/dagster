@@ -353,7 +353,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         context_injector: PipesContextInjector,
         message_reader: Optional[PipesMessageReader] = None,
         client: Optional[boto3.client] = None,
-        forward_termination: bool = False,
+        forward_termination: bool = True,
     ):
         self._client = client or boto3.client("glue")
         self._context_injector = context_injector
@@ -439,6 +439,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
 
             try:
                 run_id = self._client.start_job_run(**params)["JobRunId"]
+
             except ClientError as err:
                 context.log.error(
                     "Couldn't create job %s. Here's why: %s: %s",
@@ -459,9 +460,9 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                     self._terminate_job_run(context=context, job_name=job_name, run_id=run_id)
                 raise
 
-            if response["JobRun"]["JobRunState"] == "FAILED":
+            if status := response["JobRun"]["JobRunState"] != "SUCCEEDED":
                 raise RuntimeError(
-                    f"Glue job {job_name} run {run_id} failed:\n{response['JobRun']['ErrorMessage']}"
+                    f"Glue job {job_name} run {run_id} completed with status {status} :\n{response['JobRun'].get('ErrorMessage')}"
                 )
             else:
                 context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
@@ -479,7 +480,14 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def _wait_for_job_run_completion(self, job_name: str, run_id: str) -> Dict[str, Any]:
         while True:
             response = self._client.get_job_run(JobName=job_name, RunId=run_id)
-            if response["JobRun"]["JobRunState"] in ["FAILED", "SUCCEEDED"]:
+            # https://docs.aws.amazon.com/glue/latest/dg/job-run-statuses.html
+            if response["JobRun"]["JobRunState"] in [
+                "FAILED",
+                "SUCCEEDED",
+                "STOPPED",
+                "TIMEOUT",
+                "ERROR",
+            ]:
                 return response
             time.sleep(5)
 
