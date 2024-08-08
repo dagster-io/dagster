@@ -991,6 +991,7 @@ def _resolve_run_requests(
     context: SensorLaunchContext,
     external_sensor: ExternalSensor,
     run_ids_with_requests: Sequence[Tuple[str, RunRequest]],
+    has_evaluations: bool,
 ) -> Sequence[Tuple[str, RunRequest]]:
     resolved_run_ids_with_requests = []
 
@@ -998,7 +999,7 @@ def _resolve_run_requests(
         run_request = raw_run_request.with_replaced_attrs(
             tags=merge_dicts(
                 raw_run_request.tags,
-                DagsterRun.tags_for_tick_id(context.tick_id),
+                DagsterRun.tags_for_tick_id(context.tick_id, has_evaluations),
             )
         )
 
@@ -1085,7 +1086,11 @@ def _submit_run_requests(
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
     resolved_run_ids_with_requests = _resolve_run_requests(
-        workspace_process_context, context, external_sensor, raw_run_ids_with_requests
+        workspace_process_context,
+        context,
+        external_sensor,
+        raw_run_ids_with_requests,
+        has_evaluations=len(automation_condition_evaluations) > 0,
     )
     existing_runs_by_key = _fetch_existing_runs(
         instance, external_sensor, [request for _, request in resolved_run_ids_with_requests]
