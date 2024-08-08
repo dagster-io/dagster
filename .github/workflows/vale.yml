@@ -1,0 +1,32 @@
+name: Docs
+on: 
+  pull_request:
+    paths:
+      - 'docs/**'
+      - .github/workflows/vale.yml
+  push:
+    branches:
+      - master
+      - docs-prod
+    paths:
+      - 'docs/**'
+      - .github/workflows/vale.yml
+
+concurrency:
+  group: ${{ github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  vale:
+    name: runner / vale
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: errata-ai/vale-action@reviewdog
+        with:
+          files: '["docs/content", "docs/sphinx"]'
+          vale_flags: "--config=docs/.vale.ini"
+
