@@ -86,7 +86,7 @@ class AutomationContext(NamedTuple):
 
     # the time at which this context object was created
     create_time: datetime.datetime
-    logger: logging.Logger
+    log: logging.Logger
 
     # a cursor containing information about this asset calculated on the previous tick
     cursor: Optional[AutomationConditionCursor]
@@ -104,7 +104,7 @@ class AutomationContext(NamedTuple):
     def create(
         asset_key: AssetKey,
         asset_graph_view: AssetGraphView,
-        logger: logging.Logger,
+        log: logging.Logger,
         current_tick_results_by_key: Mapping[AssetKey, AutomationResult],
         condition_cursor: Optional[AutomationConditionCursor],
         legacy_context: "LegacyRuleEvaluationContext",
@@ -121,7 +121,7 @@ class AutomationContext(NamedTuple):
             asset_graph_view=asset_graph_view,
             parent_context=None,
             create_time=get_current_datetime(),
-            logger=logger,
+            log=log,
             cursor=condition_cursor,
             current_tick_results_by_key=current_tick_results_by_key,
             inner_legacy_context=legacy_context,
@@ -143,7 +143,7 @@ class AutomationContext(NamedTuple):
             asset_graph_view=self.asset_graph_view,
             parent_context=self,
             create_time=get_current_datetime(),
-            logger=self.logger,
+            log=self.log,
             cursor=self.cursor,
             current_tick_results_by_key=self.current_tick_results_by_key,
             inner_legacy_context=self.inner_legacy_context.for_child(
