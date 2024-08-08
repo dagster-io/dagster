@@ -148,10 +148,6 @@ See also: :py:class:`dagster_postgres.PostgresEventLogStorage` and :py:class:`da
 Compute log manager
 -------------------
 
-.. currentmodule:: dagster._core.storage.captured_log_manager
-
-.. autoclass:: CapturedLogManager
-
 .. currentmodule:: dagster._core.storage.compute_log_manager
 
 .. autoclass:: ComputeLogManager

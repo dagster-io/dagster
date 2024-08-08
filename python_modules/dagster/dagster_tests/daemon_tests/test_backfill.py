@@ -56,7 +56,7 @@ from dagster._core.remote_representation import (
     InProcessCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.storage.captured_log_manager import CapturedLogManager, ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -2577,8 +2577,6 @@ def test_asset_backfill_logs(
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
 
     cm = instance.compute_log_manager
-
-    assert isinstance(cm, CapturedLogManager)
 
     logs, cursor = cm.read_log_lines_for_log_key_prefix(
         ["backfill", backfill.backfill_id], cursor=None, io_type=ComputeIOType.STDERR

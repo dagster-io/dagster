@@ -25,7 +25,6 @@ from dagster._core.execution.plan.objects import (
     step_failure_event_from_exc_info,
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
@@ -37,7 +36,6 @@ def inner_plan_execution_iterator(
     check.inst_param(job_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     compute_log_manager = job_context.instance.compute_log_manager
-    assert isinstance(compute_log_manager, CapturedLogManager)
     step_keys = [step.key for step in execution_plan.get_steps_to_execute_in_topo_order()]
     with execution_plan.start(
         retry_mode=job_context.retry_mode,
