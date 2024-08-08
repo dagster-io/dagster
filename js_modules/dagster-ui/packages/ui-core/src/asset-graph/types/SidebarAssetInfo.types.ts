@@ -160,15 +160,6 @@ export type SidebarAssetFragment = {
     cronSchedule: string | null;
     cronScheduleTimezone: string | null;
   } | null;
-  autoMaterializePolicy: {
-    __typename: 'AutoMaterializePolicy';
-    rules: Array<{
-      __typename: 'AutoMaterializeRule';
-      className: string;
-      decisionType: Types.AutoMaterializeDecisionType;
-      description: string;
-    }>;
-  } | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -16283,15 +16274,6 @@ export type SidebarAssetQuery = {
           maximumLagMinutes: number;
           cronSchedule: string | null;
           cronScheduleTimezone: string | null;
-        } | null;
-        autoMaterializePolicy: {
-          __typename: 'AutoMaterializePolicy';
-          rules: Array<{
-            __typename: 'AutoMaterializeRule';
-            className: string;
-            decisionType: Types.AutoMaterializeDecisionType;
-            description: string;
-          }>;
         } | null;
         backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
         partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
