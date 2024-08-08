@@ -78,7 +78,7 @@ module.exports = {
     '\\.(css|less)$': 'identity-obj-proxy',
     '^worker-loader(.*)/workers/(.*)$': '<rootDir>/jest/mocks/$2',
     '^@dagster-io/ui-components$': '<rootDir>/../ui-components/src/index',
-    '^src/(.*)$': '<rootDir>/src/$1',
+    '^shared/(.*)$': '<rootDir>/src/$1',
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
