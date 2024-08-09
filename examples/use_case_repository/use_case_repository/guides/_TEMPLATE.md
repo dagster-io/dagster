@@ -14,9 +14,9 @@ Provide a brief overview of the use case, including its objectives and the main 
 
 You will learn how to:
 
-    - Define a Dagster asset that extracts data from an external source and writes it to a database
-    - Add other bullets here
-    - ...
+- Define a Dagster asset that extracts data from an external source and writes it to a database
+- Add other bullets here
+- ...
 
 ---
 
