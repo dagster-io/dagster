@@ -208,7 +208,9 @@ def test_assets_with_normalization(
 
 
 def test_assets_cloud() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key", poll_interval=0)
+    ab_resource = AirbyteCloudResource(
+        client_id="some_client_id", client_secret="some_client_secret", poll_interval=0
+    )
     ab_url = ab_resource.api_base_url
 
     ab_assets = build_airbyte_assets(
@@ -220,6 +222,11 @@ def test_assets_cloud() -> None:
     )
 
     with responses.RequestsMock() as rsps:
+        rsps.add(
+            rsps.POST,
+            f"{ab_url}/applications/token",
+            json={"access_token": "some_access_token"},
+        )
         rsps.add(
             rsps.POST,
             f"{ab_url}/jobs",

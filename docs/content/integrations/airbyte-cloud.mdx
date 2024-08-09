@@ -45,7 +45,7 @@ To get started, you will need to install the `dagster` and `dagster-airbyte` Pyt
 pip install dagster dagster-airbyte
 ```
 
-You'll also need to have an Airbyte Cloud account, and have created an Airbyte API Key. For more information, see the [Airbyte API docs](https://reference.airbyte.com/reference/start).
+You'll also need to have an Airbyte Cloud account, and have created an Airbyte client ID and client secret. For more information, see the [Airbyte API docs](https://reference.airbyte.com/reference/getting-started) and [Airbyte authentication guide](https://reference.airbyte.com/reference/authentication).
 
 ---
 
@@ -58,11 +58,12 @@ from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudResource
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 ```
 
-Here, the API key is provided using an <PyObject object="EnvVar" />. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
+Here, the client ID and client secret are provided using an <PyObject object="EnvVar" />. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
 
 ---
 
@@ -104,7 +105,8 @@ from dagster_airbyte import build_airbyte_assets, AirbyteCloudResource
 from dagster import Definitions, EnvVar
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -153,7 +155,8 @@ from dagster_snowflake_pandas import SnowflakePandasIOManager
 import pandas as pd
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -207,7 +210,8 @@ from dagster_airbyte import (
 from dagster_snowflake import SnowflakeResource
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",
@@ -261,7 +265,8 @@ from dagster import (
 )
 
 airbyte_instance = AirbyteCloudResource(
-    api_key=EnvVar("AIRBYTE_API_KEY"),
+    client_id=EnvVar("AIRBYTE_CLIENT_ID"),
+    client_secret=EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 airbyte_assets = build_airbyte_assets(
     connection_id="43908042-8399-4a58-82f1-71a45099fff7",

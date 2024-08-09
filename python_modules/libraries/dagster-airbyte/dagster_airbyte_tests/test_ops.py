@@ -1,3 +1,4 @@
+import json
 from base64 import b64encode
 
 import pytest
@@ -102,7 +103,9 @@ def test_airbyte_sync_op(forward_logs, additional_request_params, use_auth):
 
 
 def test_airbyte_sync_op_cloud() -> None:
-    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_resource = AirbyteCloudResource(
+        client_id="some_client_id", client_secret="some_client_secret"
+    )
     ab_url = ab_resource.api_base_url
 
     @op
@@ -129,6 +132,11 @@ def test_airbyte_sync_op_cloud() -> None:
     with responses.RequestsMock() as rsps:
         rsps.add(
             rsps.POST,
+            f"{ab_url}/applications/token",
+            json={"access_token": "some_access_token"},
+        )
+        rsps.add(
+            rsps.POST,
             f"{ab_url}/jobs",
             json={"jobId": 1, "status": "pending", "jobType": "sync"},
         )
@@ -150,5 +158,14 @@ def test_airbyte_sync_op_cloud() -> None:
             connection_details={},
         )
 
-        for call in rsps.calls:
-            assert call.request.headers["Authorization"] == "Bearer some_key"
+        # The first call is to get the access token.
+        access_token_call = rsps.calls[0]
+        api_calls = rsps.calls[1:]
+
+        assert "Authorization" not in access_token_call.request.headers
+        access_token_call_body = json.loads(access_token_call.request.body.decode("utf-8"))
+        assert access_token_call_body["client_id"] == "some_client_id"
+        assert access_token_call_body["client_secret"] == "some_client_secret"
+
+        for call in api_calls:
+            assert call.request.headers["Authorization"] == "Bearer some_access_token"
