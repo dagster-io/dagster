@@ -34,6 +34,7 @@ fi
 
 rm -rf dist/*
 rm -rf dagster_airlift_prerelease/dagster_airlift_patched
+mkdir dagster_airlift_prerelease
 cp -R dagster_airlift dagster_airlift_prerelease/dagster_airlift_patched
 echo "Building package..."
 python3 -m build
