@@ -1403,6 +1403,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     def get_asset_spec(self, key: Optional[AssetKey] = None) -> AssetSpec:
+        """Returns the AssetSpec for the given asset key."""
         return self._specs_by_key[key or self.key]
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
