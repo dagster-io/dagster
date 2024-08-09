@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 airflow_dep_list = [
@@ -9,6 +11,15 @@ airflow_dep_list = [
     "pendulum>=2.0.0,<3.0.0",
 ]
 
+
+def get_long_description() -> str:
+    readme_path = Path(__file__).parent / "README.md"
+
+    assert readme_path.exists(), "README.md not found"
+
+    return readme_path.read_text(encoding="utf-8")
+
+
 setup(
     name="dagster-airlift",
     version="0.0.3",
@@ -16,6 +27,7 @@ setup(
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Tooling to assist with migrating from Airflow to Dagster.",
+    long_description=get_long_description(),
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "dagster-airlift"
