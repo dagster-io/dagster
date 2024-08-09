@@ -408,24 +408,40 @@ def get_task_info_for_asset(
     return airflow_instance.get_task_info(dag_id, task_id)
 
 
-def list_intersection(list1, list2):
-    return list(set(list1) & set(list2))
-
-
 def get_leaf_assets_for_dag(
     asset_keys_in_dag: Set[AssetKey],
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
 ) -> List[AssetKey]:
-    # An asset is a "leaf" for the dag if it has no dependencies _within_ the dag. It may have
+    # An asset is a "leaf" for the dag if it has no transitive dependencies _within_ the dag. It may have
     # dependencies _outside_ the dag.
-    return [
-        asset_key
-        for asset_key in asset_keys_in_dag
-        if list_intersection(
-            downstreams_asset_dependency_graph.get(asset_key, []), asset_keys_in_dag
+    leaf_assets = []
+    cache = {}
+    for asset_key in asset_keys_in_dag:
+        if (
+            get_transitive_dependencies_for_asset(
+                asset_key, downstreams_asset_dependency_graph, cache
+            ).intersection(asset_keys_in_dag)
+            == set()
+        ):
+            leaf_assets.append(asset_key)
+    return leaf_assets
+
+
+def get_transitive_dependencies_for_asset(
+    asset_key: AssetKey,
+    downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
+    cache: Dict[AssetKey, Set[AssetKey]],
+) -> Set[AssetKey]:
+    if asset_key in cache:
+        return cache[asset_key]
+    transitive_deps = set()
+    for dep in downstreams_asset_dependency_graph[asset_key]:
+        transitive_deps.add(dep)
+        transitive_deps.update(
+            get_transitive_dependencies_for_asset(dep, downstreams_asset_dependency_graph, cache)
         )
-        == set()
-    ]
+    cache[asset_key] = transitive_deps
+    return transitive_deps
 
 
 def _get_migration_state_for_task(
