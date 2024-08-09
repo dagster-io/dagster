@@ -8,16 +8,20 @@ import pytest
 from dagster._core.test_utils import environ
 
 
+@pytest.fixture(name="dags_dir")
+def default_dags_dir():
+    return Path(__file__).parent / "dags"
+
+
 @pytest.fixture(name="setup")
-def setup_fixture() -> Generator[str, None, None]:
+def setup_fixture(dags_dir: Path) -> Generator[str, None, None]:
     with TemporaryDirectory() as tmpdir:
         # run chmod +x create_airflow_cfg.sh and then run create_airflow_cfg.sh tmpdir
         temp_env = {**os.environ.copy(), "AIRFLOW_HOME": tmpdir}
         # go up one directory from current
         path_to_script = Path(__file__).parent.parent.parent / "airflow_setup.sh"
-        path_to_dags = Path(__file__).parent / "dags"
         subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
-        subprocess.run([path_to_script, path_to_dags], check=True, env=temp_env)
+        subprocess.run([path_to_script, dags_dir], check=True, env=temp_env)
         with environ({"AIRFLOW_HOME": tmpdir}):
             yield tmpdir
 
