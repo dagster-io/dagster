@@ -49,6 +49,28 @@ def get_bar_repo_code_location(
 
 
 @contextmanager
+def get_code_location(
+    python_file: str,
+    attribute: str,
+    location_name: str,
+    instance: Optional[DagsterInstance] = None,
+) -> Iterator[GrpcServerCodeLocation]:
+    with ExitStack() as stack:
+        if not instance:
+            instance = stack.enter_context(instance_for_test())
+
+        loadable_target_origin = LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=python_file,
+            attribute=attribute,
+        )
+        origin = ManagedGrpcPythonEnvCodeLocationOrigin(loadable_target_origin, location_name)
+
+        with origin.create_single_location(instance) as location:
+            yield location
+
+
+@contextmanager
 def get_bar_repo_handle(instance: Optional[DagsterInstance] = None) -> Iterator[RepositoryHandle]:
     with ExitStack() as stack:
         if not instance:
