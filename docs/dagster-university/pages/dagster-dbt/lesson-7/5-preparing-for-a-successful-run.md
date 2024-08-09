@@ -153,7 +153,7 @@ The following table contains the environment variables we need to create in Dags
 
 ---
 
-- `S3_BUCKET_NAME`
+- `S3_BUCKET_PREFIX`
 - The name of the S3 bucket, by default `"s3://dagster-university/"`, for the S3 bucket where your taxi data will be stored.
 
 {% /table %}
