@@ -86,6 +86,9 @@ class CodeReferencesMetadataSet(NamespacedMetadataSet):
         return "dagster"
 
 
+CODE_REFERENCES_METADATA_KEY = f"{CodeReferencesMetadataSet.namespace()}/code_references"
+
+
 def _with_code_source_single_definition(
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:

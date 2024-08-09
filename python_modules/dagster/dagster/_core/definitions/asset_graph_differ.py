@@ -2,6 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._core.definitions.metadata.source_code import CODE_REFERENCES_METADATA_KEY
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import ExternalRepository
@@ -157,7 +158,13 @@ class AssetGraphDiffer:
         if branch_asset.tags != base_asset.tags:
             changes.append(AssetDefinitionChangeType.TAGS)
 
-        if branch_asset.metadata != base_asset.metadata:
+        branch_meta_no_code_ref = {
+            k: v for k, v in branch_asset.metadata.items() if k != CODE_REFERENCES_METADATA_KEY
+        }
+        base_meta_no_code_ref = {
+            k: v for k, v in base_asset.metadata.items() if k != CODE_REFERENCES_METADATA_KEY
+        }
+        if branch_meta_no_code_ref != base_meta_no_code_ref:
             changes.append(AssetDefinitionChangeType.METADATA)
 
         return changes
