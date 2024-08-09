@@ -458,11 +458,13 @@ def default_metadata_from_dbt_resource_props(
         and "alias" in dbt_resource_props
     ):
         relation_name = ".".join(
-            [
-                dbt_resource_props["database"],
-                dbt_resource_props["schema"],
-                dbt_resource_props["alias"],
-            ]
+            filter(None,
+                   [
+                       dbt_resource_props["database"],
+                       dbt_resource_props["schema"],
+                       dbt_resource_props["alias"],
+                   ]
+                   )
         )
 
     return {
