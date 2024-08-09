@@ -1,8 +1,9 @@
 Celery + Docker (dagster-celery-docker)
---------------------------------
+---------------------------------------
+
 
 APIs
-----
+====
 
 .. currentmodule:: dagster_celery_docker
 
