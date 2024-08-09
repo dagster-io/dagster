@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     FrozenSet,
+    Iterator,
     Mapping,
     NamedTuple,
     Optional,
@@ -130,6 +131,12 @@ class AutomationConditionEvaluation(NamedTuple):
         if discarded_subset is None:
             return 0
         return discarded_subset.size
+
+    def iter_nodes(self) -> Iterator["AutomationConditionEvaluation"]:
+        """Convenience utility for iterating through all nodes in an evaluation tree."""
+        yield self
+        for evaluation in self.child_evaluations:
+            yield from evaluation.iter_nodes()
 
 
 @whitelist_for_serdes(storage_name="AssetConditionEvaluationWithRunIds")

@@ -537,7 +537,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 .order_by(AssetDaemonAssetEvaluationsTable.c.evaluation_id.desc())
             ).limit(limit)
 
-            if cursor:
+            if cursor is not None:
                 query = query.where(AssetDaemonAssetEvaluationsTable.c.evaluation_id < cursor)
 
             rows = db_fetch_mappings(conn, query)

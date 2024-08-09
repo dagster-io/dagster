@@ -227,12 +227,6 @@ fragment evaluationFields on AssetConditionEvaluation {
             startTimestamp
             endTimestamp
             numTrue
-            trueSubset {
-                subsetValue {
-                    isPartitioned
-                    partitionKeys
-                }
-            }
             uniqueId
             childUniqueIds
         }
@@ -277,7 +271,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
     assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AssetConditionEvaluationRecords {
             records {
-                id
+                evaluationId
                 numRequested
                 assetKey {
                     path
@@ -310,7 +304,7 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
     assetConditionEvaluationsForEvaluationId(evaluationId: $evaluationId) {
         ... on AssetConditionEvaluationRecords {
             records {
-                id
+                evaluationId
                 numRequested
                 assetKey {
                     path
@@ -330,7 +324,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
     assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AssetConditionEvaluationRecords {
             records {
-                id
+                evaluationId
                 isLegacy
                 numRequested
                 assetKey {
@@ -343,18 +337,18 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     startTimestamp
                     endTimestamp
                     numTrue
-                    trueSubset {
-                        subsetValue {
-                            isPartitioned
-                            partitionKeys
-                        }
-                    }
                     uniqueId
                     childUniqueIds
                 }
             }
         }
     }
+}
+"""
+
+TRUE_PARTITIONS_QUERY = """
+query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: Int!, $nodeUniqueId: String!) {
+    truePartitionsForAutomationConditionEvaluationNode(assetKey: $assetKey, evaluationId: $evaluationId, nodeUniqueId: $nodeUniqueId)
 }
 """
 
@@ -676,18 +670,29 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
         assert rootNode["description"] == "All of"
         assert rootNode["numTrue"] == 2
-        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
         assert len(rootNode["childUniqueIds"]) == 2
 
         notNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
         assert notNode["description"] == "Not"
         assert notNode["numTrue"] == 2
-        assert set(notNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
 
         skipNode = self._get_node(notNode["childUniqueIds"][0], evaluation["evaluationNodes"])
         assert skipNode["description"] == "Any of"
         assert skipNode["numTrue"] == 1
-        assert set(skipNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"c"}
+
+        evaluationId = records[0]["evaluationId"]
+        uniqueId = skipNode["uniqueId"]
+        results = execute_dagster_graphql(
+            graphql_context,
+            TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetKey": {"path": ["upstream_static_partitioned_asset"]},
+                "evaluationId": evaluationId,
+                "nodeUniqueId": uniqueId,
+            },
+        )
+
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == {"c"}
 
         # test one of the true partitions
         specific_result = execute_dagster_graphql(
@@ -809,12 +814,42 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "(NOT (in_progress))",
         ]
         assert rootNode["numTrue"] == 0
-        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == set()
         assert len(rootNode["childUniqueIds"]) == 5
+
+        evaluationId = record["evaluationId"]
+        uniqueId = rootNode["uniqueId"]
+        results = execute_dagster_graphql(
+            graphql_context,
+            TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetKey": {"path": ["A"]},
+                "evaluationId": evaluationId,
+                "nodeUniqueId": uniqueId,
+            },
+        )
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == set()
 
         childNode = record["evaluationNodes"][1]
         assert childNode["userLabel"] is None
         assert childNode["expandedLabel"] == ["in_latest_time_window"]
         assert childNode["numTrue"] == 4
-        assert set(childNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b", "c", "d"}
         assert len(childNode["childUniqueIds"]) == 0
+
+        evaluationId = record["evaluationId"]
+        uniqueId = childNode["uniqueId"]
+        results = execute_dagster_graphql(
+            graphql_context,
+            TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetKey": {"path": ["A"]},
+                "evaluationId": evaluationId,
+                "nodeUniqueId": uniqueId,
+            },
+        )
+
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == {
+            "a",
+            "b",
+            "c",
+            "d",
+        }
