@@ -9,7 +9,7 @@ from dagster import (
     EnvVar,
 )
 
-# ... the existing portion of your `__init__.py` goes here.
+# ... the existing portion of your `definitions.py` goes here.
 
 # Configure the resource with an environment variable here
 datagen = DataGeneratorResource(

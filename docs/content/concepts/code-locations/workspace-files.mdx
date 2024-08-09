@@ -81,7 +81,7 @@ To load a code location from a local or installed Python module, use the `python
 # workspace.yaml
 
 load_from:
-  - python_module: hello_world_module
+  - python_module: hello_world_module.definitions
 ```
 
 </TabItem>
@@ -153,7 +153,7 @@ dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --socket /path/to
 Using a Python module:
 
 ```shell
-dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
+dagster api grpc --module-name my_module_name.definitions --host 0.0.0.0 --port 4266
 ```
 
 ---
