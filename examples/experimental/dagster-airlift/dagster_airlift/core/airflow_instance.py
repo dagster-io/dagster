@@ -3,9 +3,12 @@ from abc import ABC
 from typing import Any, Dict, List
 
 import requests
-from dagster import AssetKey
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterError
 from dagster._record import record
+from dagster._time import get_current_datetime
+
+TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 
 
 class AirflowAuthBackend(ABC):
@@ -32,8 +35,10 @@ class AirflowInstance:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags")
         if response.status_code == 200:
             dags = response.json()
+            webserver_url = self.auth_backend.get_webserver_url()
             return [
                 DagInfo(
+                    webserver_url=webserver_url,
                     dag_id=dag["dag_id"],
                     metadata=dag,
                 )
@@ -44,12 +49,30 @@ class AirflowInstance:
                 f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
             )
 
+    def get_task_instance(self, dag_id: str, task_id: str, run_id: str) -> "TaskInstance":
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}/taskInstances/{task_id}"
+        )
+        if response.status_code == 200:
+            return TaskInstance(
+                webserver_url=self.auth_backend.get_webserver_url(),
+                dag_id=dag_id,
+                task_id=task_id,
+                run_id=run_id,
+                metadata=response.json(),
+            )
+        else:
+            raise DagsterError(
+                f"Failed to fetch task instance for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
     def get_task_info(self, dag_id: str, task_id: str) -> "TaskInfo":
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/tasks/{task_id}"
         )
         if response.status_code == 200:
             return TaskInfo(
+                webserver_url=self.auth_backend.get_webserver_url(),
                 dag_id=dag_id,
                 task_id=task_id,
                 metadata=response.json(),
@@ -58,23 +81,6 @@ class AirflowInstance:
             raise DagsterError(
                 f"Failed to fetch task info for {dag_id}/{task_id}. Status code: {response.status_code}, Message: {response.text}"
             )
-
-    def get_dag_url(self, dag_id: str) -> str:
-        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}"
-
-    def get_dag_run_url(self, dag_id: str, run_id: str) -> str:
-        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/grid?dag_run_id={run_id}&tab=details"
-
-    def get_task_instance_url(self, dag_id: str, task_id: str, run_id: str) -> str:
-        # http://localhost:8080/dags/print_dag/grid?dag_run_id=manual__2024-08-08T17%3A21%3A22.427241%2B00%3A00&task_id=print_task
-        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/grid?dag_run_id={run_id}&task_id={task_id}"
-
-    def get_task_instance_log_url(self, dag_id: str, task_id: str, run_id: str) -> str:
-        # http://localhost:8080/dags/print_dag/grid?dag_run_id=manual__2024-08-08T17%3A21%3A22.427241%2B00%3A00&task_id=print_task&tab=logs
-        return f"{self.get_task_instance_url(dag_id, task_id, run_id)}&tab=logs"
-
-    def get_dag_run_asset_key(self, dag_id: str) -> AssetKey:
-        return AssetKey([self.normalized_name, "dag", dag_id])
 
     def get_dag_source_code(self, file_token: str) -> str:
         response = self.auth_backend.get_session().get(
@@ -93,7 +99,7 @@ class AirflowInstance:
 
     def get_dag_runs(
         self, dag_id: str, start_date: datetime.datetime, end_date: datetime.datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> List["DagRun"]:
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
             params={
@@ -103,11 +109,54 @@ class AirflowInstance:
             },
         )
         if response.status_code == 200:
-            return response.json()["dag_runs"]
+            webserver_url = self.auth_backend.get_webserver_url()
+            return [
+                DagRun(
+                    webserver_url=webserver_url,
+                    dag_id=dag_id,
+                    run_id=dag_run["dag_run_id"],
+                    metadata=dag_run,
+                )
+                for dag_run in response.json()["dag_runs"]
+            ]
         else:
             raise DagsterError(
                 f"Failed to fetch dag runs for {dag_id}. Status code: {response.status_code}, Message: {response.text}"
             )
+
+    def trigger_dag(self, dag_id: str) -> str:
+        response = self.auth_backend.get_session().post(
+            f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
+            json={},
+        )
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to launch run for {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+        return response.json()["dag_run_id"]
+
+    def get_dag_run(self, dag_id: str, run_id: str) -> "DagRun":
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}"
+        )
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch dag run for {dag_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+        return DagRun(
+            webserver_url=self.auth_backend.get_webserver_url(),
+            dag_id=dag_id,
+            run_id=run_id,
+            metadata=response.json(),
+        )
+
+    def wait_for_run_completion(self, dag_id: str, run_id: str, timeout: int = 30) -> None:
+        start_time = get_current_datetime()
+        while get_current_datetime() - start_time < datetime.timedelta(seconds=timeout):
+            dag_run = self.get_dag_run(dag_id, run_id)
+            if dag_run.finished:
+                return
+        raise DagsterError(f"Timed out waiting for airflow run {run_id} to finish.")
 
     @staticmethod
     def timestamp_from_airflow_date(airflow_date: str) -> float:
@@ -121,12 +170,96 @@ class AirflowInstance:
 
 @record
 class DagInfo:
+    webserver_url: str
     dag_id: str
     metadata: Dict[str, Any]
+
+    @property
+    def url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}"
+
+    @property
+    def dag_asset_key(self) -> AssetKey:
+        # Conventional asset key representing a successful run of an airfow dag.
+        return AssetKey(["airflow_instance", "dag", self.dag_id])
 
 
 @record
 class TaskInfo:
+    webserver_url: str
     dag_id: str
     task_id: str
     metadata: Dict[str, Any]
+
+    @property
+    def dag_url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}"
+
+
+@record
+class TaskInstance:
+    webserver_url: str
+    dag_id: str
+    task_id: str
+    run_id: str
+    metadata: Dict[str, Any]
+
+    @property
+    def note(self) -> str:
+        return self.metadata.get("note") or ""
+
+    @property
+    def details_url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}/grid?dag_run_id={self.run_id}&task_id={self.task_id}"
+
+    @property
+    def log_url(self) -> str:
+        return f"{self.details_url}&tab=logs"
+
+    @property
+    def start_date(self) -> float:
+        return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
+
+    @property
+    def end_date(self) -> float:
+        return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
+
+
+@record
+class DagRun:
+    webserver_url: str
+    dag_id: str
+    run_id: str
+    metadata: Dict[str, Any]
+
+    @property
+    def note(self) -> str:
+        return self.metadata.get("note") or ""
+
+    @property
+    def url(self) -> str:
+        return f"{self.webserver_url}/dags/{self.dag_id}/grid?dag_run_id={self.run_id}&tab=details"
+
+    @property
+    def success(self) -> bool:
+        return self.metadata["state"] == "success"
+
+    @property
+    def finished(self) -> bool:
+        return self.metadata["state"] in TERMINAL_STATES
+
+    @property
+    def run_type(self) -> str:
+        return self.metadata["run_type"]
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        return self.metadata["conf"]
+
+    @property
+    def start_date(self) -> float:
+        return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
+
+    @property
+    def end_date(self) -> float:
+        return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
