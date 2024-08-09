@@ -3,7 +3,6 @@ from typing import List
 
 import pytest
 from dagster import Definitions, multi_asset
-from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_airlift.core.airflow_cacheable_assets_def import AirflowCacheableAssetsDefinition
@@ -63,14 +62,10 @@ def test_transitive_deps(airflow_instance: None) -> None:
     assert AssetKey(["airflow_instance", "dag", "first"]) in assets_defs
     dag_def = assets_defs[AssetKey(["airflow_instance", "dag", "first"])]
     spec = next(iter(dag_def.specs))
-    assert spec.deps == [
-        AssetDep(asset=AssetKey(["first_two"])),
-        AssetDep(asset=AssetKey(["first_three"])),
-    ]
+    deps_keys = {dep.asset_key for dep in spec.deps}
+    assert deps_keys == {AssetKey(["first_two"]), AssetKey(["first_three"])}
     assert AssetKey(["airflow_instance", "dag", "second"]) in assets_defs
     dag_def = assets_defs[AssetKey(["airflow_instance", "dag", "second"])]
     spec = next(iter(dag_def.specs))
-    assert spec.deps == [
-        AssetDep(asset=AssetKey(["second_one"])),
-        AssetDep(asset=AssetKey(["second_two"])),
-    ]
+    deps_keys = {dep.asset_key for dep in spec.deps}
+    assert deps_keys == {AssetKey(["second_one"]), AssetKey(["second_two"])}

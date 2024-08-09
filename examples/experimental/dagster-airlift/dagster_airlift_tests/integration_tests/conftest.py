@@ -2,10 +2,16 @@ import os
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
+import requests
 from dagster._core.test_utils import environ
+
+
+def assert_link_exists(link_name: str, link_url: Any):
+    assert isinstance(link_url, str)
+    assert requests.get(link_url).status_code == 200, f"{link_name} is broken"
 
 
 @pytest.fixture(name="dags_dir")
