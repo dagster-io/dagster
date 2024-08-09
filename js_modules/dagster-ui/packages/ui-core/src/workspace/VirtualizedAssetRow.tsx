@@ -50,7 +50,7 @@ interface AssetRowProps {
   repoAddress: RepoAddress | null;
   height: number;
   start: number;
-  onWipe: (assets: AssetKeyInput[]) => void;
+  onRefresh: () => void;
   computeKindFilter?: StaticSetFilter<string>;
   storageKindFilter?: StaticSetFilter<DefinitionTag>;
 }
@@ -65,7 +65,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     height,
     checked,
     onToggleChecked,
-    onWipe,
+    onRefresh,
     showCheckboxColumn = false,
     showRepoColumn,
     view = 'flat',
@@ -220,7 +220,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               path={path}
               definition={definition}
               repoAddress={repoAddress}
-              onWipe={onWipe}
+              onRefresh={onRefresh}
             />
           ) : null}
         </RowCell>

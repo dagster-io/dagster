@@ -65,8 +65,7 @@ export const DimensionRangeWizards = ({
                 selections.map((r) => (r.dimension === range.dimension ? {...r, selectedKeys} : r)),
               )
             }
-            partitionDefinitionName={
-              displayedPartitionDefinition?.name ||
+            dynamicPartitionsDefinitionName={
               displayedPartitionDefinition?.dimensionTypes.find(
                 (d) => d.name === range.dimension.name,
               )?.dynamicPartitionsDefinitionName

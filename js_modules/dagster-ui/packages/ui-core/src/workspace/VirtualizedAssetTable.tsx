@@ -5,7 +5,7 @@ import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedA
 import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {AssetKeyInput, DefinitionTag} from '../graphql/types';
+import {DefinitionTag} from '../graphql/types';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
@@ -19,7 +19,7 @@ interface Props {
   groups: {[displayKey: string]: AssetTableFragment[]};
   checkedDisplayKeys: Set<string>;
   onToggleFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
-  onWipe: (assets: AssetKeyInput[]) => void;
+  onRefresh: () => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
   computeKindFilter?: StaticSetFilter<string>;
@@ -33,7 +33,7 @@ export const VirtualizedAssetTable = (props: Props) => {
     groups,
     checkedDisplayKeys,
     onToggleFactory,
-    onWipe,
+    onRefresh,
     showRepoColumn,
     view = 'flat',
     computeKindFilter,
@@ -84,8 +84,6 @@ export const VirtualizedAssetTable = (props: Props) => {
               return buildRepoAddress(repository.name, repository.location.name);
             };
 
-            const wipeableAssets = row.type === 'folder' ? row.assets : [row.asset];
-
             return (
               <VirtualizedAssetRow
                 key={key}
@@ -100,7 +98,7 @@ export const VirtualizedAssetTable = (props: Props) => {
                 start={start}
                 checked={checkedDisplayKeys.has(row.displayKey)}
                 onToggleChecked={onToggleFactory(row.displayKey)}
-                onWipe={() => onWipe(wipeableAssets.map((a) => a.key))}
+                onRefresh={onRefresh}
                 computeKindFilter={computeKindFilter}
                 storageKindFilter={storageKindFilter}
               />

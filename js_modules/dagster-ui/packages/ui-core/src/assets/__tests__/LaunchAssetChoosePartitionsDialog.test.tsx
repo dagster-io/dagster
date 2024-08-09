@@ -9,6 +9,7 @@ import {
   buildAddDynamicPartitionSuccess,
   buildAssetKey,
   buildAssetNode,
+  buildDimensionDefinitionType,
   buildDimensionPartitionKeys,
   buildMultiPartitionStatuses,
   buildPartitionDefinition,
@@ -127,6 +128,7 @@ describe('launchAssetChoosePartitionsDialog', () => {
     const savePartitionButton = screen.getByTestId('save-partition-button');
     userEvent.click(savePartitionButton);
 
+    // Verify that it refreshes asset health after partition is added
     await waitFor(() => {
       expect(assetASecondQueryMockResult).toHaveBeenCalled();
     });
@@ -150,7 +152,18 @@ function buildAsset(name: string, dynamicPartitionKeys: string[]) {
       }),
     ],
     partitionDefinition: buildPartitionDefinition({
-      name: 'foo',
+      name: 'not-foo',
+      dimensionTypes: [
+        buildDimensionDefinitionType({
+          name: 'a',
+          type: PartitionDefinitionType.DYNAMIC,
+          dynamicPartitionsDefinitionName: 'foo',
+        }),
+        buildDimensionDefinitionType({
+          name: 'b',
+          type: PartitionDefinitionType.TIME_WINDOW,
+        }),
+      ],
     }),
     assetPartitionStatuses: buildMultiPartitionStatuses({
       primaryDimensionName: 'b',

@@ -30,7 +30,7 @@ function Test({mocks}: {mocks?: MockedResponse[]}) {
           name: 'testing',
           location: 'testing',
         }}
-        partitionDefinitionName="testPartitionDef"
+        dynamicPartitionsDefinitionName="testPartitionDef"
         onCreated={onCreatedMock}
       />
     </MockedProvider>

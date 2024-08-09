@@ -16,7 +16,7 @@ export const DimensionRangeWizard = ({
   partitionKeys,
   health,
   dimensionType,
-  partitionDefinitionName,
+  dynamicPartitionsDefinitionName,
   repoAddress,
   refetch,
 }: {
@@ -25,7 +25,7 @@ export const DimensionRangeWizard = ({
   partitionKeys: string[];
   health: PartitionStatusHealthSource;
   dimensionType: PartitionDefinitionType;
-  partitionDefinitionName?: string | null;
+  dynamicPartitionsDefinitionName?: string | null;
   repoAddress?: RepoAddress;
   refetch?: () => Promise<void>;
 }) => {
@@ -96,7 +96,7 @@ export const DimensionRangeWizard = ({
         <CreatePartitionDialog
           key={showCreatePartition ? '1' : '0'}
           isOpen={showCreatePartition}
-          partitionDefinitionName={partitionDefinitionName}
+          dynamicPartitionsDefinitionName={dynamicPartitionsDefinitionName}
           repoAddress={repoAddress}
           close={() => {
             setShowCreatePartition(false);

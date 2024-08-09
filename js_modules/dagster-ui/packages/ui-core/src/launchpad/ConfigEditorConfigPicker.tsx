@@ -224,7 +224,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     rightElement,
   };
 
-  const {isDynamicPartition, partitionDefinitionName} = React.useMemo(() => {
+  const {isDynamicPartition, dynamicPartitionsDefinitionName} = React.useMemo(() => {
     const assetNodes = data?.assetNodes;
     const definition = assetNodes?.find((a) => !!a.partitionDefinition)?.partitionDefinition;
     if (
@@ -234,11 +234,11 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
           node?.partitionDefinition?.name && node?.partitionDefinition?.name !== definition?.name,
       )
     ) {
-      return {isDynamicPartition: false, partitionDefinitionName: undefined};
+      return {isDynamicPartition: false, dynamicPartitionsDefinitionName: undefined};
     }
     return {
       isDynamicPartition: definition.type === PartitionDefinitionType.DYNAMIC,
-      partitionDefinitionName: definition.name,
+      dynamicPartitionsDefinitionName: definition.name,
     };
   }, [data?.assetNodes]);
 
@@ -323,7 +323,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
         <CreatePartitionDialog
           key={showCreatePartition ? '1' : '0'}
           isOpen={showCreatePartition}
-          partitionDefinitionName={partitionDefinitionName}
+          dynamicPartitionsDefinitionName={dynamicPartitionsDefinitionName}
           repoAddress={repoAddress}
           close={() => {
             setShowCreatePartition(false);
