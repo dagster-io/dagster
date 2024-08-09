@@ -277,8 +277,8 @@ def construct_cacheable_assets_and_infer_dependencies(
             "Task Info (raw)": JsonMetadataValue(task_info.metadata),
             # In this case,
             "Dag ID": task_info.dag_id,
-            "Link to Task": MarkdownMetadataValue(
-                f"[View Task]({airflow_instance.get_task_url(task_info.dag_id, task_info.task_id)})"
+            "Link to DAG": MarkdownMetadataValue(
+                f"[View DAG]({airflow_instance.get_dag_url(task_info.dag_id)})"
             ),
         }
         migration_state_for_task = _get_migration_state_for_task(

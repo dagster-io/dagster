@@ -92,7 +92,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
         assert next(iter(some_key_def.specs)).metadata.keys() == {
             "Task Info (raw)",
             "Dag ID",
-            "Link to Task",
+            "Link to DAG",
             "Computed in Task ID",
         }
         assert next(iter(some_key_def.specs)).tags["airlift/task_id"] == "print_task"
@@ -103,7 +103,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
         assert next(iter(other_key_def.specs)).metadata.keys() == {
             "Task Info (raw)",
             "Dag ID",
-            "Link to Task",
+            "Link to DAG",
             "Computed in Task ID",
         }
         assert next(iter(other_key_def.specs)).tags["airlift/task_id"] == "downstream_print_task"

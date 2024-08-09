@@ -59,14 +59,19 @@ class AirflowInstance:
                 f"Failed to fetch task info for {dag_id}/{task_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def get_task_url(self, dag_id: str, task_id: str) -> str:
-        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/{task_id}"
-
     def get_dag_url(self, dag_id: str) -> str:
         return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}"
 
     def get_dag_run_url(self, dag_id: str, run_id: str) -> str:
         return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/grid?dag_run_id={run_id}&tab=details"
+
+    def get_task_instance_url(self, dag_id: str, task_id: str, run_id: str) -> str:
+        # http://localhost:8080/dags/print_dag/grid?dag_run_id=manual__2024-08-08T17%3A21%3A22.427241%2B00%3A00&task_id=print_task
+        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/grid?dag_run_id={run_id}&task_id={task_id}"
+
+    def get_task_instance_log_url(self, dag_id: str, task_id: str, run_id: str) -> str:
+        # http://localhost:8080/dags/print_dag/grid?dag_run_id=manual__2024-08-08T17%3A21%3A22.427241%2B00%3A00&task_id=print_task&tab=logs
+        return f"{self.get_task_instance_url(dag_id, task_id, run_id)}&tab=logs"
 
     def get_dag_run_asset_key(self, dag_id: str) -> AssetKey:
         return AssetKey([self.normalized_name, "dag", dag_id])

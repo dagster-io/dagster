@@ -52,37 +52,43 @@ def build_airflow_polling_sensor(
                 # If the dag run succeeded, add materializations for all assets referring to dags.
                 if dag_run["state"] != "success":
                     raise Exception("Should only see successful dag runs at this point.")
-                materializations_to_report.extend(
-                    [
+                for asset_key in topo_order_keys:
+                    asset_node = repository_def.asset_graph.get(asset_key)
+                    spec = asset_node.to_asset_spec()
+                    task_id = spec.tags.get("airlift/task_id")
+                    details_link = (
+                        airflow_instance.get_dag_run_url(dag_id, dag_run["dag_run_id"])
+                        if task_id is None
+                        else airflow_instance.get_task_instance_url(
+                            dag_id, task_id, dag_run["dag_run_id"]
+                        )
+                    )
+                    metadata = {
+                        "Airflow Run ID": dag_run["dag_run_id"],
+                        "Run Metadata (raw)": JsonMetadataValue(dag_run),
+                        "Start Date": TimestampMetadataValue(
+                            airflow_instance.timestamp_from_airflow_date(dag_run["start_date"])
+                        ),
+                        "End Date": TimestampMetadataValue(
+                            airflow_instance.timestamp_from_airflow_date(dag_run["end_date"])
+                        ),
+                        "Run Type": dag_run["run_type"],
+                        "Airflow Config": JsonMetadataValue(dag_run["conf"]),
+                        "Run Details": MarkdownMetadataValue(f"[View]({details_link})"),
+                        "Creation Timestamp": TimestampMetadataValue(get_current_timestamp()),
+                    }
+                    if task_id:
+                        metadata["Task Logs"] = MarkdownMetadataValue(
+                            f"[View Logs]({airflow_instance.get_task_instance_log_url(dag_id, task_id, dag_run['dag_run_id'])})"
+                        )
+
+                    materializations_to_report.append(
                         AssetMaterialization(
                             asset_key=asset_key,
                             description=dag_run["note"],
-                            metadata={
-                                "Airflow Run ID": dag_run["dag_run_id"],
-                                "Run Metadata (raw)": JsonMetadataValue(dag_run),
-                                "Start Date": TimestampMetadataValue(
-                                    airflow_instance.timestamp_from_airflow_date(
-                                        dag_run["start_date"]
-                                    )
-                                ),
-                                "End Date": TimestampMetadataValue(
-                                    airflow_instance.timestamp_from_airflow_date(
-                                        dag_run["end_date"]
-                                    )
-                                ),
-                                "Run Type": dag_run["run_type"],
-                                "Airflow Config": JsonMetadataValue(dag_run["conf"]),
-                                "Link to Run": MarkdownMetadataValue(
-                                    f"[View Run]({airflow_instance.get_dag_run_url(dag_id, dag_run['dag_run_id'])})"
-                                ),
-                                "Creation Timestamp": TimestampMetadataValue(
-                                    get_current_timestamp()
-                                ),
-                            },
+                            metadata=metadata,
                         )
-                        for asset_key in topo_order_keys
-                    ]
-                )
+                    )
         context.update_cursor(str(current_date.timestamp()))
         return SensorResult(
             asset_events=materializations_to_report,

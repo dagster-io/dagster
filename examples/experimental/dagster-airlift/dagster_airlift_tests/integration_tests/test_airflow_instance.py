@@ -39,12 +39,14 @@ def test_airflow_instance(airflow_instance: None):
     ):
         instance.get_task_info(dag_id="print_dag", task_id="nonexistent_task")
 
-    assert (
-        instance.get_task_url(dag_id="print_dag", task_id="print_task")
-        == "http://localhost:8080/dags/print_dag/print_task"
-    )
     assert instance.get_dag_url(dag_id="print_dag") == "http://localhost:8080/dags/print_dag"
     assert (
         instance.get_dag_run_url(dag_id="print_dag", run_id="run_id")
         == "http://localhost:8080/dags/print_dag/grid?dag_run_id=run_id&tab=details"
+    )
+    assert (
+        instance.get_task_instance_log_url(
+            dag_id="print_dag", task_id="print_task", run_id="run_id"
+        )
+        == "http://localhost:8080/dags/print_dag/grid?dag_run_id=run_id&task_id=print_task&tab=logs"
     )
