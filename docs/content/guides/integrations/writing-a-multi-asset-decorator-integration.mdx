@@ -197,7 +197,7 @@ class ReplicationTranslator:
         return AssetKey(str(table_definition.get("name")))
 ```
 
-Next, we can update our `custom_replication_assets` to use the translator when defining the `key` on the `AssetSpec`. You will note, that we have taken this opportunity to also include the replication project, and the translator instance on the `AssetSpec` metadata. This is a workaround that we tend to employ in this approach, making it possible to define these objects once, and then access them on the context of our asset.
+Next, we'll update `custom_replication_assets` to use the translator when defining the `key` on the <PyObject object="AssetSpec" />. Note that we took this opportunity to also include the replication project and translator instance on the `AssetSpec` metadata. This is a workaround that we tend to employ in this approach, as it makes it possible to define these objects once and then access them on the context of our asset.
 
 ```python
 def custom_replication_assets(
