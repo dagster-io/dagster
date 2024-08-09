@@ -25,7 +25,7 @@ Each use case consists of two main components:
 Both files are utilized on the Dagster.io website. However, only the Python files are subject to automated testing.
 
 The TEMPLATE.md file is used to create new use cases. The actual template lives on our external
-Scout platform. 
+Scout platform.
 
 ### Important Note
 
