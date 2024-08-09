@@ -1,4 +1,4 @@
-Orchestration on Celery + Kubernetes
+Celery + Kubernetes (dagster-celery-k8s)
 ------------------------------------
 
 APIs

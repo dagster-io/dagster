@@ -1,0 +1,20 @@
+sphinx>=8,<9
+
+sphinx-autobuild
+# For generating CLI docs
+sphinx_click
+
+sphinx_toolbox
+sphinxcontrib-serializinghtml
+
+# Generate opengraph data
+sphinxext-opengraph
+
+# Copy code button
+sphinx-copybutton
+
+# Furo theme
+furo
+
+# Dagster extension
+-e dagster-sphinx @ _ext/dagster-sphinx
