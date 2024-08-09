@@ -5,7 +5,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_airlift.core.airflow_cacheable_assets_def import AirflowCacheableAssetsDefinition
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import BasicAuthBackend
-from dagster_airlift.core.migration_state import (
+from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
     TaskMigrationState,
