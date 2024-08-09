@@ -2,6 +2,82 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.8.0
+
+### Notable behavior changes
+
+- The `Definitions` constructor will no longer raise errors when the provided definitions aren’t mutually resolve-able – e.g. when there are conflicting definitions with the same name, unsatisfied resource dependencies, etc. These errors will still be raised at code location load time. The new `Definitions.validate_loadable` static method also allows performing the validation steps that used to occur in constructor.
+- The “Unsynced” label on an asset is no longer transitive, i.e. it no longer displays purely on account of a parent asset being labeled “Unsynced”. This helps avoid “Unsynced label fatigue”, where huge portions of the graph often have the label because of a distant ancestor. And it also helps the asset graph UI load faster.
+- The Run Status column on the Backfills page has been removed. This column was only filled out for backfills of jobs. Users should instead click on the backfill to see the status of each run.
+- The default behavior for evaluating `AutoMaterializePolicy` and `AutomationCondition` objects has changed. Previously, all assets were evaluated in a single process on the `AssetDaemon` , and evaluation history would show up in the UI in a special-purpose tab. Now, a default `AutomationConditionSensorDefinition` with the name `"default_automation_condition_sensor"` will be constructed for each code location, and a history of evaluations can be accessed by navigating to the page of that sensor. These changes are intended to provide a consistent UI/UX for interacting with automation concepts, and the sensor-based APIs allow for greater isolation between separate sets of assets.
+  - The core work of these sensors is still handled by the `AssetDaemon`, so this will need to continue running for your deployment.
+  - If desired, you can retain the current behavior by setting the following in your `dagster.yaml` file:
+  ```yaml
+  auto_materialize:
+    use_sensors: true
+  ```
+- The `datetime` objects that are exposed in Dagster public APIs are now standard Python `datetime.datetime` objects with timezones, instead of [Pendulum](https://pendulum.eustace.io/docs/) `datetime` objects. Technically, this is not a breaking change since Dagster’s public API uses `datetime.datetime` in our APIs, but Pendulum datetimes expose some methods (like `add` and `subtract`) that are not available on standard `datetime.datetime` objects. If your code was using methods that are only available on `Pendulum` datetimes, you can transform your `datetimes` back to Pendulum datetimes before using them.
+
+  - For example, an asset like this:
+
+  ```python
+  from dagster import asset, AssetExecutionContext
+
+  @asset
+  def my_asset(context: AssetExecutionContext):
+    window_start, window_end = context.partition_time_window
+    in_an_hour = window_start.add(hours=1) # will break since add() is only defined in pendulum
+  ```
+
+  - could be changed to this in order to continue using pendulum datetimes:
+
+  ```python
+
+  from dagster import asset, AssetExecutionContext
+  import pendulum
+
+  @asset
+  def my_asset(context: AssetExecutionContext):
+    window_start, window_end = context.partition_time_window
+      window_start = pendulum.instance(window_start) # transform to a pendulum time
+
+    in_an_hour = window_start.add(hours=1) # will continue working
+  ```
+
+### Breaking changes
+
+- `AutoMaterializeSensorDefinition` has been renamed to `AutomationConditionSensorDefinition`. All other functionality is identical.
+- “Op job versioning and memoization”, an experimental and deprecated pre-1.0 feature, has been removed. This feature has been superseded for a long time by `code_version` , data versions, and automation conditions. `MemoizableIOManager`, `VersionStrategy`, `SourceHashVersionStrategy`, `OpVersionContext`, `ResourceVersionContext`, and `MEMOIZED_RUN_TAG` have been removed.
+- The experimental and deprecated `build_asset_with_blocking_check` has been removed. Use the `blocking` argument on `@asset_check` instead.
+- [dagster-dbt] Support for setting freshness policies through dbt metadata on field `+meta.dagster_freshness_policy` has been removed. Use `+meta.dagster.freshness_policy` instead.
+- [dagster-dbt] `KeyPrefixDagsterDbtTranslator` has been removed. To modify the asset keys for a set of dbt assets, implement`DagsterDbtTranslator.get_asset_key()` instead.
+- [dagster-dbt] Support for setting auto-materialize policies through dbt metadata on field `+meta.dagster_auto_materialize_policy` has been removed. Use `+meta.dagster.auto_materialize_policy` instead.
+- [dagster-dbt] Support for `dbt-core==1.6.*` has been removed because the version is now end-of-life.
+- [dagster-dbt] Support for `load_assets_from_dbt_project`, `load_assets_from_dbt_manifest`, and `dbt_cli_resource` has been removed. Use `@dbt_assets`, `DbtCliResource`, and `DbtProject` instead to define how to load dbt assets from a dbt project and to execute them.
+- [dagster-dbt] Support for rebuilt ops like `dbt_run_op`, `dbt_compile_op`, etc has been removed. Use `@op` and `DbtCliResource` directly to execute dbt commands in an op.
+
+### Deprecations
+
+- The experimental `external_assets_from_specs` API has been deprecated. Instead, you can directly pass `AssetSpec` objects to the `assets` argument of the `Definitions` constructor.
+- `AutoMaterializePolicy`, `AutoMaterializeRule`, and the `auto_materialize_policy` arguments to `@asset` and `AssetSpec` have been marked as deprecated, and the new `AutomationCondition` API and `automation_condition` argument should be used instead. These changes are intended to provide a more consistent, composable, and flexible experience for users interested in asset-focused automation. A full migration guide can be found [here](https://github.com/dagster-io/dagster/discussions/23495), and a more detailed explanation of the thought process behind these changes can be found in the [original RFC](https://github.com/dagster-io/dagster/discussions/22811).
+  - `AutoMaterializePolicys` and `AutomationConditions` can interoperate without issue, meaning you do not need to migrate all assets at the same time.
+- The `partitions_def` parameter on `define_asset_job` is now deprecated. The `partitions_def` for an asset job is determined from the `partitions_def` attributes on the assets it targets, so this parameter is redundant.
+- The `asset_partition_key_for_output`, `asset_partition_keys_for_output`, and `asset_partition_key_range_for_output`, and `asset_partitions_time_window_for_output` methods on `OpExecutionContext` have been deprecated. Instead, use the corresponding property: `partition_key`, `partition_keys`, `partition_key_range`, or `partition_time_window`.
+- `SourceAsset` is deprecated, in favor of `AssetSpec`. You can now use `AssetSpec`s in any of the places you could previously use `SourceAsset`s, including passing them to the `assets` argument of `Definitions`, passing them to the `assets` argument of `materialize`, and supplying them as inputs in op graphs. `AssetSpec` has all the properties that `SourceAsset` does, except for `io_manager_key`. To set an IO manager key on an `AssetSpec`, you can supply a metadata entry with the `"dagster/io_manager_key"` key:
+
+  ```python
+  # before
+  from dagster import SourceAsset
+  my_asset = SourceAsset("my_asset", io_manager_key="abc")
+
+  # after
+  from dagster import AssetSpec
+  my_asset = AssetSpec("my_asset", metadata={"dagster/io_manager_key": "abc"})
+  ```
+
+- [dagster-shell] The `dagster-shell` package, which exposes `create_shell_command_op` and `create_shell_script_op`, has been deprecated. Instead, use `PipesSubprocessClient`, from the `dagster` package.
+- [dagster-airbyte] `load_assets_from_airbyte_project` is now deprecated, because the Octavia CLI that it relies on is an experimental feature that is no longer supported. Use `build_airbyte_assets` or `load_assets_from_airbyte_project` instead.
+
 ## Migrating to 1.7.0
 
 ### Breaking Changes
