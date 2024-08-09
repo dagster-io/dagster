@@ -4,9 +4,9 @@ from dagster import Definitions
 
 from dagster_airlift.core.sensor import build_airflow_polling_sensor
 
+from ..migration_state import AirflowMigrationState
 from .airflow_cacheable_assets_def import DEFAULT_POLL_INTERVAL, AirflowCacheableAssetsDefinition
 from .airflow_instance import AirflowInstance
-from .migration_state import AirflowMigrationState
 
 
 def build_defs_from_airflow_instance(

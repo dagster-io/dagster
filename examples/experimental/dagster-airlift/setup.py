@@ -1,5 +1,14 @@
 from setuptools import find_packages, setup
 
+airflow_dep_list = [
+    "apache-airflow>=2.0.0,<2.8",
+    # Flask-session 0.6 is incompatible with certain airflow-provided test
+    # utilities.
+    "flask-session<0.6.0",
+    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+    "pendulum>=2.0.0,<3.0.0",
+]
+
 setup(
     name="dagster-airlift",
     version="0.0.3",
@@ -24,13 +33,8 @@ setup(
     extras_require={
         "core": [
             "dagster",
-            "apache-airflow>=2.0.0,<2.8",
-            # Flask-session 0.6 is incompatible with certain airflow-provided test
-            # utilities.
-            "flask-session<0.6.0",
-            "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-            "pendulum>=2.0.0,<3.0.0",
         ],
+        "in-airflow": airflow_dep_list,
         "mwaa": ["boto3"],
         "dbt": ["dagster-dbt"],
         "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3"],
