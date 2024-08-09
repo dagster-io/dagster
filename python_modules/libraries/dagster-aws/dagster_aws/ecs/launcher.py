@@ -4,7 +4,7 @@ import os
 import uuid
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -15,6 +15,7 @@ from dagster import (
     Noneable,
     Permissive,
     ScalarUnion,
+    Shape,
     StringSource,
     _check as check,
 )
@@ -79,6 +80,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_task_kwargs: Optional[Mapping[str, Any]] = None,
         run_resources: Optional[Dict[str, Any]] = None,
         run_ecs_tags: Optional[List[Dict[str, Optional[str]]]] = None,
+        propagate_tags: Optional[Dict[str, Any]] = None,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -169,6 +171,17 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.run_resources = check.opt_mapping_param(run_resources, "run_resources")
 
         self.run_ecs_tags = check.opt_sequence_param(run_ecs_tags, "run_ecs_tags")
+        self.propagate_tags = check.opt_dict_param(
+            propagate_tags,
+            "propagate_tags",
+            key_type=str,
+            value_type=Union[bool, List],
+        )
+        if self.propagate_tags:
+            check.invariant(
+                len([k for k, v in self.propagate_tags.items() if v]) <= 1,
+                "Only one of include_only, include_all, or exclude can be set for the propagate_tags config property",
+            )
 
         self._current_task_metadata = None
         self._current_task = None
@@ -325,6 +338,29 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " always be set by the run launcher."
                 ),
             ),
+            "propagate_tags": Field(
+                Shape(
+                    {
+                        "include_all": Field(
+                            bool,
+                            default_value=True,
+                            description="Whether to propagate all tags assigned to a Dagster run to the ECS task.",
+                        ),
+                        "include_only": Field(
+                            Array(str),
+                            default_value=[],
+                            description="List of specific tag keys from the Dagster run which should be propagated to the ECS task.",
+                        ),
+                        "exclude": Field(
+                            Array(str),
+                            default_value=[],
+                            description="List of specific tag keys which should not be propagated to the ECS task. All other tags will be propagated to the ECS task.",
+                        ),
+                    }
+                ),
+                is_required=False,
+                description="Configuration for propagating tags from Dagster runs to ECS tasks. Only one of include_all, include_only, or exclude can be set.",
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -342,14 +378,48 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         }
         self._instance.add_run_tags(run_id, tags)
 
-    def build_ecs_tags_for_run_task(self, run, container_context: EcsContainerContext):
+    def build_ecs_tags_for_run_task(self, run: DagsterRun, container_context: EcsContainerContext):
         if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
             raise Exception("Cannot override system ECS tag: dagster/run_id")
+
+        if self.propagate_tags:
+            # Add contextual Dagster run tags to ECS tags
+            tags = run.tags
+            if self.propagate_tags.get("include_all"):
+                tags = {
+                    k: v for k, v in run.tags.items() if not k.startswith("ecs/")
+                }  # ecs tags are redundant to information already defined on the task
+            elif self.propagate_tags.get("include_only"):
+                tags = {
+                    k: v for k, v in run.tags.items() if k in self.propagate_tags["include_only"]
+                }
+            elif self.propagate_tags.get("exclude"):
+                tags = {
+                    k: v
+                    for k, v in run.tags.items()
+                    if k not in self.propagate_tags["exclude"] and not k.startswith("ecs/")
+                }
+            to_add = [{"key": k, "value": v} for k, v in tags.items()]
+        else:
+            to_add = []
+
+        # ECS tags can't have * in the value, which is the value passed to `dagster/solid_selection` when all steps in
+        # a run are selected (probably the most common case), or when all tags before or after a step are selected.
+        # We need to replace * with a character that is allowed in ECS tags.
+        for i, k in enumerate(to_add):
+            if k["key"] == "dagster/solid_selection":
+                if k["value"].startswith("*"):
+                    to_add[i]["value"] = to_add[i]["value"].lreplace("*", "ALL_BEFORE_AND_")
+                if k["value"].endswith("*"):
+                    to_add[i]["value"] = to_add[i]["value"].rreplace("*", "_AND_ALL_AFTER")
+                if k["value"] == "*":
+                    to_add[i]["value"] = to_add[i]["value"].replace("*", "ALL")
 
         return [
             {"key": "dagster/run_id", "value": run.run_id},
             {"key": "dagster/job_name", "value": run.job_name},
             *container_context.run_ecs_tags,
+            *to_add,
         ]
 
     def _get_run_tags(self, run_id):
@@ -394,6 +464,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         )
         command = self._get_command_args(args, context)
         image = self._get_image_for_run(context)
+        if image is None:
+            raise ValueError("Could not determine image for run")
 
         run_task_kwargs = self._run_task_kwargs(run, image, container_context)
 
@@ -418,12 +490,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             **cpu_and_memory_overrides,
             **task_overrides,
         }
+        run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
+
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
             *self.build_ecs_tags_for_run_task(run, container_context),
+            *run_task_kwargs_from_run.pop("tags", []),
         ]
 
-        run_task_kwargs_from_run = self._get_run_task_kwargs_from_run(run)
         run_task_kwargs.update(run_task_kwargs_from_run)
 
         # launchType and capacityProviderStrategy are incompatible - prefer the latter if it is set
@@ -511,7 +585,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return overrides
 
-    def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Mapping[str, Any]:
+    def _get_run_task_kwargs_from_run(self, run: DagsterRun) -> Dict[str, Any]:
         run_task_kwargs = run.tags.get("ecs/run_task_kwargs")
         if run_task_kwargs:
             return json.loads(run_task_kwargs)
@@ -557,10 +631,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
         return get_task_definition_family("run", check.not_none(run.external_job_origin))
 
-    def _get_container_name(self, container_context) -> str:
+    def _get_container_name(self, container_context: EcsContainerContext) -> str:
         return container_context.container_name or self.container_name
 
-    def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
+    def _run_task_kwargs(
+        self, run: DagsterRun, image: str, container_context: EcsContainerContext
+    ) -> Dict[str, Any]:
         """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
         """

@@ -970,6 +970,120 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, external_job
             instance.launch_run(run.run_id, workspace)
 
 
+@pytest.mark.parametrize(
+    [
+        "run_tags",
+        "expected_ecs_tag_keys",
+        "include_all",
+        "include_only",
+        "exclude",
+    ],
+    [
+        (
+            {
+                "dagster/partition_key": "abc",
+                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+            },
+            {"dagster/partition_key", "dagster/git_commit_hash", "dagster/job_name"},
+            True,
+            [],
+            [],
+        ),
+        (
+            {
+                "dagster/partition_key": "abc",
+                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+            },
+            {"dagster/partition_key", "dagster/job_name"},
+            False,
+            ["dagster/partition_key"],
+            [],
+        ),
+        (
+            {
+                "dagster/partition_key": "abc",
+                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+            },
+            {"dagster/git_commit_hash", "dagster/job_name"},
+            False,
+            [],
+            [
+                "dagster/partition_key",
+            ],
+        ),
+        (
+            {
+                "dagster/partition_key": "abc",
+                "dagster/git_commit_hash": "b54e4ddfbf2f4f661cdb312b6f3dd49de6139c94",
+            },
+            {"dagster/git_commit_hash", "dagster/job_name"},
+            False,
+            [],
+            [
+                "dagster/partition_key",
+            ],
+        ),
+    ],
+)
+def test_propagate_tags_include_all(
+    run_tags: dict[str, str],
+    expected_ecs_tag_keys: set[str],
+    include_all: bool,
+    include_only: list[str],
+    exclude: list[str],
+    instance_cm,
+    workspace,
+    job,
+    external_job,
+    ecs,
+):
+    with instance_cm(
+        {
+            "propagate_tags": {
+                "include_all": include_all,
+                "include_only": include_only,
+                "exclude": exclude,
+            },
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
+        )
+        test_tags = {**run_tags, "ecs/memory": "30720", "ecs/cpu": "4096"}
+
+        instance.add_run_tags(run.run_id, test_tags)
+        instance.launch_run(run.run_id, workspace)
+
+        run_tags.update({"dagster/run_id": run.run_id})
+        initial_tasks = ecs.list_tasks()
+        tasks = ecs.describe_tasks(tasks=initial_tasks["taskArns"])
+        tags = tasks["tasks"][1]["tags"]
+        expected_ecs_tag_keys.add("dagster/run_id")
+        assert set([tag["key"] for tag in tags]) == expected_ecs_tag_keys
+
+
+def test_propagate_tags_args_validated(
+    instance_cm,
+    workspace,
+    job,
+    external_job,
+):
+    with pytest.raises(CheckError):
+        with instance_cm(
+            {
+                "propagate_tags": {"include_only": ["a"], "exclude": ["b"]},
+            }
+        ) as instance:
+            run = instance.create_run_for_job(
+                job,
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
+            )
+            instance.launch_run(run.run_id, workspace)
+
+
 def test_launch_run_with_container_context(
     ecs,
     instance,
