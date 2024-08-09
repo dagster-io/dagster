@@ -9,6 +9,7 @@ from dagster._core.remote_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
+    job_name_for_external_partition_set_name,
 )
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
@@ -31,7 +32,9 @@ def sync_get_external_partition_names_grpc(
         api_client.external_partition_names(
             partition_names_args=PartitionNamesArgs(
                 repository_origin=repository_origin,
+                job_name=job_name_for_external_partition_set_name(partition_set_name),
                 partition_set_name=partition_set_name,
+                selected_asset_keys=None,
             ),
         ),
         (ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
@@ -60,9 +63,11 @@ def sync_get_external_partition_config_grpc(
         api_client.external_partition_config(
             partition_args=PartitionArgs(
                 repository_origin=repository_origin,
+                job_name=job_name_for_external_partition_set_name(partition_set_name),
                 partition_set_name=partition_set_name,
                 partition_name=partition_name,
                 instance_ref=instance.get_ref(),
+                selected_asset_keys=None,
             ),
         ),
         (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
@@ -92,9 +97,11 @@ def sync_get_external_partition_tags_grpc(
         api_client.external_partition_tags(
             partition_args=PartitionArgs(
                 repository_origin=repository_origin,
+                job_name=job_name_for_external_partition_set_name(partition_set_name),
                 partition_set_name=partition_set_name,
                 partition_name=partition_name,
                 instance_ref=instance.get_ref(),
+                selected_asset_keys=None,
             ),
         ),
         (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),

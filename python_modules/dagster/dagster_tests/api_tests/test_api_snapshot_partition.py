@@ -43,7 +43,9 @@ def test_external_partition_names_deserialize_error_grpc(instance: DagsterInstan
             api_client.external_partition_names(
                 partition_names_args=PartitionNamesArgs(
                     repository_origin=repository_origin,
-                    partition_set_name="foo",
+                    job_name="foo",
+                    partition_set_name="foo_partition_set",
+                    selected_asset_keys=None,
                 )._replace(repository_origin="INVALID"),
             )
         )
@@ -86,9 +88,11 @@ def test_external_partition_config_deserialize_error_grpc(instance: DagsterInsta
             api_client.external_partition_config(
                 partition_args=PartitionArgs(
                     repository_origin=repository_handle.get_external_origin(),
-                    partition_set_name="foo",
+                    job_name="foo",
+                    partition_set_name="foo_partition_set",
                     partition_name="bar",
                     instance_ref=instance.get_ref(),
+                    selected_asset_keys=None,
                 )._replace(repository_origin="INVALID"),
             )
         )
@@ -119,9 +123,11 @@ def test_external_partitions_tags_deserialize_error_grpc(instance: DagsterInstan
             api_client.external_partition_tags(
                 partition_args=PartitionArgs(
                     repository_origin=repository_origin,
-                    partition_set_name="fooba",
+                    job_name="fooba",
+                    partition_set_name="fooba_partition_set",
                     partition_name="c",
                     instance_ref=instance.get_ref(),
+                    selected_asset_keys=None,
                 )._replace(repository_origin="INVALID"),
             )
         )
