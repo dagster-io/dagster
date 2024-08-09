@@ -391,6 +391,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_get_runs_feed_backfill_created_between_calls(self, graphql_context):
+        # TestRunsFeed::test_get_runs_feed_backfill_created_between_calls[sqlite_with_default_run_launcher_managed_grpc_env]
         for _ in range(10):
             _create_run(graphql_context)
 
@@ -423,6 +424,8 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
         # create a backfill before the next call
         _create_backfill(graphql_context)
 
+        # the next page of the Runs Feed should not include the newly created backfill, since that would
+        # be out of time order with the previous page
         result = execute_dagster_graphql(
             graphql_context,
             GET_RUNS_FEED_QUERY,
@@ -432,18 +435,17 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        # TODO - should this next query include the new backfill? Which maybe
-        # means that the cursor needs to hold a timestamp as well that we compare results to
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        for res in result.data["runsFeedOrError"]["results"]:
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
 
-        # assert len(result.data["runsFeedOrError"]["results"]) == 5
-        # for res in result.data["runsFeedOrError"]["results"]:
-        #     if prev_run_time:
-        #         assert res["creationTime"] <= prev_run_time
-        #     prev_run_time = res["creationTime"]
+            assert res["runType"] == "RUN"
 
-        #     # the newly created backfill should not be returned?
-        #     assert res["runType"] == "RUN"
-
-        # assert not result.data["runsFeedOrError"]["hasMore"]
-        # assert result.data["runsFeedOrError"]["cursor"] is not None
-        # assert RunsFeedCursor.from_string(result.data["runsFeedOrError"]["cursor"]).backfill_cursor is None
+        assert not result.data["runsFeedOrError"]["hasMore"]
+        assert result.data["runsFeedOrError"]["cursor"] is not None
+        assert (
+            RunsFeedCursor.from_string(result.data["runsFeedOrError"]["cursor"]).backfill_cursor
+            is None
+        )
