@@ -24,7 +24,7 @@ To follow the steps in this guide, you'll need:
 
 ## Step 1: Input
 
-This hypothetical tool is configured using a YAML definition file where someone can define source and destination databases, along with the tables that they would like to replicate.
+For this guide, let's imagine a hypothetical tool that replicates data between two databases. It is configured using a `replication.yaml` configuration file, in which a user is able to define source and destination databases, along with the tables that they would like to replicate between these systems.
 
 ```yaml
 connections:
@@ -44,13 +44,13 @@ tables:
     primary_key: id
 ```
 
-For our integration, we want to generate an asset for each table being replicated.
+For the integration we're building, we want to provide a multi-asset that encompasses this replication process, and generates an asset for each table being replicated.
 
-To keep this tutorial simple, let's assume that we have a library that provides us with a Python function that performs the replication process, and returns a dictionary with the status of each table.
+We will define a dummy function named `replicate` that will mock the replication process, and return a dictionary with the replication status of each table. In the real world, this could be a function in a library, or a call to a command-line tool.
 
 ```python
 import yaml
-To keep this tutorial simple, let's assume that we have a library that provides us with a Python function that performs the replication process and returns a dictionary with the status of each table.
+
 from pathlib import Path
 from typing import Mapping, Iterator, Any
 
@@ -138,7 +138,7 @@ def my_assets(context: AssetExecutionContext):
 
 There are a few limitations to this approach:
 
-- **We have not encapsulated the logic for replicating tables.** This means that users who use the `custom_replication_assets` decorator would be responsible for yielding asset materializations themselves. 
+- **We have not encapsulated the logic for replicating tables.** This means that users who use the `custom_replication_assets` decorator would be responsible for yielding asset materializations themselves.
 - **Users can't customize the attributes of the asset**.
 
 For the first limitation, we can resolve this by refactoring the code in the body of our asset function into a Dagster resource.
