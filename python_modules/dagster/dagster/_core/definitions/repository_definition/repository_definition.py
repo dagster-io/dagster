@@ -421,9 +421,9 @@ class PendingRepositoryDefinition:
                 check.invariant(
                     defn.unique_id in repository_load_data.cached_data_by_key,
                     "No metadata found for CacheableAssetsDefinition with unique_id"
-                    f" {defn.unique_id}.",
+                    f" {defn.unique_id}. Found cacheable data: {repository_load_data.cached_data_by_key}",
                 )
-                # use the emtadata to generate definitions
+                # use the metadata to generate definitions
                 resolved_definitions.extend(
                     defn.build_definitions(
                         data=repository_load_data.cached_data_by_key[defn.unique_id]
