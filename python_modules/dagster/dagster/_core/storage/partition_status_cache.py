@@ -363,7 +363,7 @@ def build_failed_and_in_progress_partition_subset(
 ) -> Tuple[PartitionsSubset, PartitionsSubset, Optional[int]]:
     in_progress_partitions: Set[str] = set()
 
-    incomplete_materializations = {}
+    incomplete_materialization_records = {}
 
     failed_subset = failed_subset or partitions_def.empty_subset()
 
@@ -372,15 +372,22 @@ def build_failed_and_in_progress_partition_subset(
     if last_planned_materialization_storage_id and (
         not after_storage_id or last_planned_materialization_storage_id > after_storage_id
     ):
-        incomplete_materializations = instance.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+        incomplete_materialization_records = instance.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
             asset_key, after_storage_id=after_storage_id
         )
 
     failed_partitions: Set[str] = set()
 
     cursor = None
-    if incomplete_materializations:
-        to_fetch = list(set([run_id for run_id, _event_id in incomplete_materializations.values()]))
+    if incomplete_materialization_records:
+        to_fetch = list(
+            set(
+                [
+                    check.not_none(record.last_planned_materialization_run_id)
+                    for record in incomplete_materialization_records.values()
+                ]
+            )
+        )
         finished_runs = {}
         unfinished_runs = {}
 
@@ -393,7 +400,10 @@ def build_failed_and_in_progress_partition_subset(
                 else:
                     unfinished_runs[r.run_id] = r.status
 
-        for partition, (run_id, event_id) in incomplete_materializations.items():
+        for partition, record in incomplete_materialization_records.items():
+            run_id = check.not_none(record.last_planned_materialization_run_id)
+            event_id = check.not_none(record.last_planned_materialization_storage_id)
+
             if run_id in finished_runs:
                 status = finished_runs.get(run_id)
                 if status == DagsterRunStatus.FAILURE:

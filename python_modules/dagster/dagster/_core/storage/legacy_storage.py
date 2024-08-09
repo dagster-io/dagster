@@ -16,6 +16,7 @@ from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInf
 
 from .base_storage import DagsterStorage
 from .event_log.base import (
+    AssetPartitionSummaryRecord,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
@@ -566,7 +567,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: "AssetKey", after_storage_id: Optional[int] = None
-    ) -> Mapping[str, Tuple[str, int]]:
+    ) -> Mapping[str, AssetPartitionSummaryRecord]:
         return self._storage.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
             asset_key, after_storage_id
         )

@@ -7,7 +7,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import List, Mapping, Optional, Sequence, Tuple, cast
 
 import mock
 import pytest
@@ -92,7 +92,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
-from dagster._core.storage.event_log.base import EventLogStorage
+from dagster._core.storage.event_log.base import AssetPartitionSummaryRecord, EventLogStorage
 from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
@@ -3051,9 +3051,12 @@ class TestEventLogStorage:
     def test_get_latest_asset_partition_materialization_attempts_without_materializations(
         self, storage, instance
     ):
-        def _assert_matches_not_including_event_id(result, expected):
+        def _assert_matches_not_including_event_id(
+            result: Mapping[str, AssetPartitionSummaryRecord], expected
+        ):
             assert {
-                partition: run_id for partition, (run_id, _event_id) in result.items()
+                partition: record.last_planned_materialization_run_id
+                for partition, record in result.items()
             } == expected
 
         a = AssetKey(["a"])
@@ -3269,7 +3272,10 @@ class TestEventLogStorage:
             result = storage.get_latest_asset_partition_materialization_attempts_without_materializations(
                 asset_key
             )
-            return {partition: run_id for partition, (run_id, _event_id) in result.items()}
+            return {
+                partition: record.last_planned_materialization_run_id
+                for partition, record in result.items()
+            }
 
         run_id = make_new_run_id()
         with create_and_delete_test_runs(instance, [run_id]):
@@ -3618,9 +3624,16 @@ class TestEventLogStorage:
                 ).storage_id
 
                 assert storage.get_materialized_partitions(a) == {"2023-01-05"}
-                planned_but_no_materialization_partitions = storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                planned_but_no_materialization_partition_records = storage.get_latest_asset_partition_materialization_attempts_without_materializations(
                     a
                 )
+                planned_but_no_materialization_partitions = {
+                    key: (
+                        record.last_planned_materialization_run_id,
+                        record.last_planned_materialization_storage_id,
+                    )
+                    for key, record in planned_but_no_materialization_partition_records.items()
+                }
                 if self.has_asset_partitions_table():
                     # When an asset partitions table is present we can fetch planned but not
                     # materialized partitions when planned events target a partitions subset
@@ -3699,8 +3712,24 @@ class TestEventLogStorage:
                     a
                 )
                 == {
-                    "foo": (run_id_1, foo_event_id),
-                    "bar": (run_id_2, bar_event_id),
+                    "foo": AssetPartitionSummaryRecord(
+                        partition="foo",
+                        last_planned_materialization_run_id=run_id_1,
+                        last_planned_materialization_storage_id=foo_event_id,
+                        last_materialization_storage_id=None,
+                        last_materialization_run_id=None,
+                        last_materialization_failure_storage_id=None,
+                        last_materialization_failure_run_id=None,
+                    ),
+                    "bar": AssetPartitionSummaryRecord(
+                        partition="bar",
+                        last_planned_materialization_run_id=run_id_2,
+                        last_planned_materialization_storage_id=bar_event_id,
+                        last_materialization_storage_id=None,
+                        last_materialization_run_id=None,
+                        last_materialization_failure_storage_id=None,
+                        last_materialization_failure_run_id=None,
+                    ),
                 }
             )
             assert (
@@ -3708,7 +3737,15 @@ class TestEventLogStorage:
                     a, foo_event_id
                 )
                 == {
-                    "bar": (run_id_2, bar_event_id),
+                    "bar": AssetPartitionSummaryRecord(
+                        partition="bar",
+                        last_planned_materialization_run_id=run_id_2,
+                        last_planned_materialization_storage_id=bar_event_id,
+                        last_materialization_storage_id=None,
+                        last_materialization_run_id=None,
+                        last_materialization_failure_storage_id=None,
+                        last_materialization_failure_run_id=None,
+                    ),
                 }
             )
 
@@ -3732,8 +3769,24 @@ class TestEventLogStorage:
                     a
                 )
                 == {
-                    "foo": (run_id_1, foo_event_id),
-                    "bar": (run_id_3, bar_event_id + 1),
+                    "foo": AssetPartitionSummaryRecord(
+                        partition="foo",
+                        last_planned_materialization_run_id=run_id_1,
+                        last_planned_materialization_storage_id=foo_event_id,
+                        last_materialization_storage_id=None,
+                        last_materialization_run_id=None,
+                        last_materialization_failure_storage_id=None,
+                        last_materialization_failure_run_id=None,
+                    ),
+                    "bar": AssetPartitionSummaryRecord(
+                        partition="bar",
+                        last_planned_materialization_run_id=run_id_3,
+                        last_planned_materialization_storage_id=bar_event_id + 1,
+                        last_materialization_storage_id=None,
+                        last_materialization_run_id=None,
+                        last_materialization_failure_storage_id=None,
+                        last_materialization_failure_run_id=None,
+                    ),
                 }
             )
 
