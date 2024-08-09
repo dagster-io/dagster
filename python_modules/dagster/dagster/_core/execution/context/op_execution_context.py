@@ -405,7 +405,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         Returns:
             bool: Whether the tag is set.
         """
-        return self._step_execution_context.has_tag(key)
+        return key in self.dagster_run.tags
 
     @public
     def get_tag(self, key: str) -> Optional[str]:
@@ -417,12 +417,12 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         Returns:
             Optional[str]: The value of the tag, if present.
         """
-        return self._step_execution_context.get_tag(key)
+        return self.dagster_run.tags.get(key)
 
     @property
     def run_tags(self) -> Mapping[str, str]:
         """Mapping[str, str]: The tags for the current run."""
-        return self._step_execution_context.run_tags
+        return self.dagster_run.tags
 
     def has_events(self) -> bool:
         return bool(self._events)

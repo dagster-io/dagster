@@ -810,21 +810,6 @@ def test_output_type_check():
         wrong_type()
 
 
-def test_pending_node_invocation():
-    @op
-    def basic_op_to_hook():
-        return 5
-
-    assert basic_op_to_hook.with_hooks(set())() == 5
-
-    @op
-    def basic_op_with_tag(context):
-        assert context.has_tag("foo")
-        return context.get_tag("foo")
-
-    assert basic_op_with_tag.tag({"foo": "bar"})(None) == "bar"
-
-
 def test_graph_invocation_out_of_composition():
     @op
     def basic_op():
@@ -1589,3 +1574,23 @@ def test_context_bound_state_with_error_async_generator():
         asyncio.run(get_results())
 
     assert_context_unbound(ctx)
+
+
+def test_run_tags():
+    @op
+    def basic_op(context):
+        assert context.run_tags["foo"] == "bar"
+        assert context.has_tag("foo")
+        assert not context.has_tag("ffdoo")
+        assert context.get_tag("foo") == "bar"
+
+    basic_op(build_op_context(run_tags={"foo": "bar"}))
+
+    @asset
+    def basic_asset(context):
+        assert context.run_tags["foo"] == "bar"
+        assert context.has_tag("foo")
+        assert not context.has_tag("ffdoo")
+        assert context.get_tag("foo") == "bar"
+
+    basic_asset(build_asset_context(run_tags={"foo": "bar"}))
