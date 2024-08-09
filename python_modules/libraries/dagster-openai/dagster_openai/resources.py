@@ -180,6 +180,9 @@ class OpenAIResource(ConfigurableResource):
     """
 
     api_key: str = Field(description=("OpenAI API key. See https://platform.openai.com/api-keys"))
+    organization: Optional[str] = Field(default=None)
+    project: Optional[str] = Field(default=None)
+    base_url: Optional[str] = Field(default=None)
 
     _client: Client = PrivateAttr()
 
@@ -212,7 +215,12 @@ class OpenAIResource(ConfigurableResource):
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         # Set up an OpenAI client based on the API key.
-        self._client = Client(api_key=self.api_key)
+        self._client = Client(
+            api_key=self.api_key,
+            organization=self.organization,
+            project=self.project,
+            base_url=self.base_url,
+        )
 
     @public
     @contextmanager
