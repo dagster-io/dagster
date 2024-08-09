@@ -78,7 +78,7 @@ class MaterializeResult(AssetResult):
 @experimental
 class ObserveResult(AssetResult):
     """An object representing a successful observation of an asset. These can be returned from an
-    @observable_source_asset decorated function to pass metadata.
+    @asset decorated function with result_type="observe" to pass metadata.
 
     Attributes:
         asset_key (Optional[AssetKey]): The asset key. Optional to include.
