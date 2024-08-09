@@ -81,9 +81,7 @@ class ReplicationProject():
         return yaml.safe_load(Path(self.replication_configuration_yaml).read_text())
 ```
 
-Here we define a function that returns a `multi_asset` function. The `multi_asset` function is a decorator itself, so this allows us to customize the behavior of `multi_asset` and create a new decorator of our own.
-
-We load our replication project, and then iterate over the tables that were defined in the YAML file. Those are then used to create a list of `AssetSpec` objects that are passed to the `specs` parameter. This is what allows us to define the assets that are visible in the Dagster UI. However, we have not yet shown how to perform the actual execution of our replication function — that's what we will go over next!
+Next, define a function that returns a `multi_asset` function. The `multi_asset` function is a decorator itself, so this allows us to customize the behavior of `multi_asset` and create a new decorator of our own:
 
 ```python
 def custom_replication_assets(
@@ -105,6 +103,14 @@ def custom_replication_assets(
         ],
     )
 ```
+
+Let's review what this code does:
+
+- Defines a function that returns a `multi_asset` function
+- Loads our replication project and iterates over the tables defined in the input YAML file
+- Uses the tables to create a list of <PyObject object="AssetSpec" /> objects and passes them to the `specs` parameter, thus defining assets that will be visible in the Dagster UI
+
+Next, we'll show you how to perform the execution of the replication function.
 
 Thinking back to our previous example on how decorators work, they allow us to wrap a function that performs some operation. In the case of our `multi_asset` we are able to define `AssetSpec` objects for our project, and the actual processing that takes place will be in the body of the function we decorate.
 
