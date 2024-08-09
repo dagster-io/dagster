@@ -9,9 +9,8 @@ from typing import IO, Any, Mapping, Optional, Tuple
 import dagster
 import dagster._check as check
 import dagster_pyspark
-import databricks_cli.sdk
 import requests.exceptions
-from dagster._annotations import deprecated, public
+from dagster._annotations import public
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.core import (
     Config,
@@ -245,77 +244,6 @@ class DatabricksClient:
             host=host,
         )
         self._workspace_client = workspace_client_factory.get_workspace_client()
-
-        # TODO: This is the old shim client that we were previously using. Arguably this is
-        # confusing for users to use since this is an unofficial wrapper around the documented
-        # Databricks REST API. We should consider removing this in the next minor release.
-        if token:
-            # TODO: This is the old `databricks_cli` client that was previously recommended by Databricks.
-            # It is no longer supported and should be removed in favour of `databricks-sdk` in the next
-            # minor release.
-            self._api_client = databricks_cli.sdk.ApiClient(host=host, token=token)
-            self.__setup_user_agent(self._api_client)
-        else:
-            self._client = None
-            self._api_client = None
-
-    def __setup_user_agent(self, client: databricks_cli.sdk.ApiClient) -> None:
-        """Overrides the user agent for the Databricks API client."""
-        client.default_headers["user-agent"] = f"dagster-databricks/{__version__}"
-
-    @deprecated(
-        breaking_version="0.21.0", additional_warn_text="Use `workspace_client` property instead."
-    )
-    @public
-    @property
-    def api_client(self) -> databricks_cli.sdk.ApiClient:
-        """Retrieve a reference to the underlying Databricks API client. For more information,
-        see the `Databricks Python API <https://docs.databricks.com/dev-tools/python-api.html>`_.
-        Noe: accessing this property will throw an exception if oauth credentials are used to initialize the
-        DatabricksClient, because oauth credentials are not supported by the legacy Databricks API client.
-        **Examples:**.
-
-        .. code-block:: python
-
-            from dagster import op
-            from databricks_cli.jobs.api import JobsApi
-            from databricks_cli.runs.api import RunsApi
-            from databricks.sdk import WorkspaceClient
-
-            @op(required_resource_keys={"databricks_client"})
-            def op1(context):
-                # Initialize the Databricks Jobs API
-                jobs_client = JobsApi(context.resources.databricks_client.api_client)
-                runs_client = RunsApi(context.resources.databricks_client.api_client)
-                client = context.resources.databricks_client.api_client
-
-                # Example 1: Run a Databricks job with some parameters.
-                jobs_client.run_now(...)
-                client.jobs.run_now(...)
-
-                # Example 2: Trigger a one-time run of a Databricks workload.
-                runs_client.submit_run(...)
-                client.jobs.submit(...)
-
-                # Example 3: Get an existing run.
-                runs_client.get_run(...)
-                client.jobs.get_run(...)
-
-                # Example 4: Cancel a run.
-                runs_client.cancel_run(...)
-                client.jobs.cancel_run(...)
-
-        Returns:
-            ApiClient: The authenticated Databricks API client.
-        """
-        if self._api_client is None:
-            raise ValueError(
-                "Legacy Databricks API client from `databricks-cli` was not initialized because"
-                " oauth credentials were used instead of an access token. This legacy Databricks"
-                " API client is not supported when using oauth credentials. Use the"
-                " `workspace_client` property instead."
-            )
-        return self._api_client
 
     @public
     @property
