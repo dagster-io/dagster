@@ -5,11 +5,11 @@ description: "This guide walks through how to write a decorator based multi-asse
 
 # Writing a multi-asset decorator integration
 
-When working in the Dagster ecosystem, you may have noticed that decorators are frequently used. For example, assets, jobs, and ops use decorators. If you have a service that produces many assets, it is possible to define it as a multi-asset decorator — offering a consistent and intuitive developer experience to existing Dagster APIs.
+When working in the Dagster ecosystem, you may have noticed that decorators are frequently used. For example, assets, jobs, and ops use decorators. If you have a service that produces many assets, it's possible to define it as a multi-asset decorator — offering a consistent and intuitive developer experience to existing Dagster APIs.
 
 In the context of Dagster, decorators are helpful because they often wrap some form of processing. For example, when writing an asset, you define your processing code and then annotate the function with the <PyObject object="object" decorator /> decorator. Then, the internal Dagster code can register the asset, assign metadata, pass in context data, or perform any other variety of operations that are required to integrate your asset code with the Dagster platform.
 
-In this guide, you'll develop a new multi-asset integration that takes a YAML file as input and produces a multi-asset. This will allow your end users to customize the translation of the definition spec and understand how it maps to Dagster concepts.
+In this guide, you'll develop a new multi-asset integration that takes a YAML file as input and produces a multi-asset. This allows your end users to customize the translation of the definition spec and understand how it maps to Dagster concepts.
 
 ---
 
@@ -18,13 +18,13 @@ In this guide, you'll develop a new multi-asset integration that takes a YAML fi
 To follow the steps in this guide, you'll need:
 
 - Familiarity with Dagster
-- An understanding of Python decorators — we recommend [Real Python's Primer on Python Decorators](https://realpython.com/primer-on-python-decorators/)
+- An understanding of Python decorators — [Real Python's Primer on Python Decorators](https://realpython.com/primer-on-python-decorators/) is a fantastic introduction
 
 ---
 
 ## Step 1: Input
 
-For this guide, let's imagine a hypothetical tool that replicates data between two databases. It is configured using a `replication.yaml` configuration file, in which a user is able to define source and destination databases, along with the tables that they would like to replicate between these systems.
+For this guide, let's imagine a hypothetical tool that replicates data between two databases. It's configured using a `replication.yaml` configuration file, in which a user is able to define source and destination databases, along with the tables that they would like to replicate between these systems.
 
 ```yaml
 connections:
