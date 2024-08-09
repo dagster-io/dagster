@@ -5,13 +5,7 @@ description: "This guide walks through how to write a decorator based multi-asse
 
 # Writing a multi-asset decorator integration
 
-You may have noticed that Dagster makes frequent use of decorators when working with assets, jobs, ops, and more. If you have a service that produces many assets, it is possible to define it as a multi-asset decorator — offering a consistent and intuitive developer experience to existing Dagster APIs.
-
-Existing integrations that implement this approach include:
-
-- [dbt](https://docs.dagster.io/integrations/dbt)
-- [Embedded ELT: dlt](https://docs.dagster.io/integrations/embedded-elt/dlt)
-- [Embedded ELT: Sling](https://docs.dagster.io/integrations/embedded-elt/sling)
+When working in the Dagster ecosystem, you may have noticed that decorators are frequently used. For example, assets, jobs, and ops use decorators. If you have a service that produces many assets, it is possible to define it as a multi-asset decorator — offering a consistent and intuitive developer experience to existing Dagster APIs.
 
 In this guide, you'll develop a new multi-asset integration that takes a YAML file as input and produces a multi-asset. This will allow your end users to customize the translation of the definition spec and understand how it maps to Dagster concepts.
 
@@ -19,7 +13,10 @@ In this guide, you'll develop a new multi-asset integration that takes a YAML fi
 
 ## Prerequisites
 
-To follow the steps in this guide, **you'll need familiarity with Dagster and Python decorators**. Reviewing Python functionality is out of scope for this guide, but you can refer to [Real Python's Primer on Python Decorators](https://realpython.com/primer-on-python-decorators/) to learn the fundamentals.
+To follow the steps in this guide, you'll need:
+
+- Familiarity with Dagster
+- An understanding of Python decorators — we recommend [Real Python's Primer on Python Decorators](https://realpython.com/primer-on-python-decorators/)
 
 ### Why decorators?
 
