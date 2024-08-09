@@ -27,7 +27,6 @@ Airlift depends on the the availability of Airflow’s REST API. Airflow’s RES
 - **OSS:** Stable as of 2.00
 - **MWAA**
   - Note: only available in Airflow 2.4.3 or later on MWAA.
-  - Doesn’t appear to be a well-defined reason other than pure conservatism according to [ChatGPT](https://chatgpt.com/c/220cd63e-2111-4b32-bd83-87d95e2390d7).
 - **Cloud Composer:** No limitations as far as we know.
 - **Astronomer:** No limitations as far as we know.
 
@@ -35,9 +34,10 @@ Airlift depends on the the availability of Airflow’s REST API. Airflow’s RES
 
 The first step is to peer the Dagster Deployment and the Airflow instance.
 
-To do this you need to install airlift in and make it available in your Dagster deployment.
+To do this you need to install airlift and make it available in your Dagster deployment.
 
 ```bash
+pip install uv
 uv pip install dagster-airlift[core]
 ```
 
@@ -48,6 +48,7 @@ from dagster_airlift.core import AirflowInstance, build_defs_from_airflow_instan
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
+        # other backends available (e.g. MwaaSessionAuthBackend)
         auth_backend=BasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
@@ -69,21 +70,24 @@ This function creates:
 
 ### Peering to multiple instances
 
-Airlift supports peering to multiple Airflow instances, as you can invoke `create_airflow_instance_defs` multiple times and combine them with `Definitions.merge`
+Airlift supports peering to multiple Airflow instances, as you can invoke `create_airflow_instance_defs` multiple times and combine them with `Definitions.merge`:
 
 ```python
+from dagster import Definitions
+
 from dagster_airlift.core import AirflowInstance, build_defs_from_airflow_instance
 
-defs = build_defs_from_airflow_instance(
-    airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
-            webserver_url="http://yourcompany.com/instance_one",
-            username="admin",
-            password="admin",
-        ),
-        name="airflow_instance_one",
-    )
-).merge(
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://yourcompany.com/instance_one",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
+        )
+    ),
     build_defs_from_airflow_instance(
         airflow_instance=AirflowInstance(
             auth_backend=BasicAuthBackend(
@@ -93,7 +97,7 @@ defs = build_defs_from_airflow_instance(
             ),
             name="airflow_instance_two",
         )
-    )
+    ),
 )
 ```
 
@@ -112,7 +116,7 @@ For most projects we anticipate the following process:
 - Create a new factory class for every operator type or specialized use case of an operator (e.g. a BashOperator invoking a dbt project).
 - Use that factory to create definitions associating with each Airflow task.
 
-In our example we have a pre-written factory class (in `examples/experimental/dagster-airlift/dagster_airlift/dbt/multi_asset.py`) that is associated with invoking a dbt project:
+In our example we have a pre-written factory class (in `examples/experimental/dagster-airlift/dagster_airlift/dbt/multi_asset.py` and installable by `uv pip install dagster-airlift[dbt]`) that is associated with invoking a dbt project:
 
 ```python
 @dataclass
@@ -167,8 +171,8 @@ We default to a "convention over configuration" approach to affiliate Dagster as
 
 Note the naming convention `dbt_dag__build_dbt_models`. By default we use this convention to encode the dag name (`dbt_dag`) and task id (`build_dbt_models`) of the Airflow task actually orchestrating the computation.
 
-This name gets parsed and set corresponding tags (`airlift/dag_id` and `airlift/task_id`). Alternatively you can set those tags explicitly if you don’t want to rely on the naming convention.
+This name gets parsed and set corresponding tags (`airlift/dag_id` and `airlift/task_id`) on both the asset and the op that computes it. Alternatively you can set those tags explicitly if you don’t want to rely on the naming convention.
 
 Once this is done you should be able to reload your definitions and the see the full dbt project. Once you run the corresponding Airflow Dag and task, each task completion will corresponding to an asset materialization in any asset that is orchestrated by that task.
 
-_Note: There will be some delay as this process is managed by a Dagster sensor that polls the Airflow instance for task history. This is every 30 seconds by default, so there will be some delay._
+_Note: There will be some delay as this process is managed by a Dagster sensor that polls the Airflow instance for task history. This is every 30 seconds by default (you can reduce down to one second via the `minimum_interval_seconds` argument to `sensor`), so there will be some delay._
