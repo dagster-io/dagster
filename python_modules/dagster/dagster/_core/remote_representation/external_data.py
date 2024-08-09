@@ -1010,6 +1010,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
     storage_field_names={
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
+        "description": "op_description",
     },
     field_serializers={
         "metadata": MetadataFieldSerializer,
@@ -1034,13 +1035,10 @@ class ExternalAssetNode(IHaveNew):
     code_version: Optional[str]
     node_definition_name: Optional[str]
     graph_name: Optional[str]
-    # op_description is a misleading name - this is the description for the asset, not for
-    # the op
-    op_description: Optional[str]
+    description: Optional[str]
     job_names: Sequence[str]
     partitions_def_data: Optional[ExternalPartitionsDefinitionData]
     output_name: Optional[str]
-    output_description: Optional[str]
     metadata: Mapping[str, MetadataValue]
     tags: Optional[Mapping[str, str]]
     group_name: str
@@ -1069,11 +1067,10 @@ class ExternalAssetNode(IHaveNew):
         code_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
-        op_description: Optional[str] = None,
+        description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
-        output_description: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
         tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
@@ -1143,11 +1140,10 @@ class ExternalAssetNode(IHaveNew):
             code_version=code_version,
             node_definition_name=node_definition_name,
             graph_name=graph_name,
-            op_description=op_description or output_description,
+            description=description,
             job_names=job_names or [],
             partitions_def_data=partitions_def_data,
             output_name=output_name,
-            output_description=output_description,
             metadata=metadata,
             tags=tags or {},
             # Newer code always passes a string group name when constructing these, but we assign
@@ -1472,7 +1468,7 @@ def external_asset_nodes_from_defs(
                 code_version=asset_node.code_version,
                 node_definition_name=node_definition_name,
                 graph_name=graph_name,
-                op_description=asset_node.description,
+                description=asset_node.description,
                 job_names=job_names,
                 partitions_def_data=(
                     external_partitions_definition_from_def(asset_node.partitions_def)
