@@ -1,0 +1,99 @@
+:root {
+  /* Font families */
+  --font-family-main: "Geist", sans-serif;
+  --font-family-mono: "Geist Mono", monospace;
+
+  /* Font sizes and weights */
+  --font-size-base: 14px;
+  --line-height-base: 16px;
+  --font-weight-light: 200;
+  --font-weight-normal: 300;
+  --font-weight-medium: 400;
+
+  /* Colors */
+  --color-gable-green: #21463D;
+  --color-gable-green-08: rgba(22, 59, 54, 0.08);
+  --color-gable-green-darker: #122F2B;
+  --color-sea-foam: #A7FFBF;
+  --color-slate: #697690;
+  --color-red: #FF0000;
+  --color-blurple: #4F43DD;
+  --color-blurple-darker: #3F36B1;
+  --color-lavender: #DEDDFF;
+  --color-lavender-darker: #C9C6FA;
+  --color-twitter-gray: #F7F7F7;
+
+  /* Primary colors */
+  --color-primary-900: #09086E;
+  --color-primary-700: #0E0CA7;
+  --color-primary-500: #4F43DD;
+  --color-primary-300: #B9B4F1;
+  --color-primary-100: #EDECFC;
+
+  /* Gray colors */
+  --color-gray-900: #231F1B;
+  --color-gray-800: #3A3631;
+  --color-gray-700: #524E48;
+  --color-gray-600: #6B6762;
+  --color-gray-500: #86837F;
+  --color-gray-400: #A19D99;
+  --color-gray-300: #BDBAB7;
+  --color-gray-200: #DAD8D6;
+  --color-gray-150: #F1F1EF;
+  --color-gray-100: #F5F4F2;
+  --color-gray-50: #FAF9F7;
+
+  /* Yellow colors */
+  --color-yellow-50: #F8F2EB;
+  --color-yellow-200: #FBE9B5;
+  --color-yellow-500: #FCBC41;
+  --color-yellow-700: #A55802;
+
+  /* Sizes */
+  --size-navbar-height: 4rem;
+  --size-document-max-width: 60rem;
+}
+
+@font-face {
+    font-family: 'Geist';
+    src: url('../fonts/GeistVF.woff') format('woff');
+    font-weight: 100 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../fonts/GeistMonoVF.woff') format('woff');
+    font-weight: 100 900;
+    font-style: normal;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+
+div[class*="highlight"] {
+    width: fit-content;
+}
+
+div.document div.documentwrapper {
+    max-width: var(--size-document-max-width);
+}
+
+dl>dt {
+    margin-right: -1rem;
+    border-bottom-width: 1px;
+    background-color: var(--color-gray-50);
+    padding: .5rem 4rem .5rem 1rem
+}
+
+dl>dd>dl,dl>dt {
+  background-color: var(--color-gray-50);
+}
+
+dl>dd>dl {
+    border-width: 1px;
+} 

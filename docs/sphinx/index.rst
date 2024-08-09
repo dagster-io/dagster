@@ -1,32 +1,41 @@
 .. title:: Home
 
+API Reference
+=============
+
 .. toctree::
-   :hidden:
+   :maxdepth: 1
+   :caption: Core
 
    sections/api/apidocs/assets
-   sections/api/apidocs/asset-checks
-   sections/api/apidocs/cli
+   sections/api/apidocs/metadata
+   sections/api/apidocs/jobs
+   sections/api/apidocs/definitions
+   sections/api/apidocs/ops
+   sections/api/apidocs/graphs
+   sections/api/apidocs/resources
+   sections/api/apidocs/loggers
    sections/api/apidocs/config
+   sections/api/apidocs/types
+   sections/api/apidocs/cli
+   sections/api/apidocs/schedules-sensors
+   sections/api/apidocs/partitions
    sections/api/apidocs/errors
    sections/api/apidocs/execution
-   sections/api/apidocs/external-assets
-   sections/api/apidocs/graphs
    sections/api/apidocs/hooks
-   sections/api/apidocs/internals
-   sections/api/apidocs/jobs
-   sections/api/apidocs/loggers
-   sections/api/apidocs/ops
    sections/api/apidocs/io-managers
-   sections/api/apidocs/metadata
-   sections/api/apidocs/partitions
-   sections/api/apidocs/pipes
-   sections/api/apidocs/definitions
-   sections/api/apidocs/repositories
-   sections/api/apidocs/resources
-   sections/api/apidocs/schedules-sensors
    sections/api/apidocs/dynamic
-   sections/api/apidocs/types
+   sections/api/apidocs/asset-checks
+   sections/api/apidocs/external-assets
+   sections/api/apidocs/repositories
    sections/api/apidocs/utilities
+   sections/api/apidocs/pipes
+   sections/api/apidocs/internals
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Libraries
+
    sections/api/apidocs/libraries/dagster-airbyte
    sections/api/apidocs/libraries/dagster-aws
    sections/api/apidocs/libraries/dagster-azure
@@ -42,13 +51,13 @@
    sections/api/apidocs/libraries/dagster-deltalake
    sections/api/apidocs/libraries/dagster-deltalake-pandas
    sections/api/apidocs/libraries/dagster-deltalake-polars
+   sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-duckdb
    sections/api/apidocs/libraries/dagster-duckdb-pandas
-   sections/api/apidocs/libraries/dagster-duckdb-pyspark
    sections/api/apidocs/libraries/dagster-duckdb-polars
+   sections/api/apidocs/libraries/dagster-duckdb-pyspark
    sections/api/apidocs/libraries/dagster-embedded-elt
    sections/api/apidocs/libraries/dagster-fivetran
-   sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-gcp
    sections/api/apidocs/libraries/dagster-gcp-pandas
    sections/api/apidocs/libraries/dagster-gcp-pyspark
@@ -77,6 +86,5 @@
    sections/api/apidocs/libraries/dagster-spark
    sections/api/apidocs/libraries/dagster-ssh
    sections/api/apidocs/libraries/dagster-twilio
-   sections/api/apidocs/libraries/dagstermill
-   sections/api/apidocs/libraries/dagster-graphql
    sections/api/apidocs/libraries/dagster-wandb
+   sections/api/apidocs/libraries/dagstermill
