@@ -405,6 +405,20 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         )
 
 
+class GrapheneAssetMaterializationFailureEvent(graphene.ObjectType):
+    assetKey = graphene.Field(GrapheneAssetKey)
+
+    class Meta:
+        name = "AssetMaterializationFailureEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+
+    def __init__(self, event: EventLogEntry):
+        self._event = event
+
+    def resolve_assetKey(self, _graphene_info: ResolveInfo):
+        return self._event.get_dagster_event().asset_materialization_failure_data.asset_key
+
+
 class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
     assetKey = graphene.Field(GrapheneAssetKey)
     runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
@@ -586,6 +600,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneAlertSuccessEvent,
             GrapheneAlertFailureEvent,
             GrapheneAssetMaterializationPlannedEvent,
+            GrapheneAssetMaterializationFailureEvent,
             GrapheneAssetCheckEvaluationPlannedEvent,
             GrapheneAssetCheckEvaluationEvent,
         )

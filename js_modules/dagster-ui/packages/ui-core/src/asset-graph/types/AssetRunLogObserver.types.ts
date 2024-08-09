@@ -24,6 +24,7 @@ export type AssetLiveRunLogsSubscription = {
               };
             }
           | {__typename: 'AssetCheckEvaluationPlannedEvent'}
+          | {__typename: 'AssetMaterializationFailureEvent'}
           | {
               __typename: 'AssetMaterializationPlannedEvent';
               assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
