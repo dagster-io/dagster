@@ -76,5 +76,9 @@ def compute_fn() -> None:
     return None
 
 
+class DagsterOperator(PythonOperator):
+    pass
+
+
 def build_dagster_task(task_id: str, **kwargs):
-    return PythonOperator(task_id=task_id, python_callable=compute_fn, **kwargs)
+    return DagsterOperator(task_id=task_id, python_callable=compute_fn, **kwargs)

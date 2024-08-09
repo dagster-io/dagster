@@ -7,9 +7,35 @@ import yaml
 class TaskMigrationState(NamedTuple):
     migrated: bool
 
+    @staticmethod
+    def from_dict(task_dict: Dict[str, Any]) -> "TaskMigrationState":
+        if "migrated" not in task_dict:
+            raise Exception("Expected a 'migrated' key in the task dictionary")
+        if set(task_dict.keys()) != {"migrated"}:
+            raise Exception("Expected only a 'migrated' key in the task dictionary")
+        if task_dict["migrated"] not in [True, False]:
+            raise Exception("Expected 'migrated' key to be a boolean")
+        return TaskMigrationState(migrated=task_dict["migrated"])
+
 
 class DagMigrationState(NamedTuple):
     tasks: Dict[str, TaskMigrationState]
+
+    @staticmethod
+    def from_dict(dag_dict: Dict[str, Dict[str, Any]]) -> "DagMigrationState":
+        if "tasks" not in dag_dict:
+            raise Exception(
+                f"Expected a 'tasks' key in the dag dictionary. Instead; got: {dag_dict}"
+            )
+        task_migration_states = {}
+        for task_id, task_dict in dag_dict["tasks"].items():
+            task_migration_states[task_id] = TaskMigrationState.from_dict(task_dict)
+        return DagMigrationState(tasks=task_migration_states)
+
+    def is_task_migrated(self, task_id: str) -> bool:
+        if task_id not in self.tasks:
+            return False
+        return self.tasks[task_id].migrated
 
 
 class AirflowMigrationState(NamedTuple):
@@ -40,23 +66,6 @@ class MigrationStateParsingError(Exception):
     pass
 
 
-def load_dag_migration_state_from_dict(dag_dict: Dict[str, Dict[str, Any]]) -> DagMigrationState:
-    if "tasks" not in dag_dict:
-        raise Exception("Expected a 'tasks' key in the yaml")
-    task_migration_states = {}
-    for task_id, task_dict in dag_dict["tasks"].items():
-        if not isinstance(task_dict, dict):
-            raise Exception("Expected a dictionary for each task")
-        if "migrated" not in task_dict:
-            raise Exception("Expected a 'migrated' key in the task dictionary")
-        if set(task_dict.keys()) != {"migrated"}:
-            raise Exception("Expected only a 'migrated' key in the task dictionary")
-        if task_dict["migrated"] not in [True, False]:
-            raise Exception("Expected 'migrated' key to be a boolean")
-        task_migration_states[task_id] = TaskMigrationState(migrated=task_dict["migrated"])
-    return DagMigrationState(tasks=task_migration_states)
-
-
 def load_migration_state_from_yaml(migration_yaml_path: Path) -> AirflowMigrationState:
     # Expect migration_yaml_path to be a directory, where each file represents a dag, and each
     # file in the subdir represents a task. The dictionary each task should consist of a single bit:
@@ -71,7 +80,7 @@ def load_migration_state_from_yaml(migration_yaml_path: Path) -> AirflowMigratio
             yaml_dict = yaml.safe_load(dag_file.read_text())
             if not isinstance(yaml_dict, dict):
                 raise Exception("Expected a dictionary")
-            dag_migration_states[dag_id] = load_dag_migration_state_from_dict(yaml_dict)
+            dag_migration_states[dag_id] = DagMigrationState.from_dict(yaml_dict)
     except Exception as e:
         raise MigrationStateParsingError("Error parsing migration yaml") from e
     return AirflowMigrationState(dags=dag_migration_states)
