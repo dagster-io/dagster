@@ -13,10 +13,10 @@ Dagster offers several ways to provide useful information and documentation alon
 
 ## Benefits
 
-Using metadata and tags helps you:
+Using metadata, kinds, and tags helps you:
 
 - Create built-in documentation that makes your pipelines easy to understand
-- Visually categorize your assets
+- Visually categorize and enrich your definitions
 - Provide useful context for other users of your project (and your future self!)
 - Improve the ease of debugging when issues arise
 - Organize definitions in your Dagster project and improve filtering in the Dagster UI
@@ -43,9 +43,9 @@ How metadata is defined depends on whether you're using assets or ops and jobs:
 
 ## How kinds work
 
-Kinds are a way to label and categorize definitions in Dagster. Kinds correspond to prominently displayed icons in our visual tools (see XXX for supported visual kinds) and also can be the target of searches. A good proxy for whether something should be a kind is whether or not it is an adjective in your day-to-day language and meaningfully identifies that definition. E.g. "Is this a dbt asset or a databricks asset?" would indicate that "dbt" and "spark" are kinds for your project.
+Kinds label and categorize definitions in Dagster. Notably, kinds correspond to prominently displayed icons in our visual tools (see XXX for supported visual kinds). An effective proxy for whether something should be a kind is whether or not it is an adjective in your day-to-day language and meaningfully identifies that definition. E.g. If "Is this a dbt asset or a databricks asset?" is a question in your team that would indicate that "dbt" and "spark" are good kinds for your team.
 
-In its implementation, kinds are system-defined tags, prefixed with the "dagster/" prefix. Our UIs reserve the right to treat these tags specially, hiding them or promoting them as appropriate.
+In its implementation, kinds are system-defined tags, prefixed with the "dagster/kind/" prefix. As is true with all of our system tags, our UIs reserve the right to treat these tags specially, hiding them or promoting them as appropriate.
 
 ---
 
