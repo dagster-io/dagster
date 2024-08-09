@@ -23,7 +23,7 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import PipesClient
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -198,6 +198,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         finally:
             self._handler = None
 
+    @public
     def consume_cloudwatch_logs(
         self,
         log_group: str,
@@ -211,11 +212,10 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
             log_group (str): CloudWatch log group name
             log_stream (str): CLoudWatch log stream name
             start_time (Optional[int]): The start of the time range, expressed as the number of
-                milliseconds after Jan 1, 1970 00:00:00 UTC. Events with a timestamp equal to this
-                time or later than this time are included.
-                Events with a timestamp earlier than this time are not included.
+                milliseconds after ``Jan 1, 1970 00:00:00 UTC``. Only events with a timestamp equal to this
+                time or later are included.
             end_time (Optional[int]): The end of the time range, expressed as the number of
-                milliseconds after Jan 1, 1970 00:00:00 UTC. Events with a timestamp equal to or
+                milliseconds after ``Jan 1, 1970 00:00:00 UTC``. Events with a timestamp equal to or
                 later than this time are not included.
         """
         handler = check.not_none(
@@ -297,6 +297,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @public
     def run(
         self,
         *,
@@ -362,9 +363,9 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the glue job run. Defaults to :py:class:`PipesCloudWatchsMessageReader`.
             When provided with :py:class:`PipesCloudWatchMessageReader`,
-            it will be used to recieve logs and events from the `.../output/<job-run-id>`
+            it will be used to recieve logs and events from the ``.../output/<job-run-id>``
             CloudWatch log stream created by AWS Glue. Note that AWS Glue routes both
-            `stderr` and `stdout` from the main job process into this LogStream.
+            ``stderr`` and ``stdout`` from the main job process into this LogStream.
         client (Optional[boto3.client]): The boto Glue client used to launch the Glue job
         forward_termination (bool): Whether to cancel the Glue job run when the Dagster process receives a termination signal.
     """
@@ -385,6 +386,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @public
     def run(
         self,
         *,

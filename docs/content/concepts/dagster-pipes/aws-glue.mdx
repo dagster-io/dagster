@@ -7,7 +7,9 @@ description: "Learn to integrate Dagster Pipes with AWS Glue to launch external 
 
 This tutorial gives a short overview on how to use [Dagster Pipes](/concepts/dagster-pipes) with [AWS Glue](https://aws.amazon.com/glue/).
 
-## The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides the <PyObject object="PipesGlueClient" module="dagster_aws.pipes" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
+The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides the <PyObject object="PipesGlueClient" module="dagster_aws.pipes" /> resource which can be used to launch AWS Glue jobs from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the job side.
+
+---
 
 ## Prerequisites
 
@@ -129,7 +131,9 @@ defs = Definitions(
 
 Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` asset.
 
-By default the client will be using the CloudWatch log stream (`.../output/<job-run-id>`) created by the Glue job to receive Dagster events and will forward this stream to `stdout`. If this is undesired, instead, the client can be configured to use <PyObject object="PipesS3MessageReader" module="dagster_aws.pipes" />, and the Glue job can use <PyObject object="PipesS3MessageWriter" module="dagster_pipes" /> .
+By default, the client uses the CloudWatch log stream (`.../output/<job-run-id>`) created by the Glue job to receive Dagster events. The client will also forward the stream to `stdout`.
+
+To customize this behavior, the client can be configured to use <PyObject object="PipesS3MessageReader" module="dagster_aws.pipes" />, and the Glue job to use <PyObject object="PipesS3MessageWriter" module="dagster_pipes" /> .
 
 ---
 
