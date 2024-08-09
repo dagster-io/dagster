@@ -37,7 +37,7 @@ setup(
         "in-airflow": airflow_dep_list,
         "mwaa": ["boto3"],
         "dbt": ["dagster-dbt"],
-        "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3"],
+        "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3", "dagster-webserver"],
     },
     zip_safe=False,
 )
