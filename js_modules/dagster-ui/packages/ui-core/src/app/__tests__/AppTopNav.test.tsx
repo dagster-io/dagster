@@ -2,7 +2,9 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {AppTopNav} from '../AppTopNav/AppTopNav';
+import {workspaceWithNoJobs} from '../__fixtures__/useJobStateForNav.fixtures';
 
 // We don't need to render the search input here.
 jest.mock('../../search/SearchDialog', () => ({
@@ -12,9 +14,11 @@ jest.mock('../../search/SearchDialog', () => ({
 describe('AppTopNav', () => {
   it('renders links and controls', async () => {
     render(
-      <MockedProvider>
+      <MockedProvider mocks={[...workspaceWithNoJobs]}>
         <MemoryRouter>
-          <AppTopNav />
+          <WorkspaceProvider>
+            <AppTopNav />
+          </WorkspaceProvider>
         </MemoryRouter>
       </MockedProvider>,
     );
