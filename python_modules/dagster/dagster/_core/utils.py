@@ -1,7 +1,5 @@
 import os
-import random
 import re
-import string
 import uuid
 import warnings
 from collections import OrderedDict
@@ -83,7 +81,7 @@ def make_new_run_id() -> str:
 
 
 def make_new_backfill_id() -> str:
-    return "".join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
+    return make_new_run_id()
 
 
 def str_format_list(items: Iterable[object]) -> str:
