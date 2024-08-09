@@ -31,14 +31,14 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         if: |
           github.event_name == 'pull_request' || 
-          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')))
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod)))
         run: |
           BRANCH_PREVIEW_SUBDOMAIN=$(echo "${HEAD_REF:-$REF_NAME}" | sed -e 's/[^a-zA-Z0-9-]/-/g; s/^-*//; s/-*$//')
           echo "$BRANCH_PREVIEW_SUBDOMAIN"
           echo "BRANCH_PREVIEW_SUBDOMAIN=$BRANCH_PREVIEW_SUBDOMAIN" >> "${GITHUB_ENV}"
 
       - name: Checkout master/release branch
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-'))
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod'))
         uses: actions/checkout@v4
 
       - name: Get PR fetch depth
@@ -71,6 +71,7 @@ jobs:
 
       - name: Copy doc snippets to public directory
         run: |
+          ls
           mkdir -p docs/next/public/docs_snippets
           cp -R examples/docs_snippets/docs_snippets docs/next/public/docs_snippets/
 
@@ -78,7 +79,8 @@ jobs:
         uses: amondnet/vercel-action@v25
         if: |
           github.event_name == 'pull_request' || 
-          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')))
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod)))
+                  
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
