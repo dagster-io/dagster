@@ -1,4 +1,4 @@
-Orchestration on Celery + Docker
+Celery + Docker (dagster-celery-docker)
 --------------------------------
 
 APIs
