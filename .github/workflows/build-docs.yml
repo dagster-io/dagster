@@ -7,13 +7,13 @@ on:
       - docs-prod # prod
     paths:
       - docs/**
-      - examples/doc_snippets/**
+      - examples/docs_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
   pull_request:
     paths:
       - docs/**
-      - examples/doc_snippets/**
+      - examples/docs_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
 concurrency:
