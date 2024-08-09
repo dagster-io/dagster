@@ -52,6 +52,8 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._utils.merger import merge_dicts
 
+from dagster_dbt.metadata_set import DbtMetadataSet
+
 from .utils import (
     ASSET_RESOURCE_TYPES,
     dagster_name_fn,
@@ -465,7 +467,9 @@ def default_metadata_from_dbt_resource_props(
             ]
         )
 
+    materialization_type = dbt_resource_props["config"].get("materialized")
     return {
+        **DbtMetadataSet(materialization_type=materialization_type),
         **TableMetadataSet(
             column_schema=column_schema,
             relation_identifier=relation_name,
