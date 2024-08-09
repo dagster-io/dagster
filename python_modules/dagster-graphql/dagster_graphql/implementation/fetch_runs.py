@@ -41,6 +41,9 @@ if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
 
 
+_DELIMITER = "::"
+
+
 async def gen_run_by_id(
     graphene_info: "ResolveInfo", run_id: str
 ) -> Union["GrapheneRun", "GrapheneRunNotFoundError"]:
@@ -383,12 +386,15 @@ def get_logs_for_run(
     )
 
 
-# TODO - should prob move to a different file
-_DELIMITER = "::"
-
-
 @record
 class RunsFeedCursor:
+    """Two part cursor for paginating the Runs Feed. The run_cursor is the run_id of the latest run that
+    has been returned. The backfill_cursor is the id of the latest backfill that has been returned. If
+    the run/backfill cursor is None, that means that no runs/backfills have been returned yet and querying
+    should begin at the start of the table. Once all runs/backfills in the table have been returned, the
+    corresponding cursor should still be set to the id of the last run/backfill returned.
+    """
+
     run_cursor: Optional[str]
     backfill_cursor: Optional[str]
 
@@ -435,10 +441,14 @@ def get_runs_feed_entries(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneRunsFeedConnection":
-    """Returns a merged list of backfills and single runs (runs that are not part of a backfill),
-    the cursor to fetch the next page, and a boolean indicating if there are more results to fetch.
+    """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
+    single runs (runs that are not part of a backfill), the cursor to fetch the next page,
+    and a boolean indicating if there are more results to fetch.
 
-    Cursor format: run_id;backfill_id - see RunsFeedCursor
+    Args:
+        cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
+            that querying should start at the beginning of the table for both runs and backfills.
+        limit (Optional[int]): max number of results to return. If None, will return all results.
     """
     from ..schema.backfill import GraphenePartitionBackfill
     from ..schema.pipelines.pipeline import GrapheneRun
