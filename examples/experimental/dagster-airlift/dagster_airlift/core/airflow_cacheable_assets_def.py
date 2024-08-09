@@ -149,16 +149,14 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
         dag_specs_per_key: Dict[AssetKey, CacheableAssetSpec] = {}
         for dag in self.airflow_instance.list_dags():
             source_code = self.airflow_instance.get_dag_source_code(dag.metadata["file_token"])
-            dag_specs_per_key[self.airflow_instance.get_dag_run_asset_key(dag.dag_id)] = (
-                get_cached_spec_for_dag(
-                    airflow_instance=self.airflow_instance,
-                    task_asset_keys_in_dag=cacheable_task_data.all_asset_keys_per_dag_id.get(
-                        dag.dag_id, set()
-                    ),
-                    downstreams_asset_dependency_graph=cacheable_task_data.downstreams_asset_dependency_graph,
-                    dag_info=dag,
-                    source_code=source_code,
-                )
+            dag_specs_per_key[dag.dag_asset_key] = get_cached_spec_for_dag(
+                airflow_instance=self.airflow_instance,
+                task_asset_keys_in_dag=cacheable_task_data.all_asset_keys_per_dag_id.get(
+                    dag.dag_id, set()
+                ),
+                downstreams_asset_dependency_graph=cacheable_task_data.downstreams_asset_dependency_graph,
+                dag_info=dag,
+                source_code=source_code,
             )
         return [
             AssetsDefinitionCacheableData(
@@ -213,9 +211,7 @@ def get_cached_spec_for_dag(
     metadata = {
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
         "Dag ID": dag_info.dag_id,
-        "Link to DAG": MarkdownMetadataValue(
-            f"[View DAG]({airflow_instance.get_dag_url(dag_info.dag_id)})"
-        ),
+        "Link to DAG": MarkdownMetadataValue(f"[View DAG]({dag_info.url})"),
     }
     # Attempt to retrieve source code from the DAG.
     metadata["Source Code"] = MarkdownMetadataValue(
@@ -227,7 +223,7 @@ def get_cached_spec_for_dag(
     )
 
     return CacheableAssetSpec(
-        asset_key=airflow_instance.get_dag_run_asset_key(dag_info.dag_id),
+        asset_key=dag_info.dag_asset_key,
         description=f"A materialization corresponds to a successful run of airflow DAG {dag_info.dag_id}.",
         metadata=metadata,
         tags={"dagster/compute_kind": "airflow", DAG_ID_TAG: dag_info.dag_id},
@@ -277,9 +273,7 @@ def construct_cacheable_assets_and_infer_dependencies(
             "Task Info (raw)": JsonMetadataValue(task_info.metadata),
             # In this case,
             "Dag ID": task_info.dag_id,
-            "Link to DAG": MarkdownMetadataValue(
-                f"[View DAG]({airflow_instance.get_dag_url(task_info.dag_id)})"
-            ),
+            "Link to DAG": MarkdownMetadataValue(f"[View DAG]({task_info.dag_url})"),
         }
         migration_state_for_task = _get_migration_state_for_task(
             migration_state, task_info.dag_id, task_info.task_id
