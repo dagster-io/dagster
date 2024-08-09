@@ -79,7 +79,6 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -3055,7 +3054,6 @@ def test_sensor_logging_on_tick_failure(
     assert len(records) == 1
     assert records[0][LOG_RECORD_METADATA_ATTR]["orig_message"] == "hello hello"
 
-    assert isinstance(instance.compute_log_manager, CapturedLogManager)
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 

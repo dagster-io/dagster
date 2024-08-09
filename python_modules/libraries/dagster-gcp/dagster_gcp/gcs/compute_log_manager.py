@@ -11,12 +11,11 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_type import Noneable
-from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
 )
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,

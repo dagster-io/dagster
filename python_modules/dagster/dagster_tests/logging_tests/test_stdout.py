@@ -15,7 +15,7 @@ from dagster._core.execution.api import execute_job
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.storage.captured_log_manager import CapturedLogManager, ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
@@ -121,10 +121,9 @@ def test_compute_log_to_disk_multiprocess():
 @pytest.mark.skipif(
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
-def test_captured_log_manager():
+def test_compute_log_manager():
     with instance_for_test() as instance:
         manager = instance.compute_log_manager
-        assert isinstance(manager, CapturedLogManager)
 
         spew_job = define_job()
         result = spew_job.execute_in_process(instance=instance)
@@ -249,7 +248,6 @@ def execute_inner(step_key: str, dagster_run: DagsterRun, instance_ref: Instance
 
 
 def inner_step(instance: DagsterInstance, dagster_run: DagsterRun, step_key: str) -> None:
-    assert isinstance(instance.compute_log_manager, CapturedLogManager)
     log_key = [dagster_run.run_id, "compute_logs", step_key]
     with instance.compute_log_manager.capture_logs(log_key):
         time.sleep(0.1)

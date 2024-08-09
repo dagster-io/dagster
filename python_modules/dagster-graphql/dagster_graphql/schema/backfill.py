@@ -18,7 +18,7 @@ from dagster._core.execution.asset_backfill import (
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalPartitionSet
-from dagster._core.storage.captured_log_manager import CapturedLogManager, ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -585,9 +585,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         backfill_log_key_prefix = self._backfill_job.log_storage_prefix
 
         instance = graphene_info.context.instance
-
-        if not isinstance(instance.compute_log_manager, CapturedLogManager):
-            return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
         if not instance.backfill_log_storage_enabled():
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)

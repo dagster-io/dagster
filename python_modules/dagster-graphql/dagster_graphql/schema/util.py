@@ -1,7 +1,7 @@
 from typing import cast
 
 import graphene
-from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._core.storage.compute_log_manager import ComputeLogManager
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
@@ -15,6 +15,5 @@ def non_null_list(of_type):
     return graphene.NonNull(graphene.List(graphene.NonNull(of_type)))
 
 
-def get_compute_log_manager(graphene_info: ResolveInfo) -> CapturedLogManager:
-    assert isinstance(graphene_info.context.instance.compute_log_manager, CapturedLogManager)
+def get_compute_log_manager(graphene_info: ResolveInfo) -> ComputeLogManager:
     return graphene_info.context.instance.compute_log_manager
