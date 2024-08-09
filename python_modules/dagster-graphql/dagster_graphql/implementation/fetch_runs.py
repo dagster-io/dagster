@@ -552,9 +552,7 @@ def get_runs_feed_entries(
     # they are different tables
     all_entries = sorted(
         all_entries,
-        key=lambda x: x.resolve_creationTimestamp(
-            graphene_info
-        ),  # ideally could just do .creationTime
+        key=lambda x: x.creation_timestamp,
         reverse=True,
     )
 
@@ -573,7 +571,7 @@ def get_runs_feed_entries(
         if new_run_cursor is None and isinstance(run, GrapheneRun):
             new_run_cursor = run.runId
 
-    new_timestamp = to_return[-1].resolve_creationTimestamp(graphene_info) if to_return else None
+    new_timestamp = to_return[-1].creation_timestamp if to_return else None
 
     # if either of the new cursors are None, replace with the cursor passed in so the next call doesn't
     # restart at the top the table.

@@ -153,7 +153,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
-            assert res["__typename"] == "GraphenePartitionBackfill"
+            assert res["__typename"] == "PartitionBackfill"
 
         assert not result.data["runsFeedOrError"]["hasMore"]
 
@@ -299,7 +299,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             prev_run_time = res["creationTime"]
 
             # first 10 results should all be runs
-            assert res["__typename"] == "GrapheneRun"
+            assert res["__typename"] == "Run"
 
         assert result.data["runsFeedOrError"]["hasMore"]
         assert result.data["runsFeedOrError"]["cursor"] is not None
@@ -380,7 +380,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             prev_run_time = res["creationTime"]
 
             # all remaining results should be runs
-            assert res["__typename"] == "GrapheneRun"
+            assert res["__typename"] == "Run"
 
         assert not result.data["runsFeedOrError"]["hasMore"]
         assert result.data["runsFeedOrError"]["cursor"] is not None
@@ -441,7 +441,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
 
-            assert res["__typename"] == "GrapheneRun"
+            assert res["__typename"] == "Run"
 
         assert not result.data["runsFeedOrError"]["hasMore"]
         assert result.data["runsFeedOrError"]["cursor"] is not None

@@ -1401,7 +1401,6 @@ type Run implements PipelineRun & RunsFeedEntry {
   endTime: Float
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  runType: RunsFeedType!
   parentPipelineSnapshotId: String
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
@@ -1424,17 +1423,11 @@ interface RunsFeedEntry {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  runType: RunsFeedType!
 }
 
 type AssetCheckhandle {
   name: String!
   assetKey: AssetKey!
-}
-
-enum RunsFeedType {
-  BACKFILL
-  RUN
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -2786,7 +2779,6 @@ type PartitionBackfill implements RunsFeedEntry {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  runType: RunsFeedType!
   id: String!
   status: BulkActionStatus!
   partitionNames: [String!]
@@ -3244,7 +3236,7 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  runsFeedOrError(cursor: String, limit: Int): RunsFeedConnectionOrError!
+  runsFeedOrError(limit: Int!, cursor: String): RunsFeedConnectionOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!

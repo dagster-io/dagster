@@ -355,9 +355,6 @@ class GrapheneRun(graphene.ObjectType):
         limit=graphene.Argument(graphene.Int),
     )
     creationTime = graphene.NonNull(graphene.Float)
-    creationTimestamp = graphene.NonNull(
-        graphene.Float
-    )  # for RunsFeedEntry interface - dupe of creationTime
     startTime = graphene.Float()
     endTime = graphene.Float()
     updateTime = graphene.Float()
@@ -397,6 +394,10 @@ class GrapheneRun(graphene.ObjectType):
             if location_name
             else graphene_info.context.has_permission(permission)
         )
+
+    @property
+    def creation_timestamp(self) -> float:
+        return self._run_record.create_timestamp.timestamp()
 
     def resolve_hasReExecutePermission(self, graphene_info: ResolveInfo):
         return self._get_permission_value(Permissions.LAUNCH_PIPELINE_REEXECUTION, graphene_info)
@@ -572,10 +573,7 @@ class GrapheneRun(graphene.ObjectType):
         return self._run_record.update_timestamp.timestamp()
 
     def resolve_creationTime(self, graphene_info: ResolveInfo):
-        return self._run_record.create_timestamp.timestamp()
-
-    def resolve_creationTimestamp(self, graphene_info: ResolveInfo):
-        return self.resolve_creationTime(graphene_info)
+        return self.creation_timestamp
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance

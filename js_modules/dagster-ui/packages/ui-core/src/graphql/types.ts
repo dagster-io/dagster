@@ -3087,7 +3087,6 @@ export type PartitionBackfill = RunsFeedEntry & {
   reexecutionSteps: Maybe<Array<Scalars['String']['output']>>;
   runId: Scalars['String']['output'];
   runStatus: RunStatus;
-  runType: RunsFeedType;
   runs: Array<Run>;
   startTime: Maybe<Scalars['Float']['output']>;
   status: BulkActionStatus;
@@ -3933,7 +3932,7 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  limit: Scalars['Int']['input'];
 };
 
 export type QueryRunsOrErrorArgs = {
@@ -4404,7 +4403,6 @@ export type Run = PipelineRun &
     runConfigYaml: Scalars['String']['output'];
     runId: Scalars['String']['output'];
     runStatus: RunStatus;
-    runType: RunsFeedType;
     solidSelection: Maybe<Array<Scalars['String']['output']>>;
     startTime: Maybe<Scalars['Float']['output']>;
     stats: RunStatsSnapshotOrError;
@@ -4729,15 +4727,9 @@ export type RunsFeedEntry = {
   jobName: Maybe<Scalars['String']['output']>;
   runId: Scalars['String']['output'];
   runStatus: Maybe<RunStatus>;
-  runType: RunsFeedType;
   startTime: Maybe<Scalars['Float']['output']>;
   tags: Array<PipelineTag>;
 };
-
-export enum RunsFeedType {
-  BACKFILL = 'BACKFILL',
-  RUN = 'RUN',
-}
 
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
@@ -10786,8 +10778,6 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
         : RunStatus.CANCELED,
-    runType:
-      overrides && overrides.hasOwnProperty('runType') ? overrides.runType! : RunsFeedType.BACKFILL,
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 9.35,
     status:
@@ -12912,8 +12902,6 @@ export const buildRun = (
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
         : RunStatus.CANCELED,
-    runType:
-      overrides && overrides.hasOwnProperty('runType') ? overrides.runType! : RunsFeedType.BACKFILL,
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 2.52,
@@ -13493,8 +13481,6 @@ export const buildRunsFeedEntry = (
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
         : RunStatus.CANCELED,
-    runType:
-      overrides && overrides.hasOwnProperty('runType') ? overrides.runType! : RunsFeedType.BACKFILL,
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.94,
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };

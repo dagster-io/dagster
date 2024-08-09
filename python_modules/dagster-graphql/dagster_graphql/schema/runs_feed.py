@@ -8,7 +8,7 @@ from .util import non_null_list
 class GrapheneRunsFeedEntry(graphene.Interface):
     runId = graphene.NonNull(graphene.String)
     runStatus = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GrapheneRunStatus")
-    creationTimestamp = graphene.NonNull(graphene.Float)
+    creationTime = graphene.NonNull(graphene.Float)
     startTime = graphene.Float()
     endTime = graphene.Float()
     tags = non_null_list("dagster_graphql.schema.tags.GraphenePipelineTag")

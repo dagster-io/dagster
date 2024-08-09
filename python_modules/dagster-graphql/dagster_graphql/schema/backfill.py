@@ -311,7 +311,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
-    creationTimestamp = graphene.NonNull(
+    creationTime = graphene.NonNull(
         graphene.Float
     )  # for RunsFeedEntry interface - dupe of timestamp
     startTime = graphene.Float()  # for RunsFeedEntry interface - dupe of timestamp
@@ -374,6 +374,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             reexecutionSteps=backfill_job.reexecution_steps,
             timestamp=backfill_job.backfill_timestamp,
             startTime=backfill_job.backfill_timestamp,
+            creationTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
             assetCheckSelection=[],
         )
@@ -461,10 +462,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         ]
 
-    def resolve_creationTimestamp(self, graphene_info: ResolveInfo):
-        # Needed to have this as a resolver, rather than pass on __init__ because creationTimestamp is
-        # fulfilled via a resolver for GrapheneRun and we need to use the same method of getting
-        # creationTimestamp in get_runs_feed_entries
+    @property
+    def creation_timestamp(self) -> float:
         return self.timestamp
 
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
