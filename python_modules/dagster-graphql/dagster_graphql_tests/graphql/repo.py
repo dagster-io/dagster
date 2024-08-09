@@ -84,7 +84,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
