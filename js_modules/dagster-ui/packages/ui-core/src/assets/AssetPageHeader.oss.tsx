@@ -141,14 +141,14 @@ const CopyButton = styled.button`
 export const AssetGlobalLineageLink = () => (
   <Link to="/asset-groups">
     <Box flex={{gap: 4}}>
-      <Icon color={Colors.linkDefault()} name="schema" />
+      <Icon color={Colors.linkDefault()} name="lineage" />
       View global asset lineage
     </Box>
   </Link>
 );
 
 export const AssetGlobalLineageButton = () => (
-  <AnchorButton intent="primary" icon={<Icon name="schema" />} to="/asset-groups">
+  <AnchorButton intent="primary" icon={<Icon name="lineage" />} to="/asset-groups">
     View lineage
   </AnchorButton>
 );

@@ -64,7 +64,7 @@ export const AssetGraphBackgroundContextMenu = ({
             <MenuItem
               text={
                 <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  Vertical orientation <KeyboardTag>⌥O</KeyboardTag>
+                  Set vertical orientation <KeyboardTag>⌥O</KeyboardTag>
                 </Box>
               }
               icon="graph_vertical"
@@ -74,7 +74,7 @@ export const AssetGraphBackgroundContextMenu = ({
             <MenuItem
               text={
                 <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                  Horizontal orientation <KeyboardTag>⌥O</KeyboardTag>
+                  Set horizontal orientation <KeyboardTag>⌥O</KeyboardTag>
                 </Box>
               }
               icon="graph_horizontal"

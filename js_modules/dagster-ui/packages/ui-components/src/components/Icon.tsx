@@ -21,21 +21,20 @@ import asset_plot from '../icon-svgs/asset_plot.svg';
 import assignment from '../icon-svgs/assignment.svg';
 import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
 import attach_file from '../icon-svgs/attach_file.svg';
-import auto_materialize_policy from '../icon-svgs/auto-materialize-policy.svg';
-import auto_observe from '../icon-svgs/auto-observe.svg';
+import auto_materialize_policy from '../icon-svgs/auto_materialize_policy.svg';
+import auto_observe from '../icon-svgs/auto_observe.svg';
 import backfill from '../icon-svgs/backfill.svg';
 import badge from '../icon-svgs/badge.svg';
-import bar_chart from '../icon-svgs/bar-chart.svg';
+import bar_chart from '../icon-svgs/bar_chart.svg';
 import bolt from '../icon-svgs/bolt.svg';
-import expectation from '../icon-svgs/bp-automatic-updates.svg';
-import op from '../icon-svgs/bp-git-commit.svg';
-import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
 import calendar from '../icon-svgs/calendar.svg';
+import campaign from '../icon-svgs/campaign.svg';
 import cancel from '../icon-svgs/cancel.svg';
 import catalog from '../icon-svgs/catalog.svg';
-import changes_present from '../icon-svgs/changes-present.svg';
-import chat_support from '../icon-svgs/chat-support.svg';
+import changed_in_branch from '../icon-svgs/changed_in_branch.svg';
+import changes_present from '../icon-svgs/changes_present.svg';
+import chat_support from '../icon-svgs/chat_support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
 import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
@@ -43,20 +42,29 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import code_block from '../icon-svgs/code_block.svg';
 import code_location from '../icon-svgs/code_location.svg';
+import code_location_reload from '../icon-svgs/code_location_reload.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
 import compute_kind from '../icon-svgs/compute_kind.svg';
-import concept_book from '../icon-svgs/concept-book.svg';
-import console_icon from '../icon-svgs/console.svg';
+import concept_book from '../icon-svgs/concept_book.svg';
+import concurrency from '../icon-svgs/concurrency.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import controller from '../icon-svgs/controller.svg';
+import copy_to_clipboard from '../icon-svgs/copy_to_clipboard.svg';
+import copy_to_clipboard_done from '../icon-svgs/copy_to_clipboard_done.svg';
 import corporate_fare from '../icon-svgs/corporate_fare.svg';
+import daemon from '../icon-svgs/daemon.svg';
+import dagster_primary from '../icon-svgs/dagster_primary.svg';
+import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
+import dagster_solid from '../icon-svgs/dagster_solid.svg';
 import dash from '../icon-svgs/dash.svg';
 import datatype_array from '../icon-svgs/datatype_array.svg';
 import datatype_bool from '../icon-svgs/datatype_bool.svg';
 import datatype_number from '../icon-svgs/datatype_number.svg';
 import datatype_string from '../icon-svgs/datatype_string.svg';
 import date from '../icon-svgs/date.svg';
-import deleteSVG from '../icon-svgs/delete.svg';
+import trash from '../icon-svgs/delete.svg';
+import diamond from '../icon-svgs/diamond.svg';
 import dollar_sign from '../icon-svgs/dollar_sign.svg';
 import done from '../icon-svgs/done.svg';
 import dot from '../icon-svgs/dot.svg';
@@ -64,8 +72,9 @@ import dot_filled from '../icon-svgs/dot_filled.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
+import eco from '../icon-svgs/eco.svg';
 import edit from '../icon-svgs/edit.svg';
-import editor_role from '../icon-svgs/editor-role.svg';
+import editor_role from '../icon-svgs/editor_role.svg';
 import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
@@ -75,6 +84,7 @@ import expand from '../icon-svgs/expand.svg';
 import expand_arrows from '../icon-svgs/expand_arrows.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
+import expectation from '../icon-svgs/expectation.svg';
 import filter_alt from '../icon-svgs/filter_alt.svg';
 import folder from '../icon-svgs/folder.svg';
 import folder_open from '../icon-svgs/folder_open.svg';
@@ -100,31 +110,63 @@ import history from '../icon-svgs/history.svg';
 import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
 import hourglass from '../icon-svgs/hourglass.svg';
 import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
+import hybrid from '../icon-svgs/hybrid.svg';
 import id from '../icon-svgs/id.svg';
+import image from '../icon-svgs/image.svg';
 import infinity from '../icon-svgs/infinity.svg';
 import info from '../icon-svgs/info.svg';
+import info_filled from '../icon-svgs/info_filled.svg';
+import ingest from '../icon-svgs/ingest.svg';
+import insert from '../icon-svgs/insert.svg';
+import insights from '../icon-svgs/insights.svg';
 import job from '../icon-svgs/job.svg';
+import key_command from '../icon-svgs/key_command.svg';
+import key_option from '../icon-svgs/key_option.svg';
+import key_shift from '../icon-svgs/key_shift.svg';
+import launch from '../icon-svgs/launch.svg';
+import launchpad from '../icon-svgs/launchpad.svg';
 import layers from '../icon-svgs/layers.svg';
 import line_style from '../icon-svgs/line_style.svg';
+import lineage from '../icon-svgs/lineage.svg';
 import linear_scale from '../icon-svgs/linear_scale.svg';
 import link from '../icon-svgs/link.svg';
 import list from '../icon-svgs/list.svg';
+import location from '../icon-svgs/location.svg';
 import location_on from '../icon-svgs/location_on.svg';
 import lock from '../icon-svgs/lock.svg';
+import logistics from '../icon-svgs/logistics.svg';
 import logout from '../icon-svgs/logout.svg';
+import logs_stderr from '../icon-svgs/logs_stderr.svg';
+import logs_stdout from '../icon-svgs/logs_stdout.svg';
+import logs_structured from '../icon-svgs/logs_structured.svg';
 import materialization from '../icon-svgs/materialization.svg';
+import materialization_event from '../icon-svgs/materialization_event.svg';
+import materialization_planned from '../icon-svgs/materialization_planned.svg';
+import materialization_started from '../icon-svgs/materialization_started.svg';
+import memory from '../icon-svgs/memory.svg';
 import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
+import metadata from '../icon-svgs/metadata.svg';
+import missing from '../icon-svgs/missing.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
-import ms_teams from '../icon-svgs/ms_teams.svg';
+import more_vert from '../icon-svgs/more_vert.svg';
+import ms_teams from '../icon-svgs/ms_teams_color.svg';
 import multi_asset from '../icon-svgs/multi_asset.svg';
+import new_svg from '../icon-svgs/new.svg';
 import new_in_branch from '../icon-svgs/new_in_branch.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
 import no_access from '../icon-svgs/no_access.svg';
 import notifications from '../icon-svgs/notifications.svg';
 import observation from '../icon-svgs/observation.svg';
+import observation_planned from '../icon-svgs/observation_planned.svg';
+import observation_started from '../icon-svgs/observation_started.svg';
+import offline from '../icon-svgs/offline.svg';
+import op from '../icon-svgs/op.svg';
+import op_selector from '../icon-svgs/op_selector.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
-import pagerduty from '../icon-svgs/pagerduty.svg';
+import owner from '../icon-svgs/owner.svg';
+import pagerduty from '../icon-svgs/pagerduty_color.svg';
+import palette from '../icon-svgs/palette.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
 import panel_show_both from '../icon-svgs/panel_show_both.svg';
 import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
@@ -137,40 +179,101 @@ import partition_missing from '../icon-svgs/partition_missing.svg';
 import partition_stale from '../icon-svgs/partition_stale.svg';
 import partition_success from '../icon-svgs/partition_success.svg';
 import password from '../icon-svgs/password.svg';
+import pause from '../icon-svgs/pause.svg';
 import people from '../icon-svgs/people.svg';
+import plots from '../icon-svgs/plots.svg';
+import priority_1 from '../icon-svgs/priority_1.svg';
+import priority_2 from '../icon-svgs/priority_2.svg';
+import priority_3 from '../icon-svgs/priority_3.svg';
+import priority_4 from '../icon-svgs/priority_4.svg';
+import priority_5 from '../icon-svgs/priority_5.svg';
+import priority_6 from '../icon-svgs/priority_6.svg';
+import priority_7 from '../icon-svgs/priority_7.svg';
+import priority_8 from '../icon-svgs/priority_8.svg';
+import priority_9 from '../icon-svgs/priority_9.svg';
+import rainbow from '../icon-svgs/rainbow.svg';
+import re_execute from '../icon-svgs/re_execute.svg';
 import refresh from '../icon-svgs/refresh.svg';
+import reload from '../icon-svgs/reload.svg';
 import replay from '../icon-svgs/replay.svg';
+import reporting from '../icon-svgs/reporting.svg';
+import resource from '../icon-svgs/resource.svg';
+import role_admin from '../icon-svgs/role_admin.svg';
+import role_custom from '../icon-svgs/role_custom.svg';
+import role_editor from '../icon-svgs/role_editor.svg';
+import role_launcher from '../icon-svgs/role_launcher.svg';
+import role_viewer from '../icon-svgs/role_viewer.svg';
+import rss from '../icon-svgs/rss.svg';
+import rule from '../icon-svgs/rule.svg';
+import run from '../icon-svgs/run.svg';
+import run_canceled from '../icon-svgs/run_canceled.svg';
+import run_failed from '../icon-svgs/run_failed.svg';
+import run_queued from '../icon-svgs/run_queued.svg';
+import run_started from '../icon-svgs/run_started.svg';
+import run_success from '../icon-svgs/run_success.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
+import scim_provision from '../icon-svgs/scim_provision.svg';
 import search from '../icon-svgs/search.svg';
+import secure from '../icon-svgs/secure.svg';
 import send from '../icon-svgs/send.svg';
+import sensor from '../icon-svgs/sensor.svg';
 import sensors from '../icon-svgs/sensors.svg';
+import serve from '../icon-svgs/serve.svg';
+import serverless from '../icon-svgs/serverless.svg';
 import settings from '../icon-svgs/settings.svg';
 import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
-import slack from '../icon-svgs/slack.svg';
+import shield from '../icon-svgs/shield.svg';
+import shield_check from '../icon-svgs/shield_check.svg';
+import slack from '../icon-svgs/slack_color.svg';
+import snapshot from '../icon-svgs/snapshot.svg';
 import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
 import source from '../icon-svgs/source.svg';
 import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
+import sso from '../icon-svgs/sso.svg';
 import stacks from '../icon-svgs/stacks.svg';
 import star from '../icon-svgs/star.svg';
+import star_double from '../icon-svgs/star_double.svg';
+import star_half from '../icon-svgs/star_half.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
 import status from '../icon-svgs/status.svg';
+import step from '../icon-svgs/step.svg';
 import sticky_note from '../icon-svgs/sticky_note.svg';
 import storage_kind from '../icon-svgs/storage_kind.svg';
+import subtract from '../icon-svgs/subtract.svg';
+import success from '../icon-svgs/success.svg';
+import sun from '../icon-svgs/sun.svg';
+import support from '../icon-svgs/support.svg';
+import sync from '../icon-svgs/sync.svg';
 import sync_alt from '../icon-svgs/sync_alt.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
+import table_columns from '../icon-svgs/table_columns.svg';
 import table_rows from '../icon-svgs/table_rows.svg';
 import table_view from '../icon-svgs/table_view.svg';
 import tag from '../icon-svgs/tag.svg';
+import target from '../icon-svgs/target.svg';
+import team from '../icon-svgs/team.svg';
+import terminate from '../icon-svgs/terminate.svg';
+import test from '../icon-svgs/test.svg';
+import timeline from '../icon-svgs/timeline.svg';
 import timer from '../icon-svgs/timer.svg';
+import timestamp from '../icon-svgs/timestamp.svg';
 import toggle_off from '../icon-svgs/toggle_off.svg';
 import toggle_on from '../icon-svgs/toggle_on.svg';
 import toggle_whitespace from '../icon-svgs/toggle_whitespace.svg';
+import token from '../icon-svgs/token.svg';
+import transform from '../icon-svgs/transform.svg';
 import tune from '../icon-svgs/tune.svg';
 import unfold_less from '../icon-svgs/unfold_less.svg';
 import unfold_more from '../icon-svgs/unfold_more.svg';
+import university from '../icon-svgs/university.svg';
+import unlocked from '../icon-svgs/unlocked.svg';
+import unsynced from '../icon-svgs/unsynced.svg';
+import user from '../icon-svgs/user.svg';
+import variable from '../icon-svgs/variable.svg';
+import verified from '../icon-svgs/verified.svg';
 import vertical_align_bottom from '../icon-svgs/vertical_align_bottom.svg';
 import vertical_align_center from '../icon-svgs/vertical_align_center.svg';
 import vertical_align_top from '../icon-svgs/vertical_align_top.svg';
@@ -180,9 +283,13 @@ import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
 import warning from '../icon-svgs/warning.svg';
 import warning_outline from '../icon-svgs/warning_outline.svg';
+import water from '../icon-svgs/water.svg';
 import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
+import webhook from '../icon-svgs/webhook.svg';
+import workspace from '../icon-svgs/workspace.svg';
 import workspaces from '../icon-svgs/workspaces.svg';
 import wysiwyg from '../icon-svgs/wysiwyg.svg';
+import x_filled from '../icon-svgs/x_filled.svg';
 import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
@@ -191,216 +298,308 @@ import zoom_out from '../icon-svgs/zoom_out.svg';
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
 
 export const Icons = {
-  // Core icons
-  auto_materialize_policy,
-  auto_observe,
-  asset,
-  asset_check,
-  asset_plot,
-  asset_non_sda,
-  asset_group,
-  backfill,
-  badge,
-  date,
-  datatype_array,
-  datatype_bool,
-  datatype_string,
-  datatype_number,
-  expectation,
-  execute,
-  executing,
-  materialization,
-  observation,
-  job,
-  multi_asset,
-  op,
-  op_selector,
-  op_dynamic: bolt,
+  // Overrides
+  delete: trash,
+  repo: folder,
   partition_set: schedule,
-  partition,
-  partition_missing,
-  partition_success,
-  partition_stale,
-  partition_failure,
-  repo: source,
-  resource: layers,
-  run: history,
-  sensors,
-  schedule,
-  source_asset,
-  table_rows,
-  workspace: source,
-  gantt_flat,
-  gantt_waterfall,
-
-  // Other custom icons
-  toggle_whitespace,
-  help_circle,
-  panel_show_top,
-  panel_show_left,
-  panel_show_right,
-  panel_hide_right,
-  panel_show_bottom,
-  panel_show_both,
-  calendar,
-  copy_to_clipboard: assignment,
-  copy_to_clipboard_done: assignment_turned_in,
-  chat_support,
-  changes_present,
-  concept_book,
-  dash,
-  open_in_new,
-  folder,
-  tag,
-  slack,
-  ms_teams,
-  pagerduty,
-  github,
-  github_pr_open,
-  github_pr_closed,
-  github_pr_merged,
-  git_commit,
-  gitlab,
-  globe,
-  graduation_cap,
-  youtube,
-  arrow_indent,
-  editor_role,
-  id,
-
-  graph,
-  graph_downstream,
-  graph_upstream,
-  graph_neighbors,
-  graph_horizontal,
-  graph_vertical,
-
-  // Material icons
-  add,
-  add_circle,
+  op_dynamic: bolt,
+  new: new_svg,
+  //Core Icons
   account_circle,
   account_tree,
+  add,
+  add_circle,
   alternate_email,
   arrow_back,
   arrow_downward,
   arrow_drop_down,
   arrow_forward,
+  arrow_indent,
   arrow_upward,
+  asset,
+  asset_check,
+  asset_group,
+  asset_non_sda,
+  asset_plot,
   assignment,
   assignment_turned_in,
   attach_file,
+  auto_materialize_policy,
+  auto_observe,
+  backfill,
+  badge,
   bar_chart,
   bolt,
   cached,
-  catalog,
+  calendar,
+  campaign,
   cancel,
+  catalog,
+  changed_in_branch,
+  changes_present,
+  chat_support,
   check_circle,
   checklist,
-  chevron_right,
   chevron_left,
+  chevron_right,
   close,
   code_block,
   code_location,
-  compute_kind,
-  console: console_icon,
-  content_copy,
+  code_location_reload,
   collapse_arrows,
   column_lineage,
+  compute_kind,
+  concept_book,
+  concurrency,
+  content_copy,
+  controller,
+  copy_to_clipboard,
+  copy_to_clipboard_done,
   corporate_fare,
-  delete: deleteSVG,
+  daemon,
+  dash,
+  dagster_primary,
+  dagster_reversed,
+  dagster_solid,
+  datatype_array,
+  datatype_bool,
+  datatype_number,
+  datatype_string,
+  date,
+  diamond,
   dollar_sign,
   done,
   dot,
   dot_filled,
   download_for_offline,
-  dynamic_feed,
   drag_handle,
+  dynamic_feed,
+  eco,
   edit,
+  editor_role,
   email,
   error,
   error_outline,
+  execute,
+  executing,
   expand,
   expand_arrows,
   expand_less,
   expand_more,
+  expectation,
   filter_alt,
+  folder,
   folder_open,
   forum,
-  infinity,
-  info,
+  gantt_flat,
+  gantt_waterfall,
+  git_commit,
+  github,
+  github_pr_closed,
+  github_pr_merged,
+  github_pr_open,
+  gitlab,
+  globe,
+  graduation_cap,
+  graph,
+  graph_downstream,
+  graph_horizontal,
+  graph_neighbors,
+  graph_upstream,
+  graph_vertical,
+  help_circle,
   history,
   history_toggle_off,
   hourglass,
   hourglass_bottom,
+  hybrid,
+  id,
+  image,
+  infinity,
+  info,
+  info_filled,
+  ingest,
+  insert,
+  insights,
+  job,
+  key_command,
+  key_option,
+  key_shift,
+  launch,
+  launchpad,
   layers,
   line_style,
+  lineage,
   linear_scale,
   link,
   list,
+  location,
   location_on,
   lock,
+  logistics,
   logout,
+  logs_stderr,
+  logs_stdout,
+  logs_structured,
+  materialization,
+  materialization_event,
+  materialization_planned,
+  materialization_started,
+  memory,
   menu,
   menu_book,
+  metadata,
+  missing,
   more_horiz,
+  more_vert,
+  ms_teams,
+  multi_asset,
   new_in_branch,
   nightlight,
   no_access,
   notifications,
+  observation,
+  observation_planned,
+  observation_started,
+  offline,
+  op,
+  op_selector,
+  open_in_new,
+  owner,
+  pagerduty,
+  palette,
+  panel_hide_right,
+  panel_show_both,
+  panel_show_bottom,
+  panel_show_left,
+  panel_show_right,
+  panel_show_top,
+  partition,
+  partition_failure,
+  partition_missing,
+  partition_stale,
+  partition_success,
   password,
+  pause,
   people,
+  plots,
+  priority_1,
+  priority_2,
+  priority_3,
+  priority_4,
+  priority_5,
+  priority_6,
+  priority_7,
+  priority_8,
+  priority_9,
+  rainbow,
+  re_execute,
   refresh,
+  reload,
   replay,
+  reporting,
+  resource,
+  role_admin,
+  role_custom,
+  role_editor,
+  role_launcher,
+  role_viewer,
+  rss,
+  rule,
+  run,
+  run_canceled,
+  run_failed,
+  run_queued,
+  run_started,
+  run_success,
+  schedule,
   schema,
+  scim_provision,
   search,
+  secure,
   send,
+  sensor,
+  sensors,
+  serve,
+  serverless,
   settings,
   settings_backup_restore,
+  shield,
+  shield_check,
+  slack,
+  snapshot,
   sort_by_alpha,
   source,
+  source_asset,
   speed,
   splitscreen,
+  sso,
   stacks,
   star,
+  star_double,
+  star_half,
   star_outline,
   status,
+  step,
   sticky_note,
   storage_kind,
+  subtract,
+  success,
+  sun,
+  support,
+  sync,
   sync_alt,
   sync_problem,
+  table_columns,
+  table_rows,
   table_view,
+  tag,
+  target,
+  team,
+  terminate,
+  test,
+  timeline,
   timer,
+  timestamp,
   toggle_off,
   toggle_on,
+  toggle_whitespace,
+  token,
+  transform,
   tune,
   unfold_less,
   unfold_more,
-  view_list,
+  university,
+  unlocked,
+  unsynced,
+  user,
+  variable,
+  verified,
+  vertical_align_bottom,
+  vertical_align_center,
+  vertical_align_top,
   view_column,
+  view_list,
   visibility,
   visibility_off,
   warning,
   warning_outline,
-  workspaces,
+  water,
   waterfall_chart,
-  vertical_align_bottom,
-  vertical_align_center,
-  vertical_align_top,
+  webhook,
+  workspaces,
+  workspace,
   wysiwyg,
+  x_filled,
+  youtube,
   zoom_in,
   zoom_out,
 } as const;
 
-const SVGS_WITH_COLORS = new Set([
-  (slack as any).src,
-  (ms_teams as any).src,
-  (pagerduty as any).src,
-]);
-
 export type IconName = keyof typeof Icons;
 
 const rotations: {[key in IconName]?: string} = {
-  waterfall_chart: '-90deg',
+  // waterfall_chart: '-90deg',
 };
 
 export const IconNames = Object.keys(Icons) as IconName[];
@@ -410,6 +609,7 @@ interface Props {
   name: IconName;
   size?: 12 | 16 | 20 | 24 | 48;
   style?: React.CSSProperties;
+  useOriginalColor?: boolean;
 }
 
 export const Icon = React.memo((props: Props) => {
@@ -419,8 +619,9 @@ export const Icon = React.memo((props: Props) => {
   // This is a temporary work around until we can get storybook to import them the same way as nextjs
   const img = typeof Icons[name] === 'string' ? (Icons[name] as any) : Icons[name].src;
 
-  const color: string | null =
-    props.color || (SVGS_WITH_COLORS.has(img) ? null : Colors.accentPrimary());
+  const color: string | null = props.useOriginalColor
+    ? null
+    : props.color || Colors.accentPrimary();
   return (
     <IconWrapper
       role="img"
@@ -433,7 +634,6 @@ export const Icon = React.memo((props: Props) => {
     />
   );
 });
-
 interface WrapperProps {
   $color: string | null;
   $size: number;

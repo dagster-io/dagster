@@ -68,8 +68,8 @@ export const workspacePipelineLinkForRun = ({
     const opsQuery = (run.assetSelection || []).map(tokenForAssetKey).join(', ');
     return {
       disabledReason: null,
-      label: `View asset graph`,
-      icon: 'schema' as IconName,
+      label: `View asset lineage`,
+      icon: 'lineage' as IconName,
       to: globalAssetGraphPathToString({opsQuery, opNames: []}),
     };
   }

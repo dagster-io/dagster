@@ -119,7 +119,7 @@ export const MetadataEntry = ({
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
-            <Icon name="assignment" color={Colors.accentGray()} />
+            <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
           </IconButton>
         </Group>
       );
@@ -263,7 +263,7 @@ export const MetadataEntry = ({
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
-            <Icon name="assignment" color={Colors.accentGray()} />
+            <Icon name="copy_to_clipboard" color={Colors.accentGray()} />
           </IconButton>
         </Group>
       );
