@@ -130,7 +130,10 @@ def my_assets(context: AssetExecutionContext):
             yield AssetMaterialization(asset_key=str(table.get("name")), metadata=table)
 ```
 
-You may have noticed, however, that there are a couple of limitations to this approach. Most importantly, we have not encapsulated the logic for replicating tables. Meaning, end-users who make use of the `custom_replication_assets` decorator would be responsible for yielding asset materializations themselves. Second, there is no way for the user to customize the attributes of the asset.
+There are a few limitations to this approach:
+
+- **We have not encapsulated the logic for replicating tables.** This means that users who use the `custom_replication_assets` decorator would be responsible for yielding asset materializations themselves. 
+- **Users can't customize the attributes of the asset**.
 
 For the first limitation, we can resolve them by refactoring the code in the body of our asset function into a `Resource`.
 
