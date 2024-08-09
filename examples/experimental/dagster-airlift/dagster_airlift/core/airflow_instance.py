@@ -1,14 +1,24 @@
 import datetime
 from abc import ABC
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict, List
 
 import requests
 from dagster import AssetKey
-from pydantic import BaseModel
+from dagster._core.errors import DagsterError
+from dagster._record import record
 
 
-class AirflowInstance(NamedTuple):
-    auth_backend: "AirflowAuthBackend"
+class AirflowAuthBackend(ABC):
+    def get_session(self) -> requests.Session:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+    def get_webserver_url(self) -> str:
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
+
+@record
+class AirflowInstance:
+    auth_backend: AirflowAuthBackend
     name: str
 
     @property
@@ -30,7 +40,7 @@ class AirflowInstance(NamedTuple):
                 for dag in dags["dags"]
             ]
         else:
-            raise Exception(
+            raise DagsterError(
                 f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
             )
 
@@ -45,18 +55,23 @@ class AirflowInstance(NamedTuple):
                 metadata=response.json(),
             )
         else:
-            raise Exception(
+            raise DagsterError(
                 f"Failed to fetch task info for {dag_id}/{task_id}. Status code: {response.status_code}, Message: {response.text}"
             )
-
-    def get_task_url(self, dag_id: str, task_id: str) -> str:
-        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/{task_id}"
 
     def get_dag_url(self, dag_id: str) -> str:
         return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}"
 
     def get_dag_run_url(self, dag_id: str, run_id: str) -> str:
         return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/grid?dag_run_id={run_id}&tab=details"
+
+    def get_task_instance_url(self, dag_id: str, task_id: str, run_id: str) -> str:
+        # http://localhost:8080/dags/print_dag/grid?dag_run_id=manual__2024-08-08T17%3A21%3A22.427241%2B00%3A00&task_id=print_task
+        return f"{self.auth_backend.get_webserver_url()}/dags/{dag_id}/grid?dag_run_id={run_id}&task_id={task_id}"
+
+    def get_task_instance_log_url(self, dag_id: str, task_id: str, run_id: str) -> str:
+        # http://localhost:8080/dags/print_dag/grid?dag_run_id=manual__2024-08-08T17%3A21%3A22.427241%2B00%3A00&task_id=print_task&tab=logs
+        return f"{self.get_task_instance_url(dag_id, task_id, run_id)}&tab=logs"
 
     def get_dag_run_asset_key(self, dag_id: str) -> AssetKey:
         return AssetKey([self.normalized_name, "dag", dag_id])
@@ -68,8 +83,8 @@ class AirflowInstance(NamedTuple):
         if response.status_code == 200:
             return response.text
         else:
-            raise Exception(
-                f"Failed to fetch source code for {file_token}. Status code: {response.status_code}, Message: {response.text}"
+            raise DagsterError(
+                f"Failed to fetch source code. Status code: {response.status_code}, Message: {response.text}"
             )
 
     @staticmethod
@@ -90,7 +105,7 @@ class AirflowInstance(NamedTuple):
         if response.status_code == 200:
             return response.json()["dag_runs"]
         else:
-            raise Exception(
+            raise DagsterError(
                 f"Failed to fetch dag runs for {dag_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
@@ -104,20 +119,14 @@ class AirflowInstance(NamedTuple):
             ).timestamp()
 
 
-class DagInfo(BaseModel):
+@record
+class DagInfo:
     dag_id: str
     metadata: Dict[str, Any]
 
 
-class TaskInfo(BaseModel):
+@record
+class TaskInfo:
     dag_id: str
     task_id: str
     metadata: Dict[str, Any]
-
-
-class AirflowAuthBackend(ABC):
-    def get_session(self) -> requests.Session:
-        raise NotImplementedError("This method must be implemented by subclasses.")
-
-    def get_webserver_url(self) -> str:
-        raise NotImplementedError("This method must be implemented by subclasses.")
