@@ -119,7 +119,7 @@ For most projects we anticipate the following process:
 In our example we have a pre-written factory class (in `examples/experimental/dagster-airlift/dagster_airlift/dbt/multi_asset.py` and installable by `uv pip install dagster-airlift[dbt]`) that is associated with invoking a dbt project:
 
 ```python
-from dagster_airlift.core.def_factory import DefsFactory
+from dagster_airlift.def_factory import DefsFactory
 
 @dataclass
 class DbtProjectDefs(DefsFactory):
