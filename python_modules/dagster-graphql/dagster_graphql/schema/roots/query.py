@@ -352,7 +352,7 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneRunsFeedConnectionOrError),
         cursor=graphene.String(),
         limit=graphene.Int(),
-        description="Retireve entries for the Runs Feed after applying cursor and limit.",
+        description="Retrieve entries for the Runs Feed after applying cursor and limit.",
     )
     runTagKeysOrError = graphene.Field(
         GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."

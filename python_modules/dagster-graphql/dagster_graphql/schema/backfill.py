@@ -55,7 +55,6 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.partition_sets import GraphenePartitionStatusCounts
 
     from ..schema.partition_sets import GraphenePartitionSet
-    from .asset_checks import GrapheneAssetCheckHandle
     from .pipelines.pipeline import GrapheneRun
 
 pipeline_execution_error_types = (
@@ -123,7 +122,7 @@ class GrapheneBulkActionStatus(graphene.Enum):
     class Meta:
         name = "BulkActionStatus"
 
-    def to_dagster_run_status(self):
+    def to_dagster_run_status(self) -> GrapheneRunStatus:
         """Placeholder for this PR. Will do a more thurough pass to accurately convert backfill status
         to DagsterRunStatus in a stacked branch.
         """
@@ -375,10 +374,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
             timestamp=backfill_job.backfill_timestamp,
-            # creationTime=backfill_job.backfill_timestamp,
             startTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
             runType=GrapheneRunsFeedEntryType.BACKFILL,
+            assetCheckSelection=[],
         )
 
     def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[ExternalPartitionSet]:
@@ -465,6 +464,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         ]
 
     def resolve_creationTime(self, graphene_info: ResolveInfo):
+        # Needed to have this as a resolver, rather than pass on __init__ because creationTime is
+        # fulfilled via a resolver for GrapheneRun and we need to use the same method of getting
+        # creationTime in get_runs_feed_entries
         return self.timestamp
 
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
@@ -670,11 +672,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             cursor=new_cursor.to_string() if new_cursor else "",
             hasMore=new_cursor.has_more_now if new_cursor else False,
         )
-
-    def resolve_assetCheckSelection(
-        self, _graphene_info: ResolveInfo
-    ) -> Sequence["GrapheneAssetCheckHandle"]:
-        return []
 
 
 class GrapheneBackfillNotFoundError(graphene.ObjectType):
