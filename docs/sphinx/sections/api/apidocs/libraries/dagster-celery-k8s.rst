@@ -1,8 +1,8 @@
 Celery + Kubernetes (dagster-celery-k8s)
-------------------------------------
+----------------------------------------
 
 APIs
-----
+====
 
 .. currentmodule:: dagster_celery_k8s
 
