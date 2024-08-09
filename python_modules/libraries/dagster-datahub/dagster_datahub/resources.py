@@ -77,7 +77,6 @@ class DatahubConnection(Config):
 
 class DatahubKafkaEmitterResource(ConfigurableResource):
     connection: DatahubConnection
-    topic: Optional[str] = None
     topic_routes: Dict[str, str] = Field(
         default={
             MCE_KEY: DEFAULT_MCE_KAFKA_TOPIC,
