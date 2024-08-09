@@ -435,8 +435,8 @@ class RunsFeedCursor:
 def _fetch_runs_not_in_backfill(
     instance: DagsterInstance,
     cursor: Optional[str],
-    limit: Optional[int],
-    created_before: Optional[float] = None,
+    limit: int,
+    created_before: Optional[float],
 ) -> Sequence[RunRecord]:
     """Fetches limit RunRecords that are not part of a backfill and were created before a given timestamp."""
     runs_filter = (
@@ -444,12 +444,11 @@ def _fetch_runs_not_in_backfill(
         if created_before
         else None
     )
-    if limit is None:
-        new_runs = instance.get_run_records(cursor=cursor, filters=runs_filter)
-        return [run for run in new_runs if run.dagster_run.tags.get(BACKFILL_ID_TAG) is None]
 
     runs = []
     while len(runs) < limit:
+        # fetch runs in a loop and discard runs that are part of a backfill until we have
+        # limit runs to return or have reached the end of the runs table
         new_runs = instance.get_run_records(limit=limit, cursor=cursor, filters=runs_filter)
         if len(new_runs) == 0:
             return runs
@@ -462,7 +461,7 @@ def _fetch_runs_not_in_backfill(
 def _fetch_backfills_created_before_timestamp(
     instance: DagsterInstance,
     cursor: Optional[str],
-    limit: Optional[int],
+    limit: int,
     created_before: Optional[float] = None,
 ) -> Sequence[PartitionBackfill]:
     """Fetches limit PartitionBackfills that were created before a given timestamp.
@@ -472,14 +471,10 @@ def _fetch_backfills_created_before_timestamp(
     in a separate function.
     """
     created_before = created_before if created_before else get_current_timestamp()
-    if limit is None:
-        new_backfills = instance.get_backfills(cursor=cursor, limit=limit)
-        return [
-            backfill for backfill in new_backfills if backfill.backfill_timestamp <= created_before
-        ]
-
     backfills = []
     while len(backfills) < limit:
+        # fetch backfills in a loop discarding backfills that were created after created_before until
+        # we have limit backfills to return or have reached the end of the backfills table
         new_backfills = instance.get_backfills(cursor=cursor, limit=limit)
         if len(new_backfills) == 0:
             return backfills
@@ -497,30 +492,30 @@ def _fetch_backfills_created_before_timestamp(
 
 def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
+    limit: int,
     cursor: Optional[str] = None,
-    limit: Optional[int] = None,
 ) -> "GrapheneRunsFeedConnection":
     """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
     single runs (runs that are not part of a backfill), the cursor to fetch the next page,
     and a boolean indicating if there are more results to fetch.
 
     Args:
+        limit (int): max number of results to return
         cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
             that querying should start at the beginning of the table for both runs and backfills.
-        limit (Optional[int]): max number of results to return. If None, will return all results.
     """
     from ..schema.backfill import GraphenePartitionBackfill
     from ..schema.pipelines.pipeline import GrapheneRun
     from ..schema.runs_feed import GrapheneRunsFeedConnection
 
     check.opt_str_param(cursor, "cursor")
-    check.opt_int_param(limit, "limit")
+    check.int_param(limit, "limit")
 
     instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
-    fetch_limit = limit + 1 if limit else None
+    fetch_limit = limit + 1
     # filter out any backfills/runs that are newer than the cursor timestamp. See RunsFeedCursor docstring
     # for case when theis is necessary
     backfills = [
@@ -542,35 +537,31 @@ def get_runs_feed_entries(
         )
     ]
 
-    if (
-        fetch_limit and limit
-    ):  # if fetch_limit is non-None then limit must also be non-None, but check for pyright
-        # if we fetched limit+1 of either runs or backfills, we know there must be more results
-        # to fetch on the next call since we will return limit results for this call. Additionally,
-        # if we fetched more than limit of runs and backfill combined, we know there are more results
-        has_more = (
-            len(backfills) == fetch_limit
-            or len(runs) == fetch_limit
-            or len(backfills) + len(runs) > limit
-        )
-    else:
-        # case when limit was not passed, so we fetched all of the results
-        has_more = False
+    # if we fetched limit+1 of either runs or backfills, we know there must be more results
+    # to fetch on the next call since we will return limit results for this call. Additionally,
+    # if we fetched more than limit of runs and backfill combined, we know there are more results
+    has_more = (
+        len(backfills) == fetch_limit
+        or len(runs) == fetch_limit
+        or len(backfills) + len(runs) > limit
+    )
 
-    all_runs = backfills + runs
+    all_entries = backfills + runs
 
     # order runs and backfills by create_time. typically we sort by storage id but that won't work here since
     # they are different tables
-    all_runs = sorted(
-        all_runs,
-        key=lambda x: x.resolve_creationTime(graphene_info),  # ideally could just do .creationTime
+    all_entries = sorted(
+        all_entries,
+        key=lambda x: x.resolve_creationTimestamp(
+            graphene_info
+        ),  # ideally could just do .creationTime
         reverse=True,
     )
 
     if limit:
-        to_return = all_runs[:limit]
+        to_return = all_entries[:limit]
     else:
-        to_return = all_runs
+        to_return = all_entries
 
     new_run_cursor = None
     new_backfill_cursor = None
@@ -582,7 +573,7 @@ def get_runs_feed_entries(
         if new_run_cursor is None and isinstance(run, GrapheneRun):
             new_run_cursor = run.runId
 
-    new_timestamp = to_return[-1].resolve_creationTime(graphene_info) if to_return else None
+    new_timestamp = to_return[-1].resolve_creationTimestamp(graphene_info) if to_return else None
 
     # if either of the new cursors are None, replace with the cursor passed in so the next call doesn't
     # restart at the top the table.

@@ -17,6 +17,7 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!) {
     runsFeedOrError(cursor: $cursor, limit: $limit) {
       ... on RunsFeedConnection {
           results {
+            __typename
             runId
             runStatus
             creationTime
@@ -33,7 +34,6 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!) {
                 key
                 value
             }
-            runType
           }
           cursor
           hasMore
@@ -153,7 +153,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
-            assert res["runType"] == "BACKFILL"
+            assert res["__typename"] == "GraphenePartitionBackfill"
 
         assert not result.data["runsFeedOrError"]["hasMore"]
 
@@ -299,7 +299,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             prev_run_time = res["creationTime"]
 
             # first 10 results should all be runs
-            assert res["runType"] == "RUN"
+            assert res["__typename"] == "GrapheneRun"
 
         assert result.data["runsFeedOrError"]["hasMore"]
         assert result.data["runsFeedOrError"]["cursor"] is not None
@@ -380,7 +380,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             prev_run_time = res["creationTime"]
 
             # all remaining results should be runs
-            assert res["runType"] == "RUN"
+            assert res["__typename"] == "GrapheneRun"
 
         assert not result.data["runsFeedOrError"]["hasMore"]
         assert result.data["runsFeedOrError"]["cursor"] is not None
@@ -441,7 +441,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
 
-            assert res["runType"] == "RUN"
+            assert res["__typename"] == "GrapheneRun"
 
         assert not result.data["runsFeedOrError"]["hasMore"]
         assert result.data["runsFeedOrError"]["cursor"] is not None

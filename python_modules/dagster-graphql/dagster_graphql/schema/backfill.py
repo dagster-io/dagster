@@ -48,7 +48,7 @@ from .errors import (
     create_execution_params_error_types,
 )
 from .pipelines.config import GrapheneRunConfigValidationInvalid
-from .runs_feed import GrapheneRunsFeedEntry, GrapheneRunsFeedEntryType
+from .runs_feed import GrapheneRunsFeedEntry
 from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
@@ -311,7 +311,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
-    creationTime = graphene.NonNull(
+    creationTimestamp = graphene.NonNull(
         graphene.Float
     )  # for RunsFeedEntry interface - dupe of timestamp
     startTime = graphene.Float()  # for RunsFeedEntry interface - dupe of timestamp
@@ -357,7 +357,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
     )
-    runType = graphene.NonNull(GrapheneRunsFeedEntryType)
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -376,7 +375,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             timestamp=backfill_job.backfill_timestamp,
             startTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
-            runType=GrapheneRunsFeedEntryType.BACKFILL,
             assetCheckSelection=[],
         )
 
@@ -463,10 +461,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         ]
 
-    def resolve_creationTime(self, graphene_info: ResolveInfo):
-        # Needed to have this as a resolver, rather than pass on __init__ because creationTime is
+    def resolve_creationTimestamp(self, graphene_info: ResolveInfo):
+        # Needed to have this as a resolver, rather than pass on __init__ because creationTimestamp is
         # fulfilled via a resolver for GrapheneRun and we need to use the same method of getting
-        # creationTime in get_runs_feed_entries
+        # creationTimestamp in get_runs_feed_entries
         return self.timestamp
 
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:

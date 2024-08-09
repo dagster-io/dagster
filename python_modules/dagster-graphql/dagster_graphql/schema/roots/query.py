@@ -350,8 +350,8 @@ class GrapheneQuery(graphene.ObjectType):
     )
     runsFeedOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsFeedConnectionOrError),
+        limit=graphene.NonNull(graphene.Int),
         cursor=graphene.String(),
-        limit=graphene.Int(),
         description="Retrieve entries for the Runs Feed after applying cursor and limit.",
     )
     runTagKeysOrError = graphene.Field(
@@ -811,7 +811,10 @@ class GrapheneQuery(graphene.ObjectType):
         return await gen_run_by_id(graphene_info, runId)
 
     def resolve_runsFeedOrError(
-        self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
+        self,
+        graphene_info: ResolveInfo,
+        limit: int,
+        cursor: Optional[str] = None,
     ):
         return get_runs_feed_entries(graphene_info=graphene_info, cursor=cursor, limit=limit)
 

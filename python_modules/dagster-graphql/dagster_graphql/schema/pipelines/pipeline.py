@@ -46,7 +46,7 @@ from ..logs.events import (
 )
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..runs import GrapheneRunConfigData
-from ..runs_feed import GrapheneRunsFeedEntry, GrapheneRunsFeedEntryType
+from ..runs_feed import GrapheneRunsFeedEntry
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
 from ..solids import (
@@ -355,6 +355,9 @@ class GrapheneRun(graphene.ObjectType):
         limit=graphene.Argument(graphene.Int),
     )
     creationTime = graphene.NonNull(graphene.Float)
+    creationTimestamp = graphene.NonNull(
+        graphene.Float
+    )  # for RunsFeedEntry interface - dupe of creationTime
     startTime = graphene.Float()
     endTime = graphene.Float()
     updateTime = graphene.Float()
@@ -364,7 +367,6 @@ class GrapheneRun(graphene.ObjectType):
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
     rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
-    runType = graphene.NonNull(GrapheneRunsFeedEntryType)
 
     class Meta:
         interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
@@ -378,7 +380,6 @@ class GrapheneRun(graphene.ObjectType):
             status=dagster_run.status.value,
             runStatus=dagster_run.status.value,
             mode=DEFAULT_MODE_NAME,
-            runType=GrapheneRunsFeedEntryType.RUN,
         )
         self.dagster_run = dagster_run
         self._run_record = record
@@ -572,6 +573,9 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_creationTime(self, graphene_info: ResolveInfo):
         return self._run_record.create_timestamp.timestamp()
+
+    def resolve_creationTimestamp(self, graphene_info: ResolveInfo):
+        return self.resolve_creationTime(graphene_info)
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance
