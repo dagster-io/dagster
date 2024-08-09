@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -47,6 +47,17 @@ class AutoMaterializePolicySerializer(NamedTupleSerializer):
             unpacked_dict["rules"] = frozenset(rules)
 
         return unpacked_dict
+
+    def before_pack(self, value) -> "AutoMaterializePolicy":
+        # If the automation_condition contains user code, it must be converted to an
+        # UnexecutableAutomationCondition before serializing
+        # TODO: move this logic to ExternalAssetNode
+        value = cast(AutoMaterializePolicy, value)
+        if value.asset_condition and not value.asset_condition.is_serializable:
+            value = value._replace(
+                asset_condition=value.asset_condition.to_unexecutable_automation_condition()
+            )
+        return value
 
 
 class AutoMaterializePolicyType(Enum):

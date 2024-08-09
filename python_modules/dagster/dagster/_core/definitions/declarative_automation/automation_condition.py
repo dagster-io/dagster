@@ -2,6 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
+import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
 from dagster._core.definitions.asset_key import AssetKey
@@ -16,7 +17,8 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._record import copy
+from dagster._record import copy, record
+from dagster._serdes.serdes import is_whitelisted_for_serdes_object, whitelist_for_serdes
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
@@ -58,21 +60,19 @@ class AutomationCondition(ABC):
         return []
 
     @property
-    @abstractmethod
     def description(self) -> str:
         """Human-readable description of when this condition is true."""
-        raise NotImplementedError()
+        return ""
 
     @property
-    @abstractmethod
     def label(self) -> Optional[str]:
         """User-provided label subjectively describing the purpose of this condition in the broader evaluation tree."""
-        raise NotImplementedError()
+        return None
 
     @property
     def name(self) -> Optional[str]:
         """Formal name of this specific condition, generally aligning with its static constructor."""
-        return None
+        return self.__class__.__name__
 
     def get_snapshot(self, unique_id: str) -> AutomationConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
@@ -102,18 +102,36 @@ class AutomationCondition(ABC):
     def __hash__(self) -> int:
         return self.get_hash()
 
-    def as_auto_materialize_policy(self) -> "AutoMaterializePolicy":
-        """Returns an AutoMaterializePolicy which contains this condition."""
-        from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-
-        return AutoMaterializePolicy.from_automation_condition(self)
-
-    def is_rule_condition(self):
+    def is_rule_condition(self) -> bool:
         from .legacy import RuleCondition
 
         if isinstance(self, RuleCondition):
             return True
         return any(child.is_rule_condition() for child in self.children)
+
+    @property
+    def is_serializable(self) -> bool:
+        if not is_whitelisted_for_serdes_object(self):
+            return False
+        return all(child.is_serializable for child in self.children)
+
+    def to_unexecutable_automation_condition(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> "UnexecutableAutomationCondition":
+        unique_id = self.get_unique_id(parent_unique_id=parent_unique_id, index=index)
+        return UnexecutableAutomationCondition(
+            node_snapshot=self.get_snapshot(unique_id),
+            operands=[
+                child.to_unexecutable_automation_condition(parent_unique_id=unique_id, index=i)
+                for (i, child) in enumerate(self.children)
+            ],
+        )
+
+    def as_auto_materialize_policy(self) -> "AutoMaterializePolicy":
+        """Returns an AutoMaterializePolicy which contains this condition."""
+        from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+
+        return AutoMaterializePolicy.from_automation_condition(self)
 
     @abstractmethod
     def evaluate(self, context: "AutomationContext") -> "AutomationResult":
@@ -354,6 +372,38 @@ class AutomationCondition(ABC):
         from .operators import AnyDownstreamConditionsCondition
 
         return AnyDownstreamConditionsCondition()
+
+
+@whitelist_for_serdes
+@record
+class UnexecutableAutomationCondition(AutomationCondition):
+    """Represents an AutomationCondition that is not possible to execute in the current process as
+    it references user code that is currently inaccessible.
+    """
+
+    node_snapshot: AutomationConditionSnapshot
+    operands: Sequence["UnexecutableAutomationCondition"]
+
+    @property
+    def children(self) -> Sequence["UnexecutableAutomationCondition"]:
+        return self.operands
+
+    @property
+    def label(self) -> str:
+        return self.node_snapshot.label or ""
+
+    @property
+    def description(self) -> str:
+        return self.node_snapshot.description
+
+    @property
+    def name(self) -> Optional[str]:
+        return self.node_snapshot.name
+
+    def evaluate(self, context: "AutomationContext") -> "AutomationResult":
+        check.failed(
+            f"AutomationCondition of type `{self.node_snapshot}` cannot be executed as it is not a built-in type."
+        )
 
 
 class AutomationResult(NamedTuple):

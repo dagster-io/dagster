@@ -10,6 +10,7 @@ from dagster import (
 
 
 def test_round_trip_conversion() -> None:
+    assert AutomationCondition.eager().is_serializable
     policy = AutomationCondition.eager().as_auto_materialize_policy()
     serialized_policy = serialize_value(policy)
     deserialized_policy = deserialize_value(serialized_policy, AutoMaterializePolicy)
