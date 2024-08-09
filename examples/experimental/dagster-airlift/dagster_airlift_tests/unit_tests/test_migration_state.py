@@ -1,11 +1,11 @@
 from pathlib import Path
 
 import pytest
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_airlift.core import load_migration_state_from_yaml
-from dagster_airlift.core.migration_state import (
+from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
+    MigrationStateParsingError,
     TaskMigrationState,
 )
 
@@ -38,5 +38,5 @@ def test_migration_state() -> None:
     incorrect_dirs = ["empty_file", "nonexistent_dir", "extra_key", "nonsense"]
     for incorrect_dir in incorrect_dirs:
         incorrect_migration_file = Path(__file__).parent / "migration_state_yamls" / incorrect_dir
-        with pytest.raises(DagsterInvalidDefinitionError, match="Error parsing migration yaml"):
+        with pytest.raises(MigrationStateParsingError, match="Error parsing migration yaml"):
             load_migration_state_from_yaml(incorrect_migration_file)

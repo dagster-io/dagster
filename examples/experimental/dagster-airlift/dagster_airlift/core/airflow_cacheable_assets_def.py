@@ -30,7 +30,7 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 
-from dagster_airlift.core.migration_state import AirflowMigrationState
+from dagster_airlift.migration_state import AirflowMigrationState
 
 from .airflow_instance import AirflowInstance, DagInfo, TaskInfo
 from .utils import get_dag_id_from_asset, get_task_id_from_asset
@@ -149,16 +149,14 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
         dag_specs_per_key: Dict[AssetKey, CacheableAssetSpec] = {}
         for dag in self.airflow_instance.list_dags():
             source_code = self.airflow_instance.get_dag_source_code(dag.metadata["file_token"])
-            dag_specs_per_key[self.airflow_instance.get_dag_run_asset_key(dag.dag_id)] = (
-                get_cached_spec_for_dag(
-                    airflow_instance=self.airflow_instance,
-                    task_asset_keys_in_dag=cacheable_task_data.all_asset_keys_per_dag_id.get(
-                        dag.dag_id, set()
-                    ),
-                    downstreams_asset_dependency_graph=cacheable_task_data.downstreams_asset_dependency_graph,
-                    dag_info=dag,
-                    source_code=source_code,
-                )
+            dag_specs_per_key[dag.dag_asset_key] = get_cached_spec_for_dag(
+                airflow_instance=self.airflow_instance,
+                task_asset_keys_in_dag=cacheable_task_data.all_asset_keys_per_dag_id.get(
+                    dag.dag_id, set()
+                ),
+                downstreams_asset_dependency_graph=cacheable_task_data.downstreams_asset_dependency_graph,
+                dag_info=dag,
+                source_code=source_code,
             )
         return [
             AssetsDefinitionCacheableData(
@@ -213,9 +211,7 @@ def get_cached_spec_for_dag(
     metadata = {
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
         "Dag ID": dag_info.dag_id,
-        "Link to DAG": MarkdownMetadataValue(
-            f"[View DAG]({airflow_instance.get_dag_url(dag_info.dag_id)})"
-        ),
+        "Link to DAG": MarkdownMetadataValue(f"[View DAG]({dag_info.url})"),
     }
     # Attempt to retrieve source code from the DAG.
     metadata["Source Code"] = MarkdownMetadataValue(
@@ -227,7 +223,7 @@ def get_cached_spec_for_dag(
     )
 
     return CacheableAssetSpec(
-        asset_key=airflow_instance.get_dag_run_asset_key(dag_info.dag_id),
+        asset_key=dag_info.dag_asset_key,
         description=f"A materialization corresponds to a successful run of airflow DAG {dag_info.dag_id}.",
         metadata=metadata,
         tags={"dagster/compute_kind": "airflow", DAG_ID_TAG: dag_info.dag_id},
@@ -277,9 +273,7 @@ def construct_cacheable_assets_and_infer_dependencies(
             "Task Info (raw)": JsonMetadataValue(task_info.metadata),
             # In this case,
             "Dag ID": task_info.dag_id,
-            "Link to DAG": MarkdownMetadataValue(
-                f"[View DAG]({airflow_instance.get_dag_url(task_info.dag_id)})"
-            ),
+            "Link to DAG": MarkdownMetadataValue(f"[View DAG]({task_info.dag_url})"),
         }
         migration_state_for_task = _get_migration_state_for_task(
             migration_state, task_info.dag_id, task_info.task_id
@@ -408,24 +402,40 @@ def get_task_info_for_asset(
     return airflow_instance.get_task_info(dag_id, task_id)
 
 
-def list_intersection(list1, list2):
-    return list(set(list1) & set(list2))
-
-
 def get_leaf_assets_for_dag(
     asset_keys_in_dag: Set[AssetKey],
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
 ) -> List[AssetKey]:
-    # An asset is a "leaf" for the dag if it has no dependencies _within_ the dag. It may have
+    # An asset is a "leaf" for the dag if it has no transitive dependencies _within_ the dag. It may have
     # dependencies _outside_ the dag.
-    return [
-        asset_key
-        for asset_key in asset_keys_in_dag
-        if list_intersection(
-            downstreams_asset_dependency_graph.get(asset_key, []), asset_keys_in_dag
+    leaf_assets = []
+    cache = {}
+    for asset_key in asset_keys_in_dag:
+        if (
+            get_transitive_dependencies_for_asset(
+                asset_key, downstreams_asset_dependency_graph, cache
+            ).intersection(asset_keys_in_dag)
+            == set()
+        ):
+            leaf_assets.append(asset_key)
+    return leaf_assets
+
+
+def get_transitive_dependencies_for_asset(
+    asset_key: AssetKey,
+    downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
+    cache: Dict[AssetKey, Set[AssetKey]],
+) -> Set[AssetKey]:
+    if asset_key in cache:
+        return cache[asset_key]
+    transitive_deps = set()
+    for dep in downstreams_asset_dependency_graph[asset_key]:
+        transitive_deps.add(dep)
+        transitive_deps.update(
+            get_transitive_dependencies_for_asset(dep, downstreams_asset_dependency_graph, cache)
         )
-        == set()
-    ]
+    cache[asset_key] = transitive_deps
+    return transitive_deps
 
 
 def _get_migration_state_for_task(

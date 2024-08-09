@@ -1403,7 +1403,18 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     def get_asset_spec(self, key: Optional[AssetKey] = None) -> AssetSpec:
-        """Returns the AssetSpec for the given asset key."""
+        """Returns a representation of this asset as an :py:class:`AssetSpec`.
+
+        If this is a multi-asset, the "key" argument allows selecting which asset to return the
+        spec for.
+
+        Args:
+            key (Optional[AssetKey]): If this is a multi-asset, select which asset to return its
+                AssetSpec. If not a multi-asset, this can be left as None.
+
+        Returns:
+            AssetSpec
+        """
         return self._specs_by_key[key or self.key]
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
