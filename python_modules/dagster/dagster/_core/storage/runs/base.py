@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from typing_extensions import TypedDict
@@ -373,6 +374,8 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
     ) -> Sequence[PartitionBackfill]:
         """Get a list of partition backfills."""
 

@@ -837,6 +837,8 @@ class SqlRunStorage(RunStorage):
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db_select([BulkActionsTable.c.body])
@@ -847,6 +849,14 @@ class SqlRunStorage(RunStorage):
                 BulkActionsTable.c.key == cursor
             )
             query = query.where(BulkActionsTable.c.id < cursor_query)
+        if created_after:
+            query = query.where(
+                BulkActionsTable.c.timestamp > created_after.replace(tzinfo=None).timestamp()
+            )
+        if created_before:
+            query = query.where(
+                BulkActionsTable.c.timestamp < created_before.replace(tzinfo=None).timestamp()
+            )
         if limit:
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())

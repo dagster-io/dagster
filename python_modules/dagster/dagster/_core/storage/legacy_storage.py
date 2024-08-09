@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from dagster import _check as check
@@ -312,8 +313,12 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         status: Optional["BulkActionStatus"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._storage.run_storage.get_backfills(status, cursor, limit)
+        return self._storage.run_storage.get_backfills(
+            status, cursor, limit, created_before=created_before, created_after=created_after
+        )
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)
