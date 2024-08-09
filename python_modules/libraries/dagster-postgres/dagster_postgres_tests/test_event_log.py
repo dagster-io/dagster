@@ -30,10 +30,20 @@ def _clean_storage(conn_string):
 class TestPostgresEventLogStorage(TestEventLogStorage):
     __test__ = True
 
+    @pytest.fixture(name="instance", scope="function")
+    def instance(self, conn_string):
+        PostgresEventLogStorage.create_clean_storage(conn_string)
+
+        with instance_for_test(
+            overrides={"storage": {"postgres": {"postgres_url": conn_string}}}
+        ) as instance:
+            yield instance
+
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, conn_string):
-        with _clean_storage(conn_string) as storage:
-            yield storage
+    def event_log_storage(self, instance):
+        event_log_storage = instance.event_log_storage
+        assert isinstance(event_log_storage, PostgresEventLogStorage)
+        yield event_log_storage
 
     def test_event_log_storage_two_watchers(self, conn_string):
         with _clean_storage(conn_string) as storage:
