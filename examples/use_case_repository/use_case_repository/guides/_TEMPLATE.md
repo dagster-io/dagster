@@ -33,7 +33,7 @@ To follow the steps in this guide, you will need:
 
 ## Steps to Implement With Dagster
 
-By following these steps, you will have a Dagster asset that successfully runs a CLI command and logs its output. This allows you to integrate non-Python workloads into your Dagster data pipeline.
+By following these steps, you will [Provide a general description of what the user will wind up with by the end of the guide]. [Also provide a general description of what this enables them to do].
 
 ### Step 1: Enter the Name of Step 1 Here 
 
