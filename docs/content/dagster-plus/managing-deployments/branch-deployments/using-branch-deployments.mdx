@@ -25,8 +25,8 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 
 - **Organization Admin** permissions in Dagster+
 - To install the [`dagster-cloud` CLI](/dagster-plus/managing-deployments/dagster-plus-cli)
-- The ability to run a new agent in your infrastructure
 - The ability to configure your CI platform
+- The ability to run a new agent in your infrastructure. This isn't required if you're using [Serverless deployment](/dagster-plus/deployment/serverless).
 
 ---
 
@@ -37,6 +37,14 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 ---
 
 ## Step 2: Create and configure an agent
+
+<Note>
+  If you're using Serverless deployment, this step isn't required.{" "}
+  <a href="#step-3-create-a-branch-deployment-using-the-dagster-cloud-cli">
+    Skip to Step 3
+  </a>
+  .
+</Note>
 
 <BDCreateConfigureAgent />
 
