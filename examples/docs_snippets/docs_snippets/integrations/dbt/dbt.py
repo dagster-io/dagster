@@ -370,20 +370,20 @@ def scope_custom_tags_dagster_dbt_translator():
     # end_custom_tags_dagster_dbt_translator
 
 
-def scope_custom_auto_materialize_policy_dagster_dbt_translator():
-    # start_custom_auto_materialize_policy_dagster_dbt_translator
+def scope_custom_automation_condition_dagster_dbt_translator():
+    # start_custom_automation_condition_dagster_dbt_translator
     from pathlib import Path
-    from dagster import AssetExecutionContext, AutoMaterializePolicy
+    from dagster import AssetExecutionContext, AutomationCondition
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
     from typing import Any, Mapping, Optional
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_auto_materialize_policy(
+        def get_automation_condition(
             self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[AutoMaterializePolicy]:
-            return AutoMaterializePolicy.eager()
+        ) -> Optional[AutomationCondition]:
+            return AutomationCondition.eager()
 
     @dbt_assets(
         manifest=my_dbt_project.manifest_path,
@@ -392,7 +392,7 @@ def scope_custom_auto_materialize_policy_dagster_dbt_translator():
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
-    # end_custom_auto_materialize_policy_dagster_dbt_translator
+    # end_custom_automation_condition_dagster_dbt_translator
 
 
 def scope_disable_asset_check_dagster_dbt_translator():

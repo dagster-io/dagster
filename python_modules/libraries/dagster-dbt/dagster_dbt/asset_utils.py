@@ -26,6 +26,7 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     AutoMaterializePolicy,
+    AutomationCondition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
@@ -825,7 +826,7 @@ def build_dbt_multi_asset_args(
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
             code_version=default_code_version_fn(dbt_resource_props),
             freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
-            auto_materialize_policy=dagster_dbt_translator.get_auto_materialize_policy(
+            automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
             ),
         )
@@ -937,7 +938,7 @@ def get_asset_deps(
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
     Dict[AssetKey, FreshnessPolicy],
-    Dict[AssetKey, AutoMaterializePolicy],
+    Dict[AssetKey, AutomationCondition],
     Dict[str, AssetCheckSpec],
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
@@ -954,7 +955,7 @@ def get_asset_deps(
     # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
     freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
-    auto_materialize_policies_by_key: Dict[AssetKey, AutoMaterializePolicy] = {}
+    automation_conditions_by_key: Dict[AssetKey, AutomationCondition] = {}
     check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
@@ -1002,11 +1003,9 @@ def get_asset_deps(
         if freshness_policy is not None:
             freshness_policies_by_key[asset_key] = freshness_policy
 
-        auto_materialize_policy = dagster_dbt_translator.get_auto_materialize_policy(
-            dbt_resource_props
-        )
-        if auto_materialize_policy is not None:
-            auto_materialize_policies_by_key[asset_key] = auto_materialize_policy
+        automation_condition = dagster_dbt_translator.get_automation_condition(dbt_resource_props)
+        if automation_condition is not None:
+            automation_conditions_by_key[asset_key] = automation_condition
 
         test_unique_ids = []
         if manifest:
@@ -1051,7 +1050,7 @@ def get_asset_deps(
         asset_outs,
         group_names_by_key,
         freshness_policies_by_key,
-        auto_materialize_policies_by_key,
+        automation_conditions_by_key,
         check_specs_by_output_name,
         fqns_by_output_name,
         metadata_by_output_name,
