@@ -540,6 +540,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
         ] = None,
+        stream_to_asset_map: Optional[Mapping[str, str]] = None,
     ):
         self._key_prefix = key_prefix
         self._create_assets_for_normalization_tables = create_assets_for_normalization_tables
@@ -555,6 +556,7 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connection_to_auto_materialize_policy_fn = (
             connection_to_auto_materialize_policy_fn or (lambda _: None)
         )
+        self.stream_to_asset_map = stream_to_asset_map if stream_to_asset_map else {}
 
         contents = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -571,6 +573,12 @@ class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
         asset_defn_data: List[AssetsDefinitionCacheableData] = []
         for connection_id, connection in self._get_connections():
+            for stream_item in connection.stream_data:
+                if 'stream' in stream_item and 'name' in stream_item['stream']:
+                    stream_name = stream_item['stream']['name']
+                    if stream_name in self.stream_to_asset_map:
+                        stream_item['stream']['name'] = self.stream_to_asset_map[stream_name]
+
             stream_table_metadata = connection.parse_stream_tables(
                 self._create_assets_for_normalization_tables
             )
@@ -635,6 +643,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         connection_to_auto_materialize_policy_fn: Optional[
             Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
         ] = None,
+        stream_to_asset_map: Optional[Mapping[str, str]] = None,
     ):
         super().__init__(
             key_prefix=key_prefix,
@@ -645,6 +654,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             connection_to_asset_key_fn=connection_to_asset_key_fn,
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
             connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
+            stream_to_asset_map=stream_to_asset_map,
         )
         self._workspace_id = workspace_id
 
@@ -817,6 +827,7 @@ def load_assets_from_airbyte_instance(
     connection_to_auto_materialize_policy_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]
     ] = None,
+    stream_to_asset_map: Optional[Mapping[str, str]] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
     about defined connections at initialization time, and will error on workspace load if the Airbyte
@@ -853,6 +864,8 @@ def load_assets_from_airbyte_instance(
         connection_to_auto_materialize_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[AutoMaterializePolicy]]]): Optional
             function which takes in connection metadata and returns an auto materialization policy for the connection's assets. If None, no
             auto materialization policies will be applied to the assets.
+        stream_to_asset_map (Optional[Mapping[str, str]]): A mapping of an Airbyte stream name to a Dagster asset.
+            This allows the use of the "prefix" setting in Airbyte with special characters that aren't valid asset names.
 
     **Examples:**
 
@@ -924,6 +937,7 @@ def load_assets_from_airbyte_instance(
         connection_to_asset_key_fn=connection_to_asset_key_fn,
         connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
+        stream_to_asset_map=stream_to_asset_map,
     )
 
 
