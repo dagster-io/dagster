@@ -28,6 +28,7 @@ setup(
     license="Apache-2.0",
     description="Tooling to assist with migrating from Airflow to Dagster.",
     long_description=get_long_description(),
+    long_description_content_type="text/markdown",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "dagster-airlift"
