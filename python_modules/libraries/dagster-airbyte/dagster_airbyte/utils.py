@@ -1,9 +1,10 @@
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from itertools import chain
+from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, cast
 
 from dagster import AssetMaterialization, MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
-from dagster_airbyte.types import AirbyteOutput
+from dagster_airbyte.types import AirbyteOutput, AirbyteTableMetadata
 
 
 def generate_table_schema(stream_schema_props: Mapping[str, Any]) -> TableSchema:
@@ -74,3 +75,28 @@ def generate_materializations(
             all_stream_stats.get(stream_name, {}),
             asset_key_prefix=asset_key_prefix,
         )
+
+
+def table_to_output_name_fn(table: str) -> str:
+    return table.replace("-", "_")
+
+
+def get_schema_by_table_name(
+    stream_table_metadata: Mapping[str, AirbyteTableMetadata],
+) -> Mapping[str, TableSchema]:
+    schema_by_base_table_name = [(k, v.schema) for k, v in stream_table_metadata.items()]
+    schema_by_normalization_table_name = list(
+        chain.from_iterable(
+            [
+                [
+                    (k, v.schema)
+                    for k, v in cast(
+                        Dict[str, AirbyteTableMetadata], meta.normalization_tables
+                    ).items()
+                ]
+                for meta in stream_table_metadata.values()
+            ]
+        )
+    )
+
+    return dict(schema_by_normalization_table_name + schema_by_base_table_name)
