@@ -395,7 +395,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
         event_records_filter = (
-            records_filter.to_event_records_filter(cursor, ascending)
+            records_filter.to_event_records_filter_without_job_names(cursor, ascending)
             if isinstance(records_filter, RunStatusChangeRecordsFilter)
             else EventRecordsFilter(
                 event_type, before_cursor=before_cursor, after_cursor=after_cursor

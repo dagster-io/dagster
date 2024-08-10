@@ -751,6 +751,42 @@ class RunStatusSensorDefinition(SensorDefinition):
                     ascending=True,
                     limit=fetch_limit,
                 ).records
+            elif (
+                context.instance.event_log_storage.supports_run_status_change_job_name_filter
+                and monitored_jobs
+                and all(
+                    [
+                        not isinstance(monitored, (RepositorySelector, CodeLocationSelector))
+                        for monitored in monitored_jobs
+                    ]
+                )
+            ):
+                # the event log storage supports run status change selectors... we should construct
+                # the appropriate job selectors so that we can filter the events by jobs in the
+                # storage layer instead of in memory.  This should improve throughput since we will
+                # avoid fetching events that we will filter out later on.
+                job_names = _job_names_for_monitored(
+                    cast(
+                        Sequence[
+                            Union[
+                                JobDefinition,
+                                GraphDefinition,
+                                UnresolvedAssetJobDefinition,
+                                "JobSelector",
+                            ]
+                        ],
+                        monitored_jobs,
+                    )
+                )
+                event_records = context.instance.fetch_run_status_changes(
+                    records_filter=RunStatusChangeRecordsFilter(
+                        event_type=cast(RunStatusChangeEventType, event_type),
+                        after_storage_id=sensor_cursor.record_id,
+                        job_names=job_names,
+                    ),
+                    ascending=True,
+                    limit=fetch_limit,
+                ).records
             else:
                 # the cursor storage id is globally unique, either because the event log storage is
                 # not run sharded or because the cursor was set from an event returned from the
@@ -1095,3 +1131,24 @@ def run_status_sensor(
         )
 
     return inner
+
+
+def _job_names_for_monitored(
+    monitored: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "JobSelector",
+        ]
+    ],
+) -> Sequence[str]:
+    from dagster._core.definitions.selector import JobSelector
+
+    job_names = []
+    for m in monitored:
+        if isinstance(m, JobSelector):
+            job_names.append(m.job_name)
+        else:
+            job_names.append(m.name)
+    return job_names
