@@ -6,7 +6,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     PartitionsDefinition,
     RetryPolicy,
-    TimeWindowPartitionsDefinition,
     multi_asset,
 )
 from dagster._utils.warnings import suppress_dagster_warnings
@@ -334,13 +333,6 @@ def dbt_assets(
         **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude} if exclude else {}),
         **(op_tags if op_tags else {}),
     }
-
-    if (
-        partitions_def
-        and isinstance(partitions_def, TimeWindowPartitionsDefinition)
-        and not backfill_policy
-    ):
-        backfill_policy = BackfillPolicy.single_run()
 
     return multi_asset(
         outs=outs,
