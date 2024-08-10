@@ -899,7 +899,7 @@ def get_dbt_resource_names_for_output_names(
 
     if kwargs.get("enable_selective_view_materialization"):
 
-        return _select_dbt_views_for_materialization(
+        return _get_conditional_dbt_resource_names(
             context=context,
             dbt_resource_props_gen=dbt_resource_props_gen
         )
@@ -917,11 +917,10 @@ def get_dbt_resource_names_for_output_names(
     return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
 
 
-def _select_dbt_views_for_materialization(
+def _get_conditional_dbt_resource_names(
         context: OpExecutionContext,
         dbt_resource_props_gen: Mapping[str, Any],
     ):
-    """Select dbt models that are views for materialization."""
     _view_types = ("view", "materialized view")
     selected_resources = []
     asset_keys_for_code_version = []
