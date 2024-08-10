@@ -34,7 +34,7 @@ export default {
       items: [
         // highlight-start
         {
-          type: 'docsVersionDropdown',
+          type: "docsVersionDropdown",
         },
         // highlight-end
       ],

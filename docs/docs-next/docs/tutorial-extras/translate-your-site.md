@@ -13,8 +13,8 @@ Modify `docusaurus.config.js` to add support for the `fr` locale:
 ```js title="docusaurus.config.js"
 export default {
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'fr'],
+    defaultLocale: "en",
+    locales: ["en", "fr"],
   },
 };
 ```
@@ -60,7 +60,7 @@ export default {
       items: [
         // highlight-start
         {
-          type: 'localeDropdown',
+          type: "localeDropdown",
         },
         // highlight-end
       ],

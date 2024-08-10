@@ -12,13 +12,19 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint:eslint": "eslint src",
+    "lint": "npx tsc --noEmit && prettier . --check && npm run lint:eslint",
+    "lint:fix": "prettier . --write && npm run lint:eslint --fix"
   },
   "dependencies": {
     "@docusaurus/core": "3.5.1",
     "@docusaurus/preset-classic": "3.5.1",
+    "@docusaurus/theme-mermaid": "^3.5.1",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
+    "docusaurus-plugin-sass": "^0.2.5",
+    "modern-normalize": "^2.0.0",
     "prism-react-renderer": "^2.3.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
@@ -27,7 +33,15 @@
     "@docusaurus/module-type-aliases": "3.5.1",
     "@docusaurus/tsconfig": "3.5.1",
     "@docusaurus/types": "3.5.1",
-    "typescript": "~5.5.2"
+    "@eslint/js": "^9.9.0",
+    "@typescript-eslint/parser": "^8.0.1",
+    "eslint": "^9.9.0",
+    "eslint-plugin-react": "^7.35.0",
+    "globals": "^15.9.0",
+    "prettier": "^3.3.3",
+    "prettier-eslint": "^16.3.0",
+    "typescript": "~5.5.2",
+    "typescript-eslint": "^8.0.1"
   },
   "browserslist": {
     "production": [
