@@ -122,14 +122,21 @@ At this point, the `dagster_university/assets/dbt.py` file should look like this
 
 ```python
 import json
+import os
 
 from dagster import AssetExecutionContext, AssetKey
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 from ..partitions import daily_partition
-from ..project import dbt_project
+from ..resources import dbt_resource
+from .constants import DBT_DIRECTORY
 
 INCREMENTAL_SELECTOR = "config.materialized:incremental"
+
+if os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"):
+    dbt_manifest_path = dbt_resource.cli(["--quiet", "parse"]).wait().target_path.joinpath("manifest.json")
+else:
+    dbt_manifest_path = os.path.join(DBT_DIRECTORY, "target", "manifest.json")
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
@@ -140,6 +147,9 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
             return AssetKey(f"taxi_{name}")
         else:
             return super().get_asset_key(dbt_resource_props)
+
+    def get_group_name(self, dbt_resource_props):
+        return dbt_resource_props["fqn"][1]
 
 
 @dbt_assets(
@@ -161,11 +171,12 @@ def incremental_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
     time_window = context.partition_time_window
     dbt_vars = {
         "min_date": time_window.start.strftime('%Y-%m-%d'),
-        "max_date": time_window.end.strftime('%Y-%m-%d')
+        "max_date": time_window.end.strftime('%Y-%m-%d'),
     }
 
     yield from dbt.cli(
-        ["build", "--vars", json.dumps(dbt_vars)], context=context
+        ["build", "--vars", json.dumps(dbt_vars)],
+        context=context,
     ).stream()
 
 ```
