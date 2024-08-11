@@ -11,13 +11,12 @@ help:
 .PHONY: help Makefile watch install livehtml
 
 install:
-	pip install --upgrade uv
-	uv pip install -r requirements.txt
+	pip install -r requirements.txt
 
 watch: 
 	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
 
-build:
+build: 
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Catch-all target: route all unknown targets to Sphinx using the new
