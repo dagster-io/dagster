@@ -35,7 +35,7 @@ const config: Config = {
       additionalLanguages: ["diff", "json", "bash"],
     },
     zoom: {
-      selector: ".markdown > img",
+      selector: ".markdown > img, .tabs-container img ",
       config: {
         // options you can specify via https://github.com/francoischalifour/medium-zoom#usage
         background: {
