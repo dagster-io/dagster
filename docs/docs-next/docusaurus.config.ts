@@ -19,7 +19,10 @@ const config: Config = {
   },
   themes: ["@docusaurus/theme-mermaid"],
   i18n: { defaultLocale: "en", locales: ["en"] },
-  plugins: ["docusaurus-plugin-sass"],
+  plugins: [
+    require.resolve("docusaurus-plugin-sass"),
+    require.resolve("docusaurus-plugin-image-zoom"),
+  ],
   themeConfig: {
     colorMode: {
       defaultMode: "dark",
@@ -29,7 +32,17 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ["diff", "json"],
+      additionalLanguages: ["diff", "json", "bash"],
+    },
+    zoom: {
+      selector: ".markdown > img",
+      config: {
+        // options you can specify via https://github.com/francoischalifour/medium-zoom#usage
+        background: {
+          light: "rgb(255, 255, 255)",
+          dark: "rgb(50, 50, 50)",
+        },
+      },
     },
     tableOfContents: {
       minHeadingLevel: 2,
@@ -66,7 +79,8 @@ const config: Config = {
     image: "img/docusaurus-social-card.jpg",
     docs: {
       sidebar: {
-        autoCollapseCategories: false,
+        autoCollapseCategories: true,
+        hideable: true,
       },
     },
 
@@ -113,6 +127,7 @@ const config: Config = {
       copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs.`,
     },
   } satisfies Preset.ThemeConfig,
+
   presets: [
     [
       "@docusaurus/preset-classic",
@@ -121,7 +136,7 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
           editUrl:
-            "https://github.com/dagster-io/dagster/tree/main/docs/docs-next",
+            "https://github.com/dagster-io/dagster/tree/docs/revamp/docs/docs-next",
         },
         blog: false,
         theme: {
