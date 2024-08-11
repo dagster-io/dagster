@@ -6,7 +6,7 @@ last_update:
     author: Pedram Navid
 ---
 
-In Dagster, assets are the building blocks of data pipelines. They represent the data that is being processed by the pipeline.
+In Dagster, assets are the building blocks of data pipelines. They represent the data that's being processed by the pipeline.
 An asset can represent a table in a database, a file in a file system, or even a machine learning model or notebook.
 
 

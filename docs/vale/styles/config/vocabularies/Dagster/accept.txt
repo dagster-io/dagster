@@ -4,3 +4,6 @@ Dagster
 ETL
 SDAs
 SDA
+Extract
+Transform
+Load
