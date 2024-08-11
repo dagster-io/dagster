@@ -21,8 +21,8 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Tutorial",
-      items: ["tutorial/tutorial-1"],
+      label: "Tutorials",
+      items: ["tutorial/tutorial-etl"],
     },
     {
       type: "category",

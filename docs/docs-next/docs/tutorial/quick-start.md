@@ -1,167 +1,176 @@
 ---
-title: "Quick Start"
-description: "This guide will step you through the process of creating a barebones Hello World app in Electron, similar to electron/electron-quick-start."
-slug: quick-start
-hide_title: false
+title: Quickstart
+description: Learn how to quickly get up and running with Dagster
+last_update: 
+    date: 2024-08-10
+    author: Pedram Navid
 ---
-# Quickstart
 
+# Dagster Tutorial: Building Your First Dagster Project
 
+Welcome to this hands-on tutorial where you'll learn how to build a basic Extract, Transform, Load (ETL) pipeline using Dagster. By the end of this tutorial, you'll have created a functional pipeline that extracts data from a CSV file and transforms it.
 
-Welcome to Dagster! This guide will help you quickly run the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project, showcasing Dagster's capabilities and serving as a foundation for exploring its features.
+## What You'll Learn
 
-The [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project can be used without installing anything on your machine by using the pre-configured [GitHub Codespace](https://github.com/features/codespaces). If you prefer to run things on your own machine, however, we've got you covered.
+- How to set up a basic Dagster project
+- How to create Software-Defined Assets (SDAs) for each step of the ETL process
+- How to use Dagster's built-in features to monitor and execute your pipeline
 
-<Tabs>
-<TabItem value="option-1" label="Option 1: Running locally">
+## Prerequisites
 
-### Option 1: Running Locally
+- Basic Python knowledge
+- Python 3.7+ installed on your system, see [installation guide](tutorial/installation.md) for more details
 
-Ensure you have one of the supported Python versions installed before proceeding.
+## Step 1: Set Up Your Dagster Environment
 
-Refer to Python's official <a href="https://www.python.org/about/gettingstarted/">getting started guide</a>, or our recommendation of using <a href="https://github.com/pyenv/pyenv?tab=readme-ov-file#installation">pyenv</a> for installing Python.
+First, set up a new Dagster project.
 
-1. Clone the Dagster Quickstart repository by executing:
+1. Open your terminal and create a new directory for your project:
 
-   ```bash title="Clone the repo"
-   git clone https://github.com/dagster-io/dagster-quickstart
+   ```bash title="Create a new directory"
+   mkdir dagster-quickstart
    cd dagster-quickstart
    ```
 
-2. Install the necessary dependencies using the following command:
+2. Create a virtual environment and activate it:
 
-   We use `-e` to install dependencies in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs). This allows changes to be automatically applied when we modify code.
-
-   ```bash title="Install dependencies"
-   pip install -e ".[dev]"
+   ```bash title="Create a virtual environment"
+   python -m venv venv
+   source venv/bin/activate  
+   # On Windows, use `venv\Scripts\activate`
    ```
 
-3. Run the project!
+3. Install Dagster and the required dependencies:
 
-   ```bash title="Run the project"
-   dagster dev
+   ```bash title="Install Dagster and dependencies"
+   pip install dagster dagster-webserver pandas
    ```
 
-4. Navigate to <a href="localhost:3000">localhost:3000</a> in your web browser.
+## Step 2: Create Your Dagster Project Structure
 
-5. **Success!**
+Let's set up a basic project structure:
 
-</TabItem>
-<TabItem value="option-2" label="Option 2: Using GitHub Codespaces">
+:::warning
 
-### Option 2: Using GitHub Codespaces
+The file structure here is simplified to get started quickly. Once you've 
+completed this tutorial, consider completing the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) 
+to learn how to build a more complex ETL pipeline with best practices when it comes 
+to file organization.
 
-1. Fork the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) repository
+:::
 
-2. Select **Create codespace on main** from the **Code** dropdown menu.
+1. Create the following files and directories:
 
-<img src="/images/getting-started/quickstart/github-codespace-create.png" alt="Create codespace" style={{maxWidth:'500px'}}/>
-
-3. After the codespace loads, start Dagster by running `dagster dev` in the terminal:
-
-   ```bash
-   dagster dev
+   ```bash title="Project structure"
+   dagster-quickstart/
+   ├── quickstart/
+   │   ├── __init__.py
+   │   └── assets.py
+   ├── data/
+       └── sample_data.csv
    ```
 
-4. Click **Open in Browser** when prompted.
+   ```bash title="Create the project structure"
+   mkdir quickstart data
+   touch quickstart/__init__.py quickstart/assets.py
+   touch data/sample_data.csv
+   ```
+   
+   
 
-<img src="/images/getting-started/quickstart/github-codespace-open-in-browser.png" alt="Codespace Open In Browser" style={{maxWidth:'500px'}}/>
+2. Create a sample CSV file as a data source. In the `data/sample_data.csv` file, add the following content:
 
-5. **Success!**
+   ```csv
+   id,name,age,city
+   1,Alice,28,New York
+   2,Bob,35,San Francisco
+   3,Charlie,42,Chicago
+   4,Diana,31,Los Angeles
+   ```
 
-</TabItem>
-</Tabs>
+## Step 3: Define Your Assets
 
-## Navigating the User Interface
+Now, create the assets for the ETL pipeline. Open `quickstart/assets.py` and add the following code:
 
-You should now have a running instance of Dagster! From here, we can run our data pipeline.
-
-To run the pipeline, click the **Materialize All** button in the top right. In Dagster, _materialization_ refers to executing the code associated with an asset to produce an output.
-
-<img src="/images/getting-started/quickstart/quickstart-unmaterialized.png" alt="HackerNews assets in Dagster's Asset Graph, unmaterialized" style={{maxWidth:'900px'}}/>
-
-Congratulations! You have successfully materialized two Dagster assets:
-
-<img src="/images/getting-started/quickstart/quickstart.png" alt="HackerNews asset graph" style={{maxWidth:'900px'}}/>
-
-But wait - there's more. Because the `hackernews_top_stories` asset returned some `metadata`, you can view the metadata right in the UI:
-
-1. Click the asset
-2. In the sidebar, click the **Show Markdown** link in the **Materialization in Last Run** section. This opens a preview of the pipeline result, allowing you to view the top 10 HackerNews stories:
-
-<img src="/images/getting-started/quickstart/hn-preview.png" alt="Markdown preview of HackerNews top 10 stories" style={{maxWidth:'900px'}}/>
-
-## Understanding the Code
-
-The Quickstart project defines two **Assets** using the <PyObject object="asset" decorator /> decorator:
-
-- `hackernews_top_story_ids` retrieves the top stories from the Hacker News API and saves them as a JSON file.
-- `hackernews_top_stories` asset builds upon the first asset, retrieving data for each story as a CSV file, and returns a `MaterializeResult` with a markdown preview of the top stories.
-
-```python file=/getting-started/quickstart/assets.py
-import json
-
+```python
 import pandas as pd
-import requests
-
-from dagster import Config, MaterializeResult, MetadataValue, asset
-
-
-class HNStoriesConfig(Config):
-    top_stories_limit: int = 10
-    hn_top_story_ids_path: str = "hackernews_top_story_ids.json"
-    hn_top_stories_path: str = "hackernews_top_stories.csv"
-
+from dagster import asset
 
 @asset
-def hackernews_top_story_ids(config: HNStoriesConfig):
-    """Get top stories from the HackerNews top stories endpoint."""
-    top_story_ids = requests.get(
-        "https://hacker-news.firebaseio.com/v0/topstories.json"
-    ).json()
+def extract_data():
+    df = pd.read_csv("data/sample_data.csv")
+    return df
 
-    with open(config.hn_top_story_ids_path, "w") as f:
-        json.dump(top_story_ids[: config.top_stories_limit], f)
+@asset
+def transform_data(extract_data):
+    df = extract_data.copy()
+    df['age_group'] = pd.cut(df['age'], bins=[0, 30, 40, 100], labels=['Young', 'Middle', 'Senior'])
+    return df
 
+@asset
+def load_data(transform_data):
+    df = transform_data
+    df.to_csv("data/processed_data.csv", index=False)
+    return "Data loaded successfully"
 
-@asset(deps=[hackernews_top_story_ids])
-def hackernews_top_stories(config: HNStoriesConfig) -> MaterializeResult:
-    """Get items based on story ids from the HackerNews items endpoint."""
-    with open(config.hn_top_story_ids_path, "r") as f:
-        hackernews_top_story_ids = json.load(f)
-
-    results = []
-    for item_id in hackernews_top_story_ids:
-        item = requests.get(
-            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        ).json()
-        results.append(item)
-
-    df = pd.DataFrame(results)
-    df.to_csv(config.hn_top_stories_path)
-
-    return MaterializeResult(
-        metadata={
-            "num_records": len(df),
-            "preview": MetadataValue.md(str(df[["title", "by", "url"]].to_markdown())),
-        }
-    )
+defs = Definitions(assets=[extract_data, transform_data, load_data])
 ```
 
----
+This code defines three assets:
+- `extract_data`: Reads data from the CSV file
+- `transform_data`: Adds an 'age_group' column based on the 'age'
+- `load_data`: Saves the processed data to a CSV file
 
-## Next steps
+The `Definitions` object serves as the central configuration point for a Dagster project. In this code, a `Definitions` 
+object is defined and passed all three assets to it. This tells Dagster about the assets that make up the ETL pipeline 
+and allows Dagster to manage their execution and dependencies.
 
-Congratulations on successfully running your first Dagster pipeline! In this example, we used [assets](/tutorial), which are a cornerstone of Dagster projects. They empower data engineers to:
+## Step 4: Run Your Pipeline
 
-- Think in the same terms as stakeholders
-- Answer questions about data quality and lineage
-- Work with the modern data stack (dbt, Airbyte/Fivetran, Spark)
-- Create declarative freshness policies instead of task-driven cron schedules
+:::warning
 
-Dagster also offers [ops and jobs](/guides/dagster/intro-to-ops-jobs), but we recommend starting with assets.
+There should be screenshots here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-To create your own project, consider the following options:
+:::
 
-- Scaffold a new project using our [new project guide](/getting-started/create-new-project).
-- Begin with an official example, like the [dbt & Dagster project](/integrations/dbt/using-dbt-with-dagster), and explore [all examples on GitHub](https://github.com/dagster-io/dagster/tree/master/examples).
+1. In the terminal, navigate to your project root directory and run:
+
+   ```bash
+   dagster dev -f quickstart/assets.py
+   ```
+
+2. Open your web browser and go to `http://localhost:3000`
+
+3. You should see the Dagster UI along with all three assets. 
+
+3. Click Materialize All to run the pipeline.
+
+4. In the popup that appears, click View to view a run as it executes.
+
+5. Watch as Dagster executes your pipeline. Try different views by selecting the different view buttons in the top-left.
+You can click on each asset to see its logs and metadata.
+
+## Step 5: Verify Your Results
+
+To verify that your pipeline worked correctly:
+
+1. In your terminal, run:
+
+   ```bash
+   cat data/processed_data.csv
+   ```
+
+You should see your transformed data, including the new 'age_group' column.
+
+## What You've Learned
+
+Congratulations! You've just built and run your first pipeline with Dagster. You've learned how to:
+
+- Set up a Dagster project
+- Define Software-Defined Assets for each step of your pipeline
+- Use Dagster's UI to run and monitor your pipeline
+
+## Next Steps
+
+- Continue with the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) to learn how to build a more complex ETL pipeline
+- Learn how to [Think in Assets](/concepts/thinking-in-assets)

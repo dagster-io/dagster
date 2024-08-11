@@ -177,7 +177,7 @@ a.pyobject {
 }
 
 .markdown {
-  line-height: 175%;
+  line-height: 150%;
 
   a {
     font-weight: var(--ifm-font-weight-semibold);
@@ -187,11 +187,13 @@ a.pyobject {
   }
 
   h1,
+  h1:first-child,
   h2,
   h3,
   h4,
   h5,
   h6 {
+    --ifm-h1-font-size: 2rem;
     --ifm-h2-font-size: 1.5rem;
     --ifm-h3-font-size: 1.3rem;
     --ifm-h4-font-size: 1rem;
