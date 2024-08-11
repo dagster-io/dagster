@@ -48,14 +48,14 @@ First, set up a new Dagster project.
 
 ## Step 2: Create Your Dagster Project Structure
 
-Let's set up a basic project structure:
+Set up a basic project structure:
 
 :::warning
 
-The file structure here is simplified to get started quickly. Once you've 
-completed this tutorial, consider completing the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) 
-to learn how to build a more complex ETL pipeline with best practices when it comes 
-to file organization.
+The file structure here is simplified to get quickly started. 
+
+Once you've completed this tutorial, consider the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) to learn 
+how to build more complex pipelines with best practices.
 
 :::
 
@@ -118,7 +118,7 @@ defs = Definitions(assets=[extract_data, transform_data, load_data])
 
 This code defines three assets:
 - `extract_data`: Reads data from the CSV file
-- `transform_data`: Adds an 'age_group' column based on the 'age'
+- `transform_data`: Adds an `age_group` column based on the `age`
 - `load_data`: Saves the processed data to a CSV file
 
 The `Definitions` object serves as the central configuration point for a Dagster project. In this code, a `Definitions` 
@@ -160,7 +160,7 @@ To verify that your pipeline worked correctly:
    cat data/processed_data.csv
    ```
 
-You should see your transformed data, including the new 'age_group' column.
+You should see your transformed data, including the new `age_group` column.
 
 ## What You've Learned
 

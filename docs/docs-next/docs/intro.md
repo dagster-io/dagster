@@ -5,4 +5,4 @@ slug: /
 
 # Dagster Documentation
 
-Welcome to Dagster's documentation!
+Welcome to Dagster's documentation.
