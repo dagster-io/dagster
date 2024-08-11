@@ -94,35 +94,30 @@ Now, create the assets for the ETL pipeline. Open `quickstart/assets.py` and add
 
 ```python
 import pandas as pd
-from dagster import asset
+from dagster import asset, Definitions
 
 @asset
-def extract_data():
+def processed_data():
     df = pd.read_csv("data/sample_data.csv")
-    return df
-
-@asset
-def transform_data(extract_data):
-    df = extract_data.copy()
     df['age_group'] = pd.cut(df['age'], bins=[0, 30, 40, 100], labels=['Young', 'Middle', 'Senior'])
-    return df
-
-@asset
-def load_data(transform_data):
-    df = transform_data
     df.to_csv("data/processed_data.csv", index=False)
     return "Data loaded successfully"
 
-defs = Definitions(assets=[extract_data, transform_data, load_data])
+defs = Definitions(assets=[processed_data])
 ```
 
-This code defines three assets:
-- `extract_data`: Reads data from the CSV file
-- `transform_data`: Adds an `age_group` column based on the `age`
-- `load_data`: Saves the processed data to a CSV file
+This code defines a single data asset within a single computation that performs three steps:
+- Reads data from the CSV file
+- Adds an `age_group` column based on the `age`
+- Saves the processed data to a CSV file
+
+If you are used to task-based orchestrations, this might feel a bit different. 
+In traditional task-based orchestrations, you would have three separate steps,
+but in Dagster, you model your pipelines using assets as the fundamental building block,
+rather than tasks.
 
 The `Definitions` object serves as the central configuration point for a Dagster project. In this code, a `Definitions` 
-object is defined and passed all three assets to it. This tells Dagster about the assets that make up the ETL pipeline 
+object is defined and the asset is passed to it. This tells Dagster about the assets that make up the ETL pipeline 
 and allows Dagster to manage their execution and dependencies.
 
 ## Step 4: Run Your Pipeline
@@ -141,7 +136,7 @@ There should be screenshots here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 2. Open your web browser and go to `http://localhost:3000`
 
-3. You should see the Dagster UI along with all three assets. 
+3. You should see the Dagster UI along with the asset. 
 
 3. Click Materialize All to run the pipeline.
 
