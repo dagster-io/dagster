@@ -175,8 +175,7 @@ def incremental_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
     }
 
     yield from dbt.cli(
-        ["build", "--vars", json.dumps(dbt_vars)],
-        context=context,
+        ["build", "--vars", json.dumps(dbt_vars)], context=context
     ).stream()
 
 ```
@@ -197,7 +196,7 @@ Here, we’ve changed the logic to say that we only want to select rows between 
 
 ---
 
-## Updating the existing `trip_update_job` definition
+## Updating the `trip_update_job` definition
 
 Before we can run the pipeline, we need to do a small bit of housekeeping. The job is partitioned monthly, and our `daily_metrics` asset is given a daily parition. It does not make sense for these to run together. So we must exclude the `daily_metrics` asset from our `trip_update_job`.  We can update this in `dagster_university/jobs/__init__.py` it to the following:
 
