@@ -5,7 +5,7 @@
  */
 
 /* You can override the default Infima variables here. */
-
+/* Some styles heavily influenced from: https://github.com/electron/website/blob/main/src/css/custom.scss */
 :root {
   // modified base colors
   --ifm-color-primary: var(--dagster-color-primary-500);
@@ -67,7 +67,7 @@
 
   // docusaurus variables
   --ifm-hover-overlay: rgba(162, 236, 251, 0.2);
-  --ifm-link-color: var(--dagster-color-mid);
+  --ifm-link-color: var(--dagster-color-primary-900);
   --ifm-menu-color-active: var(--dagster-color-dark);
   // these require !important because of some weirdness in CSS ordering
   // see: https://github.com/facebook/docusaurus/issues/3678
@@ -123,17 +123,17 @@
   --dagster-inline-code: var(--dagster-color-secondary-light);
 }
 
-.hero {
-  &--electron {
-    color: var(--dagster-color-light);
-    background: var(--dagster-color-dark);
-  }
+/* Main content */
+.theme-doc-markdown {
+  max-width: 900px;
+  margin: 0 auto;
+  margin-top: 1rem;
+  padding-left: 3rem;
 }
 
-.theme-doc-markdown {
-  max-width: 700px;
-  margin: 0 auto;
-  margin-top: 2rem;
+/* Custom code for PyObject */
+a.pyobject {
+  color: var(--dagster-color-red);
 }
 
 .navbar {
@@ -144,7 +144,7 @@
 
   &__inner {
     max-width: 1400px;
-    margin: 0 auto;
+    margin: 0 0;
   }
 
   &__item {
@@ -157,7 +157,7 @@
 
   &__link {
     font-weight: var(--ifm-font-weight-normal);
-    border-bottom: 2px solid transparent;
+    border-bottom: 3px solid transparent;
 
     &--active {
       color: var(--dagster-color-light);
@@ -177,15 +177,13 @@
 }
 
 .markdown {
+  line-height: 175%;
+
   a {
-    font-weight: var(--ifm-font-weight-bold);
+    font-weight: var(--ifm-font-weight-semibold);
     code {
       font-weight: var(--ifm-font-weight-bold);
     }
-  }
-
-  p {
-    line-height: 180%;
   }
 
   h1,
@@ -194,8 +192,8 @@
   h4,
   h5,
   h6 {
-    --ifm-h2-font-size: 1.6rem;
-    --ifm-h3-font-size: 1.2rem;
+    --ifm-h2-font-size: 1.5rem;
+    --ifm-h3-font-size: 1.3rem;
     --ifm-h4-font-size: 1rem;
     --ifm-h5-font-size: 0.8rem;
   }
@@ -228,18 +226,14 @@
 // sidebar
 .menu {
   &__link {
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: var(--ifm-font-weight-normal);
 
     &--active {
       font-weight: var(--ifm-font-weight-bold);
+      color: var(--dagster-color-blurple-dark);
     }
   }
-}
-
-// utility
-.no-select {
-  user-select: none;
 }
 
 .card {
@@ -250,7 +244,11 @@
   font-weight: var(--ifm-font-weight-bold);
 }
 
-// fix https://github.com/electron/website/issues/539
-.navbar__logo {
-  width: 2rem;
+.pagination-nav {
+  &__link {
+    border: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--dagster-color-gray-300);
+    color: var(--dagster-color-gray-900);
+  }
 }

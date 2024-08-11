@@ -1,0 +1,167 @@
+---
+title: "Quick Start"
+description: "This guide will step you through the process of creating a barebones Hello World app in Electron, similar to electron/electron-quick-start."
+slug: quick-start
+hide_title: false
+---
+# Quickstart
+
+
+
+Welcome to Dagster! This guide will help you quickly run the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project, showcasing Dagster's capabilities and serving as a foundation for exploring its features.
+
+The [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) project can be used without installing anything on your machine by using the pre-configured [GitHub Codespace](https://github.com/features/codespaces). If you prefer to run things on your own machine, however, we've got you covered.
+
+<Tabs>
+<TabItem value="option-1" label="Option 1: Running locally">
+
+### Option 1: Running Locally
+
+Ensure you have one of the supported Python versions installed before proceeding.
+
+Refer to Python's official <a href="https://www.python.org/about/gettingstarted/">getting started guide</a>, or our recommendation of using <a href="https://github.com/pyenv/pyenv?tab=readme-ov-file#installation">pyenv</a> for installing Python.
+
+1. Clone the Dagster Quickstart repository by executing:
+
+   ```bash title="Clone the repo"
+   git clone https://github.com/dagster-io/dagster-quickstart
+   cd dagster-quickstart
+   ```
+
+2. Install the necessary dependencies using the following command:
+
+   We use `-e` to install dependencies in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs). This allows changes to be automatically applied when we modify code.
+
+   ```bash title="Install dependencies"
+   pip install -e ".[dev]"
+   ```
+
+3. Run the project!
+
+   ```bash title="Run the project"
+   dagster dev
+   ```
+
+4. Navigate to <a href="localhost:3000">localhost:3000</a> in your web browser.
+
+5. **Success!**
+
+</TabItem>
+<TabItem value="option-2" label="Option 2: Using GitHub Codespaces">
+
+### Option 2: Using GitHub Codespaces
+
+1. Fork the [Dagster Quickstart](https://github.com/dagster-io/dagster-quickstart) repository
+
+2. Select **Create codespace on main** from the **Code** dropdown menu.
+
+<img src="/images/getting-started/quickstart/github-codespace-create.png" alt="Create codespace" style={{maxWidth:'500px'}}/>
+
+3. After the codespace loads, start Dagster by running `dagster dev` in the terminal:
+
+   ```bash
+   dagster dev
+   ```
+
+4. Click **Open in Browser** when prompted.
+
+<img src="/images/getting-started/quickstart/github-codespace-open-in-browser.png" alt="Codespace Open In Browser" style={{maxWidth:'500px'}}/>
+
+5. **Success!**
+
+</TabItem>
+</Tabs>
+
+## Navigating the User Interface
+
+You should now have a running instance of Dagster! From here, we can run our data pipeline.
+
+To run the pipeline, click the **Materialize All** button in the top right. In Dagster, _materialization_ refers to executing the code associated with an asset to produce an output.
+
+<img src="/images/getting-started/quickstart/quickstart-unmaterialized.png" alt="HackerNews assets in Dagster's Asset Graph, unmaterialized" style={{maxWidth:'900px'}}/>
+
+Congratulations! You have successfully materialized two Dagster assets:
+
+<img src="/images/getting-started/quickstart/quickstart.png" alt="HackerNews asset graph" style={{maxWidth:'900px'}}/>
+
+But wait - there's more. Because the `hackernews_top_stories` asset returned some `metadata`, you can view the metadata right in the UI:
+
+1. Click the asset
+2. In the sidebar, click the **Show Markdown** link in the **Materialization in Last Run** section. This opens a preview of the pipeline result, allowing you to view the top 10 HackerNews stories:
+
+<img src="/images/getting-started/quickstart/hn-preview.png" alt="Markdown preview of HackerNews top 10 stories" style={{maxWidth:'900px'}}/>
+
+## Understanding the Code
+
+The Quickstart project defines two **Assets** using the <PyObject object="asset" decorator /> decorator:
+
+- `hackernews_top_story_ids` retrieves the top stories from the Hacker News API and saves them as a JSON file.
+- `hackernews_top_stories` asset builds upon the first asset, retrieving data for each story as a CSV file, and returns a `MaterializeResult` with a markdown preview of the top stories.
+
+```python file=/getting-started/quickstart/assets.py
+import json
+
+import pandas as pd
+import requests
+
+from dagster import Config, MaterializeResult, MetadataValue, asset
+
+
+class HNStoriesConfig(Config):
+    top_stories_limit: int = 10
+    hn_top_story_ids_path: str = "hackernews_top_story_ids.json"
+    hn_top_stories_path: str = "hackernews_top_stories.csv"
+
+
+@asset
+def hackernews_top_story_ids(config: HNStoriesConfig):
+    """Get top stories from the HackerNews top stories endpoint."""
+    top_story_ids = requests.get(
+        "https://hacker-news.firebaseio.com/v0/topstories.json"
+    ).json()
+
+    with open(config.hn_top_story_ids_path, "w") as f:
+        json.dump(top_story_ids[: config.top_stories_limit], f)
+
+
+@asset(deps=[hackernews_top_story_ids])
+def hackernews_top_stories(config: HNStoriesConfig) -> MaterializeResult:
+    """Get items based on story ids from the HackerNews items endpoint."""
+    with open(config.hn_top_story_ids_path, "r") as f:
+        hackernews_top_story_ids = json.load(f)
+
+    results = []
+    for item_id in hackernews_top_story_ids:
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
+        results.append(item)
+
+    df = pd.DataFrame(results)
+    df.to_csv(config.hn_top_stories_path)
+
+    return MaterializeResult(
+        metadata={
+            "num_records": len(df),
+            "preview": MetadataValue.md(str(df[["title", "by", "url"]].to_markdown())),
+        }
+    )
+```
+
+---
+
+## Next steps
+
+Congratulations on successfully running your first Dagster pipeline! In this example, we used [assets](/tutorial), which are a cornerstone of Dagster projects. They empower data engineers to:
+
+- Think in the same terms as stakeholders
+- Answer questions about data quality and lineage
+- Work with the modern data stack (dbt, Airbyte/Fivetran, Spark)
+- Create declarative freshness policies instead of task-driven cron schedules
+
+Dagster also offers [ops and jobs](/guides/dagster/intro-to-ops-jobs), but we recommend starting with assets.
+
+To create your own project, consider the following options:
+
+- Scaffold a new project using our [new project guide](/getting-started/create-new-project).
+- Begin with an official example, like the [dbt & Dagster project](/integrations/dbt/using-dbt-with-dagster), and explore [all examples on GitHub](https://github.com/dagster-io/dagster/tree/master/examples).
