@@ -101,6 +101,7 @@ def main(
         "-e examples/experimental/dagster-blueprints",
         "-e examples/experimental/dagster-airlift",
     ]
+
     if sys.version_info <= (3, 12):
         install_targets += [
             "-e python_modules/libraries/dagster-duckdb",
