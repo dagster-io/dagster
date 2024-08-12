@@ -43,10 +43,7 @@ class FalseAutomationCondition(AutomationCondition):
         return ""
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
-        return AutomationResult.create(
-            context,
-            true_slice=context.asset_graph_view.create_empty_slice(asset_key=context.asset_key),
-        )
+        return AutomationResult.create(context, true_slice=context.get_empty_slice())
 
 
 @dataclass(frozen=True)

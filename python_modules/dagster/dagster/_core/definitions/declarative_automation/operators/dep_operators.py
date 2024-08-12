@@ -112,7 +112,7 @@ class AnyDepsCondition(DepCondition):
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         dep_results = []
-        true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+        true_slice = context.get_empty_slice()
 
         for i, dep_key in enumerate(
             sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
