@@ -54,8 +54,7 @@ class NewlyTrueCondition(AutomationCondition):
 
         # get the set of asset partitions of the child which newly became true
         newly_true_child_slice = child_result.true_slice.compute_difference(
-            self._get_previous_child_true_slice(context)
-            or context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+            self._get_previous_child_true_slice(context) or context.get_empty_slice()
         )
 
         return AutomationResult.create_from_children(

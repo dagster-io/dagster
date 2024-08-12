@@ -69,7 +69,7 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             asset_key=context.asset_key
         )
 
-        true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+        true_slice = context.get_empty_slice()
         child_results = []
         for i, (downstream_condition, asset_keys) in enumerate(
             sorted(downstream_conditions.items(), key=lambda x: sorted(x[1]))
