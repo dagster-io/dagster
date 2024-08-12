@@ -27,7 +27,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "How-To Guides",
-      items: ["how-to/asset-management", "how-to/data-movement-transformation"],
+      items: ["how-to/asset-management/passing-data-between-assets"],
     },
   ],
   /*
