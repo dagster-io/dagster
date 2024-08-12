@@ -33,7 +33,13 @@ from dagster._serdes.serdes import (
 from dagster_airlift.migration_state import AirflowMigrationState
 
 from .airflow_instance import AirflowInstance, DagInfo, TaskInfo
-from .utils import get_dag_id_from_asset, get_task_id_from_asset
+from .utils import (
+    DAG_ID_TAG,
+    MIGRATED_TAG,
+    TASK_ID_TAG,
+    get_dag_id_from_asset,
+    get_task_id_from_asset,
+)
 
 
 # We serialize dictionaries as json, and json doesn't know how to serialize AssetKeys. So we wrap the mapping
@@ -113,9 +119,6 @@ class CacheableAssetDep:
 
 
 DEFAULT_POLL_INTERVAL = 60
-MIGRATED_TAG = "airlift/task_migrated"
-DAG_ID_TAG = "airlift/dag_id"
-TASK_ID_TAG = "airlift/task_id"
 
 
 class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -188,7 +191,7 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
                 build_airflow_asset_from_specs(
                     specs=[dag_spec.to_asset_spec({})],
                     name=key.to_user_string().replace("/", "__"),
-                    tags={"airlift/dag_id": dag_id},
+                    tags={DAG_ID_TAG: dag_id},
                 )
             )
         return new_assets_defs + construct_assets_with_task_migration_info_applied(

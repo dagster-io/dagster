@@ -21,7 +21,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 
 from .airflow_instance import AirflowInstance, TaskInstance
-from .utils import get_dag_id_from_asset, get_task_id_from_asset
+from .utils import MIGRATED_TAG, get_dag_id_from_asset, get_task_id_from_asset
 
 
 def build_airflow_polling_sensor(
@@ -42,7 +42,7 @@ def build_airflow_polling_sensor(
         )
         current_date = get_current_datetime()
         materializations_to_report: List[Tuple[float, AssetMaterialization]] = []
-        for dag_id, (dag_key, task_keys) in retrieve_dag_keys(repository_def).items():
+        for dag_id, (dag_key, task_keys) in retrieve_unmigrated_dag_keys(repository_def).items():
             # For now, we materialize assets representing tasks only when the whole dag completes.
             # With a more robust cursor that can let us know when we've seen a particular task run already, then we can relax this constraint.
             for dag_run in airflow_instance.get_dag_runs(dag_id, last_effective_date, current_date):
@@ -106,10 +106,12 @@ def build_airflow_polling_sensor(
     return airflow_dag_sensor
 
 
-def retrieve_dag_keys(
+def retrieve_unmigrated_dag_keys(
     repository_def: RepositoryDefinition,
 ) -> Dict[str, Tuple[AssetKey, Set[Tuple[str, AssetKey]]]]:
-    """For each dag, retrieve the list of asset keys."""
+    """For each dag, retrieve the list of asset keys which correspond, and are unmigrated.
+    The key representing the "peered" dag will always be retrieved, but assets whose tasks are marked as "migrated" will not.
+    """
     # First, we need to retrieve the upstreams for each asset key
     key_per_dag = {}
     task_keys_per_dag = defaultdict(set)
@@ -125,5 +127,12 @@ def retrieve_dag_keys(
                 assets_def.key
             )  # There should only be one key in the case of a "dag" asset
         else:
-            task_keys_per_dag[dag_id].update((task_id, spec.key) for spec in assets_def.specs)
+            migrated = (
+                MIGRATED_TAG in assets_def.node_def.tags
+                and assets_def.node_def.tags[MIGRATED_TAG] == "True"
+            )
+            if migrated:
+                continue
+            else:
+                task_keys_per_dag[dag_id].update((task_id, spec.key) for spec in assets_def.specs)
     return {dag_id: (key, task_keys_per_dag[dag_id]) for dag_id, key in key_per_dag.items()}
