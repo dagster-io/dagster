@@ -328,7 +328,10 @@ class GrapheneRun(graphene.ObjectType):
     parentPipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
     status = graphene.NonNull(GrapheneRunStatus)
-    runStatus = graphene.NonNull(GrapheneRunStatus)  # for RunsFeedEntry interface - dupe of status
+    runStatus = graphene.Field(
+        graphene.NonNull(GrapheneRunStatus),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of status.",
+    )
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)

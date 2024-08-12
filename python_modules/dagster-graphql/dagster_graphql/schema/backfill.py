@@ -9,7 +9,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPo
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._core.errors import DagsterError
+from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillStatus,
     PartitionedAssetBackfillStatus,
@@ -123,18 +123,23 @@ class GrapheneBulkActionStatus(graphene.Enum):
         name = "BulkActionStatus"
 
     def to_dagster_run_status(self) -> GrapheneRunStatus:
-        """Placeholder for this PR. Will do a more thurough pass to accurately convert backfill status
-        to DagsterRunStatus in a stacked branch.
-        """
-        if self.args[0] == GrapheneBulkActionStatus.REQUESTED.value:
-            return GrapheneRunStatus.STARTED
-        if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:
-            return GrapheneRunStatus.SUCCESS
-        if self.args[0] == GrapheneBulkActionStatus.FAILED.value:
-            return GrapheneRunStatus.FAILURE
-        if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:
-            return GrapheneRunStatus.CANCELED
-        return GrapheneRunStatus.CANCELING
+        """Maps bulk action status to a run status for use with the RunsFeedEntry interface."""
+        # the pyright ignores are required because GrapheneBulkActionStatus.STATUS and GrapheneRunStatus.STATUS
+        # are interpreted as a Literal string during static analysis, but it is actually an Enum value
+        if self.args[0] == GrapheneBulkActionStatus.REQUESTED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.STARTED  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.CANCELED  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.CANCELING.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.CANCELING  # pyright: ignore[reportReturnType]
+
+        raise DagsterInvariantViolationError(
+            f"Unable to convert BulkActionStatus {self.args[0]} to a RunStatus. {self.args[0]} is an unknown status."
+        )
 
 
 class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):
@@ -297,11 +302,17 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         name = "PartitionBackfill"
 
     id = graphene.NonNull(graphene.String)
-    runId = graphene.NonNull(graphene.String)  # for RunsFeedEntry interface - dupe of id
+    runId = graphene.Field(
+        graphene.NonNull(graphene.String),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of id.",
+    )
     status = graphene.NonNull(GrapheneBulkActionStatus)
-    runStatus = graphene.NonNull(
-        GrapheneRunStatus
-    )  # for RunsFeedEntry interface - combines status with sub-run statuses
+    runStatus = graphene.Field(
+        graphene.NonNull(
+            GrapheneRunStatus,
+            description="Included to comply with RunsFeedEntry interface. Synthesizes status and the status of subruns to create a RunStatus.",
+        )
+    )
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
     numPartitions = graphene.Field(graphene.Int)
@@ -311,12 +322,21 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
-    creationTime = graphene.NonNull(
-        graphene.Float
-    )  # for RunsFeedEntry interface - dupe of timestamp
-    startTime = graphene.Float()  # for RunsFeedEntry interface - dupe of timestamp
+    creationTime = graphene.Field(
+        graphene.NonNull(
+            graphene.Float,
+            description="Included to comply with RunsFeedEntry interface. Duplicate of timestamp.",
+        )
+    )
+    startTime = graphene.Field(
+        graphene.Float(),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of timestamp.",
+    )
     endTimestamp = graphene.Field(graphene.Float)
-    endTime = graphene.Float()  # for RunsFeedEntry interface - dupe of endTimestamp
+    endTime = graphene.Field(
+        graphene.Float(),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of endTimestamp.",
+    )
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
@@ -353,7 +373,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         graphene.NonNull("dagster_graphql.schema.instigation.GrapheneInstigationEventConnection"),
         cursor=graphene.String(),
     )
-    jobName = graphene.String()  # for RunsFeedEntry interface - dupe of partitionSetName
+    jobName = graphene.Field(
+        graphene.String(),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of partitionSetName.",
+    )
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
     )
