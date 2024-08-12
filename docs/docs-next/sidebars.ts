@@ -21,15 +21,52 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Tutorials",
+      label: "Tutorial",
       items: ["tutorial/tutorial-etl"],
     },
     {
       type: "category",
-      label: "How-To Guides",
-      items: ["how-to/asset-management/passing-data-between-assets"],
+      label: "Guides",
+      items: [
+        {
+          type: "category",
+          label: "Data assets",
+          items: ["guides/data-assets"]
+        },
+        {
+          type: "category",
+          label: "Transformation",
+          items: ["guides/transformation"]
+        },
+        {
+          type: "category",
+          label: "Automation",
+          items: ["guides/automation"]
+        },
+        {
+          type: "category",
+          label: "External systems",
+          items: ["guides/external-systems"]
+        },
+        {
+          type: "category",
+          label: "Testing",
+          items: ["guides/testing"]
+        },
+        {
+          type: "category",
+          label: "Monitoring",
+          items: ["guides/monitoring"]
+        },
+        {
+          type: "category",
+          label: "Deployment",
+          items: ["guides/deployment"]
+        }
+      ],
     },
   ],
+
   /*
   // But you can create a sidebar manually
   docSidebar: [
