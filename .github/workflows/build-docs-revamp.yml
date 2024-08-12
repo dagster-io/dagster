@@ -25,7 +25,7 @@ jobs:
           github-comment: ${{ true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
           vercel-args: "--prod"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
