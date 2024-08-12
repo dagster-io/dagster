@@ -69,7 +69,7 @@ class MaterializeOnRequiredForFreshnessRule(
             context.legacy_context.root_context
         )
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -208,7 +208,7 @@ class MaterializeOnCronRule(
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(
             asset_subset_to_request
         )
-        return AutomationResult.create(context, true_slice=true_slice)
+        return AutomationResult(context, true_slice=true_slice)
 
 
 @whitelist_for_serdes
@@ -431,7 +431,7 @@ class MaterializeOnParentUpdatedRule(
             )
         )
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -532,7 +532,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 | context.legacy_context.previous_true_subset
             ) - context.legacy_context.previous_tick_requested_subset
 
-        return AutomationResult.create(
+        return AutomationResult(
             context,
             true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
                 unhandled_candidates
@@ -591,7 +591,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
             )
         )
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -648,7 +648,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
             )
         )
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -742,7 +742,7 @@ class SkipOnNotAllParentsUpdatedRule(
             )
         )
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -966,7 +966,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 - context.legacy_context.previous_true_subset
             ) | all_parents_updated_subset
 
-        return AutomationResult.create(
+        return AutomationResult(
             context,
             true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
                 context.legacy_context.candidate_subset - all_parents_updated_subset
@@ -1020,7 +1020,7 @@ class SkipOnRequiredButNonexistentParentsRule(
             )
         )
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice, subsets_with_metadata)
+        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -1060,7 +1060,7 @@ class SkipOnBackfillInProgressRule(
             true_subset = context.legacy_context.candidate_subset & backfilling_subset
 
         true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult.create(context, true_slice)
+        return AutomationResult(context, true_slice)
 
 
 @whitelist_for_serdes
@@ -1086,7 +1086,7 @@ class DiscardOnMaxMaterializationsExceededRule(
             )[self.limit :]
         )
 
-        return AutomationResult.create(
+        return AutomationResult(
             context,
             context.asset_graph_view.get_asset_slice_from_valid_subset(
                 AssetSubset.from_asset_partitions_set(
@@ -1124,13 +1124,13 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
         if planned_materialization_info:
             dagster_run = instance.get_run_by_id(planned_materialization_info.run_id)
             if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
-                return AutomationResult.create(
+                return AutomationResult(
                     context,
                     context.asset_graph_view.get_asset_slice_from_valid_subset(
                         context.legacy_context.candidate_subset
                     ),
                 )
-        return AutomationResult.create(
+        return AutomationResult(
             context,
             context.asset_graph_view.get_asset_slice_from_valid_subset(
                 context.legacy_context.empty_subset()
