@@ -30,31 +30,33 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
         api_token=fake_token,
         workspace_id=workspace_id,
     )
-    all_asset_specs = resource.build_asset_specs()
+    cacheable_asset = resource.build_assets()[0]
+    data = cacheable_asset.compute_cacheable_data()
+    all_assets = cacheable_asset.build_definitions(data)
 
     # 1 dashboard, 1 report, 1 semantic model, 2 data sources
-    assert len(all_asset_specs) == 5
+    assert len(all_assets) == 5
 
     # Sanity check outputs, translator tests cover details here
-    dashboard_spec = next(spec for spec in all_asset_specs if spec.key.path[0] == "dashboard")
-    assert dashboard_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
+    dashboard_asset = next(asset for asset in all_assets if asset.key.path[0] == "dashboard")
+    assert dashboard_asset.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
 
-    report_spec = next(spec for spec in all_asset_specs if spec.key.path[0] == "report")
-    assert report_spec.key.path == ["report", "Sales_Returns_Sample_v201912"]
+    report_asset = next(asset for asset in all_assets if asset.key.path[0] == "report")
+    assert report_asset.key.path == ["report", "Sales_Returns_Sample_v201912"]
 
-    semantic_model_spec = next(
-        spec for spec in all_asset_specs if spec.key.path[0] == "semantic_model"
+    semantic_model_asset = next(
+        asset for asset in all_assets if asset.key.path[0] == "semantic_model"
     )
-    assert semantic_model_spec.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
+    assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
 
-    data_source_specs = [
-        spec
-        for spec in all_asset_specs
-        if spec.key.path[0] not in ("dashboard", "report", "semantic_model")
+    data_source_assets = [
+        asset
+        for asset in all_assets
+        if asset.key.path[0] not in ("dashboard", "report", "semantic_model")
     ]
-    assert len(data_source_specs) == 2
+    assert len(data_source_assets) == 2
 
-    data_source_keys = {spec.key for spec in data_source_specs}
+    data_source_keys = {spec.key for spec in data_source_assets}
     assert data_source_keys == {
         AssetKey(["data_27_09_2019.xlsx"]),
         AssetKey(["sales_marketing_datas.xlsx"]),
@@ -67,10 +69,9 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
 
         from dags.pending_repo import pending_repo_from_cached_asset_metadata
 
-        assert len(workspace_data_api_mocks.calls) == 5
-
         # first, we resolve the repository to generate our cached metadata
         repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        assert len(workspace_data_api_mocks.calls) == 5
 
         # 5 PowerBI external assets, one materializable asset
         assert len(repository_def.assets_defs_by_key) == 5 + 1

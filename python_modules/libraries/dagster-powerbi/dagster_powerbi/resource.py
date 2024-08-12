@@ -1,14 +1,20 @@
 from typing import Any, Dict, Sequence, Type
 
 import requests
-from dagster import ConfigurableResource
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.cacheable_assets import extract_from_current_repository_load_data
+from dagster import (
+    AssetsDefinition,
+    ConfigurableResource,
+    _check as check,
+    external_assets_from_specs,
+)
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from dagster_powerbi.translator import (
-    POWERBI_PREFIX,
     DagsterPowerBITranslator,
     PowerBIContentData,
     PowerBIContentType,
@@ -119,33 +125,54 @@ class PowerBIWorkspace(ConfigurableResource):
             dashboards + reports + semantic_models + list(data_sources_by_id.values()),
         )
 
-    def build_asset_specs(
+    def build_assets(
         self,
         dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
-    ) -> Sequence[AssetSpec]:
-        """Fetches Power BI content from the workspace and translates it into AssetSpecs,
-        using the provided translator.
-        Future work will cache this data to avoid repeated calls to the Power BI API.
+    ) -> Sequence[CacheableAssetsDefinition]:
+        """Returns a set of CacheableAssetsDefinition which will load Power BI content from
+        the workspace and translates it into AssetSpecs, using the provided translator.
 
         Args:
             dagster_powerbi_translator (Type[DagsterPowerBITranslator]): The translator to use
                 to convert Power BI content into AssetSpecs. Defaults to DagsterPowerBITranslator.
 
         Returns:
-            Sequence[AssetSpec]: A list of AssetSpecs representing the Power BI content.
+            Sequence[CacheableAssetsDefinition]: A list of CacheableAssetsDefinitions which
+                will load the Power BI content.
         """
-        cached_workspace_data = extract_from_current_repository_load_data(
-            f"{POWERBI_PREFIX}{self.workspace_id}"
-        )
-        if cached_workspace_data:
-            workspace_data = PowerBIWorkspaceData.from_content_data(
-                self.workspace_id,
-                [PowerBIContentData.from_cached_data(data) for data in cached_workspace_data],
-            )
-        else:
-            workspace_data = self.fetch_powerbi_workspace_data()
+        return [PowerBICacheableAssetsDefinition(self, dagster_powerbi_translator)]
 
-        translator = dagster_powerbi_translator(context=workspace_data)
+
+class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
+    def __init__(self, workspace: PowerBIWorkspace, translator: Type[DagsterPowerBITranslator]):
+        self._workspace = workspace
+        self._translator_cls = translator
+        super().__init__(unique_id=self._workspace.workspace_id)
+
+    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+        workspace_data: PowerBIWorkspaceData = self._workspace.fetch_powerbi_workspace_data()
+        return [
+            AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
+            for data in [
+                *workspace_data.dashboards_by_id.values(),
+                *workspace_data.reports_by_id.values(),
+                *workspace_data.semantic_models_by_id.values(),
+                *workspace_data.data_sources_by_id.values(),
+            ]
+        ]
+
+    def build_definitions(
+        self, data: Sequence[AssetsDefinitionCacheableData]
+    ) -> Sequence[AssetsDefinition]:
+        workspace_data = PowerBIWorkspaceData.from_content_data(
+            self._workspace.workspace_id,
+            [
+                PowerBIContentData.from_cached_data(check.not_none(entry.extra_metadata))
+                for entry in data
+            ],
+        )
+
+        translator = self._translator_cls(context=workspace_data)
 
         all_content = [
             *workspace_data.dashboards_by_id.values(),
@@ -154,4 +181,6 @@ class PowerBIWorkspace(ConfigurableResource):
             *workspace_data.data_sources_by_id.values(),
         ]
 
-        return [translator.get_asset_spec(content) for content in all_content]
+        return external_assets_from_specs(
+            [translator.get_asset_spec(content) for content in all_content]
+        )
