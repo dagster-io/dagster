@@ -269,8 +269,8 @@ class AutomationConditionCursor(NamedTuple):
 
         return AutomationConditionCursor(
             previous_requested_subset=result.true_subset,
-            effective_timestamp=context.effective_dt.timestamp(),
-            last_event_id=context.new_max_storage_id,
+            effective_timestamp=context.evaluation_time.timestamp(),
+            last_event_id=context.max_storage_id,
             node_cursors_by_unique_id=_gather_node_cursors(result),
             result_value_hash=result_hash,
         )
