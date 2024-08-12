@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -421,9 +421,9 @@ class AutomationResult:
         self,
         context: "AutomationContext",
         true_slice: AssetSlice,
+        cursor: Optional[str] = None,
         child_results: Optional[Sequence["AutomationResult"]] = None,
-        subsets_with_metadata: Optional[Sequence[AssetSubsetWithMetadata]] = None,
-        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
+        **kwargs,
     ):
         from dagster._core.definitions.declarative_automation.automation_context import (
             AutomationContext,
@@ -438,10 +438,24 @@ class AutomationResult:
         self._start_timestamp = context.create_time.timestamp()
         self._end_timestamp = get_current_timestamp()
 
+        # hidden_param which should only be set by legacy RuleConditions
         self._subsets_with_metadata = check.opt_sequence_param(
-            subsets_with_metadata, "subsets_with_metadata", AssetSubsetWithMetadata
+            kwargs.get("subsets_with_metadata"), "subsets_with_metadata", AssetSubsetWithMetadata
         )
-        self._extra_state = extra_state
+
+        # hidden_param which should only be set by builtin conditions which require high performance
+        # in their serdes layer
+        structured_cursor = kwargs.get("structured_cursor")
+        invalid_hidden_params = set(kwargs.keys()) - {"subsets_with_metadata", "structured_cursor"}
+        check.param_invariant(
+            not invalid_hidden_params, "kwargs", f"Invalid hidden params: {invalid_hidden_params}"
+        )
+        check.param_invariant(
+            not (cursor and structured_cursor),
+            "structured_cursor",
+            "Cannot provide both cursor and structured_cursor.",
+        )
+        self._extra_state = check.opt_str_param(cursor, "cursor") or structured_cursor
 
         # used to enable the evaluator class to modify the evaluation in some edge cases
         self._serializable_evaluation_override: Optional[AutomationConditionEvaluation] = None

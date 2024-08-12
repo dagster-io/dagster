@@ -37,7 +37,7 @@ class AndAutomationCondition(AutomationCondition):
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
             true_slice = true_slice.compute_intersection(child_result.true_slice)
-        return AutomationResult(context, true_slice, child_results)
+        return AutomationResult(context, true_slice, child_results=child_results)
 
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")
@@ -71,7 +71,7 @@ class OrAutomationCondition(AutomationCondition):
             child_results.append(child_result)
             true_slice = true_slice.compute_union(child_result.true_slice)
 
-        return AutomationResult(context, true_slice, child_results)
+        return AutomationResult(context, true_slice, child_results=child_results)
 
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
@@ -101,4 +101,4 @@ class NotAutomationCondition(AutomationCondition):
         child_result = self.operand.evaluate(child_context)
         true_slice = context.candidate_slice.compute_difference(child_result.true_slice)
 
-        return AutomationResult(context, true_slice, [child_result])
+        return AutomationResult(context, true_slice, child_results=[child_result])
