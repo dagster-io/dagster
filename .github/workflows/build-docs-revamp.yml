@@ -1,0 +1,32 @@
+name: Deploy Docs Revamp
+on:
+  push:
+    branches:
+      - docs/revamp
+    paths:
+      - docs/docs-next
+      - .github/workflows/build-docs-revamp.yml
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docs/revamp branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs/revamp'
+        uses: actions/checkout@v4
+
+      - name: Publish Preview to Vercel
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs/revamp'
+        with:
+          github-comment: ${{ true }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: dagster-docs-next.dagster.dagster-docs.io
