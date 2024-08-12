@@ -8,7 +8,8 @@ allowing the webserver to launch runs as Kubernetes Jobs, as well as a Helm char
 for a Dagster deployment on a Kubernetes cluster.
 
 APIs
-----
+====
+
 .. currentmodule:: dagster_k8s
 
 .. autoconfigurable:: K8sRunLauncher

@@ -1312,7 +1312,7 @@ def _partition_subset_str(
         partitions_def, TimeWindowPartitionsDefinition
     ):
         return ", ".join(
-            f" {type(partition_subset)} {type(partitions_def)} {partitions_def.get_num_partitions_in_window(time_window.to_public_time_window())} partitions: {time_window.start} -> {time_window.end}"
+            f"{partitions_def.get_num_partitions_in_window(time_window.to_public_time_window())} partitions: {time_window.start} -> {time_window.end}"
             for time_window in partition_subset.included_time_windows
         )
 

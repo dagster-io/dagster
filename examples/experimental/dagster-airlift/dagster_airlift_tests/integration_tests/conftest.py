@@ -2,22 +2,32 @@ import os
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
+import requests
 from dagster._core.test_utils import environ
 
 
+def assert_link_exists(link_name: str, link_url: Any):
+    assert isinstance(link_url, str)
+    assert requests.get(link_url).status_code == 200, f"{link_name} is broken"
+
+
+@pytest.fixture(name="dags_dir")
+def default_dags_dir():
+    return Path(__file__).parent / "dags"
+
+
 @pytest.fixture(name="setup")
-def setup_fixture() -> Generator[str, None, None]:
+def setup_fixture(dags_dir: Path) -> Generator[str, None, None]:
     with TemporaryDirectory() as tmpdir:
         # run chmod +x create_airflow_cfg.sh and then run create_airflow_cfg.sh tmpdir
         temp_env = {**os.environ.copy(), "AIRFLOW_HOME": tmpdir}
         # go up one directory from current
         path_to_script = Path(__file__).parent.parent.parent / "airflow_setup.sh"
-        path_to_dags = Path(__file__).parent / "dags"
         subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
-        subprocess.run([path_to_script, path_to_dags], check=True, env=temp_env)
+        subprocess.run([path_to_script, dags_dir], check=True, env=temp_env)
         with environ({"AIRFLOW_HOME": tmpdir}):
             yield tmpdir
 

@@ -39,8 +39,6 @@ setup(
         f"dagster{pin}",
         "pandas",
         "pandera>=0.15.0",
-        # Pin numpy pending release of pandera that either supports numpy 2 or adds a pin
-        "numpy<2",
     ],
     extras_require={
         "polars": ["polars>=1"],

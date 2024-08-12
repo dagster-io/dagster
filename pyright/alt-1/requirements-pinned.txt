@@ -1,8 +1,8 @@
 agate==1.9.1
-aiobotocore==2.13.1
+aiobotocore==2.13.2
 aiofile==3.8.8
-aiohappyeyeballs==2.3.4
-aiohttp==3.10.1
+aiohappyeyeballs==2.3.5
+aiohttp==3.10.2
 aioitertools==0.11.0
 aiosignal==1.3.1
 alembic==1.13.2
@@ -19,7 +19,7 @@ astroid==3.2.4
 asttokens==2.4.1
 async-lru==2.0.4
 attrs==24.2.0
-babel==2.15.0
+babel==2.16.0
 backoff==2.2.1
 backports-tarfile==1.2.0
 beautifulsoup4==4.12.3
@@ -64,9 +64,9 @@ daff==1.3.46
 -e python_modules/libraries/dagster-spark
 -e python_modules/dagster-webserver
 db-dtypes==1.2.0
-dbt-adapters==1.4.0
+dbt-adapters==1.4.1
 dbt-common==1.7.0
-dbt-core==1.8.4
+dbt-core==1.8.5
 dbt-duckdb==1.8.2
 dbt-extractor==0.5.1
 dbt-semantic-interfaces==0.5.1
@@ -92,15 +92,15 @@ frozenlist==1.4.1
 fsspec==2024.3.1
 gcsfs==2024.3.1
 google-api-core==2.19.1
-google-api-python-client==2.139.0
-google-auth==2.32.0
+google-api-python-client==2.140.0
+google-auth==2.33.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 google-cloud-bigquery==3.25.0
 google-cloud-core==2.4.1
-google-cloud-storage==2.18.0
+google-cloud-storage==2.18.2
 google-crc32c==1.5.0
-google-resumable-media==2.7.1
+google-resumable-media==2.7.2
 googleapis-common-protos==1.63.2
 gql==3.5.0
 graphene==3.3
@@ -116,7 +116,7 @@ httplib2==0.22.0
 httptools==0.6.1
 httpx==0.27.0
 humanfriendly==10.0
-hypothesis==6.108.10
+hypothesis==6.110.1
 idna==3.7
 importlib-metadata==6.11.0
 iniconfig==2.0.0
@@ -154,14 +154,14 @@ mako==1.3.5
 markdown-it-py==3.0.0
 markupsafe==2.1.5
 mashumaro==3.13.1
-matplotlib==3.9.0
+matplotlib==3.9.1.post1
 matplotlib-inline==0.1.7
 mccabe==0.7.0
 mdurl==0.1.2
 minimal-snowplow-tracker==0.0.2
 mistune==3.0.2
 mock==3.0.5
-more-itertools==10.3.0
+more-itertools==10.4.0
 morefs==0.2.2
 msgpack==1.0.8
 multidict==6.0.5
@@ -176,16 +176,16 @@ nest-asyncio==1.6.0
 networkx==3.3
 nodeenv==1.9.1
 notebook-shim==0.2.4
-numpy==1.26.4
+numpy==2.0.1
 oauth2client==4.1.3
 oauthlib==3.2.2
 objgraph==3.6.1
 ordered-set==4.1.0
-orjson==3.10.6
+orjson==3.10.7
 overrides==7.7.0
 packaging==24.1
 pandas==2.2.2
-pandas-stubs==2.2.2.240603
+pandas-stubs==2.2.2.240807
 pandera==0.20.3
 pandocfilters==1.5.1
 parsedatetime==2.6
@@ -234,9 +234,9 @@ python-json-logger==2.0.7
 python-slugify==8.0.4
 pytimeparse==1.1.8
 pytz==2024.1
-pyyaml==6.0.1
+pyyaml==6.0.2
 pyzmq==26.1.0
-rapidfuzz==3.9.5
+rapidfuzz==3.9.6
 referencing==0.35.1
 requests==2.32.3
 requests-oauthlib==2.0.0
@@ -263,7 +263,7 @@ snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
 soupsieve==2.5
 sqlalchemy==1.4.53
-sqlglot==25.9.0
+sqlglot==25.10.0
 sqlglotrs==0.2.8
 sqlparse==0.5.1
 stack-data==0.6.3
@@ -279,7 +279,7 @@ tomli==2.0.1
 tomlkit==0.13.0
 toposort==1.10
 tornado==6.4.1
-tox==4.17.0
+tox==4.17.1
 tqdm==4.66.5
 traitlets==5.14.3
 typeguard==4.3.0
@@ -296,7 +296,7 @@ types-protobuf==5.27.0.20240626
 types-pyopenssl==24.1.0.20240722
 types-python-dateutil==2.9.0.20240316
 types-pytz==2024.1.0.20240417
-types-pyyaml==6.0.12.20240724
+types-pyyaml==6.0.12.20240808
 types-requests==2.32.0.20240712
 types-setuptools==71.1.0.20240806
 types-simplejson==3.19.0.20240801
@@ -316,7 +316,7 @@ uvicorn==0.30.5
 uvloop==0.19.0
 virtualenv==20.26.3
 watchdog==4.0.1
-watchfiles==0.22.0
+watchfiles==0.23.0
 wcwidth==0.2.13
 webcolors==24.6.0
 webencodings==0.5.1

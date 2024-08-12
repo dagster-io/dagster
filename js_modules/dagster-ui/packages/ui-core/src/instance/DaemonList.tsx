@@ -7,7 +7,6 @@ import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
-import {AutoMaterializeExperimentalTag} from '../assets/AutoMaterializePolicyPage/AutoMaterializeExperimentalBanner';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
 import {useAutomaterializeDaemonStatus} from '../assets/useAutomaterializeDaemonStatus';
 import {testId} from '../testing/testId';
@@ -65,19 +64,19 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
         </tr>
       </thead>
       <tbody>
-        {assetDaemon ? (
+        {assetDaemon && hasGlobalAMP ? (
           <tr>
             <td>
               <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
                 <Box flex={{gap: 8, alignItems: 'center'}}>
                   Auto-materializing
-                  <AutoMaterializeExperimentalTag />
+                  <Tag intent="primary">Experimental</Tag>
                 </Box>
                 {automaterialize.loading ? (
                   <div data-testid={testId('loading-spinner')}>
                     <Spinner purpose="body-text" />
                   </div>
-                ) : hasGlobalAMP ? (
+                ) : (
                   <Checkbox
                     format="switch"
                     checked={!automaterialize.paused}
@@ -94,7 +93,7 @@ export const DaemonList = ({daemonStatuses, showTimestampColumn = true}: Props) 
                       automaterialize.setPaused(!checked);
                     }}
                   />
-                ) : null}
+                )}
               </Box>
             </td>
             <td>

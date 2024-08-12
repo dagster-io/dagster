@@ -1,0 +1,22 @@
+{
+  "extends": "./node_modules/@docusaurus/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "types": [
+      "@docusaurus/theme-classic",
+      "node"
+    ]
+  },
+  "exclude": [
+    "**/node_modules/*",
+    "blog",
+    "docs",
+    "build",
+    "i18n"
+  ],
+}

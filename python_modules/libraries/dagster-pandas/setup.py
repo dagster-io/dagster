@@ -50,7 +50,5 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "pandas",
-        # Pin numpy pending release of pandas that either supports numpy 2 or adds a pin
-        "numpy<2",
     ],
 )

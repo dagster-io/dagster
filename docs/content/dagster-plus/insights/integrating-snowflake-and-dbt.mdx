@@ -83,7 +83,7 @@ query-comment:
   append: true
 ```
 
-This allows you to add a comment, containing the dbt invocation ID and unique ID, to every query recorded in Snowflake's `query_history` table. Using this data, Insights will attribute cost metrics in BigQuery to the corresponding Dagster jobs and assets.
+This allows you to add a comment, containing the dbt invocation ID and unique ID, to every query recorded in Snowflake's `query_history` table. Using this data, Insights will attribute cost metrics in Snowflake to the corresponding Dagster jobs and assets.
 
 **Note**: Make sure to include `append: true`, as Snowflake strips leading comments.
 

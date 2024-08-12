@@ -1,4 +1,4 @@
-name: Docs
+name: Vale Docs
 on: 
   pull_request:
     paths:
@@ -26,7 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: errata-ai/vale-action@reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: '["docs/content", "docs/sphinx"]'
+          files: '["docs-next/docs"]'
           vale_flags: "--config=docs/.vale.ini"
-
+          fail_on_error: true
+          reporter: github-pr-check
