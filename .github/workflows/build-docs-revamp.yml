@@ -1,5 +1,12 @@
 name: Deploy Docs Revamp
 on:
+  pull_request:
+    branches:
+      - docs/revamp
+    paths:
+      - docs/docs-next
+      - .github/workflows/build-docs-revamp.yml
+
   push:
     branches:
       - docs/revamp
