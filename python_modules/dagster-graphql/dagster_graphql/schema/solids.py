@@ -440,7 +440,10 @@ class ISolidDefinitionMixin:
             nodes = [
                 node
                 for node in ext_repo.get_external_asset_nodes()
-                if node.node_definition_name == self.solid_def_name
+                if (
+                    (node.node_definition_name == self.solid_def_name)
+                    or (node.graph_name and node.graph_name == self.solid_def_name)
+                )
             ]
             asset_checks_loader = AssetChecksLoader(
                 context=graphene_info.context, asset_keys=[node.asset_key for node in nodes]
