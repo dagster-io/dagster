@@ -23,7 +23,7 @@ def _remove_file_ext(name: str) -> str:
 
 def _clean_asset_name(name: str) -> str:
     """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9A-Z.]+", "_", name)
+    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
 
 
 class PowerBIContentType(Enum):

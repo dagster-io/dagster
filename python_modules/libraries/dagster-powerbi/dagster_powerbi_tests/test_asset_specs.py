@@ -1,6 +1,8 @@
 import uuid
 
+import pytest
 import responses
+from dagster import materialize
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.events import DagsterEventType
@@ -8,6 +10,9 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_powerbi import PowerBIWorkspace
+from dagster_powerbi.resource import BASE_API_URL
+
+from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
 
 def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_id: str) -> None:
@@ -56,9 +61,58 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
 
     data_source_keys = {spec.key for spec in data_source_assets}
     assert data_source_keys == {
-        AssetKey(["data_27_09_2019.xlsx"]),
-        AssetKey(["sales_marketing_datas.xlsx"]),
+        AssetKey(["data_27_09_2019_xlsx"]),
+        AssetKey(["sales_marketing_datas_xlsx"]),
     }
+
+
+@pytest.mark.parametrize("success", [True, False])
+def test_refreshable_semantic_model(
+    workspace_data_api_mocks: responses.RequestsMock, workspace_id: str, success: bool
+) -> None:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        api_token=fake_token, workspace_id=workspace_id, refresh_poll_interval=0
+    )
+    all_assets = (
+        resource.build_defs(enable_refresh_semantic_models=True).get_asset_graph().assets_defs
+    )
+
+    # 1 dashboard, 1 report, 1 semantic model, 2 data sources
+    assert len(all_assets) == 5
+
+    semantic_model_asset = next(
+        asset for asset in all_assets if asset.key.path[0] == "semantic_model"
+    )
+    assert semantic_model_asset.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
+    assert semantic_model_asset.is_executable
+
+    # materialize the semantic model
+
+    workspace_data_api_mocks.add(
+        method=responses.POST,
+        url=f"{BASE_API_URL}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        json={"notifyOption": "NoNotification"},
+        status=202,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        json={"value": [{"status": "Unknown"}]},
+        status=200,
+    )
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        json={
+            "value": [{"status": "Completed" if success else "Failed", "serviceExceptionJson": {}}]
+        },
+        status=200,
+    )
+
+    result = materialize([semantic_model_asset], raise_on_error=False)
+    assert result.success is success
 
 
 def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMock) -> None:
