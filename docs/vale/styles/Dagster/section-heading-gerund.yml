@@ -4,4 +4,4 @@ level: error
 scope: heading
 ignorecase: false
 raw:
-  '^(\w+ing\b.*)$'
+  ^(?!Troubleshooting)(\w+ing\b.*)$
