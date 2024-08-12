@@ -1,36 +1,11 @@
-import os
 from datetime import datetime
+from pathlib import Path
 
-import duckdb
-import pandas as pd
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-
-
-def load_csv_to_duckdb():
-    # Absolute path to the iris dataset is path to current file's directory
-    csv_path = os.path.join(os.path.dirname(__file__), "iris.csv")
-    # Duckdb database stored in airflow home
-    duckdb_path = os.path.join(os.environ["AIRFLOW_HOME"], "jaffle_shop.duckdb")
-    iris_df = pd.read_csv(  # noqa: F841 # used by duckdb
-        csv_path,
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-    # Connect to DuckDB and create a new table
-    con = duckdb.connect(duckdb_path)
-    con.execute("CREATE SCHEMA IF NOT EXISTS iris_dataset").fetchall()
-    con.execute(
-        "CREATE TABLE IF NOT EXISTS jaffle_shop.iris_dataset.iris_lakehouse_table AS SELECT * FROM iris_df"
-    ).fetchall()
-    con.close()
-
+from dagster_airlift.in_airflow import mark_as_dagster_migrating
+from dagster_airlift.migration_state import load_migration_state_from_yaml
+from dbt_example.shared.load_iris import load_csv_to_duckdb
 
 default_args = {
     "owner": "airflow",
@@ -41,3 +16,7 @@ default_args = {
 
 dag = DAG("load_lakehouse", default_args=default_args, schedule_interval=None)
 load_iris = PythonOperator(task_id="load_iris", python_callable=load_csv_to_duckdb, dag=dag)
+mark_as_dagster_migrating(
+    global_vars=globals(),
+    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+)
