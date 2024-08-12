@@ -269,9 +269,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         meaning any nested config objects will be returned as config objects, not dictionaries.
         """
         output = {}
-        alias_keys = [f.alias for f in model_fields(cls).values() if f.alias is not None]
+
         for key, value in items.items():
-            if _is_field_internal(key) or key in alias_keys:
+            if _is_field_internal(key):  # or key in alias_keys:
                 continue
             field = model_fields(cls).get(key)
 
@@ -286,7 +286,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 resolved_field_name = field.alias or key
                 output[resolved_field_name] = value
             else:
-                output[key] = value
+                if key not in output:
+                    output[key] = value
         return output
 
     def _get_non_default_public_field_values(self) -> Mapping[str, Any]:
