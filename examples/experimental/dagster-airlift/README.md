@@ -105,7 +105,7 @@ defs = Definitions.merge(
 
 The next step is to observe the assets that are orchestrated from Airflow. In order to do that we must create the corresponding definitions in the Dagster deployment.
 
-We have an included example at `examples/experimental/dagster-airlift/examples/peering-with-dbt`. We suggest mimicking the structure of this project as a starting point.
+We have an included example at `examples/experimental/dagster-airlift/examples/dbt-example`. We suggest mimicking the structure of this project as a starting point.
 
 To add definitions that an Airlift-enabled deployment will observed, you need to use the `orchestrated_defs` argument to `build_defs_from_airflow_instance`
 
