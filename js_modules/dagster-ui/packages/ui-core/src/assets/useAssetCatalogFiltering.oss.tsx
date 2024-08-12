@@ -60,7 +60,6 @@ export function useAssetCatalogFiltering({
       : filters.groups,
     setGroups,
   });
-  console.log({allAssetGroupOptions, filters, assets});
   const changedInBranchFilter = useChangedFilter({
     changedInBranch: filters.selectAllFilters.includes('changedInBranch')
       ? ALL_CHANGED_IN_BRANCH_VALUES
@@ -145,23 +144,21 @@ export function useAssetCatalogFiltering({
   ]);
   const components = useFilters({filters: uiFilters});
 
-  const isFiltered: boolean = !!(
-    filters.changedInBranch?.length ||
-    filters.computeKindTags?.length ||
-    filters.storageKindTags?.length ||
-    filters.groups?.length ||
-    filters.owners?.length ||
-    filters.codeLocations?.length
+  const isFiltered: boolean = !!Object.values(filters as Record<string, any[]>).some(
+    (filter) => filter?.length,
   );
 
   const [didWaitAfterLoading, setDidWaitAfterLoading] = useState(false);
 
   useEffect(() => {
+    /**
+     * This effect handles syncing the `selectAllFilters` query param state with the actual filtering state.
+     * eg: If all of the items are selected then we include that key, otherwise we remove it.
+     */
     if (loading) {
       return;
     }
     if (!didWaitAfterLoading) {
-      // Wait for a render frame because the graphData is set in a useEffect in response to the data loading...
       requestAnimationFrame(() => setDidWaitAfterLoading(true));
       return;
     }
@@ -173,6 +170,7 @@ export function useAssetCatalogFiltering({
       ['owners', filters.owners, allAssetOwners] as const,
       ['tags', filters.tags, nonStorageKindTags] as const,
       ['computeKindTags', filters.computeKindTags, allComputeKindTags] as const,
+      ['storageKindTags', filters.storageKindTag, storageKindTags] as const,
       ['groups', filters.groups, allAssetGroupOptions] as const,
       ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
       ['codeLocations', filters.codeLocations, allRepos] as const,
@@ -181,11 +179,13 @@ export function useAssetCatalogFiltering({
         return;
       }
       if ((activeItems?.length ?? 0) !== allItems.length) {
+        // Not all items are included, lets remove the key if its included
         if (filters.selectAllFilters?.includes(key)) {
           didChange = true;
           nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
         }
       } else if (activeItems?.length && !filters.selectAllFilters?.includes(key)) {
+        // All items are included, lets add the key since its not already included
         didChange = true;
         nextAllFilters.push(key);
       }
