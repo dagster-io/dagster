@@ -52,8 +52,7 @@ class AutomationContext:
     parent_context: Optional["AutomationContext"]
 
     _cursor: Optional[AutomationConditionCursor]
-    _legacy_context: LegacyRuleEvaluationContext
-    _is_legacy_evaluation: bool
+    _legacy_context: Optional[LegacyRuleEvaluationContext]
 
     @staticmethod
     def create(
@@ -78,8 +77,7 @@ class AutomationContext:
             current_tick_results_by_key=current_tick_results_by_key,
             parent_context=None,
             _cursor=condition_cursor,
-            _legacy_context=legacy_context,
-            _is_legacy_evaluation=_has_legacy_condition(condition),
+            _legacy_context=legacy_context if condition.has_rule_condition else None,
         )
 
     def for_child_condition(
@@ -102,8 +100,9 @@ class AutomationContext:
                 child_condition,
                 condition_unqiue_id,
                 candidate_slice.convert_to_valid_asset_subset(),
-            ),
-            _is_legacy_evaluation=self._is_legacy_evaluation,
+            )
+            if self._legacy_context
+            else None,
         )
 
     @property
@@ -153,12 +152,9 @@ class AutomationContext:
 
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:
-        return (
-            self._legacy_context
-            if self._is_legacy_evaluation
-            else check.failed(
-                "Legacy access only allowed in AutoMaterializeRule subclasses in auto_materialize_rules_impls.py"
-            )
+        return check.not_none(
+            self._legacy_context,
+            "Cannot access legacy context unless evaluating a condition containing a RuleCondition.",
         )
 
     @property
@@ -201,7 +197,7 @@ class AutomationContext:
 
     @property
     def new_max_storage_id(self) -> Optional[int]:
-        if self._is_legacy_evaluation:
+        if self._legacy_context is not None:
             # legacy evaluations handle event log tailing in a different manner, and so need to
             # use a different storage id cursoring scheme
             return self.legacy_context.new_max_storage_id

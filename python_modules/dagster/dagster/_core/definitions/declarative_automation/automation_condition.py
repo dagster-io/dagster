@@ -136,12 +136,13 @@ class AutomationCondition(ABC):
     def __hash__(self) -> int:
         return self.get_hash()
 
-    def is_rule_condition(self) -> bool:
+    @property
+    def has_rule_condition(self) -> bool:
         from .legacy import RuleCondition
 
         if isinstance(self, RuleCondition):
             return True
-        return any(child.is_rule_condition() for child in self.children)
+        return any(child.has_rule_condition for child in self.children)
 
     @property
     def is_serializable(self) -> bool:

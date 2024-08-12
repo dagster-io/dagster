@@ -177,11 +177,10 @@ class AutomationConditionEvaluator:
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
         current_results_by_key: Mapping[AssetKey, AutomationResult],
     ) -> Tuple[AutomationResult, Optional[datetime.datetime]]:
-        """Evaluates the auto materialize policy of a given asset key."""
-        # convert the legacy AutoMaterializePolicy to an Evaluator
+        """Evaluates the AutomationCondition of a given asset key."""
         automation_condition = check.not_none(self.asset_graph.get(asset_key).automation_condition)
 
-        if automation_condition.is_rule_condition() and self.request_backfills:
+        if automation_condition.has_rule_condition and self.request_backfills:
             raise DagsterInvalidDefinitionError(
                 "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
             )
