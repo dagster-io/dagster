@@ -31,7 +31,7 @@ const sidebars: SidebarsConfig = {
         {
           type: "category",
           label: "Data assets",
-          items: ["guides/data-assets"]
+          items: ["guides/data-assets", "guides/passing-data-assets/passing-data-between-assets"]
         },
         {
           type: "category",
