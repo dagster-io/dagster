@@ -1,6 +1,7 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import (
@@ -36,33 +37,23 @@ def _has_legacy_condition(condition: AutomationCondition):
         return any(_has_legacy_condition(child) for child in condition.children)
 
 
-class AutomationContext(NamedTuple):
-    # the slice over which the condition is being evaluated
+@dataclass
+class AutomationContext:
+    condition: AutomationCondition
+    condition_unique_id: str
     candidate_slice: AssetSlice
 
-    # the condition being evaluated
-    condition: AutomationCondition
-    # a unique identifier for the condition within the broader tree
-    condition_unique_id: str
+    logger: logging.Logger
+    create_time: datetime.datetime
 
     asset_graph_view: AssetGraphView
-
-    # the context object for the parent condition
-    parent_context: Optional["AutomationContext"]
-
-    # the time at which this context object was created
-    create_time: datetime.datetime
-    logger: logging.Logger
-
-    # a cursor containing information about this asset calculated on the previous tick
-    cursor: Optional[AutomationConditionCursor]
-    # a mapping of information computed on the current tick for assets which are upstream of this
-    # asset
     current_tick_results_by_key: Mapping[AssetKey, AutomationResult]
 
-    # hack to avoid circular references during pydantic validation
-    inner_legacy_context: Any
-    is_legacy_evaluation: bool
+    parent_context: Optional["AutomationContext"]
+
+    _cursor: Optional[AutomationConditionCursor]
+    _legacy_context: LegacyRuleEvaluationContext
+    _is_legacy_evaluation: bool
 
     @staticmethod
     def create(
@@ -74,47 +65,45 @@ class AutomationContext(NamedTuple):
         legacy_context: "LegacyRuleEvaluationContext",
     ) -> "AutomationContext":
         asset_graph = asset_graph_view.asset_graph
-        automation_condition = check.not_none(asset_graph.get(asset_key).automation_condition)
+        condition = check.not_none(asset_graph.get(asset_key).automation_condition)
+        condition_unqiue_id = condition.get_unique_id(parent_unique_id=None, index=None)
 
         return AutomationContext(
+            condition=condition,
+            condition_unique_id=condition_unqiue_id,
             candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
-            condition=automation_condition,
-            condition_unique_id=automation_condition.get_unique_id(
-                parent_unique_id=None, index=None
-            ),
-            asset_graph_view=asset_graph_view,
-            parent_context=None,
-            create_time=get_current_datetime(),
             logger=logger,
-            cursor=condition_cursor,
+            create_time=get_current_datetime(),
+            asset_graph_view=asset_graph_view,
             current_tick_results_by_key=current_tick_results_by_key,
-            inner_legacy_context=legacy_context,
-            is_legacy_evaluation=_has_legacy_condition(automation_condition),
+            parent_context=None,
+            _cursor=condition_cursor,
+            _legacy_context=legacy_context,
+            _is_legacy_evaluation=_has_legacy_condition(condition),
         )
 
     def for_child_condition(
         self, child_condition: AutomationCondition, child_index: int, candidate_slice: AssetSlice
     ) -> "AutomationContext":
+        condition_unqiue_id = child_condition.get_unique_id(
+            parent_unique_id=self.condition_unique_id, index=child_index
+        )
         return AutomationContext(
-            candidate_slice=candidate_slice,
             condition=child_condition,
-            condition_unique_id=child_condition.get_unique_id(
-                parent_unique_id=self.condition_unique_id, index=child_index
-            ),
-            asset_graph_view=self.asset_graph_view,
-            parent_context=self,
-            create_time=get_current_datetime(),
+            condition_unique_id=condition_unqiue_id,
+            candidate_slice=candidate_slice,
             logger=self.logger,
-            cursor=self.cursor,
+            create_time=get_current_datetime(),
+            asset_graph_view=self.asset_graph_view,
             current_tick_results_by_key=self.current_tick_results_by_key,
-            inner_legacy_context=self.inner_legacy_context.for_child(
+            parent_context=self,
+            _cursor=self._cursor,
+            _legacy_context=self._legacy_context.for_child(
                 child_condition,
-                child_condition.get_unique_id(
-                    parent_unique_id=self.condition_unique_id, index=child_index
-                ),
+                condition_unqiue_id,
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
-            is_legacy_evaluation=self.is_legacy_evaluation,
+            _is_legacy_evaluation=self._is_legacy_evaluation,
         )
 
     @property
@@ -141,20 +130,22 @@ class AutomationContext(NamedTuple):
         """Returns the evaluation node for this node from the previous evaluation, if this node
         was evaluated on the previous tick.
         """
-        if self.cursor is None:
-            return None
-        else:
-            return self.cursor.node_cursors_by_unique_id.get(self.condition_unique_id)
+        return (
+            self._cursor.node_cursors_by_unique_id.get(self.condition_unique_id)
+            if self._cursor
+            else None
+        )
 
     @property
     def previous_true_slice(self) -> Optional[AssetSlice]:
         """Returns the true slice for this node from the previous evaluation, if this node was
         evaluated on the previous tick.
         """
-        if self.node_cursor is None:
-            return None
-        else:
-            return self.asset_graph_view.get_asset_slice_from_subset(self.node_cursor.true_subset)
+        return (
+            self.asset_graph_view.get_asset_slice_from_subset(self.node_cursor.true_subset)
+            if self.node_cursor
+            else None
+        )
 
     @property
     def effective_dt(self) -> datetime.datetime:
@@ -163,8 +154,8 @@ class AutomationContext(NamedTuple):
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:
         return (
-            self.inner_legacy_context
-            if self.is_legacy_evaluation
+            self._legacy_context
+            if self._is_legacy_evaluation
             else check.failed(
                 "Legacy access only allowed in AutoMaterializeRule subclasses in auto_materialize_rules_impls.py"
             )
@@ -176,8 +167,10 @@ class AutomationContext(NamedTuple):
         evaluated, returns None.
         """
         return (
-            self.asset_graph_view.get_asset_slice_from_subset(self.cursor.previous_requested_subset)
-            if self.cursor
+            self.asset_graph_view.get_asset_slice_from_subset(
+                self._cursor.previous_requested_subset
+            )
+            if self._cursor
             else None
         )
 
@@ -199,16 +192,16 @@ class AutomationContext(NamedTuple):
     @property
     def previous_evaluation_max_storage_id(self) -> Optional[int]:
         """Returns the maximum storage ID for the previous time this asset was evaluated."""
-        return self.cursor.temporal_context.last_event_id if self.cursor else None
+        return self._cursor.temporal_context.last_event_id if self._cursor else None
 
     @property
     def previous_evaluation_effective_dt(self) -> Optional[datetime.datetime]:
         """Returns the datetime for the previous time this asset was evaluated."""
-        return self.cursor.temporal_context.effective_dt if self.cursor else None
+        return self._cursor.temporal_context.effective_dt if self._cursor else None
 
     @property
     def new_max_storage_id(self) -> Optional[int]:
-        if self.is_legacy_evaluation:
+        if self._is_legacy_evaluation:
             # legacy evaluations handle event log tailing in a different manner, and so need to
             # use a different storage id cursoring scheme
             return self.legacy_context.new_max_storage_id
