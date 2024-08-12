@@ -162,8 +162,18 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "doc",
+          label: "Partitions",
+          id: "concepts/partitions",
+        },
+        {
+          type: "doc",
           label: "Resources",
           id: "concepts/resources",
+        },
+        {
+          type: "doc",
+          label: "I/O managers",
+          id: "concepts/io-managers",
         },
         {
           type: "category",
