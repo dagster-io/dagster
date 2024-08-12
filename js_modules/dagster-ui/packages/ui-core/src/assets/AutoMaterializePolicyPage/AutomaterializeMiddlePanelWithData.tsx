@@ -19,7 +19,7 @@ import styled from 'styled-components';
 
 import {StatusDot} from './AutomaterializeLeftPanel';
 import {AutomaterializeRunsTable} from './AutomaterializeRunsTable';
-import {PartitionSubsetList} from './PartitionSegmentWithPopover';
+import {PartitionSubsetList} from './PartitionSubsetList';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
 import {
   FullPartitionsQuery,
@@ -57,17 +57,20 @@ export const AutomaterializeMiddlePanelWithData = ({
     () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
     [evaluation],
   );
-  const partitionDefinition = definition?.partitionDefinition;
-  const numRequested = selectedEvaluation?.numRequested;
+  const rootUniqueId = evaluation?.rootUniqueId;
 
   const statusTag = useMemo(() => {
-    const trueSubset =
+    const partitionDefinition = definition?.partitionDefinition;
+    const assetKeyPath = definition?.assetKey.path || [];
+    const numRequested = selectedEvaluation?.numRequested;
+
+    const numTrue =
       rootEvaluationNode?.__typename === 'PartitionedAssetConditionEvaluationNode'
-        ? rootEvaluationNode.trueSubset
+        ? rootEvaluationNode.numTrue
         : null;
 
     if (numRequested) {
-      if (partitionDefinition && trueSubset) {
+      if (partitionDefinition && rootUniqueId && numTrue) {
         return (
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
             <Popover
@@ -78,7 +81,9 @@ export const AutomaterializeMiddlePanelWithData = ({
               content={
                 <PartitionSubsetList
                   description="Requested assets"
-                  subset={trueSubset}
+                  assetKeyPath={assetKeyPath}
+                  evaluationId={selectedEvaluation.evaluationId}
+                  nodeUniqueId={rootUniqueId}
                   selectPartition={selectPartition}
                 />
               }
@@ -90,9 +95,6 @@ export const AutomaterializeMiddlePanelWithData = ({
                 </Box>
               </Tag>
             </Popover>
-            {numRequested === 1 ? (
-              <Tag icon="partition">{trueSubset.subsetValue.partitionKeys![0]}</Tag>
-            ) : null}
           </Box>
         );
       }
@@ -115,7 +117,7 @@ export const AutomaterializeMiddlePanelWithData = ({
         </Box>
       </Tag>
     );
-  }, [partitionDefinition, selectPartition, numRequested, rootEvaluationNode]);
+  }, [definition, rootEvaluationNode, selectedEvaluation, rootUniqueId, selectPartition]);
 
   const fullPartitionsQueryResult = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
     FULL_PARTITIONS_QUERY,
@@ -256,6 +258,8 @@ export const AutomaterializeMiddlePanelWithData = ({
             </Box>
           ) : null}
           <PolicyEvaluationTable
+            assetKeyPath={definition?.assetKey.path ?? null}
+            evaluationId={selectedEvaluation.evaluationId}
             evaluationNodes={
               !selectedEvaluation.isLegacy
                 ? selectedEvaluation.evaluationNodes
