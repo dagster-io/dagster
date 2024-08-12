@@ -3,10 +3,24 @@
  * bundles Infima by default. Infima is a CSS framework designed to
  * work well for content-centric websites.
  */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/GeistVF.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Geist-Mono';
+  src: url('/fonts/GeistMonoVF.woff') format('woff');
+}
 
 /* You can override the default Infima variables here. */
 /* Some styles heavily influenced from: https://github.com/electron/website/blob/main/src/css/custom.scss */
 :root {
+
+  --ifm-font-family-base: 'Geist';
+  --ifm-heading-font-family: 'Geist';
+  --ifm-font-family-monospace: 'Geist-Mono';
+
   // modified base colors
   --ifm-color-primary: var(--dagster-color-primary-500);
   --ifm-color-primary-dark: var(--dagster-color-primary-700);
@@ -17,7 +31,7 @@
   --ifm-color-primary-lightest: var(--dagster-color-gray-50);
 
   // modified base vars
-  --ifm-code-font-size: 95%;
+  --ifm-code-font-size: 90%;
   --ifm-navbar-height: 70px;
 
   // brand-specific colors
@@ -71,7 +85,7 @@
   --ifm-menu-color-active: var(--dagster-color-dark);
   // these require !important because of some weirdness in CSS ordering
   // see: https://github.com/facebook/docusaurus/issues/3678
-  --docusaurus-highlighted-code-line-bg: rgb(217, 220, 222);
+  --docusaurus-highlighted-code-line-bg: var(--dagster-color-yellow-50);
 
   // infima shadow levels
   // generated from https://www.joshwcomeau.com/shadow-palette/
@@ -122,6 +136,7 @@
   --dagster-heading: var(--ifm-color-primary-lightest);
   --dagster-inline-code: var(--dagster-color-secondary-light);
 }
+
 
 /* Main content */
 .theme-doc-markdown {
@@ -178,6 +193,10 @@ a.pyobject {
 
 .markdown {
   line-height: 150%;
+
+  code {
+    font-size: var(--ifm-code-font-size)
+  }
 
   a {
     font-weight: var(--ifm-font-weight-semibold);
