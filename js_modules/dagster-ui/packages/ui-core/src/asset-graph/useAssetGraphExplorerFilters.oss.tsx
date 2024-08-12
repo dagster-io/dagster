@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
@@ -23,7 +23,14 @@ export function useAssetGraphExplorerFilters({
 }: Props) {
   const {filterButton, computeKindFilter, storageKindFilter, activeFiltersJsx, filterFn} =
     useAssetCatalogFiltering({
-      assets: nodes,
+      assets: useMemo(
+        () =>
+          nodes.map((node) => ({
+            ...node,
+            key: node.assetKey,
+          })),
+        [nodes],
+      ),
       includeRepos: isGlobalGraph,
       loading,
     });

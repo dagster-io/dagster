@@ -12,10 +12,7 @@ import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
-import {
-  ALL_VALUES as ALL_CHANGED_IN_BRANCH_VALUES,
-  useChangedFilter,
-} from '../ui/Filters/useChangedFilter';
+import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {
   useAssetKindTagsForAssets,
@@ -26,6 +23,8 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const EMPTY_ARRAY: any[] = [];
+
+const ALL_CHANGED_IN_BRANCH_VALUES = Object.values(ChangeReason);
 
 export function useAssetCatalogFiltering({
   assets = EMPTY_ARRAY,
@@ -170,7 +169,7 @@ export function useAssetCatalogFiltering({
       ['owners', filters.owners, allAssetOwners] as const,
       ['tags', filters.tags, nonStorageKindTags] as const,
       ['computeKindTags', filters.computeKindTags, allComputeKindTags] as const,
-      ['storageKindTags', filters.storageKindTag, storageKindTags] as const,
+      ['storageKindTags', filters.storageKindTags, storageKindTags] as const,
       ['groups', filters.groups, allAssetGroupOptions] as const,
       ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
       ['codeLocations', filters.codeLocations, allRepos] as const,
