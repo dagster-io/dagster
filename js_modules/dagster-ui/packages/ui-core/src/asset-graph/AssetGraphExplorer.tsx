@@ -14,7 +14,7 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
-import {useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
@@ -92,17 +92,22 @@ export const GROUPS_ONLY_SCALE = 0.15;
 
 export const AssetGraphExplorer = (props: Props) => {
   const fullAssetGraphData = useFullAssetGraphData(props.fetchOptions);
+  const [hideNodesMatching, setHideNodesMatching] = useState(
+    () => (_node: AssetNodeForGraphQueryFragment) => true,
+  );
+
   const {fetchResult, assetGraphData, graphQueryItems, allAssetKeys} = useAssetGraphData(
     props.explorerPath.opsQuery,
     {
       ...props.fetchOptions,
       computeKinds: props.assetFilterState?.filters.computeKindTags,
+      hideNodesMatching,
     },
   );
 
   const {explorerPath, onChangeExplorerPath} = props;
 
-  const {button, filterBar, computeKindTagsFilter} = useAssetGraphExplorerFilters({
+  const {button, filterBar, computeKindTagsFilter, filterFn} = useAssetGraphExplorerFilters({
     nodes: React.useMemo(
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
       [fullAssetGraphData],
@@ -121,6 +126,10 @@ export const AssetGraphExplorer = (props: Props) => {
       );
     }, [explorerPath, onChangeExplorerPath]),
   });
+
+  useEffect(() => {
+    setHideNodesMatching(() => (node: AssetNodeForGraphQueryFragment) => !filterFn(node));
+  }, [filterFn]);
 
   return (
     <Loading allowStaleData queryResult={fetchResult}>

@@ -5,7 +5,7 @@ import {ChangeReason} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
-const ALL_VALUES = Object.values(ChangeReason).map((reason) => ({
+export const ALL_VALUES = Object.values(ChangeReason).map((reason) => ({
   key: reason,
   value: reason,
   match: [reason],

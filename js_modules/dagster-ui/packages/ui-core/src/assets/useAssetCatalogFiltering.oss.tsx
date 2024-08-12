@@ -1,20 +1,21 @@
-import {TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useMemo} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {useAssetDefinitionFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
-import {useAssetSearch} from './useAssetSearch';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
-import {useChangedFilter} from '../ui/Filters/useChangedFilter';
+import {
+  ALL_VALUES as ALL_CHANGED_IN_BRANCH_VALUES,
+  useChangedFilter,
+} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {
   useAssetKindTagsForAssets,
@@ -22,15 +23,19 @@ import {
 } from '../ui/Filters/useComputeKindTagFilter';
 import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const EMPTY_ARRAY: any[] = [];
 
-export function useAssetCatalogFiltering(
-  assets: AssetTableFragment[] | undefined,
-  prefixPath: string[],
-) {
-  const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
-
+export function useAssetCatalogFiltering({
+  assets = EMPTY_ARRAY,
+  includeRepos = true,
+  loading = false,
+}: {
+  assets: AssetTableFragment[] | undefined;
+  includeRepos?: boolean;
+  loading?: boolean;
+}) {
   const {
     filters,
     filterFn,
@@ -41,48 +46,41 @@ export function useAssetCatalogFiltering(
     setOwners,
     setCodeLocations,
     setStorageKindTags,
+    setSelectAllFilters,
   } = useAssetDefinitionFilterState();
 
-  const searchPath = (search || '')
-    .replace(/(( ?> ?)|\.|\/)/g, '/')
-    .toLowerCase()
-    .trim();
-
-  const pathMatches = useAssetSearch(
-    searchPath,
-    assets ?? (EMPTY_ARRAY as NonNullable<typeof assets>),
-  );
-
-  const filtered = React.useMemo(
-    () => pathMatches.filter((a) => filterFn(a.definition ?? {})),
-    [filterFn, pathMatches],
-  );
-
-  const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
-  const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
-  const allAssetOwners = useAssetOwnersForAssets(pathMatches);
+  const allAssetGroupOptions = useAssetGroupSelectorsForAssets(assets);
+  const allComputeKindTags = useAssetKindTagsForAssets(assets);
+  const allAssetOwners = useAssetOwnersForAssets(assets);
 
   const groupsFilter = useAssetGroupFilter({
     allAssetGroups: allAssetGroupOptions,
-    assetGroups: filters.groups,
+    assetGroups: filters.selectAllFilters.includes('groups')
+      ? allAssetGroupOptions
+      : filters.groups,
     setGroups,
   });
+  console.log({allAssetGroupOptions, filters, assets});
   const changedInBranchFilter = useChangedFilter({
-    changedInBranch: filters.changedInBranch,
+    changedInBranch: filters.selectAllFilters.includes('changedInBranch')
+      ? ALL_CHANGED_IN_BRANCH_VALUES
+      : filters.changedInBranch,
     setChangedInBranch,
   });
   const computeKindFilter = useComputeKindTagFilter({
     allComputeKindTags,
-    computeKindTags: filters.computeKindTags,
+    computeKindTags: filters.selectAllFilters.includes('computeKindTags')
+      ? allComputeKindTags
+      : filters.computeKindTags,
     setComputeKindTags,
   });
   const ownersFilter = useAssetOwnerFilter({
     allAssetOwners,
-    owners: filters.owners,
+    owners: filters.selectAllFilters.includes('owners') ? allAssetOwners : filters.owners,
     setOwners,
   });
 
-  const tags = useAssetTagsForAssets(pathMatches);
+  const tags = useAssetTagsForAssets(assets);
   const storageKindTags = useMemo(() => tags.filter(isCanonicalStorageKindTag), [tags]);
   const nonStorageKindTags = useMemo(
     () => tags.filter((tag) => !isCanonicalStorageKindTag(tag)),
@@ -91,20 +89,30 @@ export function useAssetCatalogFiltering(
 
   const tagsFilter = useAssetTagFilter({
     allAssetTags: nonStorageKindTags,
-    tags: filters.tags,
+    tags: filters.selectAllFilters.includes('tags') ? nonStorageKindTags : filters.tags,
     setTags: setAssetTags,
   });
   const storageKindFilter = useStorageKindFilter({
     allAssetStorageKindTags: storageKindTags,
-    storageKindTags: filters.storageKindTags,
+    storageKindTags: filters.selectAllFilters.includes('storageKindTags')
+      ? storageKindTags
+      : filters.storageKindTags,
     setStorageKindTags,
   });
 
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
   const {allRepos} = React.useContext(WorkspaceContext);
 
+  const allRepoAddresses = useMemo(() => {
+    return allRepos.map((repo) =>
+      buildRepoAddress(repo.repository.name, repo.repositoryLocation.name),
+    );
+  }, [allRepos]);
+
   const reposFilter = useCodeLocationFilter({
-    codeLocations: filters.codeLocations,
+    codeLocations: filters.selectAllFilters?.includes('codeLocations')
+      ? allRepoAddresses
+      : filters.codeLocations,
     setCodeLocations,
   });
 
@@ -119,7 +127,7 @@ export function useAssetCatalogFiltering(
     if (isBranchDeployment) {
       uiFilters.push(changedInBranchFilter);
     }
-    if (allRepos.length > 1) {
+    if (allRepos.length > 1 && includeRepos) {
       uiFilters.unshift(reposFilter);
     }
     return uiFilters;
@@ -128,6 +136,7 @@ export function useAssetCatalogFiltering(
     changedInBranchFilter,
     computeKindFilter,
     groupsFilter,
+    includeRepos,
     isBranchDeployment,
     ownersFilter,
     reposFilter,
@@ -135,17 +144,6 @@ export function useAssetCatalogFiltering(
     tagsFilter,
   ]);
   const components = useFilters({filters: uiFilters});
-
-  const filterInput = (
-    <TextInput
-      value={search || ''}
-      style={{width: '30vw', minWidth: 150, maxWidth: 400}}
-      placeholder={
-        prefixPath.length ? `Filter asset keys in ${prefixPath.join('/')}…` : `Filter asset keys…`
-      }
-      onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
-    />
-  );
 
   const isFiltered: boolean = !!(
     filters.changedInBranch?.length ||
@@ -156,12 +154,74 @@ export function useAssetCatalogFiltering(
     filters.codeLocations?.length
   );
 
+  const [didWaitAfterLoading, setDidWaitAfterLoading] = useState(false);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+    if (!didWaitAfterLoading) {
+      // Wait for a render frame because the graphData is set in a useEffect in response to the data loading...
+      requestAnimationFrame(() => setDidWaitAfterLoading(true));
+      return;
+    }
+    let nextAllFilters = [...filters.selectAllFilters];
+
+    let didChange = false;
+
+    [
+      ['owners', filters.owners, allAssetOwners] as const,
+      ['tags', filters.tags, nonStorageKindTags] as const,
+      ['computeKindTags', filters.computeKindTags, allComputeKindTags] as const,
+      ['groups', filters.groups, allAssetGroupOptions] as const,
+      ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
+      ['codeLocations', filters.codeLocations, allRepos] as const,
+    ].forEach(([key, activeItems, allItems]) => {
+      if (!allItems.length) {
+        return;
+      }
+      if ((activeItems?.length ?? 0) !== allItems.length) {
+        if (filters.selectAllFilters?.includes(key)) {
+          didChange = true;
+          nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
+        }
+      } else if (activeItems?.length && !filters.selectAllFilters?.includes(key)) {
+        didChange = true;
+        nextAllFilters.push(key);
+      }
+    });
+
+    if (didChange) {
+      setSelectAllFilters?.(nextAllFilters);
+    }
+  }, [
+    allAssetGroupOptions,
+    allAssetOwners,
+    allComputeKindTags,
+    allRepos,
+    didWaitAfterLoading,
+    filters.changedInBranch,
+    filters.codeLocations,
+    filters.computeKindTags,
+    filters.groups,
+    filters.owners,
+    filters.selectAllFilters,
+    filters.tags,
+    loading,
+    nonStorageKindTags,
+    setSelectAllFilters,
+  ]);
+
+  const filtered = React.useMemo(
+    () => assets.filter((a) => filterFn(a.definition ?? {})),
+    [filterFn, assets],
+  );
+
   return {
-    searchPath,
     activeFiltersJsx: components.activeFiltersJsx,
     filterButton: components.button,
-    filterInput,
     isFiltered,
+    filterFn,
     filtered,
     computeKindFilter,
     storageKindFilter,

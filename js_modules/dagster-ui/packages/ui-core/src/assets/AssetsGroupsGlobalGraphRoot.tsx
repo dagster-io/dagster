@@ -2,7 +2,6 @@ import {Page} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {AssetsGraphHeader} from 'shared/assets/AssetsGraphHeader.oss';
-import {useAssetDefinitionFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
@@ -24,8 +23,6 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   useTrackPageView();
   const {0: path} = useParams<AssetGroupRootParams>();
   const history = useHistory();
-
-  const assetFilterState = useAssetDefinitionFilterState();
 
   useDocumentTitle(`Global Asset Lineage`);
 
@@ -51,15 +48,12 @@ export const AssetsGroupsGlobalGraphRoot = () => {
     [history],
   );
 
-  const {filterFn} = assetFilterState;
-
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
       hideEdgesToNodesOutsideQuery: false,
-      hideNodesMatching: (node) => !filterFn(node),
     };
     return options;
-  }, [filterFn]);
+  }, []);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
@@ -67,7 +61,6 @@ export const AssetsGroupsGlobalGraphRoot = () => {
 
       <AssetGraphExplorer
         fetchOptions={fetchOptions}
-        assetFilterState={assetFilterState}
         options={{preferAssetRendering: true, explodeComposites: true}}
         explorerPath={globalAssetGraphPathFromString(path)}
         onChangeExplorerPath={onChangeExplorerPath}

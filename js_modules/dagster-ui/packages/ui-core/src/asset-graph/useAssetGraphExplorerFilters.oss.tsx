@@ -1,24 +1,9 @@
-import React, {useContext, useEffect, useState} from 'react';
+import React from 'react';
+import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {AssetGraphFilterBar} from './AssetGraphFilterBar';
 import {GraphNode} from './Utils';
-import {CloudOSSContext} from '../app/CloudOSSContext';
-import {isCanonicalStorageKindTag} from '../graph/KindTags';
-import {ChangeReason} from '../graphql/types';
-import {useFilters} from '../ui/BaseFilters';
-import {FilterObject} from '../ui/BaseFilters/useFilter';
-import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
-import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
-import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
-import {useChangedFilter} from '../ui/Filters/useChangedFilter';
-import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
-import {
-  useAssetKindTagsForAssets,
-  useComputeKindTagFilter,
-} from '../ui/Filters/useComputeKindTagFilter';
-import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 type Props = {
   nodes: GraphNode[];
@@ -29,190 +14,25 @@ type Props = {
   loading: boolean;
 };
 
-const defaultState: AssetFilterState = {
-  filters: {
-    changedInBranch: [],
-    computeKindTags: [],
-    groups: [],
-    owners: [],
-    codeLocations: [],
-    selectAllFilters: [],
-    tags: [],
-    storageKindTags: [],
-  },
-  setAssetTags: () => {},
-  setChangedInBranch: () => {},
-  setComputeKindTags: () => {},
-  setFilters: () => {},
-  setGroups: () => {},
-  setOwners: () => {},
-  setCodeLocations: () => {},
-  setSelectAllFilters: () => {},
-  filterFn: () => true,
-  setStorageKindTags: () => {},
-};
-
 export function useAssetGraphExplorerFilters({
   nodes,
   isGlobalGraph,
   explorerPath,
   loading,
   clearExplorerPath,
-  assetFilterState,
 }: Props) {
-  const allAssetTags = useAssetTagsForAssets(nodes);
-
-  const {allRepos} = useContext(WorkspaceContext);
-
-  const {
-    filters: {
-      changedInBranch,
-      computeKindTags,
-      codeLocations,
-      owners,
-      groups,
-      tags,
-      storageKindTags,
-      selectAllFilters,
-    },
-    setAssetTags,
-    setChangedInBranch,
-    setComputeKindTags,
-    setGroups,
-    setOwners,
-    setCodeLocations,
-    setSelectAllFilters,
-    setStorageKindTags,
-  } = assetFilterState || defaultState;
-
-  const reposFilter = useCodeLocationFilter(
-    codeLocations ? {codeLocations, setCodeLocations} : undefined,
-  );
-
-  const changedFilter = useChangedFilter({changedInBranch, setChangedInBranch});
-
-  const allAssetGroups = useAssetGroupsForAssets(nodes);
-
-  const groupsFilter = useAssetGroupFilter({
-    assetGroups: selectAllFilters?.includes('groups') ? allAssetGroups : groups,
-    allAssetGroups,
-    setGroups,
-  });
-
-  const allComputeKindTags = useAssetKindTagsForAssets(nodes);
-
-  const kindTagsFilter = useComputeKindTagFilter({
-    allComputeKindTags,
-    computeKindTags: selectAllFilters?.includes('computeKindTags')
-      ? allComputeKindTags
-      : computeKindTags,
-    setComputeKindTags,
-  });
-
-  const allStorageKindTags = allAssetTags.filter(isCanonicalStorageKindTag);
-  const allNonStorageKindTags = allAssetTags.filter((tag) => !isCanonicalStorageKindTag(tag));
-
-  const tagsFilter = useAssetTagFilter({
-    allAssetTags: allNonStorageKindTags,
-    tags: selectAllFilters?.includes('tags') ? allAssetTags : tags,
-    setTags: setAssetTags,
-  });
-
-  const storageKindTagsFilter = useStorageKindFilter({
-    allAssetStorageKindTags: allStorageKindTags,
-    storageKindTags: selectAllFilters?.includes('storageKindTags')
-      ? allStorageKindTags
-      : storageKindTags,
-    setStorageKindTags,
-  });
-
-  const allAssetOwners = useAssetOwnersForAssets(nodes);
-  const ownerFilter = useAssetOwnerFilter({
-    allAssetOwners,
-    owners: selectAllFilters?.includes('owners') ? allAssetOwners : owners,
-    setOwners,
-  });
-
-  const [didWaitAfterLoading, setDidWaitAfterLoading] = useState(false);
-
-  useEffect(() => {
-    if (loading) {
-      return;
-    }
-    if (!didWaitAfterLoading) {
-      // Wait for a render frame because the graphData is set in a useEffect in response to the data loading...
-      requestAnimationFrame(() => setDidWaitAfterLoading(true));
-      return;
-    }
-    let nextAllFilters = [...selectAllFilters];
-
-    let didChange = false;
-
-    [
-      ['owners', owners, allAssetOwners] as const,
-      ['tags', tags, allAssetTags] as const,
-      ['computeKindTags', computeKindTags, allComputeKindTags] as const,
-      ['groups', groups, allAssetGroups] as const,
-      ['changedInBranch', changedInBranch, Object.values(ChangeReason)] as const,
-      ['codeLocations', codeLocations, allRepos] as const,
-    ].forEach(([key, activeItems, allItems]) => {
-      if (!allItems.length) {
-        return;
-      }
-      if ((activeItems?.length ?? 0) !== allItems.length) {
-        if (selectAllFilters?.includes(key)) {
-          didChange = true;
-          nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
-        }
-      } else if (activeItems?.length && !selectAllFilters?.includes(key)) {
-        didChange = true;
-        nextAllFilters.push(key);
-      }
+  const {filterButton, computeKindFilter, storageKindFilter, activeFiltersJsx, filterFn} =
+    useAssetCatalogFiltering({
+      assets: nodes,
+      includeRepos: isGlobalGraph,
+      loading,
     });
 
-    if (didChange) {
-      setSelectAllFilters?.(nextAllFilters);
-    }
-  }, [
-    loading,
-    owners,
-    allAssetOwners,
-    selectAllFilters,
-    setSelectAllFilters,
-    tags,
-    allAssetTags,
-    computeKindTags,
-    allComputeKindTags,
-    groups,
-    allAssetGroups,
-    changedInBranch,
-    codeLocations,
-    allRepos,
-    didWaitAfterLoading,
-  ]);
-
-  const filters: FilterObject[] = [];
-
-  if (allRepos.length > 1 && isGlobalGraph) {
-    filters.push(reposFilter);
-  }
-  if (allAssetGroups) {
-    filters.push(groupsFilter);
-  }
-  const {isBranchDeployment} = React.useContext(CloudOSSContext);
-  if (changedInBranch && isBranchDeployment) {
-    filters.push(changedFilter);
-  }
-  filters.push(kindTagsFilter);
-  filters.push(storageKindTagsFilter);
-  filters.push(tagsFilter);
-  filters.push(ownerFilter);
-  const {button, activeFiltersJsx} = useFilters({filters});
-
   return {
-    computeKindTagsFilter: kindTagsFilter,
-    storageKindTagsFilter,
-    button: filters.length ? button : null,
+    computeKindTagsFilter: computeKindFilter,
+    storageKindTagsFilter: storageKindFilter,
+    button: filterButton,
+    filterFn,
     activeFiltersJsx,
     filterBar: (
       <AssetGraphFilterBar

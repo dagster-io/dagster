@@ -28,6 +28,7 @@ export type StaticBaseConfig<TValue> = {
   getStringValue: (value: TValue) => string;
   getTooltipText?: (value: TValue) => string;
   matchType?: 'any-of' | 'all-of';
+  isLoadingFilters?: boolean;
 };
 
 type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
@@ -45,11 +46,13 @@ type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
   canSelectAll?: boolean;
   menuWidth?: number | string;
   closeOnSelect?: boolean;
+  isLoadingFilters?: boolean;
 };
 
 export type StaticSetFilter<TValue> = FilterObject & {
   state: Set<TValue>;
   setState: (state: Set<TValue>) => void;
+  selectAll: () => void;
 };
 
 const selectAllSymbol = Symbol.for('useStaticSetFilter:SelectAll');
@@ -61,6 +64,7 @@ export function useStaticSetFilter<TValue>({
   allValues: _unsortedValues,
   renderLabel,
   renderActiveStateLabel,
+  isLoadingFilters,
   state,
   getStringValue,
   getTooltipText,
@@ -109,6 +113,7 @@ export function useStaticSetFilter<TValue>({
       icon,
       state: innerState,
       isActive: innerState.size > 0,
+      isLoadingFilters,
       getResults: (query) => {
         currentQueryRef.current = query;
         let results;
@@ -212,6 +217,14 @@ export function useStaticSetFilter<TValue>({
           close();
         }
       },
+      selectAll() {
+        this.onSelect({
+          value: selectAllSymbol,
+          close: () => {},
+          createPortal: () => () => {},
+          clearSearch: () => {},
+        });
+      },
 
       activeJSX: (
         <SetFilterActiveState
@@ -243,6 +256,7 @@ export function useStaticSetFilter<TValue>({
       allowMultipleSelections,
       getKey,
       selectAllText,
+      isLoadingFilters,
     ],
   );
   const filterObjRef = useUpdatingRef(filterObj);

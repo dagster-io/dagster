@@ -101,6 +101,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 
   const allResultsJsx = React.useMemo(() => {
     if (selectedFilter) {
+      if (selectedFilter.isLoadingFilters) {
+        return [];
+      }
       return selectedFilter
         .getResults(search)
         .map((result, resultIndex) => (
