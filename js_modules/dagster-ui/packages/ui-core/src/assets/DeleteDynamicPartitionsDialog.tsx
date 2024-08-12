@@ -163,7 +163,7 @@ export const DeleteDynamicPartitionsModalInner = memo(
   },
 );
 
-const DELETE_DYNAMIC_PARTITIONS_MUTATION = gql`
+export const DELETE_DYNAMIC_PARTITIONS_MUTATION = gql`
   mutation DeleteDynamicPartitionsMutation(
     $partitionKeys: [String!]!
     $partitionsDefName: String!
