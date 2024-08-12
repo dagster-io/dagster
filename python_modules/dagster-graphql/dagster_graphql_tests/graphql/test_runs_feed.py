@@ -1,5 +1,6 @@
 import time
 
+import pytest
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import create_run_for_test
@@ -82,15 +83,24 @@ def _create_backfill(graphql_context) -> str:
     return backfill.backfill_id
 
 
-class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
-    def test_get_runs_feed(self, graphql_context):
-        for _ in range(10):
-            _create_run(graphql_context)
-            time.sleep(CREATE_DELAY)
-            _create_backfill(graphql_context)
+class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
+    """Tests for the runs feed that can be done on a instance that has 10 runs and 10 backfills
+    created in alternating order. Split these tests into a separate class so that we can make the runs
+    and backfills once and re-use them across tests.
+    """
 
+    @pytest.fixture(scope="class")
+    def gql_context_with_runs_and_backfills(self, class_scoped_graphql_context):
+        for _ in range(10):
+            _create_run(class_scoped_graphql_context)
+            time.sleep(CREATE_DELAY)
+            _create_backfill(class_scoped_graphql_context)
+
+        return class_scoped_graphql_context
+
+    def test_get_runs_feed(self, gql_context_with_runs_and_backfills):
         result = execute_dagster_graphql(
-            graphql_context,
+            gql_context_with_runs_and_backfills.create_request_context(),
             GET_RUNS_FEED_QUERY,
             variables={
                 "limit": 10,
@@ -113,7 +123,7 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
         assert old_cursor is not None
 
         result = execute_dagster_graphql(
-            graphql_context,
+            gql_context_with_runs_and_backfills.create_request_context(),
             GET_RUNS_FEED_QUERY,
             variables={
                 "limit": 10,
@@ -128,6 +138,108 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
             prev_run_time = res["creationTime"]
 
         assert not result.data["runsFeedOrError"]["hasMore"]
+
+    def test_get_runs_feed_inexact_limit(self, gql_context_with_runs_and_backfills):
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 15,
+                "cursor": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 15
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert result.data["runsFeedOrError"]["hasMore"]
+        assert result.data["runsFeedOrError"]["cursor"] is not None
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": result.data["runsFeedOrError"]["cursor"],
+            },
+        )
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 5
+        for res in result.data["runsFeedOrError"]["results"]:
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+    def test_get_runs_feed_cursor_respected(self, gql_context_with_runs_and_backfills):
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": None,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+        assert result.data["runsFeedOrError"]["hasMore"]
+        assert result.data["runsFeedOrError"]["cursor"] is not None
+
+        old_cursor = RunsFeedCursor.from_string(result.data["runsFeedOrError"]["cursor"])
+        run_cursor_run = gql_context_with_runs_and_backfills.instance.get_run_record_by_id(
+            old_cursor.run_cursor
+        )
+        backfill_cursor_backfill = gql_context_with_runs_and_backfills.instance.get_backfill(
+            old_cursor.backfill_cursor
+        )
+
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 10,
+                "cursor": old_cursor.to_string(),
+            },
+        )
+
+        assert len(result.data["runsFeedOrError"]["results"]) == 10
+        for res in result.data["runsFeedOrError"]["results"]:
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
+            assert res["runId"] != old_cursor.run_cursor
+            assert res["runId"] != old_cursor.backfill_cursor
+
+            assert res["creationTime"] <= run_cursor_run.create_timestamp.timestamp()
+            assert res["creationTime"] <= backfill_cursor_backfill.backfill_timestamp
+
+        assert not result.data["runsFeedOrError"]["hasMore"]
+
+
+class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
+    """Tests for the runs feed that need special ordering of runs and backfills. Split these
+    out from the tests that can use a consistent setup because fetching the graphql_context per
+    test wipes the run storage, so is incompatible to use with the class-scoped context needed for
+    the other test suite.
+    """
 
     def test_get_runs_feed_ignores_backfill_runs(self, graphql_context):
         for _ in range(10):
@@ -157,51 +269,6 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
 
         assert not result.data["runsFeedOrError"]["hasMore"]
 
-    def test_get_runs_feed_inexact_limit(self, graphql_context):
-        for _ in range(10):
-            _create_run(graphql_context)
-            time.sleep(CREATE_DELAY)
-            _create_backfill(graphql_context)
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_RUNS_FEED_QUERY,
-            variables={
-                "limit": 15,
-                "cursor": None,
-            },
-        )
-
-        assert not result.errors
-        assert result.data
-
-        assert len(result.data["runsFeedOrError"]["results"]) == 15
-        prev_run_time = None
-        for res in result.data["runsFeedOrError"]["results"]:
-            if prev_run_time:
-                assert res["creationTime"] <= prev_run_time
-            prev_run_time = res["creationTime"]
-
-        assert result.data["runsFeedOrError"]["hasMore"]
-        assert result.data["runsFeedOrError"]["cursor"] is not None
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_RUNS_FEED_QUERY,
-            variables={
-                "limit": 10,
-                "cursor": result.data["runsFeedOrError"]["cursor"],
-            },
-        )
-
-        assert len(result.data["runsFeedOrError"]["results"]) == 5
-        for res in result.data["runsFeedOrError"]["results"]:
-            if prev_run_time:
-                assert res["creationTime"] <= prev_run_time
-            prev_run_time = res["creationTime"]
-
-        assert not result.data["runsFeedOrError"]["hasMore"]
-
     def test_get_runs_feed_no_runs_or_backfills_exist(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context,
@@ -216,61 +283,6 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         assert len(result.data["runsFeedOrError"]["results"]) == 0
-        assert not result.data["runsFeedOrError"]["hasMore"]
-
-    def test_get_runs_feed_cursor_respected(self, graphql_context):
-        for _ in range(10):
-            _create_run(graphql_context)
-            time.sleep(CREATE_DELAY)
-            _create_backfill(graphql_context)
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_RUNS_FEED_QUERY,
-            variables={
-                "limit": 10,
-                "cursor": None,
-            },
-        )
-
-        assert not result.errors
-        assert result.data
-
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
-        prev_run_time = None
-        for res in result.data["runsFeedOrError"]["results"]:
-            if prev_run_time:
-                assert res["creationTime"] <= prev_run_time
-            prev_run_time = res["creationTime"]
-
-        assert result.data["runsFeedOrError"]["hasMore"]
-        assert result.data["runsFeedOrError"]["cursor"] is not None
-
-        old_cursor = RunsFeedCursor.from_string(result.data["runsFeedOrError"]["cursor"])
-        run_cursor_run = graphql_context.instance.get_run_record_by_id(old_cursor.run_cursor)
-        backfill_cursor_backfill = graphql_context.instance.get_backfill(old_cursor.backfill_cursor)
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_RUNS_FEED_QUERY,
-            variables={
-                "limit": 10,
-                "cursor": old_cursor.to_string(),
-            },
-        )
-
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
-        for res in result.data["runsFeedOrError"]["results"]:
-            if prev_run_time:
-                assert res["creationTime"] <= prev_run_time
-            prev_run_time = res["creationTime"]
-
-            assert res["runId"] != old_cursor.run_cursor
-            assert res["runId"] != old_cursor.backfill_cursor
-
-            assert res["creationTime"] <= run_cursor_run.create_timestamp.timestamp()
-            assert res["creationTime"] <= backfill_cursor_backfill.backfill_timestamp
-
         assert not result.data["runsFeedOrError"]["hasMore"]
 
     def test_get_runs_feed_one_backfill_long_ago(self, graphql_context):
@@ -391,7 +403,6 @@ class TestRunsFeed(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_get_runs_feed_backfill_created_between_calls(self, graphql_context):
-        # TestRunsFeed::test_get_runs_feed_backfill_created_between_calls[sqlite_with_default_run_launcher_managed_grpc_env]
         for _ in range(10):
             _create_run(graphql_context)
 
