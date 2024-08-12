@@ -1,5 +1,6 @@
 # ruff: noqa: T201
 import argparse
+import itertools
 import subprocess
 import sys
 from typing import List, Optional
@@ -47,78 +48,84 @@ def main(
     # `install_targets` below should use `sys.version_info` checks to reflect this.
 
     # Supported on all Python versions.
-    install_targets += [
-        "-e python_modules/dagster[pyright,ruff,test]",
-        "-e python_modules/dagster-pipes",
-        "-e python_modules/dagster-graphql",
-        "-e python_modules/dagster-test",
-        "-e python_modules/dagster-webserver",
-        "-e python_modules/dagit",
-        "-e python_modules/automation",
-        "-e python_modules/libraries/dagster-managed-elements",
-        "-e python_modules/libraries/dagster-airbyte",
-        "-e python_modules/libraries/dagster-aws[test]",
-        "-e python_modules/libraries/dagster-celery",
-        "-e python_modules/libraries/dagster-celery-docker",
-        "-e python_modules/libraries/dagster-dask[yarn,pbs,kube]",
-        "-e python_modules/libraries/dagster-databricks",
-        "-e python_modules/libraries/dagster-datadog",
-        "-e python_modules/libraries/dagster-datahub",
-        "-e python_modules/libraries/dagster-dbt",
-        "-e python_modules/libraries/dagster-docker",
-        "-e python_modules/libraries/dagster-gcp",
-        "-e python_modules/libraries/dagster-gcp-pandas",
-        "-e python_modules/libraries/dagster-gcp-pyspark",
-        "-e python_modules/libraries/dagster-embedded-elt",
-        "-e python_modules/libraries/dagster-fivetran",
-        "-e python_modules/libraries/dagster-k8s",
-        "-e python_modules/libraries/dagster-celery-k8s",
-        "-e python_modules/libraries/dagster-github",
-        "-e python_modules/libraries/dagster-mlflow",
-        "-e python_modules/libraries/dagster-mysql",
-        "-e python_modules/libraries/dagster-looker",
-        "-e python_modules/libraries/dagster-openai",
-        "-e python_modules/libraries/dagster-pagerduty",
-        "-e python_modules/libraries/dagster-pandas",
-        "-e python_modules/libraries/dagster-papertrail",
-        "-e python_modules/libraries/dagster-postgres",
-        "-e python_modules/libraries/dagster-prometheus",
-        "-e python_modules/libraries/dagster-pyspark",
-        "-e python_modules/libraries/dagster-shell",
-        "-e python_modules/libraries/dagster-slack",
-        "-e python_modules/libraries/dagster-spark",
-        "-e python_modules/libraries/dagster-ssh",
-        "-e python_modules/libraries/dagster-twilio",
-        "-e python_modules/libraries/dagstermill",
-        "-e integration_tests/python_modules/dagster-k8s-test-infra",
-        "-e python_modules/libraries/dagster-azure",
-        "-e python_modules/libraries/dagster-msteams",
-        "-e python_modules/libraries/dagster-deltalake",
-        "-e python_modules/libraries/dagster-deltalake-pandas",
-        "-e python_modules/libraries/dagster-deltalake-polars",
-        "-e helm/dagster/schema[test]",
-        "-e .buildkite/dagster-buildkite",
-        "-e examples/experimental/dagster-blueprints",
-        "-e examples/experimental/dagster-airlift",
+    editable_target_paths = [
+        "python_modules/dagster[pyright,ruff,test]",
+        "python_modules/dagster-pipes",
+        "python_modules/dagster-graphql",
+        "python_modules/dagster-test",
+        "python_modules/dagster-webserver",
+        "python_modules/dagit",
+        "python_modules/automation",
+        "python_modules/libraries/dagster-managed-elements",
+        "python_modules/libraries/dagster-airbyte",
+        "python_modules/libraries/dagster-aws[test]",
+        "python_modules/libraries/dagster-celery",
+        "python_modules/libraries/dagster-celery-docker",
+        "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
+        "python_modules/libraries/dagster-databricks",
+        "python_modules/libraries/dagster-datadog",
+        "python_modules/libraries/dagster-datahub",
+        "python_modules/libraries/dagster-dbt",
+        "python_modules/libraries/dagster-docker",
+        "python_modules/libraries/dagster-gcp",
+        "python_modules/libraries/dagster-gcp-pandas",
+        "python_modules/libraries/dagster-gcp-pyspark",
+        "python_modules/libraries/dagster-embedded-elt",
+        "python_modules/libraries/dagster-fivetran",
+        "python_modules/libraries/dagster-k8s",
+        "python_modules/libraries/dagster-celery-k8s",
+        "python_modules/libraries/dagster-github",
+        "python_modules/libraries/dagster-mlflow",
+        "python_modules/libraries/dagster-mysql",
+        "python_modules/libraries/dagster-looker",
+        "python_modules/libraries/dagster-openai",
+        "python_modules/libraries/dagster-pagerduty",
+        "python_modules/libraries/dagster-pandas",
+        "python_modules/libraries/dagster-papertrail",
+        "python_modules/libraries/dagster-postgres",
+        "python_modules/libraries/dagster-prometheus",
+        "python_modules/libraries/dagster-pyspark",
+        "python_modules/libraries/dagster-shell",
+        "python_modules/libraries/dagster-slack",
+        "python_modules/libraries/dagster-spark",
+        "python_modules/libraries/dagster-ssh",
+        "python_modules/libraries/dagster-twilio",
+        "python_modules/libraries/dagstermill",
+        "integration_tests/python_modules/dagster-k8s-test-infra",
+        "python_modules/libraries/dagster-azure",
+        "python_modules/libraries/dagster-msteams",
+        "python_modules/libraries/dagster-deltalake",
+        "python_modules/libraries/dagster-deltalake-pandas",
+        "python_modules/libraries/dagster-deltalake-polars",
+        "helm/dagster/schema[test]",
+        ".buildkite/dagster-buildkite",
+        "examples/experimental/dagster-blueprints",
+        "examples/experimental/dagster-airlift",
     ]
 
     if sys.version_info <= (3, 12):
-        install_targets += [
-            "-e python_modules/libraries/dagster-duckdb",
-            "-e python_modules/libraries/dagster-duckdb-pandas",
-            "-e python_modules/libraries/dagster-duckdb-polars",
-            "-e python_modules/libraries/dagster-duckdb-pyspark",
-            "-e python_modules/libraries/dagster-wandb",
-            "-e python_modules/libraries/dagster-airflow",
+        editable_target_paths += [
+            "python_modules/libraries/dagster-duckdb",
+            "python_modules/libraries/dagster-duckdb-pandas",
+            "python_modules/libraries/dagster-duckdb-polars",
+            "python_modules/libraries/dagster-duckdb-pyspark",
+            "python_modules/libraries/dagster-wandb",
+            "python_modules/libraries/dagster-airflow",
         ]
 
     if sys.version_info > (3, 7):
-        install_targets += [
-            "-e python_modules/libraries/dagster-pandera",
-            "-e python_modules/libraries/dagster-snowflake",
-            "-e python_modules/libraries/dagster-snowflake-pandas",
-            "-e python_modules/libraries/dagster-polars[deltalake,gcp,test]",
+        editable_target_paths += [
+            "python_modules/libraries/dagster-pandera",
+            "python_modules/libraries/dagster-snowflake",
+            "python_modules/libraries/dagster-snowflake-pandas",
+            "python_modules/libraries/dagster-polars[deltalake,gcp,test]",
         ]
+
+    install_targets += list(
+        itertools.chain.from_iterable(
+            zip(["-e"] * len(editable_target_paths), editable_target_paths)
+        )
+    )
 
     if sys.version_info > (3, 6) and sys.version_info < (3, 10):
         install_targets += []
