@@ -39,7 +39,7 @@ def get_hardcoded_condition():
             partitions_def = context.asset_graph_view.asset_graph.get(
                 context.asset_key
             ).partitions_def
-            return AutomationResult.create(
+            return AutomationResult(
                 context,
                 true_slice=check.not_none(
                     context.asset_graph_view.get_asset_slice_from_subset(

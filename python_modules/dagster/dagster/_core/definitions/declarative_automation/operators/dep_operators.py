@@ -42,9 +42,7 @@ class DepConditionWrapperCondition(AutomationCondition):
 
         # find all children of the true dep slice
         true_slice = dep_result.true_slice.compute_child_slice(context.asset_key)
-        return AutomationResult.create_from_children(
-            context=context, true_slice=true_slice, child_results=[dep_result]
-        )
+        return AutomationResult(context=context, true_slice=true_slice, child_results=[dep_result])
 
 
 @record
@@ -129,9 +127,7 @@ class AnyDepsCondition(DepCondition):
             true_slice = true_slice.compute_union(dep_result.true_slice)
 
         true_slice = context.candidate_slice.compute_intersection(true_slice)
-        return AutomationResult.create_from_children(
-            context, true_slice=true_slice, child_results=dep_results
-        )
+        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)
 
 
 @whitelist_for_serdes
@@ -162,6 +158,4 @@ class AllDepsCondition(DepCondition):
             dep_results.append(dep_result)
             true_slice = true_slice.compute_intersection(dep_result.true_slice)
 
-        return AutomationResult.create_from_children(
-            context, true_slice=true_slice, child_results=dep_results
-        )
+        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)

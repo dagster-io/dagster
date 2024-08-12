@@ -43,7 +43,7 @@ class FalseAutomationCondition(AutomationCondition):
         return ""
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
-        return AutomationResult.create(context, true_slice=context.get_empty_slice())
+        return AutomationResult(context, true_slice=context.get_empty_slice())
 
 
 @dataclass(frozen=True)

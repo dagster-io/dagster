@@ -57,7 +57,7 @@ class NewlyTrueCondition(AutomationCondition):
             self._get_previous_child_true_slice(context) or context.get_empty_slice()
         )
 
-        return AutomationResult.create_from_children(
+        return AutomationResult(
             context=context,
             true_slice=context.candidate_slice.compute_intersection(newly_true_child_slice),
             child_results=[child_result],
