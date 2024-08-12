@@ -3,9 +3,14 @@ import {TextInput} from '@dagster-io/ui-components';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useAssetSearch} from './useAssetSearch';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {FilterableAssetDefinition} from './useAssetDefinitionFilterState.oss';
 
-export const useBasicAssetSearchInput = (
-  assets: AssetTableFragment[],
+export const useBasicAssetSearchInput = <T extends {
+  id: string;
+  key: {path: Array<string>};
+  definition?: FilterableAssetDefinition | null;
+},>(
+  assets: T[],
   prefixPath: string[] = [],
 ) => {
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
@@ -26,7 +31,7 @@ export const useBasicAssetSearchInput = (
     />
   );
 
-  const filtered = useAssetSearch<AssetTableFragment>(searchPath, assets);
+  const filtered = useAssetSearch(searchPath, assets);
 
   return {filterInput, filtered, searchPath};
 };
