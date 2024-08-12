@@ -24,17 +24,12 @@ class CodeVersionChangedCondition(AutomationCondition):
     def requires_cursor(self) -> bool:
         return True
 
-    def _get_previous_code_version(self, context: AutomationContext) -> Optional[str]:
-        if context.node_cursor is None:
-            return None
-        return context.node_cursor.get_extra_state(as_type=str)
-
     def evaluate(self, context: AutomationContext) -> AutomationResult:
-        previous_code_version = self._get_previous_code_version(context)
+        previous_code_version = context.cursor
         current_code_version = context.asset_graph.get(context.asset_key).code_version
         if previous_code_version is None or previous_code_version == current_code_version:
             true_slice = context.get_empty_slice()
         else:
             true_slice = context.candidate_slice
 
-        return AutomationResult(context, true_slice, extra_state=current_code_version)
+        return AutomationResult(context, true_slice, cursor=current_code_version)
