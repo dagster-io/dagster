@@ -35,9 +35,7 @@ class NewlyTrueCondition(AutomationCondition):
         """Returns the true slice of the child from the previous tick, which is stored in the
         extra state field of the cursor.
         """
-        if not context.node_cursor:
-            return None
-        true_subset = context.node_cursor.get_extra_state(as_type=AssetSubset)
+        true_subset = context.get_structured_cursor(as_type=AssetSubset)
         if not true_subset:
             return None
         return context.asset_graph_view.get_asset_slice_from_subset(true_subset)
@@ -61,5 +59,5 @@ class NewlyTrueCondition(AutomationCondition):
             context=context,
             true_slice=context.candidate_slice.compute_intersection(newly_true_child_slice),
             child_results=[child_result],
-            extra_state=child_result.true_subset,
+            structured_cursor=child_result.true_subset,
         )
