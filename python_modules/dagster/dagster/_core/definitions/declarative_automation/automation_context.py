@@ -4,11 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import (
-    AssetGraphView,
-    AssetSlice,
-    TemporalContext,
-)
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -155,8 +151,29 @@ class AutomationContext:
         )
 
     @property
-    def effective_dt(self) -> datetime.datetime:
+    def evaluation_time(self) -> datetime.datetime:
+        """A consistent datetime for all evaluations on this tick."""
         return self.asset_graph_view.effective_dt
+
+    @property
+    def max_storage_id(self) -> Optional[int]:
+        """A consistent maximum storage id to consider for all evaluations on this tick."""
+        if self._legacy_context is not None:
+            # legacy evaluations handle event log tailing in a different manner, and so need to
+            # use a different storage id cursoring scheme
+            return self.legacy_context.new_max_storage_id
+        else:
+            return self.asset_graph_view.last_event_id
+
+    @property
+    def previous_max_storage_id(self) -> Optional[int]:
+        """The `max_storage_id` value used on the previous tick's evaluation."""
+        return self._cursor.temporal_context.last_event_id if self._cursor else None
+
+    @property
+    def previous_evaluation_time(self) -> Optional[datetime.datetime]:
+        """The `evaluation_time` value used on the previous tick's evaluation."""
+        return self._cursor.temporal_context.effective_dt if self._cursor else None
 
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:
@@ -192,31 +209,6 @@ class AutomationContext:
                 if candidate_subset
                 else None
             )
-
-    @property
-    def previous_evaluation_max_storage_id(self) -> Optional[int]:
-        """Returns the maximum storage ID for the previous time this asset was evaluated."""
-        return self._cursor.temporal_context.last_event_id if self._cursor else None
-
-    @property
-    def previous_evaluation_effective_dt(self) -> Optional[datetime.datetime]:
-        """Returns the datetime for the previous time this asset was evaluated."""
-        return self._cursor.temporal_context.effective_dt if self._cursor else None
-
-    @property
-    def new_max_storage_id(self) -> Optional[int]:
-        if self._legacy_context is not None:
-            # legacy evaluations handle event log tailing in a different manner, and so need to
-            # use a different storage id cursoring scheme
-            return self.legacy_context.new_max_storage_id
-        else:
-            return self.asset_graph_view.last_event_id
-
-    @property
-    def new_temporal_context(self) -> TemporalContext:
-        return TemporalContext(
-            effective_dt=self.effective_dt, last_event_id=self.new_max_storage_id
-        )
 
     def get_empty_slice(self) -> AssetSlice:
         """Returns an empty AssetSlice of the currently-evaluated asset."""

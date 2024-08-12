@@ -561,8 +561,8 @@ class AutomationResult:
     def get_new_cursor(self) -> AutomationConditionCursor:
         return AutomationConditionCursor(
             previous_requested_subset=self.serializable_evaluation.true_subset,
-            effective_timestamp=self._context.effective_dt.timestamp(),
-            last_event_id=self._context.new_max_storage_id,
+            effective_timestamp=self._context.evaluation_time.timestamp(),
+            last_event_id=self._context.max_storage_id,
             node_cursors_by_unique_id=self.get_child_node_cursors(),
             result_value_hash=self.value_hash,
         )
