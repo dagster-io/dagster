@@ -46,14 +46,14 @@ export const buildDefinitionTag = memoize(
 );
 
 export function useAssetTagsForAssets(
-  assets: {definition?: {tags: DefinitionTag[]} | null}[],
+  assets: {definition?: {tags?: DefinitionTag[] | null} | null}[],
 ): DefinitionTag[] {
   return useMemo(
     () =>
       Array.from(
         new Set(
           assets
-            .flatMap((a) => a.definition?.tags.map((tag) => JSON.stringify(tag)) ?? [])
+            .flatMap((a) => a.definition?.tags?.map((tag) => JSON.stringify(tag)) ?? [])
             .filter((o) => o),
         ),
       )

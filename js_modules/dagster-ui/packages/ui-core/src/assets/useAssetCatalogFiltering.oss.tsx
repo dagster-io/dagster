@@ -1,9 +1,11 @@
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
-import {useAssetDefinitionFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
+import {
+  FilterableAssetDefinition,
+  useAssetDefinitionFilterState,
+} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
-import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
@@ -26,12 +28,18 @@ const EMPTY_ARRAY: any[] = [];
 
 const ALL_CHANGED_IN_BRANCH_VALUES = Object.values(ChangeReason);
 
-export function useAssetCatalogFiltering({
+export function useAssetCatalogFiltering<
+  T extends {
+    id: string;
+    key: {path: Array<string>};
+    definition?: FilterableAssetDefinition | null;
+  },
+>({
   assets = EMPTY_ARRAY,
   includeRepos = true,
   loading = false,
 }: {
-  assets: AssetTableFragment[] | undefined;
+  assets: T[] | undefined;
   includeRepos?: boolean;
   loading?: boolean;
 }) {
@@ -199,22 +207,17 @@ export function useAssetCatalogFiltering({
     allComputeKindTags,
     allRepos,
     didWaitAfterLoading,
-    filters.changedInBranch,
-    filters.codeLocations,
-    filters.computeKindTags,
-    filters.groups,
-    filters.owners,
-    filters.selectAllFilters,
-    filters.tags,
+    filters,
     loading,
     nonStorageKindTags,
     setSelectAllFilters,
+    storageKindTags,
   ]);
 
   const filtered = React.useMemo(
     () => assets.filter((a) => filterFn(a.definition ?? {})),
     [filterFn, assets],
-  );
+  ) as T[];
 
   return {
     activeFiltersJsx: components.activeFiltersJsx,
