@@ -58,6 +58,6 @@ class SinceCondition(AutomationCondition):
         # remove any newly true reset asset partitions
         true_slice = true_slice.compute_difference(reset_result.true_slice)
 
-        return AutomationResult.create_from_children(
+        return AutomationResult(
             context=context, true_slice=true_slice, child_results=[trigger_result, reset_result]
         )

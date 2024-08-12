@@ -25,7 +25,7 @@ class SliceAutomationCondition(AutomationCondition):
         else:
             true_slice = self.compute_slice(context)
 
-        return AutomationResult.create(context, true_slice)
+        return AutomationResult(context, true_slice)
 
 
 @whitelist_for_serdes
