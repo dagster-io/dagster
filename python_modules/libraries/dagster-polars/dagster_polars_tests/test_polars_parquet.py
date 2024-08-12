@@ -2,7 +2,7 @@ import os
 
 import polars as pl
 import polars.testing as pl_testing
-from dagster import asset, materialize
+from dagster import Definitions, asset, materialize
 from dagster_polars import PolarsParquetIOManager
 from hypothesis import given, settings
 from polars.testing.parametric import dataframes
@@ -60,3 +60,14 @@ def test_polars_parquet_io_manager_read_write_full_lazy(
     saved_path = get_saved_path(result, "upstream")
     pl_testing.assert_frame_equal(df, pl.read_parquet(saved_path))
     os.remove(saved_path)  # cleanup manually because of hypothesis
+
+
+def test_get_config_field() -> None:
+    io_manager = PolarsParquetIOManager(storage_options={"key": "value"})
+
+    foo = (
+        Definitions(resources={"parquet_io_manager": io_manager})  # noqa: SLF001
+        ._created_pending_or_normal_repo.get_top_level_resources()["parquet_io_manager"]  # type: ignore
+        .get_config_field()
+    )
+    assert io_manager.cloud_storage_options == foo.default_value["storage_options"]
