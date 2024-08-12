@@ -1,5 +1,5 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Box, Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {
@@ -42,17 +42,17 @@ export const ScheduleSwitch = (props: Props) => {
 
   const repoAddressSelector = useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
 
+  const variables = {
+    id: schedule.id,
+    selector: {
+      ...repoAddressSelector,
+      name,
+    },
+  };
+
   const {data, loading} = useQuery<ScheduleStateQuery, ScheduleStateQueryVariables>(
     SCHEDULE_STATE_QUERY,
-    {
-      variables: {
-        id: schedule.id,
-        selector: {
-          ...repoAddressSelector,
-          name,
-        },
-      },
-    },
+    {variables},
   );
 
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
@@ -60,7 +60,7 @@ export const ScheduleSwitch = (props: Props) => {
     StartThisScheduleMutationVariables
   >(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
-    refetchQueries: [{variables: {id: schedule.id}, query: SCHEDULE_STATE_QUERY}],
+    refetchQueries: [{variables, query: SCHEDULE_STATE_QUERY}],
     awaitRefetchQueries: true,
   });
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
@@ -68,7 +68,7 @@ export const ScheduleSwitch = (props: Props) => {
     StopScheduleMutationVariables
   >(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
-    refetchQueries: [{variables: {id: schedule.id}, query: SCHEDULE_STATE_QUERY}],
+    refetchQueries: [{variables, query: SCHEDULE_STATE_QUERY}],
     awaitRefetchQueries: true,
   });
 
@@ -93,7 +93,11 @@ export const ScheduleSwitch = (props: Props) => {
   let status = schedule.scheduleState.status;
 
   if (!data && loading) {
-    return <Spinner purpose="body-text" />;
+    return (
+      <Box flex={{direction: 'row', justifyContent: 'center'}} style={{width: '30px'}}>
+        <Spinner purpose="body-text" />
+      </Box>
+    );
   }
   if (
     !['InstigationState', 'InstigationStateNotFoundError'].includes(

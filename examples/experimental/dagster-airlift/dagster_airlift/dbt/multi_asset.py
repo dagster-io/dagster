@@ -6,7 +6,7 @@ from typing import Optional
 from dagster import AssetExecutionContext, Definitions
 from dagster_dbt import DbtCliResource, dbt_assets
 
-from dagster_airlift.core.def_factory import DefsFactory
+from dagster_airlift.core import DefsFactory
 
 
 @dataclass

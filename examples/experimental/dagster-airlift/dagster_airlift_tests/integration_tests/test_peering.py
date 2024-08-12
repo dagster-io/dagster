@@ -1,8 +1,7 @@
-import time
-from typing import cast
+import re
+from typing import Any, cast
 
 import pytest
-import requests
 from dagster import (
     AssetDep,
     AssetsDefinition,
@@ -17,11 +16,13 @@ from dagster import (
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.test_utils import instance_for_test
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
-from dagster_airlift.core.migration_state import (
+from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
     TaskMigrationState,
 )
+
+from .conftest import assert_link_exists
 
 
 @pytest.mark.flaky(reruns=2)
@@ -89,6 +90,8 @@ def test_dag_peering(
     assert spec_metadata["Link to DAG"] == MarkdownMetadataValue(
         "[View DAG](http://localhost:8080/dags/print_dag)"
     )
+    link = extract_link(spec_metadata["Link to DAG"].value)
+    assert_link_exists("Link to DAG", link)
     assert "Source Code" in spec_metadata
 
     task_def: AssetsDefinition = [  # noqa
@@ -98,6 +101,11 @@ def test_dag_peering(
     task_spec = list(task_def.specs)[0]  # noqa
     assert task_spec.metadata["Dag ID"] == "print_dag"
     assert task_spec.metadata["Computed in Task ID"] == "print_task"
+    assert task_spec.metadata["Link to DAG"] == MarkdownMetadataValue(
+        "[View DAG](http://localhost:8080/dags/print_dag)"
+    )
+    link = extract_link(task_spec.metadata["Link to DAG"].value)
+    assert_link_exists("Link to DAG", link)
 
     other_task_def: AssetsDefinition = [  # noqa
         assets_def for assets_def in assets_defs if assets_def.key == AssetKey(["other", "key"])
@@ -112,23 +120,8 @@ def test_dag_peering(
     sensor_def = next(iter(defs.sensors))
 
     # Kick off a run of the dag
-    response = requests.post(
-        "http://localhost:8080/api/v1/dags/print_dag/dagRuns", auth=("admin", "admin"), json={}
-    )
-    assert response.status_code == 200, response.json()
-    # Wait until the run enters a terminal state
-    terminal_status = None
-    while True:
-        response = requests.get(
-            "http://localhost:8080/api/v1/dags/print_dag/dagRuns", auth=("admin", "admin")
-        )
-        assert response.status_code == 200, response.json()
-        dag_runs = response.json()["dag_runs"]
-        if dag_runs[0]["state"] in ["success", "failed"]:
-            terminal_status = dag_runs[0]["state"]
-            break
-        time.sleep(1)
-    assert terminal_status == "success"
+    run_id = instance.trigger_dag("print_dag")
+    instance.wait_for_run_completion("print_dag", run_id, timeout=60)
 
     # invoke the sensor and check the sensor result. It should contain a new asset materialization for the dag.
     with instance_for_test() as instance:
@@ -145,9 +138,11 @@ def test_dag_peering(
         assert "Airflow Run ID" in dag_mat.metadata
         assert "manual" in cast(str, dag_mat.metadata["Airflow Run ID"].value)
         run_id = dag_mat.metadata["Airflow Run ID"].value
-        assert dag_mat.metadata["Link to Run"] == MarkdownMetadataValue(
+        assert dag_mat.metadata["Run Details"] == MarkdownMetadataValue(
             f"[View Run](http://localhost:8080/dags/print_dag/grid?dag_run_id={run_id}&tab=details)"
         )
+        pure_link = extract_link(dag_mat.metadata["Run Details"].value)
+        assert_link_exists("Run Details", pure_link)
         assert dag_mat.metadata["Airflow Config"] == JsonMetadataValue({})
 
         task_mat = [  # noqa
@@ -160,9 +155,18 @@ def test_dag_peering(
         assert "Airflow Run ID" in task_mat.metadata
         assert "manual" in cast(str, task_mat.metadata["Airflow Run ID"].value)
         run_id = task_mat.metadata["Airflow Run ID"].value
-        assert task_mat.metadata["Link to Run"] == MarkdownMetadataValue(
-            f"[View Run](http://localhost:8080/dags/print_dag/grid?dag_run_id={run_id}&tab=details)"
+        assert task_mat.metadata["Run Details"] == MarkdownMetadataValue(
+            f"[View Run](http://localhost:8080/dags/print_dag/grid?dag_run_id={run_id}&task_id=print_task)"
         )
+        link = extract_link(task_mat.metadata["Run Details"].value)
+        assert_link_exists("Run Details", link)
+
+        assert "Task Logs" in task_mat.metadata
+        assert task_mat.metadata["Task Logs"] == MarkdownMetadataValue(
+            f"[View Logs](http://localhost:8080/dags/print_dag/grid?dag_run_id={run_id}&task_id=print_task&tab=logs)"
+        )
+        link = extract_link(task_mat.metadata["Task Logs"].value)
+        assert_link_exists("Task Logs", link)
 
         other_mat = [  # noqa
             asset_mat
@@ -176,3 +180,9 @@ def test_dag_peering(
             other_mat.metadata["Creation Timestamp"].value
             >= task_mat.metadata["Creation Timestamp"].value
         )
+
+
+def extract_link(mrkdwn: Any) -> str:
+    match = re.search(r"\[.*\]\((.*)\)", mrkdwn)
+    assert match
+    return match.group(1)

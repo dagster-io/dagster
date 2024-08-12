@@ -152,7 +152,10 @@ export const VirtualizedAutomationSensorRow = forwardRef(
             <div>
               {sensorInfo ? (
                 sensorInfo.description ? (
-                  <Tooltip content={sensorInfo.description}>
+                  <Tooltip
+                    content={<div style={{maxWidth: '300px'}}>{sensorInfo.description}</div>}
+                    placement="top"
+                  >
                     <Tag icon={sensorInfo.icon}>{sensorInfo.name}</Tag>
                   </Tooltip>
                 ) : (

@@ -243,6 +243,7 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
     </Box>
   );
 };
+
 const AssetCatalogLink = styled(Link)`
   display: flex;
   gap: 4px;
@@ -263,13 +264,6 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
       maximumLagMinutes
       cronSchedule
       cronScheduleTimezone
-    }
-    autoMaterializePolicy {
-      rules {
-        className
-        decisionType
-        description
-      }
     }
     backfillPolicy {
       description

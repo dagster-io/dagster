@@ -2,7 +2,7 @@ acryl-datahub==0.13.3.6
 agate==1.9.1
 aiofile==3.8.8
 aiofiles==24.1.0
-aiohappyeyeballs==2.3.4
+aiohappyeyeballs==2.3.5
 aiohttp==3.10.1
 aiohttp-retry==2.8.3
 aiosignal==1.3.1
@@ -15,13 +15,13 @@ ansicolors==1.1.8
 anyio==4.4.0
 apache-airflow==2.7.3
 apache-airflow-providers-apache-spark==4.9.0
-apache-airflow-providers-cncf-kubernetes==8.3.3
-apache-airflow-providers-common-sql==1.14.2
+apache-airflow-providers-cncf-kubernetes==8.3.4
+apache-airflow-providers-common-sql==1.15.0
 apache-airflow-providers-docker==3.9.1
-apache-airflow-providers-ftp==3.10.0
+apache-airflow-providers-ftp==3.10.1
 apache-airflow-providers-http==4.1.0
 apache-airflow-providers-imap==3.6.1
-apache-airflow-providers-sqlite==3.8.1
+apache-airflow-providers-sqlite==3.8.2
 apeye==1.4.1
 apeye-core==1.1.5
 apispec==6.6.1
@@ -47,7 +47,7 @@ aws-sam-translator==1.89.0
 aws-xray-sdk==2.14.0
 azure-core==1.30.2
 azure-identity==1.17.1
-azure-storage-blob==12.21.0
+azure-storage-blob==12.22.0
 azure-storage-file-datalake==12.16.0
 babel==2.15.0
 backoff==2.2.1
@@ -58,8 +58,8 @@ bitmath==1.3.3.1
 bleach==6.1.0
 blinker==1.8.2
 bokeh==3.5.1
-boto3==1.34.154
-botocore==1.34.154
+boto3==1.34.155
+botocore==1.34.155
 buildkite-test-collector==0.1.8
 cachecontrol==0.14.0
 cached-property==1.5.2
@@ -163,8 +163,8 @@ daff==1.3.46
 -e python_modules/libraries/dagster-wandb
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagstermill
-dask==2024.7.1
-dask-expr==1.1.9
+dask==2024.8.0
+dask-expr==1.1.10
 dask-jobqueue==0.8.5
 dask-kubernetes==2022.9.0
 dask-yarn==0.9
@@ -192,7 +192,7 @@ dict2css==0.3.0.post1
 diff-match-patch==20200713
 dill==0.3.8
 distlib==0.3.8
-distributed==2024.7.1
+distributed==2024.8.0
 distro==1.9.0
 dlt==0.5.2
 dnspython==2.6.1
@@ -235,13 +235,13 @@ gitdb==4.0.11
 gitpython==3.1.43
 giturlparse==0.12.0
 google-api-core==2.19.1
-google-api-python-client==2.139.0
-google-auth==2.32.0
+google-api-python-client==2.140.0
+google-auth==2.33.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 google-cloud-bigquery==3.25.0
 google-cloud-core==2.4.1
-google-cloud-storage==2.18.0
+google-cloud-storage==2.18.1
 google-crc32c==1.5.0
 google-re2==1.1.20240702
 google-resumable-media==2.7.1
@@ -266,7 +266,7 @@ httptools==0.6.1
 httpx==0.27.0
 humanfriendly==10.0
 humanize==4.10.0
-hypothesis==6.108.10
+hypothesis==6.110.0
 idna==3.7
 ijson==3.3.0
 imagesize==1.4.1
@@ -314,7 +314,7 @@ kubernetes==30.1.0
 kubernetes-asyncio==30.1.0
 langchain==0.2.7
 langchain-community==0.2.7
-langchain-core==0.2.28
+langchain-core==0.2.29
 langchain-openai==0.1.14
 langchain-text-splitters==0.2.2
 langsmith==0.1.98
@@ -335,7 +335,7 @@ marshmallow==3.21.3
 marshmallow-oneofschema==3.1.1
 marshmallow-sqlalchemy==0.26.1
 mashumaro==3.13.1
-matplotlib==3.9.0
+matplotlib==3.9.1.post1
 matplotlib-inline==0.1.3
 mbstrdecoder==1.1.3
 mdit-py-plugins==0.4.1
@@ -345,7 +345,7 @@ mistune==3.0.2
 mixpanel==4.10.1
 mlflow==1.27.0
 mock==3.0.5
-more-itertools==10.3.0
+more-itertools==10.4.0
 morefs==0.2.2
 moto==4.2.14
 mpmath==1.3.0
@@ -375,7 +375,7 @@ objgraph==3.6.1
 onnx==1.16.2
 onnxconverter-common==1.13.0
 onnxruntime==1.18.1
-openai==1.40.0
+openai==1.40.1
 openapi-schema-validator==0.6.2
 openapi-spec-validator==0.7.1
 opentelemetry-api==1.26.0
@@ -393,7 +393,7 @@ overrides==7.7.0
 packaging==24.1
 pandas==2.2.2
 pandas-gbq==0.23.1
-pandas-stubs==2.2.2.240603
+pandas-stubs==2.2.2.240807
 pandera==0.20.3
 pandocfilters==1.5.1
 papermill==2.6.0
@@ -441,6 +441,7 @@ pydata-google-auth==1.8.2
 pyflakes==3.2.0
 pygments==2.18.0
 pyjwt==2.9.0
+pymdown-extensions==10.9
 pynacl==1.5.0
 pyopenssl==24.2.1
 pyparsing==3.1.2
@@ -459,6 +460,7 @@ pytest-xdist==3.6.1
 python-daemon==3.0.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
+python-frontmatter==1.1.0
 python-jose==3.3.0
 python-json-logger==2.0.7
 python-multipart==0.0.9
@@ -468,10 +470,10 @@ python-utils==3.8.2
 pytimeparse==1.1.8
 pytz==2024.1
 pytzdata==2020.1
-pyyaml==6.0.1
+pyyaml==6.0.2
 pyzmq==26.1.0
 querystring-parser==1.2.4
-rapidfuzz==3.9.5
+rapidfuzz==3.9.6
 readme-renderer==44.0
 referencing==0.35.1
 regex==2024.7.24
@@ -489,11 +491,12 @@ rich-argparse==1.5.2
 rpds-py==0.20.0
 rsa==4.9
 ruamel-yaml==0.17.17
+ruff==0.5.6
 s3transfer==0.10.2
 scikit-learn==1.5.1
 scipy==1.14.0
 scrapbook==0.5.0
-sdf-cli==0.3.12
+sdf-cli==0.3.16
 seaborn==0.13.2
 selenium==4.23.1
 semver==3.0.2
@@ -520,7 +523,7 @@ soupsieve==2.5
 sphinx==8.0.2
 sphinx-autodoc-typehints==2.2.3
 sphinx-jinja2-compat==0.3.0
-sphinx-prompt==1.5.0
+sphinx-prompt==1.9.0
 sphinx-tabs==3.4.5
 sphinx-toolbox==3.7.0
 sphinxcontrib-applehelp==2.0.0
@@ -603,13 +606,14 @@ universal-pathlib==0.2.2
 uri-template==1.3.0
 uritemplate==4.1.1
 urllib3==1.26.19
+-e examples/use_case_repository
 uvicorn==0.30.5
 uvloop==0.19.0
 vine==5.1.0
 virtualenv==20.25.0
 wandb==0.17.5
 watchdog==4.0.1
-watchfiles==0.22.0
+watchfiles==0.23.0
 wcwidth==0.2.13
 webcolors==24.6.0
 webencodings==0.5.1

@@ -5,7 +5,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_airlift.core.airflow_cacheable_assets_def import AirflowCacheableAssetsDefinition
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import BasicAuthBackend
-from dagster_airlift.core.migration_state import (
+from dagster_airlift.migration_state import (
     AirflowMigrationState,
     DagMigrationState,
     TaskMigrationState,
@@ -33,6 +33,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
     assert specs[0].tags == {"dagster/compute_kind": "airflow", "airlift/dag_id": "print_dag"}
     spec_metadata = specs[0].metadata
     assert set(spec_metadata.keys()) == {"Dag Info (raw)", "Dag ID", "Link to DAG", "Source Code"}
+    assert specs[0].deps == []
 
     # Now, create a cacheable assets with a task peering.
 
@@ -55,6 +56,8 @@ def test_cacheable_asset(airflow_instance: None) -> None:
     def print_dag__downstream_print_task():
         return 1
 
+    # Having everything task with false migration state should be functionally equivalent to
+    # having no migration state.
     for migration_state in [
         AirflowMigrationState(
             dags={
@@ -92,7 +95,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
         assert next(iter(some_key_def.specs)).metadata.keys() == {
             "Task Info (raw)",
             "Dag ID",
-            "Link to Task",
+            "Link to DAG",
             "Computed in Task ID",
         }
         assert next(iter(some_key_def.specs)).tags["airlift/task_id"] == "print_task"
@@ -103,9 +106,21 @@ def test_cacheable_asset(airflow_instance: None) -> None:
         assert next(iter(other_key_def.specs)).metadata.keys() == {
             "Task Info (raw)",
             "Dag ID",
-            "Link to Task",
+            "Link to DAG",
             "Computed in Task ID",
         }
         assert next(iter(other_key_def.specs)).tags["airlift/task_id"] == "downstream_print_task"
         assert next(iter(other_key_def.specs)).tags["airlift/dag_id"] == "print_dag"
         assert next(iter(other_key_def.specs)).deps == [AssetDep(AssetKey(["some", "key"]))]
+
+        dag_def = assets_defs[AssetKey(["airflow_instance", "dag", "print_dag"])]
+        assert len(list(dag_def.specs)) == 1
+        dag_spec = next(iter(dag_def.specs))
+        assert dag_spec.metadata.keys() == {
+            "Dag Info (raw)",
+            "Dag ID",
+            "Link to DAG",
+            "Source Code",
+        }
+        # Should have upstream dependency on the "leaf" task in the dag.
+        assert dag_spec.deps == [AssetDep(AssetKey(["other", "key"]))]

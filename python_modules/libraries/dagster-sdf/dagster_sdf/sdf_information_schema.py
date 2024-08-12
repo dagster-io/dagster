@@ -180,7 +180,7 @@ class SdfInformationSchema(IHaveNew):
                         dep
                     )  # Otherwise, use the translator to get the asset key
                     for dep in table_row["depends_on"]
-                    if dep not in origin_remote_tables
+                    if dep not in origin_remote_tables and dep in table_deps["table_id"]
                 }.union(table_id_to_upstream.get(table_row["table_id"], set()))
                 # This registers an asset check on all inner tables, since SDF will execute all tests as a single query (greedy approach)
                 # If no table or column tests are registered, they will simply be skipped

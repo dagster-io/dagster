@@ -37,8 +37,6 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "wandb>=0.15.11,<1.0",
-        # Pin numpy pending release of wandb that either supports numpy 2 or adds a pin
-        "numpy<2",
     ],
     extras_require={"dev": ["cloudpickle", "joblib", "callee", "dill"]},
     zip_safe=False,
