@@ -52,8 +52,8 @@ from .resource_definition import ResourceDefinition
 from .resource_requirement import ensure_requirements_satisfied
 from .utils import DEFAULT_IO_MANAGER_KEY
 
-# Name for auto-created job that's used to materialize assets
-IMPLICIT_ASSET_JOB_NAME = "__ASSET_JOB"
+# Prefix for auto created jobs that are used to materialize assets
+ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
@@ -61,19 +61,57 @@ if TYPE_CHECKING:
     from .asset_check_spec import AssetCheckSpec
 
 
-def get_base_asset_job_lambda(
+def is_base_asset_job_name(name: str) -> bool:
+    return name.startswith(ASSET_BASE_JOB_PREFIX)
+
+
+def _build_partitioned_asset_job_lambda(
+    job_name: str,
     asset_graph: AssetGraph,
+    partitions_def: PartitionsDefinition,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
     logger_defs: Optional[Mapping[str, LoggerDefinition]],
 ) -> Callable[[], JobDefinition]:
     def build_asset_job_lambda() -> JobDefinition:
+        executable_asset_keys = asset_graph.executable_asset_keys & {
+            *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
+            *asset_graph.unpartitioned_asset_keys,
+        }
+        # For now, to preserve behavior keep all orphaned asset checks (where the target check
+        # has no corresponding executable definition) in all base jobs. When checks support
+        # partitions, they should only go in the corresponding partitioned job.
+        selection = AssetSelection.assets(*executable_asset_keys) | AssetSelection.checks(
+            *asset_graph.orphan_asset_check_keys
+        )
         job_def = build_asset_job(
-            name=IMPLICIT_ASSET_JOB_NAME,
+            job_name,
+            asset_graph=get_asset_graph_for_job(asset_graph, selection),
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            partitions_def=partitions_def,
+            allow_different_partitions_defs=False,
+        )
+        job_def.validate_resource_requirements_satisfied()
+
+        if logger_defs and not job_def.has_specified_loggers:
+            job_def = job_def.with_logger_defs(logger_defs)
+
+        return job_def
+
+    return build_asset_job_lambda
+
+
+def _build_global_asset_job_lambda(
+    asset_graph, executor_def, resource_defs, logger_defs
+) -> Callable[[], JobDefinition]:
+    def build_asset_job_lambda() -> JobDefinition:
+        job_def = build_asset_job(
+            name=ASSET_BASE_JOB_PREFIX,
             asset_graph=asset_graph,
             executor_def=executor_def,
             resource_defs=resource_defs,
-            allow_different_partitions_defs=True,
+            allow_different_partitions_defs=False,
         )
         job_def.validate_resource_requirements_satisfied()
         if logger_defs and not job_def.has_specified_loggers:
@@ -81,6 +119,33 @@ def get_base_asset_job_lambda(
         return job_def
 
     return build_asset_job_lambda
+
+
+def get_base_asset_jobs(
+    asset_graph: AssetGraph,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    executor_def: Optional[ExecutorDefinition],
+    logger_defs: Optional[Mapping[str, LoggerDefinition]],
+) -> Mapping[str, Callable[[], JobDefinition]]:
+    if len(asset_graph.all_partitions_defs) == 0:
+        return {
+            ASSET_BASE_JOB_PREFIX: _build_global_asset_job_lambda(
+                asset_graph, executor_def, resource_defs, logger_defs
+            )
+        }
+    else:
+        jobs = {}
+        for i, partitions_def in enumerate(asset_graph.all_partitions_defs):
+            job_name = f"{ASSET_BASE_JOB_PREFIX}_{i}"
+            jobs[job_name] = _build_partitioned_asset_job_lambda(
+                f"{ASSET_BASE_JOB_PREFIX}_{i}",
+                asset_graph,
+                partitions_def,
+                resource_defs,
+                executor_def,
+                logger_defs,
+            )
+        return jobs
 
 
 def build_asset_job(
