@@ -108,6 +108,7 @@ def execute_job_backfill_iteration(
                 logger.info(
                     f"Backfill {backfill.backfill_id} has unfinished runs. Status will be updated when all runs are finished."
                 )
+                instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
                 return
             partition_names = cast(Sequence[str], backfill.partition_names)
             logger.info(
@@ -173,6 +174,7 @@ def _get_partitions_chunk(
 ) -> Tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
     partition_names = cast(Sequence[str], backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
+    backfill_policy = partition_set.backfill_policy
 
     if (
         backfill_job.last_submitted_partition_name
@@ -185,7 +187,27 @@ def _get_partitions_chunk(
     backfill_runs = instance.get_runs(
         RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
-    completed_partitions = set([run.tags.get(PARTITION_NAME_TAG) for run in backfill_runs])
+    if backfill_policy and backfill_policy.max_partitions_per_run != 1:
+        partition_ranges = set(
+            [
+                PartitionKeyRange(
+                    start=run.tags.get(ASSET_PARTITION_RANGE_START_TAG),
+                    end=run.tags.get(ASSET_PARTITION_RANGE_END_TAG),
+                )
+                for run in backfill_runs
+            ]
+        )
+        completed_partitions = []
+        partitions_def = partition_set.get_partitions_definition()
+        for partition_range in partition_ranges:
+            completed_partitions.extend(
+                partitions_def.get_partition_keys_in_range(partition_range, instance)
+            )
+
+        completed_partitions = set(completed_partitions)
+    else:
+        completed_partitions = set([run.tags.get(PARTITION_NAME_TAG) for run in backfill_runs])
+    logger.info([run.tags for run in backfill_runs])
     initial_checkpoint = (
         partition_names.index(checkpoint) + 1 if checkpoint and checkpoint in partition_names else 0
     )
@@ -194,10 +216,14 @@ def _get_partitions_chunk(
         # no more partitions to submit, return early
         return [], checkpoint or "", False
 
-    backfill_policy = partition_set.backfill_policy
     if backfill_policy and backfill_policy.max_partitions_per_run != 1:
+        to_submit = [
+            partition_name
+            for partition_name in partition_names
+            if partition_name not in completed_partitions
+        ]
         partitions_def = partition_set.get_partitions_definition()
-        partitions_subset = partitions_def.subset_with_partition_keys(partition_names)
+        partitions_subset = partitions_def.subset_with_partition_keys(to_submit)
         partition_key_ranges = partitions_subset.get_partition_key_ranges(
             partitions_def, dynamic_partitions_store=instance
         )
@@ -210,7 +236,7 @@ def _get_partitions_chunk(
         ]
         ranges_to_launch = subdivided_ranges[:chunk_size]
         has_more = chunk_size < len(subdivided_ranges)
-        next_checkpoint = ranges_to_launch[-1].end
+        next_checkpoint = ranges_to_launch[-1].end if len(ranges_to_launch) > 0 else checkpoint
         to_submit = ranges_to_launch
     else:
         has_more = chunk_size < len(partition_names)

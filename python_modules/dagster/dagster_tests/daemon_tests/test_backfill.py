@@ -1982,6 +1982,67 @@ def test_asset_job_backfill_single_run(
     assert run.tags["alpha"] == "beta"
 
 
+def test_asset_job_backfill_single_run_multiple_iterations(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    """Tests that job backfills correctly find existing runs for partitions in the backfill and don't
+    relaunch those partitions. This is a regression test for a bug where the backfill would relaunch
+    runs for BackfillPolicy.single_run asset jobs since we were incorrectly determining which partitions
+    had already been launched.
+    """
+    backfill = _get_abcd_job_backfill(external_repo, "bp_single_run_asset_job")
+    assert instance.get_runs_count() == 0
+    instance.add_backfill(backfill)
+
+    # seed an in progress run. The mimics the backfill daemon having already launched the run for these
+    # partitions
+    fake_run = create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.STARTED,
+        tags={
+            **DagsterRun.tags_for_backfill_id("simple"),
+            ASSET_PARTITION_RANGE_START_TAG: "a",
+            ASSET_PARTITION_RANGE_END_TAG: "d",
+        },
+    )
+
+    assert instance.get_runs_count() == 1
+    run = instance.get_runs()[0]
+    assert run.tags[BACKFILL_ID_TAG] == "simple"
+    assert run.tags[ASSET_PARTITION_RANGE_START_TAG] == "a"
+    assert run.tags[ASSET_PARTITION_RANGE_END_TAG] == "d"
+
+    for _ in range(3):  # simulate the daemon ticking a few times
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+        # backfill should not create any new runs
+        assert instance.get_runs_count() == 1
+
+    # manually update the run to be in a finished state, backfill should be marked complete on next iteration
+    instance.delete_run(fake_run.run_id)
+    create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.SUCCESS,
+        tags={
+            **DagsterRun.tags_for_backfill_id("simple"),
+            ASSET_PARTITION_RANGE_START_TAG: "a",
+            ASSET_PARTITION_RANGE_END_TAG: "d",
+        },
+    )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 1
+    backfill = instance.get_backfill("simple")
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
+
+
 def test_asset_job_backfill_multi_run(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
