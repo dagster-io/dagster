@@ -3,7 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.dagster]
-module_name = "dagster_pypi"
+module_name = "dagster_pypi.definitions"
+code_location_name = "dagster_pypi"
 
 [tool.ruff]
 
