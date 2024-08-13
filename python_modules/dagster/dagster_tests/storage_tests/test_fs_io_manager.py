@@ -195,7 +195,7 @@ def get_assets_job(io_manager_def, partitions_def=None):
     return Definitions(
         assets=[asset1, asset2],
         resources={"io_manager": io_manager_def},
-    ).get_implicit_global_asset_job_def()
+    ).get_implicit_job_def_for_assets([asset1.key, asset2.key])
 
 
 def test_fs_io_manager_handles_assets():

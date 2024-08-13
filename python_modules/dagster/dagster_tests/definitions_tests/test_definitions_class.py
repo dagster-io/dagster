@@ -485,7 +485,7 @@ def test_implicit_global_job():
 
     defs = Definitions(assets=[asset_one])
 
-    assert defs.get_implicit_global_asset_job_def()
+    assert defs.has_implicit_global_asset_job_def()
     assert len(defs.get_all_job_defs()) == 1
 
 
@@ -496,7 +496,7 @@ def test_implicit_global_job_with_job_defined():
 
     defs = Definitions(assets=[asset_one], jobs=[define_asset_job("all_assets_job", selection="*")])
 
-    assert defs.get_implicit_global_asset_job_def()
+    assert defs.has_implicit_global_asset_job_def()
     assert defs.get_job_def("all_assets_job")
     assert defs.get_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
 
@@ -534,6 +534,8 @@ def test_implicit_job_with_source_assets():
     defs = Definitions(assets=[source_asset, downstream_of_source])
     assert defs.get_all_job_defs()
     assert len(defs.get_all_job_defs()) == 1
+    assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
+    assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
 
 

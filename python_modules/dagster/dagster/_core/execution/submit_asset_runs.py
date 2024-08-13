@@ -25,6 +25,16 @@ class RunRequestExecutionData(NamedTuple):
     external_execution_plan: ExternalExecutionPlan
 
 
+def _get_implicit_job_name_for_assets(
+    asset_graph: RemoteAssetGraph, asset_keys: Sequence[AssetKey]
+) -> Optional[str]:
+    job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
+    for asset_key in asset_keys[1:]:
+        job_names &= set(asset_graph.get_materialization_job_names(asset_key))
+
+    return next((job_name for job_name in job_names if job_name == IMPLICIT_ASSET_JOB_NAME), None)
+
+
 def _get_execution_plan_asset_keys(
     execution_plan_snapshot: ExecutionPlanSnapshot,
 ) -> AbstractSet[AssetKey]:
@@ -49,6 +59,14 @@ def _get_job_execution_data_from_run_request(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
     )
     location_name = repo_handle.code_location_origin.location_name
+    job_name = _get_implicit_job_name_for_assets(
+        asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
+    )
+    if job_name is None:
+        check.failed(
+            "Could not find an implicit asset job for the given assets:"
+            f" {run_request.asset_selection}"
+        )
 
     if not run_request.asset_selection:
         check.failed("Expected RunRequest to have an asset selection")
@@ -56,7 +74,7 @@ def _get_job_execution_data_from_run_request(
     pipeline_selector = JobSubsetSelector(
         location_name=location_name,
         repository_name=repo_handle.repository_name,
-        job_name=IMPLICIT_ASSET_JOB_NAME,
+        job_name=job_name,
         asset_selection=run_request.asset_selection,
         asset_check_selection=run_request.asset_check_keys,
         op_selection=None,

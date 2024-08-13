@@ -1390,10 +1390,10 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = check.not_none(context.repository_def).get_implicit_global_asset_job_def()
+        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name,
+                job_name=base_job.name,  # type: ignore  # (possible none)
                 asset_selection=list(asset_keys),
             )
         )
