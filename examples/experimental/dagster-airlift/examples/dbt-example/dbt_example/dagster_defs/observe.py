@@ -1,3 +1,6 @@
+#### Step 2: Observe ####
+# At this stage, we have peered with the running airflow instance, and we can see all the dags as assets in Dagster.
+# Now, we want to observe the underlying asset dependencies produced by the dag. 
 import os
 from pathlib import Path
 
