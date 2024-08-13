@@ -20,10 +20,6 @@ class CodeVersionChangedCondition(AutomationCondition):
     def name(self) -> str:
         return "code_version_changed"
 
-    @property
-    def requires_cursor(self) -> bool:
-        return True
-
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         previous_code_version = context.cursor
         current_code_version = context.asset_graph.get(context.asset_key).code_version

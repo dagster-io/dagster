@@ -15,6 +15,10 @@ from ..automation_context import AutomationContext
 class SliceAutomationCondition(AutomationCondition):
     """Base class for simple conditions which compute a simple slice of the asset graph."""
 
+    @property
+    def requires_cursor(self) -> bool:
+        return False
+
     @abstractmethod
     def compute_slice(self, context: AutomationContext) -> AssetSlice: ...
 

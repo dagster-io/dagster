@@ -16,10 +16,6 @@ class NewlyTrueCondition(AutomationCondition):
     label: Optional[str] = None
 
     @property
-    def requires_cursor(self) -> bool:
-        return True
-
-    @property
     def description(self) -> str:
         return "Condition newly became true."
 

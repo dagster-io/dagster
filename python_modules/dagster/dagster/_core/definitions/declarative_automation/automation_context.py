@@ -128,6 +128,12 @@ class AutomationContext:
         """Returns the evaluation node for this node from the previous evaluation, if this node
         was evaluated on the previous tick.
         """
+        check.invariant(
+            self.condition.requires_cursor,
+            f"Attempted to access cursor for a node of type {self.condition.__class__.__name__} "
+            "which does not store a cursor. Set the `requires_cursor` property to `True` to enable access.",
+        )
+
         return (
             self._cursor.node_cursors_by_unique_id.get(self.condition_unique_id)
             if self._cursor
