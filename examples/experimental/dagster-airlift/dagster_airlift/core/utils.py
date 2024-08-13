@@ -2,6 +2,10 @@ from typing import Optional
 
 from dagster import AssetsDefinition
 
+MIGRATED_TAG = "airlift/task_migrated"
+DAG_ID_TAG = "airlift/dag_id"
+TASK_ID_TAG = "airlift/task_id"
+
 
 def get_task_id_from_asset(assets_def: AssetsDefinition) -> Optional[str]:
     if assets_def.node_def.tags and "airlift/task_id" in assets_def.node_def.tags:
