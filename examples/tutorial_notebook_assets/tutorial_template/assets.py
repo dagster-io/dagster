@@ -28,7 +28,7 @@ from dagster import AssetIn, Field, Int, asset, file_relative_path
 
 # iris_kmeans_jupyter_notebook = define_dagstermill_asset(
 #     name="iris_kmeans_jupyter",
-#     notebook_path=file_relative_path(__file__, "../notebooks/iris-kmeans.ipynb"),
+#     notebook_path=file_relative_path(__file__, "notebooks/iris-kmeans.ipynb"),
 #     group_name="template_tutorial",
 #     # ins={"iris": AssetIn("iris_dataset")},  # this code to remain commented until TODO 3
 # )
