@@ -187,28 +187,26 @@ def _get_partitions_chunk(
     backfill_runs = instance.get_runs(
         RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
-    if backfill_policy and backfill_policy.max_partitions_per_run != 1:
-        partition_ranges = set(
-            [
-                PartitionKeyRange(
-                    start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
-                    end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
-                )
-                for run in backfill_runs
-                if run.tags.get(ASSET_PARTITION_RANGE_START_TAG, False)
-                and run.tags.get(ASSET_PARTITION_RANGE_END_TAG, False)
-            ]
-        )
-        completed_partitions = []
-        partitions_def = partition_set.get_partitions_definition()
-        for partition_range in partition_ranges:
+    partitions_def = partition_set.get_partitions_definition()
+    completed_partitions = []
+    for run in backfill_runs:
+        if (
+            run.tags.get(ASSET_PARTITION_RANGE_START_TAG)
+            and run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+            and run.tags.get(PARTITION_NAME_TAG) is None
+        ):
             completed_partitions.extend(
-                partitions_def.get_partition_keys_in_range(partition_range, instance)
+                partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(
+                        start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
+                        end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
+                    ),
+                    instance,
+                )
             )
+        elif run.tags.get(PARTITION_NAME_TAG):
+            completed_partitions.append(run.tags[PARTITION_NAME_TAG])
 
-        completed_partitions = set(completed_partitions)
-    else:
-        completed_partitions = set([run.tags.get(PARTITION_NAME_TAG) for run in backfill_runs])
     logger.info([run.tags for run in backfill_runs])
     initial_checkpoint = (
         partition_names.index(checkpoint) + 1 if checkpoint and checkpoint in partition_names else 0
