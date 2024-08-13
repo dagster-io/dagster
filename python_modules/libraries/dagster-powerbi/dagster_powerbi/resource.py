@@ -257,7 +257,7 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
             ]
         ]
 
-    def build_assets(
+    def build_definitions(
         self,
         data: Sequence[AssetsDefinitionCacheableData],
     ) -> Sequence[AssetsDefinition]:

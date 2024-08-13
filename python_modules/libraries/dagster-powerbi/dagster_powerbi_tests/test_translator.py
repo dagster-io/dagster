@@ -40,8 +40,8 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
     assert asset_spec.tags == {"dagster/storage_kind": "powerbi"}
     deps = list(asset_spec.deps)
     assert len(deps) == 2
-    assert deps[0].asset_key == AssetKey(["data_27_09_2019.xlsx"])
-    assert deps[1].asset_key == AssetKey(["sales_marketing_datas.xlsx"])
+    assert deps[0].asset_key == AssetKey(["data_27_09_2019_xlsx"])
+    assert deps[1].asset_key == AssetKey(["sales_marketing_datas_xlsx"])
 
 
 class MyCustomTranslator(DagsterPowerBITranslator):
