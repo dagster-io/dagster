@@ -442,5 +442,5 @@ def _get_migration_state_for_task(
     migration_state: Optional[AirflowMigrationState], dag_id: str, task_id: str
 ) -> bool:
     if migration_state:
-        return migration_state.get_migration_state_for_task(dag_id, task_id)
+        return migration_state.get_migration_state_for_task(dag_id, task_id) or False
     return False

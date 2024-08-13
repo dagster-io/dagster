@@ -15,8 +15,15 @@ class DagMigrationState(NamedTuple):
 class AirflowMigrationState(NamedTuple):
     dags: Dict[str, DagMigrationState]
 
-    def get_migration_state_for_task(self, dag_id: str, task_id: str) -> bool:
+    def get_migration_state_for_task(self, dag_id: str, task_id: str) -> Optional[bool]:
+        if dag_id not in self.dags:
+            return None
+        if task_id not in self.dags[dag_id].tasks:
+            return None
         return self.dags[dag_id].tasks[task_id].migrated
+
+    def dag_has_migration_state(self, dag_id: str) -> bool:
+        return self.get_migration_dict_for_dag(dag_id) is not None
 
     def get_migration_dict_for_dag(self, dag_id: str) -> Optional[Dict[str, Dict[str, Any]]]:
         if dag_id not in self.dags:
