@@ -389,7 +389,10 @@ class DbtCliResource(ConfigurableResource):
                     config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
 
         except ImportError:
-            pass
+            logger.warning(
+                "An error was encountered when creating a handle to the dbt adapter in Dagster.",
+                exc_info=True,
+            )
 
         cleanup_event_logger()
 
