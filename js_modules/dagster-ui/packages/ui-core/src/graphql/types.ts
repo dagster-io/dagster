@@ -1879,11 +1879,6 @@ export type InputMapping = {
   mappedInput: Input;
 };
 
-export type InputTag = {
-  name: Scalars['String']['input'];
-  value: Scalars['String']['input'];
-};
-
 export type Instance = {
   __typename: 'Instance';
   autoMaterializePaused: Scalars['Boolean']['output'];
@@ -5300,6 +5295,11 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
   schema: TableSchema;
 };
 
+export type TagInput = {
+  key: Scalars['String']['input'];
+  value: Scalars['String']['input'];
+};
+
 export type Target = {
   __typename: 'Target';
   mode: Scalars['String']['output'];
@@ -8689,18 +8689,6 @@ export const buildInputMapping = (
         : relationshipsToOmit.has('Input')
         ? ({} as Input)
         : buildInput({}, relationshipsToOmit),
-  };
-};
-
-export const buildInputTag = (
-  overrides?: Partial<InputTag>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): InputTag => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('InputTag');
-  return {
-    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'possimus',
-    value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'quod',
   };
 };
 
@@ -14542,6 +14530,18 @@ export const buildTableSchemaMetadataEntry = (
         : relationshipsToOmit.has('TableSchema')
         ? ({} as TableSchema)
         : buildTableSchema({}, relationshipsToOmit),
+  };
+};
+
+export const buildTagInput = (
+  overrides?: Partial<TagInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): TagInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TagInput');
+  return {
+    key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ut',
+    value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'nostrum',
   };
 };
 

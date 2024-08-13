@@ -2341,8 +2341,8 @@ input StepOutputHandle {
   outputName: String!
 }
 
-input InputTag {
-  name: String!
+input TagInput {
+  key: String!
   value: String!
 }
 

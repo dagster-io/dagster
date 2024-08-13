@@ -147,6 +147,29 @@ class RepositorySelector(
         )
 
 
+class AssetGroupSelector(
+    NamedTuple(
+        "_AssetGroupSelector",
+        [("group_name", str), ("location_name", str), ("repository_name", str)],
+    )
+):
+    def __new__(cls, group_name: str, location_name: str, repository_name: str):
+        return super(AssetGroupSelector, cls).__new__(
+            cls,
+            group_name=check.str_param(group_name, "group_name"),
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+        )
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return AssetGroupSelector(
+            group_name=graphql_data["groupName"],
+            location_name=graphql_data["repositoryLocationName"],
+            repository_name=graphql_data["repositoryName"],
+        )
+
+
 class CodeLocationSelector(NamedTuple("_CodeLocationSelector", [("location_name", str)])):
     def __new__(cls, location_name: str):
         return super(CodeLocationSelector, cls).__new__(
