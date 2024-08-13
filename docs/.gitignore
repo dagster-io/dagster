@@ -1,3 +1,5 @@
 sphinx/_build/
 .env
 next/.env
+*.duckdb
+*.sqlite
