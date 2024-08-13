@@ -1,6 +1,7 @@
 import datetime
 import operator
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -11,13 +12,13 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._model import InstanceOf
-from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import DataclassSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
 
 
-class AssetSubsetSerializer(NamedTupleSerializer):
+class AssetSubsetSerializer(DataclassSerializer):
     """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
 
     def get_storage_name(self) -> str:
@@ -26,12 +27,13 @@ class AssetSubsetSerializer(NamedTupleSerializer):
 
     def before_pack(self, value: "AssetSubset") -> "AssetSubset":
         if value.is_partitioned:
-            return value._replace(value=value.subset_value.to_serializable_subset())
+            return replace(value, value=value.subset_value.to_serializable_subset())
         return value
 
 
 @whitelist_for_serdes(serializer=AssetSubsetSerializer)
-class AssetSubset(NamedTuple):
+@dataclass(frozen=True)
+class AssetSubset:
     """Represents a set of AssetKeyPartitionKeys for a given AssetKey. For partitioned assets, this
     class uses a PartitionsSubset to represent the set of partitions, enabling lazy evaluation of the
     underlying partition keys. For unpartitioned assets, this class uses a bool to represent whether
@@ -101,7 +103,7 @@ class AssetSubset(NamedTuple):
             return self.is_partitioned == other.is_partitioned
 
     def as_valid(self, partitions_def: Optional[PartitionsDefinition]) -> "ValidAssetSubset":
-        """Converts this AssetSubset to a ValidAssetSubset by returning a copy of this AssetSubset
+        """Converts this AssetSubset to a ValidAssetSubset by returning a replace of this AssetSubset
         if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
         """
         if self.is_compatible_with_partitions_def(partitions_def):
@@ -173,19 +175,6 @@ class AssetSubset(NamedTuple):
         else:
             return item.asset_key == self.asset_key and item.partition_key in self.subset_value
 
-    def dict(self, **kwargs) -> dict:
-        # Must be overridden as the Pydantic implementation errors when encountering NamedTuples
-        # which have different fields than their __new__ method, which TimeWindowPartitionsSubset
-        # unfortunately has.
-        # This can likely be removed once TimeWindowPartitionsSubset is converted into a DagsterModel
-        return {"asset_key": self.asset_key, "value": self.value}
-
-    def __eq__(self, other: Any) -> bool:
-        # Pydantic 2.x does not handle this comparison correctly for some reason, just override it
-        if not isinstance(other, AssetSubset):
-            return False
-        return self.dict() == other.dict()
-
 
 @whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class ValidAssetSubset(AssetSubset):
@@ -208,7 +197,7 @@ class ValidAssetSubset(AssetSubset):
     ) -> "ValidAssetSubset":
         """Returns the AssetSubset containing all asset partitions which are not in this AssetSubset."""
         if partitions_def is None:
-            return self._replace(value=not self.bool_value)
+            return replace(self, value=not self.bool_value)
         else:
             value = partitions_def.subset_with_partition_keys(
                 self.subset_value.get_partition_keys_not_in_subset(
@@ -217,17 +206,17 @@ class ValidAssetSubset(AssetSubset):
                     dynamic_partitions_store=dynamic_partitions_store,
                 )
             )
-            return self._replace(value=value)
+            return replace(self, value=value)
 
     def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
-        return self._replace(value=value)
+        return replace(self, value=value)
 
     def __sub__(self, other: AssetSubset) -> "ValidAssetSubset":
         """Returns an AssetSubset representing self.asset_partitions - other.asset_partitions."""
         valid_other = self.get_valid(other)
         if not self.is_partitioned:
-            return self._replace(value=self.bool_value and not valid_other.bool_value)
+            return replace(self, value=self.bool_value and not valid_other.bool_value)
         return self._oper(valid_other, operator.sub)
 
     def __and__(self, other: AssetSubset) -> "ValidAssetSubset":
@@ -239,7 +228,7 @@ class ValidAssetSubset(AssetSubset):
         return self._oper(self.get_valid(other), operator.or_)
 
     def get_valid(self, other: AssetSubset) -> "ValidAssetSubset":
-        """Creates a ValidAssetSubset from the given AssetSubset by returning a copy of the given
+        """Creates a ValidAssetSubset from the given AssetSubset by returning a replace of the given
         AssetSubset if it is compatible with this AssetSubset, otherwise returns an empty subset.
         """
         if isinstance(other, ValidAssetSubset):
@@ -247,8 +236,9 @@ class ValidAssetSubset(AssetSubset):
         elif self._is_compatible_with_subset(other):
             return ValidAssetSubset(asset_key=other.asset_key, value=other.value)
         else:
-            return self._replace(
+            return replace(
+                self,
                 # unfortunately, this is the best way to get an empty partitions subset of an unknown
                 # type if you don't have access to the partitions definition
-                value=(self.subset_value - self.subset_value) if self.is_partitioned else False
+                value=(self.subset_value - self.subset_value) if self.is_partitioned else False,
             )
