@@ -271,7 +271,10 @@ def as_dict(obj) -> Mapping[str, Any]:
     """Creates a dict representation of the record based on the fields."""
     check.invariant(is_record(obj), "Only works for @record decorated classes")
 
-    return {key: value for key, value in zip(obj._fields, obj.__hidden_iter__())}
+    return {
+        key: as_dict(value) if is_record(value) else value
+        for key, value in zip(obj._fields, obj.__hidden_iter__())
+    }
 
 
 def as_dict_for_new(obj) -> Mapping[str, Any]:
