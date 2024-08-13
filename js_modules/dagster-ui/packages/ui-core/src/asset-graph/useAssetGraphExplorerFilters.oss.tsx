@@ -23,14 +23,7 @@ export function useAssetGraphExplorerFilters({
 }: Props) {
   const {filterButton, computeKindFilter, storageKindFilter, activeFiltersJsx, filterFn} =
     useAssetCatalogFiltering({
-      assets: useMemo(
-        () =>
-          nodes.map((node) => ({
-            ...node,
-            key: node.assetKey,
-          })),
-        [nodes],
-      ),
+      assets: nodes,
       includeRepos: isGlobalGraph,
       loading,
     });

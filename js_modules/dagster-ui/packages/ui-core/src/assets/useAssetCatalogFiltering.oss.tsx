@@ -31,7 +31,6 @@ const ALL_CHANGED_IN_BRANCH_VALUES = Object.values(ChangeReason);
 export function useAssetCatalogFiltering<
   T extends {
     id: string;
-    key: {path: Array<string>};
     definition?: FilterableAssetDefinition | null;
   },
 >({
