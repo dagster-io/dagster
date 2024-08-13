@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React from 'react';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
