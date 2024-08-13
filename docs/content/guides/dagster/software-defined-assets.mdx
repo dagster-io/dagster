@@ -71,7 +71,7 @@ To load definitions such as assets and resources, we use <PyObject object="Defin
 - We supply resources mapped to the assets using the `resources` argument to the <PyObject object="Definitions" /> object.
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/definitions.py startafter=gather_assets_start endbefore=gather_assets_end
-# __init__.py
+# definitions.py
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import table_assets
@@ -146,7 +146,7 @@ def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
 Here's an extended version of `weather_assets` that contains the new asset:
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/definitions.py  startafter=gather_spark_assets_start endbefore=gather_spark_assets_end
-# __init__.py
+# definitions.py
 
     from dagster import Definitions, load_assets_from_modules
 
