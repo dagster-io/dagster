@@ -35,8 +35,14 @@ setup_local_env:
 run_airflow: 
 	airflow standalone
 
-run_dagster_dev:
-	dagster dev -m dbt_example.dagster_defs -p 3333
+run_peer:
+	dagster dev -m dbt_example.dagster_defs.peer -p 3333
+
+run_observe:
+	dagster dev -m dbt_example.dagster_defs.observe -p 3333
+
+run_migrate:
+	dagster dev -m dbt_example.dagster_defs.migrate -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $$AIRFLOW_HOME $$DAGSTER_HOME

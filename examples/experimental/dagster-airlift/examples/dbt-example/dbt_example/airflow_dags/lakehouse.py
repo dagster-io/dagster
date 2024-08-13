@@ -53,7 +53,7 @@ load_iris = LoadCSVToDuckDB(
     task_id="load_iris",
     dag=dag,
     table_name="iris_lakehouse_table",
-    csv_path=Path("iris.csv"),
+    csv_path=Path(__file__).parent / "iris.csv",
     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
     column_names=[
         "sepal_length_cm",

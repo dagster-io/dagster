@@ -17,7 +17,7 @@ default_args = {
 }
 DBT_DIR = os.getenv("DBT_PROJECT_DIR")
 # Create the DAG with the specified schedule interval
-dag = DAG("dbt_dag", default_args=default_args, schedule_interval=timedelta(days=1))
+dag = DAG("dbt_dag", default_args=default_args, schedule_interval=None)
 args = f"--project-dir {DBT_DIR} --profiles-dir {DBT_DIR}"
 run_dbt_model = BashOperator(task_id="build_dbt_models", bash_command=f"dbt build {args}", dag=dag)
 
