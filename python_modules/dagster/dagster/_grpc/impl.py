@@ -397,7 +397,9 @@ def get_external_sensor_execution(
                     f"Error occurred during the execution of evaluation_fn for sensor {sensor_def.name}"
                 ),
             ):
-                return sensor_def.evaluate_tick(sensor_context)
+                result = sensor_def.evaluate_tick(sensor_context)
+                print("TICK RESULT: " + str(result))
+                return result
     except Exception:
         return ExternalSensorExecutionErrorData(
             error=serializable_error_info_from_exc_info(sys.exc_info())

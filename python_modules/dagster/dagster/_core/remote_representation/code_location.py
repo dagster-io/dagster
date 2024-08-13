@@ -145,6 +145,12 @@ class CodeLocation(AbstractContextManager):
 
         repo_handle = self.get_repository(selector.repository_name).handle
 
+        print("HERE WE ARE")
+        import traceback
+
+        traceback.print_stack()
+        print("SELECTOR: " + str(selector))
+
         subset_result = self.get_subset_external_job_result(selector)
         external_data = subset_result.external_job_data
         if external_data is None:

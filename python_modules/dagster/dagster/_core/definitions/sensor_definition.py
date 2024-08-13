@@ -27,6 +27,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, experimental_param, public
+from dagster._core.definitions import asset_selection
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
@@ -788,7 +789,7 @@ class SensorDefinition(IHasInternalInit):
     @property
     def job(self) -> Union[JobDefinition, "UnresolvedAssetJobDefinition"]:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
-        targeted by this schedule.
+        targeted by this sensor.
         """
         if self._targets:
             if len(self._targets) == 1:
@@ -963,6 +964,10 @@ class SensorDefinition(IHasInternalInit):
                     " run requests"
                 )
             return context.repository_def.get_job(job_name)
+
+        print("RESOLVING: " + str(run_requests))
+        print("MY TARGETS: " + str(self._targets))
+        print("ASSET SELECTION: " + str(asset_selection))
 
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.job_name for target in self._targets]
@@ -1365,6 +1370,9 @@ def _run_requests_with_base_asset_jobs(
     """
     asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
     result = []
+
+    print("ASSET SELECTION: " + str(asset_selection))
+
     for run_request in run_requests:
         if run_request.asset_selection:
             asset_keys = run_request.asset_selection
@@ -1380,7 +1388,22 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
+        base_job = None
+        if asset_keys:
+            base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
+        else:
+            asset_check_keys = outer_asset_selection.resolve_checks(asset_graph)
+            if asset_check_keys:
+                asset_keys_for_base_job = {
+                    asset_check_key.asset_key for asset_check_key in asset_check_keys
+                }
+                base_job = context.repository_def.get_implicit_job_def_for_assets(
+                    asset_keys_for_base_job
+                )
+
+        if not base_job:
+            raise DagsterInvalidSubsetError("RunRequest did not produce a base job")
+
         result.append(
             run_request.with_replaced_attrs(
                 job_name=base_job.name,  # type: ignore  # (possible none)

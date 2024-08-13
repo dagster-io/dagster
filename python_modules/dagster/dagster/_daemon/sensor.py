@@ -687,6 +687,8 @@ def _submit_run_request(
 
     sensor_origin = external_sensor.get_external_origin()
 
+    print("SUBMITTING: " + str(run_request))
+
     target_data: ExternalTargetData = check.not_none(
         external_sensor.get_target_data(run_request.job_name)
     )
@@ -1045,6 +1047,8 @@ def _handle_run_requests_and_automation_condition_evaluations(
         )
 
     check_for_debug_crash(sensor_debug_crash_flags, "AUTOMATION_EVALUATIONS_ADDED")
+
+    print("RAW RUN REQUESTS: " + str(raw_run_requests))
 
     def reserved_run_id(run_request: RunRequest) -> str:
         if run_request.requires_backfill_daemon():
