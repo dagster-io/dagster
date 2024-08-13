@@ -6,7 +6,7 @@ from .util import non_null_list
 
 
 class GrapheneRunsFeedEntry(graphene.Interface):
-    runId = graphene.NonNull(graphene.String)
+    id = graphene.NonNull(graphene.ID)
     runStatus = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GrapheneRunStatus")
     creationTime = graphene.NonNull(graphene.Float)
     startTime = graphene.Float()

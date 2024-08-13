@@ -1414,7 +1414,7 @@ type Run implements PipelineRun & RunsFeedEntry {
 }
 
 interface RunsFeedEntry {
-  runId: String!
+  id: ID!
   runStatus: RunStatus
   creationTime: Float!
   startTime: Float
@@ -2770,7 +2770,7 @@ type PartitionRun {
 }
 
 type PartitionBackfill implements RunsFeedEntry {
-  runId: String!
+  id: ID!
   runStatus: RunStatus!
   creationTime: Float!
   startTime: Float
@@ -2779,7 +2779,6 @@ type PartitionBackfill implements RunsFeedEntry {
   jobName: String
   assetSelection: [AssetKey!]
   assetCheckSelection: [AssetCheckhandle!]
-  id: String!
   status: BulkActionStatus!
   partitionNames: [String!]
   isValidSerialization: Boolean!

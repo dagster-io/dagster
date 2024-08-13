@@ -19,7 +19,7 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!) {
       ... on RunsFeedConnection {
           results {
             __typename
-            runId
+            id
             runStatus
             creationTime
             startTime
@@ -225,8 +225,8 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
 
-            assert res["runId"] != old_cursor.run_cursor
-            assert res["runId"] != old_cursor.backfill_cursor
+            assert res["id"] != old_cursor.run_cursor
+            assert res["id"] != old_cursor.backfill_cursor
 
             assert res["creationTime"] <= run_cursor_run.create_timestamp.timestamp()
             assert res["creationTime"] <= backfill_cursor_backfill.backfill_timestamp

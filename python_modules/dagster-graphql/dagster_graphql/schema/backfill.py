@@ -301,11 +301,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         name = "PartitionBackfill"
 
-    id = graphene.NonNull(graphene.String)
-    runId = graphene.Field(
-        graphene.NonNull(graphene.String),
-        description="Included to comply with RunsFeedEntry interface. Duplicate of id.",
-    )
+    id = graphene.NonNull(graphene.ID)
     status = graphene.NonNull(GrapheneBulkActionStatus)
     runStatus = graphene.Field(
         graphene.NonNull(
@@ -389,7 +385,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         super().__init__(
             id=backfill_job.backfill_id,
-            runId=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
             jobName=backfill_job.partition_set_name,
             status=backfill_job.status.value,
