@@ -1,7 +1,7 @@
 import contextlib
 import inspect
+from abc import ABC, abstractmethod
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -20,41 +20,20 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
+import dagster._check as check
 from dagster import Field as DagsterField
 from dagster._annotations import deprecated
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.validate import validate_config
+from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
-from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
-from dagster._model.pydantic_compat_layer import model_fields
-from dagster._utils.cached_method import cached_method
-from dagster._utils.typing_api import is_closed_python_optional_type
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-
-try:
-    from functools import cached_property  # type: ignore  # (py37 compat)
-except ImportError:
-
-    class cached_property:
-        pass
-
-
-from abc import ABC, abstractmethod
-
-from pydantic import BaseModel
-
-import dagster._check as check
-from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ResourceFunction,
@@ -62,13 +41,20 @@ from dagster._core.definitions.resource_definition import (
     ResourceFunctionWithoutContext,
     has_at_least_one_parameter,
 )
+from dagster._core.definitions.resource_requirement import ResourceRequirement
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._model.pydantic_compat_layer import model_fields
+from dagster._record import record
+from dagster._utils.cached_method import cached_method
+from dagster._utils.typing_api import is_closed_python_optional_type
 
+from .attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
 from .config import Config, MakeConfigCacheable, infer_schema_from_config_class
 from .conversion_utils import TResValue, _curry_config_schema
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.resource_requirement import ResourceRequirement
 
 T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int
@@ -88,10 +74,6 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
     def configurable_resource_cls(self) -> Type: ...
 
     def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:
-        from dagster._core.definitions.resource_requirement import (
-            PartialResourceDependencyRequirement,
-        )
-
         for attr_name, partial_resource in self.nested_partial_resources.items():
             yield PartialResourceDependencyRequirement(
                 class_name=self.configurable_resource_cls.__name__,
@@ -974,3 +956,22 @@ def _resolve_partial_resource_to_key(
         f"Failed to find resource for {attr_name}, expected this to be caught when resource requirements where evaluated.",
     )
     return matches[0]
+
+
+@record
+class PartialResourceDependencyRequirement(ResourceRequirement):
+    class_name: str
+    attr_name: str
+    partial_resource: CoercibleToResource
+
+    def is_satisfied(self, resource_defs: Mapping[str, "ResourceDefinition"]):
+        from dagster._config.pythonic_config.resource import coerce_to_resource
+
+        return coerce_to_resource(self.partial_resource) in resource_defs.values()
+
+    def ensure_satisfied(self, resource_defs: Mapping[str, "ResourceDefinition"]):
+        if not self.is_satisfied(resource_defs):
+            raise DagsterInvalidDefinitionError(
+                f"Failed to resolve resource nested at {self.class_name}.{self.attr_name}. "
+                "Any partially configured, nested resources must be provided as a top level resource."
+            )
