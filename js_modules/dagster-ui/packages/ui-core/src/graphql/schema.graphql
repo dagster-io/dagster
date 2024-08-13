@@ -3263,6 +3263,11 @@ type Query {
     limit: Int!
     cursor: String
   ): AutoMaterializeAssetEvaluationRecordsOrError
+  truePartitionsForAutomationConditionEvaluationNode(
+    assetKey: AssetKeyInput!
+    evaluationId: Int!
+    nodeUniqueId: String
+  ): [String!]!
   autoMaterializeEvaluationsForEvaluationId(
     evaluationId: Int!
   ): AutoMaterializeAssetEvaluationRecordsOrError
@@ -3536,24 +3541,9 @@ type PartitionedAssetConditionEvaluationNode {
   description: String!
   startTimestamp: Float
   endTimestamp: Float
-  trueSubset: AssetSubset!
-  candidateSubset: AssetSubset
   numTrue: Int!
-  numFalse: Int
-  numSkipped: Int
+  numCandidates: Int
   childUniqueIds: [String!]!
-}
-
-type AssetSubset {
-  assetKey: AssetKey!
-  subsetValue: AssetSubsetValue!
-}
-
-type AssetSubsetValue {
-  boolValue: Boolean
-  partitionKeys: [String!]
-  partitionKeyRanges: [PartitionKeyRange!]
-  isPartitioned: Boolean!
 }
 
 type SpecificPartitionAssetConditionEvaluationNode {
@@ -3594,9 +3584,8 @@ type AutomationConditionEvaluationNode {
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
+  numCandidates: Int
   isPartitioned: Boolean!
-  trueSubset: AssetSubset!
-  candidateSubset: AssetSubset
   childUniqueIds: [String!]!
 }
 
