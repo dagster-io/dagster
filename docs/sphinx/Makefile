@@ -1,10 +1,7 @@
-# Makefile for Sphinx documentation
-
-# You can set these variables from the command line.
 SPHINXOPTS    ?= -j auto -q
 SPHINXBUILD   ?= sphinx-build
 BUILDDIR      = _build
-# Put it first so that "make" without argument is like "make help".
+
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
@@ -19,8 +16,12 @@ watch:
 build: 
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
+build-markdown: 
+	@$(SPHINXBUILD) -M markdown "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+sync-docusaurus: build-markdown
+	cp -r _build/markdown ../docs-next/docs/sphinx
+
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 

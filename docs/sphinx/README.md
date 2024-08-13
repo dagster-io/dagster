@@ -17,3 +17,11 @@ Run `make install` to install the necessary dependencies for building the docume
 You can run `make watch` to watch for changes to the API documentation and automatically rebuild the documentation.
 Note: some changes might not be reflected immediately, for example style-sheets. 
 You can run `make clean` and `make html` to force a full rebuild.
+
+## Synchronizing API docs with Docusaurus
+
+To generate markdown files from the Sphinx project using the 3rd party `sphinx_markdown_builder` builder, and copy them to the `docs/` directory of the Docusaurus project use the `sync-docusaurus` directive:
+
+```
+make sync-docusaurus
+```

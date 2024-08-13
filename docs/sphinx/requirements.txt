@@ -17,3 +17,6 @@ sphinx-copybutton
 furo
 
 -e ./_ext/dagster-sphinx
+
+# Markdown builder
+sphinx_markdown_builder

@@ -74,6 +74,8 @@ extensions = [
     "sphinx_copybutton",
     # Displays the duration of the build process
     "sphinx.ext.duration",
+    # Markdown output
+    "sphinx_markdown_builder",
 ]
 
 # -- Extension configuration -------------------------------------------------
