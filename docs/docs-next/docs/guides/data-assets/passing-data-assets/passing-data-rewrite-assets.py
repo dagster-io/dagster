@@ -1,3 +1,5 @@
+from typing import List
+
 from dagster import asset
 
 
@@ -6,12 +8,12 @@ def download_files() -> str:
     ...
 
 
-def unzip_files(zipfile: str) -> list[str]:
+def unzip_files(zipfile: str) -> List[str]:
     # Unzip files to local disk or persistent storage
     ...
 
 
-def load_data(files: list[str]):
+def load_data(files: List[str]):
     # Read data previously written and store in a data warehouse
     ...
 
