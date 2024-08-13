@@ -19,6 +19,7 @@ import {
   AssetCatalogTableQueryVariables,
 } from './types/AssetsCatalogTable.types';
 import {AssetViewType, useAssetView} from './useAssetView';
+import {useBasicAssetSearchInput} from './useBasicAssetSearchInput';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -195,16 +196,20 @@ export const AssetsCatalogTable = ({
   const [view, setView] = useAssetView();
 
   const {assets, query, error} = useAllAssets({groupSelector});
+
   const {
-    searchPath,
-    filtered,
+    filtered: partiallyFiltered,
     isFiltered,
     filterButton,
-    filterInput,
     activeFiltersJsx,
     computeKindFilter,
     storageKindFilter,
-  } = useAssetCatalogFiltering(assets, prefixPath);
+  } = useAssetCatalogFiltering({assets});
+
+  const {searchPath, filterInput, filtered} = useBasicAssetSearchInput(
+    partiallyFiltered,
+    prefixPath,
+  );
 
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length);
 

@@ -67,7 +67,7 @@ const UserDisplay = (
 export function useAssetOwnersForAssets(
   assets: {
     definition?: {
-      owners: AssetOwner[];
+      owners?: AssetOwner[] | null;
     } | null;
   }[],
 ): AssetOwner[] {
