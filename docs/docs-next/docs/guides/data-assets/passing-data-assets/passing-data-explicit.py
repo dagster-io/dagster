@@ -1,6 +1,6 @@
+import sqlite3
 import tempfile
 
-import sqlite3
 from dagster import AssetExecutionContext, Definitions, asset
 
 database_file = tempfile.NamedTemporaryFile()

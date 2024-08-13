@@ -6,7 +6,7 @@ def download_files() -> str:
     ...
 
 
-def unzip_files(zip: str) -> list[str]:
+def unzip_files(zipfile: str) -> list[str]:
     # Unzip files to local disk or persistent storage
     ...
 
