@@ -25,6 +25,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -151,6 +152,7 @@ class SensorLaunchContext(AbstractContextManager):
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
         cursor = cast(Optional[str], kwargs.get("cursor"))
         origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))
+        has_emitted_asset_events = cast(Optional[bool], kwargs.get("has_emitted_asset_events"))
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
 
@@ -173,6 +175,9 @@ class SensorLaunchContext(AbstractContextManager):
 
         if origin_run_id:
             self._tick = self._tick.with_origin_run(origin_run_id)
+
+        if has_emitted_asset_events is not None:
+            self._tick.with_has_emitted_asset_events(has_emitted_asset_events)
 
     def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
@@ -820,8 +825,17 @@ def _evaluate_sensor(
     if sensor_runtime_data.log_key:
         context.add_log_key(sensor_runtime_data.log_key)
 
+    if sensor_runtime_data.asset_events:
+        context.update_state(TickStatus.SKIPPED, has_emitted_asset_events=True)
     for asset_event in sensor_runtime_data.asset_events:
-        instance.report_runless_asset_event(asset_event)
+        # TODO: enable linking asset check evaluations, which do not have tags
+        if isinstance(asset_event, AssetCheckEvaluation):
+            instance.report_runless_asset_event(asset_event)
+        else:
+            event_with_tags = asset_event.with_tags(
+                merge_dicts(asset_event.tags or {}, {"dagster/tick_id": context.tick_id})
+            )
+            instance.report_runless_asset_event(event_with_tags)
 
     if sensor_runtime_data.dynamic_partitions_requests:
         _handle_dynamic_partitions_requests(
