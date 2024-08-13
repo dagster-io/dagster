@@ -1,29 +1,34 @@
-import os
+from pathlib import Path
+from typing import List
 
 import duckdb
 import pandas as pd
 
 
-def load_csv_to_duckdb() -> None:
-    # Absolute path to the iris dataset is path to current file's directory
-    csv_path = os.path.join(os.path.dirname(__file__), "iris.csv")
+def load_csv_to_duckdb(
+    *,
+    table_name: str,
+    csv_path: Path,
+    duckdb_path: Path,
+    names: List[str],
+    duckdb_schema: str,
+    duckdb_database_name: str,
+) -> None:
+    # Ensure that path exists
+    if not csv_path.exists():
+        raise ValueError(f"CSV file not found at {csv_path}")
+    if not duckdb_path.exists():
+        raise ValueError(f"DuckDB database not found at {duckdb_path}")
     # Duckdb database stored in airflow home
-    duckdb_path = os.path.join(os.environ["AIRFLOW_HOME"], "jaffle_shop.duckdb")
-    iris_df = pd.read_csv(  # noqa: F841 # used by duckdb
+    df = pd.read_csv(  # noqa: F841 # used by duckdb
         csv_path,
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
+        names=names,
     )
 
     # Connect to DuckDB and create a new table
-    con = duckdb.connect(duckdb_path)
-    con.execute("CREATE SCHEMA IF NOT EXISTS iris_dataset").fetchall()
+    con = duckdb.connect(str(duckdb_path))
+    con.execute(f"CREATE SCHEMA IF NOT EXISTS {duckdb_schema}").fetchall()
     con.execute(
-        "CREATE TABLE IF NOT EXISTS jaffle_shop.iris_dataset.iris_lakehouse_table AS SELECT * FROM iris_df"
+        f"CREATE TABLE IF NOT EXISTS {duckdb_database_name}.{duckdb_schema}.{table_name} AS SELECT * FROM df"
     ).fetchall()
     con.close()

@@ -1,18 +1,11 @@
 import os
 from pathlib import Path
 
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    PythonDefs,
-    build_defs_from_airflow_instance,
-)
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 from dagster_airlift.core.def_factory import defs_from_factories
 from dagster_airlift.dbt import DbtProjectDefs
 
-from dbt_example.shared.load_iris import load_csv_to_duckdb
+from dbt_example.dagster_defs.csv_to_duckdb_defs import CSVToDuckdbDefs
 
 from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
 
@@ -33,10 +26,20 @@ def dbt_project_path() -> Path:
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     orchestrated_defs=defs_from_factories(
-        PythonDefs(
+        CSVToDuckdbDefs(
             name="load_lakehouse__load_iris",
-            specs=[AssetSpec(key=AssetKey.from_user_string("iris_dataset/iris_lakehouse_table"))],
-            python_fn=load_csv_to_duckdb,
+            table_name="iris_lakehouse_table",
+            csv_path=Path("iris.csv"),
+            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+            column_names=[
+                "sepal_length_cm",
+                "sepal_width_cm",
+                "petal_length_cm",
+                "petal_width_cm",
+                "species",
+            ],
+            duckdb_schema="iris_dataset",
+            duckdb_database_name="jaffle_shop",
         ),
         DbtProjectDefs(
             name="dbt_dag__build_dbt_models",
