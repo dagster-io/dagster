@@ -191,10 +191,12 @@ def _get_partitions_chunk(
         partition_ranges = set(
             [
                 PartitionKeyRange(
-                    start=run.tags.get(ASSET_PARTITION_RANGE_START_TAG),
-                    end=run.tags.get(ASSET_PARTITION_RANGE_END_TAG),
+                    start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
+                    end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
                 )
                 for run in backfill_runs
+                if run.tags.get(ASSET_PARTITION_RANGE_START_TAG, False)
+                and run.tags.get(ASSET_PARTITION_RANGE_END_TAG, False)
             ]
         )
         completed_partitions = []
@@ -253,7 +255,7 @@ def _get_partitions_chunk(
             if partition_name not in completed_partitions
         ]
 
-    return to_submit, next_checkpoint, has_more
+    return to_submit, next_checkpoint or "", has_more
 
 
 def submit_backfill_runs(
