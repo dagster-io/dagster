@@ -407,6 +407,7 @@ pathable==0.4.3
 pathspec==0.12.1
 pathvalidate==3.2.0
 -e examples/experimental/dagster-airlift/examples/peering-with-dbt
+-e examples/experimental/dagster-airlift/examples/simple-migration
 pendulum==2.1.2
 pexpect==4.9.0
 pillow==10.4.0
