@@ -78,12 +78,11 @@ def _build_partitioned_asset_job_lambda(
             *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
             *asset_graph.unpartitioned_asset_keys,
         }
-        # For now, to preserve behavior keep all orphaned asset checks (where the target check
-        # has no corresponding executable definition) in all base jobs. When checks support
-        # partitions, they should only go in the corresponding partitioned job.
+
         selection = AssetSelection.assets(*executable_asset_keys) | AssetSelection.checks(
-            *asset_graph.orphan_asset_check_keys
+            *asset_graph.unpartitioned_assets_def_asset_check_keys
         )
+
         job_def = build_asset_job(
             job_name,
             asset_graph=get_asset_graph_for_job(asset_graph, selection),

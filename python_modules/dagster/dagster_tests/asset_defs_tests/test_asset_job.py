@@ -2104,6 +2104,8 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_asset_checks_and_obser
         AssetCheckKey(p1_key, "p1_check2"),
         AssetCheckKey(p1_observable_key, "p1_observable_check"),
         AssetCheckKey(external_key, "orphan_check"),
+        AssetCheckKey(p2_key, "p2_check2"),
+        AssetCheckKey(p2_observable_key, "p2_observable_check2"),
     }
 
     p2_job_def = defs.get_implicit_job_def_for_assets([p2_key])
@@ -2113,6 +2115,8 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_asset_checks_and_obser
         AssetCheckKey(p2_observable_key, "p2_observable_check1"),
         AssetCheckKey(p2_observable_key, "p2_observable_check2"),
         AssetCheckKey(external_key, "orphan_check"),
+        AssetCheckKey(p1_key, "p1_check2"),
+        AssetCheckKey(p1_observable_key, "p1_observable_check"),
     }
 
 
