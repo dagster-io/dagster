@@ -4,7 +4,6 @@ from dagster import asset, define_asset_job
 from dagster._core.definitions.cacheable_assets import (
     CACHED_ASSET_ID_KEY,
     CACHED_ASSET_METADATA_KEY,
-    extract_from_current_repository_load_data,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -17,7 +16,9 @@ FETCHED_KVS_KEY = "fetched_external_data"
 USED_CACHE_KVS_KEY = "used_cached_external_data"
 
 instance = DagsterInstance.get()
-metadata_value_cached_assets = extract_from_current_repository_load_data("my_cached_asset_id")
+metadata_value_cached_assets = instance.extract_from_current_repository_load_data(
+    "my_cached_asset_id"
+)
 
 if metadata_value_cached_assets is not None:
     get_definitions_called = int(

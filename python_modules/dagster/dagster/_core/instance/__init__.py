@@ -37,6 +37,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
+from dagster._core.definitions.cacheable_assets import CACHED_ASSET_PREFIX
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -3241,3 +3242,30 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def da_request_backfills(self) -> bool:
         return False
+
+    @experimental
+    def extract_from_current_repository_load_data(
+        self, key: str
+    ) -> Optional[Sequence[Mapping[Any, Any]]]:
+        """Extracts cached asset metadata from the current repository load data, if it exists.
+
+        Args:
+            key (str): The key to look up in the current repository load data, appended to
+                CACHED_ASSET_PREFIX.
+
+        Returns:
+            Optional[Sequence[Mapping[Any, Any]]]: The cached asset metadata, if it exists.
+        """
+        from dagster._core.definitions.repository_definition.repository_definition import (
+            current_repository_load_data,
+        )
+
+        data = current_repository_load_data.get()
+        if not data:
+            return None
+
+        return [
+            data.extra_metadata
+            for data in data.cached_data_by_key.get(f"{CACHED_ASSET_PREFIX}{key}", [])
+            if data.extra_metadata
+        ]
