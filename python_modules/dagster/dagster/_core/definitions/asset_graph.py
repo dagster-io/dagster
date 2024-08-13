@@ -312,20 +312,24 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     def assets_defs_for_keys(
         self, keys: Iterable[AssetKeyOrCheckKey]
     ) -> Sequence[AssetsDefinition]:
-        return list(
-            {
-                *[self.get(key).assets_def for key in keys if isinstance(key, AssetKey)],
-                *[
-                    self._assets_defs_by_check_key[key]
-                    for key in keys
-                    if isinstance(key, AssetCheckKey)
-                ],
-            }
-        )
+        return list({self.assets_def_for_key(key) for key in keys})
+
+    def assets_def_for_key(self, key: AssetKeyOrCheckKey) -> AssetsDefinition:
+        if isinstance(key, AssetKey):
+            return self.get(key).assets_def
+        else:
+            return self._assets_defs_by_check_key[key]
 
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for ad in self.assets_defs for key in ad.check_keys}
+
+    @cached_property
+    def unpartitioned_assets_def_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        """Asset check keys that correspond to unpartitioned AssetsDefinitions."""
+        return {
+            k for k in self.asset_check_keys if self.assets_def_for_key(k).partitions_def is None
+        }
 
     def get_check_spec(self, key: AssetCheckKey) -> AssetCheckSpec:
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
