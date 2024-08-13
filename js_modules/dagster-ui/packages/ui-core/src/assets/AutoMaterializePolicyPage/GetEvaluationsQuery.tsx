@@ -2,19 +2,6 @@ import {gql} from '@apollo/client';
 
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 
-const AssetSubsetFragment = gql`
-  fragment AssetSubsetFragment on AssetSubset {
-    subsetValue {
-      isPartitioned
-      partitionKeys
-      partitionKeyRanges {
-        start
-        end
-      }
-    }
-  }
-`;
-
 const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
   fragment SpecificPartitionAssetConditionEvaluationNodeFragment on SpecificPartitionAssetConditionEvaluationNode {
     description
@@ -48,18 +35,11 @@ const PartitionedAssetConditionEvaluationNodeFragment = gql`
     startTimestamp
     endTimestamp
     numTrue
-    numFalse
-    numSkipped
-    trueSubset {
-      ...AssetSubsetFragment
-    }
-    candidateSubset {
-      ...AssetSubsetFragment
-    }
     uniqueId
     childUniqueIds
+    numTrue
+    numCandidates
   }
-  ${AssetSubsetFragment}
 `;
 
 const NEW_EVALUATION_NODE_FRAGMENT = gql`
@@ -69,18 +49,11 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
     userLabel
     startTimestamp
     endTimestamp
+    numCandidates
     numTrue
     isPartitioned
     childUniqueIds
-    trueSubset {
-      ...AssetSubsetFragment
-    }
-    candidateSubset {
-      ...AssetSubsetFragment
-    }
   }
-
-  ${AssetSubsetFragment}
 `;
 
 const AssetConditionEvaluationRecordFragment = gql`

@@ -2,16 +2,6 @@
 
 import * as Types from '../../../graphql/types';
 
-export type AssetSubsetFragment = {
-  __typename: 'AssetSubset';
-  subsetValue: {
-    __typename: 'AssetSubsetValue';
-    isPartitioned: boolean;
-    partitionKeys: Array<string> | null;
-    partitionKeyRanges: Array<{__typename: 'PartitionKeyRange'; start: string; end: string}> | null;
-  };
-};
-
 export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
   description: string;
@@ -326,36 +316,9 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
   startTimestamp: number | null;
   endTimestamp: number | null;
   numTrue: number;
-  numFalse: number | null;
-  numSkipped: number | null;
   uniqueId: string;
   childUniqueIds: Array<string>;
-  trueSubset: {
-    __typename: 'AssetSubset';
-    subsetValue: {
-      __typename: 'AssetSubsetValue';
-      isPartitioned: boolean;
-      partitionKeys: Array<string> | null;
-      partitionKeyRanges: Array<{
-        __typename: 'PartitionKeyRange';
-        start: string;
-        end: string;
-      }> | null;
-    };
-  };
-  candidateSubset: {
-    __typename: 'AssetSubset';
-    subsetValue: {
-      __typename: 'AssetSubsetValue';
-      isPartitioned: boolean;
-      partitionKeys: Array<string> | null;
-      partitionKeyRanges: Array<{
-        __typename: 'PartitionKeyRange';
-        start: string;
-        end: string;
-      }> | null;
-    };
-  } | null;
+  numCandidates: number | null;
 };
 
 export type NewEvaluationNodeFragment = {
@@ -365,35 +328,10 @@ export type NewEvaluationNodeFragment = {
   userLabel: string | null;
   startTimestamp: number | null;
   endTimestamp: number | null;
+  numCandidates: number | null;
   numTrue: number;
   isPartitioned: boolean;
   childUniqueIds: Array<string>;
-  trueSubset: {
-    __typename: 'AssetSubset';
-    subsetValue: {
-      __typename: 'AssetSubsetValue';
-      isPartitioned: boolean;
-      partitionKeys: Array<string> | null;
-      partitionKeyRanges: Array<{
-        __typename: 'PartitionKeyRange';
-        start: string;
-        end: string;
-      }> | null;
-    };
-  };
-  candidateSubset: {
-    __typename: 'AssetSubset';
-    subsetValue: {
-      __typename: 'AssetSubsetValue';
-      isPartitioned: boolean;
-      partitionKeys: Array<string> | null;
-      partitionKeyRanges: Array<{
-        __typename: 'PartitionKeyRange';
-        start: string;
-        end: string;
-      }> | null;
-    };
-  } | null;
 };
 
 export type AssetConditionEvaluationRecordFragment = {
@@ -417,36 +355,9 @@ export type AssetConditionEvaluationRecordFragment = {
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
-          numFalse: number | null;
-          numSkipped: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
-          trueSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          };
-          candidateSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          } | null;
+          numCandidates: number | null;
         }
       | {
           __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -803,35 +714,10 @@ export type AssetConditionEvaluationRecordFragment = {
     userLabel: string | null;
     startTimestamp: number | null;
     endTimestamp: number | null;
+    numCandidates: number | null;
     numTrue: number;
     isPartitioned: boolean;
     childUniqueIds: Array<string>;
-    trueSubset: {
-      __typename: 'AssetSubset';
-      subsetValue: {
-        __typename: 'AssetSubsetValue';
-        isPartitioned: boolean;
-        partitionKeys: Array<string> | null;
-        partitionKeyRanges: Array<{
-          __typename: 'PartitionKeyRange';
-          start: string;
-          end: string;
-        }> | null;
-      };
-    };
-    candidateSubset: {
-      __typename: 'AssetSubset';
-      subsetValue: {
-        __typename: 'AssetSubsetValue';
-        isPartitioned: boolean;
-        partitionKeys: Array<string> | null;
-        partitionKeyRanges: Array<{
-          __typename: 'PartitionKeyRange';
-          start: string;
-          end: string;
-        }> | null;
-      };
-    } | null;
   }>;
 };
 
@@ -883,36 +769,9 @@ export type GetEvaluationsQuery = {
                   startTimestamp: number | null;
                   endTimestamp: number | null;
                   numTrue: number;
-                  numFalse: number | null;
-                  numSkipped: number | null;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
-                  trueSubset: {
-                    __typename: 'AssetSubset';
-                    subsetValue: {
-                      __typename: 'AssetSubsetValue';
-                      isPartitioned: boolean;
-                      partitionKeys: Array<string> | null;
-                      partitionKeyRanges: Array<{
-                        __typename: 'PartitionKeyRange';
-                        start: string;
-                        end: string;
-                      }> | null;
-                    };
-                  };
-                  candidateSubset: {
-                    __typename: 'AssetSubset';
-                    subsetValue: {
-                      __typename: 'AssetSubsetValue';
-                      isPartitioned: boolean;
-                      partitionKeys: Array<string> | null;
-                      partitionKeyRanges: Array<{
-                        __typename: 'PartitionKeyRange';
-                        start: string;
-                        end: string;
-                      }> | null;
-                    };
-                  } | null;
+                  numCandidates: number | null;
                 }
               | {
                   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -1281,35 +1140,10 @@ export type GetEvaluationsQuery = {
             userLabel: string | null;
             startTimestamp: number | null;
             endTimestamp: number | null;
+            numCandidates: number | null;
             numTrue: number;
             isPartitioned: boolean;
             childUniqueIds: Array<string>;
-            trueSubset: {
-              __typename: 'AssetSubset';
-              subsetValue: {
-                __typename: 'AssetSubsetValue';
-                isPartitioned: boolean;
-                partitionKeys: Array<string> | null;
-                partitionKeyRanges: Array<{
-                  __typename: 'PartitionKeyRange';
-                  start: string;
-                  end: string;
-                }> | null;
-              };
-            };
-            candidateSubset: {
-              __typename: 'AssetSubset';
-              subsetValue: {
-                __typename: 'AssetSubsetValue';
-                isPartitioned: boolean;
-                partitionKeys: Array<string> | null;
-                partitionKeyRanges: Array<{
-                  __typename: 'PartitionKeyRange';
-                  start: string;
-                  end: string;
-                }> | null;
-              };
-            } | null;
           }>;
         }>;
       }
@@ -1335,36 +1169,9 @@ export type GetEvaluationsSpecificPartitionQuery = {
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
-          numFalse: number | null;
-          numSkipped: number | null;
           uniqueId: string;
           childUniqueIds: Array<string>;
-          trueSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          };
-          candidateSubset: {
-            __typename: 'AssetSubset';
-            subsetValue: {
-              __typename: 'AssetSubsetValue';
-              isPartitioned: boolean;
-              partitionKeys: Array<string> | null;
-              partitionKeyRanges: Array<{
-                __typename: 'PartitionKeyRange';
-                start: string;
-                end: string;
-              }> | null;
-            };
-          } | null;
+          numCandidates: number | null;
         }
       | {
           __typename: 'SpecificPartitionAssetConditionEvaluationNode';

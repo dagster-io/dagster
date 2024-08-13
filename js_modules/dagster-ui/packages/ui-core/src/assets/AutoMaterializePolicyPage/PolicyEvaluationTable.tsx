@@ -16,17 +16,27 @@ import {
 import {AssetConditionEvaluationStatus} from '../../graphql/types';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
+import {numberFormatter} from '../../ui/formatters';
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 
 interface Props {
+  assetKeyPath: string[] | null;
   evaluationNodes: Evaluation[];
+  evaluationId: number;
   rootUniqueId: string;
   isLegacyEvaluation: boolean;
   selectPartition: (partitionKey: string | null) => void;
 }
 
 export const PolicyEvaluationTable = (props: Props) => {
-  const {evaluationNodes, rootUniqueId, isLegacyEvaluation, selectPartition} = props;
+  const {
+    assetKeyPath,
+    evaluationNodes,
+    evaluationId,
+    rootUniqueId,
+    isLegacyEvaluation,
+    selectPartition,
+  } = props;
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(() => {
     const list = isLegacyEvaluation ? evaluationNodes.map((node) => node.uniqueId) : [];
     return new Set(list);
@@ -55,6 +65,8 @@ export const PolicyEvaluationTable = (props: Props) => {
   if (!isLegacyEvaluation) {
     return (
       <NewPolicyEvaluationTable
+        assetKeyPath={assetKeyPath}
+        evaluationId={evaluationId}
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
@@ -68,7 +80,9 @@ export const PolicyEvaluationTable = (props: Props) => {
         flattenedRecords={
           flattened as FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[]
         }
-        // definition={definition}
+        assetKeyPath={assetKeyPath}
+        evaluationId={evaluationId}
+        rootUniqueId={rootUniqueId}
         selectPartition={selectPartition}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
@@ -90,10 +104,14 @@ export const PolicyEvaluationTable = (props: Props) => {
 };
 
 const NewPolicyEvaluationTable = ({
+  assetKeyPath,
+  evaluationId,
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
 }: {
+  assetKeyPath: string[] | null;
+  evaluationId: number;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
@@ -112,8 +130,8 @@ const NewPolicyEvaluationTable = ({
       </thead>
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
-          const {userLabel, uniqueId, numTrue, candidateSubset, expandedLabel} = evaluation;
-          const anyCandidatePartitions = !!candidateSubset?.subsetValue.partitionKeys?.length;
+          const {userLabel, uniqueId, numTrue, numCandidates, expandedLabel} = evaluation;
+          const anyCandidatePartitions = typeof numCandidates === 'number' && numCandidates > 0;
           const status =
             numTrue === 0 && !anyCandidatePartitions
               ? AssetConditionEvaluationStatus.SKIPPED
@@ -162,15 +180,23 @@ const NewPolicyEvaluationTable = ({
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
-              {isPartitioned ? (
+              {isPartitioned && assetKeyPath ? (
                 <td style={{width: 0}}>
                   <Box
                     flex={{direction: 'row', alignItems: 'center', gap: 2}}
                     style={{width: FULL_SEGMENTS_WIDTH}}
                   >
                     <PartitionSegmentWithPopover
-                      description={userLabel || ''}
-                      subset={evaluation.trueSubset}
+                      description={
+                        userLabel ||
+                        (numTrue === 1
+                          ? '1 partition'
+                          : `${numberFormatter.format(numTrue)} partitions`)
+                      }
+                      assetKeyPath={assetKeyPath}
+                      evaluationId={evaluationId}
+                      nodeUniqueId={evaluation.uniqueId}
+                      numTrue={numTrue}
                     />
                   </Box>
                 </td>
@@ -179,9 +205,7 @@ const NewPolicyEvaluationTable = ({
                   <PolicyEvaluationStatusTag status={status} />
                 </td>
               )}
-              {isPartitioned ? (
-                <td>{evaluation.candidateSubset?.subsetValue.partitionKeys?.length || '0'}</td>
-              ) : null}
+              {isPartitioned ? <td>{numCandidates || '0'}</td> : null}
               <td>
                 {startTimestamp && endTimestamp ? (
                   <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
@@ -310,11 +334,17 @@ const ViewDetailsButton = ({
 const FULL_SEGMENTS_WIDTH = 200;
 
 export const PartitionedPolicyEvaluationTable = ({
+  assetKeyPath,
+  evaluationId,
+  rootUniqueId,
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
   selectPartition,
 }: {
+  assetKeyPath: string[] | null;
+  evaluationId: number;
+  rootUniqueId: string;
   flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
@@ -333,9 +363,8 @@ export const PartitionedPolicyEvaluationTable = ({
       </thead>
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, candidateSubset, endTimestamp, startTimestamp, trueSubset, uniqueId} =
+          const {description, endTimestamp, startTimestamp, numCandidates, numTrue, uniqueId} =
             evaluation;
-          const consideredPartitions = candidateSubset?.subsetValue.partitionKeys?.length;
 
           return (
             <EvaluationRow
@@ -365,8 +394,8 @@ export const PartitionedPolicyEvaluationTable = ({
                 />
               </td>
               <td>
-                {consideredPartitions ? (
-                  consideredPartitions
+                {numCandidates ? (
+                  <>{numberFormatter.format(numCandidates)}</>
                 ) : (
                   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                     All
@@ -377,16 +406,21 @@ export const PartitionedPolicyEvaluationTable = ({
                 )}
               </td>
               <td style={{width: 0}}>
-                <Box
-                  flex={{direction: 'row', alignItems: 'center', gap: 2}}
-                  style={{width: FULL_SEGMENTS_WIDTH}}
-                >
-                  <PartitionSegmentWithPopover
-                    description={description}
-                    subset={trueSubset}
-                    selectPartition={selectPartition}
-                  />
-                </Box>
+                {assetKeyPath ? (
+                  <Box
+                    flex={{direction: 'row', alignItems: 'center', gap: 2}}
+                    style={{width: FULL_SEGMENTS_WIDTH}}
+                  >
+                    <PartitionSegmentWithPopover
+                      description={description}
+                      assetKeyPath={assetKeyPath}
+                      numTrue={numTrue}
+                      evaluationId={evaluationId}
+                      nodeUniqueId={rootUniqueId}
+                      selectPartition={selectPartition}
+                    />
+                  </Box>
+                ) : null}
               </td>
               <td>
                 <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
