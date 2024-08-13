@@ -6,7 +6,7 @@ import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterBackfillFailedError
+from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -200,7 +200,10 @@ def _get_partitions_chunk(
             and run.tags.get(PARTITION_NAME_TAG) is None
             and partitions_def is not None
         ):
-            check.not_none(partitions_def)
+            if partitions_def is None:
+                raise DagsterInvariantViolationError(
+                    f"Cannot access PartitionsDefinition for backfill {backfill_job.backfill_id}. This is likely because the PartitionsDefinition is a DynamicPartitionsDefinition that was constructed with the deprecated `partitions_fn` argument. Please use the `name` argument instead, or remove the BackfillPolicy from your asset."
+                )
             completed_partitions.extend(
                 partitions_def.get_partition_keys_in_range(
                     PartitionKeyRange(
