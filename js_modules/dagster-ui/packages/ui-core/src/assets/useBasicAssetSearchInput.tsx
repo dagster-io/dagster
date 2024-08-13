@@ -1,5 +1,5 @@
 import {TextInput} from '@dagster-io/ui-components';
-import {FilterableAssetDefinition} from 'js_modules/dagster-ui/packages/ui-core/src/assets/useAssetDefinitionFilterState.oss';
+import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {useAssetSearch} from './useAssetSearch';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
