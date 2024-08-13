@@ -205,6 +205,11 @@ const sidebars: SidebarsConfig = {
         }
       ],
     },
+    {
+      type: "category",
+      label: "Use cases",
+      items: ["usecases/copy-csv-to-snowflake"],
+    }
   ],
 };
 
