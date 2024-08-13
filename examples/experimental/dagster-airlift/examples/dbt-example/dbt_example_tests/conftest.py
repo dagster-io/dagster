@@ -14,12 +14,12 @@ def local_env_fixture() -> Generator[None, None, None]:
     with environ(
         {
             "AIRFLOW_HOME": str(makefile_dir / ".airflow_home"),
-            "DBT_PROJECT_DIR": str(makefile_dir / "dbt_example" / "dbt"),
+            "DBT_PROJECT_DIR": str(makefile_dir / "dbt_example" / "shared" / "dbt"),
             "DAGSTER_HOME": str(makefile_dir / ".dagster_home"),
         }
     ):
         yield
-    subprocess.run(["make", "wipe"], check=True)
+    subprocess.run(["make", "wipe"], cwd=makefile_dir, check=True)
 
 
 @pytest.fixture(name="dags_dir")
