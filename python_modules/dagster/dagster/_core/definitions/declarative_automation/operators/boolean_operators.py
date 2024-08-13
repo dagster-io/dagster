@@ -16,16 +16,20 @@ class AndAutomationCondition(AutomationCondition):
     label: Optional[str] = None
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
-        return self.operands
-
-    @property
     def description(self) -> str:
         return "All of"
 
     @property
     def name(self) -> str:
         return "AND"
+
+    @property
+    def children(self) -> Sequence[AutomationCondition]:
+        return self.operands
+
+    @property
+    def requires_cursor(self) -> bool:
+        return False
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
@@ -49,16 +53,20 @@ class OrAutomationCondition(AutomationCondition):
     label: Optional[str] = None
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
-        return self.operands
-
-    @property
     def description(self) -> str:
         return "Any of"
 
     @property
     def name(self) -> str:
         return "OR"
+
+    @property
+    def children(self) -> Sequence[AutomationCondition]:
+        return self.operands
+
+    @property
+    def requires_cursor(self) -> bool:
+        return False
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []

@@ -89,7 +89,7 @@ class AutomationCondition(ABC):
 
     @property
     def requires_cursor(self) -> bool:
-        return False
+        return True
 
     @property
     def children(self) -> Sequence["AutomationCondition"]:

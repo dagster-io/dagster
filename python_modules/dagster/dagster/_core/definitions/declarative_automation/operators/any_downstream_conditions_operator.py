@@ -27,6 +27,10 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
     def children(self) -> Sequence[AutomationCondition]:
         return [self.operand]
 
+    @property
+    def requires_cursor(self) -> bool:
+        return False
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_result = self.operand.evaluate(
             context.for_child_condition(
@@ -50,6 +54,10 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
     @property
     def name(self) -> str:
         return "ANY_DOWNSTREAM_CONDITIONS"
+
+    @property
+    def requires_cursor(self) -> bool:
+        return False
 
     def _get_ignored_conditions(
         self, context: AutomationContext
