@@ -79,11 +79,11 @@ class CacheableAssetSpec:
     deps: Optional[Sequence["CacheableAssetDep"]]
     group_name: Optional[str]
 
-    def to_asset_spec(self) -> AssetSpec:
+    def to_asset_spec(self, additional_metadata: Mapping[str, Any]) -> AssetSpec:
         return AssetSpec(
             key=self.asset_key,
             description=self.description,
-            metadata=self.metadata,
+            metadata={**additional_metadata, **self.metadata},
             tags=self.tags,
             deps=[AssetDep(asset=dep.asset_key) for dep in self.deps] if self.deps else [],
             group_name=self.group_name,
@@ -186,7 +186,7 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
             dag_id = dag_spec.metadata["Dag ID"]
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
-                    specs=[dag_spec.to_asset_spec()],
+                    specs=[dag_spec.to_asset_spec({})],
                     name=key.to_user_string().replace("/", "__"),
                     tags={"airlift/dag_id": dag_id},
                 )
@@ -289,7 +289,7 @@ def construct_cacheable_assets_and_infer_dependencies(
             cacheable_specs_per_asset_key[spec.key] = CacheableAssetSpec(
                 asset_key=spec.key,
                 description=spec.description,
-                metadata={**spec.metadata, **task_level_metadata},
+                metadata=task_level_metadata,
                 tags={
                     **spec.tags,
                     MIGRATED_TAG: str(migration_state_for_task),
@@ -328,7 +328,10 @@ def construct_assets_with_task_migration_info_applied(
                 cacheable_specs.task_asset_specs.get(spec.key) is not None,
                 f"Could not find cacheable spec for asset key {spec.key.to_user_string()}",
             )
-            new_spec = cacheable_specs.task_asset_specs[spec.key].to_asset_spec()
+            # We allow arbitrary (non-serdes) metadata in asset specs, which makes them non-serializable.
+            # This means we need to "combine" the metadata from the cacheable spec with the non-serializable
+            # metadata fields from the original spec it was built from after deserializing.
+            new_spec = cacheable_specs.task_asset_specs[spec.key].to_asset_spec(spec.metadata)
             check.invariant(
                 MIGRATED_TAG in new_spec.tags,
                 f"Could not find migrated status for asset key {spec.key.to_user_string()}",
