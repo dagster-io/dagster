@@ -42,7 +42,6 @@ class AutomationContext:
     condition_unique_id: str
     candidate_slice: AssetSlice
 
-    logger: logging.Logger
     create_time: datetime.datetime
 
     asset_graph_view: AssetGraphView
@@ -53,11 +52,13 @@ class AutomationContext:
     _cursor: Optional[AutomationConditionCursor]
     _legacy_context: Optional[LegacyRuleEvaluationContext]
 
+    _root_log: logging.Logger
+
     @staticmethod
     def create(
         asset_key: AssetKey,
         asset_graph_view: AssetGraphView,
-        logger: logging.Logger,
+        log: logging.Logger,
         current_tick_results_by_key: Mapping[AssetKey, AutomationResult],
         condition_cursor: Optional[AutomationConditionCursor],
         legacy_context: "LegacyRuleEvaluationContext",
@@ -70,13 +71,13 @@ class AutomationContext:
             condition=condition,
             condition_unique_id=condition_unqiue_id,
             candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
-            logger=logger,
             create_time=get_current_datetime(),
             asset_graph_view=asset_graph_view,
             current_tick_results_by_key=current_tick_results_by_key,
             parent_context=None,
             _cursor=condition_cursor,
             _legacy_context=legacy_context if condition.has_rule_condition else None,
+            _root_log=log,
         )
 
     def for_child_condition(
@@ -89,7 +90,6 @@ class AutomationContext:
             condition=child_condition,
             condition_unique_id=condition_unqiue_id,
             candidate_slice=candidate_slice,
-            logger=self.logger,
             create_time=get_current_datetime(),
             asset_graph_view=self.asset_graph_view,
             current_tick_results_by_key=self.current_tick_results_by_key,
@@ -102,7 +102,13 @@ class AutomationContext:
             )
             if self._legacy_context
             else None,
+            _root_log=self._root_log,
         )
+
+    @property
+    def log(self) -> logging.Logger:
+        """The logger for the current condition evaluation."""
+        return self._root_log.getChild(self.condition.__class__.__name__)
 
     @property
     def asset_graph(self) -> "BaseAssetGraph":
