@@ -18,7 +18,7 @@ on:
       - .github/workflows/build-docs.yml
 concurrency:
   # Cancel in-progress runs on same branch
-  group: ${{ github.ref }}
+  group: ${{ github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 jobs:
   deploy:
