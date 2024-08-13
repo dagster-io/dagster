@@ -125,7 +125,7 @@ class AutomationConditionScenarioState(ScenarioState):
             context = AutomationContext.create(
                 asset_key=asset_key,
                 asset_graph_view=daemon_context.asset_graph_view,
-                logger=self.logger,
+                log=self.logger,
                 current_tick_results_by_key=self._get_current_results_by_key(
                     daemon_context.asset_graph_view
                 ),

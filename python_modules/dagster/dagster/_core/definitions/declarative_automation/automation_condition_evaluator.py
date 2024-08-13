@@ -200,7 +200,7 @@ class AutomationConditionEvaluator:
         context = AutomationContext.create(
             asset_key=asset_key,
             asset_graph_view=self.asset_graph_view,
-            logger=self.logger,
+            log=self.logger,
             current_tick_results_by_key=current_results_by_key,
             condition_cursor=self.cursor.get_previous_condition_cursor(asset_key),
             legacy_context=legacy_context,
