@@ -168,4 +168,4 @@ Congratulations! You've just built and run your first pipeline with Dagster. You
 ## Next Steps
 
 - Continue with the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) to learn how to build a more complex ETL pipeline
-- Learn how to [Think in Assets](/concepts/thinking-in-assets)
+- Learn how to [Think in Assets](/concepts/assets/thinking-in-assets)
