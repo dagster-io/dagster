@@ -1,8 +1,6 @@
 name: Deploy Docs Revamp
 on:
   pull_request:
-    branches:
-      - docs/revamp
     paths:
       - docs/docs-next
       - .github/workflows/build-docs-revamp.yml
@@ -13,10 +11,12 @@ on:
     paths:
       - docs/docs-next
       - .github/workflows/build-docs-revamp.yml
+
 concurrency:
   # Cancel in-progress runs on same branch
   group: ${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
