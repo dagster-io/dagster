@@ -219,8 +219,11 @@ def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
     if target is None:
         return "None"
 
+    if target is NoneType:
+        return "check.NoneType"
+
     if isinstance(target, tuple):
-        return f"({', '.join(tup_type.__name__ if tup_type is not NoneType else 'check.NoneType' for tup_type in target)})"
+        return f"({', '.join(_name(tup_type) for tup_type in target)})"
 
     if hasattr(target, "__name__"):
         return target.__name__
