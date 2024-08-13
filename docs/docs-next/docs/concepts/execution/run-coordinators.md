@@ -1,6 +1,6 @@
 ---
 title: "Run coordinators"
-sidebar_position: 4
+sidebar_position: 40
 ---
 
 # Run coordinators

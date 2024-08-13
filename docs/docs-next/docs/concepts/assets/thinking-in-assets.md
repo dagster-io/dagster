@@ -1,6 +1,6 @@
 ---
 title: "Thinking in assets"
-sidebar_position: 1
+sidebar_position: 10
 ---
 
 # Thinking in assets

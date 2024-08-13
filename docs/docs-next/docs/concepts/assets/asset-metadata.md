@@ -1,6 +1,6 @@
 ---
 title: "Asset metadata"
-sidebar_position: 4
+sidebar_position: 40
 ---
 
 # Asset metadata
