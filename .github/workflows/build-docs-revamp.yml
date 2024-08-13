@@ -14,7 +14,7 @@ on:
 
 concurrency:
   # Cancel in-progress runs on same branch
-  group: ${{ github.ref }}
+  group: ${{ github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 
 jobs:
@@ -22,12 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout docs/revamp branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/docs/revamp'
         uses: actions/checkout@v4
 
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
-        if: github.event_name == 'push' && github.ref == 'refs/heads/docs/revamp'
         with:
           github-comment: ${{ true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
