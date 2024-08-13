@@ -1,18 +1,13 @@
 import enum
 import itertools
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence
 
 import graphene
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
-from dagster._core.definitions.partition import (
-    DefaultPartitionsSubset,
-    PartitionsDefinition,
-    PartitionsSubset,
-)
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -22,7 +17,6 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 from .asset_key import GrapheneAssetKey
-from .partition_sets import GraphenePartitionKeyRange
 from .util import ResolveInfo, non_null_list
 
 
@@ -33,53 +27,6 @@ class AssetConditionEvaluationStatus(enum.Enum):
 
 
 GrapheneAssetConditionEvaluationStatus = graphene.Enum.from_enum(AssetConditionEvaluationStatus)
-
-
-class GrapheneAssetSubsetValue(graphene.ObjectType):
-    class Meta:
-        name = "AssetSubsetValue"
-
-    boolValue = graphene.Field(graphene.Boolean)
-    partitionKeys = graphene.List(graphene.NonNull(graphene.String))
-    partitionKeyRanges = graphene.List(graphene.NonNull(GraphenePartitionKeyRange))
-
-    isPartitioned = graphene.NonNull(graphene.Boolean)
-
-    def __init__(self, value: Union[bool, PartitionsSubset]):
-        bool_value, partition_keys, partition_key_ranges = None, None, None
-        if isinstance(value, bool):
-            bool_value = value
-        elif isinstance(value, BaseTimeWindowPartitionsSubset):
-            partition_key_ranges = [
-                GraphenePartitionKeyRange(start, end)
-                for start, end in value.get_partition_key_ranges(value.partitions_def)
-            ]
-            partition_keys = value.get_partition_keys()
-        else:
-            partition_keys = value.get_partition_keys()
-
-        super().__init__(
-            boolValue=bool_value,
-            partitionKeys=partition_keys,
-            partitionKeyRanges=partition_key_ranges,
-        )
-
-    def resolve_isPartitioned(self, graphene_info: ResolveInfo) -> bool:
-        return self.boolValue is not None
-
-
-class GrapheneAssetSubset(graphene.ObjectType):
-    assetKey = graphene.NonNull(GrapheneAssetKey)
-    subsetValue = graphene.NonNull(GrapheneAssetSubsetValue)
-
-    class Meta:
-        name = "AssetSubset"
-
-    def __init__(self, asset_subset: AssetSubset):
-        super().__init__(
-            assetKey=GrapheneAssetKey(path=asset_subset.asset_key.path),
-            subsetValue=GrapheneAssetSubsetValue(asset_subset.subset_value),
-        )
 
 
 class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
@@ -136,12 +83,8 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
-    trueSubset = graphene.NonNull(GrapheneAssetSubset)
-    candidateSubset = graphene.Field(GrapheneAssetSubset)
-
     numTrue = graphene.NonNull(graphene.Int)
-    numFalse = graphene.Field(graphene.Int)
-    numSkipped = graphene.Field(graphene.Int)
+    numCandidates = graphene.Field(graphene.Int)
 
     childUniqueIds = non_null_list(graphene.String)
 
@@ -154,9 +97,10 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             description=evaluation.condition_snapshot.description,
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
-            trueSubset=_coerce_subset(evaluation.true_subset),
-            candidateSubset=_coerce_subset(evaluation.candidate_subset),
             numTrue=evaluation.true_subset.size,
+            numCandidates=evaluation.candidate_subset.size
+            if isinstance(evaluation.candidate_subset, AssetSubset)
+            else None,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
@@ -274,10 +218,9 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     endTimestamp = graphene.Field(graphene.Float)
 
     numTrue = graphene.NonNull(graphene.Int)
-    isPartitioned = graphene.NonNull(graphene.Boolean)
+    numCandidates = graphene.Field(graphene.Int)
 
-    trueSubset = graphene.NonNull(GrapheneAssetSubset)
-    candidateSubset = graphene.Field(GrapheneAssetSubset)
+    isPartitioned = graphene.NonNull(graphene.Boolean)
 
     childUniqueIds = non_null_list(graphene.String)
 
@@ -293,9 +236,10 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
+            numCandidates=evaluation.candidate_subset.size
+            if isinstance(evaluation.candidate_subset, AssetSubset)
+            else None,
             isPartitioned=evaluation.true_subset.is_partitioned,
-            trueSubset=_coerce_subset(evaluation.true_subset),
-            candidateSubset=_coerce_subset(evaluation.candidate_subset),
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
@@ -380,25 +324,6 @@ def _flatten_evaluation(
 ) -> Sequence[AutomationConditionEvaluation]:
     # flattens the evaluation tree into a list of nodes
     return list(itertools.chain([e], *(_flatten_evaluation(ce) for ce in e.child_evaluations)))
-
-
-def _coerce_subset(maybe_subset):
-    if not isinstance(maybe_subset, AssetSubset):
-        return None
-    elif maybe_subset.is_partitioned:
-        return GrapheneAssetSubset(maybe_subset)
-
-    # TODO: Remove on redesign (FOU-242)
-    # We create a fake partitioned asset subset out of an unpartitioned asset subset in
-    # order to allow unpartitioned rows to not error when used in the partition-focused UI.
-    if maybe_subset.size == 0:
-        value = set()
-    else:
-        value = {"None"}
-
-    return GrapheneAssetSubset(
-        AssetSubset(asset_key=maybe_subset.asset_key, value=DefaultPartitionsSubset(value))
-    )
 
 
 def _get_expanded_label(

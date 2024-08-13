@@ -27,6 +27,7 @@ from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
     fetch_asset_condition_evaluation_record_for_partition,
     fetch_asset_condition_evaluation_records_for_asset_key,
     fetch_asset_condition_evaluation_records_for_evaluation_id,
+    fetch_true_partitions_for_evaluation_node,
 )
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
     fetch_auto_materialize_asset_evaluations,
@@ -522,6 +523,14 @@ class GrapheneQuery(graphene.ObjectType):
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the auto materialization evaluation records for an asset.",
+    )
+
+    truePartitionsForAutomationConditionEvaluationNode = graphene.Field(
+        non_null_list(graphene.String),
+        assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        evaluationId=graphene.Argument(graphene.NonNull(graphene.Int)),
+        nodeUniqueId=graphene.Argument(graphene.String),
+        description="Retrieve the partition keys which were true for a specific automation condition evaluation node.",
     )
 
     autoMaterializeEvaluationsForEvaluationId = graphene.Field(
@@ -1197,6 +1206,20 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         return fetch_asset_condition_evaluation_records_for_asset_key(
             graphene_info=graphene_info, graphene_asset_key=assetKey, cursor=cursor, limit=limit
+        )
+
+    def resolve_truePartitionsForAutomationConditionEvaluationNode(
+        self,
+        graphene_info: ResolveInfo,
+        assetKey: GrapheneAssetKeyInput,
+        evaluationId: int,
+        nodeUniqueId: str,
+    ):
+        return fetch_true_partitions_for_evaluation_node(
+            graphene_info=graphene_info,
+            graphene_asset_key=assetKey,
+            evaluation_id=evaluationId,
+            node_unique_id=nodeUniqueId,
         )
 
     def resolve_assetConditionEvaluationsForEvaluationId(
