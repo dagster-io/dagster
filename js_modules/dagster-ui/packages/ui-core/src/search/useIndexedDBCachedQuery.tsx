@@ -133,6 +133,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
 
   return {
     data,
+    called: true, // Add called for compatibility with useBlockTraceOnQueryResult
     error,
     loading,
     fetch: useCallback(() => fetch(true), [fetch]),

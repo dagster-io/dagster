@@ -1,15 +1,16 @@
 import {TextInput} from '@dagster-io/ui-components';
+import {FilterableAssetDefinition} from 'js_modules/dagster-ui/packages/ui-core/src/assets/useAssetDefinitionFilterState.oss';
 
-import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useAssetSearch} from './useAssetSearch';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {FilterableAssetDefinition} from './useAssetDefinitionFilterState.oss';
 
-export const useBasicAssetSearchInput = <T extends {
-  id: string;
-  key: {path: Array<string>};
-  definition?: FilterableAssetDefinition | null;
-},>(
+export const useBasicAssetSearchInput = <
+  T extends {
+    id: string;
+    key: {path: Array<string>};
+    definition?: FilterableAssetDefinition | null;
+  },
+>(
   assets: T[],
   prefixPath: string[] = [],
 ) => {
