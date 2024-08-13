@@ -187,14 +187,20 @@ def _get_partitions_chunk(
     backfill_runs = instance.get_runs(
         RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
-    partitions_def = partition_set.get_partitions_definition()
+    partitions_def = (
+        partition_set.get_partitions_definition()
+        if partition_set.has_partitions_definition()
+        else None
+    )
     completed_partitions = []
     for run in backfill_runs:
         if (
             run.tags.get(ASSET_PARTITION_RANGE_START_TAG)
             and run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
             and run.tags.get(PARTITION_NAME_TAG) is None
+            and partitions_def is not None
         ):
+            check.not_none(partitions_def)
             completed_partitions.extend(
                 partitions_def.get_partition_keys_in_range(
                     PartitionKeyRange(
