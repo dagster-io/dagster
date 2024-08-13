@@ -23,11 +23,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import (
-    IMPLICIT_ASSET_JOB_NAME,
-    get_base_asset_job_lambda,
-    is_base_asset_job_name,
-)
+from dagster._core.definitions.asset_job import get_base_asset_jobs, is_base_asset_job_name
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutomationConditionSensorDefinition,
@@ -321,11 +317,13 @@ def build_caching_repository_data_from_list(
         ]
     )
     if assets_defs or asset_checks_defs or source_assets:
-        jobs[IMPLICIT_ASSET_JOB_NAME] = get_base_asset_job_lambda(
-            asset_graph=asset_graph,
-            executor_def=default_executor_def,
-            resource_defs=top_level_resources,
-            logger_defs=default_logger_defs,
+        jobs.update(
+            get_base_asset_jobs(
+                asset_graph=asset_graph,
+                executor_def=default_executor_def,
+                resource_defs=top_level_resources,
+                logger_defs=default_logger_defs,
+            )
         )
 
     _validate_auto_materialize_sensors(sensors.values(), asset_graph)

@@ -4,7 +4,7 @@ import time
 from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
@@ -32,7 +32,7 @@ def _get_implicit_job_name_for_assets(
     for asset_key in asset_keys[1:]:
         job_names &= set(asset_graph.get_materialization_job_names(asset_key))
 
-    return next((job_name for job_name in job_names if job_name == IMPLICIT_ASSET_JOB_NAME), None)
+    return next((job_name for job_name in job_names if is_base_asset_job_name(job_name)), None)
 
 
 def _get_execution_plan_asset_keys(

@@ -17,7 +17,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -29,6 +29,7 @@ from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
@@ -261,18 +262,55 @@ class RepositoryDefinition:
         return self._repository_data.get_asset_checks_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
-        return self.has_job(IMPLICIT_ASSET_JOB_NAME)
+        """Returns true is there is a single implicit asset job for all asset keys in a repository."""
+        return self.has_job(ASSET_BASE_JOB_PREFIX)
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
-        return self.get_job(IMPLICIT_ASSET_JOB_NAME)
+        """A useful conveninence method for repositories where there are a set of assets with
+        the same partitioning schema and one wants to access their corresponding implicit job
+        easily.
+        """
+        if not self.has_job(ASSET_BASE_JOB_PREFIX):
+            raise DagsterInvariantViolationError(
+                "There is no single global asset job, likely due to assets using "
+                "different partitioning schemes via their partitions_def parameter. You must "
+                "use get_implicit_job_def_for_assets in order to access the correct implicit job."
+            )
+
+        return self.get_job(ASSET_BASE_JOB_PREFIX)
 
     def get_implicit_asset_job_names(self) -> Sequence[str]:
-        return [IMPLICIT_ASSET_JOB_NAME]
+        return [
+            job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)
+        ]
 
     def get_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
-        return self.get_job(IMPLICIT_ASSET_JOB_NAME)
+        """Returns the asset base job that contains all the given assets, or None if there is no such
+        job.
+        """
+        if self.has_job(ASSET_BASE_JOB_PREFIX):
+            base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
+            asset_layer = base_job.asset_layer
+            if all(
+                asset_layer.has(key) and asset_layer.get(key).is_executable for key in asset_keys
+            ):
+                return base_job
+        else:
+            i = 0
+            while self.has_job(f"{ASSET_BASE_JOB_PREFIX}_{i}"):
+                base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
+                asset_layer = base_job.asset_layer
+                if all(
+                    asset_layer.has(key) and asset_layer.get(key).is_executable
+                    for key in asset_keys
+                ):
+                    return base_job
+
+                i += 1
+
+        return None
 
     def get_maybe_subset_job_def(
         self,
