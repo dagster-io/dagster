@@ -524,6 +524,9 @@ class ScheduleDefinition(IHasInternalInit):
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the schedule will execute.
+            It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
+            It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
+            This is an experimental parameter that will replace `job` and `job_name`.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
