@@ -9,6 +9,7 @@ from dagster import (
     EnvVar,
     InputContext,
     IOManager,
+    MetadataValue,
     OutputContext,
     asset,
     io_manager,
@@ -29,6 +30,7 @@ from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     DEFAULT_CONNECTOR_ID_2,
     get_complex_sample_connector_schema_config,
+    get_sample_columns_response,
     get_sample_connector_response,
     get_sample_connectors_response,
     get_sample_connectors_response_multiple,
@@ -204,9 +206,9 @@ def test_load_from_instance(
             == (
                 TableSchema(
                     columns=[
-                        TableColumn(name="column_1", type="any"),
-                        TableColumn(name="column_2", type="any"),
-                        TableColumn(name="column_3", type="any"),
+                        TableColumn(name="column_1", type=""),
+                        TableColumn(name="column_2", type=""),
+                        TableColumn(name="column_3", type=""),
                     ]
                 )
             )
@@ -261,6 +263,17 @@ def test_load_from_instance(
                 # final state will be updated
                 rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
 
+                for schema, table in [
+                    ("schema_1", "table_1"),
+                    ("schema_1", "table_2"),
+                    ("schema_2", "table_1"),
+                ]:
+                    rsps.add(
+                        rsps.GET,
+                        f"{ft_resource.api_connector_url}{DEFAULT_CONNECTOR_ID}/schemas/{schema}/tables/{table}/columns",
+                        json=get_sample_columns_response(),
+                    )
+
             result = materialize(all_assets)
             asset_materializations = [
                 event
@@ -268,6 +281,21 @@ def test_load_from_instance(
                 if event.event_type_value == "ASSET_MATERIALIZATION"
             ]
             assert len(asset_materializations) == 3
+
+            # Check that we correctly pull runtime schema metadata from the API
+            for mat in asset_materializations:
+                schema = mat.materialization.metadata.get("dagster/column_schema")
+                assert schema == MetadataValue.table_schema(
+                    TableSchema(
+                        columns=[
+                            TableColumn(name="column_1", type=""),
+                            TableColumn(name="column_2_renamed", type=""),
+                            TableColumn(name="column_3", type=""),
+                        ]
+                    )
+                ), f"{mat.asset_key} {schema}"
+
+
             asset_keys = set(
                 mat.event_specific_data.materialization.asset_key  # type: ignore
                 for mat in asset_materializations
