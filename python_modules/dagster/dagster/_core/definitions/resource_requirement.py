@@ -1,16 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Sequence, Type
 
-from typing_extensions import Annotated
-
-from dagster._record import ImportFrom, record
+from dagster._record import record
 from dagster._utils.merger import merge_dicts
 
 from ..errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from .utils import DEFAULT_IO_MANAGER_KEY
 
 if TYPE_CHECKING:
-    from dagster._config.pythonic_config.resource import CoercibleToResource
     from dagster._core.definitions.assets import AssetsDefinition
 
     from .resource_definition import ResourceDefinition
@@ -218,27 +215,6 @@ class ResourceDependencyRequirement(ResourceKeyRequirement):
     def describe_requirement(self) -> str:
         source_descriptor = f" by resource with key '{self.source_key}'" if self.source_key else ""
         return f"resource with key '{self.key}' required{source_descriptor}"
-
-
-@record
-class PartialResourceDependencyRequirement(ResourceRequirement):
-    class_name: str
-    attr_name: str
-    partial_resource: Annotated[
-        "CoercibleToResource", ImportFrom("dagster._config.pythonic_config.resource")
-    ]
-
-    def is_satisfied(self, resource_defs: Mapping[str, "ResourceDefinition"]):
-        from dagster._config.pythonic_config.resource import coerce_to_resource
-
-        return coerce_to_resource(self.partial_resource) in resource_defs.values()
-
-    def ensure_satisfied(self, resource_defs: Mapping[str, "ResourceDefinition"]):
-        if not self.is_satisfied(resource_defs):
-            raise DagsterInvalidDefinitionError(
-                f"Failed to resolve resource nested at {self.class_name}.{self.attr_name}. "
-                "Any partially configured, nested resources must be provided as a top level resource."
-            )
 
 
 def ensure_requirements_satisfied(
