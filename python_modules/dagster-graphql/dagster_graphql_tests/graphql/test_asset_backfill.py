@@ -27,7 +27,7 @@ from dagster_graphql.test.utils import (
 )
 
 ensure_dagster_tests_import()
-from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
     root_assets_different_partitions_same_downstream,
 )
 
