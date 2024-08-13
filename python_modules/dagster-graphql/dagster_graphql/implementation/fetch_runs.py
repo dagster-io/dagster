@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -435,14 +436,10 @@ def _fetch_runs_not_in_backfill(
     instance: DagsterInstance,
     cursor: Optional[str],
     limit: int,
-    created_before: Optional[float],
+    created_before: Optional[datetime.datetime],
 ) -> Sequence[RunRecord]:
     """Fetches limit RunRecords that are not part of a backfill and were created before a given timestamp."""
-    runs_filter = (
-        RunsFilter(created_before=datetime_from_timestamp(created_before))
-        if created_before
-        else None
-    )
+    runs_filter = RunsFilter(created_before=created_before) if created_before else None
 
     runs = []
     while len(runs) < limit:
@@ -485,10 +482,13 @@ def get_runs_feed_entries(
     fetch_limit = limit + 1
     # filter out any backfills/runs that are newer than the cursor timestamp. See RunsFeedCursor docstring
     # for case when theis is necessary
+    created_before_cursor = (
+        datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
+    )
     backfills = [
         GraphenePartitionBackfill(backfill)
         for backfill in instance.get_backfills(
-            cursor=cursor, limit=limit, created_before=runs_feed_cursor.timestamp
+            cursor=cursor, limit=limit, created_before=created_before_cursor
         )
     ]
     runs = [
@@ -497,7 +497,7 @@ def get_runs_feed_entries(
             instance,
             cursor=runs_feed_cursor.run_cursor,
             limit=fetch_limit,
-            created_before=runs_feed_cursor.timestamp,
+            created_before=created_before_cursor,
         )
     ]
 
