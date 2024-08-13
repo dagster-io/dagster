@@ -43,7 +43,7 @@ A common and recommended approach to passing data between assets is explicitly m
 
 <CodeExample filePath="guides/data-assets/passing-data-assets/passing-data-explicit.py" language="python" title="Using External Storage" />
 
-In this example, the first asset opens a connection to the SQLite database and writes data to it. The second asset opens a connection to the same database and reads data from it.
+In this example, the first asset opens a connection to the SQLite database and writes data to it. The second asset opens a connection to the same database and reads data from it. The dependency between the first asset and the second asset is made explicit through the asset's `deps` argument.
 
 The benefits of this approach are:
 - It's explicit and easy to understand how data is stored and retrieved
