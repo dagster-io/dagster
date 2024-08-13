@@ -75,7 +75,7 @@ each step would execute in a separate environment and would not have access to t
 :::
 
 The `people()` and `birds()` assets both write their dataframes to DuckDB 
-for persistent storage. The `combined_data()` asset requests data from both assets by adding them as parameters to the function, and the IO Manager handles the reading them from DuckDB and making them available to the `combined_data` function as dataframes.
+for persistent storage. The `combined_data()` asset requests data from both assets by adding them as parameters to the function, and the IO Manager handles the reading them from DuckDB and making them available to the `combined_data` function as dataframes. Note that when you use IO Managers you do not need to manually add the asset's dependencies through the `deps` argument.
 
 The benefits of this approach are:
 - The reading and writing of data is handled by the IO Manager, reducing boilerplate code
