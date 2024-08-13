@@ -1,4 +1,5 @@
 import re
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
@@ -18,8 +19,15 @@ def parse_asset_key_string(s: str) -> Sequence[str]:
     return list(filter(lambda x: x, re.split(ASSET_KEY_SPLIT_REGEX, s)))
 
 
+class AssetGraphEntityKey(ABC):
+    """Unique identifier for an entity in the AssetGraph."""
+
+    @abstractmethod
+    def to_user_string(self) -> str: ...
+
+
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
+class AssetKey(AssetGraphEntityKey, NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -38,6 +46,8 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         path (Union[str, Sequence[str]]): String, list of strings, or tuple of strings.  A list of
             strings represent the hierarchical structure of the asset_key.
     """
+
+    path: Sequence[str]
 
     def __new__(cls, path: Union[str, Sequence[str]]):
         if isinstance(path, str):
@@ -173,13 +183,13 @@ def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence
 
 
 @whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
-class AssetCheckKey(NamedTuple):
+class AssetCheckKey(
+    AssetGraphEntityKey,
+    NamedTuple("_AssetCheckKey", [("asset_key", PublicAttr[AssetKey]), ("name", PublicAttr[str])]),
+):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
     check name uniquely identifies an asset check within a deployment.
     """
-
-    asset_key: PublicAttr[AssetKey]
-    name: PublicAttr[str]
 
     @staticmethod
     def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
