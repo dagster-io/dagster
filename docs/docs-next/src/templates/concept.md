@@ -33,15 +33,19 @@ Using [TOPIC] helps you:
 
 ---
 
-## Prerequisites
-
 <!-- This section lists the prerequisites users must complete before they should/can proceed. For concepts, we should list the other concepts they should be familiar with first. -->
 
-Before continuing, you should be familiar with:
+<details>
+  <summary>Prerequisites</summary>
 
+To follow the steps in this guide, you'll need:
+
+- A basic understanding of Dagster concepts such as assets and resources
 <!-- - Ex: To use asset checks, users should understand Asset definitions first
 - Another one
 - One more -->
+
+</details>
 
 ---
 

@@ -11,15 +11,19 @@ By the end of this guide, you will [a sentence or list about what will be achiev
 
 ---
 
-## Prerequisites
+<!-- This section lists the prerequisites users must complete before they should/can proceed. For concepts, we should list the other concepts they should be familiar with first. -->
 
-<!-- This section lists the prerequisites users must complete before they should/can proceed with the guide. -->
+<details>
+  <summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 
-- A prerequisite, ex: "Familiarity with Asset definitions"
-- Another prerequisite, ex: "To install <this> library"
-- One more
+- A basic understanding of Dagster concepts such as assets and resources
+<!-- - Ex: To use asset checks, users should understand Asset definitions first
+- Another one
+- One more -->
+
+</details>
 
 ---
 
