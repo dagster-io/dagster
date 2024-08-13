@@ -52,7 +52,7 @@ def _strip_quotes_target_table_name(target_table_name: str) -> str:
     return target_table_name.replace('"', "")
 
 
-INSERT_REGEX: re.Pattern[str] = re.compile(r".*inserted (\d+) rows into (.*) in.*")
+INSERT_REGEX = re.compile(r".*inserted (\d+) rows into (.*) in.*")
 
 
 def _get_target_table_name(stream_name: str, sling_cli: "SlingResource") -> Optional[str]:
