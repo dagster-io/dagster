@@ -4,272 +4,273 @@
  * work well for content-centric websites.
  */
 @font-face {
-  font-family: 'Geist';
-  src: url('/fonts/GeistVF.woff') format('woff');
+	font-family: "Geist";
+	src: url("/fonts/GeistVF.woff") format("woff");
 }
 
 @font-face {
-  font-family: 'Geist-Mono';
-  src: url('/fonts/GeistMonoVF.woff') format('woff');
+	font-family: "Geist-Mono";
+	src: url("/fonts/GeistMonoVF.woff") format("woff");
 }
 
 /* You can override the default Infima variables here. */
 /* Some styles heavily influenced from: https://github.com/electron/website/blob/main/src/css/custom.scss */
 :root {
+	--ifm-font-family-base: "Geist", "Inter", "Arial", sans-serif;
+	--ifm-heading-font-family: "Geist", "Inter", "Arial", sans-serif;
+	--ifm-font-family-monospace: "Geist-Mono", monospace;
 
-  --ifm-font-family-base: 'Geist';
-  --ifm-heading-font-family: 'Geist';
-  --ifm-font-family-monospace: 'Geist-Mono';
+	// modified base colors
+	--ifm-color-primary: var(--dagster-color-primary-500);
+	--ifm-color-primary-dark: var(--dagster-color-primary-700);
+	--ifm-color-primary-darker: var(--dagster-color-primary-900);
+	--ifm-color-primary-darkest: var(--dagster-color-gray-900);
+	--ifm-color-primary-light: var(--dagster-color-primary-300);
+	--ifm-color-primary-lighter: var(--dagster-color-primary-100);
+	--ifm-color-primary-lightest: var(--dagster-color-gray-50);
 
-  // modified base colors
-  --ifm-color-primary: var(--dagster-color-primary-500);
-  --ifm-color-primary-dark: var(--dagster-color-primary-700);
-  --ifm-color-primary-darker: var(--dagster-color-primary-900);
-  --ifm-color-primary-darkest: var(--dagster-color-gray-900);
-  --ifm-color-primary-light: var(--dagster-color-primary-300);
-  --ifm-color-primary-lighter: var(--dagster-color-primary-100);
-  --ifm-color-primary-lightest: var(--dagster-color-gray-50);
+	// modified base vars
+	--ifm-code-font-size: 90%;
+	--ifm-navbar-height: 70px;
 
-  // modified base vars
-  --ifm-code-font-size: 90%;
-  --ifm-navbar-height: 70px;
+	// brand-specific colors
+	--dagster-color-light: #deddff; // Lavender
+	--dagster-color-mid: #4f43dd; // Blurple
+	--dagster-color-dark: #231f1b; // Gray 900
+	--dagster-color-secondary-light: #a7ffbf; // Sea Foam
+	--dagster-color-secondary-mid: #21463d; // Gable Green
+	--dagster-color-blurple-dark: #3f36b1; // Blurple Darker
+	--dagster-color-gable-green-dark: #122f2b; // Gable Green Darker
+	--dagster-color-gray-500: #86837f;
+	--dagster-color-gray-200: #dad8d6;
+	--dagster-color-white: #ffffff;
 
-  // brand-specific colors
-  --dagster-color-light: #deddff; // Lavender
-  --dagster-color-mid: #4f43dd; // Blurple
-  --dagster-color-dark: #231f1b; // Gray 900
-  --dagster-color-secondary-light: #a7ffbf; // Sea Foam
-  --dagster-color-secondary-mid: #21463d; // Gable Green
-  --dagster-color-blurple-dark: #3f36b1; // Blurple Darker
-  --dagster-color-gable-green-dark: #122f2b; // Gable Green Darker
-  --dagster-color-gray-500: #86837f;
-  --dagster-color-gray-200: #dad8d6;
-  --dagster-color-white: #ffffff;
+	// Add new colors from the palette
+	--dagster-color-primary-900: #09086e;
+	--dagster-color-primary-700: #0e0ca7;
+	--dagster-color-primary-500: #4f43dd;
+	--dagster-color-primary-300: #b9b4f1;
+	--dagster-color-primary-100: #edecfc;
 
-  // Add new colors from the palette
-  --dagster-color-primary-900: #09086e;
-  --dagster-color-primary-700: #0e0ca7;
-  --dagster-color-primary-500: #4f43dd;
-  --dagster-color-primary-300: #b9b4f1;
-  --dagster-color-primary-100: #edecfc;
+	--dagster-color-gray-900: #231f1b;
+	--dagster-color-gray-800: #3a3631;
+	--dagster-color-gray-700: #524e48;
+	--dagster-color-gray-600: #6b6762;
+	--dagster-color-gray-400: #a19d99;
+	--dagster-color-gray-300: #bdbab7;
+	--dagster-color-gray-150: #f1f1ef;
+	--dagster-color-gray-100: #f5f4f2;
+	--dagster-color-gray-50: #faf9f7;
 
-  --dagster-color-gray-900: #231f1b;
-  --dagster-color-gray-800: #3a3631;
-  --dagster-color-gray-700: #524e48;
-  --dagster-color-gray-600: #6b6762;
-  --dagster-color-gray-400: #a19d99;
-  --dagster-color-gray-300: #bdbab7;
-  --dagster-color-gray-150: #f1f1ef;
-  --dagster-color-gray-100: #f5f4f2;
-  --dagster-color-gray-50: #faf9f7;
+	--dagster-color-yellow-50: #f8f2eb;
+	--dagster-color-yellow-200: #fbe9b5;
+	--dagster-color-yellow-500: #fcbc41;
+	--dagster-color-yellow-700: #a55802;
 
-  --dagster-color-yellow-50: #f8f2eb;
-  --dagster-color-yellow-200: #fbe9b5;
-  --dagster-color-yellow-500: #fcbc41;
-  --dagster-color-yellow-700: #a55802;
+	--dagster-color-slate: #697690;
+	--dagster-color-red: #ff0000;
+	--dagster-color-lavender-darker: #c9c6fa;
+	--dagster-color-twitter-gray: #f7f7f7;
+	--dagster-color-gable-green-08: rgba(22, 59, 54, 0.08);
 
-  --dagster-color-slate: #697690;
-  --dagster-color-red: #ff0000;
-  --dagster-color-lavender-darker: #c9c6fa;
-  --dagster-color-twitter-gray: #f7f7f7;
-  --dagster-color-gable-green-08: rgba(22, 59, 54, 0.08);
+	// custom vars
+	--dagster-heading: var(--dagster-color-mid);
+	--dagster-inline-code: var(--dagster-color-secondary-mid);
+	--ifm-navbar-item-padding-horizontal: 8px;
 
-  // custom vars
-  --dagster-heading: var(--dagster-color-mid);
-  --dagster-inline-code: var(--dagster-color-secondary-mid);
-  --ifm-navbar-item-padding-horizontal: 8px;
+	// docusaurus variables
+	--ifm-hover-overlay: rgba(162, 236, 251, 0.2);
+	--ifm-link-color: var(--dagster-color-primary-900);
+	--ifm-menu-color-active: var(--dagster-color-dark);
+	// these require !important because of some weirdness in CSS ordering
+	// see: https://github.com/facebook/docusaurus/issues/3678
+	--docusaurus-highlighted-code-line-bg: var(--dagster-color-yellow-50);
 
-  // docusaurus variables
-  --ifm-hover-overlay: rgba(162, 236, 251, 0.2);
-  --ifm-link-color: var(--dagster-color-primary-900);
-  --ifm-menu-color-active: var(--dagster-color-dark);
-  // these require !important because of some weirdness in CSS ordering
-  // see: https://github.com/facebook/docusaurus/issues/3678
-  --docusaurus-highlighted-code-line-bg: var(--dagster-color-yellow-50);
+	// infima shadow levels
+	// generated from https://www.joshwcomeau.com/shadow-palette/
+	--shadow-color: 0deg 0% 63%;
+	--shadow-elevation-low: 0px 1px 1px hsl(var(--shadow-color) / 0.07),
+		0px 1.4px 1.4px -1.8px hsl(var(--shadow-color) / 0.06),
+		-0.1px 3px 2.9px -3.5px hsl(var(--shadow-color) / 0.04);
+	--shadow-elevation-medium: 0px 1px 1px hsl(var(--shadow-color) / 0.06),
+		0px 1.8px 1.7px -0.9px hsl(var(--shadow-color) / 0.05),
+		-0.1px 3.5px 3.4px -1.8px hsl(var(--shadow-color) / 0.05),
+		-0.1px 7.5px 7.3px -2.7px hsl(var(--shadow-color) / 0.04),
+		-0.3px 15px 14.5px -3.5px hsl(var(--shadow-color) / 0.03);
+	--shadow-elevation-high: 0px 1px 1px hsl(var(--shadow-color) / 0.06),
+		0px 2.1px 2px -0.4px hsl(var(--shadow-color) / 0.05),
+		-0.1px 3.4px 3.3px -0.8px hsl(var(--shadow-color) / 0.05),
+		-0.1px 5.2px 5px -1.2px hsl(var(--shadow-color) / 0.05),
+		-0.1px 7.9px 7.6px -1.6px hsl(var(--shadow-color) / 0.04),
+		-0.2px 12px 11.6px -2px hsl(var(--shadow-color) / 0.04),
+		-0.3px 17.9px 17.3px -2.4px hsl(var(--shadow-color) / 0.04),
+		-0.5px 25.9px 25.1px -2.8px hsl(var(--shadow-color) / 0.03),
+		-0.7px 36.5px 35.3px -3.2px hsl(var(--shadow-color) / 0.03),
+		-0.9px 50px 48.4px -3.5px hsl(var(--shadow-color) / 0.03);
 
-  // infima shadow levels
-  // generated from https://www.joshwcomeau.com/shadow-palette/
-  --shadow-color: 0deg 0% 63%;
-  --shadow-elevation-low: 0px 1px 1px hsl(var(--shadow-color) / 0.07),
-    0px 1.4px 1.4px -1.8px hsl(var(--shadow-color) / 0.06),
-    -0.1px 3px 2.9px -3.5px hsl(var(--shadow-color) / 0.04);
-  --shadow-elevation-medium: 0px 1px 1px hsl(var(--shadow-color) / 0.06),
-    0px 1.8px 1.7px -0.9px hsl(var(--shadow-color) / 0.05),
-    -0.1px 3.5px 3.4px -1.8px hsl(var(--shadow-color) / 0.05),
-    -0.1px 7.5px 7.3px -2.7px hsl(var(--shadow-color) / 0.04),
-    -0.3px 15px 14.5px -3.5px hsl(var(--shadow-color) / 0.03);
-  --shadow-elevation-high: 0px 1px 1px hsl(var(--shadow-color) / 0.06),
-    0px 2.1px 2px -0.4px hsl(var(--shadow-color) / 0.05),
-    -0.1px 3.4px 3.3px -0.8px hsl(var(--shadow-color) / 0.05),
-    -0.1px 5.2px 5px -1.2px hsl(var(--shadow-color) / 0.05),
-    -0.1px 7.9px 7.6px -1.6px hsl(var(--shadow-color) / 0.04),
-    -0.2px 12px 11.6px -2px hsl(var(--shadow-color) / 0.04),
-    -0.3px 17.9px 17.3px -2.4px hsl(var(--shadow-color) / 0.04),
-    -0.5px 25.9px 25.1px -2.8px hsl(var(--shadow-color) / 0.03),
-    -0.7px 36.5px 35.3px -3.2px hsl(var(--shadow-color) / 0.03),
-    -0.9px 50px 48.4px -3.5px hsl(var(--shadow-color) / 0.03);
-
-  --ifm-global-shadow-lw: var(--shadow-elevation-low);
-  --ifm-global-shadow-md: var(--shadow-elevation-medium);
-  --ifm-global-shadow-tl: var(--shadow-elevation-high);
+	--ifm-global-shadow-lw: var(--shadow-elevation-low);
+	--ifm-global-shadow-md: var(--shadow-elevation-medium);
+	--ifm-global-shadow-tl: var(--shadow-elevation-high);
 }
 
 :root[data-theme="dark"] {
-  // modified base colors
-  --ifm-color-primary: #00aeff;
-  --ifm-color-primary-dark: #0057c2;
-  --ifm-color-primary-darker: #4d4d4f;
-  --ifm-color-primary-darkest: #000047;
-  --ifm-color-primary-light: #4cc8ff;
-  --ifm-color-primary-lighter: #97e1ff;
-  --ifm-color-primary-lightest: #e3f7ff;
+	// modified base colors
+	--ifm-color-primary: #00aeff;
+	--ifm-color-primary-dark: #0057c2;
+	--ifm-color-primary-darker: #4d4d4f;
+	--ifm-color-primary-darkest: #000047;
+	--ifm-color-primary-light: #4cc8ff;
+	--ifm-color-primary-lighter: #97e1ff;
+	--ifm-color-primary-lightest: #e3f7ff;
 
-  // docusaurus
-  --docusaurus-highlighted-code-line-bg: rgb(13, 15, 28);
+	// docusaurus
+	--docusaurus-highlighted-code-line-bg: rgb(13, 15, 28);
 
-  // modified base vars
-  --ifm-menu-color: var(--ifm-color-primary-lightest);
-  --ifm-link-color: var(--dagster-color-light);
-  --ifm-menu-color-active: var(--dagster-color-light);
+	// modified base vars
+	--ifm-menu-color: var(--ifm-color-primary-lightest);
+	--ifm-link-color: var(--dagster-color-light);
+	--ifm-menu-color-active: var(--dagster-color-light);
 
-  // custom vars
-  --dagster-heading: var(--ifm-color-primary-lightest);
-  --dagster-inline-code: var(--dagster-color-secondary-light);
+	// custom vars
+	--dagster-heading: var(--ifm-color-primary-lightest);
+	--dagster-inline-code: var(--dagster-color-secondary-light);
 }
 
-
+html {
+	font-family: var(--ifm-font-family-base);
+}
 /* Main content */
 .theme-doc-markdown {
-  max-width: 900px;
-  margin: 0 auto;
-  margin-top: 1rem;
-  padding-left: 3rem;
+	max-width: 900px;
+	margin: 0 auto;
+	margin-top: 1rem;
+	padding-left: 3rem;
 }
 
 /* Custom code for PyObject */
 a.pyobject {
-  color: var(--dagster-color-red);
+	color: var(--dagster-color-red);
 }
 
 .navbar {
-  &--dark {
-    --ifm-navbar-background-color: var(--dagster-color-gray-900);
-    --ifm-navbar-link-color: var(--dagster-color-light);
-  }
+	&--dark {
+		--ifm-navbar-background-color: var(--dagster-color-gray-900);
+		--ifm-navbar-link-color: var(--dagster-color-light);
+	}
 
-  &__inner {
-    max-width: 1400px;
-    margin: 0 0;
-  }
+	&__inner {
+		max-width: 1400px;
+		margin: 0 0;
+	}
 
-  &__item {
-    // use margin instead of padding so that the border-bottom
-    // on active looks better
-    padding: 0;
-    margin: var(--ifm-navbar-item-padding-vertical)
-      var(--ifm-navbar-item-padding-horizontal);
-  }
+	&__item {
+		// use margin instead of padding so that the border-bottom
+		// on active looks better
+		padding: 0;
+		margin: var(--ifm-navbar-item-padding-vertical)
+			var(--ifm-navbar-item-padding-horizontal);
+	}
 
-  &__link {
-    font-weight: var(--ifm-font-weight-normal);
-    border-bottom: 3px solid transparent;
+	&__link {
+		font-weight: var(--ifm-font-weight-normal);
+		border-bottom: 3px solid transparent;
 
-    &--active {
-      color: var(--dagster-color-light);
-      border-bottom-color: var(--ifm-link-color);
-    }
-  }
+		&--active {
+			color: var(--dagster-color-light);
+			border-bottom-color: var(--ifm-link-color);
+		}
+	}
 }
 
 .footer {
-  &--dark {
-    --ifm-footer-background-color: var(--dagster-color-gray-900);
-  }
+	&--dark {
+		--ifm-footer-background-color: var(--dagster-color-gray-900);
+	}
 
-  .footer__logo {
-    max-width: 80px;
-  }
+	.footer__logo {
+		max-width: 80px;
+	}
 }
 
 .markdown {
-  line-height: 150%;
+	line-height: 150%;
 
-  code {
-    font-size: var(--ifm-code-font-size)
-  }
+	code {
+		font-size: var(--ifm-code-font-size);
+	}
 
-  a {
-    font-weight: var(--ifm-font-weight-semibold);
-    code {
-      font-weight: var(--ifm-font-weight-bold);
-    }
-  }
+	a {
+		font-weight: var(--ifm-font-weight-semibold);
+		code {
+			font-weight: var(--ifm-font-weight-bold);
+		}
+	}
 
-  h1,
-  h1:first-child,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    --ifm-h1-font-size: 2rem;
-    --ifm-h2-font-size: 1.5rem;
-    --ifm-h3-font-size: 1.3rem;
-    --ifm-h4-font-size: 1rem;
-    --ifm-h5-font-size: 0.8rem;
-  }
+	h1,
+	h1:first-child,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		--ifm-h1-font-size: 2rem;
+		--ifm-h2-font-size: 1.5rem;
+		--ifm-h3-font-size: 1.3rem;
+		--ifm-h4-font-size: 1rem;
+		--ifm-h5-font-size: 0.8rem;
+	}
 
-  // We want this to only apply to inline code, so don't apply
-  // this color to ``` code blocks nor any headings.
-  :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
-    border: none;
-  }
+	// We want this to only apply to inline code, so don't apply
+	// this color to ``` code blocks nor any headings.
+	:not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
+		border: none;
+	}
 
-  // don't apply --dagster-inline-code colors to admonitions
-  // as well
-  .admonition {
-    code {
-      color: inherit;
-    }
-  }
+	// don't apply --dagster-inline-code colors to admonitions
+	// as well
+	.admonition {
+		code {
+			color: inherit;
+		}
+	}
 }
 
 .button {
-  &--outline {
-    border: 1px solid;
-    color: var(--ifm-color-primary);
-    &:hover {
-      color: var(--ifm-color-primary-dark);
-    }
-  }
+	&--outline {
+		border: 1px solid;
+		color: var(--ifm-color-primary);
+		&:hover {
+			color: var(--ifm-color-primary-dark);
+		}
+	}
 }
 
 // sidebar
 .menu {
-  &__link {
-    font-size: 1rem;
-    font-weight: var(--ifm-font-weight-normal);
+	&__link {
+		font-size: 1rem;
+		font-weight: var(--ifm-font-weight-normal);
 
-    &--active {
-      font-weight: var(--ifm-font-weight-bold);
-      color: var(--dagster-color-blurple-dark);
-    }
-  }
+		&--active {
+			font-weight: var(--ifm-font-weight-bold);
+			color: var(--dagster-color-blurple-dark);
+		}
+	}
 }
 
 .card {
-  border: 1px solid rgba(200, 200, 200, 0.3);
+	border: 1px solid rgba(200, 200, 200, 0.3);
 }
 
 .table-of-contents__link--active {
-  font-weight: var(--ifm-font-weight-bold);
+	font-weight: var(--ifm-font-weight-bold);
 }
 
 .pagination-nav {
-  &__link {
-    border: 0;
-    border-radius: 0;
-    border-top: 1px solid var(--dagster-color-gray-300);
-    color: var(--dagster-color-gray-900);
-  }
+	&__link {
+		border: 0;
+		border-radius: 0;
+		border-top: 1px solid var(--dagster-color-gray-300);
+		color: var(--dagster-color-gray-900);
+	}
 }
