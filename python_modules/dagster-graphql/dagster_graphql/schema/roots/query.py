@@ -35,7 +35,7 @@ from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations imp
 )
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
-from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info, get_runs_feed_entries
 from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluation,
     GrapheneAssetConditionEvaluationRecordsOrError,
@@ -167,6 +167,7 @@ from ..runs import (
     GrapheneRunTagsOrError,
     parse_run_config_input,
 )
+from ..runs_feed import GrapheneRunsFeedConnectionOrError
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from ..test import GrapheneTestFields
@@ -347,6 +348,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneRunOrError),
         runId=graphene.NonNull(graphene.ID),
         description="Retrieve a run by its run id.",
+    )
+    runsFeedOrError = graphene.Field(
+        graphene.NonNull(GrapheneRunsFeedConnectionOrError),
+        limit=graphene.NonNull(graphene.Int),
+        cursor=graphene.String(),
+        description="Retrieve entries for the Runs Feed after applying cursor and limit.",
     )
     runTagKeysOrError = graphene.Field(
         GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
@@ -811,6 +818,14 @@ class GrapheneQuery(graphene.ObjectType):
 
     async def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
         return await gen_run_by_id(graphene_info, runId)
+
+    def resolve_runsFeedOrError(
+        self,
+        graphene_info: ResolveInfo,
+        limit: int,
+        cursor: Optional[str] = None,
+    ):
+        return get_runs_feed_entries(graphene_info=graphene_info, cursor=cursor, limit=limit)
 
     @capture_error
     def resolve_partitionSetsOrError(
