@@ -58,12 +58,12 @@ class DagsterSdfTranslator:
         return self._settings
 
     @public
-    def get_asset_key(self, fqn: str) -> AssetKey:
-        return default_asset_key_fn(fqn)
+    def get_asset_key(self, catalog: str, schema: str, table: str) -> AssetKey:
+        return default_asset_key_fn(catalog, schema, table)
 
     @public
-    def get_check_key_for_test(self, fqn: str) -> AssetCheckKey:
-        return default_asset_check_key_fn(fqn)
+    def get_check_key_for_test(self, catalog: str, schema: str, table: str) -> AssetCheckKey:
+        return default_asset_check_key_fn(catalog, schema, table)
 
     @public
     def get_description(

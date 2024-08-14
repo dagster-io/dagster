@@ -1,18 +1,10 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, Iterator, List, Literal, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 import polars as pl
-from dagster import (
-    AssetCheckSpec,
-    AssetDep,
-    AssetKey,
-    AssetObservation,
-    AssetOut,
-    Nothing,
-    TableColumn,
-)
+from dagster import AssetCheckSpec, AssetKey, AssetObservation, AssetSpec, TableColumn
 from dagster._core.definitions.metadata import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -23,7 +15,7 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._record import IHaveNew, record_custom
 
-from .asset_utils import dagster_name_fn, get_info_schema_dir, get_output_dir
+from .asset_utils import get_info_schema_dir, get_output_dir
 from .constants import (
     DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
     SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE,
@@ -104,18 +96,14 @@ class SdfInformationSchema(IHaveNew):
         )
 
     def build_sdf_multi_asset_args(
-        self, io_manager_key: Optional[str], dagster_sdf_translator: DagsterSdfTranslator
+        self, dagster_sdf_translator: DagsterSdfTranslator
     ) -> Tuple[
-        Sequence[AssetDep],
-        Dict[str, AssetOut],
-        Dict[str, Set[AssetKey]],
+        Sequence[AssetSpec],
         Sequence[AssetCheckSpec],
     ]:
-        deps: Sequence[AssetDep] = []
         table_id_to_dep: Dict[str, AssetKey] = {}
         table_id_to_upstream: Dict[str, Set[AssetKey]] = {}
-        outs: Dict[str, AssetOut] = {}
-        internal_asset_deps: Dict[str, Set[AssetKey]] = {}
+        asset_specs: Sequence[AssetSpec] = []
         asset_checks: Sequence[AssetCheckSpec] = []
         origin_remote_tables: Set[str] = set()
 
@@ -124,7 +112,9 @@ class SdfInformationSchema(IHaveNew):
             ~pl.col("purpose").is_in(["system", "external-system"])
         )
 
-        # Step 1: Build Dagster Asset Deps
+        # Step 1: Build Map of Table Deps to Rows
+        table_rows_deps = {row["table_id"]: row for row in table_deps.rows(named=True)}
+        # Step 2: Build Dagster Asset Deps
         for table_row in table_deps.rows(named=True):
             # Iterate over the meta column to find the dagster-asset-key
             if len(table_row["meta"]) > 0:
@@ -132,11 +122,9 @@ class SdfInformationSchema(IHaveNew):
                     # If the meta_map has a key of dagster-asset-key, add it to the deps
                     if meta_map["keys"] == "dagster-asset-key":
                         dep_asset_key = meta_map["values"]
-                        deps.append(AssetDep(asset=dep_asset_key))
                         table_id_to_dep[table_row["table_id"]] = AssetKey(dep_asset_key)
                     elif meta_map["keys"] == "dagster-depends-on-asset-key":
                         dep_asset_key = meta_map["values"]
-                        deps.append(AssetDep(asset=dep_asset_key))
                         # Currently, we only support one upstream asset
                         table_id_to_upstream.setdefault(table_row["table_id"], set()).add(
                             AssetKey(dep_asset_key)
@@ -146,10 +134,11 @@ class SdfInformationSchema(IHaveNew):
             elif table_row["origin"] == "remote":
                 origin_remote_tables.add(table_row["table_id"])
 
-        # Step 2: Build Dagster Asset Outs and Internal Asset Deps
+        # Step 3: Build Dagster Asset Outs and Internal Asset Deps
         for table_row in table_deps.rows(named=True):
-            asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
-            output_name = dagster_name_fn(table_row["table_id"])
+            asset_key = dagster_sdf_translator.get_asset_key(
+                table_row["catalog_name"], table_row["schema_name"], table_row["table_name"]
+            )
             code_references = None
             if dagster_sdf_translator.settings.enable_code_references:
                 code_references = self._extract_code_ref(table_row)
@@ -159,29 +148,31 @@ class SdfInformationSchema(IHaveNew):
                 table_row["table_id"] not in table_id_to_dep
                 and table_row["table_id"] not in origin_remote_tables
             ):
-                outs[output_name] = AssetOut(
-                    key=asset_key,
-                    dagster_type=Nothing,
-                    io_manager_key=io_manager_key,
-                    description=dagster_sdf_translator.get_description(
-                        table_row,
-                        self.workspace_dir,
-                        get_output_dir(self.target_dir, self.environment),
-                    ),
-                    is_required=False,
-                    metadata=metadata,
-                )
-                # Remove origin remote tables from internal asset deps
-                internal_asset_deps[output_name] = {
+                dependencies = {
                     table_id_to_dep[dep]
                     if dep
                     in table_id_to_dep  # If the dep is a dagster dependency, use the meta asset key
                     else dagster_sdf_translator.get_asset_key(
-                        dep
+                        table_rows_deps[dep]["catalog_name"],
+                        table_rows_deps[dep]["schema_name"],
+                        table_rows_deps[dep]["table_name"],
                     )  # Otherwise, use the translator to get the asset key
                     for dep in table_row["depends_on"]
                     if dep not in origin_remote_tables and dep in table_deps["table_id"]
                 }.union(table_id_to_upstream.get(table_row["table_id"], set()))
+                asset_specs.append(
+                    AssetSpec(
+                        key=asset_key,
+                        deps=dependencies,
+                        description=dagster_sdf_translator.get_description(
+                            table_row,
+                            self.workspace_dir,
+                            get_output_dir(self.target_dir, self.environment),
+                        ),
+                        metadata=metadata,
+                        skippable=True,
+                    )
+                )
                 # This registers an asset check on all inner tables, since SDF will execute all tests as a single query (greedy approach)
                 # If no table or column tests are registered, they will simply be skipped
                 if dagster_sdf_translator.settings.enable_asset_checks:
@@ -193,7 +184,7 @@ class SdfInformationSchema(IHaveNew):
                             asset=asset_key,
                         )
                     )
-        return deps, outs, internal_asset_deps, asset_checks
+        return asset_specs, asset_checks
 
     def get_columns(self) -> Dict[str, List[TableColumn]]:
         columns = self.read_table("columns")[
@@ -253,8 +244,11 @@ class SdfInformationSchema(IHaveNew):
         tables = self.read_table("tables").filter(
             ~pl.col("purpose").is_in(["system", "external-system"])
         )
+
         for table_row in tables.rows(named=True):
-            asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
+            asset_key = dagster_sdf_translator.get_asset_key(
+                table_row["catalog_name"], table_row["schema_name"], table_row["table_name"]
+            )
             code_references = None
             if dagster_sdf_translator.settings.enable_code_references:
                 code_references = self._extract_code_ref(table_row)
