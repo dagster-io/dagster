@@ -1086,6 +1086,12 @@ class ExternalPartitionSet:
         # names
         return self._external_partition_set_data.external_partitions_data is not None
 
+    def has_partitions_definition(self) -> bool:
+        # Partition sets from older versions of Dagster as well as partition sets using
+        # a DynamicPartitionsDefinition require calling out to user code to get the
+        # partitions definition
+        return self._external_partition_set_data.external_partitions_data is not None
+
     def get_partitions_definition(self) -> PartitionsDefinition:
         partitions_data = self._external_partition_set_data.external_partitions_data
         if partitions_data is None:

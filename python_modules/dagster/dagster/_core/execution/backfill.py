@@ -315,7 +315,7 @@ class PartitionBackfill(
         return self._replace(status=status)
 
     def with_partition_checkpoint(self, last_submitted_partition_name):
-        check.str_param(last_submitted_partition_name, "last_submitted_partition_name")
+        check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name")
         return self._replace(last_submitted_partition_name=last_submitted_partition_name)
 
     def with_submitting_run_requests(
