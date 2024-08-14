@@ -125,11 +125,8 @@ By implementing this use case, you will have an automated system that detects ne
 
 ## Troubleshooting
 
-- **Issue:** The sensor is not detecting new files.
-  - **Solution:** Ensure that your AWS credentials have the necessary permissions to list and read files in the source S3 bucket.
-
-- **Issue:** The file is not being copied to the backup bucket.
-  - **Solution:** Verify that your AWS credentials have the necessary permissions to write to the backup S3 bucket.
+- **Sensor is not detecting new files:** Ensure that your AWS credentials have the necessary permissions to list and read files in the source S3 bucket.
+- **Object is not being copied to bucket:** Verify that your AWS credentials have the necessary permissions to write to the backup S3 bucket.
 
 ---
 
