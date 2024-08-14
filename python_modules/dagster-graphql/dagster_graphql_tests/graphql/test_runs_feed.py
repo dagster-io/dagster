@@ -108,14 +108,10 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             },
         )
         prev_run_time = None
-        id_to_timestamp_mapping = {}
         for res in result.data["runsFeedOrError"]["results"]:
-            id_to_timestamp_mapping[res["id"]] = res["creationTime"]
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
-
-        print(id_to_timestamp_mapping)
 
         result = execute_dagster_graphql(
             gql_context_with_runs_and_backfills.create_request_context(),
@@ -131,14 +127,10 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
 
         assert len(result.data["runsFeedOrError"]["results"]) == 10
         prev_run_time = None
-        id_to_timestamp_mapping = {}
         for res in result.data["runsFeedOrError"]["results"]:
-            id_to_timestamp_mapping[res["id"]] = res["creationTime"]
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
-
-        print(id_to_timestamp_mapping)
 
         assert result.data["runsFeedOrError"]["hasMore"]
         old_cursor = result.data["runsFeedOrError"]["cursor"]
@@ -153,20 +145,11 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        id_to_timestamp_mapping = {}
-        for res in result.data["runsFeedOrError"]["results"]:
-            id_to_timestamp_mapping[res["id"]] = res["creationTime"]
-
+        assert len(result.data["runsFeedOrError"]["results"]) == 10
         for res in result.data["runsFeedOrError"]["results"]:
             if prev_run_time:
                 assert res["creationTime"] <= prev_run_time
             prev_run_time = res["creationTime"]
-
-        print(id_to_timestamp_mapping)
-
-        assert len(result.data["runsFeedOrError"]["results"]) == 10
-
-        # assert False
 
         assert not result.data["runsFeedOrError"]["hasMore"]
 

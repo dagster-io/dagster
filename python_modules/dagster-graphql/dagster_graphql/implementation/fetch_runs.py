@@ -488,7 +488,9 @@ def get_runs_feed_entries(
     backfills = [
         GraphenePartitionBackfill(backfill)
         for backfill in instance.get_backfills(
-            cursor=cursor, limit=limit, created_before=created_before_cursor
+            cursor=runs_feed_cursor.backfill_cursor,
+            limit=limit,
+            created_before=created_before_cursor,
         )
     ]
     runs = [
