@@ -1,6 +1,7 @@
 ---
 title: "Loading a CSV file to Snowflake"
 description: "This use case demonstrates how to load a CSV file into a Snowflake table using Dagster. The objective is to automate the process of reading a CSV file and writing its contents to a Snowflake table using a COPY INTO query."
+tags: ["snowflake", "csv"]
 ---
 
 # Loading a CSV File to a Snowflake

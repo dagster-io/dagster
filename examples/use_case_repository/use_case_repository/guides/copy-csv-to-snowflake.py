@@ -12,7 +12,6 @@ snowflake = SnowflakeResource(
 )
 
 
-# highlight-start
 @asset
 def load_csv_to_snowflake(context: AssetExecutionContext, snowflake: SnowflakeResource):
     csv_file_path = "path/to/your/file.csv"
@@ -32,4 +31,3 @@ def load_csv_to_snowflake(context: AssetExecutionContext, snowflake: SnowflakeRe
 
 
 defs = Definitions(assets=[load_csv_to_snowflake], resources={"snowflake": snowflake})
-# highlight-end
