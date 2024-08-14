@@ -16,8 +16,8 @@ from dagster import (
 from .constants import SDF_TARGET_DIR
 
 
-def dagster_name_fn(table_id: str) -> str:
-    return table_id.replace(".", "_").replace("-", "_").replace("*", "_star")
+def dagster_name_fn(catalog: str, schema: str, table: str) -> str:
+    return f"{catalog}__{schema}__{table}"
 
 
 def default_asset_key_fn(catalog: str, schema: str, table: str) -> AssetKey:

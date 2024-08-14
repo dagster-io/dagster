@@ -78,7 +78,11 @@ class SdfCliEventMessage:
             event = (
                 Output(
                     value=None,
-                    output_name=dagster_name_fn(table_id),
+                    output_name=dagster_name_fn(
+                        catalog,
+                        schema,
+                        table,
+                    ),
                     metadata=default_metadata,
                 )
                 if has_asset_def
