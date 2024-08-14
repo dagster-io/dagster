@@ -8,6 +8,7 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import deprecated_param
+from dagster._core.storage.tags import STORAGE_KIND_TAG
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
@@ -51,7 +52,7 @@ def build_dlt_asset_specs(
             },
             owners=dagster_dlt_translator.get_owners(dlt_source_resource),
             tags={
-                "dagster/storage_kind": destination_type,
+                STORAGE_KIND_TAG: destination_type,
                 **dagster_dlt_translator.get_tags(dlt_source_resource),
             },
         )
