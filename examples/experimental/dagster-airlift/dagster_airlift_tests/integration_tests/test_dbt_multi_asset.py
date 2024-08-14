@@ -7,6 +7,7 @@ import pytest
 from dagster import AssetKey, AssetsDefinition
 from dagster._core.test_utils import environ
 from dagster_airlift.dbt import DbtProjectDefs
+from dagster_dbt import DbtProject
 
 
 @pytest.fixture(name="dbt_project_dir")
@@ -34,7 +35,8 @@ def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
         dbt_project_dir
     ), "Expected dbt project dir to be set as env var"
     defs = DbtProjectDefs(
-        dbt_project_path=dbt_project_dir,
+        dbt_manifest=dbt_project_dir / "target" / "manifest.json",
+        project=DbtProject(project_dir=dbt_project_dir),
         name="my_dbt_multi_asset",
     ).build_defs()
     assert defs.assets
