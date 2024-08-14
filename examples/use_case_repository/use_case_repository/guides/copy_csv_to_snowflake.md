@@ -35,7 +35,7 @@ To follow the steps in this guide, you will need:
 
 By following these steps, you will have a Dagster asset that successfully reads a CSV file and writes its contents to a Snowflake table.
 
-### Step 1: Install the Snowflake integration
+### Step 1: Install the Snowflake Integration
 
 ```bash
 pip install dagster-snowflake
