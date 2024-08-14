@@ -1,6 +1,7 @@
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
+from typing import Any, List, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
@@ -22,88 +23,47 @@ def get_recursive_type_keys(
     return result_keys
 
 
-@whitelist_for_serdes
-class ConfigSchemaSnapshot(
-    NamedTuple(
-        "_ConfigSchemaSnapshot", [("all_config_snaps_by_key", Mapping[str, "ConfigTypeSnap"])]
-    )
-):
-    def __new__(cls, all_config_snaps_by_key: Mapping[str, "ConfigTypeSnap"]):
-        return super(ConfigSchemaSnapshot, cls).__new__(
-            cls,
-            all_config_snaps_by_key=check.mapping_param(
-                all_config_snaps_by_key,
-                "all_config_snaps_by_key",
-                key_type=str,
-                value_type=ConfigTypeSnap,
-            ),
-        )
-
-    @property
-    def all_config_keys(self) -> Sequence[str]:
-        return list(self.all_config_snaps_by_key.keys())
-
-    def get_config_snap(self, key: str) -> "ConfigTypeSnap":
-        check.str_param(key, "key")
-        return self.all_config_snaps_by_key[key]
-
-    def has_config_snap(self, key: str) -> bool:
-        check.str_param(key, "key")
-        return key in self.all_config_snaps_by_key
-
-
 def _ct_name(ct):
     return ct.name
 
 
 @whitelist_for_serdes(skip_when_empty_fields={"field_aliases"})
-class ConfigTypeSnap(
-    NamedTuple(
-        "_ConfigTypeSnap",
-        [
-            ("kind", ConfigTypeKind),
-            ("key", str),
-            ("given_name", Optional[str]),
-            ("description", Optional[str]),
-            ("type_param_keys", Optional[Sequence[str]]),  # only valid for closed generics
-            ("enum_values", Optional[Sequence["ConfigEnumValueSnap"]]),  # only valid for enums
-            ("fields", Optional[Sequence["ConfigFieldSnap"]]),  # only valid for dicts and selectors
-            ("scalar_kind", Optional[ConfigScalarKind]),  # only valid for scalars
-            ("field_aliases", Optional[Mapping[str, str]]),  # only valid for strict shapes
-        ],
-    )
-):
+@record_custom
+class ConfigTypeSnap(IHaveNew):
+    kind: ConfigTypeKind
+    key: str
+    given_name: Optional[str]
+    description: Optional[str]
+    type_param_keys: Optional[Sequence[str]]  # only valid for closed generics
+    enum_values: Optional[Sequence["ConfigEnumValueSnap"]]  # only valid for enums
+    fields: Optional[Sequence["ConfigFieldSnap"]]  # only valid for dicts and selectors
+    scalar_kind: Optional[ConfigScalarKind]  # only valid for scalars
+    field_aliases: Optional[Mapping[str, str]]  # only valid for strict shapes
+
     # serdes log
     # * Adding scalar_kind
     # * Adding field_aliases
     def __new__(
         cls,
-        kind,
-        key,
-        given_name,
-        description,
-        type_param_keys,
-        enum_values,
-        fields,
+        kind: ConfigTypeKind,
+        key: str,
+        given_name: Optional[str],
+        description: Optional[str],
+        type_param_keys: Optional[Sequence[str]],
+        enum_values: Optional[Sequence["ConfigEnumValueSnap"]],
+        fields: Optional[Sequence["ConfigFieldSnap"]],
         # Old version of object will not have these properties
-        scalar_kind=None,
-        field_aliases=None,
+        scalar_kind: Optional[ConfigScalarKind] = None,
+        field_aliases: Optional[Mapping[str, str]] = None,
     ):
-        return super(ConfigTypeSnap, cls).__new__(
+        return super().__new__(
             cls,
-            kind=check.inst_param(kind, "kind", ConfigTypeKind),
-            key=check.str_param(key, "key"),
-            given_name=check.opt_str_param(given_name, "given_name"),
-            type_param_keys=(
-                None
-                if type_param_keys is None
-                else check.list_param(type_param_keys, "type_param_keys", of_type=str)
-            ),
-            enum_values=(
-                None
-                if enum_values is None
-                else check.list_param(enum_values, "enum_values", of_type=ConfigEnumValueSnap)
-            ),
+            kind=kind,
+            key=key,
+            given_name=given_name,
+            description=description,
+            type_param_keys=type_param_keys,
+            enum_values=enum_values,
             fields=(
                 None
                 if fields is None
@@ -112,9 +72,8 @@ class ConfigTypeSnap(
                     key=_ct_name,
                 )
             ),
-            description=check.opt_str_param(description, "description"),
-            scalar_kind=check.opt_inst_param(scalar_kind, "scalar_kind", ConfigScalarKind),
-            field_aliases=check.opt_dict_param(field_aliases, "field_aliases"),
+            scalar_kind=scalar_kind,
+            field_aliases=field_aliases or {},
         )
 
     @property
@@ -203,45 +162,21 @@ class ConfigTypeSnap(
 
 
 @whitelist_for_serdes
-class ConfigEnumValueSnap(
-    NamedTuple("_ConfigEnumValueSnap", [("value", str), ("description", Optional[str])])
-):
-    def __new__(cls, value: str, description: Optional[str]):
-        return super(ConfigEnumValueSnap, cls).__new__(
-            cls,
-            value=check.str_param(value, "value"),
-            description=check.opt_str_param(description, "description"),
-        )
+@record
+class ConfigEnumValueSnap:
+    value: str
+    description: Optional[str]
 
 
 @whitelist_for_serdes
-class ConfigFieldSnap(
-    NamedTuple(
-        "_ConfigFieldSnap",
-        [
-            ("name", Optional[str]),
-            ("type_key", str),
-            ("is_required", bool),
-            ("default_provided", bool),
-            ("default_value_as_json_str", Optional[str]),
-            ("description", Optional[str]),
-        ],
-    )
-):
-    def __new__(
-        cls, name, type_key, is_required, default_provided, default_value_as_json_str, description
-    ):
-        return super(ConfigFieldSnap, cls).__new__(
-            cls,
-            name=check.opt_str_param(name, "name"),
-            type_key=check.str_param(type_key, "type_key"),
-            is_required=check.bool_param(is_required, "is_required"),
-            default_provided=check.bool_param(default_provided, "default_provided"),
-            default_value_as_json_str=check.opt_str_param(
-                default_value_as_json_str, "default_value_as_json_str"
-            ),
-            description=check.opt_str_param(description, "description"),
-        )
+@record
+class ConfigFieldSnap:
+    name: Optional[str]
+    type_key: str
+    is_required: bool
+    default_provided: bool
+    default_value_as_json_str: Optional[str]
+    description: Optional[str]
 
 
 def snap_from_field(name: str, field: Field):
@@ -276,7 +211,7 @@ def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
         ),
         enum_values=(
             [
-                ConfigEnumValueSnap(ev.config_value, ev.description)
+                ConfigEnumValueSnap(value=ev.config_value, description=ev.description)
                 for ev in config_type.enum_values  # type: ignore
             ]
             if config_type.kind == ConfigTypeKind.ENUM
@@ -294,6 +229,24 @@ def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
             else None
         ),
     )
+
+
+@whitelist_for_serdes
+@record
+class ConfigSchemaSnapshot:
+    all_config_snaps_by_key: Mapping[str, ConfigTypeSnap]
+
+    @property
+    def all_config_keys(self) -> Sequence[str]:
+        return list(self.all_config_snaps_by_key.keys())
+
+    def get_config_snap(self, key: str) -> ConfigTypeSnap:
+        check.str_param(key, "key")
+        return self.all_config_snaps_by_key[key]
+
+    def has_config_snap(self, key: str) -> bool:
+        check.str_param(key, "key")
+        return key in self.all_config_snaps_by_key
 
 
 def minimal_config_for_type_snap(
