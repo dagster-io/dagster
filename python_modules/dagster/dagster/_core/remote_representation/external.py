@@ -824,7 +824,7 @@ class ExternalSchedule:
             self._external_schedule_data.name,
         )
 
-    @property
+    @cached_property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
@@ -974,7 +974,7 @@ class ExternalSensor:
             self._external_sensor_data.name,
         )
 
-    @property
+    @cached_property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
