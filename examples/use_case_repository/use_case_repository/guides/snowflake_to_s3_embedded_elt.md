@@ -1,7 +1,7 @@
 ---
 title: "Ingesting Data from S3 to Snowflake with Dagster and Sling"
 description: "This use case demonstrates how to ingest data from Amazon S3 into Snowflake using Dagster and the Sling integration from dagster-embedded-elt. The objective is to automate the data ingestion process for efficient data management and analysis."
-tags: ["snowflake", "s3", "dagster", "sling", "data ingestion"]
+tags: ["snowflake", "s3", "sling", "data ingestion"]
 ---
 
 ## Ingesting Data from S3 to Snowflake with Dagster and Sling
