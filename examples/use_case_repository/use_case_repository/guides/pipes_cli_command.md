@@ -1,7 +1,7 @@
 ---
 title: "Using Dagster Pipes Subprocess to Run a CLI Command"
 description: "This use case demonstrates how to use Dagster Pipes to run a CLI command within a Dagster asset. The objective is to execute non-Python workloads and integrate their outputs into Dagster's data pipeline."
-tags: ["dagster pipes", "subprocess", "CLI"]
+tags: ["dagster pipes", "subprocess"]
 ---
 
 # Running CLI Commands with Dagster Pipes
