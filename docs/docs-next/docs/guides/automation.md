@@ -41,7 +41,7 @@ Let's look at each method in more detail.
 ## Schedules 
 
 Schedules allow you to run jobs at specified times, like "every Monday at 9 AM" or "daily at midnight."
-A schedule combines a selection of assets, known as a [Job](/concepts/jobs), and a [cron expression](https://en.wikipedia.org/wiki/Cron) 
+A schedule combines a selection of assets, known as a [Job](/concepts/ops-jobs), and a [cron expression](https://en.wikipedia.org/wiki/Cron) 
 in order to define when the job should be run.
 
 To make creating cron expressions easier, you can use an online tool like [Crontab Guru](https://crontab.guru/).
@@ -63,8 +63,8 @@ For more information about how Schedules work, see the [About Schedules](/concep
 
 Sensors allow you to trigger runs based on events or conditions, like a new file arriving or an external system status change.
 
-Like schedules, sensors operate on a selection of assets, known as [Jobs](/concepts/jobs) and can either start a pipeline 
-through a [Run](/concepts/runs) or log a reason for not starting a pipeline using a [SkipReason](/concepts/sensors#skip-reasons).
+Like schedules, sensors operate on a selection of assets, known as [Jobs](/concepts/ops-jobs) and can either start a pipeline 
+through a Run or log a reason for not starting a pipeline using a SkipReason.
 
 However, unlike schedules, sensors are triggered by events that you define.
 You must provide a function that the sensor will use to determine if it should trigger a run.
