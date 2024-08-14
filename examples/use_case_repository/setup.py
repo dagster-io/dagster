@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["use_case_repository_tests"]),
     install_requires=[
         "dagster",
+        "dagster-aws",
         "dagster-embedded-elt",
         "dagster-pipes",
         "dagster-snowflake",
