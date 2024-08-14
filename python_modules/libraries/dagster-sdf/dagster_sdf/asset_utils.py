@@ -17,7 +17,10 @@ from .constants import SDF_TARGET_DIR
 
 
 def dagster_name_fn(catalog: str, schema: str, table: str) -> str:
-    return f"{catalog}__{schema}__{table}"
+    fmt_catalog = catalog.replace(".", "_").replace("-", "_").replace("*", "_star")
+    fmt_schema = schema.replace(".", "_").replace("-", "_").replace("*", "_star")
+    fmt_table = table.replace(".", "_").replace("-", "_").replace("*", "_star")
+    return f"{fmt_catalog}__{fmt_schema}__{fmt_table}"
 
 
 def default_asset_key_fn(catalog: str, schema: str, table: str) -> AssetKey:
@@ -119,6 +122,8 @@ def get_asset_key_for_table_id(sdf_assets: Sequence[AssetsDefinition], table_id:
             def upstream_python_asset():
                 ...
     """
+    # Strip table_id of any quotes
+    table_id = table_id.replace('"', "").replace("`", "")
     asset_keys_by_output_name = {}
     for sdf_asset in sdf_assets:
         for name, key in sdf_asset.keys_by_output_name.items():
@@ -131,6 +136,8 @@ def get_asset_key_for_table_id(sdf_assets: Sequence[AssetsDefinition], table_id:
             f"Table {table_id} has more than one table associated with two or more unique dagster asset names:"
             f" {asset_keys_by_output_name.keys()}."
         )
+    if not asset_keys_by_output_name:
+        raise KeyError(f"Table {table_id} not found in the provided sdf assets.")
     return next(iter(asset_keys_by_output_name.values()))
 
 
