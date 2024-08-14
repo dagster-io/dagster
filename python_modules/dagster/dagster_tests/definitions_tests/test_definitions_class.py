@@ -55,7 +55,7 @@ from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
@@ -1007,6 +1007,23 @@ def test_hoist_automation_assets():
 
     # We can define and execute asset jobs that reference assets only defined in targets
     assert defs.get_job_def(foo_job.name).execute_in_process().success
+
+
+def test_definitions_failure_on_asset_job_resolve():
+    @asset
+    def asset_not_in_defs():
+        pass
+
+    invalid_job = define_asset_job("invalid_job", selection=[asset_not_in_defs])
+
+    defs = Definitions(
+        jobs=[invalid_job],
+    )
+
+    with pytest.raises(
+        DagsterInvalidSubsetError, match="no AssetsDefinition objects supply these keys"
+    ):
+        Definitions.validate_loadable(defs)
 
 
 def test_definitions_dedupe_reference_equality():
