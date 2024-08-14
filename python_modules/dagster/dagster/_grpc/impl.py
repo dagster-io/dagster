@@ -56,10 +56,7 @@ from dagster._core.remote_representation.external_data import (
     job_name_for_external_partition_set_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
-from dagster._core.snap.execution_plan_snapshot import (
-    ExecutionPlanSnapshotErrorData,
-    snapshot_from_execution_plan,
-)
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
@@ -528,29 +525,24 @@ def get_external_execution_plan_snapshot(
     job_name: str,
     args: ExecutionPlanSnapshotArgs,
 ):
-    try:
-        job_def = repo_def.get_maybe_subset_job_def(
-            job_name,
-            op_selection=args.op_selection,
-            asset_selection=args.asset_selection,
-            asset_check_selection=args.asset_check_selection,
-        )
+    job_def = repo_def.get_maybe_subset_job_def(
+        job_name,
+        op_selection=args.op_selection,
+        asset_selection=args.asset_selection,
+        asset_check_selection=args.asset_check_selection,
+    )
 
-        return snapshot_from_execution_plan(
-            create_execution_plan(
-                job_def,
-                run_config=args.run_config,
-                step_keys_to_execute=args.step_keys_to_execute,
-                known_state=args.known_state,
-                instance_ref=args.instance_ref,
-                repository_load_data=repo_def.repository_load_data,
-            ),
-            args.job_snapshot_id,
-        )
-    except:
-        return ExecutionPlanSnapshotErrorData(
-            error=serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    return snapshot_from_execution_plan(
+        create_execution_plan(
+            job_def,
+            run_config=args.run_config,
+            step_keys_to_execute=args.step_keys_to_execute,
+            known_state=args.known_state,
+            instance_ref=args.instance_ref,
+            repository_load_data=repo_def.repository_load_data,
+        ),
+        args.job_snapshot_id,
+    )
 
 
 def get_partition_set_execution_param_data(
