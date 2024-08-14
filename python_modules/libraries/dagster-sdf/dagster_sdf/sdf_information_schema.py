@@ -103,7 +103,7 @@ class SdfInformationSchema(IHaveNew):
     ]:
         table_id_to_dep: Dict[str, AssetKey] = {}
         table_id_to_upstream: Dict[str, Set[AssetKey]] = {}
-        assets: Sequence[AssetSpec] = []
+        asset_specs: Sequence[AssetSpec] = []
         asset_checks: Sequence[AssetCheckSpec] = []
         origin_remote_tables: Set[str] = set()
 
@@ -160,7 +160,7 @@ class SdfInformationSchema(IHaveNew):
                     for dep in table_row["depends_on"]
                     if dep not in origin_remote_tables and dep in table_deps["table_id"]
                 }.union(table_id_to_upstream.get(table_row["table_id"], set()))
-                assets.append(
+                asset_specs.append(
                     AssetSpec(
                         key=asset_key,
                         deps=dependencies,
@@ -184,7 +184,7 @@ class SdfInformationSchema(IHaveNew):
                             asset=asset_key,
                         )
                     )
-        return assets, asset_checks
+        return asset_specs, asset_checks
 
     def get_columns(self) -> Dict[str, List[TableColumn]]:
         columns = self.read_table("columns")[
