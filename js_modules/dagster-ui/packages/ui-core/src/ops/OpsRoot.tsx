@@ -21,6 +21,7 @@ import styled from 'styled-components';
 import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
 import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -156,7 +157,7 @@ interface OpsRootWithDataProps extends Props {
   usedSolids: Solid[];
 }
 
-const OpsRootWithData = (props: OpsRootWithDataProps) => {
+export const OpsRootWithData = (props: OpsRootWithDataProps) => {
   const {name, repoAddress, usedSolids} = props;
   const history = useHistory();
   const location = useLocation();
@@ -297,7 +298,7 @@ const OpList = (props: OpListProps) => {
   );
 };
 
-const OPS_ROOT_QUERY = gql`
+export const OPS_ROOT_QUERY = gql`
   query OpsRootQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
@@ -306,6 +307,7 @@ const OPS_ROOT_QUERY = gql`
           ...OpsRootUsedSolid
         }
       }
+      ...PythonErrorFragment
     }
   }
 
@@ -324,6 +326,7 @@ const OPS_ROOT_QUERY = gql`
   }
 
   ${OP_TYPE_SIGNATURE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const OpListItem = styled.div<{$selected: boolean}>`

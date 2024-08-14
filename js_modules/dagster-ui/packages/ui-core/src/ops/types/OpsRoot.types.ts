@@ -9,7 +9,16 @@ export type OpsRootQueryVariables = Types.Exact<{
 export type OpsRootQuery = {
   __typename: 'Query';
   repositoryOrError:
-    | {__typename: 'PythonError'}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
     | {
         __typename: 'Repository';
         id: string;
