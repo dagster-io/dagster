@@ -20,23 +20,20 @@ def dagster_name_fn(table_id: str) -> str:
     return table_id.replace(".", "_").replace("-", "_").replace("*", "_star")
 
 
-def default_asset_key_fn(fqn: str) -> AssetKey:
+def default_asset_key_fn(catalog: str, schema: str, table: str) -> AssetKey:
     """Get the asset key for an sdf asset. An Sdf asset's key is its fully qualified name."""
-    return AssetKey(fqn.split("."))
+    return AssetKey([catalog, schema, table])
 
 
-def default_asset_check_key_fn(fqn: str) -> AssetCheckKey:
+def default_asset_check_key_fn(catalog: str, schema: str, table: str) -> AssetCheckKey:
     """Get the asset check key for an sdf asset. An Sdf asset's check key is its fully qualified name."""
-    asset_check_key = fqn.split(".")
-    # Get table name from the asset key
-    table_name = asset_check_key[-1]
     # If table_name starts with "test_", this is a column or table test (to be updated with something more formal)
-    if table_name.lower().startswith("test_"):
-        asset_key = AssetKey(asset_check_key[:-1] + [table_name[5:]])
+    if table.lower().startswith("test_"):
+        asset_key = AssetKey([catalog, schema, table[5:]])
     else:
-        asset_key = AssetKey(asset_check_key)
+        asset_key = AssetKey([catalog, schema, table])
     return AssetCheckKey(
-        name=fqn,
+        name=f"{catalog}.{schema}.{table}",
         asset_key=asset_key,
     )
 

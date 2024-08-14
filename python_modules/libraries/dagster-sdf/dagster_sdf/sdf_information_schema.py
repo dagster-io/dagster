@@ -124,7 +124,9 @@ class SdfInformationSchema(IHaveNew):
             ~pl.col("purpose").is_in(["system", "external-system"])
         )
 
-        # Step 1: Build Dagster Asset Deps
+        # Step 1: Build Map of Table Deps to Rows
+        table_rows_deps = {row["table_id"]: row for row in table_deps.rows(named=True)}
+        # Step 2: Build Dagster Asset Deps
         for table_row in table_deps.rows(named=True):
             # Iterate over the meta column to find the dagster-asset-key
             if len(table_row["meta"]) > 0:
@@ -146,9 +148,11 @@ class SdfInformationSchema(IHaveNew):
             elif table_row["origin"] == "remote":
                 origin_remote_tables.add(table_row["table_id"])
 
-        # Step 2: Build Dagster Asset Outs and Internal Asset Deps
+        # Step 3: Build Dagster Asset Outs and Internal Asset Deps
         for table_row in table_deps.rows(named=True):
-            asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
+            asset_key = dagster_sdf_translator.get_asset_key(
+                table_row["catalog_name"], table_row["schema_name"], table_row["table_name"]
+            )
             output_name = dagster_name_fn(table_row["table_id"])
             code_references = None
             if dagster_sdf_translator.settings.enable_code_references:
@@ -177,7 +181,9 @@ class SdfInformationSchema(IHaveNew):
                     if dep
                     in table_id_to_dep  # If the dep is a dagster dependency, use the meta asset key
                     else dagster_sdf_translator.get_asset_key(
-                        dep
+                        table_rows_deps[dep]["catalog_name"],
+                        table_rows_deps[dep]["schema_name"],
+                        table_rows_deps[dep]["table_name"],
                     )  # Otherwise, use the translator to get the asset key
                     for dep in table_row["depends_on"]
                     if dep not in origin_remote_tables and dep in table_deps["table_id"]
@@ -193,6 +199,15 @@ class SdfInformationSchema(IHaveNew):
                             asset=asset_key,
                         )
                     )
+        # Assert that all internal asset deps are either in the outs or deps
+        out_asset_keys = {key.key for key in outs.values()}
+        dep_asset_keys = {dep.asset_key for dep in deps}
+        for asset_deps in internal_asset_deps.values():
+            for asset_dep in asset_deps:
+                check.invariant(
+                    asset_dep in dep_asset_keys or asset_dep in out_asset_keys,
+                    f"Internal asset dependency {asset_dep} not found in the dependencies or outputs of this workspace.",
+                )
         return deps, outs, internal_asset_deps, asset_checks
 
     def get_columns(self) -> Dict[str, List[TableColumn]]:
@@ -253,8 +268,11 @@ class SdfInformationSchema(IHaveNew):
         tables = self.read_table("tables").filter(
             ~pl.col("purpose").is_in(["system", "external-system"])
         )
+
         for table_row in tables.rows(named=True):
-            asset_key = dagster_sdf_translator.get_asset_key(table_row["table_id"])
+            asset_key = dagster_sdf_translator.get_asset_key(
+                table_row["catalog_name"], table_row["schema_name"], table_row["table_name"]
+            )
             code_references = None
             if dagster_sdf_translator.settings.enable_code_references:
                 code_references = self._extract_code_ref(table_row)
