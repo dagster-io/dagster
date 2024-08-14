@@ -2396,6 +2396,20 @@ enum AssetEventType {
   ASSET_OBSERVATION
 }
 
+input BulkActionsFilter {
+  status: [BulkActionStatus!]
+  createdBefore: Float
+  createdAfter: Float
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
+  CANCELING
+}
+
 type DaemonHealth {
   id: String!
   daemonStatus(daemonType: String): DaemonStatus!
@@ -2830,14 +2844,6 @@ type PartitionBackfill implements RunsFeedEntry {
   title: String
   description: String
   logEvents(cursor: String): InstigationEventConnection!
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-  CANCELED
-  CANCELING
 }
 
 type AssetBackfillTargetPartitions {
@@ -3294,6 +3300,7 @@ type Query {
     status: BulkActionStatus
     cursor: String
     limit: Int
+    filters: BulkActionsFilter
   ): PartitionBackfillsOrError!
   permissions: [Permission!]!
   canBulkTerminate: Boolean!

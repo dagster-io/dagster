@@ -730,6 +730,12 @@ export enum BulkActionStatus {
   REQUESTED = 'REQUESTED',
 }
 
+export type BulkActionsFilter = {
+  createdAfter?: InputMaybe<Scalars['Float']['input']>;
+  createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  status?: InputMaybe<Array<BulkActionStatus>>;
+};
+
 export type CancelBackfillResult = CancelBackfillSuccess | PythonError | UnauthorizedError;
 
 export type CancelBackfillSuccess = {
@@ -3877,6 +3883,7 @@ export type QueryPartitionBackfillOrErrorArgs = {
 
 export type QueryPartitionBackfillsOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
+  filters?: InputMaybe<BulkActionsFilter>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<BulkActionStatus>;
 };
@@ -6963,6 +6970,21 @@ export const buildBoolMetadataEntry = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'illum',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'dolorum',
+  };
+};
+
+export const buildBulkActionsFilter = (
+  overrides?: Partial<BulkActionsFilter>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): BulkActionsFilter => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BulkActionsFilter');
+  return {
+    createdAfter:
+      overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 6.09,
+    createdBefore:
+      overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 1.5,
+    status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : [],
   };
 };
 

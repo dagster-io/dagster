@@ -127,6 +127,7 @@ from ..inputs import (
     GrapheneAssetBackfillPreviewParams,
     GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
+    GrapheneBulkActionsFilter,
     GrapheneGraphSelector,
     GrapheneInstigationSelector,
     GraphenePipelineSelector,
@@ -474,6 +475,7 @@ class GrapheneQuery(graphene.ObjectType):
         status=graphene.Argument(GrapheneBulkActionStatus),
         cursor=graphene.String(),
         limit=graphene.Int(),
+        filters=graphene.Argument(GrapheneBulkActionsFilter),
         description="Retrieve backfills after applying a status filter, cursor, and limit.",
     )
 
@@ -1105,12 +1107,14 @@ class GrapheneQuery(graphene.ObjectType):
         status: Optional[GrapheneBulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        filters: Optional[GrapheneBulkActionsFilter] = None,
     ):
         return get_backfills(
             graphene_info,
             status=BulkActionStatus.from_graphql_input(status) if status else None,
             cursor=cursor,
             limit=limit,
+            filters=filters.to_selector() if filters else None,
         )
 
     def resolve_assetBackfillPreview(
