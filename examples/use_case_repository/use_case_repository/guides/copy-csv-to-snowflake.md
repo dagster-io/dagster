@@ -4,7 +4,7 @@ description: "This use case demonstrates how to load a CSV file into a Snowflake
 tags: ["snowflake", "csv"]
 ---
 
-# Loading a CSV File to a Snowflake
+# Loading a CSV File to Snowflake
 
 Learn to load a CSV file into a Snowflake table using Dagster by making use of the `COPY INTO` query.
 
