@@ -35,20 +35,63 @@ To follow the steps in this guide, you will need:
 
 By following these steps, you will have a Dagster asset that successfully reads a CSV file and writes its contents to a Snowflake table.
 
-### Step 1: Define the Snowflake Resource
+### Step 1: Install the Snowflake integration
+
+```bash
+pip install dagster-snowflake
+```
+
+### Step 2: Define the Snowflake Resource
 
 First, define the Snowflake resource in Dagster. This resource will be used to connect to your Snowflake instance.
 
+```python
+from dagster import EnvVar
+from dagster_snowflake import SnowflakeResource
 
-<CodeExample filePath="usecases/copy-csv-to-snowflake/define-resource.py" language="python" title="Using a SnowflakeResource" />
 
-### Step 2: Define the Asset to Read and Load the CSV File
+snowflake = SnowflakeResource(
+    account=EnvVar("SNOWFLAKE_ACCOUNT"),
+    user=EnvVar("SNOWFLAKE_USER"),
+    password=EnvVar("SNOWFLAKE_PASSWORD"),
+    warehouse="YOUR_WAREHOUSE",
+    database="YOUR_DATABASE",
+    schema="YOUR_SCHEMA",
+    role="YOUR_ROLE",
+)
+```
+
+### Step 3: Define the Asset to Read and Load the CSV File
 
 Next, define the Dagster asset that reads the CSV file and writes its contents to a Snowflake table using a COPY INTO query.
 
-<CodeExample filePath="usecases/copy-csv-to-snowflake/define-asset.py" language="python" title="Asset to copy a CSV" />
+```python
+from dagster import AssetExecutionContext, Definitions, EnvVar, asset
+from dagster_snowflake import SnowflakeResource
 
-### Step 3: Configure and Run the Asset
+
+@asset
+def load_csv_to_snowflake(context: AssetExecutionContext, snowflake: SnowflakeResource):
+    csv_file_path = "path/to/your/file.csv"
+    table_name = "your_table_name"
+
+    copy_query = f"""
+    COPY INTO {table_name}
+    FROM 'file://{csv_file_path}'
+    FILE_FORMAT = (TYPE = 'CSV', FIELD_OPTIONALLY_ENCLOSED_BY = '"')
+    ON_ERROR = 'CONTINUE';
+    """
+
+    with snowflake.get_connection() as conn:
+        conn.cursor().execute(copy_query)
+
+    context.log.info(f"Loaded data from {csv_file_path} into {table_name}")
+
+
+defs = Definitions(assets=[load_csv_to_snowflake], resources={"snowflake": snowflake})
+```
+
+### Step 4: Configure and Run the Asset
 
 Finally, configure the asset in the Dagster UI and run it to load the CSV file into the Snowflake table.
 
