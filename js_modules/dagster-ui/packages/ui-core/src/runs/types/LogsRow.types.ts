@@ -208,15 +208,6 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationPlannedEvent = {
   stepKey: string | null;
 };
 
-export type LogsRowStructuredFragment_AssetMaterializationFailureEvent = {
-  __typename: 'AssetMaterializationFailureEvent';
-  message: string;
-  eventType: Types.DagsterEventType | null;
-  timestamp: string;
-  level: Types.LogLevel;
-  stepKey: string | null;
-};
-
 export type LogsRowStructuredFragment_AssetMaterializationPlannedEvent = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
@@ -1956,6 +1947,24 @@ export type LogsRowStructuredFragment_ObservationEvent = {
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
+export type LogsRowStructuredFragment_PlannedAssetMaterializationFailureEvent = {
+  __typename: 'PlannedAssetMaterializationFailureEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowStructuredFragment_PlannedAssetMaterializationSkippedEvent = {
+  __typename: 'PlannedAssetMaterializationSkippedEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowStructuredFragment_ResourceInitFailureEvent = {
   __typename: 'ResourceInitFailureEvent';
   message: string;
@@ -3019,7 +3028,6 @@ export type LogsRowStructuredFragment =
   | LogsRowStructuredFragment_AlertSuccessEvent
   | LogsRowStructuredFragment_AssetCheckEvaluationEvent
   | LogsRowStructuredFragment_AssetCheckEvaluationPlannedEvent
-  | LogsRowStructuredFragment_AssetMaterializationFailureEvent
   | LogsRowStructuredFragment_AssetMaterializationPlannedEvent
   | LogsRowStructuredFragment_EngineEvent
   | LogsRowStructuredFragment_ExecutionStepFailureEvent
@@ -3040,6 +3048,8 @@ export type LogsRowStructuredFragment =
   | LogsRowStructuredFragment_MaterializationEvent
   | LogsRowStructuredFragment_ObjectStoreOperationEvent
   | LogsRowStructuredFragment_ObservationEvent
+  | LogsRowStructuredFragment_PlannedAssetMaterializationFailureEvent
+  | LogsRowStructuredFragment_PlannedAssetMaterializationSkippedEvent
   | LogsRowStructuredFragment_ResourceInitFailureEvent
   | LogsRowStructuredFragment_ResourceInitStartedEvent
   | LogsRowStructuredFragment_ResourceInitSuccessEvent
@@ -3089,14 +3099,6 @@ export type LogsRowUnstructuredFragment_AssetCheckEvaluationEvent = {
 
 export type LogsRowUnstructuredFragment_AssetCheckEvaluationPlannedEvent = {
   __typename: 'AssetCheckEvaluationPlannedEvent';
-  message: string;
-  timestamp: string;
-  level: Types.LogLevel;
-  stepKey: string | null;
-};
-
-export type LogsRowUnstructuredFragment_AssetMaterializationFailureEvent = {
-  __typename: 'AssetMaterializationFailureEvent';
   message: string;
   timestamp: string;
   level: Types.LogLevel;
@@ -3263,6 +3265,22 @@ export type LogsRowUnstructuredFragment_ObservationEvent = {
   stepKey: string | null;
 };
 
+export type LogsRowUnstructuredFragment_PlannedAssetMaterializationFailureEvent = {
+  __typename: 'PlannedAssetMaterializationFailureEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowUnstructuredFragment_PlannedAssetMaterializationSkippedEvent = {
+  __typename: 'PlannedAssetMaterializationSkippedEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowUnstructuredFragment_ResourceInitFailureEvent = {
   __typename: 'ResourceInitFailureEvent';
   message: string;
@@ -3381,7 +3399,6 @@ export type LogsRowUnstructuredFragment =
   | LogsRowUnstructuredFragment_AlertSuccessEvent
   | LogsRowUnstructuredFragment_AssetCheckEvaluationEvent
   | LogsRowUnstructuredFragment_AssetCheckEvaluationPlannedEvent
-  | LogsRowUnstructuredFragment_AssetMaterializationFailureEvent
   | LogsRowUnstructuredFragment_AssetMaterializationPlannedEvent
   | LogsRowUnstructuredFragment_EngineEvent
   | LogsRowUnstructuredFragment_ExecutionStepFailureEvent
@@ -3402,6 +3419,8 @@ export type LogsRowUnstructuredFragment =
   | LogsRowUnstructuredFragment_MaterializationEvent
   | LogsRowUnstructuredFragment_ObjectStoreOperationEvent
   | LogsRowUnstructuredFragment_ObservationEvent
+  | LogsRowUnstructuredFragment_PlannedAssetMaterializationFailureEvent
+  | LogsRowUnstructuredFragment_PlannedAssetMaterializationSkippedEvent
   | LogsRowUnstructuredFragment_ResourceInitFailureEvent
   | LogsRowUnstructuredFragment_ResourceInitStartedEvent
   | LogsRowUnstructuredFragment_ResourceInitSuccessEvent

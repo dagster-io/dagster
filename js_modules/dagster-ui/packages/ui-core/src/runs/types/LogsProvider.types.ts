@@ -245,15 +245,6 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
             }
           | {
-              __typename: 'AssetMaterializationFailureEvent';
-              runId: string;
-              message: string;
-              timestamp: string;
-              level: Types.LogLevel;
-              stepKey: string | null;
-              eventType: Types.DagsterEventType | null;
-            }
-          | {
               __typename: 'AssetMaterializationPlannedEvent';
               runId: string;
               message: string;
@@ -2186,6 +2177,24 @@ export type PipelineRunLogsSubscription = {
               assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
             }
           | {
+              __typename: 'PlannedAssetMaterializationFailureEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
+              __typename: 'PlannedAssetMaterializationSkippedEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
               __typename: 'ResourceInitFailureEvent';
               runId: string;
               message: string;
@@ -3583,15 +3592,6 @@ export type RunLogsSubscriptionSuccessFragment = {
       }
     | {
         __typename: 'AssetCheckEvaluationPlannedEvent';
-        runId: string;
-        message: string;
-        timestamp: string;
-        level: Types.LogLevel;
-        stepKey: string | null;
-        eventType: Types.DagsterEventType | null;
-      }
-    | {
-        __typename: 'AssetMaterializationFailureEvent';
         runId: string;
         message: string;
         timestamp: string;
@@ -5490,6 +5490,24 @@ export type RunLogsSubscriptionSuccessFragment = {
         assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
       }
     | {
+        __typename: 'PlannedAssetMaterializationFailureEvent';
+        runId: string;
+        message: string;
+        timestamp: string;
+        level: Types.LogLevel;
+        stepKey: string | null;
+        eventType: Types.DagsterEventType | null;
+      }
+    | {
+        __typename: 'PlannedAssetMaterializationSkippedEvent';
+        runId: string;
+        message: string;
+        timestamp: string;
+        level: Types.LogLevel;
+        stepKey: string | null;
+        eventType: Types.DagsterEventType | null;
+      }
+    | {
         __typename: 'ResourceInitFailureEvent';
         runId: string;
         message: string;
@@ -6880,15 +6898,6 @@ export type RunLogsQuery = {
             }
           | {
               __typename: 'AssetCheckEvaluationPlannedEvent';
-              runId: string;
-              message: string;
-              timestamp: string;
-              level: Types.LogLevel;
-              stepKey: string | null;
-              eventType: Types.DagsterEventType | null;
-            }
-          | {
-              __typename: 'AssetMaterializationFailureEvent';
               runId: string;
               message: string;
               timestamp: string;
@@ -8827,6 +8836,24 @@ export type RunLogsQuery = {
                   }
               >;
               assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
+            }
+          | {
+              __typename: 'PlannedAssetMaterializationFailureEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
+              __typename: 'PlannedAssetMaterializationSkippedEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
             }
           | {
               __typename: 'ResourceInitFailureEvent';

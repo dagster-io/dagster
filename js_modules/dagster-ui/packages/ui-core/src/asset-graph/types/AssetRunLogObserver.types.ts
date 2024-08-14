@@ -24,7 +24,6 @@ export type AssetLiveRunLogsSubscription = {
               };
             }
           | {__typename: 'AssetCheckEvaluationPlannedEvent'}
-          | {__typename: 'AssetMaterializationFailureEvent'}
           | {
               __typename: 'AssetMaterializationPlannedEvent';
               assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -54,6 +53,8 @@ export type AssetLiveRunLogsSubscription = {
               __typename: 'ObservationEvent';
               assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
             }
+          | {__typename: 'PlannedAssetMaterializationFailureEvent'}
+          | {__typename: 'PlannedAssetMaterializationSkippedEvent'}
           | {__typename: 'ResourceInitFailureEvent'}
           | {__typename: 'ResourceInitStartedEvent'}
           | {__typename: 'ResourceInitSuccessEvent'}

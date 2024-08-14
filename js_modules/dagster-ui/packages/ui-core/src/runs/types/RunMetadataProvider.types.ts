@@ -37,13 +37,6 @@ export type RunMetadataProviderMessageFragment_AssetCheckEvaluationPlannedEvent 
   stepKey: string | null;
 };
 
-export type RunMetadataProviderMessageFragment_AssetMaterializationFailureEvent = {
-  __typename: 'AssetMaterializationFailureEvent';
-  message: string;
-  timestamp: string;
-  stepKey: string | null;
-};
-
 export type RunMetadataProviderMessageFragment_AssetMaterializationPlannedEvent = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
@@ -345,6 +338,20 @@ export type RunMetadataProviderMessageFragment_ObservationEvent = {
   stepKey: string | null;
 };
 
+export type RunMetadataProviderMessageFragment_PlannedAssetMaterializationFailureEvent = {
+  __typename: 'PlannedAssetMaterializationFailureEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
+export type RunMetadataProviderMessageFragment_PlannedAssetMaterializationSkippedEvent = {
+  __typename: 'PlannedAssetMaterializationSkippedEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
 export type RunMetadataProviderMessageFragment_ResourceInitFailureEvent = {
   __typename: 'ResourceInitFailureEvent';
   message: string;
@@ -459,7 +466,6 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_AlertSuccessEvent
   | RunMetadataProviderMessageFragment_AssetCheckEvaluationEvent
   | RunMetadataProviderMessageFragment_AssetCheckEvaluationPlannedEvent
-  | RunMetadataProviderMessageFragment_AssetMaterializationFailureEvent
   | RunMetadataProviderMessageFragment_AssetMaterializationPlannedEvent
   | RunMetadataProviderMessageFragment_EngineEvent
   | RunMetadataProviderMessageFragment_ExecutionStepFailureEvent
@@ -480,6 +486,8 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_MaterializationEvent
   | RunMetadataProviderMessageFragment_ObjectStoreOperationEvent
   | RunMetadataProviderMessageFragment_ObservationEvent
+  | RunMetadataProviderMessageFragment_PlannedAssetMaterializationFailureEvent
+  | RunMetadataProviderMessageFragment_PlannedAssetMaterializationSkippedEvent
   | RunMetadataProviderMessageFragment_ResourceInitFailureEvent
   | RunMetadataProviderMessageFragment_ResourceInitStartedEvent
   | RunMetadataProviderMessageFragment_ResourceInitSuccessEvent

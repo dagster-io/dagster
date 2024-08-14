@@ -405,18 +405,32 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         )
 
 
-class GrapheneAssetMaterializationFailureEvent(graphene.ObjectType):
+class GraphenePlannedAssetMaterializationFailureEvent(graphene.ObjectType):
     assetKey = graphene.Field(GrapheneAssetKey)
 
     class Meta:
-        name = "AssetMaterializationFailureEvent"
+        name = "PlannedAssetMaterializationFailureEvent"
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
 
     def __init__(self, event: EventLogEntry):
         self._event = event
 
     def resolve_assetKey(self, _graphene_info: ResolveInfo):
-        return self._event.get_dagster_event().asset_materialization_failure_data.asset_key
+        return self._event.get_dagster_event().planned_asset_materialization_failure_data.asset_key
+
+
+class GraphenePlannedAssetMaterializationSkippedEvent(graphene.ObjectType):
+    assetKey = graphene.Field(GrapheneAssetKey)
+
+    class Meta:
+        name = "PlannedAssetMaterializationSkippedEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+
+    def __init__(self, event: EventLogEntry):
+        self._event = event
+
+    def resolve_assetKey(self, _graphene_info: ResolveInfo):
+        return self._event.get_dagster_event().planned_asset_materialization_failure_data.asset_key
 
 
 class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
@@ -600,7 +614,8 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneAlertSuccessEvent,
             GrapheneAlertFailureEvent,
             GrapheneAssetMaterializationPlannedEvent,
-            GrapheneAssetMaterializationFailureEvent,
+            GraphenePlannedAssetMaterializationFailureEvent,
+            GraphenePlannedAssetMaterializationSkippedEvent,
             GrapheneAssetCheckEvaluationPlannedEvent,
             GrapheneAssetCheckEvaluationEvent,
         )

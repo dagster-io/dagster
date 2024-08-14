@@ -11,7 +11,8 @@ export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStep
     if (
       node.__typename === 'AssetMaterializationPlannedEvent' ||
       node.__typename === 'AssetCheckEvaluationPlannedEvent' ||
-      node.__typename === 'AssetMaterializationFailureEvent'
+      node.__typename === 'PlannedAssetMaterializationFailureEvent' ||
+      node.__typename === 'PlannedAssetMaterializationSkippedEvent'
     ) {
       return false;
     }

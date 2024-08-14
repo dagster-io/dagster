@@ -81,7 +81,8 @@ EventSpecificData = Union[
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
-    "AssetMaterializationFailureData",
+    "PlannedAssetMaterializationFailureData",
+    "PlannedAssetMaterializationSkippedData",
 ]
 
 
@@ -111,12 +112,14 @@ class DagsterEventType(str, Enum):
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
+
+    PLANNED_ASSET_MATERIALIZATION_FAILURE = "PLANNED_ASSET_MATERIALIZATION_FAILURE"
+    PLANNED_ASSET_MATERIALIZATION_SKIPPED = "PLANNED_ASSET_MATERIALIZATION_SKIPPED"
+
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
     ASSET_CHECK_EVALUATION = "ASSET_CHECK_EVALUATION"
-
-    ASSET_MATERIALIZATION_FAILURE = "ASSET_MATERIALIZATION_FAILURE"
 
     # We want to display RUN_* events in the Dagster UI and in our LogManager output, but in order to
     # support backcompat for our storage layer, we need to keep the persisted value to be strings
@@ -244,14 +247,16 @@ PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN
 BATCH_WRITABLE_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
-    DagsterEventType.ASSET_MATERIALIZATION_FAILURE,
+    DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
+    DagsterEventType.PLANNED_ASSET_MATERIALIZATION_SKIPPED,
 }
 
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-    DagsterEventType.ASSET_MATERIALIZATION_FAILURE,
+    DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
+    DagsterEventType.PLANNED_ASSET_MATERIALIZATION_SKIPPED,
 }
 
 ASSET_CHECK_EVENTS = {
@@ -722,8 +727,10 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.asset_key
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.asset_key
-        elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_FAILURE:
-            return self.asset_materialization_failure_data.asset_key
+        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE:
+            return self.planned_asset_materialization_failure_data.asset_key
+        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_SKIPPED:
+            return self.planned_asset_materialization_skipped_data.asset_key
         else:
             return None
 
@@ -740,8 +747,10 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.partition
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.partition
-        elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_FAILURE:
-            return self.asset_materialization_failure_data.partition
+        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE:
+            return self.planned_asset_materialization_failure_data.partition
+        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_SKIPPED:
+            return self.planned_asset_materialization_skipped_data.partition
         else:
             return None
 
@@ -798,13 +807,26 @@ class DagsterEvent(
         return cast(AssetMaterializationPlannedData, self.event_specific_data)
 
     @property
-    def asset_materialization_failure_data(self) -> "AssetMaterializationFailureData":
+    def planned_asset_materialization_failure_data(
+        self,
+    ) -> "PlannedAssetMaterializationFailureData":
         _assert_type(
-            "asset_materialization_failure",
-            DagsterEventType.ASSET_MATERIALIZATION_FAILURE,
+            "planned_asset_materialization_failure",
+            DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
             self.event_type,
         )
-        return cast(AssetMaterializationFailureData, self.event_specific_data)
+        return cast(PlannedAssetMaterializationFailureData, self.event_specific_data)
+
+    @property
+    def planned_asset_materialization_skipped_data(
+        self,
+    ) -> "PlannedAssetMaterializationSkippedData":
+        _assert_type(
+            "planned_asset_materialization_skipped",
+            DagsterEventType.PLANNED_ASSET_MATERIALIZATION_SKIPPED,
+            self.event_type,
+        )
+        return cast(PlannedAssetMaterializationSkippedData, self.event_specific_data)
 
     @property
     def asset_check_planned_data(self) -> "AssetCheckEvaluationPlanned":
@@ -986,16 +1008,30 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def build_asset_materialization_failure_event(
+    def build_planned_asset_materialization_failure_event(
         job_name: str,
         step_key: str,
-        asset_materialization_failure_data: "AssetMaterializationFailureData",
+        planned_asset_materialization_failure_data: "PlannedAssetMaterializationFailureData",
     ) -> "DagsterEvent":
         return DagsterEvent(
-            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_FAILURE.value,
+            event_type_value=DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE.value,
             job_name=job_name,
             message="",
-            event_specific_data=asset_materialization_failure_data,
+            event_specific_data=planned_asset_materialization_failure_data,
+            step_key=step_key,
+        )
+
+    @staticmethod
+    def build_planned_asset_materialization_skipped_event(
+        job_name: str,
+        step_key: str,
+        planned_asset_materialization_skipped_data: "PlannedAssetMaterializationSkippedData",
+    ) -> "DagsterEvent":
+        return DagsterEvent(
+            event_type_value=DagsterEventType.PLANNED_ASSET_MATERIALIZATION_SKIPPED.value,
+            job_name=job_name,
+            message="",
+            event_specific_data=planned_asset_materialization_skipped_data,
             step_key=step_key,
         )
 
@@ -1579,7 +1615,7 @@ class AssetObservationData(
 
 
 @whitelist_for_serdes
-class AssetMaterializationFailureData(
+class PlannedAssetMaterializationFailureData(
     NamedTuple(
         "_AssetMaterializationFailureData",
         [
@@ -1595,11 +1631,45 @@ class AssetMaterializationFailureData(
         partition: Optional[str],
         error: Optional[SerializableErrorInfo] = None,
     ):
-        return super(AssetMaterializationFailureData, cls).__new__(
+        return super(PlannedAssetMaterializationFailureData, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             partition=check.opt_str_param(partition, "partition"),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+        )
+
+
+@whitelist_for_serdes
+class PlannedAssetMaterializationSkipReason(Enum):
+    # The run was deleted after it was planned but before the materialization could happen
+    RUN_DELETED = "RUN_DELETED"
+    # Will add more concrete skip reasons as we add code that emits skip events
+
+
+@whitelist_for_serdes
+class PlannedAssetMaterializationSkippedData(
+    NamedTuple(
+        "_PlannedAssetMaterializationSkippedData",
+        [
+            ("asset_key", AssetKey),
+            ("partition", Optional[str]),
+            ("skip_reason", Optional[PlannedAssetMaterializationSkipReason]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        partition: Optional[str],
+        skip_reason: Optional[PlannedAssetMaterializationSkipReason] = None,
+    ):
+        return super(PlannedAssetMaterializationSkippedData, cls).__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            partition=check.opt_str_param(partition, "partition"),
+            skip_reason=check.opt_inst_param(
+                skip_reason, "skip_reason", PlannedAssetMaterializationSkipReason
+            ),
         )
 
 

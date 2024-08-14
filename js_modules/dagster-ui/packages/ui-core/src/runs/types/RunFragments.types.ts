@@ -265,15 +265,6 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_AssetMaterializationFailureEvent = {
-  __typename: 'AssetMaterializationFailureEvent';
-  message: string;
-  timestamp: string;
-  level: Types.LogLevel;
-  stepKey: string | null;
-  eventType: Types.DagsterEventType | null;
-};
-
 export type RunDagsterRunEventFragment_AssetMaterializationPlannedEvent = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
@@ -2014,6 +2005,24 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
+export type RunDagsterRunEventFragment_PlannedAssetMaterializationFailureEvent = {
+  __typename: 'PlannedAssetMaterializationFailureEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+};
+
+export type RunDagsterRunEventFragment_PlannedAssetMaterializationSkippedEvent = {
+  __typename: 'PlannedAssetMaterializationSkippedEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+};
+
 export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
   __typename: 'ResourceInitFailureEvent';
   message: string;
@@ -3077,7 +3086,6 @@ export type RunDagsterRunEventFragment =
   | RunDagsterRunEventFragment_AlertSuccessEvent
   | RunDagsterRunEventFragment_AssetCheckEvaluationEvent
   | RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent
-  | RunDagsterRunEventFragment_AssetMaterializationFailureEvent
   | RunDagsterRunEventFragment_AssetMaterializationPlannedEvent
   | RunDagsterRunEventFragment_EngineEvent
   | RunDagsterRunEventFragment_ExecutionStepFailureEvent
@@ -3098,6 +3106,8 @@ export type RunDagsterRunEventFragment =
   | RunDagsterRunEventFragment_MaterializationEvent
   | RunDagsterRunEventFragment_ObjectStoreOperationEvent
   | RunDagsterRunEventFragment_ObservationEvent
+  | RunDagsterRunEventFragment_PlannedAssetMaterializationFailureEvent
+  | RunDagsterRunEventFragment_PlannedAssetMaterializationSkippedEvent
   | RunDagsterRunEventFragment_ResourceInitFailureEvent
   | RunDagsterRunEventFragment_ResourceInitStartedEvent
   | RunDagsterRunEventFragment_ResourceInitSuccessEvent
