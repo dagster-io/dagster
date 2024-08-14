@@ -187,6 +187,8 @@ def _get_partitions_chunk(
     backfill_runs = instance.get_runs(
         RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
+    # fetching the partitions def of a legacy dynamic partitioned op-job will raise an error
+    # so guard against it by checking if the partitions def exists first
     partitions_def = (
         partition_set.get_partitions_definition()
         if partition_set.has_partitions_definition()
@@ -201,8 +203,11 @@ def _get_partitions_chunk(
             and partitions_def is not None
         ):
             if partitions_def is None:
+                # We should not hit this case, since all PartitionsDefinitions that can be put on
+                # assets are fetchable via the ExternalPartitionSet. However, we do this check so that
+                # we only fetch the partitions def once before the loop
                 raise DagsterInvariantViolationError(
-                    f"Cannot access PartitionsDefinition for backfill {backfill_job.backfill_id}. This is likely because the PartitionsDefinition is a DynamicPartitionsDefinition that was constructed with the deprecated `partitions_fn` argument. Please use the `name` argument instead, or remove the BackfillPolicy from your asset."
+                    f"Cannot access PartitionsDefinition for backfill {backfill_job.backfill_id}. "
                 )
             completed_partitions.extend(
                 partitions_def.get_partition_keys_in_range(
