@@ -41,7 +41,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        f"sdf-cli>=0.3.16,<{SDF_VERSION_UPPER_BOUND}",
+        f"sdf-cli>=0.3.21,<{SDF_VERSION_UPPER_BOUND}",
         "orjson",
         "polars",
         "typer>=0.9.0",
