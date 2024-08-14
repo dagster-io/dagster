@@ -51,11 +51,7 @@ To make creating cron expressions easier, you can use an online tool like [Cront
 - You need to run jobs at regular intervals
 - You want basic time-based automation
 
-### Basic Schedule Example
-
-<CodeExample filePath="guides/automation/simple-schedule-example.py" language="python" title="Simple Schedule Example" />
-
-For more examples of schedules, see the [How-To Use Schedules](/guides/automation/schedules) guide.
+For examples of how to create schedules, see the [How-To Use Schedules](/guides/automation/schedules) guide.
 
 For more information about how Schedules work, see the [About Schedules](/concepts/schedules) concept page.
 
@@ -74,20 +70,9 @@ You must provide a function that the sensor will use to determine if it should t
 - You need event-driven automation
 - You want to react to changes in external systems
 
-### Basic Sensor Example 
+For more examples of how to create sensors, see the [How-To Use Sensors](/guides/automation/sensors) guide.
 
-This example includes a `check_for_new_files` function that simulates finding new files. In a real scenario, this function would check an actual system or directory.
-
-The sensor runs every 5 seconds. If it finds new files, it starts a run of `my_job`. If not, it skips the run and logs "No new files found" in the Dagster UI.
-
-<CodeExample filePath="guides/automation/simple-sensor-example.py" language="python" title="Simple Sensor Example" />
-
-:::tip
-
-By default, sensors aren't enabled when first deployed to a Dagster instance.
-Click "Automation" in the top navigation to find and enable a sensor.
-
-:::
+For more information about how Sensors work, see the [About Sensors](/concepts/sensors) concept page.
 
 ## Asset Sensors
 
@@ -98,11 +83,8 @@ Asset Sensors trigger jobs when specified assets are materialized, allowing you 
 - You need to trigger jobs based on asset materializations
 - You want to create dependencies between different jobs or code locations
 
-### Basic Asset Sensor Example
+For more examples of how to create asset sensors, see the [How-To Use Asset Sensors](/guides/automation/asset-sensors) guide.
 
-<CodeExample filePath="guides/automation/simple-asset-sensor-example.py" language="python" title="Simple Asset Sensor Example" />
-
-This Asset Sensor will trigger a run of `my_job` whenever the `asset_to_watch` asset is materialized.
 
 ## Choosing the Right Automation Method
 
