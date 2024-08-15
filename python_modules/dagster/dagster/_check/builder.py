@@ -285,6 +285,8 @@ def build_check_call_str(
             return name  # no-op
     elif origin is Literal:
         return f'check.literal_param({name}, "{name}", {args})'
+    elif origin is Callable or origin is collections.abc.Callable:
+        return f'check.callable_param({name}, "{name}")'
     else:
         if _is_annotated(origin, args):
             _process_annotated(ttype, args, eval_ctx)
