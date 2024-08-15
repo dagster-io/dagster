@@ -75,7 +75,7 @@ export function useWipeAssets({
   return {wipeAssets, isWiping, isDone, wipedCount, failedCount};
 }
 
-const ASSET_WIPE_MUTATION = gql`
+export const ASSET_WIPE_MUTATION = gql`
   mutation AssetWipeMutation($assetPartitionRanges: [PartitionsByAssetSelector!]!) {
     wipeAssets(assetPartitionRanges: $assetPartitionRanges) {
       ... on AssetWipeSuccess {
