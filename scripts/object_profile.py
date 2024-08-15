@@ -17,7 +17,7 @@ fixed_key = AssetKey("asset_key")
 
 def make_one(i: int = 0):
     """Create an instance of the object you want to profile."""
-    return AssetSubset(asset_key=fixed_key, value=False)
+    return AssetSubset(key=fixed_key, value=False)
 
 
 def make_n(n: int):

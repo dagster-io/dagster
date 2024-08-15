@@ -226,7 +226,7 @@ class LegacyRuleEvaluationContext:
             if not parent_result:
                 continue
             parent_subset = parent_result.true_subset.as_valid(self.partitions_def)
-            subset |= replace(parent_subset, asset_key=self.asset_key)
+            subset |= replace(parent_subset, key=self.asset_key)
         return subset
 
     @functools.cached_property

@@ -5,45 +5,27 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, c
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
-    AllPartitionsSubset,
-    PartitionsDefinition,
-    PartitionsSubset,
-)
+from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._model import InstanceOf
 from dagster._serdes.serdes import DataclassSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
 
+from typing import Generic, TypeVar
 
-class AssetSubsetSerializer(DataclassSerializer):
-    """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
+from dagster._core.definitions.asset_key import AssetGraphEntityKey
+from dagster._core.definitions.partition import PartitionsSubset
 
-    def get_storage_name(self) -> str:
-        # override this method so all ValidAssetSubsets are serialzied as AssetSubsets
-        return "AssetSubset"
-
-    def before_pack(self, value: "AssetSubset") -> "AssetSubset":
-        if value.is_partitioned:
-            return replace(value, value=value.subset_value.to_serializable_subset())
-        return value
+T = TypeVar("T", bound=AssetGraphEntityKey)
+AssetGraphEntitySubsetValue = Union[bool, PartitionsSubset]
 
 
-@whitelist_for_serdes(serializer=AssetSubsetSerializer)
-@dataclass(frozen=True)
-class AssetSubset:
-    """Represents a set of AssetKeyPartitionKeys for a given AssetKey. For partitioned assets, this
-    class uses a PartitionsSubset to represent the set of partitions, enabling lazy evaluation of the
-    underlying partition keys. For unpartitioned assets, this class uses a bool to represent whether
-    the asset is present or not.
-    """
+class AssetGraphEntitySubset(Generic[T]):
+    """Generic base class for representing a subset of an AssetGraphEntity."""
 
-    # use InstanceOf to tell pydantic to just do an instanceof check instead of the default
-    # costly NamedTuple validation and reconstruction
-    asset_key: InstanceOf[AssetKey]
-    value: Union[bool, PartitionsSubset]
+    key: T
+    value: AssetGraphEntitySubsetValue
 
     @property
     def is_partitioned(self) -> bool:
@@ -60,16 +42,6 @@ class AssetSubset:
         return cast(PartitionsSubset, self.value)
 
     @property
-    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        if not self.is_partitioned:
-            return {AssetKeyPartitionKey(self.asset_key)} if self.bool_value else set()
-        else:
-            return {
-                AssetKeyPartitionKey(self.asset_key, partition_key)
-                for partition_key in self.subset_value.get_partition_keys()
-            }
-
-    @property
     def size(self) -> int:
         if not self.is_partitioned:
             return int(self.bool_value)
@@ -82,6 +54,46 @@ class AssetSubset:
             return self.subset_value.is_empty
         else:
             return not self.bool_value
+
+
+class AssetSubsetSerializer(DataclassSerializer):
+    """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
+
+    def get_storage_name(self) -> str:
+        # override this method so all ValidAssetSubsets are serialzied as AssetSubsets
+        return "AssetSubset"
+
+    def before_pack(self, value: "AssetSubset") -> "AssetSubset":
+        if value.is_partitioned:
+            return replace(value, value=value.subset_value.to_serializable_subset())
+        return value
+
+
+@whitelist_for_serdes(serializer=AssetSubsetSerializer, storage_field_names={"key": "asset_key"})
+@dataclass(frozen=True)
+class AssetSubset(AssetGraphEntitySubset[AssetKey]):
+    """Represents a set of AssetKeyPartitionKeys for a given AssetKey. For partitioned assets, this
+    class uses a PartitionsSubset to represent the set of partitions, enabling lazy evaluation of the
+    underlying partition keys. For unpartitioned assets, this class uses a bool to represent whether
+    the asset is present or not.
+    """
+
+    key: AssetKey
+    value: AssetGraphEntitySubsetValue
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.key
+
+    @property
+    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        if not self.is_partitioned:
+            return {AssetKeyPartitionKey(self.asset_key)} if self.bool_value else set()
+        else:
+            return {
+                AssetKeyPartitionKey(self.asset_key, partition_key)
+                for partition_key in self.subset_value.get_partition_keys()
+            }
 
     def is_compatible_with_partitions_def(
         self, partitions_def: Optional[PartitionsDefinition]
@@ -107,7 +119,7 @@ class AssetSubset:
         if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
         """
         if self.is_compatible_with_partitions_def(partitions_def):
-            return ValidAssetSubset(asset_key=self.asset_key, value=self.value)
+            return ValidAssetSubset(key=self.asset_key, value=self.value)
         else:
             return ValidAssetSubset.empty(self.asset_key, partitions_def)
 
@@ -119,14 +131,14 @@ class AssetSubset:
         current_time: Optional[datetime.datetime] = None,
     ) -> "ValidAssetSubset":
         if partitions_def is None:
-            return ValidAssetSubset(asset_key=asset_key, value=True)
+            return ValidAssetSubset(key=asset_key, value=True)
         else:
             if dynamic_partitions_store is None or current_time is None:
                 check.failed(
                     "Must provide dynamic_partitions_store and current_time for partitioned assets."
                 )
             return ValidAssetSubset(
-                asset_key=asset_key,
+                key=asset_key,
                 value=AllPartitionsSubset(partitions_def, dynamic_partitions_store, current_time),
             )
 
@@ -135,9 +147,9 @@ class AssetSubset:
         asset_key: AssetKey, partitions_def: Optional[PartitionsDefinition]
     ) -> "ValidAssetSubset":
         if partitions_def is None:
-            return ValidAssetSubset(asset_key=asset_key, value=False)
+            return ValidAssetSubset(key=asset_key, value=False)
         else:
-            return ValidAssetSubset(asset_key=asset_key, value=partitions_def.empty_subset())
+            return ValidAssetSubset(key=asset_key, value=partitions_def.empty_subset())
 
     @staticmethod
     def from_asset_partitions_set(
@@ -154,7 +166,7 @@ class AssetSubset:
                 },
             )
             if partitions_def
-            else ValidAssetSubset(asset_key=asset_key, value=bool(asset_partitions_set))
+            else ValidAssetSubset(key=asset_key, value=bool(asset_partitions_set))
         )
 
     @staticmethod
@@ -164,7 +176,7 @@ class AssetSubset:
         partition_keys: AbstractSet[str],
     ) -> "ValidAssetSubset":
         return ValidAssetSubset(
-            asset_key=asset_key, value=partitions_def.subset_with_partition_keys(partition_keys)
+            key=asset_key, value=partitions_def.subset_with_partition_keys(partition_keys)
         )
 
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
@@ -234,7 +246,7 @@ class ValidAssetSubset(AssetSubset):
         if isinstance(other, ValidAssetSubset):
             return other
         elif self._is_compatible_with_subset(other):
-            return ValidAssetSubset(asset_key=other.asset_key, value=other.value)
+            return ValidAssetSubset(key=other.asset_key, value=other.value)
         else:
             return replace(
                 self,

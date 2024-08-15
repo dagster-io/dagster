@@ -68,7 +68,7 @@ def _slice_from_subset(
             asset_graph_view,
             subset
             if isinstance(subset, ValidAssetSubset)
-            else ValidAssetSubset(asset_key=subset.asset_key, value=subset.value),
+            else ValidAssetSubset(key=subset.asset_key, value=subset.value),
         )
     else:
         return None

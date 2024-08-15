@@ -156,7 +156,7 @@ class AutomationConditionEvaluator:
                     # the subset of all required neighbors
                     if neighbor_key in self.current_results_by_key:
                         neighbor_true_subset = dataclasses.replace(
-                            result.serializable_evaluation.true_subset, asset_key=neighbor_key
+                            result.serializable_evaluation.true_subset, key=neighbor_key
                         )
                         neighbor_evaluation = result.serializable_evaluation._replace(
                             true_subset=neighbor_true_subset

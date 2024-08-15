@@ -432,11 +432,11 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 unique_id=str(random.randint(0, 100000000)),
             ),
             true_subset=AssetSubset(
-                asset_key=asset_key,
+                key=asset_key,
                 value=partitions_def.subset_with_partition_keys(true_partition_keys),
             ),
             candidate_subset=AssetSubset(
-                asset_key=asset_key,
+                key=asset_key,
                 value=partitions_def.subset_with_partition_keys(candidate_partition_keys),
             )
             if candidate_partition_keys
