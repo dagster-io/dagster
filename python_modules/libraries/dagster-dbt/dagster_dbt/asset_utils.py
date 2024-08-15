@@ -758,7 +758,7 @@ def build_dbt_multi_asset_args(
         asset_resource_types=ASSET_RESOURCE_TYPES,
     )
 
-    deps: Set[AssetDep] = set()
+    deps: Dict[AssetKey, AssetDep] = {}
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
@@ -870,11 +870,9 @@ def build_dbt_multi_asset_args(
 
             # Mark this parent as an input if it has no dependencies
             if parent_unique_id not in dbt_unique_id_deps:
-                deps.add(
-                    AssetDep(
-                        asset=parent_asset_key,
-                        partition_mapping=parent_partition_mapping,
-                    )
+                deps[parent_asset_key] = AssetDep(
+                    asset=parent_asset_key,
+                    partition_mapping=parent_partition_mapping,
                 )
 
         self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
@@ -882,11 +880,9 @@ def build_dbt_multi_asset_args(
             dbt_parent_resource_props=dbt_resource_props,
         )
         if self_partition_mapping and has_self_dependency(dbt_resource_props):
-            deps.add(
-                AssetDep(
-                    asset=asset_key,
-                    partition_mapping=self_partition_mapping,
-                )
+            deps[asset_key] = AssetDep(
+                asset=asset_key,
+                partition_mapping=self_partition_mapping,
             )
             output_internal_deps.add(asset_key)
 
@@ -923,7 +919,7 @@ def build_dbt_multi_asset_args(
             "\n\n".join([DUPLICATE_ASSET_KEY_ERROR_MESSAGE, *error_messages])
         )
 
-    return list(deps), outs, internal_asset_deps, list(check_specs_by_key.values())
+    return list(deps.values()), outs, internal_asset_deps, list(check_specs_by_key.values())
 
 
 def get_asset_deps(
