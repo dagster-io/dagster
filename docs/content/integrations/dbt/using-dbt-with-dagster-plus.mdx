@@ -202,21 +202,20 @@ The last step is to update the [CI/CD files](/dagster-plus/references/ci-cd-file
 4. After this step, add the following:
 
    ```yaml
-   - name: Parse dbt project and package with Dagster project
+   - name: Prepare DBT project for deployment
      if: steps.prerun.outputs.result == 'pex-deploy'
      run: |
        pip install pip --upgrade
-       pip install <ADAPTERS>               ## Add dbt adapters here, ex: dbt-duckdb
-       cd <PROJECT_REPOSITORY>/dbt          ## Replace with the dbt project directory
-       dbt deps
-       dbt parse
+       cd project-repo
+       pip install . --upgrade --upgrade-strategy eager                                            ## Install the Python dependencies from the setup.py file, ex: dbt-core and dbt-duckdb
+       dagster-dbt project prepare-and-package --file <DAGSTER_PROJECT_FOLDER>/project.py          ## Replace with the project.py location in the Dagster project folder
      shell: bash
    ```
 
    When you add this step, you'll need to:
 
-   - **Add any [adapters](https://docs.getdbt.com/docs/connect-adapters) used by dbt**. In this example, we're using `dbt-duckdb`.
-   - **Add the location of your dbt project directory** to the `cd` command. In this example, our project is in the `/dbt` directory.
+   - **Add any [adapters](https://docs.getdbt.com/docs/connect-adapters) and libraries used by dbt to your `setup.py` file**. In this example, we're using `dbt-core` and `dbt-duckdb`.
+   - **Add the location of your Dagster project directory** to the `dagster-dbt project prepare-and-package` command. In this example, our project is in the `/my_dbt_and_dagster_project` directory.
 
 5. Save the changes.
 
