@@ -1,0 +1,73 @@
+---
+title: "Using dbt with Hybrid deployments in Dagster+ | Dagster Docs"
+description: Deploy your dbt & Dagster project with Hybrid deployments in Dagster+.
+---
+
+# Using dbt with Hybrid deployments Dagster+
+
+Using Hybrid deployment, the dbt project must be accessible to the Dagster code executed by your agent:
+
+- Using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent, the dbt project must be included in the Docker Image containing your Dagster code.
+- Using a local agent, your Dagster code must be able to accessed the dbt project on the same machine as your agent.
+
+For the dbt project to be used by Dagster, it must contain an up-to-date [manifest file](https://docs.getdbt.com/reference/artifacts/manifest-json) and [project dependencies](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies).
+
+In this guide, we'll demonstrate how to prepare your dbt project for use in your Hybrid deployment in Dagster+.
+
+---
+
+## Prerequisites
+
+To follow the steps in this guide, you'll need **an existing dbt project** that contains the following files in the repository root:
+
+- [`dbt_project.yml`](https://docs.getdbt.com/reference/dbt_project.yml)
+- [`profiles.yml`](https://docs.getdbt.com/docs/core/connect-data-platform/profiles.yml)
+
+---
+
+## Using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent
+
+
+### Dockerfile
+
+### CI/CD
+
+---
+
+## Using a local agent
+
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="dbt & Dagster"
+    href="/integrations/dbt"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-dbt reference"
+    href="/integrations/dbt/reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Getting started with Dagster+"
+    href="/dagster-plus"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Hybrid deployment in Dagster+"
+    href="/dagster-plus/deployment/hybrid"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster_cloud.yaml reference"
+    href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster+ CI/CD file reference"
+    href="/dagster-plus/references/ci-cd-file-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster project files"
+    href="/guides/understanding-dagster-project-files"
+  ></ArticleListItem>
+</ArticleList>
