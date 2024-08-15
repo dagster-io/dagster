@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogFooter,
   DialogHeader,
+  FontFamily,
   MiddleTruncate,
   Spinner,
   Subtitle2,
@@ -66,7 +67,7 @@ interface InnerProps {
 }
 
 const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
-  const [activeTab, setActiveTab] = useState<'result' | 'logs'>('result');
+  const [activeTab, setActiveTab] = useState<'result' | 'cursor' | 'logs'>('result');
 
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, tickId: tickId || 0},
@@ -77,6 +78,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
     data?.instigationStateOrError.__typename === 'InstigationState'
       ? data?.instigationStateOrError.tick
       : undefined;
+  const cursor = tick?.cursor;
 
   const [addedPartitionRequests, deletedPartitionRequests] = useMemo(() => {
     const added = tick?.dynamicPartitionsRequestResults.filter(
@@ -116,6 +118,7 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       <Box padding={{horizontal: 24}} border="bottom">
         <Tabs selectedTabId={activeTab} onChange={setActiveTab}>
           <Tab id="result" title="Result" />
+          <Tab id="cursor" title="Cursor" />
           <Tab id="logs" title="Logs" />
         </Tabs>
       </Box>
@@ -158,6 +161,15 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
             </Box>
           ) : null}
         </div>
+      ) : null}
+      {activeTab === 'cursor' ? (
+        <Box style={{height: 500}} flex={{direction: 'column'}}>
+          <Box padding={24}>
+            <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
+              {cursor ? cursor : 'None'}
+            </span>
+          </Box>
+        </Box>
       ) : null}
       {activeTab === 'logs' ? (
         <QueryfulTickLogsTable instigationSelector={instigationSelector} tick={tick} />
