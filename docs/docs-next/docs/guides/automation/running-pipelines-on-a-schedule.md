@@ -1,6 +1,4 @@
 ---
-title: "Scheduling runs"
+title: "Scheduling pipelines"
 sidebar_position: 1
 ---
-
-# Scheduling runs

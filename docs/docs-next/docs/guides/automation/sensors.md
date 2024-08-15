@@ -1,4 +1,8 @@
-### Basic Sensor Example 
+---
+title: Sensor Examples
+---
+
+### Basic Sensor Example
 
 This example includes a `check_for_new_files` function that simulates finding new files. In a real scenario, this function would check an actual system or directory.
 

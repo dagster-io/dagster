@@ -1,3 +1,7 @@
+---
+title: Asset Sensors
+---
+
 ### Basic Asset Sensor Example
 
 <CodeExample filePath="guides/automation/simple-asset-sensor-example.py" language="python" title="Simple Asset Sensor Example" />

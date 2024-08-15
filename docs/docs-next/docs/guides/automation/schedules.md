@@ -1,3 +1,7 @@
+---
+title: Scheduling Examples
+---
+
 ### Basic Schedule Example
 
 <CodeExample filePath="guides/automation/simple-schedule-example.py" language="python" title="Simple Schedule Example" />
