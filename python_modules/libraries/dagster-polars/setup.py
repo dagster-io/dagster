@@ -44,7 +44,7 @@ setup(
         "universal_pathlib>=0.1.4",
     ],
     extras_require={
-        "deltalake": ["deltalake>=0.15.0"],
+        "deltalake": ["deltalake>=0.15.0,<0.19"],
         "gcp": ["dagster-gcp>=0.19.5"],
         "test": [
             "pytest>=8",
