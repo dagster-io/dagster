@@ -5,14 +5,10 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
-)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition
 
 # re-export
 from dagster._core.definitions.run_request import (
@@ -23,7 +19,6 @@ from dagster._core.definitions.selector import InstigatorSelector, RepositorySel
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
-from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
 from dagster._time import get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import xor
@@ -782,18 +777,7 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
             asset_key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
         )
 
-    def get_evaluation_with_run_ids(
-        self, partitions_def: Optional[PartitionsDefinition]
-    ) -> AutomationConditionEvaluationWithRunIds:
-        try:
-            # If this was serialized as an AutomationConditionEvaluationWithRunIds, we can deserialize
-            # this directly
-            return deserialize_value(
-                self.serialized_evaluation_body, AutomationConditionEvaluationWithRunIds
-            )
-        except DeserializationError:
-            # If this is a legacy AutoMaterializeAssetEvaluation, we need to pass in the partitions
-            # definition in order to be able to deserialize the evaluation properly
-            return deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-                self.serialized_evaluation_body, partitions_def
-            )
+    def get_evaluation_with_run_ids(self) -> AutomationConditionEvaluationWithRunIds:
+        return deserialize_value(
+            self.serialized_evaluation_body, AutomationConditionEvaluationWithRunIds
+        )
