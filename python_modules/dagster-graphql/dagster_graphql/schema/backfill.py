@@ -109,10 +109,23 @@ class GrapheneResumeBackfillSuccess(graphene.ObjectType):
         name = "ResumeBackfillSuccess"
 
 
+class GrapheneRetryBackfillSuccess(graphene.ObjectType):
+    backfill_id = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "RetryBackfillSuccess"
+
+
 class GrapheneResumeBackfillResult(graphene.Union):
     class Meta:
         types = (GrapheneResumeBackfillSuccess, GrapheneUnauthorizedError, GraphenePythonError)
         name = "ResumeBackfillResult"
+
+
+class GrapheneRetryBackfillResult(graphene.Union):
+    class Meta:
+        types = (GrapheneRetryBackfillSuccess, GrapheneUnauthorizedError, GraphenePythonError)
+        name = "RetryBackfillResult"
 
 
 class GrapheneBulkActionStatus(graphene.Enum):
