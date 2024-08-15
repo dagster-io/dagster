@@ -6,7 +6,6 @@ import warnings
 import weakref
 from abc import abstractmethod
 from collections import defaultdict
-from datetime import datetime
 from enum import Enum
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -124,7 +123,11 @@ if TYPE_CHECKING:
         JobFailureData,
     )
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionsFilter,
+        BulkActionStatus,
+        PartitionBackfill,
+    )
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
@@ -3077,15 +3080,10 @@ class DagsterInstance(DynamicPartitionsStore):
         status: Optional["BulkActionStatus"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        created_before: Optional[datetime] = None,
-        created_after: Optional[datetime] = None,
+        filters: Optional["BulkActionsFilter"] = None,
     ) -> Sequence["PartitionBackfill"]:
         return self._run_storage.get_backfills(
-            status=status,
-            cursor=cursor,
-            limit=limit,
-            created_before=created_before,
-            created_after=created_after,
+            status=status, cursor=cursor, limit=limit, filters=filters
         )
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:

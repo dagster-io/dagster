@@ -38,7 +38,7 @@ from dagster._core.events import (
     DagsterEventType,
     RunFailureReason,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
@@ -837,22 +837,31 @@ class SqlRunStorage(RunStorage):
         status: Optional[BulkActionStatus] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        created_before: Optional[datetime] = None,
-        created_after: Optional[datetime] = None,
+        filters: Optional[BulkActionsFilter] = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
-        if status:
-            query = query.where(BulkActionsTable.c.status == status.value)
+        if status or (filters and filters.status):
+            if status and filters and filters.status and status != filters.status:
+                raise DagsterInvariantViolationError(
+                    "Conflicting status filters provided to get_backfills. Choose one of status or BulkActionsFilter.status."
+                )
+            status = status or (filters.status if filters else None)
+            if status:  # should also be non-None at this point, but pyright must be appeased
+                query = query.where(BulkActionsTable.c.status == status.value)
         if cursor:
             cursor_query = db_select([BulkActionsTable.c.id]).where(
                 BulkActionsTable.c.key == cursor
             )
             query = query.where(BulkActionsTable.c.id < cursor_query)
-        if created_after:
-            query = query.where(BulkActionsTable.c.timestamp > created_after)
-        if created_before:
-            query = query.where(BulkActionsTable.c.timestamp < created_before.replace(tzinfo=None))
+        if filters and filters.created_after:
+            query = query.where(
+                BulkActionsTable.c.timestamp > filters.created_after.replace(tzinfo=None)
+            )
+        if filters and filters.created_before:
+            query = query.where(
+                BulkActionsTable.c.timestamp < filters.created_before.replace(tzinfo=None)
+            )
         if limit:
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())

@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
@@ -14,6 +15,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -36,6 +38,13 @@ class BulkActionStatus(Enum):
     @staticmethod
     def from_graphql_input(graphql_str):
         return BulkActionStatus(graphql_str)
+
+
+@record
+class BulkActionsFilter:
+    status: Optional[BulkActionStatus] = None
+    created_before: Optional[datetime] = None
+    created_after: Optional[datetime] = None
 
 
 @whitelist_for_serdes
