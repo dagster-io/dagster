@@ -40,7 +40,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
+from dagster._serdes import pack_value, unpack_value
 from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
@@ -65,7 +65,6 @@ def get_ephemeral_repository_name(job_name: str) -> str:
     return f"__repository__{job_name}"
 
 
-@whitelist_for_serdes
 class ReconstructableRepository(
     NamedTuple(
         "_ReconstructableRepository",
@@ -194,13 +193,6 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
                 yield k, v
 
 
-@whitelist_for_serdes(
-    serializer=ReconstructableJobSerializer,
-    storage_name="ReconstructablePipeline",
-    storage_field_names={
-        "job_name": "pipeline_name",
-    },
-)
 class ReconstructableJob(
     NamedTuple(
         "_ReconstructableJob",
