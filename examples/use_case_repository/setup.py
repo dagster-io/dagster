@@ -7,6 +7,7 @@ setup(
         "dagster",
         "dagster-embedded-elt",
         "dagster-pipes",
+        "dagster-snowflake",
         "python-frontmatter",
         "pymdown-extensions",
         "markdown",
