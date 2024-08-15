@@ -10,10 +10,14 @@ from dagster._core.errors import (
 )
 from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import (
+    BULK_ACTION_COMPLETED_STATUSES,
+    BulkActionStatus,
+    PartitionBackfill,
+)
 from dagster._core.execution.job_backfill import submit_backfill_runs
 from dagster._core.remote_representation.external_data import PartitionExecutionErrorSnap
-from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster._core.storage.tags import PARENT_BACKFILL_ID_TAG, ROOT_BACKFILL_ID_TAG
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._time import datetime_from_timestamp, get_current_timestamp
@@ -353,29 +357,49 @@ def retry_partition_backfill(
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    partition_set_origin = check.not_none(backfill.partition_set_origin)
-    location_name = partition_set_origin.selector.location_name
-    assert_permission_for_location(
-        graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
-    )
+    if backfill.status not in BULK_ACTION_COMPLETED_STATUSES:
+        raise DagsterInvariantViolationError(
+            f"Cannot retry backfill {backfill_id} because it is still in progress."
+        )
 
     if backfill.is_asset_backfill:
+        if (
+            backfill.asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
+            == 0
+        ):
+            raise DagsterInvariantViolationError(
+                "Cannot retry an asset backfill that has no failed assets."
+            )
+        asset_graph = graphene_info.context.asset_graph
+        assert_permission_for_asset_graph(
+            graphene_info,
+            asset_graph,
+            backfill.asset_backfill_data.failed_and_downstream_subset.asset_keys,
+            Permissions.LAUNCH_PARTITION_BACKFILL,
+        )
+
         new_backfill = PartitionBackfill.from_asset_graph_subset(
             backfill_id=make_new_backfill_id(),
             asset_graph_subset=backfill.asset_backfill_data.failed_and_downstream_subset,
             dynamic_partitions_store=graphene_info.context.instance,
             tags={
                 **backfill.tags,
-                PARENT_RUN_ID_TAG: backfill.backfill_id,
-                ROOT_RUN_ID_TAG: backfill.tags.get(PARENT_RUN_ID_TAG, backfill.backfill_id),
+                PARENT_BACKFILL_ID_TAG: backfill.backfill_id,
+                ROOT_BACKFILL_ID_TAG: backfill.tags.get(PARENT_BACKFILL_ID_TAG, backfill.backfill_id),
             },
             backfill_timestamp=get_current_timestamp(),
             title=f"Retry of {backfill.title}" if backfill.title else None,
             description=backfill.description,
         )
     else:
+        partition_set_origin = check.not_none(backfill.partition_set_origin)
+        location_name = partition_set_origin.selector.location_name
+        assert_permission_for_location(
+            graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
+        )
+
         new_backfill = PartitionBackfill(
-            backfill_id=backfill.backfill_id,
+            backfill_id=make_new_backfill_id(),
             partition_set_origin=backfill.partition_set_origin,
             status=BulkActionStatus.REQUESTED,
             partition_names=backfill.partition_names,
@@ -383,8 +407,8 @@ def retry_partition_backfill(
             reexecution_steps=backfill.reexecution_steps,
             tags={
                 **backfill.tags,
-                PARENT_RUN_ID_TAG: backfill.backfill_id,
-                ROOT_RUN_ID_TAG: backfill.tags.get(PARENT_RUN_ID_TAG, backfill.backfill_id),
+                PARENT_BACKFILL_ID_TAG: backfill.backfill_id,
+                ROOT_BACKFILL_ID_TAG: backfill.tags.get(PARENT_BACKFILL_ID_TAG, backfill.backfill_id),
             },
             backfill_timestamp=get_current_timestamp(),
             asset_selection=backfill.asset_selection,
