@@ -221,7 +221,6 @@ def _get_partitions_chunk(
         elif run.tags.get(PARTITION_NAME_TAG):
             completed_partitions.append(run.tags[PARTITION_NAME_TAG])
 
-    logger.info([run.tags for run in backfill_runs])
     initial_checkpoint = (
         partition_names.index(checkpoint) + 1 if checkpoint and checkpoint in partition_names else 0
     )
