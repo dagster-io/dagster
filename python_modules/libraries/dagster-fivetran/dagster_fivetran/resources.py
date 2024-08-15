@@ -398,6 +398,10 @@ class FivetranResource(ConfigurableResource):
         )
         return FivetranOutput(connector_details=final_details, schema_config=schema_config)
 
+    def get_destination_details(self, destination_id: str) -> Mapping[str, Any]:
+        """Fetches details about a given destination from the Fivetran API."""
+        return self.make_request("GET", f"destinations/{destination_id}")
+
 
 @dagster_maintained_resource
 @resource(config_schema=FivetranResource.to_config_schema())

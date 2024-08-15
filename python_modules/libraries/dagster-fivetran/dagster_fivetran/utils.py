@@ -19,7 +19,12 @@ def get_fivetran_logs_url(connector_details: Mapping[str, Any]) -> str:
 
 
 def metadata_for_table(
-    table_data: Mapping[str, Any], connector_url: str, include_column_info: bool = False
+    table_data: Mapping[str, Any],
+    connector_url: str,
+    database: Optional[str],
+    schema: Optional[str],
+    table: Optional[str],
+    include_column_info: bool = False,
 ) -> RawMetadataMapping:
     metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
     if table_data.get("columns"):
@@ -35,6 +40,10 @@ def metadata_for_table(
         metadata["table_schema"] = MetadataValue.table_schema(TableSchema(table_columns))
         if include_column_info:
             metadata["column_info"] = MetadataValue.json(columns)
+    if database and schema and table:
+        metadata["dagster/relation_identifier"] = MetadataValue.text(
+            ".".join([database, schema, table])
+        )
 
     return metadata
 
@@ -57,6 +66,9 @@ def _table_data_to_materialization(
             table_data,
             get_fivetran_connector_url(fivetran_output.connector_details),
             include_column_info=True,
+            database=None,
+            schema=schema_name,
+            table=table_name,
         ),
     )
 

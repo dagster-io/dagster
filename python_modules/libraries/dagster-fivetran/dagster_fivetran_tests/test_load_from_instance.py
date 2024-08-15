@@ -1,11 +1,12 @@
 import base64
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import responses
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetsDefinition,
     EnvVar,
     InputContext,
     IOManager,
@@ -32,6 +33,7 @@ from dagster_fivetran_tests.utils import (
     get_sample_connector_response,
     get_sample_connectors_response,
     get_sample_connectors_response_multiple,
+    get_sample_destination_details_response,
     get_sample_groups_response,
     get_sample_sync_response,
     get_sample_update_response,
@@ -56,7 +58,7 @@ def test_load_from_instance(
     connector_to_asset_key_fn,
     multiple_connectors,
     destination_ids,
-):
+) -> None:
     with environ({"FIVETRAN_API_KEY": "some_key", "FIVETRAN_API_SECRET": "some_secret"}):
         load_calls = []
 
@@ -85,6 +87,13 @@ def test_load_from_instance(
                 method=rsps.GET,
                 url=ft_resource.api_base_url + "groups",
                 json=get_sample_groups_response(),
+                status=200,
+                match=[matchers.header_matcher(expected_auth_header)],
+            )
+            rsps.add(
+                method=rsps.GET,
+                url=ft_resource.api_base_url + "destinations/some_group",
+                json=(get_sample_destination_details_response()),
                 status=200,
                 match=[matchers.header_matcher(expected_auth_header)],
             )
@@ -148,7 +157,9 @@ def test_load_from_instance(
         if connector_to_asset_key_fn:
             tables = {
                 connector_to_asset_key_fn(
-                    FivetranConnectionMetadata("some_service.some_name", "", "=", []),
+                    FivetranConnectionMetadata(
+                        "some_service.some_name", "", "=", [], database="example_database"
+                    ),
                     ".".join(t.path),
                 )
                 for t in tables
@@ -157,7 +168,9 @@ def test_load_from_instance(
         # Set up a downstream asset to consume the xyz output table
         xyz_asset_key = (
             connector_to_asset_key_fn(
-                FivetranConnectionMetadata("some_service.some_name", "", "=", []),
+                FivetranConnectionMetadata(
+                    "some_service.some_name", "", "=", [], database="example_database"
+                ),
                 "abc.xyz",
             )
             if connector_to_asset_key_fn
@@ -168,7 +181,7 @@ def test_load_from_instance(
         def downstream_asset(xyz):
             return
 
-        all_assets = [downstream_asset] + ft_assets
+        all_assets = [downstream_asset] + ft_assets  # type: ignore
 
         if destination_ids:
             # if destination_ids is truthy then we should skip the API call to get groups
@@ -188,7 +201,12 @@ def test_load_from_instance(
                     ]
                 )
             )
-            for out in ft_assets[0].node_def.output_defs
+            for out in cast(AssetsDefinition, ft_assets[0]).node_def.output_defs
+        )
+        assert all(
+            metadata.get("dagster/relation_identifier")
+            == MetadataValue.text("example_database." + ".".join(key.path[-2:]))
+            for key, metadata in ft_assets[0].metadata_by_key.items()
         )
 
         assert ft_assets[0].keys == tables
