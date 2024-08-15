@@ -18,7 +18,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildStorageKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
-import {DefinitionTag, buildDefinitionTag} from '../graphql/types';
+import {AssetOwner, DefinitionTag, buildDefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
@@ -41,7 +41,7 @@ export const linkToAssetTableWithStorageKindFilter = (storageKind: string) => {
   })}`;
 };
 
-export const linkToAssetTableWithTagFilter = (tag: DefinitionTag) => {
+export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
   return `/assets?${qs.stringify({
     tags: JSON.stringify([tag]),
   })}`;
@@ -50,6 +50,18 @@ export const linkToAssetTableWithTagFilter = (tag: DefinitionTag) => {
 export const linkToAssetTableWithOwnerFilter = (owner: string) => {
   return `/assets?${qs.stringify({
     owners: JSON.stringify([owner]),
+  })}`;
+};
+
+export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
+  return `/assets?${qs.stringify({
+    owners: JSON.stringify([owner]),
+  })}`;
+};
+
+export const linkToAssetTableWithColumnsFilter = (columns: string[]) => {
+  return `/assets?${qs.stringify({
+    columns: JSON.stringify(columns),
   })}`;
 };
 
