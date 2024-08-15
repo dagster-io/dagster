@@ -240,3 +240,7 @@ def get_sample_connectors_response_multiple():
             },
         ]
     }
+
+
+def get_sample_destination_details_response():
+    return {"data": {"config": {"database": "example_database"}}}
