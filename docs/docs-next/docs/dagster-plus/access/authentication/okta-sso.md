@@ -1,6 +1,6 @@
 ---
-title: "Dagster+"
+title: "Okta SSO"
 displayed_sidebar: "dagsterPlus"
 ---
 
-# Dagster+
+# Okta SSO

@@ -1,6 +1,6 @@
 ---
-title: "Dagster+"
+title: "OneLogin SSO"
 displayed_sidebar: "dagsterPlus"
 ---
 
-# Dagster+
+# OneLogin SSO
