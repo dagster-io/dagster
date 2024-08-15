@@ -393,6 +393,15 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
+export type WorkspacePipelineFragment = {
+  __typename: 'Pipeline';
+  id: string;
+  name: string;
+  isJob: boolean;
+  isAssetJob: boolean;
+  pipelineSnapshotId: string;
+};
+
 export type WorkspaceScheduleFragment = {
   __typename: 'Schedule';
   id: string;

@@ -22,7 +22,6 @@ def sdf_assets(
     *,
     workspace: SdfWorkspace,
     name: Optional[str] = None,
-    io_manager_key: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     dagster_sdf_translator: Optional[DagsterSdfTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -36,8 +35,7 @@ def sdf_assets(
         target_dir=workspace.target_dir,
         environment=workspace.environment,
     )
-    (deps, outs, internal_asset_deps, check_specs) = information_schema.build_sdf_multi_asset_args(
-        io_manager_key=io_manager_key,
+    (specs, check_specs) = information_schema.build_sdf_multi_asset_args(
         dagster_sdf_translator=dagster_sdf_translator,
     )
 
@@ -47,12 +45,9 @@ def sdf_assets(
         and not backfill_policy
     ):
         backfill_policy = BackfillPolicy.single_run()
-
     return multi_asset(
-        outs=outs,
+        specs=specs,
         name=name,
-        internal_asset_deps=internal_asset_deps,
-        deps=deps,
         required_resource_keys=required_resource_keys,
         compute_kind="sdf",
         partitions_def=partitions_def,

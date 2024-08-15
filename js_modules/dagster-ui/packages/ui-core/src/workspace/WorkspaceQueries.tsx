@@ -60,10 +60,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     name
     pipelines {
       id
-      name
-      isJob
-      isAssetJob
-      pipelineSnapshotId
+      ...WorkspacePipeline
     }
     schedules {
       id
@@ -87,6 +84,14 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       ...ResourceEntryFragment
     }
     ...RepositoryInfoFragment
+  }
+
+  fragment WorkspacePipeline on Pipeline {
+    id
+    name
+    isJob
+    isAssetJob
+    pipelineSnapshotId
   }
 
   fragment WorkspaceSchedule on Schedule {

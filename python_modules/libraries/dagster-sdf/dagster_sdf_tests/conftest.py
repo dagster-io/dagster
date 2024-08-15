@@ -5,7 +5,12 @@ import pytest
 from dagster_sdf.constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT
 from dagster_sdf.resource import SdfCliResource
 
-from .sdf_workspaces import lineage_asset_checks_path, lineage_upstream_path, moms_flower_shop_path
+from .sdf_workspaces import (
+    lineage_asset_checks_path,
+    lineage_upstream_path,
+    moms_flower_shop_path,
+    quoted_tables_path,
+)
 
 
 def _create_sdf_invocation(
@@ -42,3 +47,8 @@ def test_lineage_upstream_target_dir_fixture() -> Path:
 @pytest.fixture(name="lineage_asset_checks_target_dir", scope="function")
 def test_lineage_asset_checks_dir_fixture() -> Path:
     return _create_sdf_invocation(lineage_asset_checks_path).target_dir
+
+
+@pytest.fixture(name="quoted_tables_target_dir", scope="function")
+def test_quoted_tables_dir_fixture() -> Path:
+    return _create_sdf_invocation(quoted_tables_path).target_dir
