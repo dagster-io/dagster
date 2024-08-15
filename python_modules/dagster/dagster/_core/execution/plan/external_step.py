@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, cast
 import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
@@ -140,7 +141,10 @@ def step_context_to_step_run_ref(
                     executable_path=recon_job.repository.executable_path,
                     entry_point=recon_job.repository.entry_point,
                     container_context=recon_job.repository.container_context,
-                    repository_load_data=step_context.plan_data.execution_plan.repository_load_data,
+                    load_context=DefinitionsLoadContext(
+                        load_type="step_launcher_external_step",
+                        repository_load_data=step_context.plan_data.execution_plan.repository_load_data,
+                    ),
                 ),
                 job_name=recon_job.job_name,
                 op_selection=recon_job.op_selection,
@@ -199,7 +203,7 @@ def step_run_ref_to_step_context(
         known_state=step_run_ref.known_state,
         # we packaged repository_load_data onto the reconstructable job when creating the
         # StepRunRef, rather than putting it in a separate field
-        repository_load_data=job.repository.repository_load_data,
+        repository_load_data=job.repository.load_context.repository_load_data,
     )
 
     initialization_manager = PlanExecutionContextManager(

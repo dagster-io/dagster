@@ -34,12 +34,14 @@ from dagster._core.code_pointer import (
     get_python_file_from_target,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
+from dagster._record import copy
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
@@ -65,7 +67,6 @@ def get_ephemeral_repository_name(job_name: str) -> str:
     return f"__repository__{job_name}"
 
 
-@whitelist_for_serdes
 class ReconstructableRepository(
     NamedTuple(
         "_ReconstructableRepository",
@@ -75,7 +76,7 @@ class ReconstructableRepository(
             ("executable_path", Optional[str]),
             ("entry_point", Sequence[str]),
             ("container_context", Optional[Mapping[str, Any]]),
-            ("repository_load_data", Optional["RepositoryLoadData"]),
+            ("load_context", "DefinitionsLoadContext"),
         ],
     )
 ):
@@ -86,10 +87,8 @@ class ReconstructableRepository(
         executable_path: Optional[str] = None,
         entry_point: Optional[Sequence[str]] = None,
         container_context: Optional[Mapping[str, Any]] = None,
-        repository_load_data: Optional["RepositoryLoadData"] = None,
+        load_context: Optional[DefinitionsLoadContext] = None,
     ):
-        from dagster._core.definitions.repository_definition import RepositoryLoadData
-
         return super(ReconstructableRepository, cls).__new__(
             cls,
             pointer=check.inst_param(pointer, "pointer", CodePointer),
@@ -105,18 +104,21 @@ class ReconstructableRepository(
                 if container_context is not None
                 else None
             ),
-            repository_load_data=check.opt_inst_param(
-                repository_load_data, "repository_load_data", RepositoryLoadData
+            load_context=check.opt_inst_param(
+                load_context,
+                "DefinitionsLoadContext",
+                DefinitionsLoadContext,
+                default=DefinitionsLoadContext.empty(),
             ),
         )
 
     def with_repository_load_data(
         self, metadata: Optional["RepositoryLoadData"]
     ) -> "ReconstructableRepository":
-        return self._replace(repository_load_data=metadata)
+        return self._replace(load_context=copy(self.load_context, repository_load_data=metadata))
 
     def get_definition(self) -> "RepositoryDefinition":
-        return repository_def_from_pointer(self.pointer, self.repository_load_data)
+        return repository_def_from_pointer(self.pointer, self.load_context)
 
     def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
@@ -684,18 +686,16 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 @overload
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
-    repository_load_data: Optional["RepositoryLoadData"] = None,
+    context: DefinitionsLoadContext,
 ) -> "RepositoryDefinition": ...
 
 
 @overload
-def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
-) -> None: ...
+def repository_def_from_target_def(target: object, context: DefinitionsLoadContext) -> None: ...
 
 
 def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+    target: object, context: DefinitionsLoadContext
 ) -> Optional["RepositoryDefinition"]:
     from .assets import AssetsDefinition
     from .definitions_class import Definitions
@@ -712,7 +712,7 @@ def repository_def_from_target_def(
 
     if isinstance(target, DefinitionsLoader):
         # TODO: validate that it takes no arguments
-        target = target.load_fn()
+        target = target.load_fn(context)
         # TODO: validate that it's a Definitions object
 
     if isinstance(target, Definitions):
@@ -737,19 +737,19 @@ def repository_def_from_target_def(
         return target
     elif isinstance(target, PendingRepositoryDefinition):
         # must load repository from scratch
-        if repository_load_data is None:
+        if context.repository_load_data is None:
             return target.compute_repository_definition()
         # can use the cached data to more efficiently load data
-        return target.reconstruct_repository_definition(repository_load_data)
+        return target.reconstruct_repository_definition(context.repository_load_data)
     else:
         return None
 
 
 def repository_def_from_pointer(
-    pointer: CodePointer, repository_load_data: Optional["RepositoryLoadData"] = None
+    pointer: CodePointer, context: DefinitionsLoadContext
 ) -> "RepositoryDefinition":
     target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, repository_load_data)
+    repo_def = repository_def_from_target_def(target, context)
     if not repo_def:
         raise DagsterInvariantViolationError(
             f"CodePointer ({pointer.describe()}) must resolve to a "

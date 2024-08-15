@@ -4,6 +4,7 @@ import sys
 import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -268,7 +269,9 @@ def test_defs_loader():
     symbol = loadable_targets[0].attribute
     assert symbol == "defs"
 
-    repo_def = repository_def_from_pointer(CodePointer.from_python_file(module_path, symbol, None))
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(module_path, symbol, None), DefinitionsLoadContext.empty()
+    )
 
     assert isinstance(repo_def, RepositoryDefinition)
     assert len(repo_def.assets_defs_by_key) == 1

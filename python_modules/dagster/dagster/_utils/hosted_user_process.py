@@ -9,19 +9,24 @@ to be the case.
 """
 
 import dagster._check as check
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation import ExternalJob
 from dagster._core.remote_representation.external_data import external_job_data_from_def
 
 
-def recon_job_from_origin(origin: JobPythonOrigin) -> ReconstructableJob:
+def recon_job_from_origin(
+    origin: JobPythonOrigin, context: DefinitionsLoadContext
+) -> ReconstructableJob:
     check.inst_param(origin, "origin", JobPythonOrigin)
-    recon_repo = recon_repository_from_origin(origin.repository_origin)
+    recon_repo = recon_repository_from_origin(origin.repository_origin, context=context)
     return recon_repo.get_reconstructable_job(origin.job_name)
 
 
-def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "ReconstructableRepository":
+def recon_repository_from_origin(
+    origin: RepositoryPythonOrigin, context: DefinitionsLoadContext
+) -> "ReconstructableRepository":
     check.inst_param(origin, "origin", RepositoryPythonOrigin)
     return ReconstructableRepository(
         origin.code_pointer,
@@ -29,6 +34,7 @@ def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "Reconstruct
         origin.executable_path,
         origin.entry_point,
         origin.container_context,
+        context,
     )
 
 
