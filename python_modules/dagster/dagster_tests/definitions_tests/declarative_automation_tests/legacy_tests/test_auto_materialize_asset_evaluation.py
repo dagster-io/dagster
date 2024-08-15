@@ -1,12 +1,7 @@
-from dagster import MetadataValue
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
-)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetSubsetWithMetadata,
+    AutomationConditionEvaluationWithRunIds,
 )
-from dagster._core.definitions.events import AssetKey
+from dagster._serdes.serdes import deserialize_value
 
 
 def test_backcompat_unpartitioned_skipped() -> None:
@@ -32,31 +27,14 @@ def test_backcompat_unpartitioned_skipped() -> None:
         '"AutoMaterializeDecisionType.MATERIALIZE"}, "description": "not materialized since last '
         'cron schedule tick of \'0 * * * *\' (timezone: UTC)"}], "run_ids": {"__set__": []}}'
     )
-    deserialized_with_run_ids = (
-        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            serialized_asset_evaluation, None
-        )
+    deserialized_with_run_ids = deserialize_value(
+        serialized_asset_evaluation, as_type=AutomationConditionEvaluationWithRunIds
     )
     deserialized = deserialized_with_run_ids.evaluation
 
+    # we now deserialize these into empty evaluations
     assert deserialized.true_subset.size == 0
-    assert len(deserialized.child_evaluations) == 2
-    materialize_evaluation, not_skip_evaluation = deserialized.child_evaluations
-    assert materialize_evaluation.true_subset.size == 1
-    assert not_skip_evaluation.true_subset.size == 0
-    skip_evaluation = not_skip_evaluation.child_evaluations[0]
-    assert skip_evaluation.true_subset.size == 1
-    assert len(skip_evaluation.child_evaluations) == 1
-    assert skip_evaluation.child_evaluations[0].true_subset.size == 1
-    assert len(skip_evaluation.child_evaluations[0].subsets_with_metadata) == 1
-    skip_metadata = skip_evaluation.child_evaluations[0].subsets_with_metadata[0]
-    assert skip_metadata == AssetSubsetWithMetadata(
-        subset=AssetSubset(asset_key=AssetKey(["C"]), value=True),
-        metadata={
-            "waiting_on_ancestor_1": MetadataValue.asset(asset_key=AssetKey(["A"])),
-            "waiting_on_ancestor_2": MetadataValue.asset(asset_key=AssetKey(["B"])),
-        },
-    )
+    assert len(deserialized.child_evaluations) == 0
 
 
 def test_backcompat_unpartitioned_requested() -> None:
@@ -76,17 +54,11 @@ def test_backcompat_unpartitioned_requested() -> None:
         '"AutoMaterializeDecisionType.MATERIALIZE"}, "description": "not materialized since last '
         'cron schedule tick of \'0 * * * *\' (timezone: UTC)"}], "run_ids": {"__set__": []}}'
     )
-    deserialized_with_run_ids = (
-        deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            serialized_asset_evaluation, None
-        )
+    deserialized_with_run_ids = deserialize_value(
+        serialized_asset_evaluation, as_type=AutomationConditionEvaluationWithRunIds
     )
     deserialized = deserialized_with_run_ids.evaluation
-    assert len(deserialized.true_subset.asset_partitions) == 1
-    assert len(deserialized.child_evaluations) == 2
-    materialize_evaluation, not_skip_evaluation = deserialized.child_evaluations
-    assert len(materialize_evaluation.child_evaluations) == 1
-    cron_rule_evaluation = materialize_evaluation.child_evaluations[0]
-    assert len(cron_rule_evaluation.child_evaluations) == 0
-    assert cron_rule_evaluation.subsets_with_metadata == []
-    assert len(not_skip_evaluation.child_evaluations) == 1
+
+    # we now deserialize these into empty evaluations
+    assert deserialized.true_subset.size == 0
+    assert len(deserialized.child_evaluations) == 0
