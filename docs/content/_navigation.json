@@ -928,7 +928,17 @@
           },
           {
             "title": "Using dbt with Dagster+",
-            "path": "/integrations/dbt/using-dbt-with-dagster-plus"
+            "path": "/integrations/dbt/using-dbt-with-dagster-plus",
+            "children": [
+              {
+                "title": "Using dbt with Serverless deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/serverless"
+              },
+              {
+                "title": "Using dbt with Hybrid deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/hybrid"
+              }
+            ]
           },
           {
             "title": "Reference",
