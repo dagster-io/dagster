@@ -39,7 +39,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         "acryl-datahub[datahub-rest, datahub-kafka]",
-        f"dagster{pin}",
+        "dagster==1.8.1",
         "packaging",
         "requests",
         "pydantic>=1.10.0,<3.0.0",
