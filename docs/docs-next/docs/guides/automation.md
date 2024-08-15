@@ -26,9 +26,6 @@ Before continuing, you should be familiar with:
 
 </details>
 
-
-
-
 ## Automation Methods Overview
 
 Dagster offers several ways to automate pipeline execution:
