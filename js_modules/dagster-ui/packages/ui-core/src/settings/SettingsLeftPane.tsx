@@ -1,7 +1,7 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useLocation} from 'react-router-dom';
-import {useVisibleFeatureFlagRows} from '../../../../../../../src/app/useVisibleFeatureFlagRows.cloud
+import {useVisibleFeatureFlagRows} from 'shared/app/useVisibleFeatureFlagRows.oss';
 
 import {UserSettingsDialog} from '../app/UserSettingsDialog/UserSettingsDialog';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
