@@ -31,6 +31,16 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Publish to Vercel Production
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push' && github.ref == 'refs/heads/docs/revamp'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: "--prod"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}

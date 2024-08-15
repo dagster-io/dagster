@@ -13,3 +13,4 @@ examples/project_dagster_university_start
 examples/project_du_dbt_starter
 examples/tutorial
 helm
+docs/docs-next
