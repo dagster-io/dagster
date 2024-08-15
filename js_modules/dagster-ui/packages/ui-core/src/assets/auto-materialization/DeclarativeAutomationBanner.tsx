@@ -11,7 +11,7 @@ export const DeclarativeAutomationBanner = () => {
           defining imperative workflows to execute your assets, you just describe the conditions
           under which they should be executed.{' '}
           <a
-            href="https://docs.dagster.io/concepts/assets/declarative-automation"
+            href="https://docs.dagster.io/concepts/automation/declarative-automation"
             target="_blank"
             rel="noreferrer"
           >
