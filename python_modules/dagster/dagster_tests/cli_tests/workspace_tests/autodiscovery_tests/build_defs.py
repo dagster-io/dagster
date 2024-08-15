@@ -1,8 +1,8 @@
-from dagster import Definitions, asset, defs_loader
+from dagster import Definitions, DefinitionsLoadContext, asset, defs_loader
 
 
 @defs_loader
-def defs():
+def defs(context: DefinitionsLoadContext) -> Definitions:
     @asset
     def asset1(): ...
 
