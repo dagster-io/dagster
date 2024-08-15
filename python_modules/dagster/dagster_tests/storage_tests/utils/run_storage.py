@@ -44,7 +44,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
-from dagster._time import create_datetime
+from dagster._time import create_datetime, datetime_from_timestamp
 
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -1395,14 +1395,18 @@ class TestRunStorage:
             all_backfills.append(backfill)
 
         created_before = storage.get_backfills(
-            filters=BulkActionsFilter(created_before=all_backfills[3].backfill_timestamp)
+            filters=BulkActionsFilter(
+                created_before=datetime_from_timestamp(all_backfills[3].backfill_timestamp)
+            )
         )
         assert len(created_before) == 2
         for backfill in created_before:
             assert backfill.backfill_timestamp < all_backfills[3].backfill_timestamp
 
         created_after = storage.get_backfills(
-            filters=BulkActionsFilter(created_after=all_backfills[3].backfill_timestamp)
+            filters=BulkActionsFilter(
+                created_after=datetime_from_timestamp(all_backfills[3].backfill_timestamp)
+            )
         )
         assert len(created_after) == 2
         for backfill in created_after:
