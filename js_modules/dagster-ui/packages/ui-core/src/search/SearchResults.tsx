@@ -85,6 +85,7 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
   }
 };
 
+type ResultType = Fuse.FuseResult<SearchResult> | Pick<Fuse.FuseResult<SearchResult>, 'item'>;
 type ItemProps<T extends ResultType> = {
   isHighlight: boolean;
   onClickResult: (result: T) => void;
