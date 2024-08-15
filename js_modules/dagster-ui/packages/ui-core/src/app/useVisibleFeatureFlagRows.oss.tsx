@@ -3,7 +3,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 /**
  * Open-source feature flags to be displayed in Dagster UI "User settings"
  */
-export const getVisibleFeatureFlagRows = () => [
+export const useVisibleFeatureFlagRows = () => [
   {
     key: 'Display resources in navigation sidebar',
     flagType: FeatureFlag.flagSidebarResources,
