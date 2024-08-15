@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 import dagster._check as check
 from dagster import AssetMaterialization, MetadataValue
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 from dagster_fivetran.types import FivetranOutput
@@ -27,6 +28,8 @@ def metadata_for_table(
     include_column_info: bool = False,
 ) -> RawMetadataMapping:
     metadata: Dict[str, MetadataValue] = {"connector_url": MetadataValue.url(connector_url)}
+    column_schema = None
+    relation_identifier = None
     if table_data.get("columns"):
         columns = check.dict_elem(table_data, "columns")
         table_columns = sorted(
@@ -37,13 +40,17 @@ def metadata_for_table(
             ],
             key=lambda col: col.name,
         )
-        metadata["table_schema"] = MetadataValue.table_schema(TableSchema(table_columns))
+        column_schema = TableSchema(columns=table_columns)
+
         if include_column_info:
             metadata["column_info"] = MetadataValue.json(columns)
+
     if database and schema and table:
-        metadata["dagster/relation_identifier"] = MetadataValue.text(
-            ".".join([database, schema, table])
-        )
+        relation_identifier = ".".join([database, schema, table])
+    metadata = {
+        **TableMetadataSet(column_schema=column_schema, relation_identifier=relation_identifier),
+        **metadata,
+    }
 
     return metadata
 

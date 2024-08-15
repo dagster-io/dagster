@@ -1,12 +1,11 @@
 import base64
-from typing import Any, cast
+from typing import Any
 
 import pytest
 import responses
 from dagster import (
     AssetIn,
     AssetKey,
-    AssetsDefinition,
     EnvVar,
     InputContext,
     IOManager,
@@ -15,7 +14,6 @@ from dagster import (
     io_manager,
 )
 from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance_for_test import environ
@@ -158,7 +156,7 @@ def test_load_from_instance(
             tables = {
                 connector_to_asset_key_fn(
                     FivetranConnectionMetadata(
-                        "some_service.some_name", "", "=", [], database="example_database"
+                        "some_service.some_name", "", "=", {}, database="example_database"
                     ),
                     ".".join(t.path),
                 )
@@ -169,7 +167,7 @@ def test_load_from_instance(
         xyz_asset_key = (
             connector_to_asset_key_fn(
                 FivetranConnectionMetadata(
-                    "some_service.some_name", "", "=", [], database="example_database"
+                    "some_service.some_name", "", "=", {}, database="example_database"
                 ),
                 "abc.xyz",
             )
@@ -191,8 +189,8 @@ def test_load_from_instance(
 
         # Check schema metadata is added correctly to asset def
         assert any(
-            out.metadata.get("table_schema")
-            == MetadataValue.table_schema(
+            metadata.get("dagster/column_schema")
+            == (
                 TableSchema(
                     columns=[
                         TableColumn(name="column_1", type="any"),
@@ -201,13 +199,12 @@ def test_load_from_instance(
                     ]
                 )
             )
-            for out in cast(AssetsDefinition, ft_assets[0]).node_def.output_defs
-        )
-        assert all(
-            metadata.get("dagster/relation_identifier")
-            == MetadataValue.text("example_database." + ".".join(key.path[-2:]))
             for key, metadata in ft_assets[0].metadata_by_key.items()
         )
+        for key, metadata in ft_assets[0].metadata_by_key.items():
+            assert metadata.get("dagster/relation_identifier") == (
+                "example_database." + ".".join(key.path[-2:])
+            )
 
         assert ft_assets[0].keys == tables
         assert all(
@@ -260,7 +257,8 @@ def test_load_from_instance(
             ]
             assert len(asset_materializations) == 3
             asset_keys = set(
-                mat.event_specific_data.materialization.asset_key for mat in asset_materializations
+                mat.event_specific_data.materialization.asset_key  # type: ignore
+                for mat in asset_materializations
             )
             assert asset_keys == tables
 
