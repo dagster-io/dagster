@@ -41,6 +41,11 @@ class BulkActionStatus(Enum):
     def from_graphql_input(graphql_str):
         return BulkActionStatus(graphql_str)
 
+BULK_ACTION_COMPLETED_STATUSES = [
+    BulkActionStatus.COMPLETED,
+    BulkActionStatus.FAILED,
+    BulkActionStatus.CANCELED,
+]
 
 @record
 class BulkActionsFilter:
