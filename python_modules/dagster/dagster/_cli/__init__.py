@@ -2,6 +2,7 @@ import click
 
 from dagster._cli.api import api_cli
 from dagster._cli.asset import asset_cli
+from dagster._cli.check import check_command
 from dagster._cli.code_server import code_server_cli
 from dagster._cli.debug import debug_cli
 from dagster._cli.dev import dev_command
@@ -27,6 +28,7 @@ def create_dagster_cli():
         "project": project_cli,
         "dev": dev_command,
         "code-server": code_server_cli,
+        "check": check_command,
     }
 
     @click.group(
