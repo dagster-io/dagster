@@ -7,9 +7,16 @@
 - If the sensor daemon fails while submitting runs, it will now checkpoint its progress and attempt to submit the remaining runs on the next evaluation.
 - `build_op_context` and `build_asset_context` now accepts a `run_tags` argument.
 - Nested partially configured resources can now be used outside of `Definitions`.
+- [ui] Replaced GraphQL Explorer with GraphiQL.
+- [ui] The run timeline can now be grouped by job or by automation.
+- [ui] For users in the experimental navigation flag, schedules and sensors are now in a single merged automations table.
+- [ui] Logs can now be filtered by metadata keys and values.
+- [ui] Logs for `RUN_CANCELED` events now display relevant error messages.
 - [dagster-aws] The new `PipesCloudWatchMessageReader` can consume logs from CloudWatch as pipes messages.
 - [dagster-aws] Glue jobs launched via pipes can be automatically canceled if Dagster receives a termination signal.
+- [dagster-azure] `AzureBlobComputeLogManager` now supports service principals, thanks @[ion-elgreco](https://github.com/ion-elgreco)!
 - [dagster-databricks] `dagster-databricks` now supports `databricks-sdk<=0.17.0`.
+- [dagster-datahub] `dagster-datahub` now allows pydantic versions below 3.0.0, thanks @[kevin-longe-unmind](https://github.com/kevin-longe-unmind)!
 - [dagster-dbt] The `DagsterDbtTranslator` class now supports a modfiying the `AutomationCondition` for dbt models by overriding `get_automation_condition`.
 - [dagster-pandera] `dagster-pandera` now supports `polars`.
 - [dagster-sdf] Table and columns tests can now be used as asset checks.
@@ -17,15 +24,8 @@
 - [dagster-embedded-elt] dlt resource docstrings will now be used to populate asset descriptions, by default.
 - [dagster-embedded-elt] dlt assets now generate column metadata.
 - [dagster-embedded-elt] dlt transformers now refer to the base resource as upstream asset.
-- [ui] Replaced GraphQL Explorer with GraphiQL.
-- [ui] The run timeline can now be grouped by job or by automation.
-- [ui] For users in the experimental navigation flag, schedules and sensors are now in a single merged automations table.
-- [ui] Logs can now be filtered by metadata keys and values.
-- [ui] Logs for `RUN_CANCELED` events now display relevant error messages.
-- [community-contribution][dagster-azure] `AzureBlobComputeLogManager` now supports service principals, thanks @[ion-elgreco](https://github.com/ion-elgreco)!
-- [community-contribution][dagster-datahub] `dagster-datahub` now allows pydanitc versions below 3.0.0, thanks @[kevin-longe-unmind](https://github.com/kevin-longe-unmind)!
-- [community-contribution][dagster-openai] `OpenAIResource` now supports `organization`, `project` and `base_url` for configurting the OpenAI client, thanks @[\*\*chasleslr](https://github.com/chasleslr)!
-- [community-contribution][dagster-pandas][dagster-pandera][dagster-wandb] These libraries no longer pin `numpy<2`, thanks @[judahrand](https://github.com/judahrand)!
+- [dagster-openai] `OpenAIResource` now supports `organization`, `project` and `base_url` for configurting the OpenAI client, thanks @[chasleslr](https://github.com/chasleslr)!
+- [dagster-pandas][dagster-pandera][dagster-wandb] These libraries no longer pin `numpy<2`, thanks @[judahrand](https://github.com/judahrand)!
 
 ### Bugfixes
 
