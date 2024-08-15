@@ -52,11 +52,12 @@ def load_csv_to_snowflake(context: AssetExecutionContext, snowflake: SnowflakeRe
     """
 
     with snowflake.get_connection() as conn:
-        conn.cursor().execute(create_format)
-        conn.cursor().execute(create_stage)
-        conn.cursor().execute(put_file)
-        conn.cursor().execute(create_table)
-        conn.cursor().execute(copy_into)
+        with conn.cursor() as curs:
+            curs.execute(create_format)
+            curs.execute(create_stage)
+            curs.execute(put_file)
+            curs.execute(create_table)
+            curs.execute(copy_into)
 
     context.log.info(f"Loaded data from {file_path} into {table_name}")
 
