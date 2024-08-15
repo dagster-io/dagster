@@ -1,8 +1,7 @@
 ---
-title: "Docker agents"
+title: "Dagster+ IP addresses"
 displayed_sidebar: "dagsterPlus"
 sidebar_position: 20
-sidebar_label: "Docker"
 ---
 
-# Docker agents
+# Dagster+ IP addresses
