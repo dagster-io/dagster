@@ -495,10 +495,8 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
         asset_key=AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-        "hourly"
-    )
-    assert evaluations[0].get_evaluation_with_run_ids(None).run_ids == {
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }
 
@@ -606,10 +604,8 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
         asset_key=AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-        "hourly"
-    )
-    assert evaluations[0].get_evaluation_with_run_ids(None).run_ids == {
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }
 

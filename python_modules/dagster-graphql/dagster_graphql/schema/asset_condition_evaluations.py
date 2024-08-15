@@ -274,7 +274,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
         record: AutoMaterializeAssetEvaluationRecord,
         partitions_def: Optional[PartitionsDefinition],
     ):
-        evaluation_with_run_ids = record.get_evaluation_with_run_ids(partitions_def)
+        evaluation_with_run_ids = record.get_evaluation_with_run_ids()
         root_evaluation = evaluation_with_run_ids.evaluation
 
         flattened_evaluations = _flatten_evaluation(evaluation_with_run_ids.evaluation)

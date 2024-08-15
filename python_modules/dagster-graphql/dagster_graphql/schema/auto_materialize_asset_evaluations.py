@@ -1,7 +1,6 @@
 from typing import Optional, Sequence, Tuple
 
 import graphene
-from dagster import PartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
 from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -222,12 +221,8 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecord"
 
-    def __init__(
-        self,
-        record: AutoMaterializeAssetEvaluationRecord,
-        partitions_def: Optional[PartitionsDefinition],
-    ):
-        evaluation_with_run_ids = record.get_evaluation_with_run_ids(partitions_def=partitions_def)
+    def __init__(self, record: AutoMaterializeAssetEvaluationRecord):
+        evaluation_with_run_ids = record.get_evaluation_with_run_ids()
         evaluation = evaluation_with_run_ids.evaluation
         (
             rules,
