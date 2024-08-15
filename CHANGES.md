@@ -1,5 +1,57 @@
 # Changelog
 
+# 1.8.1 (core) / 0.24.1 (libraries)
+
+### New
+
+- If the sensor daemon fails while submitting runs, it will now checkpoint its progress and attempt to submit the remaining runs on the next evaluation.
+- `build_op_context` and `build_asset_context` now accepts a `run_tags` argument.
+- Nested partially configured resources can now be used outside of `Definitions`.
+- [ui] Replaced GraphQL Explorer with GraphiQL.
+- [ui] The run timeline can now be grouped by job or by automation.
+- [ui] For users in the experimental navigation flag, schedules and sensors are now in a single merged automations table.
+- [ui] Logs can now be filtered by metadata keys and values.
+- [ui] Logs for `RUN_CANCELED` events now display relevant error messages.
+- [dagster-aws] The new `PipesCloudWatchMessageReader` can consume logs from CloudWatch as pipes messages.
+- [dagster-aws] Glue jobs launched via pipes can be automatically canceled if Dagster receives a termination signal.
+- [dagster-azure] `AzureBlobComputeLogManager` now supports service principals, thanks @[ion-elgreco](https://github.com/ion-elgreco)!
+- [dagster-databricks] `dagster-databricks` now supports `databricks-sdk<=0.17.0`.
+- [dagster-datahub] `dagster-datahub` now allows pydantic versions below 3.0.0, thanks @[kevin-longe-unmind](https://github.com/kevin-longe-unmind)!
+- [dagster-dbt] The `DagsterDbtTranslator` class now supports a modfiying the `AutomationCondition` for dbt models by overriding `get_automation_condition`.
+- [dagster-pandera] `dagster-pandera` now supports `polars`.
+- [dagster-sdf] Table and columns tests can now be used as asset checks.
+- [dagster-embedded-elt] Column metadata and lineage can be fetched on Sling assets by chaining the new `replicate(...).fetch_column_metadata()` method.
+- [dagster-embedded-elt] dlt resource docstrings will now be used to populate asset descriptions, by default.
+- [dagster-embedded-elt] dlt assets now generate column metadata.
+- [dagster-embedded-elt] dlt transformers now refer to the base resource as upstream asset.
+- [dagster-openai] `OpenAIResource` now supports `organization`, `project` and `base_url` for configurting the OpenAI client, thanks @[chasleslr](https://github.com/chasleslr)!
+- [dagster-pandas][dagster-pandera][dagster-wandb] These libraries no longer pin `numpy<2`, thanks @[judahrand](https://github.com/judahrand)!
+
+### Bugfixes
+
+- Fixed a bug for job backfills using backfill policies that materialized multiple partitions in a single run would be launched multiple times.
+- Fixed an issue where runs would sometimes move into a FAILURE state rather than a CANCELED state if an error occurred after a run termination request was started.
+- [ui] Fixed a bug where an incorrect dialog was shown when canceling a backfill.
+- [ui] Fixed the asset page header breadcrumbs for assets with very long key path elements.
+- [ui] Fixed the run timeline time markers for users in timezones that have off-hour offsets.
+- [ui] Fixed bar chart tooltips to use correct timezone for timestamp display.
+- [ui] Fixed an issue introduced in the 1.8.0 release where some jobs created from graph-backed assets were missing the “View as Asset Graph” toggle in the Dagster UI.
+
+### Breaking Changes
+
+- [dagster-airbyte] `AirbyteCloudResource` now supports `client_id` and `client_secret` for authentication - the `api_key` approach is no longer supported. This is motivated by the [deprecation of portal.airbyte.com](https://reference.airbyte.com/reference/portalairbytecom-deprecation) on August 15, 2024.
+
+### Deprecations
+
+- [dagster-databricks] Removed deprecated authentication clients provided by `databricks-cli` and `databricks_api`
+- [dagster-embedded-elt] Removed deprecated Sling resources `SlingSourceConnection`, `SlingTargetConnection`
+- [dagster-embedded-elt] Removed deprecated Sling resources `SlingSourceConnection`, `SlingTargetConnection`
+- [dagster-embedded-elt] Removed deprecated Sling methods `build_sling_assets`, and `sync`
+
+### Documentation
+
+- The Integrating Snowflake & dbt with Dagster+ Insights guide no longer erroneously references BigQuery, thanks @[dnxie12](https://github.com/dnxie12)!
+
 # 1.8.0 (core) / 0.24.0 (libraries)
 
 ## Major changes since 1.7.0 (core) / 0.22.0 (libraries)
