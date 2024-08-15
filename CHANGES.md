@@ -24,7 +24,7 @@
 - [ui] Logs for `RUN_CANCELED` events now display relevant error messages.
 - [community-contribution][dagster-azure] `AzureBlobComputeLogManager` now supports service principals, thanks @[ion-elgreco](https://github.com/ion-elgreco)!
 - [community-contribution][dagster-datahub] `dagster-datahub` now allows pydanitc versions below 3.0.0, thanks @[kevin-longe-unmind](https://github.com/kevin-longe-unmind)!
-- [community-contribution][dagster-openai] `OpenAIResource` now supports `organization`, `project` and `base_url` for configurting the OpenAI client, thanks @[**chasleslr](https://github.com/chasleslr)!
+- [community-contribution][dagster-openai] `OpenAIResource` now supports `organization`, `project` and `base_url` for configurting the OpenAI client, thanks @[\*\*chasleslr](https://github.com/chasleslr)!
 - [community-contribution][dagster-pandas][dagster-pandera][dagster-wandb] These libraries no longer pin `numpy<2`, thanks @[judahrand](https://github.com/judahrand)!
 
 ### Bugfixes
