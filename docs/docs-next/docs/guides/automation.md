@@ -21,8 +21,8 @@ Automation is key to building reliable, efficient data pipelines. This guide cov
 
 Before continuing, you should be familiar with:
 
-- [Asset definitions](concepts/assets)
-- [Jobs](concepts/jobs)
+- [Asset definitions](/concepts/assets)
+- [Jobs](/concepts/ops-jobs)
 
 </details>
 
@@ -40,7 +40,7 @@ Let's look at each method in more detail.
 ## Schedules 
 
 Schedules allow you to run jobs at specified times, like "every Monday at 9 AM" or "daily at midnight."
-A schedule combines a selection of assets, known as a [Job](/concepts/jobs), and a cron expression in order to define when the job should be run.
+A schedule combines a selection of assets, known as a [Job](/concepts/ops-jobs), and a cron expression in order to define when the job should be run.
 To make creating cron expressions easier, you can use an online tool like [Crontab Guru](https://crontab.guru/).
 
 ### When to use Schedules
@@ -167,8 +167,8 @@ Use this table to help guide your decision:
 
 ## Next Steps
 
-- Learn more about [advanced scheduling patterns](link-to-advanced-scheduling)
-- Explore [complex sensor examples](link-to-sensor-examples)
-- Dive into [Declarative Automation best practices](link-to-declarative-automation)
+- Learn more about [advanced scheduling patterns] - TODO ADD LINK
+- Explore [complex sensor examples] - TODO ADD LINK
+- Dive into [Declarative Automation best practices] - TODO ADD LINK
 
 By understanding and effectively using these automation methods, you can build robust, efficient data pipelines that respond to your specific needs and constraints.
