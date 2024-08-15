@@ -1,6 +1,6 @@
 ---
-title: "Dagster+"
+title: "Code locations"
 displayed_sidebar: "dagsterPlus"
 ---
 
-# Dagster+
+# Code locations

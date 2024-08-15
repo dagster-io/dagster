@@ -1,6 +1,6 @@
 ---
-title: "Dagster+"
+title: "PingOne SSO"
 displayed_sidebar: "dagsterPlus"
 ---
 
-# Dagster+
+# PingOne SSO
