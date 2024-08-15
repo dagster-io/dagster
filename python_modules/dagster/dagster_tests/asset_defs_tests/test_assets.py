@@ -42,7 +42,7 @@ from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -695,6 +695,55 @@ def test_multi_asset_resources_execution():
             "key1": AssetOut(key=AssetKey("key1"), io_manager_key="foo"),
             "key2": AssetOut(key=AssetKey("key2"), io_manager_key="bar"),
         },
+        resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
+    )
+    def my_asset(context):
+        # Required io manager keys are available on the context, same behavoir as ops
+        assert hasattr(context.resources, "foo")
+        assert hasattr(context.resources, "bar")
+        yield Output(1, "key1")
+        yield Output(2, "key2")
+
+    with instance_for_test() as instance:
+        materialize([my_asset], instance=instance)
+
+    assert foo_list == [1]
+    assert bar_list == [2]
+
+
+def test_multi_asset_io_manager_execution_specs() -> None:
+    class MyIOManager(IOManager):
+        def __init__(self, the_list):
+            self._the_list = the_list
+
+        def handle_output(self, _context, obj):
+            self._the_list.append(obj)
+
+        def load_input(self, _context):
+            pass
+
+    foo_list = []
+
+    @resource
+    def baz_resource():
+        return "baz"
+
+    @io_manager(required_resource_keys={"baz"})
+    def foo_manager(context):
+        assert context.resources.baz == "baz"
+        return MyIOManager(foo_list)
+
+    bar_list = []
+
+    @io_manager
+    def bar_manager():
+        return MyIOManager(bar_list)
+
+    @multi_asset(
+        specs=[
+            AssetSpec(key=AssetKey("key1"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo"}),
+            AssetSpec(key=AssetKey("key2"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
+        ],
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
     def my_asset(context):

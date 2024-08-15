@@ -24,7 +24,11 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
+    AssetExecutionType,
+    AssetSpec,
+)
 from dagster._core.definitions.assets import (
     ASSET_SUBSET_INPUT_PREFIX,
     AssetsDefinition,
@@ -41,7 +45,11 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._core.types.dagster_type import DagsterType, Nothing
+from dagster._core.types.dagster_type import (
+    Any as DagsterAny,
+    DagsterType,
+    Nothing,
+)
 
 from ..asset_check_spec import AssetCheckSpec
 from ..utils import NoValueSentinel
@@ -328,11 +336,14 @@ class DecoratorAssetsDefinitionBuilder:
             named_outs_by_asset_key[asset_spec.key] = NamedOut(
                 output_name,
                 Out(
-                    Nothing,
+                    DagsterAny
+                    if asset_spec.metadata.get(SYSTEM_METADATA_KEY_IO_MANAGER_KEY)
+                    else Nothing,
                     is_required=not (can_subset or asset_spec.skippable),
                     description=asset_spec.description,
                     code_version=asset_spec.code_version,
                     metadata=asset_spec.metadata,
+                    io_manager_key=asset_spec.metadata.get(SYSTEM_METADATA_KEY_IO_MANAGER_KEY),
                 ),
             )
 
