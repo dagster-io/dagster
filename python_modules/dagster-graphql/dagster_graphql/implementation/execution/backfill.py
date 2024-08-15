@@ -363,8 +363,9 @@ def retry_partition_backfill(
         )
 
     if backfill.is_asset_backfill:
+        asset_backfill_data = backfill.get_asset_backfill_data()
         if (
-            backfill.asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
+            asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
             == 0
         ):
             raise DagsterInvariantViolationError(
@@ -374,13 +375,13 @@ def retry_partition_backfill(
         assert_permission_for_asset_graph(
             graphene_info,
             asset_graph,
-            backfill.asset_backfill_data.failed_and_downstream_subset.asset_keys,
+            list(asset_backfill_data.failed_and_downstream_subset.asset_keys),
             Permissions.LAUNCH_PARTITION_BACKFILL,
         )
 
         new_backfill = PartitionBackfill.from_asset_graph_subset(
             backfill_id=make_new_backfill_id(),
-            asset_graph_subset=backfill.asset_backfill_data.failed_and_downstream_subset,
+            asset_graph_subset=asset_backfill_data.failed_and_downstream_subset,
             dynamic_partitions_store=graphene_info.context.instance,
             tags={
                 **backfill.tags,
