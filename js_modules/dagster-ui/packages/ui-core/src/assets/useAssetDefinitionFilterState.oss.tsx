@@ -43,9 +43,9 @@ export type AssetFilterType = AssetFilterBaseType & {
   selectAllFilters: Array<keyof AssetFilterBaseType>;
 };
 
-export const useAssetDefinitionFilterState = () => {
+export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: boolean}) => {
   const [filters, setFilters] = useQueryPersistedState<AssetFilterType>({
-    encode: ({
+    encode: isEnabled ? ({
       groups,
       computeKindTags,
       storageKindTags,
@@ -63,15 +63,15 @@ export const useAssetDefinitionFilterState = () => {
       tags: tags?.length ? JSON.stringify(tags) : undefined,
       codeLocations: codeLocations?.length ? JSON.stringify(codeLocations) : undefined,
       selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
-    }),
+    }) : () => ({}),
     decode: (qs) => ({
-      groups: qs.groups ? JSON.parse(qs.groups) : [],
-      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
-      storageKindTags: qs.storageKindTags ? JSON.parse(qs.storageKindTags) : [],
-      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
-      owners: qs.owners ? JSON.parse(qs.owners) : [],
-      tags: qs.tags ? JSON.parse(qs.tags) : [],
-      codeLocations: qs.codeLocations
+      groups: qs.groups && isEnabled  ? JSON.parse(qs.groups) : [],
+      computeKindTags: qs.computeKindTags && isEnabled? JSON.parse(qs.computeKindTags) : [],
+      storageKindTags: qs.storageKindTags && isEnabled? JSON.parse(qs.storageKindTags) : [],
+      changedInBranch: qs.changedInBranch && isEnabled? JSON.parse(qs.changedInBranch) : [],
+      owners: qs.owners && isEnabled? JSON.parse(qs.owners) : [],
+      tags: qs.tags && isEnabled? JSON.parse(qs.tags) : [],
+      codeLocations: qs.codeLocations && isEnabled
         ? JSON.parse(qs.codeLocations).map((repo: RepoAddress) =>
             buildRepoAddress(repo.name, repo.location),
           )
