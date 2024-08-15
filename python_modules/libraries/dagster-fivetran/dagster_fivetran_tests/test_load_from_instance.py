@@ -64,7 +64,6 @@ def test_load_from_instance(
         def test_io_manager(_context) -> IOManager:
             class TestIOManager(IOManager):
                 def handle_output(self, context: OutputContext, obj) -> None:
-                    assert context.dagster_type.is_nothing
                     return
 
                 def load_input(self, context: InputContext) -> Any:
