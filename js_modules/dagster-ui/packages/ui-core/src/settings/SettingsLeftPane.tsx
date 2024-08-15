@@ -1,7 +1,7 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useLocation} from 'react-router-dom';
-import {getVisibleFeatureFlagRows} from 'shared/app/getVisibleFeatureFlagRows.oss';
+import {useVisibleFeatureFlagRows} from 'shared/app/useVisibleFeatureFlagRows.oss';
 
 import {UserSettingsDialog} from '../app/UserSettingsDialog/UserSettingsDialog';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
@@ -68,7 +68,7 @@ export const SettingsLeftPane = () => {
           <UserSettingsDialog
             isOpen={showUserSettings}
             onClose={() => setShowUserSettings(false)}
-            visibleFlags={getVisibleFeatureFlagRows()}
+            visibleFlags={useVisibleFeatureFlagRows()}
           />
         </>
       </Box>
