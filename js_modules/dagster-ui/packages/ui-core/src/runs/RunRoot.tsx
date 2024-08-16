@@ -114,12 +114,12 @@ export const RunRoot = () => {
           title={
             requestId ? (
               <Heading>
-                <Link to="/run-requests" style={{color: Colors.textLight()}}>
+                <Link to="/runs-feed" style={{color: Colors.textLight()}}>
                   All runs
                 </Link>
                 {' / '}
                 <Link
-                  to={`/run-requests/b/${requestId}?tab=runs&view=list`}
+                  to={`/runs-feed/b/${requestId}?tab=runs&view=list`}
                   style={{color: Colors.textLight()}}
                 >
                   {requestId}

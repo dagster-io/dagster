@@ -13,14 +13,14 @@ import {
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import partition from 'lodash/partition';
-import {useCallback, useLayoutEffect, useMemo} from 'react';
+import {useCallback, useMemo} from 'react';
 
-import {GroupedRunTable} from './GroupedRunTable';
 import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {useSelectedRunsTab} from './RunListTabs';
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {DagsterTag} from './RunTag';
 import {RunsQueryRefetchContext} from './RunUtils';
+import {RunsFeedTable} from './RunsFeedTable';
 import {
   RunFilterToken,
   RunFilterTokenType,
@@ -29,8 +29,8 @@ import {
   useRunsFilterInput,
 } from './RunsFilterInput';
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
-import {RunTableRunFragment} from './types/RunTable.types';
-import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRoot.types';
+import {RunTableRunFragment} from './types/RunTableRunFragment.types';
+import {RunsRootQuery, RunsRootQueryVariables} from './types/usePaginatedRunsTableRuns.types';
 import {AccumulatingFetchResult, useCursorAccumulatedQuery} from './useCursorAccumulatedQuery';
 import {RUNS_ROOT_QUERY} from './usePaginatedRunsTableRuns';
 import {QueryRefreshCountdown} from '../app/QueryRefresh';
@@ -38,7 +38,6 @@ import {useTrackPageView} from '../app/analytics';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {usePortalSlot} from '../hooks/usePortalSlot';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {usePageLoadTrace} from '../performance';
 import {LoadingSpinner} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {TabLink} from '../ui/TabLink';
@@ -104,9 +103,8 @@ export function useGroupedRunsTableRuns(filter: RunsFilter) {
   return {groups, error, refreshState};
 }
 
-export const GroupedRunsRoot = () => {
+export const RunsFeedRoot = () => {
   useTrackPageView();
-  const trace = usePageLoadTrace('GroupedRunsRoot');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
@@ -275,9 +273,8 @@ export const GroupedRunsRoot = () => {
 
     return (
       <>
-        <RunsRootPerformanceEmitter trace={trace} />
         <StickyTableContainer $top={0}>
-          <GroupedRunTable
+          <RunsFeedTable
             groups={page}
             onAddTag={onAddTag}
             filter={filter}
@@ -312,14 +309,10 @@ export const GroupedRunsRoot = () => {
       >
         <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
           <Tabs selectedTabId="all">
-            <TabLink id="all" title="All runs" to="/run-requests" />
-            <TabLink id="queued" title={`Queued (${countQueued})`} to="/run-requests" />
-            <TabLink
-              id="in-progress"
-              title={`In progress (${countInProgress})`}
-              to="/run-requests"
-            />
-            <TabLink id="failed" title={`Failed (${countFailed})`} to="/run-requests" />
+            <TabLink id="all" title="All runs" to="/runs-feed" />
+            <TabLink id="queued" title={`Queued (${countQueued})`} to="/runs-feed" />
+            <TabLink id="in-progress" title={`In progress (${countInProgress})`} to="/runs-feed" />
+            <TabLink id="failed" title={`Failed (${countFailed})`} to="/runs-feed" />
           </Tabs>
           <Box padding={{vertical: 16}}>
             <QueryRefreshCountdown refreshState={refreshState} />
@@ -334,13 +327,6 @@ export const GroupedRunsRoot = () => {
   );
 };
 
-const RunsRootPerformanceEmitter = ({trace}: {trace: ReturnType<typeof usePageLoadTrace>}) => {
-  useLayoutEffect(() => {
-    trace.endTrace();
-  }, [trace]);
-  return null;
-};
-
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
-export default GroupedRunsRoot;
+export default RunsFeedRoot;

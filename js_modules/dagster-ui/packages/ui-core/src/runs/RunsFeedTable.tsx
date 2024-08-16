@@ -1,16 +1,16 @@
 import {Box, Checkbox, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {GroupedRunRow} from './GroupedRunRow';
-import {RunGrouping} from './GroupedRunsRoot';
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableActionBar} from './RunTableActionBar';
 import {RunTableEmptyState} from './RunTableEmptyState';
+import {RunGrouping} from './RunsFeedRoot';
+import {RunsFeedRow} from './RunsFeedRow';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 
-interface GroupedRunTableProps {
+interface RunsFeedTableProps {
   groups: RunGrouping[];
   filter?: RunsFilter;
   onAddTag?: (token: RunFilterToken) => void;
@@ -19,7 +19,7 @@ interface GroupedRunTableProps {
   emptyState?: () => React.ReactNode;
 }
 
-export const GroupedRunTable = (props: GroupedRunTableProps) => {
+export const RunsFeedTable = (props: RunsFeedTableProps) => {
   const {groups, filter, onAddTag, actionBarComponents, belowActionBarComponents, emptyState} =
     props;
   const runs = React.useMemo(() => groups.flatMap((g) => g.runs), [groups]);
@@ -68,7 +68,7 @@ export const GroupedRunTable = (props: GroupedRunTableProps) => {
         </thead>
         <tbody>
           {groups.map((group) => (
-            <GroupedRunRow
+            <RunsFeedRow
               key={group.key}
               group={group}
               hasCheckboxColumn={canTerminateOrDeleteAny}

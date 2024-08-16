@@ -1,7 +1,7 @@
 import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
 import countBy from 'lodash/countBy';
 
-import {RunGrouping} from './GroupedRunsRoot';
+import {RunGrouping} from './RunsFeedRoot';
 import {RunStats, RunStatsDetailsContainer} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
 import {assertUnreachable} from '../app/Util';

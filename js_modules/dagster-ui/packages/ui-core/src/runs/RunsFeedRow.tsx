@@ -3,7 +3,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {CreatedByTagCell} from './CreatedByTag';
-import {RunGrouping} from './GroupedRunsRoot';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunGroupingActionsMenu} from './RunGroupingActionsMenu';
@@ -12,12 +11,13 @@ import {GroupStatusTagWithStats, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
+import {RunGrouping} from './RunsFeedRoot';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {useResolveRunTarget} from './useResolveRunTarget';
 import {RunStatus} from '../graphql/types';
 
-export const GroupedRunRow = ({
+export const RunsFeedRow = ({
   group,
   hasCheckboxColumn,
   canTerminateOrDelete,
@@ -66,7 +66,7 @@ export const GroupedRunRow = ({
       ) : null}
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          <Link to={backfillId ? `/run-requests/b/${backfillId}?tab=runs` : `/runs/${run.id}`}>
+          <Link to={backfillId ? `/runs-feed/b/${backfillId}?tab=runs` : `/runs/${run.id}`}>
             <Mono>
               {backfillId ? backfillId : titleForRun(run)} ({group.runs.length}{' '}
               {group.runs.length === 1 ? 'run' : 'runs'})

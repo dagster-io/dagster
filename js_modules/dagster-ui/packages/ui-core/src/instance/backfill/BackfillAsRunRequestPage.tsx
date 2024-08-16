@@ -105,7 +105,7 @@ export const BackfillAsRunRequestPage = () => {
             <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
           )}
           <RunRequestContext.Provider
-            value={{buildLinkToRun: ({id}) => `/run-requests/b/${backfillId}/${id}`}}
+            value={{buildLinkToRun: ({id}) => `/runs-feed/b/${backfillId}/${id}`}}
           >
             <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
               {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
@@ -177,7 +177,7 @@ export const BackfillAsRunRequestPage = () => {
       <PageHeader
         title={
           <Heading>
-            <Link to="/run-requests" style={{color: Colors.textLight()}}>
+            <Link to="/runs-feed" style={{color: Colors.textLight()}}>
               All runs
             </Link>
             {' / '}

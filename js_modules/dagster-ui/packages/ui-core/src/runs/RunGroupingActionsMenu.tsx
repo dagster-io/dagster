@@ -15,7 +15,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {DeletionDialog} from './DeletionDialog';
-import {RunGrouping} from './GroupedRunsRoot';
+import {RunGrouping} from './RunsFeedRoot';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {RunsQueryRefetchContext} from './RunUtils';
