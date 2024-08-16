@@ -3,7 +3,6 @@
  * bundles Infima by default. Infima is a CSS framework designed to
  * work well for content-centric websites.
  */
-
 @use "colors"; // Import the theme colors module
 @use "theme-globals"; //Global styles used across both themes
 @use "theme-light"; // Import the light theme module
