@@ -160,11 +160,11 @@ export const BackfillRowContent = ({
   );
 };
 
-const BackfillTarget = ({
+export const BackfillTarget = ({
   backfill,
   repoAddress,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: Pick<BackfillTableFragment, 'assetSelection' | 'partitionSet' | 'partitionSetName'>;
   repoAddress: RepoAddress | null;
 }) => {
   const repo = useRepository(repoAddress);

@@ -3,43 +3,38 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {CreatedByTagCell} from './CreatedByTag';
-import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
-import {RunGroupingActionsMenu} from './RunGroupingActionsMenu';
 import {RunRowTags} from './RunRowTags';
-import {GroupStatusTagWithStats, RunStatusTagWithStats} from './RunStatusTag';
+import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
-import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
-import {RunGrouping} from './RunsFeedRoot';
+import {RunStateSummary, RunTime} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
-import {RunTableRunFragment} from './types/RunTable.types';
-import {useResolveRunTarget} from './useResolveRunTarget';
+import {RunTimeFragment} from './types/RunUtils.types';
+import {RunsFeedTableEntryFragment} from './types/RunsFeedTable.types';
 import {RunStatus} from '../graphql/types';
+import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
+import {BackfillTarget} from '../instance/backfill/BackfillRow';
 
 export const RunsFeedRow = ({
-  group,
+  entry,
   hasCheckboxColumn,
   canTerminateOrDelete,
   onAddTag,
   checked,
   onToggleChecked,
-  additionalActionsForRun,
+  refetch,
 }: {
-  group: RunGrouping;
+  entry: RunsFeedTableEntryFragment;
   hasCheckboxColumn: boolean;
   canTerminateOrDelete: boolean;
+  refetch: () => void;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
-  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
   hideCreatedBy?: boolean;
 }) => {
-  const run = group.runs[0]!;
-
-  const {isJob, repoAddressGuess} = useResolveRunTarget(run);
-
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
@@ -49,12 +44,21 @@ export const RunsFeedRow = ({
     }
   };
 
-  const isReexecution = run.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
+  const isReexecution = entry.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
   const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const backfillId = run.tags.find((t) => t.key === DagsterTag.Backfill)?.value;
+  const runTime: RunTimeFragment = {
+    id: entry.id,
+    creationTime: entry.creationTime,
+    startTime: entry.startTime,
+    endTime: entry.endTime,
+    updateTime: entry.creationTime,
+    status: entry.runStatus,
+    __typename: 'Run',
+  };
+
   return (
     <tr onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {hasCheckboxColumn ? (
@@ -66,24 +70,27 @@ export const RunsFeedRow = ({
       ) : null}
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          <Link to={backfillId ? `/runs-feed/b/${backfillId}?tab=runs` : `/runs/${run.id}`}>
-            <Mono>
-              {backfillId ? backfillId : titleForRun(run)} ({group.runs.length}{' '}
-              {group.runs.length === 1 ? 'run' : 'runs'})
-            </Mono>
+          <Link
+            to={
+              entry.__typename === 'PartitionBackfill'
+                ? `/runs-feed/b/${entry.id}?tab=runs`
+                : `/runs/${entry.id}`
+            }
+          >
+            <Mono>{entry.id}</Mono>
           </Link>
           <Box
             flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
             style={{gap: '4px 8px', lineHeight: 0}}
           >
-            <Tag>
-              <Box flex={{direction: 'row', gap: 4}}>
-                <RunTargetLink isJob={isJob} run={run} repoAddress={repoAddressGuess} />
-              </Box>
-            </Tag>
-            <RunRowTags run={run} isJob={isJob} isHovered={isHovered} onAddTag={onAddTag} />
+            <RunRowTags
+              run={{...entry, mode: ''}}
+              isJob={true}
+              isHovered={isHovered}
+              onAddTag={onAddTag}
+            />
 
-            {run.status === RunStatus.QUEUED ? (
+            {entry.runStatus === RunStatus.QUEUED ? (
               <Caption>
                 <ButtonLink
                   onClick={() => {
@@ -99,8 +106,29 @@ export const RunsFeedRow = ({
         </Box>
       </td>
       <td>
+        <Tag>
+          <Box flex={{direction: 'row', gap: 4}}>
+            {entry.__typename === 'Run' ? (
+              <RunTargetLink
+                isJob={true}
+                run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
+                repoAddress={null}
+              />
+            ) : (
+              <BackfillTarget backfill={entry} repoAddress={null} />
+            )}
+          </Box>
+        </Tag>
+      </td>
+      <td>
+        <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
+      </td>
+      <td>
+        <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
+      </td>
+      <td>
         <Box flex={{direction: 'column', gap: 4}}>
-          <RunTime run={run} />
+          <RunTime run={runTime} />
           {isReexecution ? (
             <div>
               <Tag icon="cached">Re-execution</Tag>
@@ -109,40 +137,30 @@ export const RunsFeedRow = ({
         </Box>
       </td>
       <td>
-        <CreatedByTagCell
-          repoAddress={repoAddressGuess}
-          tags={run.tags || []}
-          onAddTag={onAddTag}
-        />
-      </td>
-      <td>
-        {group.runs.length > 1 ? (
-          <GroupStatusTagWithStats group={group} />
-        ) : (
-          <RunStatusTagWithStats status={run.status} runId={run.id} />
-        )}
-      </td>
-      <td>
-        <RunStateSummary run={run} />
+        <RunStateSummary run={runTime} />
       </td>
       <td>
         <Box flex={{justifyContent: 'flex-end'}}>
-          {group.runs.length > 1 ? (
-            <RunGroupingActionsMenu group={group} />
+          {entry.__typename === 'PartitionBackfill' ? (
+            <BackfillActionsMenu
+              backfill={{...entry, status: entry.backfillStatus}}
+              canCancelRuns={backfillCanCancelRuns(entry, entry.numCancelable > 0)}
+              refetch={refetch}
+              anchorLabel="View run"
+            />
           ) : (
             <RunActionsMenu
-              run={run}
-              onAddTag={onAddTag}
-              additionalActionsForRun={additionalActionsForRun}
+              run={entry}
+              // onAddTag={onAddTag}
             />
           )}
         </Box>
       </td>
-      <QueuedRunCriteriaDialog
+      {/* <QueuedRunCriteriaDialog
         run={run}
         isOpen={showQueueCriteria}
         onClose={() => setShowQueueCriteria(false)}
-      />
+      /> */}
     </tr>
   );
 };
