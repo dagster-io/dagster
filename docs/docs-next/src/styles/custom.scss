@@ -15,9 +15,12 @@ html {
   font-family: var(--ifm-font-family-base);
   background: var(--theme-color-background-default);
 }
+.container {
+  max-width: 1600px;
+}
 /* Main content */
 .theme-doc-markdown {
-  max-width: 900px;
+  max-width: 1900px;
   margin: 0 auto;
   margin-top: 1rem;
   padding-left: 3rem;
