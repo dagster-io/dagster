@@ -1,19 +1,17 @@
 ---
 title: "Automating Pipelines"
 description: Learn how to automate your data pipelines.
-last_update: 
-    date: 2024-08-12
-    author: Pedram Navid
+last_update:
+  date: 2024-08-12
+  author: Pedram Navid
 ---
 
-Automation is key to building reliable, efficient data pipelines. 
-This guide provides a simplified overview of the main ways to automate processes in Dagster, 
-helping you choose the right method for your needs. You will find links to more detailed guides for each method below.
+Automation is key to building reliable, efficient data pipelines. This guide provides a simplified overview of the main ways to automate processes in Dagster, helping you choose the right method for your needs. You will find links to more detailed guides for each method below.
 
-## What You'll Learn
+## What you'll learn
 
 - The different automation options available in Dagster
-- How to implement basic scheduling and event-based triggers  
+- How to implement basic scheduling and event-based triggers
 - Best practices for selecting and using automation methods
 
 <details>
@@ -26,7 +24,7 @@ Before continuing, you should be familiar with:
 
 </details>
 
-## Automation Methods Overview
+## Automation methods overview
 
 Dagster offers several ways to automate pipeline execution:
 
@@ -34,9 +32,7 @@ Dagster offers several ways to automate pipeline execution:
 2. [Sensors](#sensors) - Trigger runs based on events
 3. [Asset Sensors](#asset-sensors) - Trigger jobs when specific assets materialize
 
-Let's look at each method in more detail.
-
-## Schedules 
+## Schedules
 
 Schedules allow you to run jobs at specified times, like "every Monday at 9 AM" or "daily at midnight."
 A schedule combines a selection of assets, known as a [Job](/concepts/ops-jobs), and a [cron expression](https://en.wikipedia.org/wiki/Cron) 
@@ -44,14 +40,14 @@ in order to define when the job should be run.
 
 To make creating cron expressions easier, you can use an online tool like [Crontab Guru](https://crontab.guru/).
 
-### When to use Schedules
+### When to use schedules
 
 - You need to run jobs at regular intervals
 - You want basic time-based automation
 
-For examples of how to create schedules, see the [How-To Use Schedules](/guides/automation/schedules) guide.
+For examples of how to create schedules, see [How-To Use Schedules](/guides/automation/schedules).
 
-For more information about how Schedules work, see the [About Schedules](/concepts/schedules) concept page.
+For more information about how Schedules work, see [About Schedules](/concepts/schedules).
 
 ## Sensors
 
@@ -72,7 +68,7 @@ For more examples of how to create sensors, see the [How-To Use Sensors](/guides
 
 For more information about how Sensors work, see the [About Sensors](/concepts/sensors) concept page.
 
-## Asset Sensors
+## Asset sensors
 
 Asset Sensors trigger jobs when specified assets are materialized, allowing you to create dependencies between jobs or code locations.
 

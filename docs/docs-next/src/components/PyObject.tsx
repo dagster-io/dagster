@@ -9,16 +9,22 @@ export const PyObject: React.FunctionComponent<{
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
-}> = ({object, method, displayText, pluralize = false, decorator = false}) => {
+}> = ({
+  object,
+  method,
+  displayText,
+  pluralize = false,
+  decorator = false,
+}) => {
   let textValue = displayText || object;
   if (pluralize) {
-    textValue += 's';
+    textValue += "s";
   }
   if (decorator) {
-    textValue = '@' + textValue;
+    textValue = "@" + textValue;
   }
   if (method) {
-    textValue += '.' + method;
+    textValue += "." + method;
   }
 
   const handleClick = (e: React.MouseEvent) => {
@@ -36,4 +42,4 @@ export const PyObject: React.FunctionComponent<{
       <code>{textValue}</code>
     </a>
   );
-}
+};

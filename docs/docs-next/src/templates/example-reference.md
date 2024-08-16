@@ -29,16 +29,16 @@ def logs_then_skips(context):
 
 <!-- We need to fix the base table implemenatation before launch. This is a must. -->
 
-| | |
-|-|-|
-| Notes | |
-| Related docs | |
-| APIs in this example | |
+|                      |     |
+| -------------------- | --- |
+| Notes                |     |
+| Related docs         |     |
+| APIs in this example |     |
 
 ---
 
 <!-- This section lists a few additional sources of inspiration, such as DOP and GitHub discussions. You shouldn't need to change anything here. -->
 
-import InspirationList from '../partials/_InspirationList.md';
+import InspirationList from '../partials/\_InspirationList.md';
 
 <InspirationList />

@@ -3,6 +3,6 @@ title: Welcome
 slug: /
 ---
 
-# Dagster Documentation
+# Dagster documentation
 
 Welcome to Dagster's documentation.

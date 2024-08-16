@@ -1,17 +1,17 @@
 ---
 title: Building an ETL Pipeline
 description: Learn how to build an ETL pipeline with Dagster
-last_update: 
-    date: 2024-08-10
-    author: Pedram Navid
+last_update:
+  date: 2024-08-10
+  author: Pedram Navid
 ---
 
-# Dagster Tutorial: Building Your First ETL Pipeline
+# Dagster tutorial: Building your first ETL pipeline
 
 Welcome to this hands-on tutorial where you'll learn how to build an ETL pipeline with Dagster while exploring key parts of Dagster.
-If you haven't already, please complete the [Quick Start](/tutorial/quick-start) tutorial to get familiar with Dagster.
+If you haven't already, complete the [Quick Start](/tutorial/quick-start) tutorial to get familiar with Dagster.
 
-## What You'll Learn
+## What you'll learn
 
 - Setting up a Dagster project with the recommended project structure
 - Creating Assets and using Resources to connect to external systems
@@ -20,11 +20,7 @@ If you haven't already, please complete the [Quick Start](/tutorial/quick-start)
 - Running a pipeline by materializing assets
 - Adding schedules, sensors, and partitions to your assets
 
-## Prerequisites
-
-- 
-
-## Step 1: Set Up Your Dagster Environment
+## Step 1: Set up your Dagster environment
 
 First, set up a new Dagster project.
 
@@ -39,7 +35,7 @@ First, set up a new Dagster project.
 
    ```bash title="Create a virtual environment"
    python -m venv venv
-   source venv/bin/activate  
+   source venv/bin/activate
    # On Windows, use `venv\Scripts\activate`
    ```
 
@@ -49,7 +45,7 @@ First, set up a new Dagster project.
    pip install dagster dagster-webserver pandas
    ```
 
-## What You've Learned
+## What you've learned
 
 Congratulations! You've just built and run your first ETL pipeline with Dagster. You've learned how to:
 
@@ -57,9 +53,10 @@ Congratulations! You've just built and run your first ETL pipeline with Dagster.
 - Define Software-Defined Assets for each step of your ETL process
 - Use Dagster's UI to run and monitor your pipeline
 
-## Next Steps
+## Next steps
 
 To expand on this tutorial, you could:
+
 - Add more complex transformations
 - Implement error handling and retries
 - Create a schedule to run your pipeline periodically

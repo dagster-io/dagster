@@ -3,20 +3,9 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     },
-    "types": [
-      "@docusaurus/theme-classic",
-      "node"
-    ]
+    "types": ["@docusaurus/theme-classic", "node"]
   },
-  "exclude": [
-    "**/node_modules/*",
-    "blog",
-    "docs",
-    "build",
-    "i18n"
-  ],
+  "exclude": ["**/node_modules/*", "blog", "docs", "build", "i18n"]
 }

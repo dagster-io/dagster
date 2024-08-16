@@ -1,9 +1,9 @@
 ---
 title: Quickstart
 description: Learn how to quickly get up and running with Dagster
-last_update: 
-    date: 2024-08-10
-    author: Pedram Navid
+last_update:
+  date: 2024-08-10
+  author: Pedram Navid
 ---
 
 # Dagster Tutorial: Building Your First Dagster Project
@@ -36,7 +36,7 @@ First, set up a new Dagster project.
 
    ```bash title="Create a virtual environment"
    python -m venv venv
-   source venv/bin/activate  
+   source venv/bin/activate
    # On Windows, use `venv\Scripts\activate`
    ```
 
@@ -52,9 +52,9 @@ Set up a basic project structure:
 
 :::warning
 
-The file structure here is simplified to get quickly started. 
+The file structure here is simplified to get quickly started.
 
-Once you've completed this tutorial, consider the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) to learn 
+Once you've completed this tutorial, consider the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) to learn
 how to build more complex pipelines with best practices.
 
 :::
@@ -75,8 +75,6 @@ how to build more complex pipelines with best practices.
    touch quickstart/__init__.py quickstart/assets.py
    touch data/sample_data.csv
    ```
-   
-   
 
 2. Create a sample CSV file as a data source. In the `data/sample_data.csv` file, add the following content:
 
@@ -107,17 +105,18 @@ defs = Definitions(assets=[processed_data])
 ```
 
 This code defines a single data asset within a single computation that performs three steps:
+
 - Reads data from the CSV file
 - Adds an `age_group` column based on the `age`
 - Saves the processed data to a CSV file
 
-If you are used to task-based orchestrations, this might feel a bit different. 
+If you are used to task-based orchestrations, this might feel a bit different.
 In traditional task-based orchestrations, you would have three separate steps,
 but in Dagster, you model your pipelines using assets as the fundamental building block,
 rather than tasks.
 
-The `Definitions` object serves as the central configuration point for a Dagster project. In this code, a `Definitions` 
-object is defined and the asset is passed to it. This tells Dagster about the assets that make up the ETL pipeline 
+The `Definitions` object serves as the central configuration point for a Dagster project. In this code, a `Definitions`
+object is defined and the asset is passed to it. This tells Dagster about the assets that make up the ETL pipeline
 and allows Dagster to manage their execution and dependencies.
 
 ## Step 4: Run Your Pipeline
@@ -136,14 +135,14 @@ There should be screenshots here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 2. Open your web browser and go to `http://localhost:3000`
 
-3. You should see the Dagster UI along with the asset. 
+3. You should see the Dagster UI along with the asset.
 
-3. Click Materialize All to run the pipeline.
+4. Click Materialize All to run the pipeline.
 
-4. In the popup that appears, click View to view a run as it executes.
+5. In the popup that appears, click View to view a run as it executes.
 
-5. Watch as Dagster executes your pipeline. Try different views by selecting the different view buttons in the top-left.
-You can click on each asset to see its logs and metadata.
+6. Watch as Dagster executes your pipeline. Try different views by selecting the different view buttons in the top-left.
+   You can click on each asset to see its logs and metadata.
 
 ## Step 5: Verify Your Results
 

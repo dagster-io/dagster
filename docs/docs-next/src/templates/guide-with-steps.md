@@ -25,11 +25,11 @@ To follow the steps in this guide, you'll need:
 
 ## Step 1: Title that describes what this step will do {#step-1}
 
-<!-- 
+<!--
 For section / step heaings:
 
 - Titles should describe an action, ex: "Generate a token"
-- Don't use gerunds (-ing) in titles, as it can cause issues with translation + SEO 
+- Don't use gerunds (-ing) in titles, as it can cause issues with translation + SEO
 - Each section heading should have an ID that includes the word 'step' and the number of the step, ex: {#step-1}
 -->
 

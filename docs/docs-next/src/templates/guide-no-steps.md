@@ -25,12 +25,12 @@ To follow the steps in this guide, you'll need:
 
 ## Title that describes this section
 
-<!-- 
+<!--
 For section heaings:
 
 - Guides can (and should) contain multiple sections, with each one being a small chunk of information. Break large topics into smaller topics, using subsequent headings (H3, H4, etc) as needed
 - Titles should describe an action, ex: "Generate a token"
-- Don't use gerunds (-ing) in titles, as it can cause issues with translation + SEO 
+- Don't use gerunds (-ing) in titles, as it can cause issues with translation + SEO
 -->
 
 ---

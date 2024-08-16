@@ -7,7 +7,6 @@ description: "Learn how to install Dagster"
 
 This guide will walk you through the steps to install Dagster, a data orchestrator for machine learning, analytics, and ETL. Follow the instructions below to get started with Dagster on your local machine.
 
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -22,7 +21,7 @@ Before you begin, ensure you have the following prerequisites installed on your 
 
 After installing Python, it's a good idea to setup a virtual environment to isolate your Dagster project from the rest of your system.
 
-There are many ways to setup a virtual environment. One method that requires no 
+There are many ways to setup a virtual environment. One method that requires no
 additional dependencies is to use `venv`.
 
 ```bash
@@ -41,7 +40,6 @@ pip install dagster dagster-webserver
 ```
 
 This command will install the core Dagster library and the webserver, which is used to serve the Dagster UI.
-
 
 ## Verify Installation
 
@@ -70,7 +68,7 @@ pip install 'dagster==1.7.6'
 
 ## Conclusion
 
-Congratulations! You have successfully installed Dagster 
+Congratulations! You have successfully installed Dagster
 
 ## Troubleshooting
 
