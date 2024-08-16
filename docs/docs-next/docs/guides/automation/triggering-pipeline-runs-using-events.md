@@ -1,6 +1,4 @@
 ---
-title: "Triggering runs using events"
-sidebar_position: 2
+title: "Creating event-based pipelines"
+sidebar_position: 20
 ---
-
-# Triggering pipeline runs using events

@@ -4,7 +4,6 @@ on:
     paths:
       - docs/docs-next
       - .github/workflows/build-docs-revamp.yml
-
   push:
     branches:
       - docs/revamp
@@ -13,7 +12,6 @@ on:
       - .github/workflows/build-docs-revamp.yml
 
 concurrency:
-  # Cancel in-progress runs on same branch
   group: ${{ github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 
