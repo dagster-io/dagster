@@ -1,5 +1,5 @@
-import React from "react";
-import CodeBlock from "@theme/CodeBlock";
+import React from 'react';
+import CodeBlock from '@theme/CodeBlock';
 
 interface CodeExampleProps {
   filePath: string;
@@ -7,26 +7,18 @@ interface CodeExampleProps {
   title?: string;
 }
 
-const CodeExample: React.FC<CodeExampleProps> = ({
-  filePath,
-  language,
-  title,
-}) => {
-  const [content, setContent] = React.useState<string>("");
+const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) => {
+  const [content, setContent] = React.useState<string>('');
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     // Adjust the import path to start from the docs directory
     import(`!!raw-loader!/docs/${filePath}`)
       .then((module) => {
-        const lines = module.default.split("\n");
-        const mainIndex = lines.findIndex((line) =>
-          line.trim().startsWith("if __name__ == "),
-        );
+        const lines = module.default.split('\n');
+        const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
         const strippedContent =
-          mainIndex !== -1
-            ? lines.slice(0, mainIndex).join("\n")
-            : module.default;
+          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : module.default;
         setContent(strippedContent);
         setError(null);
       })
@@ -39,16 +31,12 @@ const CodeExample: React.FC<CodeExampleProps> = ({
   }, [filePath]);
 
   if (error) {
-    return (
-      <div style={{ color: "red", padding: "1rem", border: "1px solid red" }}>
-        {error}
-      </div>
-    );
+    return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
   }
 
   return (
     <CodeBlock language={language} title={title || filePath}>
-      {content || "Loading..."}
+      {content || 'Loading...'}
     </CodeBlock>
   );
 };

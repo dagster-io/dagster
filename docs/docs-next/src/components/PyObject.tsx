@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export const SearchIndexContext = React.createContext(null);
 
@@ -9,27 +9,21 @@ export const PyObject: React.FunctionComponent<{
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
-}> = ({
-  object,
-  method,
-  displayText,
-  pluralize = false,
-  decorator = false,
-}) => {
+}> = ({object, method, displayText, pluralize = false, decorator = false}) => {
   let textValue = displayText || object;
   if (pluralize) {
-    textValue += "s";
+    textValue += 's';
   }
   if (decorator) {
-    textValue = "@" + textValue;
+    textValue = '@' + textValue;
   }
   if (method) {
-    textValue += "." + method;
+    textValue += '.' + method;
   }
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    alert("PyObject not implemented yet");
+    alert('PyObject not implemented yet');
   };
 
   return (

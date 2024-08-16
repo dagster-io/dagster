@@ -1,11 +1,11 @@
 {
-  "extends": "./node_modules/@docusaurus/tsconfig/tsconfig.json",
+  "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["@docusaurus/theme-classic", "node"]
+    "types": ["node"]
   },
   "exclude": ["**/node_modules/*", "blog", "docs", "build", "i18n"]
 }

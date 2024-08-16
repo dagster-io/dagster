@@ -13,7 +13,7 @@
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
     "typecheck": "tsc",
-    "lint:eslint": "eslint src",
+    "lint:eslint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx",
     "lint": "npx tsc --noEmit && prettier . --check && npm run lint:eslint",
     "lint:fix": "prettier . --write && npm run lint:eslint --fix"
   },
@@ -33,10 +33,13 @@
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.25.1",
+    "@docusaurus/eslint-plugin": "^3.5.2",
     "@docusaurus/module-type-aliases": "3.5.2",
     "@docusaurus/tsconfig": "3.5.2",
     "@docusaurus/types": "3.5.2",
     "@eslint/js": "^9.9.0",
+    "@types/node": "^22.3.0",
     "@typescript-eslint/parser": "^8.0.1",
     "eslint": "^8.57.0",
     "eslint-plugin-mdx": "^3.1.5",
@@ -44,7 +47,9 @@
     "globals": "^15.9.0",
     "prettier": "^3.3.3",
     "prettier-eslint": "^16.3.0",
-    "typescript": "~5.5.2",
+    "remark-frontmatter": "^5.0.0",
+    "remark-mdx": "^3.0.1",
+    "typescript": "~5.5.4",
     "typescript-eslint": "^8.0.1"
   },
   "browserslist": {

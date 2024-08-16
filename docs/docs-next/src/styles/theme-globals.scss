@@ -1,25 +1,25 @@
 @font-face {
-	font-family: "Geist";
-	src: url("/fonts/GeistVF.woff") format("woff");
+  font-family: 'Geist';
+  src: url('/fonts/GeistVF.woff') format('woff');
 }
 
 @font-face {
-	font-family: "Geist-Mono";
-	src: url("/fonts/GeistMonoVF.woff") format("woff");
+  font-family: 'Geist-Mono';
+  src: url('/fonts/GeistMonoVF.woff') format('woff');
 }
 
 //Global Styles
 
 :root {
-	--theme-font-base: "Geist", "Inter", "Arial", sans-serif;
-	--theme-font-mono: "Geist-Mono", monospace;
-	--theme-font-size-base: 15px;
-	--theme-font-size-sm: 13px;
-	--theme-font-size-lg: 18px;
-	--ifm-font-weight-semibold: 600;
-	--ifm-font-family-base: var(--theme-font-base);
-	--ifm-heading-font-family: var(--theme-font-base);
-	--ifm-font-family-monospace: var(--theme-font-mono);
-	--ifm-code-font-size: 90%;
-	--ifm-background-color: var(--theme-accent-red);
+  --theme-font-base: 'Geist', 'Inter', 'Arial', sans-serif;
+  --theme-font-mono: 'Geist-Mono', monospace;
+  --theme-font-size-base: 15px;
+  --theme-font-size-sm: 13px;
+  --theme-font-size-lg: 18px;
+  --ifm-font-weight-semibold: 600;
+  --ifm-font-family-base: var(--theme-font-base);
+  --ifm-heading-font-family: var(--theme-font-base);
+  --ifm-font-family-monospace: var(--theme-font-mono);
+  --ifm-code-font-size: 90%;
+  --ifm-background-color: var(--theme-accent-red);
 }

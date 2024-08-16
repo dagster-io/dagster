@@ -3,155 +3,155 @@
  * bundles Infima by default. Infima is a CSS framework designed to
  * work well for content-centric websites.
  */
-@use "colors"; // Import the theme colors module
-@use "theme-globals"; //Global styles used across both themes
-@use "theme-light"; // Import the light theme module
-@use "theme-dark"; // Import the light theme module
+@use 'colors'; // Import the theme colors module
+@use 'theme-globals'; //Global styles used across both themes
+@use 'theme-light'; // Import the light theme module
+@use 'theme-dark'; // Import the light theme module
 
 /* You can override the default Infima variables here. */
 /* Some styles heavily influenced from: https://github.com/electron/website/blob/main/src/css/custom.scss */
 
 html {
-	font-family: var(--ifm-font-family-base);
-	background: var(--theme-color-background-default);
+  font-family: var(--ifm-font-family-base);
+  background: var(--theme-color-background-default);
 }
 /* Main content */
 .theme-doc-markdown {
-	max-width: 900px;
-	margin: 0 auto;
-	margin-top: 1rem;
-	padding-left: 3rem;
+  max-width: 900px;
+  margin: 0 auto;
+  margin-top: 1rem;
+  padding-left: 3rem;
 }
 
 /* Custom code for PyObject */
 a.pyobject {
-	color: var(--theme-color-text-default);
+  color: var(--theme-color-text-default);
 }
 
 .navbar {
-	&--dark {
-		--ifm-navbar-link-color: var(--theme-color-text-default);
-	}
+  &--dark {
+    --ifm-navbar-link-color: var(--theme-color-text-default);
+  }
 
-	&__inner {
-		max-width: 1400px;
-		margin: 0 0;
-	}
+  &__inner {
+    max-width: 1400px;
+    margin: 0 0;
+  }
 
-	&__item {
-		// use margin instead of padding so that the border-bottom
-		// on active looks better
-		border: 1px;
-	}
+  &__item {
+    // use margin instead of padding so that the border-bottom
+    // on active looks better
+    border: 1px;
+  }
 
-	&__link {
-		font-weight: var(--ifm-font-weight-normal);
-		border-bottom: 3px solid transparent;
+  &__link {
+    font-weight: var(--ifm-font-weight-normal);
+    border-bottom: 3px solid transparent;
 
-		&--active {
-			color: var(--theme-color-accent-blue);
-			border-bottom-color: var(--theme-color-accent-blue);
-		}
-	}
+    &--active {
+      color: var(--theme-color-accent-blue);
+      border-bottom-color: var(--theme-color-accent-blue);
+    }
+  }
 }
 
 .footer {
-	--ifm-footer-background-color: var(--theme-color-background-light);
+  --ifm-footer-background-color: var(--theme-color-background-light);
 
-	.footer__logo {
-		max-width: 80px;
-	}
+  .footer__logo {
+    max-width: 80px;
+  }
 }
 
 .markdown {
-	line-height: 150%;
+  line-height: 150%;
 
-	code {
-		font-size: var(--ifm-code-font-size);
-	}
+  code {
+    font-size: var(--ifm-code-font-size);
+  }
 
-	a {
-		font-weight: var(--ifm-font-weight-semibold);
-		code {
-			font-weight: var(--ifm-font-weight-bold);
-		}
-	}
+  a {
+    font-weight: var(--ifm-font-weight-semibold);
+    code {
+      font-weight: var(--ifm-font-weight-bold);
+    }
+  }
 
-	h1,
-	h1:first-child,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		--ifm-h1-font-size: 2rem;
-		--ifm-h2-font-size: 1.5rem;
-		--ifm-h3-font-size: 1.3rem;
-		--ifm-h4-font-size: 1rem;
-		--ifm-h5-font-size: 0.8rem;
-	}
+  h1,
+  h1:first-child,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    --ifm-h1-font-size: 2rem;
+    --ifm-h2-font-size: 1.5rem;
+    --ifm-h3-font-size: 1.3rem;
+    --ifm-h4-font-size: 1rem;
+    --ifm-h5-font-size: 0.8rem;
+  }
 
-	// We want this to only apply to inline code, so don't apply
-	// this color to ``` code blocks nor any headings.
-	:not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
-		border: none;
-	}
+  // We want this to only apply to inline code, so don't apply
+  // this color to ``` code blocks nor any headings.
+  :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
+    border: none;
+  }
 
-	// don't apply --dagster-inline-code colors to admonitions
-	// as well
-	.admonition {
-		code {
-			color: inherit;
-		}
-	}
+  // don't apply --dagster-inline-code colors to admonitions
+  // as well
+  .admonition {
+    code {
+      color: inherit;
+    }
+  }
 }
 
 .button {
-	&--outline {
-		border: 1px solid;
-		color: var(--ifm-color-primary);
-		&:hover {
-			color: var(--ifm-color-primary-dark);
-		}
-	}
+  &--outline {
+    border: 1px solid;
+    color: var(--ifm-color-primary);
+    &:hover {
+      color: var(--ifm-color-primary-dark);
+    }
+  }
 }
 
 // sidebar
 .menu {
-	padding-right: 0.5rem !important;
-	&__link {
-		font-size: 1rem;
-		font-weight: var(--ifm-font-weight-normal);
-		color: var(--theme-color-text-light);
-		&:hover {
-			color: var(--theme-color-text-default);
-			background-color: var(--theme-color-background-gray);
-		}
-		&--active {
-			font-weight: var(--ifm-font-weight-normal);
-			color: var(--theme-color-text-default);
-			background-color: var(--theme-color-background-gray);
-			&:hover {
-				background-color: var(--theme-color-background-blue);
-				color: var(--theme-color-text-default);
-			}
-		}
-	}
+  padding-right: 0.5rem !important;
+  &__link {
+    font-size: 1rem;
+    font-weight: var(--ifm-font-weight-normal);
+    color: var(--theme-color-text-light);
+    &:hover {
+      color: var(--theme-color-text-default);
+      background-color: var(--theme-color-background-gray);
+    }
+    &--active {
+      font-weight: var(--ifm-font-weight-normal);
+      color: var(--theme-color-text-default);
+      background-color: var(--theme-color-background-gray);
+      &:hover {
+        background-color: var(--theme-color-background-blue);
+        color: var(--theme-color-text-default);
+      }
+    }
+  }
 }
 
 .card {
-	border: 1px solid rgba(200, 200, 200, 0.3);
+  border: 1px solid rgba(200, 200, 200, 0.3);
 }
 
 .table-of-contents__link--active {
-	font-weight: var(--ifm-font-weight-bold);
+  font-weight: var(--ifm-font-weight-bold);
 }
 
 .pagination-nav {
-	&__link {
-		border: 0;
-		border-radius: 0;
-		border-top: 1px solid var(--dagster-color-gray-300);
-		color: var(--dagster-color-gray-900);
-	}
+  &__link {
+    border: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--dagster-color-gray-300);
+    color: var(--dagster-color-gray-900);
+  }
 }
