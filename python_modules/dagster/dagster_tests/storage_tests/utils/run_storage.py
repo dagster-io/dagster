@@ -1360,10 +1360,10 @@ class TestRunStorage:
             len(storage.get_backfills(filters=BulkActionsFilter(status=BulkActionStatus.COMPLETED)))
             == 0
         )
-        backfill = storage.get_backfills(
+        backfills = storage.get_backfills(
             filters=BulkActionsFilter(status=BulkActionStatus.REQUESTED)
         )
-        assert backfill == one
+        assert backfills[0] == one
 
         storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
         assert (
@@ -1396,21 +1396,21 @@ class TestRunStorage:
 
         created_before = storage.get_backfills(
             filters=BulkActionsFilter(
-                created_before=datetime_from_timestamp(all_backfills[3].backfill_timestamp)
+                created_before=datetime_from_timestamp(all_backfills[2].backfill_timestamp)
             )
         )
         assert len(created_before) == 2
         for backfill in created_before:
-            assert backfill.backfill_timestamp < all_backfills[3].backfill_timestamp
+            assert backfill.backfill_timestamp < all_backfills[2].backfill_timestamp
 
         created_after = storage.get_backfills(
             filters=BulkActionsFilter(
-                created_after=datetime_from_timestamp(all_backfills[3].backfill_timestamp)
+                created_after=datetime_from_timestamp(all_backfills[2].backfill_timestamp)
             )
         )
         assert len(created_after) == 2
         for backfill in created_after:
-            assert backfill.backfill_timestamp > all_backfills[3].backfill_timestamp
+            assert backfill.backfill_timestamp > all_backfills[2].backfill_timestamp
 
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
