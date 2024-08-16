@@ -23,7 +23,7 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import PipesClient
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -198,6 +198,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         finally:
             self._handler = None
 
+    @public
     def consume_cloudwatch_logs(
         self,
         log_group: str,
@@ -205,6 +206,18 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
         start_time: Optional[int] = None,
         end_time: Optional[int] = None,
     ) -> None:
+        """Reads logs from AWS CloudWatch and forwards them to Dagster for events extraction and logging.
+
+        Args:
+            log_group (str): CloudWatch log group name
+            log_stream (str): CLoudWatch log stream name
+            start_time (Optional[int]): The start of the time range, expressed as the number of
+                milliseconds after ``Jan 1, 1970 00:00:00 UTC``. Only events with a timestamp equal to this
+                time or later are included.
+            end_time (Optional[int]): The end of the time range, expressed as the number of
+                milliseconds after ``Jan 1, 1970 00:00:00 UTC``. Events with a timestamp equal to or
+                later than this time are not included.
+        """
         handler = check.not_none(
             self._handler, "Can only consume logs within context manager scope."
         )
@@ -217,7 +230,7 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
                     extract_message_or_forward_to_stdout(handler, log_line)
 
     def no_messages_debug_text(self) -> str:
-        return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
+        return "Attempted to read messages by extracting them from CloudWatch logs directly."
 
     def _get_all_cloudwatch_events(
         self,
@@ -248,6 +261,10 @@ class PipesCloudWatchMessageReader(PipesMessageReader):
 
 
 class PipesLambdaEventContextInjector(PipesEnvContextInjector):
+    """Injects context via AWS Lambda event input.
+    Should be paired with :py:class`~dagster_pipes.PipesMappingParamsLoader` on the Lambda side.
+    """
+
     def no_messages_debug_text(self) -> str:
         return "Attempted to inject context via the lambda event input."
 
@@ -256,7 +273,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS lambda.
 
     By default context is injected via the lambda input event and messages are parsed out of the
-    4k tail of logs. S3
+    4k tail of logs.
 
     Args:
         client (boto3.client): The boto lambda client used to call invoke.
@@ -280,6 +297,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @public
     def run(
         self,
         *,
@@ -344,6 +362,10 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             context into the Glue job, for example, :py:class:`PipesS3ContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the glue job run. Defaults to :py:class:`PipesCloudWatchsMessageReader`.
+            When provided with :py:class:`PipesCloudWatchMessageReader`,
+            it will be used to recieve logs and events from the ``.../output/<job-run-id>``
+            CloudWatch log stream created by AWS Glue. Note that AWS Glue routes both
+            ``stderr`` and ``stdout`` from the main job process into this LogStream.
         client (Optional[boto3.client]): The boto Glue client used to launch the Glue job
         forward_termination (bool): Whether to cancel the Glue job run when the Dagster process receives a termination signal.
     """
@@ -364,6 +386,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @public
     def run(
         self,
         *,
