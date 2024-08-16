@@ -283,19 +283,19 @@ def dlt_example_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
 
 In this example, we customized the translator to change how the dlt assets' names are defined. We also hard-coded the asset dependency upstream of our assets to provide a fan-out model from a single dependency to our dlt assets.
 
-### Assigning metadata to upstream source assets
+### Assigning metadata to upstream external assets
 
-A common question is how to define metadata on the source assets upstream of the dlt assets.
+A common question is how to define metadata on the external assets upstream of the dlt assets.
 
-This can be accomplished by defining a <PyObject object="SourceAsset" /> with a key that matches the one defined in the <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" method="get_deps_assets_keys" /> method.
+This can be accomplished by defining a <PyObject object="AssetSpec" /> with a key that matches the one defined in the <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" method="get_deps_assets_keys" /> method.
 
-For example, let's say we have defined a set of dlt assets named `thinkific_assets`, we can iterate over those assets and derive a <PyObject object="SourceAsset" /> with attributes like `group_name`.
+For example, let's say we have defined a set of dlt assets named `thinkific_assets`, we can iterate over those assets and derive a <PyObject object="AssetSpec" /> with attributes like `group_name`.
 
 ```python file=/integrations/embedded_elt/dlt_source_assets.py
 import dlt
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 
-from dagster import AssetExecutionContext, SourceAsset
+from dagster import AssetExecutionContext, AssetSpec
 
 
 @dlt.source
@@ -319,8 +319,7 @@ def example_dlt_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
 
 
 thinkific_source_assets = [
-    SourceAsset(key, group_name="thinkific")
-    for key in example_dlt_assets.dependency_keys
+    AssetSpec(key, group_name="thinkific") for key in example_dlt_assets.dependency_keys
 ]
 ```
 
