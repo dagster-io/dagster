@@ -1,9 +1,11 @@
+import {gql} from '@apollo/client';
 import {Box, ButtonLink, Caption, Checkbox, Colors, Mono, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {CreatedByTagCell} from './CreatedByTag';
-import {RunActionsMenu} from './RunActionsMenu';
+import {RUN_ACTIONS_MENU_RUN_FRAGMENT, RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
@@ -11,23 +13,22 @@ import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTimeFragment} from './types/RunUtils.types';
-import {RunsFeedTableEntryFragment} from './types/RunsFeedTable.types';
+import {RunsFeedTableEntryFragment} from './types/RunsFeedRow.types';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
+import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillStepStatusDialog';
+import {PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
+import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
 export const RunsFeedRow = ({
   entry,
-  hasCheckboxColumn,
-  canTerminateOrDelete,
   onAddTag,
   checked,
   onToggleChecked,
   refetch,
 }: {
   entry: RunsFeedTableEntryFragment;
-  hasCheckboxColumn: boolean;
-  canTerminateOrDelete: boolean;
   refetch: () => void;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
@@ -60,15 +61,16 @@ export const RunsFeedRow = ({
   };
 
   return (
-    <tr onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      {hasCheckboxColumn ? (
-        <td>
-          {canTerminateOrDelete ? (
-            <>{onToggleChecked ? <Checkbox checked={!!checked} onChange={onChange} /> : null}</>
-          ) : null}
-        </td>
-      ) : null}
-      <td>
+    <RowGrid
+      border="bottom"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <RowCell>
+        <Checkbox checked={!!checked} onChange={onChange} />
+      </RowCell>
+
+      <RowCell>
         <Box flex={{direction: 'column', gap: 5}}>
           <Link
             to={
@@ -104,8 +106,8 @@ export const RunsFeedRow = ({
             ) : null}
           </Box>
         </Box>
-      </td>
-      <td>
+      </RowCell>
+      <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
         <Tag>
           <Box flex={{direction: 'row', gap: 4}}>
             {entry.__typename === 'Run' ? (
@@ -119,48 +121,125 @@ export const RunsFeedRow = ({
             )}
           </Box>
         </Tag>
-      </td>
-      <td>
+      </RowCell>
+      <RowCell>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
-      </td>
-      <td>
+      </RowCell>
+      <RowCell>
         <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
-      </td>
-      <td>
-        <Box flex={{direction: 'column', gap: 4}}>
-          <RunTime run={runTime} />
-          {isReexecution ? (
-            <div>
-              <Tag icon="cached">Re-execution</Tag>
-            </div>
-          ) : null}
-        </Box>
-      </td>
-      <td>
+      </RowCell>
+      <RowCell style={{flexDirection: 'column', gap: 4}}>
+        <RunTime run={runTime} />
+        {isReexecution ? (
+          <div>
+            <Tag icon="cached">Re-execution</Tag>
+          </div>
+        ) : null}
+      </RowCell>
+      <RowCell>
         <RunStateSummary run={runTime} />
-      </td>
-      <td>
-        <Box flex={{justifyContent: 'flex-end'}}>
-          {entry.__typename === 'PartitionBackfill' ? (
-            <BackfillActionsMenu
-              backfill={{...entry, status: entry.backfillStatus}}
-              canCancelRuns={backfillCanCancelRuns(entry, entry.numCancelable > 0)}
-              refetch={refetch}
-              anchorLabel="View run"
-            />
-          ) : (
-            <RunActionsMenu
-              run={entry}
-              // onAddTag={onAddTag}
-            />
-          )}
-        </Box>
-      </td>
+      </RowCell>
+      <RowCell>
+        {entry.__typename === 'PartitionBackfill' ? (
+          <BackfillActionsMenu
+            backfill={{...entry, status: entry.backfillStatus}}
+            canCancelRuns={backfillCanCancelRuns(entry, entry.numCancelable > 0)}
+            refetch={refetch}
+            anchorLabel="View run"
+          />
+        ) : (
+          <RunActionsMenu
+            run={entry}
+            // onAddTag={onAddTag}
+          />
+        )}
+      </RowCell>
       {/* <QueuedRunCriteriaDialog
         run={run}
         isOpen={showQueueCriteria}
         onClose={() => setShowQueueCriteria(false)}
       /> */}
-    </tr>
+    </RowGrid>
   );
 };
+
+const TEMPLATE_COLUMNS = '60px 2fr 1fr 1fr 140px 150px 120px 132px';
+
+export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
+  return (
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+      <HeaderCell>
+        <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
+      </HeaderCell>
+      <HeaderCell>Run ID</HeaderCell>
+      <HeaderCell>Target</HeaderCell>
+      <HeaderCell>Launched by</HeaderCell>
+      <HeaderCell>Status</HeaderCell>
+      <HeaderCell>Created at</HeaderCell>
+      <HeaderCell>Duration</HeaderCell>
+      <HeaderCell></HeaderCell>
+    </HeaderRow>
+  );
+};
+
+const RowGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: ${TEMPLATE_COLUMNS};
+  height: 100%;
+`;
+
+export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
+  fragment RunsFeedTableEntryFragment on RunsFeedEntry {
+    __typename
+    id
+    runStatus
+    creationTime
+    startTime
+    endTime
+    tags {
+      key
+      value
+    }
+    jobName
+    assetSelection {
+      ... on AssetKey {
+        path
+      }
+    }
+    assetCheckSelection {
+      name
+      assetKey {
+        path
+      }
+    }
+    ... on Run {
+      repositoryOrigin {
+        id
+        repositoryLocationName
+        repositoryName
+      }
+      ...RunActionsMenuRunFragment
+    }
+    ... on PartitionBackfill {
+      backfillStatus: status
+      partitionSetName
+      partitionSet {
+        id
+        ...PartitionSetForBackfillTableFragment
+      }
+      assetSelection {
+        path
+      }
+
+      hasCancelPermission
+      hasResumePermission
+      isAssetBackfill
+      numCancelable
+      ...BackfillStepStatusDialogBackfillFragment
+    }
+  }
+
+  ${RUN_ACTIONS_MENU_RUN_FRAGMENT}
+  ${PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT}
+  ${BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT}
+`;

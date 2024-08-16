@@ -33,7 +33,11 @@ type AssetBackfillStatus = NonNullable<
   BackfillDetailsBackfillFragment['assetBackfillData']
 >['assetBackfillStatuses'][0];
 
-export const BackfillPartitionsTab = ({backfill}: {backfill: BackfillDetailsBackfillFragment}) => {
+export const BackfillAssetPartitionsTable = ({
+  backfill,
+}: {
+  backfill: BackfillDetailsBackfillFragment;
+}) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
 
   const assetStatuses: AssetBackfillStatus[] =

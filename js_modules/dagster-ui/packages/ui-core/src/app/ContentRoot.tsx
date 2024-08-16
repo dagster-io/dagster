@@ -5,7 +5,7 @@ import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
-import {BackfillAsRunRequestPage} from '../instance/backfill/BackfillAsRunRequestPage';
+import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
 import RunsFeedRoot from '../runs/RunsFeedRoot';
 import {lazy} from '../util/lazy';
 
@@ -55,7 +55,7 @@ export const ContentRoot = memo(() => {
             <RunRoot />
           </Route>
           <Route path="/runs-feed/b/:backfillId">
-            <BackfillAsRunRequestPage />
+            <RunsFeedBackfillPage />
           </Route>
           <Route path="/runs-feed" exact>
             <RunsFeedRoot />

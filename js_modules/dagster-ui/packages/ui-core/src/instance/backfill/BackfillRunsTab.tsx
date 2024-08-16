@@ -29,11 +29,18 @@ import {StickyTableContainer} from '../../ui/StickyTableContainer';
 
 const BACKFILL_RUNS_HOUR_WINDOW_KEY = 'dagster.backfill-run-timeline-hour-window';
 
-export const BackfillRunsTab = ({backfill}: {backfill: BackfillDetailsBackfillFragment}) => {
-  const [view, setView] = useQueryPersistedState<'timeline' | 'list'>({
+export const BackfillRunsTab = ({
+  backfill,
+  view: propView,
+}: {
+  backfill: BackfillDetailsBackfillFragment;
+  view: 'timeline' | 'list' | 'both';
+}) => {
+  const [_view, setView] = useQueryPersistedState<'timeline' | 'list'>({
     defaults: {view: 'timeline'},
     queryKey: 'view',
   });
+  const view = propView === 'both' ? _view : propView;
 
   const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
     useTimelineRange({
@@ -61,16 +68,18 @@ export const BackfillRunsTab = ({backfill}: {backfill: BackfillDetailsBackfillFr
 
   const actionBarComponents = (
     <Box flex={{direction: 'row', gap: 16}} style={{position: 'sticky', top: 0}}>
-      <ButtonGroup
-        activeItems={new Set([view])}
-        onClick={(id: 'timeline' | 'list') => {
-          setView(id);
-        }}
-        buttons={[
-          {id: 'timeline', icon: 'gantt_waterfall', label: 'Timeline'},
-          {id: 'list', icon: 'list', label: 'List'},
-        ]}
-      />
+      {propView === 'both' ? (
+        <ButtonGroup
+          activeItems={new Set([view])}
+          onClick={(id: 'timeline' | 'list') => {
+            setView(id);
+          }}
+          buttons={[
+            {id: 'timeline', icon: 'gantt_waterfall', label: 'Timeline'},
+            {id: 'list', icon: 'list', label: 'List'},
+          ]}
+        />
+      ) : undefined}
       <div style={{flex: 1}} />
       {view === 'timeline' && (
         <ButtonGroup<HourWindow>

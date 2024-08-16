@@ -36,7 +36,7 @@ import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryF
 export const RunRoot = () => {
   useTrackPageView();
 
-  const {runId, requestId} = useParams<{runId: string; requestId?: string}>();
+  const {runId, runFeedEntryId} = useParams<{runId: string; runFeedEntryId?: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
@@ -112,17 +112,17 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            requestId ? (
+            runFeedEntryId ? (
               <Heading>
                 <Link to="/runs-feed" style={{color: Colors.textLight()}}>
                   All runs
                 </Link>
                 {' / '}
                 <Link
-                  to={`/runs-feed/b/${requestId}?tab=runs&view=list`}
+                  to={`/runs-feed/b/${runFeedEntryId}?tab=runs&view=list`}
                   style={{color: Colors.textLight()}}
                 >
-                  {requestId}
+                  {runFeedEntryId}
                 </Link>
                 {' / '}
                 {runId.slice(0, 8)}

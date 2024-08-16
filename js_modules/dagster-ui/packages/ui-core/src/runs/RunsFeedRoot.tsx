@@ -1,16 +1,11 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  Colors,
-  CursorHistoryControls,
-  NonIdealState,
-  Page,
-  Tabs,
-} from '@dagster-io/ui-components';
+import {Box, Colors, CursorHistoryControls, NonIdealState, Tabs} from '@dagster-io/ui-components';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import {useMemo, useRef} from 'react';
 import {PYTHON_ERROR_FRAGMENT} from 'shared/app/PythonErrorFragment';
 
 import {RunsQueryRefetchContext} from './RunUtils';
-import {RUNS_FEED_TABLE_ENTRY_FRAGMENT, RunsFeedTable} from './RunsFeedTable';
+import {RUNS_FEED_TABLE_ENTRY_FRAGMENT, RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRow';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/RunsFeedRoot.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {
@@ -19,9 +14,11 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {CheckAllBox} from '../ui/CheckAllBox';
 import {LoadingSpinner} from '../ui/Loading';
-import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {TabLink} from '../ui/TabLink';
+import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 const PAGE_SIZE = 25;
 
@@ -64,6 +61,21 @@ export const RunsFeedRoot = () => {
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {error} = queryResult;
 
+  const parentRef = useRef<HTMLDivElement | null>(null);
+
+  const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
+  const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
+
+  const rowVirtualizer = useVirtualizer({
+    count: entries.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 84,
+    overscan: 15,
+  });
+
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const items = rowVirtualizer.getVirtualItems();
+
   function actionBar() {
     return (
       <Box style={{width: '100%', marginRight: 8}} flex={{justifyContent: 'space-between'}}>
@@ -102,26 +114,43 @@ export const RunsFeedRoot = () => {
     }
 
     return (
-      <>
-        <StickyTableContainer $top={0}>
-          <RunsFeedTable
-            entries={entries}
-            refetch={refreshState.refetch}
-            actionBarComponents={actionBar()}
-            belowActionBarComponents={null}
+      <div style={{overflow: 'hidden'}}>
+        <Container ref={parentRef}>
+          <RunsFeedTableHeader
+            checkbox={
+              <CheckAllBox
+                checkedCount={checkedIds.size}
+                totalCount={entries.length}
+                onToggleAll={onToggleAll}
+              />
+            }
           />
-        </StickyTableContainer>
-      </>
+          <Inner $totalHeight={totalHeight}>
+            {items.map(({index, size, start, key}) => {
+              const entry = entries[index];
+              if (!entry) {
+                return <span key={key} />;
+              }
+              return (
+                <Row $height={size} $start={start} data-key={key} key={key}>
+                  <RunsFeedRow
+                    key={key}
+                    entry={entry}
+                    onToggleChecked={onToggleFactory(entry.id)}
+                    refetch={refreshState.refetch}
+                  />
+                </Row>
+              );
+            })}
+          </Inner>
+        </Container>
+      </div>
     );
   };
 
   return (
-    <Page>
-      <Box
-        background={Colors.backgroundLight()}
-        padding={{left: 24, right: 12, top: 12}}
-        border="bottom"
-      >
+    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <Box background={Colors.backgroundLight()} padding={{left: 24, right: 12, top: 12}}>
         <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
           <Tabs selectedTabId="all">
             <TabLink id="all" title="All runs" to="/runs-feed" />
@@ -129,8 +158,11 @@ export const RunsFeedRoot = () => {
             <TabLink id="in-progress" title={`In progress (${countInProgress})`} to="/runs-feed" />
             <TabLink id="failed" title={`Failed (${countFailed})`} to="/runs-feed" /> */}
           </Tabs>
-          <Box padding={{vertical: 16}}>
-            <QueryRefreshCountdown refreshState={refreshState} />
+          <Box flex={{gap: 16, alignItems: 'center'}}>
+            <Box padding={{vertical: 16}}>
+              <QueryRefreshCountdown refreshState={refreshState} />
+            </Box>
+            {actionBar()}
           </Box>
         </Box>
       </Box>
@@ -138,7 +170,7 @@ export const RunsFeedRoot = () => {
       <RunsQueryRefetchContext.Provider value={{refetch: refreshState.refetch}}>
         {content()}
       </RunsQueryRefetchContext.Provider>
-    </Page>
+    </Box>
   );
 };
 
