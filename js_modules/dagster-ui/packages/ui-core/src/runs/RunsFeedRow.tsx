@@ -1,5 +1,14 @@
 import {gql} from '@apollo/client';
-import {Box, ButtonLink, Caption, Checkbox, Colors, Mono, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonLink,
+  Caption,
+  Checkbox,
+  Colors,
+  Icon,
+  Mono,
+  Tag,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -79,7 +88,10 @@ export const RunsFeedRow = ({
                 : `/runs/${entry.id}`
             }
           >
-            <Mono>{entry.id}</Mono>
+            <Box flex={{gap: 4, alignItems: 'center'}}>
+              <Icon name={entry.__typename === 'PartitionBackfill' ? 'run_with_subruns' : 'run'} />
+              <Mono>{entry.id}</Mono>
+            </Box>
           </Link>
           <Box
             flex={{direction: 'row', alignItems: 'center', wrap: 'wrap'}}
