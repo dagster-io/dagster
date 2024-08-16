@@ -23,7 +23,7 @@ from .declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
-    AutomationConditionSnapshot,
+    AutomationConditionNodeSnapshot,
 )
 from .partition import PartitionsDefinition, SerializedPartitionsSubset
 
@@ -199,14 +199,14 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
 
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
-    ) -> "AutomationConditionSnapshot":
+    ) -> "AutomationConditionNodeSnapshot":
         from .declarative_automation.legacy.rule_condition import RuleCondition
-        from .declarative_automation.serialized_objects import AutomationConditionSnapshot
+        from .declarative_automation.serialized_objects import AutomationConditionNodeSnapshot
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
 
-        return AutomationConditionSnapshot(
+        return AutomationConditionNodeSnapshot(
             class_name=RuleCondition.__name__,
             description=rule_snapshot.description,
             unique_id=unique_id,
@@ -296,7 +296,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 *[e.condition_snapshot.unique_id for e in child_evaluations],
             ]
             unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
-            decision_type_snapshot = AutomationConditionSnapshot(
+            decision_type_snapshot = AutomationConditionNodeSnapshot(
                 class_name=OrAutomationCondition.__name__, description="Any of", unique_id=unique_id
             )
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
@@ -334,7 +334,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 value=not evaluation.true_subset.bool_value
             )
         return AutomationConditionEvaluation(
-            condition_snapshot=AutomationConditionSnapshot(
+            condition_snapshot=AutomationConditionNodeSnapshot(
                 class_name=NotAutomationCondition.__name__, description="Not", unique_id=unique_id
             ),
             true_subset=true_subset,
@@ -410,7 +410,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             *[e.condition_snapshot.unique_id for e in child_evaluations],
         ]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
-        condition_snapshot = AutomationConditionSnapshot(
+        condition_snapshot = AutomationConditionNodeSnapshot(
             class_name=AndAutomationCondition.__name__, description="All of", unique_id=unique_id
         )
 

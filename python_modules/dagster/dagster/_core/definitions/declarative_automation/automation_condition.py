@@ -13,6 +13,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionCursor,
     AutomationConditionEvaluation,
     AutomationConditionNodeCursor,
+    AutomationConditionNodeSnapshot,
     AutomationConditionSnapshot,
     get_serializable_candidate_subset,
 )
@@ -110,15 +111,27 @@ class AutomationCondition(ABC):
         """Formal name of this specific condition, generally aligning with its static constructor."""
         return self.__class__.__name__
 
-    def get_snapshot(self, unique_id: str) -> AutomationConditionSnapshot:
+    def get_node_snapshot(self, unique_id: str) -> AutomationConditionNodeSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
-        return AutomationConditionSnapshot(
+        return AutomationConditionNodeSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
             label=self.label,
             name=self.name,
         )
+
+    def get_snapshot(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> AutomationConditionSnapshot:
+        """Returns a serializable snapshot of the entire AutomationCondition tree."""
+        unique_id = self.get_unique_id(parent_unique_id=parent_unique_id, index=index)
+        node_snapshot = self.get_node_snapshot(unique_id)
+        children = [
+            child.get_snapshot(parent_unique_id=unique_id, index=i)
+            for (i, child) in enumerate(self.children)
+        ]
+        return AutomationConditionSnapshot(node_snapshot=node_snapshot, children=children)
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
         """Returns a unique identifier for this condition within the broader condition tree."""
@@ -526,7 +539,7 @@ class AutomationResult:
     @cached_property
     def _serializable_evaluation(self) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
-            condition_snapshot=self.condition.get_snapshot(self.condition_unique_id),
+            condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
             true_subset=self.true_subset,
             candidate_subset=get_serializable_candidate_subset(
                 self._context.candidate_slice.convert_to_valid_asset_subset()
