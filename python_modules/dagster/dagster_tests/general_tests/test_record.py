@@ -1,7 +1,7 @@
 import pickle
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 import pytest
 from dagster._record import (
@@ -14,6 +14,7 @@ from dagster._record import (
     record,
     record_custom,
 )
+from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
 from typing_extensions import Annotated
 
@@ -500,3 +501,24 @@ def test_docs():
         """So much to know about this class."""
 
     assert Documented.__doc__
+
+
+def test_make_hashable():
+    @record
+    class Nope:
+        stuff: Sequence[Any]
+
+    n = Nope(stuff=[1, 2, 3])
+    with pytest.raises(TypeError, match="unhashable"):
+        hash(n)
+
+    @record
+    class Yep:
+        stuff: Sequence[Any]
+
+        def __hash__(self):
+            return hash_collection(self)
+
+    y = Yep(stuff=[1, 2, 3])
+    assert hash(y)
+    assert hash(y) == hash(Yep(stuff=[1, 2, 3]))
