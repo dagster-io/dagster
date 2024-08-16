@@ -15,12 +15,21 @@ html {
   font-family: var(--ifm-font-family-base);
   background: var(--theme-color-background-default);
 }
+article {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
 /* Main content */
 .theme-doc-markdown {
-  max-width: 900px;
   margin: 0 auto;
   margin-top: 1rem;
-  padding-left: 3rem;
 }
 
 /* Custom code for PyObject */
@@ -39,18 +48,20 @@ a.pyobject {
   }
 
   &__item {
-    // use margin instead of padding so that the border-bottom
-    // on active looks better
     border: 1px;
   }
 
   &__link {
     font-weight: var(--ifm-font-weight-normal);
-    border-bottom: 3px solid transparent;
+    border-bottom: 2px solid transparent;
 
     &--active {
       color: var(--theme-color-accent-blue);
       border-bottom-color: var(--theme-color-accent-blue);
+    }
+
+    &:hover {
+      color: var(--theme-color-accent-blue);
     }
   }
 }
@@ -120,7 +131,7 @@ a.pyobject {
 .menu {
   padding-right: 0.5rem !important;
   &__link {
-    font-size: 1rem;
+    font-size: 14px;
     font-weight: var(--ifm-font-weight-normal);
     color: var(--theme-color-text-light);
     &:hover {
@@ -135,6 +146,52 @@ a.pyobject {
         background-color: var(--theme-color-background-blue);
         color: var(--theme-color-text-default);
       }
+    }
+  }
+}
+
+.menu__link--sublist-caret {
+  color: var(--theme-color-text-default);
+  font-weight: 500;
+  font-size: 16px;
+  &:after {
+    display: none;
+  }
+}
+
+.menu__list-item-collapsible {
+  .menu__caret:before {
+    background-image: url('/icons/chevron.svg');
+    background-size: 20px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.menu__list-item:not(:first-child) {
+  margin-top: 0;
+}
+
+.theme-doc-sidebar-item-category-level-1 {
+  padding-top: 4px;
+  .menu__list {
+    border-left: 1px solid var(--theme-color-keyline);
+    margin-left: 12px;
+    padding-left: 4px;
+    margin-top: 0;
+  }
+  .menu__list-item-collapsible a {
+    font-size: 16px;
+  }
+}
+
+.theme-doc-sidebar-item-category-level-2 {
+  .menu__list-item-collapsible a {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--theme-color-text-light);
+    :after {
+      background: blue;
     }
   }
 }

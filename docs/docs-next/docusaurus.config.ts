@@ -24,7 +24,7 @@ const config: Config = {
   ],
   themeConfig: {
     colorMode: {
-      defaultMode: 'dark',
+      defaultMode: 'light',
       disableSwitch: false,
       respectPrefersColorScheme: true,
     },
@@ -90,8 +90,8 @@ const config: Config = {
     image: 'img/docusaurus-social-card.jpg',
     docs: {
       sidebar: {
-        autoCollapseCategories: true,
-        hideable: true,
+        autoCollapseCategories: false,
+        hideable: false,
       },
     },
 
