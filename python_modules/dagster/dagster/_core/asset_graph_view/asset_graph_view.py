@@ -1,19 +1,29 @@
 import operator
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
+    Generic,
     Mapping,
     NamedTuple,
     NewType,
     Optional,
     Sequence,
+    TypeVar,
 )
 
+from typing_extensions import Self
+
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import AssetGraphEntitySubsetValue, AssetSubset
+from dagster._core.definitions.asset_key import AssetGraphEntityKey
+from dagster._core.definitions.asset_subset import (
+    AssetGraphEntitySubset,
+    AssetGraphEntitySubsetValue,
+    AssetSubset,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
@@ -87,7 +97,69 @@ def _slice_from_subset(
         return None
 
 
-class AssetSlice:
+T = TypeVar("T", bound=AssetGraphEntityKey)
+
+
+class AssetGraphEntitySlice(Generic[T], ABC):
+    _asset_graph_view: "AssetGraphView"
+    _compatible_subset: AssetGraphEntitySubset[T]
+
+    def __init__(
+        self, asset_graph_view: "AssetGraphView", compatible_subset: AssetGraphEntitySubset[T]
+    ):
+        self._asset_graph_view = asset_graph_view
+        self._compatible_subset = compatible_subset
+
+    @property
+    @abstractmethod
+    def _partitions_def(self) -> Optional["PartitionsDefinition"]: ...
+
+    @property
+    def key(self) -> T:
+        return self._compatible_subset.key
+
+    def get_internal_value(self) -> AssetGraphEntitySubsetValue:
+        return self._compatible_subset.value
+
+    def get_internal_subset_value(self) -> PartitionsSubset:
+        return self._compatible_subset.subset_value
+
+    def get_internal_bool_value(self) -> bool:
+        return self._compatible_subset.bool_value
+
+    def _slice_with_value(self, value: AssetGraphEntitySubsetValue) -> Self:
+        """Creates an AssetGraphEntitySlice wrapping the provided value."""
+        return self.__class__(
+            self._asset_graph_view, self._compatible_subset.__class__(key=self.key, value=value)
+        )
+
+    def _oper(self, other: Self, oper: Callable[..., Any]) -> Self:
+        return self._slice_with_value(oper(self.get_internal_value(), other.get_internal_value()))
+
+    def compute_difference(self, other: Self) -> Self:
+        if self._partitions_def is None:
+            return self._slice_with_value(
+                self.get_internal_bool_value() and not other.get_internal_bool_value()
+            )
+        else:
+            return self._oper(other, operator.sub)
+
+    def compute_union(self, other: Self) -> Self:
+        return self._oper(other, operator.or_)
+
+    def compute_intersection(self, other: Self) -> Self:
+        return self._oper(other, operator.and_)
+
+    @property
+    def is_empty(self) -> bool:
+        return self._compatible_subset.is_empty
+
+    @property
+    def size(self) -> int:
+        return self._compatible_subset.size
+
+
+class AssetSlice(AssetGraphEntitySlice[AssetKey]):
     """An asset slice represents a set of partitions for a given asset key. It is
     tied to a particular instance of an AssetGraphView, and is read-only.
 
@@ -129,23 +201,23 @@ class AssetSlice:
         self._compatible_subset = compatible_subset
 
     def convert_to_asset_subset(self) -> AssetSubset:
-        return self._compatible_subset
+        return AssetSubset(key=self.asset_key, value=self.get_internal_value())
 
     # only works for partitioned assets for now
     def compute_partition_keys(self) -> AbstractSet[str]:
         return {
             check.not_none(akpk.partition_key, "No None partition keys")
-            for akpk in self._compatible_subset.asset_partitions
+            for akpk in self.expensively_compute_asset_partitions()
         }
 
     def expensively_compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
         # this method requires computing all partition keys of the definition, which
         # may be expensive
-        return self._compatible_subset.asset_partitions
+        return self.convert_to_asset_subset().asset_partitions
 
     @property
     def asset_key(self) -> AssetKey:
-        return self._compatible_subset.asset_key
+        return self._compatible_subset.key
 
     @property
     def parent_keys(self) -> AbstractSet[AssetKey]:
@@ -174,28 +246,6 @@ class AssetSlice:
     @cached_method
     def compute_child_slices(self) -> Mapping[AssetKey, "AssetSlice"]:
         return {ak: self.compute_child_slice(ak) for ak in self.child_keys}
-
-    def _oper(self, other: "AssetSlice", oper: Callable[..., Any]) -> "AssetSlice":
-        value = oper(self.get_internal_value(), other.get_internal_value())
-        return AssetSlice(
-            self._asset_graph_view,
-            _AssetSliceCompatibleSubset(AssetSubset(key=self.asset_key, value=value)),
-        )
-
-    def compute_difference(self, other: "AssetSlice") -> "AssetSlice":
-        if self._partitions_def is None:
-            if self.get_internal_bool_value() and not other.get_internal_bool_value():
-                return self._asset_graph_view.get_asset_slice(asset_key=self.asset_key)
-            else:
-                return self._asset_graph_view.get_empty_slice(asset_key=self.asset_key)
-        else:
-            return self._oper(other, operator.sub)
-
-    def compute_union(self, other: "AssetSlice") -> "AssetSlice":
-        return self._oper(other, operator.or_)
-
-    def compute_intersection(self, other: "AssetSlice") -> "AssetSlice":
-        return self._oper(other, operator.and_)
 
     def compute_intersection_with_partition_keys(
         self, partition_keys: AbstractSet[str]
@@ -255,23 +305,6 @@ class AssetSlice:
         if isinstance(pd, MultiPartitionsDefinition):
             return pd.time_window_partitions_def if pd.has_time_window_dimension else None
         return None
-
-    @property
-    def is_empty(self) -> bool:
-        return self._compatible_subset.is_empty
-
-    @property
-    def size(self) -> int:
-        return self._compatible_subset.size
-
-    def get_internal_value(self) -> AssetGraphEntitySubsetValue:
-        return self._compatible_subset.value
-
-    def get_internal_subset_value(self) -> PartitionsSubset:
-        return self._compatible_subset.subset_value
-
-    def get_internal_bool_value(self) -> bool:
-        return self._compatible_subset.bool_value
 
 
 class AssetGraphView:

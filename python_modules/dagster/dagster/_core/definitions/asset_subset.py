@@ -16,6 +16,7 @@ T = TypeVar("T", bound=AssetGraphEntityKey)
 AssetGraphEntitySubsetValue = Union[bool, PartitionsSubset]
 
 
+@dataclass(frozen=True)
 class AssetGraphEntitySubset(Generic[T]):
     """Generic base class for representing a subset of an AssetGraphEntity."""
 
