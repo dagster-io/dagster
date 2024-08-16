@@ -119,13 +119,13 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         return {
             "storage_account": StringSource,
             "container": StringSource,
-            "secret_key": Field(StringSource, is_required=False),
+            "secret_key": Field(Noneable(StringSource), is_required=False, default_value=None),
             "default_azure_credential": Field(
                 Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
                 is_required=False,
                 default_value=None,
             ),
-            "local_dir": Field(StringSource, is_required=False),
+            "local_dir": Field(Noneable(StringSource), is_required=False, default_value=None),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
         }
