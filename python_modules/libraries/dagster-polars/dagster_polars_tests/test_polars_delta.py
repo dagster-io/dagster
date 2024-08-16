@@ -235,7 +235,10 @@ def test_polars_delta_native_partitioning(
     @asset(
         io_manager_def=manager,
         partitions_def=partitions_def,
-        metadata={"partition_by": "partition"},
+        metadata={
+            "partition_by": "partition",
+            "delta_write_options": {"engine": "pyarrow"},
+        },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
@@ -281,7 +284,10 @@ def test_polars_delta_native_multi_partitions(
     @asset(
         io_manager_def=manager,
         partitions_def=partitions_def,
-        metadata={"partition_by": {"time": "date", "category": "category"}},
+        metadata={
+            "partition_by": {"time": "date", "category": "category"},
+            "delta_write_options": {"engine": "pyarrow"},
+        },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         partition_key = context.partition_key
@@ -326,7 +332,10 @@ def test_polars_delta_native_partitioning_loading_single_partition(
     @asset(
         io_manager_def=manager,
         partitions_def=partitions_def,
-        metadata={"partition_by": "partition"},
+        metadata={
+            "partition_by": "partition",
+            "delta_write_options": {"engine": "pyarrow"},
+        },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
