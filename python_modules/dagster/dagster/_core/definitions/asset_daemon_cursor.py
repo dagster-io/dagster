@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from .declarative_automation.serialized_objects import (
         AutomationConditionCursor,
         AutomationConditionEvaluationState,
-        AutomationConditionSnapshot,
+        AutomationConditionNodeSnapshot,
     )
 
 
@@ -33,7 +33,7 @@ class AutomationConditionCursorExtras(NamedTuple):
     evaluations.
     """
 
-    condition_snapshot: "AutomationConditionSnapshot"
+    condition_snapshot: "AutomationConditionNodeSnapshot"
     extras: Mapping[str, PackableValue]
 
 

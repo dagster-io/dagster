@@ -55,7 +55,7 @@ def get_serializable_candidate_subset(
 
 
 @whitelist_for_serdes(storage_name="AssetConditionSnapshot")
-class AutomationConditionSnapshot(NamedTuple):
+class AutomationConditionNodeSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
     class_name: str
@@ -63,6 +63,14 @@ class AutomationConditionSnapshot(NamedTuple):
     unique_id: str
     label: Optional[str] = None
     name: Optional[str] = None
+
+
+@whitelist_for_serdes
+class AutomationConditionSnapshot(NamedTuple):
+    """A serializable snapshot of an entire AutomationCondition tree."""
+
+    node_snapshot: AutomationConditionNodeSnapshot
+    children: Sequence["AutomationConditionSnapshot"]
 
 
 @whitelist_for_serdes
@@ -81,7 +89,7 @@ class AssetSubsetWithMetadata(NamedTuple):
 class AutomationConditionEvaluation(NamedTuple):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
-    condition_snapshot: AutomationConditionSnapshot
+    condition_snapshot: AutomationConditionNodeSnapshot
     start_timestamp: Optional[float]
     end_timestamp: Optional[float]
 

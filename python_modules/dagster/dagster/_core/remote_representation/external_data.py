@@ -57,6 +57,9 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionSnapshot,
+)
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
     GraphNode,
@@ -1052,6 +1055,7 @@ class ExternalAssetNode(IHaveNew):
     execution_set_identifier: Optional[str]
     required_top_level_resources: Optional[Sequence[str]]
     auto_materialize_policy: Optional[AutoMaterializePolicy]
+    automation_condition_snapshot: Optional[AutomationConditionSnapshot]
     backfill_policy: Optional[BackfillPolicy]
     auto_observe_interval_minutes: Optional[Union[float, int]]
     owners: Optional[Sequence[str]]
@@ -1081,6 +1085,7 @@ class ExternalAssetNode(IHaveNew):
         execution_set_identifier: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[Union[float, int]] = None,
         owners: Optional[Sequence[str]] = None,
@@ -1130,14 +1135,13 @@ class ExternalAssetNode(IHaveNew):
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
 
-        # do not include automation conditions containing user-defined info on the ExternalAssetNode
-        # TODO: include a snapshot of the condition on this class instead
-        if (
-            auto_materialize_policy
-            and auto_materialize_policy.asset_condition
-            and not auto_materialize_policy.asset_condition.is_serializable
-        ):
-            auto_materialize_policy = None
+        if auto_materialize_policy and auto_materialize_policy.asset_condition:
+            automation_condition_snapshot = (
+                auto_materialize_policy.to_automation_condition().get_snapshot()
+            )
+            # do not include automation conditions containing user-defined info on the ExternalAssetNode
+            if not auto_materialize_policy.asset_condition.is_serializable:
+                auto_materialize_policy = None
 
         return super().__new__(
             cls,
@@ -1165,6 +1169,7 @@ class ExternalAssetNode(IHaveNew):
             execution_set_identifier=execution_set_identifier,
             required_top_level_resources=required_top_level_resources or [],
             auto_materialize_policy=auto_materialize_policy,
+            automation_condition_snapshot=automation_condition_snapshot,
             backfill_policy=backfill_policy,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
