@@ -12,7 +12,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
-    AutomationConditionSnapshot,
+    AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
@@ -547,7 +547,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         child_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
     ) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
-            condition_snapshot=AutomationConditionSnapshot(
+            condition_snapshot=AutomationConditionNodeSnapshot(
                 class_name="...",
                 description=description,
                 unique_id=str(random.randint(0, 100000000)),
