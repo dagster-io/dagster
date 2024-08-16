@@ -363,7 +363,7 @@ def retry_partition_backfill(
         )
 
     if backfill.is_asset_backfill:
-        asset_backfill_data = backfill.get_asset_backfill_data()
+        asset_backfill_data = backfill.get_asset_backfill_data(graphene_info.context.asset_graph)
         if (
             asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
             == 0
