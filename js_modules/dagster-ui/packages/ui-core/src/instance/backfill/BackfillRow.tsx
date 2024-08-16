@@ -229,13 +229,17 @@ export const BackfillTarget = ({
     return null;
   };
 
+  const repoLink = buildRepoLink();
+  const pipelineOrAssets = buildPipelineOrAssets();
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       {buildHeader()}
-      <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-        {buildRepoLink()}
-        {buildPipelineOrAssets()}
-      </Box>
+      {(pipelineOrAssets || repoLink) && (
+        <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
+          {repoLink}
+          {pipelineOrAssets}
+        </Box>
+      )}
     </Box>
   );
 };
