@@ -167,7 +167,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                 >
                   <MenuItem
                     tagName="button"
-                    icon="job"
+                    icon="history"
                     text="View snapshot"
                     onClick={() => setVisibleDialog('tags')}
                   />

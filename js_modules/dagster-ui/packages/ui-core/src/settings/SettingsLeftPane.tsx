@@ -17,14 +17,14 @@ const items: SideNavItemConfig[] = [
   {
     key: 'daemons',
     type: 'link',
-    icon: <Icon name="sync_alt" />,
+    icon: <Icon name="daemon" />,
     label: 'Daemons',
     path: '/deployment/daemons',
   },
   {
     key: 'concurrency-limits',
     type: 'link',
-    icon: <Icon name="stacks" />,
+    icon: <Icon name="concurrency" />,
     label: 'Concurrency limits',
     path: '/deployment/concurrency',
   },
