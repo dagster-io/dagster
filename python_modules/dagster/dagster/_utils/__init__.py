@@ -285,8 +285,12 @@ def make_hashable(value: Any) -> Any: ...
 
 
 def make_hashable(value: Any) -> Any:
+    from dagster._record import as_dict, is_record
+
     if isinstance(value, dict):
         return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
+    elif is_record(value):
+        return tuple(make_hashable(value) for value in as_dict(value).values())
     elif isinstance(value, (list, tuple, set)):
         return tuple([make_hashable(x) for x in value])
     elif isinstance(value, BaseModel):
