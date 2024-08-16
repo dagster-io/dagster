@@ -33,7 +33,7 @@ def get_hardcoded_condition():
         def evaluate(self, context: AutomationContext) -> AutomationResult:
             true_candidates = {
                 candidate
-                for candidate in context.candidate_slice.convert_to_asset_subset().asset_partitions
+                for candidate in context.candidate_slice.convert_to_serializable_subset().asset_partitions
                 if candidate in true_set
             }
             return AutomationResult(

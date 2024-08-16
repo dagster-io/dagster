@@ -2,7 +2,7 @@ from dataclasses import dataclass, replace
 from typing import AbstractSet, Generic, Optional, TypeVar, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetGraphEntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetGraphEntityKey
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
@@ -111,3 +111,10 @@ class AssetSubset(AssetGraphEntitySubset[AssetKey]):
             )
         else:
             return item.asset_key == self.asset_key and item.partition_key in self.subset_value
+
+
+@whitelist_for_serdes
+@dataclass(frozen=True)
+class AssetCheckSubset(AssetGraphEntitySubset[AssetCheckKey]):
+    key: AssetCheckKey
+    value: AssetGraphEntitySubsetValue

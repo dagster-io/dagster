@@ -18,8 +18,9 @@ from typing import (
 from typing_extensions import Self
 
 from dagster import _check as check
-from dagster._core.definitions.asset_key import AssetGraphEntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetGraphEntityKey
 from dagster._core.definitions.asset_subset import (
+    AssetCheckSubset,
     AssetGraphEntitySubset,
     AssetGraphEntitySubsetValue,
     AssetSubset,
@@ -85,6 +86,7 @@ class TemporalContext(NamedTuple):
 # in AssetSlice internals. Adding a NewType enforces that we do that conversion
 # in one spot (see _slice_from_subset)
 _AssetSliceCompatibleSubset = NewType("_AssetSliceCompatibleSubset", AssetSubset)
+_AssetCheckSliceCompatibleSubset = NewType("_AssetCheckSliceCompatibleSubset", AssetCheckSubset)
 
 
 def _slice_from_subset(
@@ -111,12 +113,15 @@ class AssetGraphEntitySlice(Generic[T], ABC):
         self._compatible_subset = compatible_subset
 
     @property
+    def key(self) -> T:
+        return self._compatible_subset.key
+
+    @property
     @abstractmethod
     def _partitions_def(self) -> Optional["PartitionsDefinition"]: ...
 
-    @property
-    def key(self) -> T:
-        return self._compatible_subset.key
+    @abstractmethod
+    def convert_to_serializable_subset(self) -> AssetGraphEntitySubset[T]: ...
 
     def get_internal_value(self) -> AssetGraphEntitySubsetValue:
         return self._compatible_subset.value
@@ -200,7 +205,7 @@ class AssetSlice(AssetGraphEntitySlice[AssetKey]):
         self._asset_graph_view = asset_graph_view
         self._compatible_subset = compatible_subset
 
-    def convert_to_asset_subset(self) -> AssetSubset:
+    def convert_to_serializable_subset(self) -> AssetSubset:
         return AssetSubset(key=self.asset_key, value=self.get_internal_value())
 
     # only works for partitioned assets for now
@@ -213,7 +218,7 @@ class AssetSlice(AssetGraphEntitySlice[AssetKey]):
     def expensively_compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
         # this method requires computing all partition keys of the definition, which
         # may be expensive
-        return self.convert_to_asset_subset().asset_partitions
+        return self.convert_to_serializable_subset().asset_partitions
 
     @property
     def asset_key(self) -> AssetKey:
@@ -305,6 +310,24 @@ class AssetSlice(AssetGraphEntitySlice[AssetKey]):
         if isinstance(pd, MultiPartitionsDefinition):
             return pd.time_window_partitions_def if pd.has_time_window_dimension else None
         return None
+
+
+class AssetCheckSlice(AssetGraphEntitySlice[AssetCheckKey]):
+    def __init__(
+        self,
+        asset_graph_view: "AssetGraphView",
+        compatible_subset: _AssetCheckSliceCompatibleSubset,
+    ):
+        self._asset_graph_view = asset_graph_view
+        self._compatible_subset = compatible_subset
+
+    @property
+    def _partitions_def(self) -> Optional["PartitionsDefinition"]:
+        # checks currently do not support partitioning
+        return None
+
+    def convert_to_serializable_subset(self) -> AssetCheckSubset:
+        return AssetCheckSubset(key=self.key, value=self.get_internal_value())
 
 
 class AssetGraphView:
@@ -401,6 +424,13 @@ class AssetGraphView:
 
     def _get_partitions_def(self, asset_key: "AssetKey") -> Optional["PartitionsDefinition"]:
         return self.asset_graph.get(asset_key).partitions_def
+
+    @cached_method
+    def get_asset_check_slice(self, *, asset_check_key: "AssetCheckKey") -> "AssetCheckSlice":
+        return AssetCheckSlice(
+            self,
+            _AssetCheckSliceCompatibleSubset(AssetCheckSubset(key=asset_check_key, value=True)),
+        )
 
     @cached_method
     def get_asset_slice(self, *, asset_key: "AssetKey") -> "AssetSlice":
