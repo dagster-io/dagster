@@ -855,13 +855,9 @@ class SqlRunStorage(RunStorage):
             )
             query = query.where(BulkActionsTable.c.id < cursor_query)
         if filters and filters.created_after:
-            query = query.where(
-                BulkActionsTable.c.timestamp > filters.created_after.replace(tzinfo=None)
-            )
+            query = query.where(BulkActionsTable.c.timestamp > filters.created_after)
         if filters and filters.created_before:
-            query = query.where(
-                BulkActionsTable.c.timestamp < filters.created_before.replace(tzinfo=None)
-            )
+            query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
         if limit:
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
