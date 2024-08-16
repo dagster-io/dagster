@@ -19,6 +19,7 @@ from dagster import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
+from dagster._core.execution.backfill import BulkActionsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.event_log.base import AssetRecord
@@ -490,7 +491,7 @@ def get_runs_feed_entries(
         for backfill in instance.get_backfills(
             cursor=runs_feed_cursor.backfill_cursor,
             limit=limit,
-            created_before=created_before_cursor,
+            filters=BulkActionsFilter(created_before=created_before_cursor),
         )
     ]
     runs = [
