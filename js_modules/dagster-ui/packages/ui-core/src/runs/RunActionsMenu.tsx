@@ -34,7 +34,6 @@ import {
   PipelineEnvironmentQueryVariables,
   RunActionsMenuRunFragment,
 } from './types/RunActionsMenu.types';
-import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {AppContext} from '../app/AppContext';
@@ -307,7 +306,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag}: Props) => {
 });
 
 interface RunBulkActionsMenuProps {
-  selected: RunTableRunFragment[];
+  selected: RunActionsMenuRunFragment[];
   clearSelection: () => void;
 }
 

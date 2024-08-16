@@ -4,9 +4,11 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 import {PYTHON_ERROR_FRAGMENT} from 'shared/app/PythonErrorFragment';
 
+import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT, RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRow';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/RunsFeedRoot.types';
+import {RunsFeedTableEntryFragment_Run} from './types/RunsFeedRow.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {
   FIFTEEN_SECONDS,
@@ -78,9 +80,18 @@ export const RunsFeedRoot = () => {
 
   function actionBar() {
     return (
-      <Box style={{width: '100%', marginRight: 8}} flex={{justifyContent: 'space-between'}}>
-        <Box flex={{gap: 8}}>{/**options */}</Box>
-        <CursorHistoryControls {...paginationProps} style={{marginTop: 0}} />
+      <Box flex={{justifyContent: 'space-between'}} style={{width: '100%'}}>
+        <Box>{/** filters */}</Box>
+        <Box flex={{gap: 12}} style={{marginRight: 8}}>
+          <CursorHistoryControls {...paginationProps} style={{marginTop: 0}} />
+          <RunBulkActionsMenu
+            clearSelection={() => onToggleAll(false)}
+            selected={entries.filter(
+              (e): e is RunsFeedTableEntryFragment_Run =>
+                checkedIds.has(e.id) && e.__typename === 'Run',
+            )}
+          />
+        </Box>
       </Box>
     );
   }
@@ -136,6 +147,7 @@ export const RunsFeedRoot = () => {
                   <RunsFeedRow
                     key={key}
                     entry={entry}
+                    checked={checkedIds.has(entry.id)}
                     onToggleChecked={onToggleFactory(entry.id)}
                     refetch={refreshState.refetch}
                   />
@@ -150,22 +162,27 @@ export const RunsFeedRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <Box background={Colors.backgroundLight()} padding={{left: 24, right: 12, top: 12}}>
-        <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-          <Tabs selectedTabId="all">
-            <TabLink id="all" title="All runs" to="/runs-feed" />
-            {/* <TabLink id="queued" title={`Queued (${countQueued})`} to="/runs-feed" />
+      <Box
+        border="bottom"
+        background={Colors.backgroundLight()}
+        padding={{left: 24, right: 20, top: 12}}
+        flex={{direction: 'row', justifyContent: 'space-between'}}
+      >
+        <Tabs selectedTabId="all">
+          <TabLink id="all" title="All runs" to="/runs-feed" />
+          {/* <TabLink id="queued" title={`Queued (${countQueued})`} to="/runs-feed" />
             <TabLink id="in-progress" title={`In progress (${countInProgress})`} to="/runs-feed" />
             <TabLink id="failed" title={`Failed (${countFailed})`} to="/runs-feed" /> */}
-          </Tabs>
-          <Box flex={{gap: 16, alignItems: 'center'}}>
-            <Box padding={{vertical: 16}}>
-              <QueryRefreshCountdown refreshState={refreshState} />
-            </Box>
-            {actionBar()}
-          </Box>
+        </Tabs>
+        <Box flex={{gap: 16, alignItems: 'center'}}>
+          <QueryRefreshCountdown refreshState={refreshState} />
         </Box>
       </Box>
+
+      <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 12, left: 24, right: 12}}>
+        {actionBar()}
+      </Box>
+
       {/* {filtersPortal} */}
       <RunsQueryRefetchContext.Provider value={{refetch: refreshState.refetch}}>
         {content()}
