@@ -1,4 +1,4 @@
 ---
 title: "Creating event-based pipelines"
-sidebar_position: 2
+sidebar_position: 20
 ---

@@ -1,5 +1,6 @@
 ---
 title: Asset Sensors
+sidebar_position: 50
 ---
 
 ### Basic Asset Sensor Example
