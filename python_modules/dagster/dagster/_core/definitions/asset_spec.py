@@ -87,8 +87,11 @@ class AssetSpec(
     ),
     IHasInternalInit,
 ):
-    """Specifies the core attributes of an asset. This object is attached to the decorated
-    function that defines how it materialized.
+    """Specifies the core attributes of an asset, except for the function that materializes or
+    observes it.
+
+    An asset spec plus any materialization or observation function for the asset constitutes an
+    "asset definition".
 
     Attributes:
         key (AssetKey): The unique identifier for this asset.
