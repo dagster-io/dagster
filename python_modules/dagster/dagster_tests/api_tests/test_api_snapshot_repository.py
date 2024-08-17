@@ -1,9 +1,13 @@
+import asyncio
 import sys
 from contextlib import contextmanager
 
 import pytest
 from dagster import IntMetadataValue, TextMetadataValue, job, op, repository
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster._api.snapshot_repository import (
+    gen_streaming_external_repositories_data_grpc,
+    sync_get_streaming_external_repositories_data_grpc,
+)
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
@@ -38,6 +42,12 @@ def test_streaming_external_repositories_api_grpc(instance):
             "integer": IntMetadataValue(123),
         }
 
+        async_external_repo_datas = asyncio.run(
+            gen_streaming_external_repositories_data_grpc(code_location.client, code_location)
+        )
+
+        assert async_external_repo_datas == external_repo_datas
+
 
 def test_streaming_external_repositories_error(instance):
     with get_bar_repo_code_location(instance) as code_location:
@@ -49,6 +59,14 @@ def test_streaming_external_repositories_error(instance):
             match='Could not find a repository called "does_not_exist"',
         ):
             sync_get_streaming_external_repositories_data_grpc(code_location.client, code_location)
+
+        with pytest.raises(
+            DagsterUserCodeProcessError,
+            match='Could not find a repository called "does_not_exist"',
+        ):
+            asyncio.run(
+                gen_streaming_external_repositories_data_grpc(code_location.client, code_location)
+            )
 
 
 @op
