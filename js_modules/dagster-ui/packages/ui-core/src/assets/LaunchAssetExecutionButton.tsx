@@ -57,7 +57,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 export type LaunchAssetsChoosePartitionsTarget =
-  | {type: 'job'; jobName: string; partitionSetName: string}
+  | {type: 'job'; jobName: string; assetKeys: AssetKey[]}
   | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey}
   | {type: 'pureAll'};
 
@@ -407,6 +407,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
   const launchpad = () => {
     if (state.type === 'launchpad') {
+      console.log(state.sessionPresets);
       return (
         <AssetLaunchpad
           assetJobName={state.jobName}
@@ -525,12 +526,6 @@ async function stateForLaunchingAssets(
   if (pipeline.__typename !== 'Pipeline') {
     return {type: 'error', error: pipeline.message};
   }
-  const partitionSets = resourceResult.data.partitionSetsOrError;
-  if (partitionSets.__typename !== 'PartitionSets') {
-    return {type: 'error', error: partitionSets.message};
-  }
-
-  const partitionSetName = partitionSets.results[0]?.name;
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
   const resources = pipeline.modes[0]!.resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
@@ -565,17 +560,15 @@ async function stateForLaunchingAssets(
         ),
         includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
-        base: partitionSetName
-          ? {partitionsSetName: partitionSetName, partitionName: null, tags: []}
-          : undefined,
+        base: partitionDefinition ? {isAssetJob: true, partitionName: null, tags: []} : undefined,
       },
     };
   }
-  if (partitionDefinition && partitionSetName) {
+  if (partitionDefinition) {
     return {
       type: 'partitions',
       assets,
-      target: {type: 'job', jobName, partitionSetName},
+      target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };
@@ -866,27 +859,6 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
     $repositoryLocationName: String!
     $repositoryName: String!
   ) {
-    partitionSetsOrError(
-      pipelineName: $pipelineName
-      repositorySelector: {
-        repositoryName: $repositoryName
-        repositoryLocationName: $repositoryLocationName
-      }
-    ) {
-      ... on PythonError {
-        message
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PartitionSets {
-        results {
-          id
-          name
-        }
-      }
-    }
-
     pipelineOrError(
       params: {
         pipelineName: $pipelineName

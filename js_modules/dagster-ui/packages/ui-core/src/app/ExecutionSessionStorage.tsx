@@ -31,8 +31,20 @@ export interface PipelineRunTag {
 }
 
 export type SessionBase =
-  | {presetName: string; tags: PipelineRunTag[] | null}
-  | {partitionsSetName: string; partitionName: string | null; tags: PipelineRunTag[] | null};
+  | {
+      presetName: string;
+      tags: PipelineRunTag[] | null;
+    }
+  | {
+      isAssetJob: true; // partition set name not required
+      partitionName: string | null;
+      tags: PipelineRunTag[] | null;
+    }
+  | {
+      partitionsSetName: string; // required for op jobs
+      partitionName: string | null;
+      tags: PipelineRunTag[] | null;
+    };
 
 export interface IExecutionSession {
   key: string;
