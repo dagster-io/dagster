@@ -13,7 +13,7 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
 
   React.useEffect(() => {
     // Adjust the import path to start from the docs directory
-    import(`!!raw-loader!/docs/${filePath}`)
+    import(`!!raw-loader!/docs/code_examples/${filePath}`)
       .then((module) => {
         const lines = module.default.split('\n');
         const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
