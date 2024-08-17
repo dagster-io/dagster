@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import List, cast
+from typing import cast
 
 import pydantic
 import pytest
@@ -21,11 +21,9 @@ def sdf_fixture() -> SdfCliResource:
     return SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
 
 
-@pytest.mark.parametrize("global_config_flags", [["--log-form=nested"]])
-def test_sdf_cli(global_config_flags: List[str]) -> None:
+def test_sdf_cli() -> None:
     expected_sdf_cli_args = [
         "sdf",
-        *global_config_flags,
         "--log-level",
         "info",
         "compile",
@@ -36,9 +34,7 @@ def test_sdf_cli(global_config_flags: List[str]) -> None:
         "--target-dir",
     ]
 
-    sdf = SdfCliResource(
-        workspace_dir=os.fspath(moms_flower_shop_path), global_config_flags=global_config_flags
-    )
+    sdf = SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
     sdf_cli_invocation = sdf.cli(["compile", "--save", "table-deps"])
     *_, target_dir = sdf_cli_invocation.process.args  # type: ignore
 

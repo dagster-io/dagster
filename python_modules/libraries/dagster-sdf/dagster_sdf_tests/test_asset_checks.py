@@ -12,7 +12,6 @@ from .sdf_workspaces import lineage_asset_checks_path
 def test_asset_checks_passing() -> None:
     sdf = SdfCliResource(
         workspace_dir=os.fspath(lineage_asset_checks_path),
-        global_config_flags=["--log-form=nested"],
     )
     environment = "passing_tests"
     sdf_cli_invocation = sdf.cli(["compile", "--save", "table-deps"], environment=environment)
@@ -52,7 +51,6 @@ def test_asset_checks_passing() -> None:
 def test_asset_checks_failing() -> None:
     sdf = SdfCliResource(
         workspace_dir=os.fspath(lineage_asset_checks_path),
-        global_config_flags=["--log-form=nested"],
     )
     dagster_sdf_translator = DagsterSdfTranslator(
         settings=DagsterSdfTranslatorSettings(enable_asset_checks=True)
