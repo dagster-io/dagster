@@ -240,7 +240,7 @@ describe('LaunchAssetExecutionButton', () => {
         selector: {
           repositoryLocationName: 'test.py',
           repositoryName: 'repo',
-          pipelineName: '__ASSET_JOB_7',
+          pipelineName: '__ASSET_JOB',
           assetSelection: [{path: ['unpartitioned_asset']}],
           assetCheckSelection: [],
         },
@@ -375,7 +375,7 @@ describe('LaunchAssetExecutionButton', () => {
         executionMetadata: {
           tags: [
             {key: 'dagster/partition', value: '2023-02-22'},
-            {key: 'dagster/partition_set', value: '__ASSET_JOB_7_partition_set'},
+            {key: 'dagster/partition_set', value: '__ASSET_JOB_partition_set'},
           ],
         },
         mode: 'default',
@@ -383,7 +383,7 @@ describe('LaunchAssetExecutionButton', () => {
         selector: {
           assetSelection: [{path: ['asset_daily']}],
           assetCheckSelection: [],
-          pipelineName: '__ASSET_JOB_7',
+          pipelineName: '__ASSET_JOB',
           repositoryLocationName: 'test.py',
           repositoryName: 'repo',
         },
@@ -593,7 +593,7 @@ describe('LaunchAssetExecutionButton', () => {
         selector: {
           repositoryLocationName: 'test.py',
           repositoryName: 'repo',
-          pipelineName: '__ASSET_JOB_7',
+          pipelineName: '__ASSET_JOB',
           assetSelection: [
             asAssetKeyInput(MULTI_ASSET_OUT_1.assetKey),
             asAssetKeyInput(MULTI_ASSET_OUT_2.assetKey),
@@ -644,9 +644,9 @@ function renderButton({
     LaunchAssetCheckUpstreamWeeklyRootMock,
     ...PartitionHealthAssetMocks,
     buildLaunchAssetWarningsMock([]),
-    buildConfigPartitionSelectionLatestPartitionMock('2020-01-02', 'my_asset_job_partition_set'),
-    buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', 'my_asset_job_partition_set'),
-    buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', '__ASSET_JOB_7_partition_set'),
+    buildConfigPartitionSelectionLatestPartitionMock('2020-01-02', 'my_asset_job'),
+    buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', 'my_asset_job'),
+    buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', '__ASSET_JOB'),
     buildLaunchAssetLoaderMock([MULTI_ASSET_OUT_1.assetKey], {
       assetNodeAdditionalRequiredKeys: [MULTI_ASSET_OUT_2.assetKey],
     }),

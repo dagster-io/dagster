@@ -20,7 +20,6 @@ import styled from 'styled-components';
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorPipelinePresetFragment,
-  ConfigPartitionResultFragment,
   ConfigPartitionsAssetsQuery,
   ConfigPartitionsAssetsQueryVariables,
   ConfigPartitionsQuery,
@@ -44,7 +43,6 @@ import {RepoAddress} from '../workspace/types';
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorPipelinePresetFragment;
 type PartitionSet = PartitionSetForConfigEditorFragment;
-type Partition = ConfigPartitionResultFragment;
 type ConfigGenerator = Preset | PartitionSet;
 
 interface ConfigEditorConfigPickerProps {

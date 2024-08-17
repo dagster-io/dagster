@@ -559,9 +559,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     if (
       base &&
       needsRefresh &&
-      ('presetName' in base ||
-        ('partitionsSetName' in base && base.partitionsSetName && base.partitionName) ||
-        ('assetKeys' in base && base.assetKeys && base.partitionName))
+      ('presetName' in base || ('partitionName' in base && base.partitionName))
     ) {
       return base;
     }

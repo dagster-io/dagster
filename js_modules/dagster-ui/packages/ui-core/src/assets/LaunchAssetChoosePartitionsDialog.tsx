@@ -81,7 +81,7 @@ import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
-interface Props {
+export interface LaunchAssetChoosePartitionsDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
@@ -94,7 +94,9 @@ interface Props {
   refetch?: () => Promise<void>;
 }
 
-export const LaunchAssetChoosePartitionsDialog = (props: Props) => {
+export const LaunchAssetChoosePartitionsDialog = (
+  props: LaunchAssetChoosePartitionsDialogProps,
+) => {
   const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
@@ -130,7 +132,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   target,
   upstreamAssetKeys,
   refetch: _refetch,
-}: Props) => {
+}: LaunchAssetChoosePartitionsDialogProps) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
   const {

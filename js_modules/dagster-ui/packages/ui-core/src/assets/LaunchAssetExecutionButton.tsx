@@ -407,7 +407,6 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
   const launchpad = () => {
     if (state.type === 'launchpad') {
-      console.log(state.sessionPresets);
       return (
         <AssetLaunchpad
           assetJobName={state.jobName}
