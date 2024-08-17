@@ -194,7 +194,7 @@ class GrapheneAssetBackfillPreviewParams(graphene.InputObjectType):
 
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
-    selector = graphene.InputField(GraphenePartitionSetSelector)
+    selector = graphene.InputField(GraphenePipelineSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     partitionsByAssets = graphene.List(GraphenePartitionsByAssetSelector)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))

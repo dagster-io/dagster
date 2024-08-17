@@ -12,7 +12,10 @@ from dagster._core.events import AssetKey
 from dagster._core.execution.asset_backfill import create_asset_backfill_data_from_asset_partitions
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
-from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
+from dagster._core.remote_representation.external_data import (
+    ExternalPartitionExecutionErrorData,
+    external_partition_set_name_for_job_name,
+)
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._time import datetime_from_timestamp, get_current_timestamp
@@ -113,11 +116,9 @@ def create_and_launch_partition_backfill(
     backfill_timestamp = get_current_timestamp()
 
     if backfill_params.get("selector") is not None:  # job backfill
-        partition_set_selector = backfill_params["selector"]
-        partition_set_name = partition_set_selector.get("partitionSetName")
-        repository_selector = RepositorySelector.from_graphql_input(
-            partition_set_selector.get("repositorySelector")
-        )
+        selector = backfill_params["selector"]
+        partition_set_name = external_partition_set_name_for_job_name(selector.get("pipelineName"))
+        repository_selector = RepositorySelector.from_graphql_input(selector)
         assert_permission_for_location(
             graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, repository_selector.location_name
         )
@@ -127,7 +128,7 @@ def create_and_launch_partition_backfill(
         matches = [
             partition_set
             for partition_set in repository.get_external_partition_sets()
-            if partition_set.name == partition_set_selector.get("partitionSetName")
+            if partition_set.name == partition_set_name
         ]
         if not matches:
             return GraphenePartitionSetNotFoundError(partition_set_name)
