@@ -3,12 +3,12 @@
   --theme-color-background-default: var(--dagster-gray-990);
   --theme-color-background-light: var(--dagster-gray-950);
   --theme-color-background-lighter: var(--dagster-gray-850);
-  --theme-color-background-red: var(--dagster-red-translucent-15);
-  --theme-color-background-green: var(--dagster-green-translucent-15);
-  --theme-color-background-blue: var(--dagster-blue-translucent-15);
-  --theme-color-background-yellow: var(--dagster-yellow-translucent-15);
-  --theme-color-background-cyan: var(--dagster-cyan-translucent-15);
-  --theme-color-background-gray: var(--dagster-gray-translucent-15);
+  --theme-color-background-red: var(--dagster-red-translucent-20);
+  --theme-color-background-green: var(--dagster-green-translucent-20);
+  --theme-color-background-blue: var(--dagster-blue-translucent-20);
+  --theme-color-background-yellow: var(--dagster-yellow-translucent-20);
+  --theme-color-background-cyan: var(--dagster-cyan-translucent-20);
+  --theme-color-background-gray: var(--dagster-gray-translucent-20);
 
   --theme-color-link-default: var(--dagster-blue-200);
   --theme-color-link-hover: var(--dagster-blue-400);
@@ -58,6 +58,6 @@
 
   //Left Menu
   --ifm-menu-color: var(--theme-color-text-light);
-  --ifm-hover-overlay: var(--dagster-blue-translucent-25);
-  --ifm-menu-color-active: var(--dagster-blue-700);
+  --ifm-hover-overlay: var(--theme-color-background-blue);
+  --ifm-menu-color-active: var(--theme-color-background-blue);
 }
