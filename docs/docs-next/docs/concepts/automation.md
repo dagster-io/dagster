@@ -64,5 +64,3 @@ def ecommerce_schedule(context):
     context.log.info("This log message will be visible in the Dagster UI.")
     return RunRequest()
 ```
-
-### Understanding Timezones
