@@ -2,43 +2,34 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetMaterialization,
-    Config,
     Definitions,
     MaterializeResult,
-    RunConfig,
     RunRequest,
     SensorEvaluationContext,
+    SkipReason,
     asset,
     asset_sensor,
     define_asset_job,
 )
 
 
-class MyConfig(Config):
-    param1: str
-
-
 @asset
 def daily_sales_data(context: AssetExecutionContext):
-    context.log.info("Asset to watch")
-    # highlight-next-line
+    context.log.info("Asset to watch, perhaps some function sets metadata here")
     yield MaterializeResult(metadata={"specific_property": "value"})
 
 
 @asset
-def weekly_report(context: AssetExecutionContext, config: MyConfig):
-    context.log.info(f"Running weekly report with param1: {config.param1}")
+def weekly_report(context: AssetExecutionContext):
+    context.log.info("Running weekly report")
 
 
-my_job = define_asset_job(
-    "my_job",
-    [weekly_report],
-    config=RunConfig(ops={"weekly_report": MyConfig(param1="value")}),
-)
+my_job = define_asset_job("my_job", [weekly_report])
 
 
 @asset_sensor(asset_key=AssetKey("daily_sales_data"), job=my_job)
 def daily_sales_data_sensor(context: SensorEvaluationContext, asset_event):
+    # Provide a type hint on the underlying event
     materialization: AssetMaterialization = (
         asset_event.dagster_event.event_specific_data.materialization
     )
@@ -46,16 +37,10 @@ def daily_sales_data_sensor(context: SensorEvaluationContext, asset_event):
     # Example custom logic: Check if the asset metadata has a specific property
     # highlight-start
     if "specific_property" in materialization.metadata:
-        yield RunRequest(
-            run_key=context.cursor,
-            run_config=RunConfig(
-                ops={
-                    "weekly_report": MyConfig(
-                        param1=str(materialization.metadata.get("specific_property"))
-                    )
-                }
-            ),
-        )
+        context.log.info("Triggering job based on custom evaluation logic")
+        yield RunRequest(run_key=context.cursor)
+    else:
+        yield SkipReason("Asset materialization does not have the required property")
     # highlight-end
 
 

@@ -1,8 +1,9 @@
 ---
-title: Sensor Examples
----
+title: Creating event-based pipelines with sensors
+sidebar_label: Creating event-based pipelines
+sidebar_position: 20
 
-### Basic Sensor Example
+---
 
 This example includes a `check_for_new_files` function that simulates finding new files. In a real scenario, this function would check an actual system or directory.
 
