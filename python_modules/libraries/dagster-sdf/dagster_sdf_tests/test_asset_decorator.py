@@ -96,13 +96,30 @@ def test_sdf_with_materialize(moms_flower_shop_target_dir: Path) -> None:
             context=context,
         ).stream()
 
-    result = materialize(
+    first_result = materialize(
         [my_sdf_assets],
         resources={"sdf": SdfCliResource(workspace_dir=moms_flower_shop_path)},
     )
 
-    assert result.success
-    assert result.get_asset_materialization_events()
+    assert first_result.success
+    first_num_asset_materialization_events = len(first_result.get_asset_materialization_events())
+    assert first_num_asset_materialization_events > 0
+
+    cached_result = materialize(
+        [my_sdf_assets],
+        resources={"sdf": SdfCliResource(workspace_dir=moms_flower_shop_path)},
+    )
+
+    assert cached_result.success
+    materialization_events = cached_result.get_asset_materialization_events()
+    assert not any(
+        [
+            not event.materialization.metadata["Materialized From Cache"]
+            for event in materialization_events
+        ]
+    )
+    cached_num_asset_materialization_events = len(cached_result.get_asset_materialization_events())
+    assert first_num_asset_materialization_events == cached_num_asset_materialization_events
 
 
 def test_with_custom_translater_asset_key_fn(moms_flower_shop_target_dir: Path) -> None:
@@ -214,8 +231,6 @@ def test_asset_descriptions(moms_flower_shop_target_dir: str) -> None:
     )
     def my_flower_shop_assets(): ...
 
-    # Currently, the expected output is duplicated, but this is a bug in the sdf cli and will be
-    # fixed in a future release.
     assert my_flower_shop_assets.descriptions_by_key == {
         AssetKey(
             ["moms_flower_shop", "analytics", "agg_installs_and_campaigns"]
@@ -268,8 +283,6 @@ def test_asset_descriptions_with_raw_sql(moms_flower_shop_target_dir: str) -> No
     )
     def my_flower_shop_assets(): ...
 
-    # Currently, the expected output is duplicated, but this is a bug in the sdf cli and will be
-    # fixed in a future release.
     assert my_flower_shop_assets.descriptions_by_key == {
         AssetKey(
             ["moms_flower_shop", "analytics", "agg_installs_and_campaigns"]

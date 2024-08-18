@@ -69,8 +69,9 @@ class SdfCliEventMessage:
         schema = self.raw_event["ev_tb_schema"]
         table = self.raw_event["ev_tb_table"]
         default_metadata = {
-            "table_id": table_id,
+            "Table ID": table_id,
             "Execution Duration": self.raw_event["st_dur_ms"] / 1000,
+            "Materialized From Cache": True if self.raw_event["st_done"] == "cached" else False,
         }
         asset_key = dagster_sdf_translator.get_asset_key(catalog, schema, table)
         if self.raw_event["ev_tb_purpose"] == "model":

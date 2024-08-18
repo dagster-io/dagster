@@ -211,5 +211,6 @@ def test_metadata(sdf: SdfCliResource) -> None:
 
     for event in materialization_events:
         metadata = event.materialization.metadata
-        assert metadata["table_id"]
+        assert metadata["Table ID"]
         assert metadata["Execution Duration"]
+        assert metadata["Materialized From Cache"] is not None
