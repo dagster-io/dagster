@@ -1,6 +1,6 @@
 import os
 from collections import defaultdict
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster._time import get_current_timestamp
@@ -12,6 +12,7 @@ from .storage.tags import GLOBAL_CONCURRENCY_TAG
 
 def compute_run_op_concurrency_info_for_snapshot(
     plan_snapshot: ExecutionPlanSnapshot,
+    global_tag_concurrency_limits: Optional[Sequence[Mapping[str, Any]]]
 ) -> Optional[RunOpConcurrency]:
     """Utility function called at run creation time to add the concurrency info needed to keep track
     of concurrency limits for each in-flight run.
@@ -25,6 +26,15 @@ def compute_run_op_concurrency_info_for_snapshot(
         if step.key not in root_step_keys:
             continue
         concurrency_key = step.tags.get(GLOBAL_CONCURRENCY_TAG) if step.tags else None
+
+        if global_tag_concurrency_limits:
+            for tag in global_tag_concurrency_limits:
+                if not step.tags:
+                    break
+                
+                if tag['key'] in step.tags.keys() and tag['value'] == step.tags[tag['key']]:
+                    concurrency_key = "test_key" 
+
         if concurrency_key is None:
             has_unconstrained_root_nodes = True
         else:
@@ -66,6 +76,8 @@ class GlobalOpConcurrencyLimitsCounter:
     def _fetch_concurrency_info(self, instance: DagsterInstance, queued_runs: Sequence[DagsterRun]):
         # fetch all the concurrency slot information for the root concurrency keys of all the queued
         # runs
+        instance.event_log_storage.set_concurrency_slots("test_key", 2)
+        print("QUEUED_RUNS>>>", queued_runs)
         all_concurrency_keys = set()
         for run in queued_runs:
             if run.run_op_concurrency:

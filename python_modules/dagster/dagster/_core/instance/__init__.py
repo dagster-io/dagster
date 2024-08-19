@@ -1249,9 +1249,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
         if execution_plan_snapshot:
             from ..op_concurrency_limits_counter import compute_run_op_concurrency_info_for_snapshot
+            from dagster._core.run_coordinator import QueuedRunCoordinator
 
             run_op_concurrency = compute_run_op_concurrency_info_for_snapshot(
-                execution_plan_snapshot
+                execution_plan_snapshot,
+                self.run_coordinator.get_run_queue_config().tag_concurrency_limits if isinstance(self.run_coordinator, QueuedRunCoordinator) else None
             )
         else:
             run_op_concurrency = None
