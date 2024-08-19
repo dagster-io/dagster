@@ -30,10 +30,10 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: 'category',
-          label: 'Data assets',
+          label: 'Data modeling',
           link: {
             type: 'doc',
-            id: 'guides/data-assets',
+            id: 'guides/data-modeling',
           },
           items: [
             {
