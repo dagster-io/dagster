@@ -1,6 +1,7 @@
 import faker from 'faker';
 
 import {
+  buildCompositeSolidDefinition,
   buildDagsterLibraryVersion,
   buildPipeline,
   buildRepository,
@@ -16,8 +17,13 @@ import {
 import {OPS_ROOT_QUERY} from '../../ops/OpsRoot';
 import {OpsRootQuery, OpsRootQueryVariables} from '../../ops/types/OpsRoot.types';
 import {buildQueryMock} from '../../testing/mocking';
+import {WORSKPACE_GRAPHS_QUERY} from '../../workspace/WorkspaceGraphsQuery';
 import {repoAddressToSelector} from '../../workspace/repoAddressToSelector';
 import {RepoAddress} from '../../workspace/types';
+import {
+  WorkspaceGraphsQuery,
+  WorkspaceGraphsQueryVariables,
+} from '../../workspace/types/WorkspaceGraphsQuery.types';
 
 export const buildEmptyWorkspaceLocationEntry = (config: {time: number; locationName: string}) => {
   const {time, locationName} = config;
@@ -107,5 +113,40 @@ export const buildSampleOpsRootQuery = (config: {repoAddress: RepoAddress; opCou
       }),
     },
     delay: 2000,
+    maxUsageCount: 20,
+  });
+};
+
+export const buildSampleRepositoryGraphsQuery = (config: {
+  repoAddress: RepoAddress;
+  jobCount: number;
+  opCount: number;
+}) => {
+  const {repoAddress, jobCount, opCount} = config;
+  return buildQueryMock<WorkspaceGraphsQuery, WorkspaceGraphsQueryVariables>({
+    query: WORSKPACE_GRAPHS_QUERY,
+    variables: {
+      selector: repoAddressToSelector(repoAddress),
+    },
+    data: {
+      repositoryOrError: buildRepository({
+        usedSolids: new Array(opCount).fill(null).map(() => {
+          return buildUsedSolid({
+            definition: buildCompositeSolidDefinition({
+              name: faker.random.words(2).split(' ').join('-').toLowerCase(),
+            }),
+          });
+        }),
+        pipelines: new Array(jobCount).fill(null).map(() => {
+          return buildPipeline({
+            id: faker.datatype.uuid(),
+            graphName: faker.random.words(2).split(' ').join('-').toLowerCase(),
+            isJob: true,
+          });
+        }),
+      }),
+    },
+    delay: 2000,
+    maxUsageCount: 100,
   });
 };
