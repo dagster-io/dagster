@@ -2397,7 +2397,7 @@ enum AssetEventType {
 }
 
 input BulkActionsFilter {
-  status: [BulkActionStatus!]
+  status: BulkActionStatus
   createdBefore: Float
   createdAfter: Float
 }

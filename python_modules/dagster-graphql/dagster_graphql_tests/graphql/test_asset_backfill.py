@@ -1176,7 +1176,6 @@ def test_get_backfills_with_filters():
                 backfill = instance.get_backfill(backfill_id)
                 all_backfills.append(backfill)
 
-            # on PartitionBackfills
             get_backfills_result = execute_dagster_graphql(
                 context,
                 BACKFILLS_WITH_FILTERS_QUERY,
@@ -1200,3 +1199,9 @@ def test_get_backfills_with_filters():
 
             for result in backfill_results:
                 assert result["timestamp"] > all_backfills[3].backfill_timestamp
+
+            get_backfills_result = execute_dagster_graphql(
+                context,
+                BACKFILLS_WITH_FILTERS_QUERY,
+                variables={"filters": {"status": "REQUESTED"}},
+            )

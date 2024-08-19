@@ -379,9 +379,7 @@ class GrapheneTagInput(graphene.InputObjectType):
 
 
 class GrapheneBulkActionsFilter(graphene.InputObjectType):
-    status = graphene.List(
-        graphene.NonNull("dagster_graphql.schema.backfill.GrapheneBulkActionStatus")
-    )
+    status = graphene.InputField("dagster_graphql.schema.backfill.GrapheneBulkActionStatus")
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
 
@@ -390,11 +388,7 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
         name = "BulkActionsFilter"
 
     def to_selector(self):
-        if self.status:
-            status = BulkActionStatus.from_graphql_input(self.status)
-        else:
-            status = None
-
+        status = BulkActionStatus[self.status.value] if self.status else None
         created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
         created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
 

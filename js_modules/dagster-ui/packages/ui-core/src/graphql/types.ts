@@ -733,7 +733,7 @@ export enum BulkActionStatus {
 export type BulkActionsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
-  status?: InputMaybe<Array<BulkActionStatus>>;
+  status?: InputMaybe<BulkActionStatus>;
 };
 
 export type CancelBackfillResult = CancelBackfillSuccess | PythonError | UnauthorizedError;
@@ -6984,7 +6984,10 @@ export const buildBulkActionsFilter = (
       overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 6.09,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 1.5,
-    status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : [],
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : BulkActionStatus.CANCELED,
   };
 };
 
