@@ -39,6 +39,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-databricks{pin}",
+        f"dagster-dbt{pin}",
     ],
     zip_safe=False,
     entry_points={
