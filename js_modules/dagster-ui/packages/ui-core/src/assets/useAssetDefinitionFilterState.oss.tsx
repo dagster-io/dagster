@@ -43,39 +43,42 @@ export type AssetFilterType = AssetFilterBaseType & {
   selectAllFilters: Array<keyof AssetFilterBaseType>;
 };
 
-export const useAssetDefinitionFilterState = () => {
+export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: boolean}) => {
   const [filters, setFilters] = useQueryPersistedState<AssetFilterType>({
-    encode: ({
-      groups,
-      computeKindTags,
-      storageKindTags,
-      changedInBranch,
-      owners,
-      tags,
-      codeLocations,
-      selectAllFilters,
-    }) => ({
-      groups: groups?.length ? JSON.stringify(groups) : undefined,
-      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
-      storageKindTags: storageKindTags?.length ? JSON.stringify(storageKindTags) : undefined,
-      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
-      owners: owners?.length ? JSON.stringify(owners) : undefined,
-      tags: tags?.length ? JSON.stringify(tags) : undefined,
-      codeLocations: codeLocations?.length ? JSON.stringify(codeLocations) : undefined,
-      selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
-    }),
+    encode: isEnabled
+      ? ({
+          groups,
+          computeKindTags,
+          storageKindTags,
+          changedInBranch,
+          owners,
+          tags,
+          codeLocations,
+          selectAllFilters,
+        }) => ({
+          groups: groups?.length ? JSON.stringify(groups) : undefined,
+          computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
+          storageKindTags: storageKindTags?.length ? JSON.stringify(storageKindTags) : undefined,
+          changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+          owners: owners?.length ? JSON.stringify(owners) : undefined,
+          tags: tags?.length ? JSON.stringify(tags) : undefined,
+          codeLocations: codeLocations?.length ? JSON.stringify(codeLocations) : undefined,
+          selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
+        })
+      : () => ({}),
     decode: (qs) => ({
-      groups: qs.groups ? JSON.parse(qs.groups) : [],
-      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
-      storageKindTags: qs.storageKindTags ? JSON.parse(qs.storageKindTags) : [],
-      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
-      owners: qs.owners ? JSON.parse(qs.owners) : [],
-      tags: qs.tags ? JSON.parse(qs.tags) : [],
-      codeLocations: qs.codeLocations
-        ? JSON.parse(qs.codeLocations).map((repo: RepoAddress) =>
-            buildRepoAddress(repo.name, repo.location),
-          )
-        : [],
+      groups: qs.groups && isEnabled ? JSON.parse(qs.groups) : [],
+      computeKindTags: qs.computeKindTags && isEnabled ? JSON.parse(qs.computeKindTags) : [],
+      storageKindTags: qs.storageKindTags && isEnabled ? JSON.parse(qs.storageKindTags) : [],
+      changedInBranch: qs.changedInBranch && isEnabled ? JSON.parse(qs.changedInBranch) : [],
+      owners: qs.owners && isEnabled ? JSON.parse(qs.owners) : [],
+      tags: qs.tags && isEnabled ? JSON.parse(qs.tags) : [],
+      codeLocations:
+        qs.codeLocations && isEnabled
+          ? JSON.parse(qs.codeLocations).map((repo: RepoAddress) =>
+              buildRepoAddress(repo.name, repo.location),
+            )
+          : [],
       selectAllFilters: qs.selectAllFilters ? JSON.parse(qs.selectAllFilters) : [],
     }),
   });
