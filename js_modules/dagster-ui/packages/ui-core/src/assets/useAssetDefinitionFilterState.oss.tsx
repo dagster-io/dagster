@@ -31,6 +31,7 @@ export type FilterableAssetDefinition = Nullable<
 
 export type AssetFilterBaseType = {
   groups: AssetGroupSelector[];
+  columns: string[];
   computeKindTags: string[];
   storageKindTags: DefinitionTag[];
   changedInBranch: ChangeReason[];
@@ -52,11 +53,13 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
           storageKindTags,
           changedInBranch,
           owners,
+          columns,
           tags,
           codeLocations,
           selectAllFilters,
         }) => ({
           groups: groups?.length ? JSON.stringify(groups) : undefined,
+          columns: columns?.length ? JSON.stringify(columns): undefined,
           computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
           storageKindTags: storageKindTags?.length ? JSON.stringify(storageKindTags) : undefined,
           changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
@@ -72,6 +75,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
       storageKindTags: qs.storageKindTags && isEnabled ? JSON.parse(qs.storageKindTags) : [],
       changedInBranch: qs.changedInBranch && isEnabled ? JSON.parse(qs.changedInBranch) : [],
       owners: qs.owners && isEnabled ? JSON.parse(qs.owners) : [],
+      columns: qs.columns && isEnabled ? JSON.parse(qs.columns) : [],
       tags: qs.tags && isEnabled ? JSON.parse(qs.tags) : [],
       codeLocations:
         qs.codeLocations && isEnabled
