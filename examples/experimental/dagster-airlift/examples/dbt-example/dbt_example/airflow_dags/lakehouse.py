@@ -7,6 +7,7 @@ from airflow import DAG
 from airflow.models.operator import BaseOperator
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.migration_state import load_migration_state_from_yaml
+
 from dbt_example.shared.load_iris import load_csv_to_duckdb
 
 
