@@ -66,7 +66,7 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def description(self) -> Optional[str]:
-        return self._priority_node.op_description
+        return self._priority_node.description
 
     @property
     def group_name(self) -> str:
