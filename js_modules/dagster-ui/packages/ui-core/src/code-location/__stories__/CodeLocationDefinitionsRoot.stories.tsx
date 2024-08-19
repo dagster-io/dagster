@@ -6,7 +6,10 @@ import {RecoilRoot} from 'recoil';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {CodeLocationDefinitionsRoot} from '../CodeLocationDefinitionsRoot';
-import {buildSampleRepository} from '../__fixtures__/CodeLocationPages.fixtures';
+import {
+  buildSampleOpsRootQuery,
+  buildSampleRepository,
+} from '../__fixtures__/CodeLocationPages.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -31,7 +34,7 @@ export const Default = () => {
   return (
     <RecoilRoot>
       <MemoryRouter initialEntries={[workspacePathFromAddress(repoAddress, '/jobs')]}>
-        <MockedProvider>
+        <MockedProvider mocks={[buildSampleOpsRootQuery({repoAddress, opCount: 500})]}>
           <div style={{height: '500px', overflow: 'hidden'}}>
             <CodeLocationDefinitionsRoot
               repoAddress={buildRepoAddress(repoName, locationName)}

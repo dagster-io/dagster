@@ -2,6 +2,7 @@ import {Box} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Switch} from 'react-router-dom';
 
+import {CodeLocationOpsView} from './CodeLocationOpsView';
 import {CodeLocationSearchableList, SearchableListRow} from './CodeLocationSearchableList';
 import {Route} from '../app/Route';
 import {COMMON_COLLATOR} from '../app/Util';
@@ -30,6 +31,9 @@ export const CodeLocationDefinitionsMain = ({repoAddress, repository}: Props) =>
         </Route>
         <Route path="/locations/:repoPath/resources">
           <CodeLocationResourcesList repoAddress={repoAddress} repository={repository} />
+        </Route>
+        <Route path="/locations/:repoPath/ops">
+          <CodeLocationOpsView repoAddress={repoAddress} />
         </Route>
       </Switch>
     </Box>

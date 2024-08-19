@@ -9,8 +9,15 @@ import {
   buildResourceDetails,
   buildSchedule,
   buildSensor,
+  buildSolidDefinition,
+  buildUsedSolid,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
+import {OPS_ROOT_QUERY} from '../../ops/OpsRoot';
+import {OpsRootQuery, OpsRootQueryVariables} from '../../ops/types/OpsRoot.types';
+import {buildQueryMock} from '../../testing/mocking';
+import {repoAddressToSelector} from '../../workspace/repoAddressToSelector';
+import {RepoAddress} from '../../workspace/types';
 
 export const buildEmptyWorkspaceLocationEntry = (config: {time: number; locationName: string}) => {
   const {time, locationName} = config;
@@ -70,7 +77,7 @@ export const buildSampleRepository = (config: {
     }),
     sensors: new Array(sensorCount).fill(null).map(() => {
       return buildSensor({
-        name: faker.random.words(10).split(' ').join('-').toLowerCase(),
+        name: faker.random.words(2).split(' ').join('-').toLowerCase(),
       });
     }),
     allTopLevelResourceDetails: new Array(resourceCount).fill(null).map(() => {
@@ -78,5 +85,27 @@ export const buildSampleRepository = (config: {
         name: faker.random.words(2).split(' ').join('-').toLowerCase(),
       });
     }),
+  });
+};
+
+export const buildSampleOpsRootQuery = (config: {repoAddress: RepoAddress; opCount: number}) => {
+  const {repoAddress, opCount} = config;
+  return buildQueryMock<OpsRootQuery, OpsRootQueryVariables>({
+    query: OPS_ROOT_QUERY,
+    variables: {
+      repositorySelector: repoAddressToSelector(repoAddress),
+    },
+    data: {
+      repositoryOrError: buildRepository({
+        usedSolids: new Array(opCount).fill(null).map(() => {
+          return buildUsedSolid({
+            definition: buildSolidDefinition({
+              name: faker.random.words(2).split(' ').join('-').toLowerCase(),
+            }),
+          });
+        }),
+      }),
+    },
+    delay: 2000,
   });
 };
