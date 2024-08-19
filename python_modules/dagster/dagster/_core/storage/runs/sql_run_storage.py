@@ -847,8 +847,8 @@ class SqlRunStorage(RunStorage):
                     "Conflicting status filters provided to get_backfills. Choose one of status or BulkActionsFilter.status."
                 )
             status = status or (filters.status if filters else None)
-            if status:  # should also be non-None at this point, but pyright must be appeased
-                query = query.where(BulkActionsTable.c.status == status.value)
+            assert status
+            query = query.where(BulkActionsTable.c.status == status.value)
         if cursor:
             cursor_query = db_select([BulkActionsTable.c.id]).where(
                 BulkActionsTable.c.key == cursor
