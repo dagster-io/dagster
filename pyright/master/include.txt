@@ -2,7 +2,7 @@
 docs/dagster-ui-screenshot
 docs/sphinx/_ext/dagster-sphinx
 docs/sphinx/conf.py
-docs/docs-next/docs
+docs/docs-beta/docs
 python_modules
 examples
 integration_tests
