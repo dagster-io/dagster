@@ -108,6 +108,15 @@ a.pyobject {
     --ifm-h5-font-size: 0.8rem;
   }
 
+  // Emulate horizontal rule above h2 headers
+  h2 {
+    border-top: 1px;
+    border-top-style: solid;
+    border-top-color: var(--theme-color-text-light);
+    margin-top: 0px;
+    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading))
+  }
+
   // We want this to only apply to inline code, so don't apply
   // this color to ``` code blocks nor any headings.
   :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
