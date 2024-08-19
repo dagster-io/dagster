@@ -12,6 +12,7 @@ help:
 
 install:
 	pip install -r requirements.txt
+	pip install -e ./_ext/dagster-sphinx
 
 watch: 
 	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)/html" $(SPHINXOPTS) $(O)
