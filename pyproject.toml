@@ -100,11 +100,15 @@ filterwarnings = [
 
 target-version = "py38"
 
+# *.py, *.ipy are included by default
+extend-include = ["*.ipynb"]
+
 extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
   "*/_vendored/*",
   "*/snapshots/*",
+  "python_modules/libraries/dagstermill/dagstermill_tests/notebooks/cli_test_scaffold.ipynb",
 ]
 
 # Codebase-wide default line length. Override in package-specific pyproject.toml where a different
@@ -115,6 +119,9 @@ line-length = 100
 required-version = "0.5.5"
 
 [tool.ruff.lint]
+
+# we only want to format notebooks, not lint them
+exclude = ["*.ipynb"]
 
 ignore = [
 
