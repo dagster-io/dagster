@@ -114,13 +114,14 @@ a.pyobject {
     border-top-style: solid;
     border-top-color: var(--theme-color-keyline);
     margin-top: 0px;
-    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading))
+    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading));
   }
 
-  // We want this to only apply to inline code, so don't apply
-  // this color to ``` code blocks nor any headings.
+  // We want this to only apply to inline code
   :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
-    border: none;
+    background-color: var(--theme-color-background-blue);
+    border: 0.5px solid var(--theme-color-keyline);
+    padding: 0.1rem;
   }
 
   // don't apply --dagster-inline-code colors to admonitions

@@ -1,6 +1,6 @@
 ---
-title: Scheduling pipelines across projects and jobs with Asset Sensors
-sidebar_label: Scheduling pipelines across projects and jobs
+title: Triggering jobs with Asset Sensors
+sidebar_label: Triggering jobs with Asset Sensors
 sidebar_position: 30
 ---
 
