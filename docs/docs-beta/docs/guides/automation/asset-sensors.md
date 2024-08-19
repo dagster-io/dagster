@@ -7,7 +7,7 @@ sidebar_position: 30
 
 Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
 
-There are many use cases for asset sensors, however the most common is to trigger a job when an asset is materialized in a different job or code location, or to provide custom logic to determine when to trigger a run following an asset materialization.
+This guide covers the most common use cases for asset sensors such as defining cross-job and cross-code location dependencies.
 
 <details>
 <summary>Prerequisites</summary>
@@ -16,11 +16,7 @@ There are many use cases for asset sensors, however the most common is to trigge
 - Familiarity with [Ops and Jobs](/concepts/ops-and-jobs)
 </details>
 
-In this guide, you'll learn how to:
-
-<TOCInline toc={toc} />
-
-## Cross-job and cross-code location dependencies
+## Define cross-job and cross-code location dependencies
 
 Asset Sensors enable dependencies across different jobs and even different code locations. This flexibility allows for more modular and decoupled workflows.
 
@@ -48,7 +44,7 @@ Here's a minimal example of an asset sensor that triggers a job when an asset is
 
 <CodeExample filePath="guides/automation/simple-asset-sensor-example.py" language="python" title="Simple Asset Sensor Example" />
 
-## Custom evaluation logic
+## Customize evaluation logic
 
 The evaluation function of an asset sensor can be customized to include custom logic for determining when to trigger a run. This allows for fine-grained control over the conditions under which downstream jobs are executed.
 
