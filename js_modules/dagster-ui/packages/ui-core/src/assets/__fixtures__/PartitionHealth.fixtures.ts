@@ -304,3 +304,25 @@ export const TWO_DIMENSIONAL_ASSET_EMPTY: PartitionHealthQuery = {
     },
   },
 };
+
+export const ONE_DIMENSIONAL_DYNAMIC_ASSET: PartitionHealthQuery = {
+  __typename: 'Query',
+  assetNodeOrError: {
+    __typename: 'AssetNode',
+    id: '1234',
+    partitionKeysByDimension: [
+      {
+        __typename: 'DimensionPartitionKeys',
+        name: 'default',
+        partitionKeys: ['apple', 'pear', 'fig'],
+        type: PartitionDefinitionType.DYNAMIC,
+      },
+    ],
+    assetPartitionStatuses: {
+      __typename: 'DefaultPartitionStatuses',
+      materializedPartitions: ['apple', 'pear', 'fig'],
+      materializingPartitions: [],
+      failedPartitions: [],
+    },
+  },
+};

@@ -103,7 +103,7 @@ export const VirtualizedRepoAssetTable = ({repoAddress, assets}: Props) => {
                 start={start}
                 checked={false}
                 onToggleChecked={() => {}}
-                onWipe={() => {}}
+                onRefresh={() => {}}
               />
             );
           })}

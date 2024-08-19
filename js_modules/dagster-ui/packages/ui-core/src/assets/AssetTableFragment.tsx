@@ -13,6 +13,10 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     hasMaterializePermission
     partitionDefinition {
       description
+      dimensionTypes {
+        type
+        dynamicPartitionsDefinitionName
+      }
     }
     description
     owners {

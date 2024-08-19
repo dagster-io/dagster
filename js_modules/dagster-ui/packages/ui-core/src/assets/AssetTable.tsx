@@ -22,7 +22,7 @@ import {AssetViewType} from './useAssetView';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
-import {AssetKeyInput, DefinitionTag} from '../graphql/types';
+import {DefinitionTag} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -57,8 +57,6 @@ export const AssetTable = ({
   computeKindFilter,
   storageKindFilter,
 }: Props) => {
-  const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
-
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
     [assets, displayPathForAsset],
@@ -139,9 +137,9 @@ export const AssetTable = ({
         groups={groupedByDisplayKey}
         checkedDisplayKeys={checkedDisplayKeys}
         onToggleFactory={onToggleFactory}
+        onRefresh={() => refreshState.refetch()}
         showRepoColumn
         view={view}
-        onWipe={(assetKeys: AssetKeyInput[]) => setToWipe(assetKeys)}
         computeKindFilter={computeKindFilter}
         storageKindFilter={storageKindFilter}
       />
@@ -188,12 +186,6 @@ export const AssetTable = ({
         {belowActionBarComponents}
         {content()}
       </Box>
-      <AssetWipeDialog
-        assetKeys={toWipe || []}
-        isOpen={!!toWipe}
-        onClose={() => setToWipe(undefined)}
-        onComplete={() => refreshState.refetch()}
-      />
     </>
   );
 };
