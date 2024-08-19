@@ -9,7 +9,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPo
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._core.errors import DagsterError
+from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillStatus,
     PartitionedAssetBackfillStatus,
@@ -493,33 +493,42 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         ]
 
     def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
-        if self.status == BulkActionStatus.FAILED:
+        converted_status = BulkActionStatus[self.status]
+        if converted_status is BulkActionStatus.FAILED:
             return GrapheneRunStatus.FAILURE
-        if self.status == BulkActionStatus.CANCELED:
+        if converted_status is BulkActionStatus.CANCELED:
             return GrapheneRunStatus.CANCELED
-        if self.status == BulkActionStatus.CANCELING:
+        if converted_status is BulkActionStatus.CANCELING:
             return GrapheneRunStatus.CANCELING
-        if self.status == BulkActionStatus.REQUESTED:
+        if converted_status is BulkActionStatus.REQUESTED:
             # if no runs have been launched:
             if len(self._get_records(_graphene_info)) == 0:
                 return GrapheneRunStatus.NOT_STARTED  # GrapheneRunStatus.QUEUED?
             return GrapheneRunStatus.STARTED
         # BulkActionStatus.COMPLETED
         sub_runs = self._get_records(_graphene_info)
-        sub_run_statuses = [record.dagster_run.status for record in sub_runs]
-        if all(status == GrapheneRunStatus.SUCCESS for status in sub_run_statuses):
+        sub_run_statuses = [record.dagster_run.status.value for record in sub_runs]
+        if all(status == "SUCCESS" for status in sub_run_statuses):
             return GrapheneRunStatus.SUCCESS
-        if any(status == GrapheneRunStatus.FAILURE for status in sub_run_statuses):
+        if any(status == "FAILURE" for status in sub_run_statuses):
             return GrapheneRunStatus.FAILURE
-        if any(status == GrapheneRunStatus.CANCELED for status in sub_run_statuses):
+        if any(status == "CANCELED" for status in sub_run_statuses):
             return GrapheneRunStatus.FAILURE
 
-        return GrapheneRunStatus.FAILURE  # what should we default to? maybe raise an error
-        # raise DagsterInvariantViolationError(
-        #     f"Unable to convert BulkActionStatus {self.args[0]} to a RunStatus. {self.args[0]} is an unknown status."
-        # )
+        # can't import this because two deserializers get registered for PipelineRunStatsSnapshot
+        # from python_modules.dagster.dagster._core.storage.dagster_run import DagsterRunStatus
+        #
+        # sub_run_statuses = [record.dagster_run.status for record in sub_runs]
+        # if all(status == DagsterRunStatus.SUCCESS for status in sub_run_statuses):
+        #     return GrapheneRunStatus.SUCCESS
+        # if any(status == DagsterRunStatus.FAILURE for status in sub_run_statuses):
+        #     return GrapheneRunStatus.FAILURE
+        # if any(status == DagsterRunStatus.CANCELED for status in sub_run_statuses):
+        #     return GrapheneRunStatus.FAILURE
 
-        return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
+        raise DagsterInvariantViolationError(
+            f"Unable to convert BulkActionStatus {self.args[0]} to a RunStatus. {self.args[0]} is an unknown status."
+        )
 
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
