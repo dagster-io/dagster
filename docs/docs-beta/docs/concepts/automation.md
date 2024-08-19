@@ -2,7 +2,7 @@
 title: About Automation
 ---
 
-Dagster has support for several types of automation. All automation in Dagster responds to some external event.
+There are several ways to automate the execution of your data pipelines with Dagster.
 
 The first system, and the most basic, is the [Schedule](/guides/automation/schedules), which responds to time.
 
@@ -14,10 +14,10 @@ as reported by the Event Log.
 Finally, the Declarative Automation system is a
 more complex system that uses conditions on the assets to determine when to execute.
 
-## About Schedules
+## Schedules
 
 In Dagster, a schedule is defined by the `ScheduleDefinition` class, or through the `@schedule` decorator. The `@schedule`
-decorator is more flexible than the `ScheduleDefinition` class, allowing you to configure job behaviour or emit log messages
+decorator is more flexible than the `ScheduleDefinition` class, allowing you to configure job behavior or emit log messages
 as the schedule is processed.
 
 Schedules were one of the first types of automation in Dagster, created before the introduction of Software-Defined Assets.
@@ -33,7 +33,7 @@ A schedule can be thought of as a wrapper around two pieces:
 - A `JobDefinition`, which is a set of assets to materialize or ops to execute.
 - A `cron` string, which describes the schedule.
 
-### Defining a schedule using `ScheduleDefinition`
+### Define a schedule using `ScheduleDefinition`
 
 ```python
 ecommerce_schedule = ScheduleDefinition(
@@ -53,7 +53,7 @@ ecommerce_schedule = ScheduleDefinition(
 )
 ```
 
-### Defining a schedule using `@schedule`
+### Define a schedule using `@schedule`
 
 If you want more control over the schedule, you can use the `@schedule` decorator. In doing so, you are then responsible for either
 emitting a `RunRequest` or a `SkipReason`. You can also emit logs, which will be visible in the Dagster UI for a given schedule's tick history.
