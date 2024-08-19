@@ -6,6 +6,13 @@ sidebar_position: 10
 
 Schedules enable automated execution of jobs at specified intervals. These intervals can range from common frequencies like hourly, daily, or weekly, to more intricate patterns defined using cron expressions.
 
+<details>
+<summary>Prerequisites</summary>
+
+- Familiarity with [Assets](/concepts/assets)
+- Familiarity with [Ops and Jobs](/concepts/ops-and-jobs)
+</details>
+
 ## Basic schedule
 
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
@@ -47,6 +54,12 @@ partitioned_op_schedule = build_schedule_from_partitioned_job(
 # highlight-end
 ```
 
----
 
-For more information about how Schedules work, see the [About Schedules](/concepts/schedules).
+
+## Next steps
+
+- Learn more about schedules in [Understanding Automation](/concepts/automation)
+- React to events with [sensors](/guides/automation/sensors)
+- Explore [Declarative Automation](/concepts/declarative-automation) as an alternative to schedules
+
+By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.

@@ -80,7 +80,7 @@ For more examples of how to create asset sensors, see the [How-To Use Asset Sens
 
 ## Declarative automation
 
-TODO: Add content
+TODO: add content
 
 ## How to choose the right automation method
 
