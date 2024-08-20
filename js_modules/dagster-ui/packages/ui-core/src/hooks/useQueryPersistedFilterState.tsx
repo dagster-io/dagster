@@ -6,7 +6,7 @@ type SetterType<T extends Record<string, any>, K extends keyof T & string> = {
   [P in K as `set${Capitalize<P>}`]: (value: SetStateAction<T[P]>) => void;
 };
 
-export const usePersistedFilterState = <T extends Record<string, any | undefined>>(
+export const useQueryPersistedFilterState = <T extends Record<string, any | undefined>>(
   filterFields: readonly (keyof T)[],
 ): {
   state: T;

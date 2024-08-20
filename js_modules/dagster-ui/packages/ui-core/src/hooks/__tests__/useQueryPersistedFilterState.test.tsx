@@ -2,7 +2,7 @@ import {act, renderHook} from '@testing-library/react-hooks';
 import React from 'react';
 import {MemoryRouter} from 'react-router';
 
-import {usePersistedFilterState} from '../usePersistedFilterState';
+import {useQueryPersistedFilterState} from '../useQueryPersistedFilterState';
 
 const wrapper = ({
   initialEntries,
@@ -14,14 +14,14 @@ const wrapper = ({
   );
 };
 
-describe('usePersistedFilterState', () => {
+describe('useQueryPersistedFilterState', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   it('should initialize with decoded state from query string', () => {
     const {result} = renderHook(
-      () => usePersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
+      () => useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
       {
         wrapper: wrapper({
           initialEntries: [
@@ -41,7 +41,7 @@ describe('usePersistedFilterState', () => {
 
   it('should encode the state correctly when setting a value', () => {
     const {result} = renderHook(
-      () => usePersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
+      () => useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
       {wrapper: wrapper()},
     );
 
@@ -54,7 +54,7 @@ describe('usePersistedFilterState', () => {
 
   it('should create setters dynamically for each filter field', () => {
     const {result} = renderHook(
-      () => usePersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
+      () => useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
       {wrapper: wrapper()},
     );
 
@@ -73,7 +73,7 @@ describe('usePersistedFilterState', () => {
   it('should handle undefined or empty values correctly', () => {
     const {result} = renderHook(
       () =>
-        usePersistedFilterState<{filterA: string[] | undefined; filterB: string[] | undefined}>([
+        useQueryPersistedFilterState<{filterA: string[] | undefined; filterB: string[] | undefined}>([
           'filterA',
           'filterB',
         ]),
@@ -92,7 +92,7 @@ describe('usePersistedFilterState', () => {
   it('should return memoized setters', () => {
     const FIELDS = ['filterA', 'filterB'] as const;
     const {result, rerender} = renderHook(
-      () => usePersistedFilterState<{filterA: string[]; filterB: string[]}>(FIELDS),
+      () => useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>(FIELDS),
       {wrapper: wrapper()},
     );
 
