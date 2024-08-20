@@ -8,7 +8,6 @@ from dagster._api.snapshot_partition import (
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
 )
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
@@ -79,7 +78,7 @@ def test_external_partition_names_asset_selection(instance: DagsterInstance):
     ) as code_location:
         data = code_location.get_external_partition_names(
             repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
-            job_name=IMPLICIT_ASSET_JOB_NAME,
+            job_name="__ASSET_JOB",
             instance=instance,
             selected_asset_keys={AssetKey("asset2"), AssetKey("asset3")},
         )
@@ -131,23 +130,6 @@ def test_external_partition_config(instance: DagsterInstance):
         assert isinstance(data, ExternalPartitionConfigData)
         assert data.run_config
         assert data.run_config["ops"]["do_input"]["inputs"]["x"]["value"] == "c"  # type: ignore
-
-
-def test_external_partition_config_different_partitions_defs(instance: DagsterInstance):
-    with get_code_location(
-        python_file=__file__,
-        attribute="get_repo_with_differently_partitioned_assets",
-        location_name="something",
-        instance=instance,
-    ) as code_location:
-        data = code_location.get_external_partition_config(
-            job_name=IMPLICIT_ASSET_JOB_NAME,
-            repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
-            partition_name="b",
-            instance=instance,
-        )
-        assert isinstance(data, ExternalPartitionConfigData)
-        assert data.run_config == {}
 
 
 def test_external_partitions_config_error_grpc(instance: DagsterInstance):
@@ -212,25 +194,6 @@ def test_external_partition_tags(instance: DagsterInstance):
         assert isinstance(data, ExternalPartitionTagsData)
         assert data.tags
         assert data.tags["foo"] == "bar"
-
-
-def test_external_partition_tags_different_partitions_defs(instance: DagsterInstance):
-    with get_code_location(
-        python_file=__file__,
-        attribute="get_repo_with_differently_partitioned_assets",
-        location_name="something",
-        instance=instance,
-    ) as code_location:
-        data = code_location.get_external_partition_tags(
-            repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
-            job_name=IMPLICIT_ASSET_JOB_NAME,
-            selected_asset_keys={AssetKey("asset2"), AssetKey("asset3")},
-            partition_name="b",
-            instance=instance,
-        )
-        assert isinstance(data, ExternalPartitionTagsData)
-        assert data.tags
-        assert data.tags["dagster/partition"] == "b"
 
 
 def test_external_partitions_tags_deserialize_error_grpc(instance: DagsterInstance):
