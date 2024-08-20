@@ -846,7 +846,7 @@ class SqlRunStorage(RunStorage):
                 raise DagsterInvariantViolationError(
                     "Conflicting status filters provided to get_backfills. Choose one of status or BulkActionsFilter.statuses."
                 )
-            statuses = [status] or (filters.statuses if filters else None)
+            statuses = [status] if status else (filters.statuses if filters else None)
             assert statuses
             query = query.where(
                 BulkActionsTable.c.status.in_([status.value for status in statuses])
