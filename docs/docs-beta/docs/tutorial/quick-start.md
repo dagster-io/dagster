@@ -6,7 +6,7 @@ last_update:
   author: Pedram Navid
 ---
 
-# Dagster Tutorial: Building Your First Dagster Project
+# Build your first Dagster project
 
 Welcome to this hands-on tutorial where you'll learn how to build a basic Extract, Transform, Load (ETL) pipeline using Dagster. By the end of this tutorial, you'll have created a functional pipeline that extracts data from a CSV file and transforms it.
 

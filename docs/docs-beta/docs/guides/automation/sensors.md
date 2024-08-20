@@ -1,9 +1,9 @@
 ---
-title: Creating event-based pipelines with sensors
-sidebar_label: Creating event-based pipelines
+title: Create event-based pipelines with sensors
+sidebar_label: Create event-based pipelines
 sidebar_position: 20
-
 ---
+
 Sensors are a way to trigger runs in response to events in Dagster. Sensors
 run on a regular interval and can either trigger a run, or provide a reason why a run was skipped.
 

@@ -1,6 +1,4 @@
 ---
 title: "Unit tests for assets and ops"
-sidebar_position: 2
+sidebar_position: 30
 ---
-
-# Unit tests for assets and ops

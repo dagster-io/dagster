@@ -1,9 +1,7 @@
 ---
-title: Triggering jobs with Asset Sensors
-sidebar_label: Triggering jobs with Asset Sensors
+title: Trigger jobs with Asset Sensors
 sidebar_position: 30
 ---
-
 
 Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
 

@@ -1,9 +1,9 @@
 ---
-title: "Installing Dagster"
+title: "Dagster installation"
 description: "Learn how to install Dagster"
 ---
 
-# Installing Dagster Guide
+# Dagster installation
 
 This guide will walk you through the steps to install Dagster, a data orchestrator for machine learning, analytics, and ETL. Follow the instructions below to get started with Dagster on your local machine.
 

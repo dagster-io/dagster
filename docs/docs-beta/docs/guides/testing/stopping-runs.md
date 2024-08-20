@@ -1,6 +1,4 @@
 ---
-title: "Stopping runs"
-sidebar_position: 5
+title: "Stop runs"
+sidebar_position: 60
 ---
-
-# Stopping runs

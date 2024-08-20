@@ -1,6 +1,6 @@
 ---
-title: "Scheduling cron-based pipelines"
-sidebar_label: "Running pipelines on a schedule"
+title: "Schedule cron-based pipelines"
+sidebar_label: "Run pipelines on a schedule"
 sidebar_position: 10
 ---
 
