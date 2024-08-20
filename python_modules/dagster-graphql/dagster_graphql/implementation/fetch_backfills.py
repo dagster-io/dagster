@@ -20,10 +20,10 @@ def get_backfill(graphene_info: "ResolveInfo", backfill_id: str) -> "GraphenePar
 
 def get_backfills(
     graphene_info: "ResolveInfo",
-    status: Optional[BulkActionStatus] = None,
+    filters: Optional[BulkActionsFilter] = None,
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
-    filters: Optional[BulkActionsFilter] = None,
+    status: Optional[BulkActionStatus] = None,
 ) -> "GraphenePartitionBackfills":
     from ..schema.backfill import GraphenePartitionBackfill, GraphenePartitionBackfills
 

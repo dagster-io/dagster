@@ -370,10 +370,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_backfills(
         self,
-        status: Optional[BulkActionStatus] = None,
+        filters: Optional[BulkActionsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        filters: Optional[BulkActionsFilter] = None,
+        status: Optional[BulkActionStatus] = None,
     ) -> Sequence[PartitionBackfill]:
         """Get a list of partition backfills."""
 
