@@ -54,6 +54,7 @@ exceptions:
   - SQL
   - SSH
   - SSL
+  - SSO
   - SVG
   - TBD
   - TCP

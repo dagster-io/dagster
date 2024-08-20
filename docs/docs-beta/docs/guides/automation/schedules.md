@@ -1,6 +1,6 @@
 ---
-title: "Scheduling cron-based pipelines"
-sidebar_label: "Running pipelines on a schedule"
+title: "Schedule cron-based pipelines"
+sidebar_label: "Run pipelines on a schedule"
 sidebar_position: 10
 ---
 
@@ -26,7 +26,7 @@ By default, schedules without a timezone will run in Coordinated Universal Time 
 ```python
 daily_schedule = ScheduleDefinition(
     job=daily_refresh_job,
-    cron_schedule="0 0 * * *", 
+    cron_schedule="0 0 * * *",
     timezone="America/Los_Angeles",
 )
 ```

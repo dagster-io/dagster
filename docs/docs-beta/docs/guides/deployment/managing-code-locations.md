@@ -1,6 +1,6 @@
 ---
-title: "Managing code locations"
-sidebar_position: 5
+title: "Manage code locations"
+sidebar_position: 50
 ---
 
-# Managing code locations
+# Manage code locations

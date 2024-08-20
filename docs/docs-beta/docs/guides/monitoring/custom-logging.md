@@ -1,6 +1,4 @@
 ---
-title: "Setting up custom logging"
-sidebar_position: 1
+title: "Set up custom logging"
+sidebar_position: 10
 ---
-
-# Setting up custom logging
