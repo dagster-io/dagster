@@ -15,5 +15,3 @@ sphinx-copybutton
 
 # Furo theme
 furo
-
--e ./_ext/dagster-sphinx

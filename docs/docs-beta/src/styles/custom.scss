@@ -1,0 +1,244 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+@use 'colors'; // Import the theme colors module
+@use 'theme-globals'; //Global styles used across both themes
+@use 'theme-light'; // Import the light theme module
+@use 'theme-dark'; // Import the light theme module
+
+/* You can override the default Infima variables here. */
+/* Some styles heavily influenced from: https://github.com/electron/website/blob/main/src/css/custom.scss */
+
+html {
+  font-family: var(--ifm-font-family-base);
+  background: var(--theme-color-background-default);
+}
+
+article {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+hr {
+  height: 1px;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+/* Main content */
+.theme-doc-markdown {
+  margin: 0 auto;
+  margin-top: 1rem;
+}
+
+/* Custom code for PyObject */
+a.pyobject {
+  color: var(--theme-color-text-default);
+}
+
+.navbar {
+  &--dark {
+    --ifm-navbar-link-color: var(--theme-color-text-default);
+  }
+
+  &__inner {
+    max-width: 1400px;
+    margin: 0 0;
+  }
+
+  &__item {
+    border: 1px;
+  }
+
+  &__link {
+    font-weight: var(--ifm-font-weight-normal);
+    border-bottom: 2px solid transparent;
+
+    &--active {
+      color: var(--theme-color-accent-blue);
+      border-bottom-color: var(--theme-color-accent-blue);
+    }
+
+    &:hover {
+      color: var(--theme-color-accent-blue);
+    }
+  }
+}
+
+.footer {
+  --ifm-footer-background-color: var(--theme-color-background-light);
+
+  .footer__logo {
+    max-width: 80px;
+  }
+}
+
+.markdown {
+  line-height: 150%;
+
+  code {
+    font-size: var(--ifm-code-font-size);
+    line-height: 135%;
+  }
+
+  a {
+    font-weight: var(--ifm-font-weight-semibold);
+    code {
+      font-weight: var(--ifm-font-weight-bold);
+    }
+  }
+
+  h1,
+  h1:first-child,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    --ifm-h1-font-size: 2rem;
+    --ifm-h2-font-size: 1.5rem;
+    --ifm-h3-font-size: 1.3rem;
+    --ifm-h4-font-size: 1rem;
+    --ifm-h5-font-size: 0.8rem;
+  }
+
+  // Emulate horizontal rule above h2 headers
+  h2 {
+    border-top: 1px;
+    border-top-style: solid;
+    border-top-color: var(--theme-color-keyline);
+    margin-top: 0px;
+    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading));
+  }
+
+  // We want this to only apply to inline code
+  :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
+    background-color: var(--theme-color-background-blue);
+    border: 0.5px solid var(--theme-color-keyline);
+    padding: 0.1rem;
+  }
+
+  // don't apply --dagster-inline-code colors to admonitions
+  // as well
+  .admonition {
+    code {
+      color: inherit;
+    }
+  }
+}
+
+.button {
+  &--outline {
+    border: 1px solid;
+    color: var(--ifm-color-primary);
+    &:hover {
+      color: var(--ifm-color-primary-dark);
+    }
+  }
+}
+
+// sidebar
+.menu {
+  padding-right: 0.5rem !important;
+  &__link {
+    font-size: 14px;
+    font-weight: var(--ifm-font-weight-normal);
+    color: var(--theme-color-text-light);
+    &:hover {
+      color: var(--theme-color-text-default);
+      background-color: var(--theme-color-background-gray);
+    }
+    &--active {
+      font-weight: var(--ifm-font-weight-normal);
+      color: var(--theme-color-text-default);
+      background-color: var(--theme-color-background-gray);
+      &:hover {
+        background-color: var(--theme-color-background-blue);
+        color: var(--theme-color-text-default);
+      }
+    }
+  }
+}
+
+.menu__link--sublist-caret {
+  color: var(--theme-color-text-default);
+  font-weight: 500;
+  font-size: 16px;
+  &:after {
+    display: none;
+  }
+}
+
+.menu__list-item-collapsible {
+  .menu__caret:before {
+    background-image: url('/icons/chevron.svg');
+    background-size: 20px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.menu__list-item:not(:first-child) {
+  margin-top: 0;
+}
+
+.theme-doc-sidebar-item-category-level-1 {
+  padding-top: 4px;
+  .menu__list {
+    border-left: 1px solid var(--theme-color-keyline);
+    margin-left: 12px;
+    padding-left: 4px;
+    margin-top: 0;
+  }
+  .menu__list-item-collapsible a {
+    font-size: 16px;
+  }
+}
+
+.theme-doc-sidebar-item-category-level-2 {
+  .menu__list-item-collapsible a {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--theme-color-text-light);
+    :after {
+      background: blue;
+    }
+  }
+}
+
+.card {
+  border: 1px solid rgba(200, 200, 200, 0.3);
+}
+
+.markdown .table-of-contents {
+  li {
+    list-style: none;
+    padding-top: 4px;
+    line-height: 1;
+  }
+  li a {
+    font-weight: var(--ifm-font-weight-normal);
+  }
+}
+.table-of-contents {
+  &__link:hover {
+    background-color: var(--theme-color-background-gray);
+  }
+  &__link--active {
+    font-weight: 500;
+  }
+}
+.pagination-nav {
+  &__link {
+    border: 0;
+    border-radius: 0;
+    border-top: 1px solid var(--dagster-color-gray-300);
+    color: var(--dagster-color-gray-900);
+  }
+}
