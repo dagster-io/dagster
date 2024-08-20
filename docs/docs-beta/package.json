@@ -1,5 +1,5 @@
 {
-  "name": "classic",
+  "name": "dagster-docs-beta",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -34,13 +34,17 @@
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.25.2",
     "@babel/eslint-parser": "^7.25.1",
     "@docusaurus/eslint-plugin": "^3.5.2",
     "@docusaurus/module-type-aliases": "3.5.2",
+    "@docusaurus/theme-classic": "^3.5.2",
     "@docusaurus/tsconfig": "3.5.2",
     "@docusaurus/types": "3.5.2",
     "@eslint/js": "^9.9.0",
+    "@types/babel__core": "^7",
     "@types/node": "^22.3.0",
+    "@types/react": "^18.3.4",
     "@typescript-eslint/parser": "^8.0.1",
     "eslint": "^8.57.0",
     "eslint-plugin-mdx": "^3.1.5",
@@ -50,8 +54,10 @@
     "prettier-eslint": "^16.3.0",
     "remark-frontmatter": "^5.0.0",
     "remark-mdx": "^3.0.1",
+    "sass": "^1.77.8",
     "typescript": "~5.5.4",
-    "typescript-eslint": "^8.0.1"
+    "typescript-eslint": "^8.0.1",
+    "webpack": "^5.93.0"
   },
   "browserslist": {
     "production": [
@@ -67,5 +73,6 @@
   },
   "engines": {
     "node": ">=18.0"
-  }
+  },
+  "packageManager": "yarn@4.4.0"
 }
