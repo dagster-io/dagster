@@ -10,7 +10,7 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 <summary>Prerequisites</summary>
 
 - Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Ops and Jobs](/concepts/ops-jobs)
+- Familiarity with [Ops and Jobs](/concepts/ops-and-jobs)
 </details>
 
 ## Basic schedule
@@ -60,6 +60,6 @@ partitioned_op_schedule = build_schedule_from_partitioned_job(
 
 - Learn more about schedules in [Understanding Automation](/concepts/automation)
 - React to events with [sensors](/guides/automation/sensors)
-- Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to schedules
+- Explore [Declarative Automation](/concepts/declarative-automation) as an alternative to schedules
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.
