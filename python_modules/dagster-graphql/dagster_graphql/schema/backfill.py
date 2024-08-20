@@ -492,7 +492,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             if get_tag_type(key) != TagType.HIDDEN
         ]
 
-    def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
+    def resolve_runStatus(self, _graphene_info: ResolveInfo) -> str:
         converted_status = BulkActionStatus[self.status]
         if converted_status is BulkActionStatus.FAILED:
             return GrapheneRunStatus.FAILURE
