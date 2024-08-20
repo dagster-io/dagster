@@ -8,7 +8,16 @@ import pytest
 from dagster import In, Nothing, Out, job, op
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster_sdf.constants import SDF_DAGSTER_OUTPUT_DIR, SDF_TARGET_DIR
+from dagster_sdf.constants import (
+    DAGSTER_SDF_CATALOG_NAME,
+    DAGSTER_SDF_DIALECT,
+    DAGSTER_SDF_PURPOSE,
+    DAGSTER_SDF_SCHEMA_NAME,
+    DAGSTER_SDF_TABLE_ID,
+    DAGSTER_SDF_TABLE_NAME,
+    SDF_DAGSTER_OUTPUT_DIR,
+    SDF_TARGET_DIR,
+)
 from dagster_sdf.resource import SdfCliResource
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
@@ -211,6 +220,11 @@ def test_metadata(sdf: SdfCliResource) -> None:
 
     for event in materialization_events:
         metadata = event.materialization.metadata
-        assert metadata["Table ID"]
+        assert metadata[DAGSTER_SDF_TABLE_ID]
+        assert metadata[DAGSTER_SDF_CATALOG_NAME]
+        assert metadata[DAGSTER_SDF_SCHEMA_NAME]
+        assert metadata[DAGSTER_SDF_TABLE_NAME]
+        assert metadata[DAGSTER_SDF_PURPOSE]
+        assert metadata[DAGSTER_SDF_DIALECT]
         assert metadata["Execution Duration"]
         assert metadata["Materialized From Cache"] is not None
