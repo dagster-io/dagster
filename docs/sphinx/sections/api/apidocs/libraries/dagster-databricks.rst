@@ -18,7 +18,7 @@ access storage.
 .. currentmodule:: dagster_databricks
 
 APIs
-----
+====
 
 
 Resources

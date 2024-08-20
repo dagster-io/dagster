@@ -1,8 +1,8 @@
-Orchestration on Docker
---------------------------------
+Docker Orchestration (dagster-docker)
+-------------------------------------
 
 APIs
-----
+====
 
 .. currentmodule:: dagster_docker
 

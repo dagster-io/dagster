@@ -11,7 +11,7 @@ Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (
 Comprehensive list of `dagster-polars` behavior for supported type annotations can be found in :ref:`Types` section.
 
 Installation
-------------
+============
 .. code-block::
 
     pip install dagster-polars
@@ -21,7 +21,7 @@ Some IOManagers (like :py:class:`PolarsDeltaIOManager`) may require additional d
 Please check the documentation for each IOManager for more details.
 
 Quickstart
-----------
+==========
 
 Common filesystem-based IOManagers features highlights, using :py:class:`PolarsParquetIOManager` as an example (see :py:class:`BasePolarsUPathIOManager` for the full list of features provided by `dagster-polars`):
 
@@ -103,7 +103,7 @@ This mode should be preferred for true partitioning.
 .. _Types:
 
 Type Annotations
-----------------
+================
 
 Type aliases like `DataFrameWithPartitions` are provided by :py:mod:`dagster_polars.types` for convenience.
 
@@ -156,7 +156,7 @@ In the table below `StorageMetadata` expands to `Dict[str, Any]`.
 Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for Python >= 3.9.
 
 API Documentation
------------------
+=================
 
 .. autoconfigurable:: BasePolarsUPathIOManager
   :annotation: IOManagerDefinition
