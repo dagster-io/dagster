@@ -77,13 +77,19 @@ POLARS_LAZY_FRAME_ANNOTATIONS = [
 
 if sys.version_info >= (3, 9):
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(Dict[str, pl.DataFrame])
     POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])
+    POLARS_EAGER_FRAME_ANNOTATIONS.append(Dict[str, Optional[pl.DataFrame]])
 
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(Dict[str, pl.LazyFrame])
     POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])
+    POLARS_LAZY_FRAME_ANNOTATIONS.append(Dict[str, Optional[pl.LazyFrame]])
 
 
 def annotation_is_typing_optional(annotation) -> bool:
+    if get_origin(annotation) in (dict, Dict, Mapping):
+        return annotation_is_typing_optional(get_args(annotation)[1])
     return get_origin(annotation) == Union and type(None) in get_args(annotation)
 
 
