@@ -114,13 +114,14 @@ a.pyobject {
     border-top-style: solid;
     border-top-color: var(--theme-color-keyline);
     margin-top: 0px;
-    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading))
+    padding-top: calc(var(--ifm-heading-vertical-rhythm-bottom) * var(--ifm-leading));
   }
 
-  // We want this to only apply to inline code, so don't apply
-  // this color to ``` code blocks nor any headings.
+  // We want this to only apply to inline code
   :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
-    border: none;
+    background-color: var(--theme-color-background-blue);
+    border: 0.5px solid var(--theme-color-keyline);
+    padding: 0.1rem;
   }
 
   // don't apply --dagster-inline-code colors to admonitions
@@ -215,10 +216,24 @@ a.pyobject {
   border: 1px solid rgba(200, 200, 200, 0.3);
 }
 
-.table-of-contents__link--active {
-  font-weight: var(--ifm-font-weight-bold);
+.markdown .table-of-contents {
+  li {
+    list-style: none;
+    padding-top: 4px;
+    line-height: 1;
+  }
+  li a {
+    font-weight: var(--ifm-font-weight-normal);
+  }
 }
-
+.table-of-contents {
+  &__link:hover {
+    background-color: var(--theme-color-background-gray);
+  }
+  &__link--active {
+    font-weight: 500;
+  }
+}
 .pagination-nav {
   &__link {
     border: 0;

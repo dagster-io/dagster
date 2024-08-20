@@ -15,5 +15,6 @@ swap:
   public preview: Public Preview
   run id: Run Id
   '\bdagster': Dagster
-  dagster cloud: Dagster Plus
+  '[Dd]agster [Cc]loud': Dagster Plus
   '\bworker\b': Worker
+  '[Aa]sset Sensor': Asset sensor
