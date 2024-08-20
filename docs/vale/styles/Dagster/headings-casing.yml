@@ -1,0 +1,8 @@
+## This rule finds section headings that don't use sentence casing.
+## Ex: This is correct, but This Is Not Correct
+
+extends: capitalization
+message: "'%s' should be in sentence case"
+level: error
+scope: heading
+match: $sentence
