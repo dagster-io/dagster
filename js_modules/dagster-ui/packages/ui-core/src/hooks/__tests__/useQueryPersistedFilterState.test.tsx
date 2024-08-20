@@ -21,7 +21,11 @@ describe('useQueryPersistedFilterState', () => {
 
   it('should initialize with decoded state from query string', () => {
     const {result} = renderHook(
-      () => useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
+      () =>
+        useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>([
+          'filterA',
+          'filterB',
+        ]),
       {
         wrapper: wrapper({
           initialEntries: [
@@ -41,7 +45,11 @@ describe('useQueryPersistedFilterState', () => {
 
   it('should encode the state correctly when setting a value', () => {
     const {result} = renderHook(
-      () => useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
+      () =>
+        useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>([
+          'filterA',
+          'filterB',
+        ]),
       {wrapper: wrapper()},
     );
 
@@ -54,7 +62,11 @@ describe('useQueryPersistedFilterState', () => {
 
   it('should create setters dynamically for each filter field', () => {
     const {result} = renderHook(
-      () => useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>(['filterA', 'filterB']),
+      () =>
+        useQueryPersistedFilterState<{filterA: string[]; filterB: string[]}>([
+          'filterA',
+          'filterB',
+        ]),
       {wrapper: wrapper()},
     );
 
@@ -73,10 +85,10 @@ describe('useQueryPersistedFilterState', () => {
   it('should handle undefined or empty values correctly', () => {
     const {result} = renderHook(
       () =>
-        useQueryPersistedFilterState<{filterA: string[] | undefined; filterB: string[] | undefined}>([
-          'filterA',
-          'filterB',
-        ]),
+        useQueryPersistedFilterState<{
+          filterA: string[] | undefined;
+          filterB: string[] | undefined;
+        }>(['filterA', 'filterB']),
       {wrapper: wrapper()},
     );
 
