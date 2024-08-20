@@ -1,4 +1,4 @@
 ---
-title: "Detecting schema changes"
-sidebar_position: 4
+title: "Detect schema changes"
+sidebar_position: 50
 ---

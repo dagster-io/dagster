@@ -1,5 +1,4 @@
 ---
-title: "Creating asset factories"
+title: "Create asset factories"
 sidebar_position: 50
-sidebar_label: "Creating asset factories"
 ---
