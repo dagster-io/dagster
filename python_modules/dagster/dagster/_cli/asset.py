@@ -68,8 +68,11 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
             check.failed("Provided '--partition' option, but none of the assets are partitioned")
 
         try:
-            tags = implicit_job_def.get_tags_for_partition_key(
+            implicit_job_def.validate_partition_key(
                 partition, selected_asset_keys=asset_keys, dynamic_partitions_store=instance
+            )
+            tags = implicit_job_def.get_tags_for_partition_key(
+                partition, selected_asset_keys=asset_keys
             )
         except DagsterUnknownPartitionError:
             raise DagsterInvalidSubsetError(
