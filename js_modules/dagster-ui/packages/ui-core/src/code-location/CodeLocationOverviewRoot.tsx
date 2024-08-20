@@ -9,11 +9,11 @@ import {
   Table,
 } from '@dagster-io/ui-components';
 import {ComponentProps, ReactNode, useMemo} from 'react';
+import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {CodeLocationPageHeader} from './CodeLocationPageHeader';
-import {CodeLocationTabs} from './CodeLocationTabs';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
 import {WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext';
