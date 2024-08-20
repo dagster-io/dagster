@@ -1,5 +1,3 @@
 module.exports = {
-  plugins: [
-    'remark-frontmatter',
-  ]
-}
+  plugins: ['remark-frontmatter'],
+};
