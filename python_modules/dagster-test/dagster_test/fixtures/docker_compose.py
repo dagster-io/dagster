@@ -47,7 +47,7 @@ def dump_docker_compose_logs(context, docker_compose_yml):
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
-        compose_command = ["docker-compose"]
+        compose_command = ["docker compose"]
 
     compose_command += [
         "--file",
@@ -89,7 +89,7 @@ def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: 
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
-        compose_command = ["docker-compose"]
+        compose_command = ["docker compose"]
 
     if env_file:
         compose_command += ["--env-file", env_file]
@@ -114,7 +114,7 @@ def docker_compose_down(docker_compose_yml, context, service, env_file):
     if context:
         compose_command = ["docker", "--context", context, "compose"]
     else:
-        compose_command = ["docker-compose"]
+        compose_command = ["docker compose"]
 
     if env_file:
         compose_command += ["--env-file", env_file]
