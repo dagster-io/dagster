@@ -72,7 +72,6 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
       storageKindTags: qs.storageKindTags && isEnabled ? JSON.parse(qs.storageKindTags) : [],
       changedInBranch: qs.changedInBranch && isEnabled ? JSON.parse(qs.changedInBranch) : [],
       owners: qs.owners && isEnabled ? JSON.parse(qs.owners) : [],
-      columns: qs.columns && isEnabled ? JSON.parse(qs.columns) : [],
       tags: qs.tags && isEnabled ? JSON.parse(qs.tags) : [],
       codeLocations:
         qs.codeLocations && isEnabled
