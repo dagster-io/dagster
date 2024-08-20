@@ -1,4 +1,4 @@
-acryl-datahub==0.14.0.1
+acryl-datahub==0.14.0.2
 agate==1.9.1
 aiofile==3.8.8
 aiofiles==24.1.0
@@ -37,6 +37,7 @@ asn1crypto==1.5.1
 asttokens==2.4.1
 astunparse==1.6.3
 async-lru==2.0.4
+async-timeout==4.0.3
 attrs==24.2.0
 autodocsumm==0.2.13
 autoflake==2.3.1
@@ -58,8 +59,8 @@ bitmath==1.3.3.1
 bleach==6.1.0
 blinker==1.8.2
 bokeh==3.5.1
-boto3==1.35.1
-botocore==1.35.1
+boto3==1.35.3
+botocore==1.35.3
 buildkite-test-collector==0.1.8
 cachecontrol==0.14.0
 cached-property==1.5.2
@@ -93,7 +94,7 @@ contourpy==1.2.1
 coverage==7.6.1
 cron-descriptor==1.4.3
 croniter==3.0.3
-cryptography==42.0.8
+cryptography==43.0.0
 cssutils==2.11.1
 cycler==0.12.1
 daff==1.3.46
@@ -171,13 +172,14 @@ dask-yarn==0.9
 databricks-cli==0.18.0
 databricks-sdk==0.17.0
 dataclasses-json==0.6.7
-datadog==0.49.1
+datadog==0.50.0
 dataproperty==1.0.1
 db-dtypes==1.3.0
 dbt-adapters==1.4.1
 dbt-common==1.7.0
 dbt-core==1.8.5
 dbt-duckdb==1.8.3
+-e examples/experimental/dagster-airlift/examples/dbt-example
 dbt-extractor==0.5.1
 dbt-semantic-interfaces==0.5.1
 debugpy==1.8.5
@@ -207,6 +209,7 @@ duckdb==1.0.0
 ecdsa==0.19.0
 email-validator==1.3.1
 entrypoints==0.4
+exceptiongroup==1.2.2
 execnet==2.1.1
 executing==2.0.1
 expandvars==0.12.0
@@ -252,7 +255,7 @@ graphql-core==3.2.3
 graphql-relay==3.2.0
 graphviz==0.20.3
 great-expectations==0.17.11
-grpcio==1.64.3
+grpcio==1.65.5
 grpcio-health-checking==1.62.3
 grpcio-status==1.62.3
 grpcio-tools==1.62.3
@@ -271,7 +274,7 @@ idna==3.7
 ijson==3.3.0
 imagesize==1.4.1
 importlib-metadata==6.11.0
-importlib-resources==6.4.3
+importlib-resources==6.4.4
 inflection==0.5.1
 iniconfig==2.0.0
 ipykernel==6.29.5
@@ -314,10 +317,10 @@ kubernetes==30.1.0
 kubernetes-asyncio==30.1.0
 langchain==0.2.9
 langchain-community==0.2.9
-langchain-core==0.2.33
+langchain-core==0.2.34
 langchain-openai==0.1.14
 langchain-text-splitters==0.2.2
-langsmith==0.1.99
+langsmith==0.1.101
 lazy-object-proxy==1.10.0
 leather==0.4.0
 limits==3.13.0
@@ -375,7 +378,7 @@ objgraph==3.6.1
 onnx==1.16.2
 onnxconverter-common==1.13.0
 onnxruntime==1.19.0
-openai==1.41.1
+openai==1.42.0
 openapi-schema-validator==0.6.2
 openapi-spec-validator==0.7.1
 opentelemetry-api==1.26.0
@@ -406,8 +409,6 @@ path==16.16.0
 pathable==0.4.3
 pathspec==0.12.1
 pathvalidate==3.2.0
--e examples/experimental/dagster-airlift/examples/dbt-example
--e examples/experimental/dagster-airlift/examples/simple-migration
 pendulum==2.1.2
 pexpect==4.9.0
 pillow==10.4.0
@@ -417,7 +418,7 @@ platformdirs==4.2.2
 plotly==5.23.0
 pluggy==1.5.0
 ply==3.11
-polars==1.2.1
+polars==1.5.0
 portalocker==2.10.1
 prison==0.2.1
 progressbar2==4.4.2
@@ -495,9 +496,9 @@ ruamel-yaml==0.17.17
 ruff==0.6.1
 s3transfer==0.10.2
 scikit-learn==1.5.1
-scipy==1.14.0
+scipy==1.14.1
 scrapbook==0.5.0
-sdf-cli==0.3.16
+sdf-cli==0.3.21
 seaborn==0.13.2
 selenium==4.23.1
 semver==3.0.2
@@ -507,6 +508,7 @@ sentry-sdk==2.13.0
 setproctitle==1.3.3
 setuptools==70.3.0
 shellingham==1.5.4
+-e examples/experimental/dagster-airlift/examples/simple-migration
 simplejson==3.19.3
 six==1.16.0
 skein==0.8.2
@@ -517,7 +519,7 @@ sling-mac-arm64==1.2.15
 smmap==5.0.1
 sniffio==1.3.1
 snowballstemmer==2.2.0
-snowflake-connector-python==3.12.0
+snowflake-connector-python==3.12.1
 snowflake-sqlalchemy==1.6.1
 sortedcontainers==2.4.0
 soupsieve==2.6
@@ -545,7 +547,7 @@ stack-data==0.6.3
 starlette==0.38.2
 structlog==24.4.0
 sympy==1.13.2
-syrupy==4.6.1
+syrupy==4.6.4
 tabledata==1.3.3
 tabulate==0.9.0
 tblib==3.0.0
@@ -569,6 +571,7 @@ tqdm==4.66.5
 traitlets==5.14.3
 trio==0.26.2
 trio-websocket==0.11.1
+-e examples/experimental/dagster-airlift/examples/tutorial-example
 -e examples/tutorial_notebook_assets
 twilio==9.2.3
 twine==1.15.0
@@ -585,11 +588,11 @@ types-mock==5.1.0.20240425
 types-paramiko==3.4.0.20240423
 types-protobuf==5.27.0.20240626
 types-pyopenssl==24.1.0.20240722
-types-python-dateutil==2.9.0.20240316
+types-python-dateutil==2.9.0.20240821
 types-pytz==2024.1.0.20240417
 types-pyyaml==6.0.12.20240808
 types-requests==2.31.0.6
-types-setuptools==71.1.0.20240818
+types-setuptools==72.2.0.20240821
 types-simplejson==3.19.0.20240801
 types-six==1.16.21.20240513
 types-sqlalchemy==1.4.53.34
