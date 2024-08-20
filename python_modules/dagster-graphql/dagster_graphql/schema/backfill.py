@@ -506,13 +506,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
                 return GrapheneRunStatus.QUEUED
             return GrapheneRunStatus.STARTED
         # BulkActionStatus.COMPLETED
+        # Backfills are only marked as COMPLETED once all runs that are part of the backfill have reached
+        # a finished state (SUCCESS, FAILURE, or CANCELED). So we only need to check for those
+        # statuses to determine the overall status of the backfill.
         sub_runs = self._get_records(_graphene_info)
         sub_run_statuses = [record.dagster_run.status.value for record in sub_runs]
         if all(status == "SUCCESS" for status in sub_run_statuses):
             return GrapheneRunStatus.SUCCESS
-        if any(status == "FAILURE" for status in sub_run_statuses):
-            return GrapheneRunStatus.FAILURE
-        if any(status == "CANCELED" for status in sub_run_statuses):
+        if any(status == "FAILURE" or status == "CANCELED" for status in sub_run_statuses):
             return GrapheneRunStatus.FAILURE
 
         # can't import this because two deserializers get registered for PipelineRunStatsSnapshot
