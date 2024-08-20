@@ -1,0 +1,17 @@
+sphinx>=7
+
+sphinx-autobuild
+# For generating CLI docs
+sphinx_click
+
+sphinx_toolbox
+sphinxcontrib-serializinghtml
+
+# Generate opengraph data
+sphinxext-opengraph
+
+# Copy code button
+sphinx-copybutton
+
+# Furo theme
+furo
