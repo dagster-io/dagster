@@ -559,7 +559,9 @@ async function stateForLaunchingAssets(
         ),
         includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
-        base: partitionDefinition ? {isAssetJob: true, partitionName: null, tags: []} : undefined,
+        base: partitionDefinition
+          ? {type: 'asset-job-partition', partitionName: null, tags: []}
+          : undefined,
       },
     };
   }

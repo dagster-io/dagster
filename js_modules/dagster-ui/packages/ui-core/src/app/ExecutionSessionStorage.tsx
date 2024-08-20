@@ -32,16 +32,18 @@ export interface PipelineRunTag {
 
 export type SessionBase =
   | {
+      type: 'preset';
       presetName: string;
       tags: PipelineRunTag[] | null;
     }
   | {
-      isAssetJob: true; // partition set name not required
+      type: 'asset-job-partition';
       partitionName: string | null;
       tags: PipelineRunTag[] | null;
     }
   | {
-      partitionsSetName: string; // required for op jobs
+      type: 'op-job-partition-set';
+      partitionsSetName: string;
       partitionName: string | null;
       tags: PipelineRunTag[] | null;
     };
@@ -242,7 +244,7 @@ export const useInitialDataForMode = (
   partitionSets: LaunchpadSessionPartitionSetsFragment,
   rootDefaultYaml: string | undefined,
   shouldPopulateWithDefaults: boolean,
-) => {
+): {base?: SessionBase; runConfigYaml?: string} => {
   const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;
 
@@ -254,14 +256,23 @@ export const useInitialDataForMode = (
     // `default` preset
     if (presetsForMode.length === 1 && (isAssetJob || partitionSetsForMode.length === 0)) {
       return {
-        base: {presetName: presetsForMode[0]!.name, tags: null},
+        base: {
+          type: 'preset',
+          presetName: presetsForMode[0]!.name,
+          tags: null,
+        },
         runConfigYaml: presetsForMode[0]!.runConfigYaml,
       };
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
       return {
-        base: {partitionsSetName: partitionSetsForMode[0]!.name, partitionName: null, tags: null},
+        base: {
+          type: 'op-job-partition-set',
+          partitionsSetName: partitionSetsForMode[0]!.name,
+          partitionName: null,
+          tags: null,
+        },
         runConfigYaml: rootDefaultYaml,
       };
     }

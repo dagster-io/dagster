@@ -105,6 +105,7 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
       onSaveSession({
         mode: item.mode,
         base: {
+          type: 'op-job-partition-set',
           partitionsSetName: item.name,
           partitionName: null,
           tags: base ? base.tags : null,

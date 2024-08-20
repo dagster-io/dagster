@@ -447,7 +447,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     const newBaseTags = preset.tags.map(onlyKeyAndValue);
 
     onSaveSession({
-      base: {presetName: preset.name, tags: newBaseTags},
+      base: {type: 'preset', presetName: preset.name, tags: newBaseTags},
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || '',
       solidSelection: preset.solidSelection,
