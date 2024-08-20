@@ -8,7 +8,7 @@ import {AssetKeyInput} from '../graphql/types';
 
 export function useWipeModal(
   opts: {assetKey: AssetKeyInput; repository: {location: {name: string}}} | null,
-  refresh: () => void,
+  refresh?: () => void,
 ) {
   const [showing, setShowing] = useState(false);
   const {

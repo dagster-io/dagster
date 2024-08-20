@@ -232,6 +232,7 @@ class FivetranConnectionMetadata(
             ("connector_id", str),
             ("connector_url", str),
             ("schemas", Mapping[str, Any]),
+            ("database", Optional[str]),
         ],
     )
 ):
@@ -253,7 +254,11 @@ class FivetranConnectionMetadata(
                         if table["enabled"]:
                             table_name = table["name_in_destination"]
                             schema_table_meta[f"{schema_name}.{table_name}"] = metadata_for_table(
-                                table, self.connector_url
+                                table,
+                                self.connector_url,
+                                database=self.database,
+                                schema=schema_name,
+                                table=table_name,
                             )
         else:
             schema_table_meta[self.name] = {}
@@ -369,6 +374,9 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         for group in groups:
             group_id = group["id"]
 
+            group_details = self._fivetran_instance.get_destination_details(group_id)
+            database = group_details.get("config", {}).get("database")
+
             connectors = self._fivetran_instance.make_request(
                 "GET", f"groups/{group_id}/connectors"
             )["items"]
@@ -393,6 +401,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                         connector_id=connector_id,
                         connector_url=connector_url,
                         schemas=schemas,
+                        database=database,
                     )
                 )
 

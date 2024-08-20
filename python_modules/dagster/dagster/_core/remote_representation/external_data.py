@@ -98,7 +98,7 @@ from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
-from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._time import datetime_from_timestamp
@@ -267,7 +267,7 @@ class ExternalPresetData(IHaveNew):
     old_fields={"is_job": True},
 )
 @record
-class ExternalJobData(LegacyNamedTupleMixin):
+class ExternalJobData:
     name: str
     job_snapshot: JobSnapshot
     active_presets: Sequence[ExternalPresetData]
@@ -279,7 +279,7 @@ class ExternalJobData(LegacyNamedTupleMixin):
     storage_field_names={"external_job_data": "external_pipeline_data"},
 )
 @record
-class ExternalJobSubsetResult(LegacyNamedTupleMixin):
+class ExternalJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
     external_job_data: Optional[ExternalJobData] = None
@@ -1011,6 +1011,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
     storage_field_names={
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
+        "description": "op_description",
     },
     field_serializers={
         "metadata": MetadataFieldSerializer,
@@ -1035,13 +1036,10 @@ class ExternalAssetNode(IHaveNew):
     code_version: Optional[str]
     node_definition_name: Optional[str]
     graph_name: Optional[str]
-    # op_description is a misleading name - this is the description for the asset, not for
-    # the op
-    op_description: Optional[str]
+    description: Optional[str]
     job_names: Sequence[str]
     partitions_def_data: Optional[ExternalPartitionsDefinitionData]
     output_name: Optional[str]
-    output_description: Optional[str]
     metadata: Mapping[str, MetadataValue]
     tags: Optional[Mapping[str, str]]
     group_name: str
@@ -1070,11 +1068,10 @@ class ExternalAssetNode(IHaveNew):
         code_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
-        op_description: Optional[str] = None,
+        description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
-        output_description: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
         tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
@@ -1144,11 +1141,10 @@ class ExternalAssetNode(IHaveNew):
             code_version=code_version,
             node_definition_name=node_definition_name,
             graph_name=graph_name,
-            op_description=op_description or output_description,
+            description=description,
             job_names=job_names or [],
             partitions_def_data=partitions_def_data,
             output_name=output_name,
-            output_description=output_description,
             metadata=metadata,
             tags=tags or {},
             # Newer code always passes a string group name when constructing these, but we assign
@@ -1473,7 +1469,7 @@ def external_asset_nodes_from_defs(
                 code_version=asset_node.code_version,
                 node_definition_name=node_definition_name,
                 graph_name=graph_name,
-                op_description=asset_node.description,
+                description=asset_node.description,
                 job_names=job_names,
                 partitions_def_data=(
                     external_partitions_definition_from_def(asset_node.partitions_def)

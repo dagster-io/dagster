@@ -3037,20 +3037,24 @@ export type PartitionRunsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type PartitionBackfill = {
+export type PartitionBackfill = RunsFeedEntry & {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
+  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
   assetSelection: Maybe<Array<AssetKey>>;
   cancelableRuns: Array<Run>;
+  creationTime: Scalars['Float']['output'];
   description: Maybe<Scalars['String']['output']>;
+  endTime: Maybe<Scalars['Float']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean']['output'];
   hasCancelPermission: Scalars['Boolean']['output'];
   hasResumePermission: Scalars['Boolean']['output'];
-  id: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
   isAssetBackfill: Scalars['Boolean']['output'];
   isValidSerialization: Scalars['Boolean']['output'];
+  jobName: Maybe<Scalars['String']['output']>;
   logEvents: InstigationEventConnection;
   numCancelable: Scalars['Int']['output'];
   numPartitions: Maybe<Scalars['Int']['output']>;
@@ -3061,7 +3065,9 @@ export type PartitionBackfill = {
   partitionStatuses: Maybe<PartitionStatuses>;
   partitionsTargetedForAssetKey: Maybe<AssetBackfillTargetPartitions>;
   reexecutionSteps: Maybe<Array<Scalars['String']['output']>>;
+  runStatus: RunStatus;
   runs: Array<Run>;
+  startTime: Maybe<Scalars['Float']['output']>;
   status: BulkActionStatus;
   tags: Array<PipelineTag>;
   timestamp: Scalars['Float']['output'];
@@ -3687,6 +3693,7 @@ export type Query = {
   runOrError: RunOrError;
   runTagKeysOrError: Maybe<RunTagKeysOrError>;
   runTagsOrError: Maybe<RunTagsOrError>;
+  runsFeedOrError: RunsFeedConnectionOrError;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -3898,6 +3905,11 @@ export type QueryRunTagsOrErrorArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   tagKeys?: InputMaybe<Array<Scalars['String']['input']>>;
   valuePrefix?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QueryRunsFeedOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit: Scalars['Int']['input'];
 };
 
 export type QueryRunsOrErrorArgs = {
@@ -4340,47 +4352,49 @@ export type ResumeBackfillSuccess = {
   backfillId: Scalars['String']['output'];
 };
 
-export type Run = PipelineRun & {
-  __typename: 'Run';
-  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
-  assetMaterializations: Array<MaterializationEvent>;
-  assetSelection: Maybe<Array<AssetKey>>;
-  assets: Array<Asset>;
-  canTerminate: Scalars['Boolean']['output'];
-  capturedLogs: CapturedLogs;
-  creationTime: Scalars['Float']['output'];
-  endTime: Maybe<Scalars['Float']['output']>;
-  eventConnection: EventConnection;
-  executionPlan: Maybe<ExecutionPlan>;
-  hasConcurrencyKeySlots: Scalars['Boolean']['output'];
-  hasDeletePermission: Scalars['Boolean']['output'];
-  hasReExecutePermission: Scalars['Boolean']['output'];
-  hasTerminatePermission: Scalars['Boolean']['output'];
-  hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
-  id: Scalars['ID']['output'];
-  jobName: Scalars['String']['output'];
-  mode: Scalars['String']['output'];
-  parentPipelineSnapshotId: Maybe<Scalars['String']['output']>;
-  parentRunId: Maybe<Scalars['String']['output']>;
-  pipeline: PipelineSnapshot | UnknownPipeline;
-  pipelineName: Scalars['String']['output'];
-  pipelineSnapshotId: Maybe<Scalars['String']['output']>;
-  repositoryOrigin: Maybe<RepositoryOrigin>;
-  resolvedOpSelection: Maybe<Array<Scalars['String']['output']>>;
-  rootConcurrencyKeys: Maybe<Array<Scalars['String']['output']>>;
-  rootRunId: Maybe<Scalars['String']['output']>;
-  runConfig: Scalars['RunConfigData']['output'];
-  runConfigYaml: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidSelection: Maybe<Array<Scalars['String']['output']>>;
-  startTime: Maybe<Scalars['Float']['output']>;
-  stats: RunStatsSnapshotOrError;
-  status: RunStatus;
-  stepKeysToExecute: Maybe<Array<Scalars['String']['output']>>;
-  stepStats: Array<RunStepStats>;
-  tags: Array<PipelineTag>;
-  updateTime: Maybe<Scalars['Float']['output']>;
-};
+export type Run = PipelineRun &
+  RunsFeedEntry & {
+    __typename: 'Run';
+    assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+    assetMaterializations: Array<MaterializationEvent>;
+    assetSelection: Maybe<Array<AssetKey>>;
+    assets: Array<Asset>;
+    canTerminate: Scalars['Boolean']['output'];
+    capturedLogs: CapturedLogs;
+    creationTime: Scalars['Float']['output'];
+    endTime: Maybe<Scalars['Float']['output']>;
+    eventConnection: EventConnection;
+    executionPlan: Maybe<ExecutionPlan>;
+    hasConcurrencyKeySlots: Scalars['Boolean']['output'];
+    hasDeletePermission: Scalars['Boolean']['output'];
+    hasReExecutePermission: Scalars['Boolean']['output'];
+    hasTerminatePermission: Scalars['Boolean']['output'];
+    hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
+    id: Scalars['ID']['output'];
+    jobName: Scalars['String']['output'];
+    mode: Scalars['String']['output'];
+    parentPipelineSnapshotId: Maybe<Scalars['String']['output']>;
+    parentRunId: Maybe<Scalars['String']['output']>;
+    pipeline: PipelineSnapshot | UnknownPipeline;
+    pipelineName: Scalars['String']['output'];
+    pipelineSnapshotId: Maybe<Scalars['String']['output']>;
+    repositoryOrigin: Maybe<RepositoryOrigin>;
+    resolvedOpSelection: Maybe<Array<Scalars['String']['output']>>;
+    rootConcurrencyKeys: Maybe<Array<Scalars['String']['output']>>;
+    rootRunId: Maybe<Scalars['String']['output']>;
+    runConfig: Scalars['RunConfigData']['output'];
+    runConfigYaml: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    runStatus: RunStatus;
+    solidSelection: Maybe<Array<Scalars['String']['output']>>;
+    startTime: Maybe<Scalars['Float']['output']>;
+    stats: RunStatsSnapshotOrError;
+    status: RunStatus;
+    stepKeysToExecute: Maybe<Array<Scalars['String']['output']>>;
+    stepStats: Array<RunStepStats>;
+    tags: Array<PipelineTag>;
+    updateTime: Maybe<Scalars['Float']['output']>;
+  };
 
 export type RunCapturedLogsArgs = {
   fileKey: Scalars['String']['input'];
@@ -4677,6 +4691,27 @@ export type Runs = PipelineRuns & {
   __typename: 'Runs';
   count: Maybe<Scalars['Int']['output']>;
   results: Array<Run>;
+};
+
+export type RunsFeedConnection = {
+  __typename: 'RunsFeedConnection';
+  cursor: Scalars['String']['output'];
+  hasMore: Scalars['Boolean']['output'];
+  results: Array<PartitionBackfill | Run>;
+};
+
+export type RunsFeedConnectionOrError = PythonError | RunsFeedConnection;
+
+export type RunsFeedEntry = {
+  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+  assetSelection: Maybe<Array<AssetKey>>;
+  creationTime: Scalars['Float']['output'];
+  endTime: Maybe<Scalars['Float']['output']>;
+  id: Scalars['ID']['output'];
+  jobName: Maybe<Scalars['String']['output']>;
+  runStatus: Maybe<RunStatus>;
+  startTime: Maybe<Scalars['Float']['output']>;
+  tags: Array<PipelineTag>;
 };
 
 export type RunsFilter = {
@@ -10580,14 +10615,21 @@ export const buildPartitionBackfill = (
         : relationshipsToOmit.has('AssetBackfillData')
         ? ({} as AssetBackfillData)
         : buildAssetBackfillData({}, relationshipsToOmit),
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     cancelableRuns:
       overrides && overrides.hasOwnProperty('cancelableRuns') ? overrides.cancelableRuns! : [],
+    creationTime:
+      overrides && overrides.hasOwnProperty('creationTime') ? overrides.creationTime! : 1.18,
     description:
       overrides && overrides.hasOwnProperty('description')
         ? overrides.description!
         : 'reprehenderit',
+    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 4.91,
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:
@@ -10606,13 +10648,17 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('hasResumePermission')
         ? overrides.hasResumePermission!
         : true,
-    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'recusandae',
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : 'f1a3860d-b771-4e91-ada6-719fa6fdc27f',
     isAssetBackfill:
       overrides && overrides.hasOwnProperty('isAssetBackfill') ? overrides.isAssetBackfill! : false,
     isValidSerialization:
       overrides && overrides.hasOwnProperty('isValidSerialization')
         ? overrides.isValidSerialization!
         : false,
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'est',
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!
@@ -10653,7 +10699,12 @@ export const buildPartitionBackfill = (
         : buildAssetBackfillTargetPartitions({}, relationshipsToOmit),
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
+    runStatus:
+      overrides && overrides.hasOwnProperty('runStatus')
+        ? overrides.runStatus!
+        : RunStatus.CANCELED,
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
+    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 9.35,
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
@@ -11924,6 +11975,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    runsFeedOrError:
+      overrides && overrides.hasOwnProperty('runsFeedOrError')
+        ? overrides.runsFeedOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runsOrError:
       overrides && overrides.hasOwnProperty('runsOrError')
         ? overrides.runsOrError!
@@ -12758,6 +12815,10 @@ export const buildRun = (
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'eveniet',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'fuga',
+    runStatus:
+      overrides && overrides.hasOwnProperty('runStatus')
+        ? overrides.runStatus!
+        : RunStatus.CANCELED,
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 2.52,
@@ -13297,6 +13358,51 @@ export const buildRuns = (
     __typename: 'Runs',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 319,
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildRunsFeedConnection = (
+  overrides?: Partial<RunsFeedConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunsFeedConnection'} & RunsFeedConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunsFeedConnection');
+  return {
+    __typename: 'RunsFeedConnection',
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'iure',
+    hasMore: overrides && overrides.hasOwnProperty('hasMore') ? overrides.hasMore! : false,
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildRunsFeedEntry = (
+  overrides?: Partial<RunsFeedEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunsFeedEntry'} & RunsFeedEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunsFeedEntry');
+  return {
+    __typename: 'RunsFeedEntry',
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    creationTime:
+      overrides && overrides.hasOwnProperty('creationTime') ? overrides.creationTime! : 5.76,
+    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 9.19,
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : '6d9ebb9a-e183-4642-b24f-468c247b375f',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'sed',
+    runStatus:
+      overrides && overrides.hasOwnProperty('runStatus')
+        ? overrides.runStatus!
+        : RunStatus.CANCELED,
+    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.94,
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 

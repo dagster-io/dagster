@@ -2,24 +2,21 @@ import {
   Box,
   Colors,
   FontFamily,
-  Heading,
   MiddleTruncate,
   Mono,
-  PageHeader,
   StyledRawCodeMirror,
   Subheading,
   Table,
 } from '@dagster-io/ui-components';
 import {ComponentProps, ReactNode, useMemo} from 'react';
-import {Link} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
+import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {CodeLocationTabs} from './CodeLocationTabs';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
 import {WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {LocationStatusEntryFragment} from '../workspace/types/WorkspaceQueries.types';
 
@@ -56,19 +53,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 
   return (
     <>
-      <PageHeader
-        title={
-          <Heading>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <div>
-                <Link to="/locations">Code locations</Link>
-              </div>
-              <div>/</div>
-              <div>{repoAddressAsHumanString(repoAddress)}</div>
-            </Box>
-          </Heading>
-        }
-      />
+      <CodeLocationPageHeader repoAddress={repoAddress} />
       <Box padding={{horizontal: 24}} border="bottom">
         <CodeLocationTabs selectedTab="overview" repoAddress={repoAddress} />
       </Box>

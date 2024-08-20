@@ -624,7 +624,7 @@ class Definitions(IHaveNew):
 
         Raises an error if any of the above are not true.
         """
-        defs.get_inner_repository()
+        defs.get_repository_def().load_all_definitions()
 
     @public
     @experimental

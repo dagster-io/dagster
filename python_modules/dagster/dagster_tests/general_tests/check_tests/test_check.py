@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -1650,6 +1651,8 @@ BUILD_CASES = [
     (TypeVar("T"), [Foo(), None], []),
     (Literal["apple"], ["apple"], ["banana"]),
     (Literal["apple", "manzana"], ["apple", "manzana"], ["banana"]),
+    (Callable, [lambda x: x, int], [4]),
+    (Callable[[], int], [lambda x: x, int], [4]),
     # fwd refs
     ("Foo", [Foo()], [Bar()]),
     (Optional["Foo"], [Foo()], [Bar()]),

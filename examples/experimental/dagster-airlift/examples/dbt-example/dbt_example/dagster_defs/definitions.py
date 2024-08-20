@@ -4,6 +4,7 @@ from pathlib import Path
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 from dagster_airlift.core.def_factory import defs_from_factories
 from dagster_airlift.dbt import DbtProjectDefs
+from dagster_dbt import DbtProject
 
 from dbt_example.dagster_defs.csv_to_duckdb_defs import CSVToDuckdbDefs
 
@@ -43,8 +44,8 @@ defs = build_defs_from_airflow_instance(
         ),
         DbtProjectDefs(
             name="dbt_dag__build_dbt_models",
-            dbt_project_path=dbt_project_path(),
-            group="dbt",
+            dbt_manifest=dbt_project_path() / "target" / "manifest.json",
+            project=DbtProject(project_dir=dbt_project_path()),
         ),
     ),
 )

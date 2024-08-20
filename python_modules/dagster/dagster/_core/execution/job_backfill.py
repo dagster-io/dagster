@@ -6,7 +6,7 @@ import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterBackfillFailedError
+from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -108,6 +108,7 @@ def execute_job_backfill_iteration(
                 logger.info(
                     f"Backfill {backfill.backfill_id} has unfinished runs. Status will be updated when all runs are finished."
                 )
+                instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
                 return
             partition_names = cast(Sequence[str], backfill.partition_names)
             logger.info(
@@ -173,6 +174,7 @@ def _get_partitions_chunk(
 ) -> Tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
     partition_names = cast(Sequence[str], backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
+    backfill_policy = partition_set.backfill_policy
 
     if (
         backfill_job.last_submitted_partition_name
@@ -185,7 +187,40 @@ def _get_partitions_chunk(
     backfill_runs = instance.get_runs(
         RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
     )
-    completed_partitions = set([run.tags.get(PARTITION_NAME_TAG) for run in backfill_runs])
+    # fetching the partitions def of a legacy dynamic partitioned op-job will raise an error
+    # so guard against it by checking if the partitions def exists first
+    partitions_def = (
+        partition_set.get_partitions_definition()
+        if partition_set.has_partitions_definition()
+        else None
+    )
+    completed_partitions = []
+    for run in backfill_runs:
+        if (
+            run.tags.get(ASSET_PARTITION_RANGE_START_TAG)
+            and run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+            and run.tags.get(PARTITION_NAME_TAG) is None
+            and partitions_def is not None
+        ):
+            if partitions_def is None:
+                # We should not hit this case, since all PartitionsDefinitions that can be put on
+                # assets are fetchable via the ExternalPartitionSet. However, we do this check so that
+                # we only fetch the partitions def once before the loop
+                raise DagsterInvariantViolationError(
+                    f"Cannot access PartitionsDefinition for backfill {backfill_job.backfill_id}. "
+                )
+            completed_partitions.extend(
+                partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(
+                        start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
+                        end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
+                    ),
+                    instance,
+                )
+            )
+        elif run.tags.get(PARTITION_NAME_TAG):
+            completed_partitions.append(run.tags[PARTITION_NAME_TAG])
+
     initial_checkpoint = (
         partition_names.index(checkpoint) + 1 if checkpoint and checkpoint in partition_names else 0
     )
@@ -194,10 +229,14 @@ def _get_partitions_chunk(
         # no more partitions to submit, return early
         return [], checkpoint or "", False
 
-    backfill_policy = partition_set.backfill_policy
     if backfill_policy and backfill_policy.max_partitions_per_run != 1:
+        to_submit = [
+            partition_name
+            for partition_name in partition_names
+            if partition_name not in completed_partitions
+        ]
         partitions_def = partition_set.get_partitions_definition()
-        partitions_subset = partitions_def.subset_with_partition_keys(partition_names)
+        partitions_subset = partitions_def.subset_with_partition_keys(to_submit)
         partition_key_ranges = partitions_subset.get_partition_key_ranges(
             partitions_def, dynamic_partitions_store=instance
         )
@@ -210,7 +249,7 @@ def _get_partitions_chunk(
         ]
         ranges_to_launch = subdivided_ranges[:chunk_size]
         has_more = chunk_size < len(subdivided_ranges)
-        next_checkpoint = ranges_to_launch[-1].end
+        next_checkpoint = ranges_to_launch[-1].end if len(ranges_to_launch) > 0 else checkpoint
         to_submit = ranges_to_launch
     else:
         has_more = chunk_size < len(partition_names)
@@ -227,7 +266,7 @@ def _get_partitions_chunk(
             if partition_name not in completed_partitions
         ]
 
-    return to_submit, next_checkpoint, has_more
+    return to_submit, next_checkpoint or "", has_more
 
 
 def submit_backfill_runs(

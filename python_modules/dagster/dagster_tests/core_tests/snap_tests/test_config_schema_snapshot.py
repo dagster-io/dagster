@@ -30,7 +30,7 @@ def test_enum_snap():
     assert enum_snap.key == "CowboyType"
     assert enum_snap.kind == ConfigTypeKind.ENUM
     assert enum_snap.enum_values == [
-        ConfigEnumValueSnap(value, description=None) for value in ["good", "bad", "ugly"]
+        ConfigEnumValueSnap(value=value, description=None) for value in ["good", "bad", "ugly"]
     ]
     assert enum_snap.fields is None
 

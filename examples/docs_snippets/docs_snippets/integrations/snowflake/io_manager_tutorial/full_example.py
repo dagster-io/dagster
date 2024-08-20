@@ -1,9 +1,9 @@
 import pandas as pd
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions, EnvVar, SourceAsset, asset
+from dagster import AssetSpec, Definitions, EnvVar, asset
 
-iris_harvest_data = SourceAsset(key="iris_harvest_data")
+iris_harvest_data = AssetSpec(key="iris_harvest_data")
 
 
 @asset

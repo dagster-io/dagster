@@ -1371,7 +1371,7 @@ type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   valueRep: String
 }
 
-type Run implements PipelineRun {
+type Run implements PipelineRun & RunsFeedEntry {
   id: ID!
   runId: String!
   pipelineSnapshotId: String
@@ -1395,14 +1395,15 @@ type Run implements PipelineRun {
   canTerminate: Boolean!
   assets: [Asset!]!
   eventConnection(afterCursor: String, limit: Int): EventConnection!
-  parentPipelineSnapshotId: String
-  assetSelection: [AssetKey!]
-  assetCheckSelection: [AssetCheckhandle!]
-  resolvedOpSelection: [String!]
-  assetMaterializations: [MaterializationEvent!]!
+  runStatus: RunStatus!
   creationTime: Float!
   startTime: Float
   endTime: Float
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
+  parentPipelineSnapshotId: String
+  resolvedOpSelection: [String!]
+  assetMaterializations: [MaterializationEvent!]!
   updateTime: Float
   hasReExecutePermission: Boolean!
   hasTerminatePermission: Boolean!
@@ -1410,6 +1411,18 @@ type Run implements PipelineRun {
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
   hasUnconstrainedRootNodes: Boolean!
+}
+
+interface RunsFeedEntry {
+  id: ID!
+  runStatus: RunStatus
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
 }
 
 type AssetCheckhandle {
@@ -2756,8 +2769,16 @@ type PartitionRun {
   run: Run
 }
 
-type PartitionBackfill {
-  id: String!
+type PartitionBackfill implements RunsFeedEntry {
+  id: ID!
+  runStatus: RunStatus!
+  creationTime: Float!
+  startTime: Float
+  endTime: Float
+  tags: [PipelineTag!]!
+  jobName: String
+  assetSelection: [AssetKey!]
+  assetCheckSelection: [AssetCheckhandle!]
   status: BulkActionStatus!
   partitionNames: [String!]
   isValidSerialization: Boolean!
@@ -2765,7 +2786,6 @@ type PartitionBackfill {
   numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]
-  assetSelection: [AssetKey!]
   partitionSetName: String
   timestamp: Float!
   endTimestamp: Float
@@ -2782,7 +2802,6 @@ type PartitionBackfill {
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
   user: String
-  tags: [PipelineTag!]!
   title: String
   description: String
   logEvents(cursor: String): InstigationEventConnection!
@@ -3216,6 +3235,7 @@ type Query {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
+  runsFeedOrError(limit: Int!, cursor: String): RunsFeedConnectionOrError!
   runTagKeysOrError: RunTagKeysOrError
   runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runIdsOrError(filter: RunsFilter, cursor: String, limit: Int): RunIdsOrError!
@@ -3368,6 +3388,14 @@ type EnvVarConsumer {
 
 enum EnvVarConsumerType {
   RESOURCE
+}
+
+union RunsFeedConnectionOrError = RunsFeedConnection | PythonError
+
+type RunsFeedConnection {
+  results: [RunsFeedEntry!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 union RunTagKeysOrError = PythonError | RunTagKeys

@@ -12,14 +12,17 @@ from dagster import (
     DailyPartitionsDefinition,
     Definitions,
     DependencyDefinition,
+    DimensionPartitionMapping,
     FreshnessPolicy,
     Jitter,
     LastPartitionMapping,
+    MultiPartitionMapping,
     NodeInvocation,
     OpDefinition,
     PartitionMapping,
     PartitionsDefinition,
     RetryPolicy,
+    StaticPartitionMapping,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
@@ -467,6 +470,18 @@ def test_with_asset_key_replacements(test_jaffle_shop_manifest: Dict[str, Any]) 
         None,
         LastPartitionMapping(),
         TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+        MultiPartitionMapping(
+            {
+                "abc": DimensionPartitionMapping(
+                    dimension_name="123",
+                    partition_mapping=StaticPartitionMapping({"a": "1", "b": "2", "c": "3"}),
+                ),
+                "weekly": DimensionPartitionMapping(
+                    dimension_name="daily",
+                    partition_mapping=TimeWindowPartitionMapping(),
+                ),
+            }
+        ),
     ],
 )
 def test_with_partition_mappings(

@@ -824,7 +824,7 @@ class ExternalSchedule:
             self._external_schedule_data.name,
         )
 
-    @property
+    @cached_property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
@@ -974,7 +974,7 @@ class ExternalSensor:
             self._external_sensor_data.name,
         )
 
-    @property
+    @cached_property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
@@ -1084,6 +1084,12 @@ class ExternalPartitionSet:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
+        return self._external_partition_set_data.external_partitions_data is not None
+
+    def has_partitions_definition(self) -> bool:
+        # Partition sets from older versions of Dagster as well as partition sets using
+        # a DynamicPartitionsDefinition require calling out to user code to get the
+        # partitions definition
         return self._external_partition_set_data.external_partitions_data is not None
 
     def get_partitions_definition(self) -> PartitionsDefinition:

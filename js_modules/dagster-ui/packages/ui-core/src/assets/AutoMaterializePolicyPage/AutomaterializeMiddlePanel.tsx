@@ -173,7 +173,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
                       Manage sensor
                     </AnchorButton>
                   </div>
-                  <a href="https://docs.dagster.io/concepts/assets/declarative-automation">
+                  <a href="https://docs.dagster.io/concepts/automation/declarative-automation">
                     Learn more about declarative automation
                   </a>
                 </Box>

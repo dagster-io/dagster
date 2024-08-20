@@ -46,6 +46,7 @@ from ..logs.events import (
 )
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..runs import GrapheneRunConfigData
+from ..runs_feed import GrapheneRunsFeedEntry
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
 from ..solids import (
@@ -327,6 +328,10 @@ class GrapheneRun(graphene.ObjectType):
     parentPipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
     status = graphene.NonNull(GrapheneRunStatus)
+    runStatus = graphene.Field(
+        graphene.NonNull(GrapheneRunStatus),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of status.",
+    )
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
@@ -364,7 +369,7 @@ class GrapheneRun(graphene.ObjectType):
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
 
     class Meta:
-        interfaces = (GraphenePipelineRun,)
+        interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
         name = "Run"
 
     def __init__(self, record: RunRecord):
@@ -373,6 +378,7 @@ class GrapheneRun(graphene.ObjectType):
         super().__init__(
             runId=dagster_run.run_id,
             status=dagster_run.status.value,
+            runStatus=dagster_run.status.value,
             mode=DEFAULT_MODE_NAME,
         )
         self.dagster_run = dagster_run
@@ -391,6 +397,10 @@ class GrapheneRun(graphene.ObjectType):
             if location_name
             else graphene_info.context.has_permission(permission)
         )
+
+    @property
+    def creation_timestamp(self) -> float:
+        return self._run_record.create_timestamp.timestamp()
 
     def resolve_hasReExecutePermission(self, graphene_info: ResolveInfo):
         return self._get_permission_value(Permissions.LAUNCH_PIPELINE_REEXECUTION, graphene_info)
@@ -566,7 +576,7 @@ class GrapheneRun(graphene.ObjectType):
         return self._run_record.update_timestamp.timestamp()
 
     def resolve_creationTime(self, graphene_info: ResolveInfo):
-        return self._run_record.create_timestamp.timestamp()
+        return self.creation_timestamp
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance

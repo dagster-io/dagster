@@ -18,6 +18,7 @@ import {
   SearchResultType,
   isAssetFilterSearchResultType,
 } from './types';
+import {assertUnreachable} from '../app/Util';
 import {isCanonicalComputeKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
 import {KNOWN_TAGS, TagIcon} from '../graph/OpTags';
 
@@ -54,8 +55,12 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'tag';
     case AssetFilterSearchResultType.StorageKind:
       return 'storage_kind';
-    default:
+    case SearchResultType.Page:
       return 'source';
+    case AssetFilterSearchResultType.Column:
+      return 'view_column';
+    default:
+      assertUnreachable(type);
   }
 };
 
@@ -73,8 +78,10 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Group';
     case AssetFilterSearchResultType.StorageKind:
       return 'Storage kind';
+    case AssetFilterSearchResultType.Column:
+      return 'Column';
     default:
-      return '';
+      assertUnreachable(type);
   }
 };
 
