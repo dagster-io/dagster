@@ -1,8 +1,0 @@
-extends: existence
-message: "Use standard single quotes or double quotes only. Do not use left or right quotes."
-level: warning
-ignorecase: true
-link: https://docs.gitlab.com/ee/development/documentation/styleguide/index.html#punctuation
-scope: raw
-raw:
-  - '[‘’“”]'
