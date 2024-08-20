@@ -10,6 +10,7 @@ import {CodeLocationDefinitionsRoot} from '../CodeLocationDefinitionsRoot';
 import {
   buildSampleOpsRootQuery,
   buildSampleRepository,
+  buildSampleRepositoryAssetsQuery,
   buildSampleRepositoryGraphsQuery,
 } from '../__fixtures__/CodeLocationPages.fixtures';
 
@@ -37,6 +38,7 @@ export const Default = () => {
     () => [
       buildSampleOpsRootQuery({repoAddress, opCount: 500}),
       buildSampleRepositoryGraphsQuery({repoAddress, jobCount: 500, opCount: 500}),
+      buildSampleRepositoryAssetsQuery({repoAddress, groupCount: 10, assetsPerGroup: 100}),
     ],
     [repoAddress],
   );

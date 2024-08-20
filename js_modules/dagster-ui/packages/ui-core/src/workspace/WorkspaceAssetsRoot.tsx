@@ -1,8 +1,9 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {REPO_ASSET_TABLE_FRAGMENT, VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
+import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
+import {WORKSPACE_ASSETS_QUERY} from './WorkspaceAssetsQuery';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -10,8 +11,7 @@ import {RepoAddress} from './types';
 import {
   WorkspaceAssetsQuery,
   WorkspaceAssetsQueryVariables,
-} from './types/WorkspaceAssetsRoot.types';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+} from './types/WorkspaceAssetsQuery.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetSearch} from '../assets/useAssetSearch';
@@ -120,22 +120,3 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
     </Box>
   );
 };
-
-const WORKSPACE_ASSETS_QUERY = gql`
-  query WorkspaceAssetsQuery($selector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $selector) {
-      ... on Repository {
-        id
-        name
-        assetNodes {
-          id
-          ...RepoAssetTableFragment
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${REPO_ASSET_TABLE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
