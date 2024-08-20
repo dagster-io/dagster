@@ -279,16 +279,23 @@ class DuckDbClient(DbClient):
     @staticmethod
     @contextmanager
     def connect(context, _):
+        config = context.resource_config["connection_config"]
+
+        # support for `custom_user_agent` was added in v1.0.0
+        # https://github.com/duckdb/duckdb/commit/0c66b6007b736ed2197bca54d20c9ad9a5eeef46
+        if duckdb.__version__ > "1.0.0":
+            config = {
+                "custom_user_agent": "dagster",
+                **config,
+            }
+
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
             kwargs={
                 "database": context.resource_config["database"],
                 "read_only": False,
-                "config": {
-                    "custom_user_agent": "dagster",
-                    **context.resource_config["connection_config"],
-                },
+                "config": config,
             },
             max_retries=10,
         )
