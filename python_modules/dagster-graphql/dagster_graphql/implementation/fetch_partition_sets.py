@@ -13,7 +13,7 @@ from dagster._core.storage.tags import (
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     TagType,
-    get_tag_type,
+    get_run_tag_type,
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
@@ -159,7 +159,7 @@ def get_partition_tags(
         results=[
             GraphenePipelineTag(key=key, value=value)
             for key, value in result.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
+            if get_run_tag_type(key) != TagType.HIDDEN
         ]
     )
 

@@ -101,10 +101,22 @@ class TagType(Enum):
     HIDDEN = "HIDDEN"
 
 
-def get_tag_type(tag):
+def get_run_tag_type(tag: str) -> TagType:
+    """Get the tag type for a run tag."""
     if tag.startswith(SYSTEM_TAG_PREFIX):
         return TagType.SYSTEM
     elif tag.startswith(HIDDEN_TAG_PREFIX):
+        return TagType.HIDDEN
+    else:
+        return TagType.USER_PROVIDED
+
+
+def get_definition_tag_type(tag: str) -> TagType:
+    """Get the tag type for a definition tag, such as an asset tag."""
+    # Though some definition tags may use the dagster/ prefix, in many cases they are
+    # user-provided and should be treated as such. The namespace here is used for standard
+    # tags rather than a system indicator.
+    if tag.startswith(HIDDEN_TAG_PREFIX):
         return TagType.HIDDEN
     else:
         return TagType.USER_PROVIDED

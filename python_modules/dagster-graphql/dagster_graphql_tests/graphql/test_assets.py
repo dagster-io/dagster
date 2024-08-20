@@ -718,6 +718,22 @@ GET_ASSET_BACKFILL_POLICY = """
     }
 """
 
+GET_TAGS = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                assetKey {
+                    path
+                }
+                tags {
+                    key
+                    value
+                }
+            }
+        }
+    }
+"""
+
 GET_TARGETING_INSTIGATORS = """
     query AssetNodeQuery($assetKey: AssetKeyInput!) {
         assetNodeOrError(assetKey: $assetKey) {
@@ -2559,6 +2575,18 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
+
+    def test_tags(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_TAGS,
+            variables={
+                "assetKey": {"path": ["fresh_diamond_bottom"]},
+            },
+        )
+
+        fresh_diamond_bottom = result.data["assetNodeOrError"]
+        assert fresh_diamond_bottom["tags"] == [{"key": "dagster/foo", "value": "asdf"}]
 
     def test_has_asset_checks(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(graphql_context, HAS_ASSET_CHECKS)

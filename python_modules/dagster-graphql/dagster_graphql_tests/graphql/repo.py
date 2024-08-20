@@ -1753,6 +1753,10 @@ def fresh_diamond_right(fresh_diamond_top):
 @asset(
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
     auto_materialize_policy=AutoMaterializePolicy.lazy(),
+    tags={
+        "dagster/foo": "asdf",
+        ".dagster/bar": "qwer",
+    },
 )
 def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
     return fresh_diamond_left + fresh_diamond_right

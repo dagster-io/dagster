@@ -22,7 +22,7 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
 )
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_run_tag_type
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -499,7 +499,7 @@ class GrapheneRunRequest(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._run_request.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
+            if get_run_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_runConfigYaml(self, _graphene_info: ResolveInfo):

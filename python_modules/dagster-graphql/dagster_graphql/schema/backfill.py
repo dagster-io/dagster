@@ -24,7 +24,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     TagType,
-    get_tag_type,
+    get_run_tag_type,
 )
 from dagster._core.workspace.permissions import Permissions
 
@@ -508,7 +508,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._backfill_job.tags.items()
-            if get_tag_type(key) != TagType.HIDDEN
+            if get_run_tag_type(key) != TagType.HIDDEN
         ]
 
     def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
