@@ -151,6 +151,13 @@ def partitioned_assets_repository():
 
 
 @repository
+def column_schema_repository():
+    from . import column_schema
+
+    return [load_assets_from_modules([column_schema])]
+
+
+@repository
 def table_metadata_repository():
     from . import table_metadata
 
