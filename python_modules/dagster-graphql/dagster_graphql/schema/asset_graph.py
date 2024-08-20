@@ -297,6 +297,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     tags = non_null_list(GrapheneDefinitionTag)
+    kinds = non_null_list(graphene.String)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
     opNames = non_null_list(graphene.String)
@@ -1210,6 +1211,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneDefinitionTag(key, value)
             for key, value in (self._external_asset_node.tags or {}).items()
         ]
+
+    def resolve_kinds(self, _graphene_info: ResolveInfo) -> Sequence[str]:
+        kinds = list(self.external_asset_node.kinds)
+        if self._external_asset_node.compute_kind:
+            return list({self._external_asset_node.compute_kind, *kinds})
+        return list(kinds)
 
     def resolve_op(
         self, _graphene_info: ResolveInfo

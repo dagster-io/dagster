@@ -1044,6 +1044,7 @@ class ExternalAssetNode(IHaveNew):
     output_description: Optional[str]
     metadata: Mapping[str, MetadataValue]
     tags: Optional[Mapping[str, str]]
+    kinds: Sequence[str]
     group_name: str
     freshness_policy: Optional[FreshnessPolicy]
     is_source: bool
@@ -1077,6 +1078,7 @@ class ExternalAssetNode(IHaveNew):
         output_description: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        kinds: Optional[Sequence[str]] = None,
         group_name: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         is_source: Optional[bool] = None,
@@ -1150,6 +1152,7 @@ class ExternalAssetNode(IHaveNew):
             output_name=output_name,
             output_description=output_description,
             metadata=metadata,
+            kinds=kinds or [],
             tags=tags or {},
             # Newer code always passes a string group name when constructing these, but we assign
             # the default here for backcompat.
@@ -1483,6 +1486,7 @@ def external_asset_nodes_from_defs(
                 output_name=output_name,
                 metadata=asset_node.metadata,
                 tags=asset_node.tags,
+                kinds=list(asset_node.kinds),
                 group_name=asset_node.group_name,
                 freshness_policy=asset_node.freshness_policy,
                 is_source=asset_node.is_external,

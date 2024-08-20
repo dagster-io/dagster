@@ -1758,6 +1758,17 @@ def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
     return fresh_diamond_left + fresh_diamond_right
 
 
+@multi_asset(
+    specs=[
+        AssetSpec(key="first_kinds_key", kinds={"python", "airflow"}),
+        AssetSpec(key="second_kinds_key", kinds={"python"}),
+    ],
+    compute_kind="dbt",
+)
+def multi_asset_with_kinds():
+    return 1
+
+
 fresh_diamond_assets_job = define_asset_job(
     "fresh_diamond_assets_job", AssetSelection.assets(fresh_diamond_bottom).upstream()
 )
@@ -2071,6 +2082,7 @@ def define_assets():
         ungrouped_asset_3,
         grouped_asset_4,
         ungrouped_asset_5,
+        multi_asset_with_kinds,
     ]
 
 

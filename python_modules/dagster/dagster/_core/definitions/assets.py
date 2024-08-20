@@ -1762,6 +1762,7 @@ def _asset_specs_from_attr_key_params(
                     skippable=False,
                     auto_materialize_policy=None,
                     partitions_def=None,
+                    kinds=None,
                 )
             )
 

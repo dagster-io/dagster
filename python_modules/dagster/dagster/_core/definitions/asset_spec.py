@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -67,6 +67,7 @@ class AssetExecutionType(Enum):
 
 @experimental_param(param="owners")
 @experimental_param(param="tags")
+@experimental_param(param="kinds")
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
@@ -82,6 +83,7 @@ class AssetSpec(
             ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("owners", PublicAttr[Sequence[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
+            ("kinds", PublicAttr[Set[str]]),
             ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
         ],
     ),
@@ -114,6 +116,8 @@ class AssetSpec(
             e.g. `team:finops`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
+        kinds: (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
+            will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
     """
@@ -132,6 +136,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        kinds: Optional[Set[str]] = None,
         # TODO: FOU-243
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
@@ -166,6 +171,7 @@ class AssetSpec(
             ),
             owners=owners,
             tags=validate_tags_strict(tags) or {},
+            kinds=check.opt_set_param(kinds, "kinds", of_type=str),
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
@@ -185,6 +191,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
+        kinds: Optional[Set[str]],
         auto_materialize_policy: Optional[AutoMaterializePolicy],
         partitions_def: Optional[PartitionsDefinition],
     ) -> "AssetSpec":
@@ -201,6 +208,7 @@ class AssetSpec(
             automation_condition=automation_condition,
             owners=owners,
             tags=tags,
+            kinds=kinds,
             partitions_def=partitions_def,
         )
 
