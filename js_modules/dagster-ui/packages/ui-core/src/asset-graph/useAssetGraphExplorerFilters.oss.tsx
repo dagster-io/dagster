@@ -1,6 +1,4 @@
-import React from 'react';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
-import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {AssetGraphFilterBar} from './AssetGraphFilterBar';
 import {GraphNode} from './Utils';
@@ -10,7 +8,6 @@ type Props = {
   clearExplorerPath: () => void;
   explorerPath: string;
   isGlobalGraph: boolean;
-  assetFilterState?: AssetFilterState;
   loading: boolean;
 };
 
@@ -21,16 +18,23 @@ export function useAssetGraphExplorerFilters({
   loading,
   clearExplorerPath,
 }: Props) {
-  const {filterButton, computeKindFilter, storageKindFilter, activeFiltersJsx, filterFn} =
-    useAssetCatalogFiltering({
-      assets: nodes,
-      includeRepos: isGlobalGraph,
-      loading,
-    });
+  const {
+    filterButton,
+    computeKindFilter,
+    storageKindFilter,
+    groupsFilter,
+    activeFiltersJsx,
+    filterFn,
+  } = useAssetCatalogFiltering({
+    assets: nodes,
+    includeRepos: isGlobalGraph,
+    loading,
+  });
 
   return {
     computeKindTagsFilter: computeKindFilter,
     storageKindTagsFilter: storageKindFilter,
+    groupsFilter,
     button: filterButton,
     filterFn,
     activeFiltersJsx,
