@@ -3,8 +3,8 @@ from setuptools import find_packages, setup
 setup(
     name="dagster-sphinx",
     version="0.0.1",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Dagster-specific sphinx extension.",
     url="https://github.com/dagster-io/dagster",
@@ -19,5 +19,6 @@ setup(
     install_requires=[
         "sphinx",
         "sphinx_toolbox",
+        "dagster",
     ],
 )
