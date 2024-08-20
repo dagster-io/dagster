@@ -20,6 +20,5 @@ swap:
   "[Nn]ode[.]?[Jj][Ss]": "Node.js"
   python: "Python"
   pythonic: "Pythonic"
-  react: "React"
   sql: "SQL"
   "[Tt]ypescript": "TypeScript"

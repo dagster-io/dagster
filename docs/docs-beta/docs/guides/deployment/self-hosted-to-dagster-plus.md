@@ -1,6 +1,4 @@
 ---
-title: "Migrating from self-hosted to Dagster+"
-sidebar_position: 7
+title: "Migrate from self-hosted to Dagster+"
+sidebar_position: 70
 ---
-
-# Migrating from self-hosted to Dagster+

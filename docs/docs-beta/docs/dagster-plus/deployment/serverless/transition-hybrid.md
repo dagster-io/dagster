@@ -4,4 +4,4 @@ displayed_sidebar: "dagsterPlus"
 sidebar_position: 50
 ---
 
-# Transitioning from Serverless to Hybrid
+# Transition from Serverless to Hybrid

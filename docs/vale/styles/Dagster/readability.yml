@@ -1,8 +1,0 @@
-extends: metric
-message: "Try to keep the Automated Readability Index (%s) below 8."
-link: https://en.wikipedia.org/wiki/Automated_readability_index
-
-formula: |
-  (4.71 * (characters / words)) + (0.5 * (words / sentences)) - 21.43
-
-condition: "> 8"

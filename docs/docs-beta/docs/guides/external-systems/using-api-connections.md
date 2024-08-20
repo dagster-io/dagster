@@ -1,6 +1,4 @@
 ---
-title: "Using API connections"
-sidebar_position: 2
+title: "Use API connections"
+sidebar_position: 20
 ---
-
-# Using API connections
