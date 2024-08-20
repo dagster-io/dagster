@@ -1,0 +1,26 @@
+extends: substitution
+message: Use '%s' instead of '%s' when referring to a Dagster UI component or page.
+level: warning
+ignorecase: false
+action:
+  name: replace
+# swap maps tokens in form of bad: good
+swap:
+# Page titles
+  asset catalog: &ac-title "Asset catalog"
+  Asset Catalog: *ac-title
+  asset details: &ad-title "Asset details"
+  Asset Details: *ad-title
+  asset health: &ah-title "Asset health"
+  Asset Health: *ah-title
+  Global Asset Lineage: "Global asset lineage"
+  job details: &jd-title "Job details"
+  Job Details: *jd-title
+  resource details: &res-title "Resource details"
+  Resource Details: *res-title
+  run details: &rd-title "Run details"
+  Run Details: *rd-title
+  schedule details: &sd-title "Schedule details"
+  Schedule Details: *sd-title
+  sensor details: &sn-title "Sensor details"
+  Sensor Details: *sn-title
