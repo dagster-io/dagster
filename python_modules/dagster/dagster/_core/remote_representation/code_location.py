@@ -875,20 +875,38 @@ class GrpcServerCodeLocation(CodeLocation):
         job_name: str,
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> "ExternalPartitionNamesData":
+    ) -> Union[ExternalPartitionNamesData, "ExternalPartitionExecutionErrorData"]:
         external_repo = self.get_repository(repository_handle.repository_name)
         partition_set_name = external_partition_set_name_for_job_name(job_name)
 
-        # Prefer to return the names without calling out to user code if there's a corresponding
-        # partition set that allows it
         if external_repo.has_external_partition_set(partition_set_name):
             external_partition_set = external_repo.get_external_partition_set(partition_set_name)
 
+            # Prefer to return the names without calling out to user code if there's a corresponding
+            # partition set that allows it
             if external_partition_set.has_partition_name_data():
                 return ExternalPartitionNamesData(
                     partition_names=external_partition_set.get_partition_names(instance=instance)
                 )
+            else:
+                return self._get_external_partition_names_from_code_server(
+                    repository_handle, job_name, selected_asset_keys
+                )
+        else:
+            # Asset jobs might have no corresponding partition set but still have partitioned
+            # assets, so we get the partition names using the assets.
+            return ExternalPartitionNamesData(
+                partition_names=external_repo.get_partition_names_for_asset_job(
+                    job_name=job_name, selected_asset_keys=selected_asset_keys, instance=instance
+                )
+            )
 
+    def _get_external_partition_names_from_code_server(
+        self,
+        repository_handle: RepositoryHandle,
+        job_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ) -> Union[ExternalPartitionNamesData, "ExternalPartitionExecutionErrorData"]:
         return sync_get_external_partition_names_grpc(
             self.client, repository_handle, job_name, selected_asset_keys
         )
