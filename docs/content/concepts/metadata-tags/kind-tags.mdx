@@ -1,0 +1,38 @@
+---
+title: "Kind Tags | Dagster Docs"
+description: "Use kind tags to easily categorize assets within you Dagster project."
+---
+
+# Kind Tags
+
+Kind tags can help you quickly identify the underlying system or technology used for a given asset in the Dagster UI. These tags allow you to organize assets within a Dagster project and can be used to filter or search across all your assets.
+
+## Adding Compute Kinds to assets
+
+You can add a tag to any asset by providing a value to the `compute_kind` argument.
+
+```python
+@asset(compute_kind="dbt")
+def my_asset():
+    pass
+```
+
+In the Dagster UI, a kind tag will appear on the asset. <Image src="/images/concepts/metadata-tags/kinds/kind-tag.png" width={1039} height={484} />
+
+## Supported Icons
+
+Some kinds are given a branded icon in the UI. We currently support nearly 200 unique technology icons.
+
+<Image
+src="/images/concepts/metadata-tags/kinds/icons/tool-airbyte-color.svg"
+width={20}
+height={20}
+/>
+
+    </tbody>
+
+</table>
+
+## Requesting additional icons
+
+The kinds icon pack is open source and anyone can <a href="/community/contributing"> contribute new icons</a> to the public repo or request a new icon by <a href="https://github.com/dagster-io/dagster/issues/new?assignees=&labels=type%3A+feature-request&projects=&template=request_a_feature.yml">filing an issue</a>. Custom icons per deployment are not currently supported.
