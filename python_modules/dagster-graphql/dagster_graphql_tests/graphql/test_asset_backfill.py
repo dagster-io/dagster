@@ -497,7 +497,7 @@ def test_launch_asset_backfill():
             assert backfill_results[0]["partitionSet"] is None
             assert backfill_results[0]["partitionSetName"] is None
             assert set(backfill_results[0]["partitionNames"]) == {"a", "b"}
-            assert backfill_results[0]["runStatus"] == "NOT_STARTED"
+            assert backfill_results[0]["runStatus"] == "QUEUED"
 
             # on PartitionBackfill
             single_backfill_result = execute_dagster_graphql(
@@ -508,10 +508,7 @@ def test_launch_asset_backfill():
             assert (
                 single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
             )
-            assert (
-                single_backfill_result.data["partitionBackfillOrError"]["runStatus"]
-                == "NOT_STARTED"
-            )
+            assert single_backfill_result.data["partitionBackfillOrError"]["runStatus"] == "QUEUED"
 
 
 def test_remove_partitions_defs_after_backfill_backcompat():
@@ -627,10 +624,7 @@ def test_remove_partitions_defs_after_backfill():
             assert (
                 single_backfill_result.data["partitionBackfillOrError"]["partitionStatuses"] is None
             )
-            assert (
-                single_backfill_result.data["partitionBackfillOrError"]["runStatus"]
-                == "NOT_STARTED"
-            )
+            assert single_backfill_result.data["partitionBackfillOrError"]["runStatus"] == "QUEUED"
 
 
 def test_launch_asset_backfill_with_non_partitioned_asset():
@@ -723,7 +717,7 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
             assert backfill_results[0]["partitionSet"] is None
             assert backfill_results[0]["partitionSetName"] is None
             assert backfill_results[0]["partitionNames"] is None
-            assert backfill_results[0]["runStatus"] == "NOT_STARTED"
+            assert backfill_results[0]["runStatus"] == "QUEUED"
 
 
 def get_daily_two_hourly_repo() -> RepositoryDefinition:

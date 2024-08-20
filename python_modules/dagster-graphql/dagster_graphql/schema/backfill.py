@@ -503,7 +503,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if converted_status is BulkActionStatus.REQUESTED:
             # if no runs have been launched:
             if len(self._get_records(_graphene_info)) == 0:
-                return GrapheneRunStatus.NOT_STARTED  # GrapheneRunStatus.QUEUED?
+                return GrapheneRunStatus.QUEUED
             return GrapheneRunStatus.STARTED
         # BulkActionStatus.COMPLETED
         sub_runs = self._get_records(_graphene_info)
