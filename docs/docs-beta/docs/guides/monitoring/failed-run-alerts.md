@@ -1,6 +1,4 @@
 ---
-title: "Alerting on failed runs"
-sidebar_position: 1
+title: "Alert on failed runs"
+sidebar_position: 10
 ---
-
-# Alerting on failed runs

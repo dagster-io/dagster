@@ -1,6 +1,8 @@
 [Cc]onfig
-Dagster
+\bDagster\b
 DataFrame
+Declarative Automation
+dagster-.*
 gRPC
 [Mm]aterializations
 [Mm]emoization
@@ -14,6 +16,9 @@ Databricks
 Datadog
 dbt
 DuckDB
+GitHub
+Gitlab
+Microsoft Teams
 MLflow
 MongoDB
 MySQL
@@ -25,4 +30,5 @@ Pandera
 PingOne
 Postgres
 S3
+Snowflake
 Twilio

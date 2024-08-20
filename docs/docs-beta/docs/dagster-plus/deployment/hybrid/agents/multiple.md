@@ -4,4 +4,4 @@ displayed_sidebar: "dagsterPlus"
 sidebar_position: 50
 ---
 
-# Using multiple agents
+# Use multiple agents with Dagster+

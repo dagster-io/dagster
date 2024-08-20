@@ -1,7 +1,7 @@
 ---
-title: "Managing teams"
+title: "Team management"
 displayed_sidebar: "dagsterPlus"
 sidebar_position: 2
 ---
 
-# Managing teams
+# Team management in Dagster+
