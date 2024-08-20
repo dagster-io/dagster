@@ -10,10 +10,10 @@ last_update:
 
 Welcome to this hands-on tutorial where you'll learn how to build a basic Extract, Transform, Load (ETL) pipeline using Dagster. By the end of this tutorial, you'll have created a functional pipeline that extracts data from a CSV file and transforms it.
 
-## What You'll Learn
+## What you'll learn
 
 - How to set up a basic Dagster project
-- How to create Software-Defined Assets (SDAs) for each step of the ETL process
+- How to create a Dagster asset for each step of the ETL process
 - How to use Dagster's built-in features to monitor and execute your pipeline
 
 ## Prerequisites
@@ -21,7 +21,7 @@ Welcome to this hands-on tutorial where you'll learn how to build a basic Extrac
 - Basic Python knowledge
 - Python 3.7+ installed on your system, see [installation guide](tutorial/installation.md) for more details
 
-## Step 1: Set Up Your Dagster Environment
+## Step 1: Set up your Dagster environment
 
 First, set up a new Dagster project.
 
@@ -46,7 +46,7 @@ First, set up a new Dagster project.
    pip install dagster dagster-webserver pandas
    ```
 
-## Step 2: Create Your Dagster Project Structure
+## Step 2: Create your Dagster project structure
 
 Set up a basic project structure:
 
@@ -86,7 +86,7 @@ how to build more complex pipelines with best practices.
    4,Diana,31,Los Angeles
    ```
 
-## Step 3: Define Your Assets
+## Step 3: Define your assets
 
 Now, create the assets for the ETL pipeline. Open `quickstart/assets.py` and add the following code:
 
@@ -119,7 +119,7 @@ The `Definitions` object serves as the central configuration point for a Dagster
 object is defined and the asset is passed to it. This tells Dagster about the assets that make up the ETL pipeline
 and allows Dagster to manage their execution and dependencies.
 
-## Step 4: Run Your Pipeline
+## Step 4: Run your pipeline
 
 :::warning
 
@@ -142,9 +142,9 @@ There should be screenshots here!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 5. In the popup that appears, click View to view a run as it executes.
 
 6. Watch as Dagster executes your pipeline. Try different views by selecting the different view buttons in the top-left.
-   You can click on each asset to see its logs and metadata.
+   Click each asset to see its logs and metadata.
 
-## Step 5: Verify Your Results
+## Step 5: Verify your results
 
 To verify that your pipeline worked correctly:
 
@@ -156,7 +156,7 @@ To verify that your pipeline worked correctly:
 
 You should see your transformed data, including the new `age_group` column.
 
-## What You've Learned
+## What you've learned
 
 Congratulations! You've just built and run your first pipeline with Dagster. You've learned how to:
 
@@ -164,7 +164,7 @@ Congratulations! You've just built and run your first pipeline with Dagster. You
 - Define Software-Defined Assets for each step of your pipeline
 - Use Dagster's UI to run and monitor your pipeline
 
-## Next Steps
+## Next steps
 
 - Continue with the [ETL Pipeline Tutorial](/tutorial/tutorial-etl) to learn how to build a more complex ETL pipeline
 - Learn how to [Think in Assets](/concepts/assets/thinking-in-assets)
