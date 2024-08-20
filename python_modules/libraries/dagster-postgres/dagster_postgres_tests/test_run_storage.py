@@ -8,7 +8,6 @@ from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 
 
 class TestPostgresRunStorage(TestRunStorage):
-    # TestPostgresRunStorage::test_backfill_created_time_filtering
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
