@@ -1,5 +1,7 @@
 import os
+import re
 import shutil
+import subprocess
 import uuid
 from contextlib import suppress
 from pathlib import Path
@@ -11,6 +13,7 @@ from dagster import (
     ConfigurableResource,
     DagsterInvariantViolationError,
     OpExecutionContext,
+    get_dagster_logger,
 )
 from dagster._annotations import experimental, public
 from dagster._core.errors import DagsterInvalidPropertyError
@@ -31,7 +34,10 @@ from .constants import (
 )
 from .dagster_sdf_translator import DagsterSdfTranslator, validate_opt_translator
 from .sdf_cli_invocation import SdfCliInvocation
+from .sdf_version import SDF_VERSION_LOWER_BOUND, SDF_VERSION_UPPER_BOUND
 from .sdf_workspace import SdfWorkspace
+
+logging = get_dagster_logger()
 
 
 @suppress_dagster_warnings
@@ -145,6 +151,7 @@ class SdfCliResource(ConfigurableResource):
             SdfCliInvocation: A invocation instance that can be used to retrieve the output of the
                 sdf CLI command.
         """
+        self._validate_sdf_version()
         dagster_sdf_translator = validate_opt_translator(dagster_sdf_translator)
         assets_def: Optional[AssetsDefinition] = None
         with suppress(DagsterInvalidPropertyError):
@@ -258,3 +265,28 @@ class SdfCliResource(ConfigurableResource):
         current_output_path = Path(self.workspace_dir).joinpath(SDF_DAGSTER_OUTPUT_DIR)
 
         return current_output_path.joinpath(path)
+
+    def _validate_sdf_version(self) -> None:
+        """Validate that the sdf version is compatible with the current version of the sdf CLI."""
+        try:
+            result = subprocess.run(
+                ["sdf", "--version"], capture_output=True, text=True, check=True
+            )
+            output = result.stdout.strip()
+            match = re.search(r"sdf (\d+\.\d+\.\d+)", output)
+            if match:
+                version = match.group(1)
+                if version < SDF_VERSION_LOWER_BOUND or version > SDF_VERSION_UPPER_BOUND:
+                    logging.warn(
+                        f"The sdf version '{version}' is not within the supported range of"
+                        f" '{SDF_VERSION_LOWER_BOUND}' to '{SDF_VERSION_UPPER_BOUND}'. Check your"
+                        " environment to ensure that the correct version of sdf is being used."
+                    )
+            else:
+                logging.warn(
+                    "Failed to extract the sdf version from the output. Check your environment to"
+                    " ensure that the correct version of sdf is being used."
+                )
+        except subprocess.CalledProcessError as e:
+            logging.warn(f"Failed to get the sdf version: {e}")
+            exit(1)
