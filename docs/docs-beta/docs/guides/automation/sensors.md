@@ -13,7 +13,7 @@ Sensors allow you to react events in external systems. For example, you can trig
 <summary>Prerequisites</summary>
 
 - Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Ops and Jobs](/concepts/ops-jobs)
+- Familiarity with [Ops and Jobs](/concepts/ops-and-jobs)
 </details>
 
 ## Basic sensor example
