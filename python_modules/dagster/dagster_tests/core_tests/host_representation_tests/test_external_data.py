@@ -189,7 +189,7 @@ def test_asset_with_multi_run_backfill_policy():
             op_names=["asset1"],
             description="hullo_ten_partitions_per_run",
             node_definition_name="asset1",
-            job_names=["__ASSET_JOB_0", "assets_job"],
+            job_names=["__ASSET_JOB", "assets_job"],
             output_name="result",
             group_name=DEFAULT_GROUP_NAME,
             partitions_def_data=partitions_def_data,

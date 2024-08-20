@@ -116,10 +116,9 @@ def test_one_of_the_asset_keys_missing():
 
 def test_conflicting_partitions():
     with instance_for_test():
-        result = invoke_materialize("partitioned_asset,differently_partitioned_asset")
-        assert (
-            "All selected assets must share the same PartitionsDefinition or have no PartitionsDefinition"
-            in str(result.exception)
+        result = invoke_materialize("partitioned_asset,differently_partitioned_asset", "one")
+        assert "There is no PartitionsDefinition shared by all the provided assets" in str(
+            result.exception
         )
 
 
