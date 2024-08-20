@@ -26,7 +26,7 @@ By default, schedules without a timezone will run in Coordinated Universal Time 
 ```python
 daily_schedule = ScheduleDefinition(
     job=daily_refresh_job,
-    cron_schedule="0 0 * * *", 
+    cron_schedule="0 0 * * *",
     timezone="America/Los_Angeles",
 )
 ```

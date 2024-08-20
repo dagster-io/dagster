@@ -7,7 +7,15 @@ last_update:
   author: Pedram Navid
 ---
 
-As you develop your data pipeline, you'll likely need to pass data between assets. By the end of this guide, you'll have a solid understanding of the different approaches to passing data between assets and when to use each one.
+In Dagster, assets are the building blocks of your data pipeline and it's common to want to pass data between them. This guide will help you understand how to pass data between assets.
+
+There are three ways of passing data between assets:
+
+- Explicitly managing data, by using external storage
+- Implicitly managing data, using I/O managers
+- Avoiding passing data between assets altogether by combining several tasks into a single asset
+
+This guide walks through all three methods.
 
 ---
 
@@ -17,26 +25,12 @@ As you develop your data pipeline, you'll likely need to pass data between asset
 To follow the steps in this guide, you'll need:
 
 - A basic understanding of Dagster concepts such as assets and resources
-- Dagster installed, as well as the `dagster-duckdb-pandas` package
+- Dagster and the `dagster-duckdb-pandas` package installed
 </details>
 
 ---
 
-## Overview
-
-In Dagster, assets are the building blocks of your data pipeline and it's common to want to pass data between them. This guide will help you understand how to pass data between assets.
-
-There are three ways of passing data between assets:
-
-- Explicitly managing data, by using external storage
-- Implicitly managing data, using IO Managers
-- Avoiding passing data between assets altogether by combining several tasks into a single asset
-
-This guide walks through all three methods.
-
----
-
-## Move Data Between Assets Explicitly Using External Storage
+## Move data assets explicitly using external storage
 
 A common and recommended approach to passing data between assets is explicitly managing data using external storage. This example pipeline uses a SQLite database as external storage:
 
@@ -54,20 +48,20 @@ The downsides of this approach are:
 - You need to manage connections and transactions manually
 - You need to handle errors and edge cases, for example, if the database is down or if a connection is closed
 
-## Move Data Between Assets Implicitly Using IO Managers
+## Move data between assets implicitly using I/O managers
 
-Dagster's IO Managers are a powerful feature that manages data between assets by defining how data is read from and written to external storage. They help separate business logic from I/O operations, reducing boilerplate code and making it easier to change where data is stored.
+Dagster's I/O managers are a powerful feature that manages data between assets by defining how data is read from and written to external storage. They help separate business logic from I/O operations, reducing boilerplate code and making it easier to change where data is stored.
 
 I/O managers handle:
 
 1. **Input**: Reading data from storage and loading it into memory for use by dependent assets.
 2. **Output**: Writing data to the configured storage location.
 
-For a deeper understanding of IO Managers, check out the [Understanding IO Managers](/concepts/io-managers) guide.
+For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/concepts/io-managers) guide.
 
-<CodeExample filePath="guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using IO Managers" />
+<CodeExample filePath="guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
 
-In this example, a `DuckDBPandasIOManager` is instantiated to run using a local file. The IO manager handles both reading and writing to the database.
+In this example, a `DuckDBPandasIOManager` is instantiated to run using a local file. The I/O manager handles both reading and writing to the database.
 
 :::warning
 
@@ -77,19 +71,19 @@ each step would execute in a separate environment and would not have access to t
 :::
 
 The `people()` and `birds()` assets both write their dataframes to DuckDB
-for persistent storage. The `combined_data()` asset requests data from both assets by adding them as parameters to the function, and the IO Manager handles the reading them from DuckDB and making them available to the `combined_data` function as dataframes. Note that when you use IO Managers you do not need to manually add the asset's dependencies through the `deps` argument.
+for persistent storage. The `combined_data()` asset requests data from both assets by adding them as parameters to the function, and the I/O manager handles the reading them from DuckDB and making them available to the `combined_data` function as dataframes. **Note**: When you use I/O managers you don't need to manually add the asset's dependencies through the `deps` argument.
 
 The benefits of this approach are:
 
-- The reading and writing of data is handled by the IO Manager, reducing boilerplate code
-- It's easy to swap out different IO Managers based on environments without changing the underlying asset computation
+- The reading and writing of data is handled by the I/O manager, reducing boilerplate code
+- It's easy to swap out different I/O managers based on environments without changing the underlying asset computation
 
 The downsides of this approach are:
 
-- The IO Manager approach is less flexible should you need to customize how data is read or written to storage
-- Some decisions may be made by the IO Manager for you, such as naming conventions that can be hard to override.
+- The I/O manager approach is less flexible should you need to customize how data is read or written to storage
+- Some decisions may be made by the I/O manager for you, such as naming conventions that can be hard to override.
 
-## Avoid Passing Data Between Assets by Combining Assets
+## Avoid passing data between assets by combining assets
 
 In some cases, you may find that you can avoid passing data between assets by
 carefully considering how you have modeled your pipeline:
@@ -123,6 +117,6 @@ The downsides of this approach are:
 
 ---
 
-## Related Resources
+## Related resources
 
 TODO: add links to relevant API documentation here.

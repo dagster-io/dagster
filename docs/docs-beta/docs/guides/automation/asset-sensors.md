@@ -72,7 +72,7 @@ otherwise it skips the run.
 
 ## Trigger a job with configuration
 
-By providing a configuration to the `RunRequest` object, you can trigger a job with a specific configuration. This is useful when you want to trigger a job with custom parameters based on custom logic you define. For example, you might use a sensor to trigger a job when an asset is materialized, but also pass metadata about that materialization to the job. 
+By providing a configuration to the `RunRequest` object, you can trigger a job with a specific configuration. This is useful when you want to trigger a job with custom parameters based on custom logic you define. For example, you might use a sensor to trigger a job when an asset is materialized, but also pass metadata about that materialization to the job.
 
 <CodeExample filePath="guides/automation/asset-sensor-with-config.py" language="python" title="Asset Sensor with Config" />
 
