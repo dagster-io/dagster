@@ -13,7 +13,7 @@ This guide covers the most common use cases for asset sensors such as defining c
 <summary>Prerequisites</summary>
 
 - Familiarity with [Assets](/concepts/assets)
-- Familiarity with [Ops and Jobs](/concepts/ops-and-jobs)
+- Familiarity with [Ops and Jobs](/concepts/ops-jobs)
 </details>
 
 ## Define cross-job and cross-code location dependencies
@@ -88,4 +88,4 @@ The previous examples showed how to use a single asset sensor to monitor a singl
 ## Next steps
 
 - Learn more about asset sensors in [Understanding Automation](/concepts/automation)
-- Explore [Declarative Automation](/concepts/declarative-automation) as an alternative to asset sensors
+- Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to asset sensors
