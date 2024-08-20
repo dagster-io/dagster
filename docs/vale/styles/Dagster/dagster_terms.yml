@@ -1,0 +1,20 @@
+extends: substitution
+message: Use '%s' instead of '%s' when referring to a Dagster term.
+level: warning
+ignorecase: false
+action:
+  name: replace
+# swap maps tokens in form of bad: good
+swap:
+  account id: Account Id
+  grpc: gRPC
+  '\bheartbeat\b': Heartbeat
+  id: ID
+  IDs: IDs
+  pre-release: Pre-Release
+  public preview: Public Preview
+  run id: Run Id
+  '\bdagster': Dagster
+  '[Dd]agster [Cc]loud': Dagster Plus
+  '\bworker\b': Worker
+  '[Aa]sset Sensor': Asset sensor
