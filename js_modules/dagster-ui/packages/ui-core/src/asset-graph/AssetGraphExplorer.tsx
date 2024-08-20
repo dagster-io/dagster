@@ -16,7 +16,6 @@ import without from 'lodash/without';
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
-import {AssetFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -55,6 +54,7 @@ import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
+import {AssetGroupSelector} from '../graphql/types';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {
   GraphExplorerOptions,
@@ -73,8 +73,6 @@ type AssetNode = AssetNodeForGraphQueryFragment;
 type Props = {
   options: GraphExplorerOptions;
   setOptions?: (options: GraphExplorerOptions) => void;
-
-  assetFilterState?: AssetFilterState;
 
   fetchOptions: AssetGraphFetchScope;
 
@@ -98,34 +96,30 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {fetchResult, assetGraphData, graphQueryItems, allAssetKeys} = useAssetGraphData(
     props.explorerPath.opsQuery,
-    {
-      ...props.fetchOptions,
-      computeKinds: props.assetFilterState?.filters.computeKindTags,
-      hideNodesMatching,
-    },
+    {...props.fetchOptions, hideNodesMatching},
   );
 
   const {explorerPath, onChangeExplorerPath} = props;
 
-  const {button, filterBar, computeKindTagsFilter, filterFn} = useAssetGraphExplorerFilters({
-    nodes: React.useMemo(
-      () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
-      [fullAssetGraphData],
-    ),
-    loading: fetchResult.loading,
-    isGlobalGraph: !!props.isGlobalGraph,
-    assetFilterState: props.assetFilterState,
-    explorerPath: explorerPath.opsQuery,
-    clearExplorerPath: React.useCallback(() => {
-      onChangeExplorerPath(
-        {
-          ...explorerPath,
-          opsQuery: '',
-        },
-        'push',
-      );
-    }, [explorerPath, onChangeExplorerPath]),
-  });
+  const {button, filterBar, groupsFilter, computeKindTagsFilter, filterFn} =
+    useAssetGraphExplorerFilters({
+      nodes: React.useMemo(
+        () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
+        [fullAssetGraphData],
+      ),
+      loading: fetchResult.loading,
+      isGlobalGraph: !!props.isGlobalGraph,
+      explorerPath: explorerPath.opsQuery,
+      clearExplorerPath: React.useCallback(() => {
+        onChangeExplorerPath(
+          {
+            ...explorerPath,
+            opsQuery: '',
+          },
+          'push',
+        );
+      }, [explorerPath, onChangeExplorerPath]),
+    });
 
   useEffect(() => {
     setHideNodesMatching(() => (node: AssetNodeForGraphQueryFragment) => !filterFn(node));
@@ -159,6 +153,7 @@ export const AssetGraphExplorer = (props: Props) => {
             filterBar={filterBar}
             filterButton={button}
             computeKindTagsFilter={computeKindTagsFilter}
+            groupsFilter={groupsFilter}
             {...props}
           />
         );
@@ -173,10 +168,12 @@ type WithDataProps = Props & {
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
 
-  filterButton?: React.ReactNode;
-  filterBar?: React.ReactNode;
+  filterButton: React.ReactNode;
+  filterBar: React.ReactNode;
   isGlobalGraph?: boolean;
-  computeKindTagsFilter?: StaticSetFilter<string>;
+
+  computeKindTagsFilter: StaticSetFilter<string>;
+  groupsFilter: StaticSetFilter<AssetGroupSelector>;
 };
 
 const AssetGraphExplorerWithData = ({
@@ -192,9 +189,9 @@ const AssetGraphExplorerWithData = ({
   allAssetKeys,
   filterButton,
   filterBar,
-  assetFilterState,
   isGlobalGraph = false,
   computeKindTagsFilter,
+  groupsFilter,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
@@ -440,13 +437,15 @@ const AssetGraphExplorerWithData = ({
   const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    assetFilterState?.setGroups([
-      {
-        groupName: group.groupName,
-        repositoryName: group.repositoryName,
-        repositoryLocationName: group.repositoryLocationName,
-      },
-    ]);
+    groupsFilter?.setState(
+      new Set([
+        {
+          groupName: group.groupName,
+          repositoryName: group.repositoryName,
+          repositoryLocationName: group.repositoryLocationName,
+        },
+      ]),
+    );
   };
 
   const svgViewport = layout ? (

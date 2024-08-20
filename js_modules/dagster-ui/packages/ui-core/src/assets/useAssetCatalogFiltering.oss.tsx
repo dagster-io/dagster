@@ -229,6 +229,7 @@ export function useAssetCatalogFiltering<
     filtered,
     computeKindFilter,
     storageKindFilter,
+    groupsFilter,
     renderFilterButton: components.renderButton,
   };
 }
