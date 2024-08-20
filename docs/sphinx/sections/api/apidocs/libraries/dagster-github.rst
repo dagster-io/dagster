@@ -35,7 +35,7 @@ Sharing your App ID and Installation ID is fine, but make sure that the Private 
 stored securily.
 
 Posting Issues
---------------
+==============
 
 Now, you can create issues in GitHub from Dagster with the GitHub resource:
 
@@ -87,7 +87,7 @@ By provisioning ``GithubResource`` as a Dagster resource, you can post to GitHub
 within any asset or op execution.
 
 Executing GraphQL queries
--------------------------
+========================
 
 .. code-block:: python
 

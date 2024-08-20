@@ -1,8 +1,9 @@
-Orchestration on Celery + Docker
---------------------------------
+Celery + Docker (dagster-celery-docker)
+---------------------------------------
+
 
 APIs
-----
+====
 
 .. currentmodule:: dagster_celery_docker
 
