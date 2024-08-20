@@ -8,7 +8,7 @@ code.
 Presently, it provides a thin wrapper on the `Events API V2 <https://v2.developer.pagerduty.com/docs/events-api-v2>`_.
 
 Getting Started
----------------
+===============
 
 You can install this library with:
 
