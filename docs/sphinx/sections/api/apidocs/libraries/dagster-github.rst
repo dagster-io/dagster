@@ -87,7 +87,7 @@ By provisioning ``GithubResource`` as a Dagster resource, you can post to GitHub
 within any asset or op execution.
 
 Executing GraphQL queries
-========================
+=========================
 
 .. code-block:: python
 
