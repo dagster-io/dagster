@@ -89,7 +89,7 @@ export function useAllAssets({
     ),
   });
 
-  const fetchAssets = useCallback(async () => {
+  const allAssetsQuery = useCallback(async () => {
     if (groupSelector) {
       return;
     }
@@ -165,7 +165,7 @@ export function useAllAssets({
     onData(data);
   }, [groupSelector, client]);
 
-  const query = groupSelector ? groupQuery : fetchAssets;
+  const query = groupSelector ? groupQuery : allAssetsQuery;
 
   useEffect(() => {
     query();
