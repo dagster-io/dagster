@@ -290,29 +290,5 @@ class ExecutionMetadata(
         }
 
 
-def apply_cursor_limit_reverse(
-    items: Sequence[str], cursor: Optional[str], limit: Optional[int], reverse: Optional[bool]
-) -> Sequence[str]:
-    start = 0
-    end = len(items)
-    index = 0
-
-    if cursor:
-        index = next((idx for (idx, item) in enumerate(items) if item == cursor))
-
-        if reverse:
-            end = index
-        else:
-            start = index + 1
-
-    if limit:
-        if reverse:
-            start = end - limit
-        else:
-            end = start + limit
-
-    return items[max(start, 0) : end]
-
-
 BackfillParams: TypeAlias = Mapping[str, Any]
 AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]
