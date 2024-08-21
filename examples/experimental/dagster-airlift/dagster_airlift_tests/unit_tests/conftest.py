@@ -184,3 +184,11 @@ def assert_expected_key_order(
     mats: Sequence[AssetMaterialization], expected_key_order: Sequence[str]
 ) -> None:
     assert [mat.asset_key.to_user_string() for mat in mats] == expected_key_order
+
+
+def make_asset(key, deps):
+    @asset(key=key, deps=deps)
+    def the_asset():
+        pass
+
+    return the_asset

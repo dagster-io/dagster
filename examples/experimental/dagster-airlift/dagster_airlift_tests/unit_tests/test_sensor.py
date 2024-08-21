@@ -7,6 +7,7 @@ from .conftest import (
     assert_expected_key_order,
     build_and_invoke_sensor,
     build_dag_assets,
+    make_asset,
     make_test_instance,
 )
 
@@ -107,3 +108,56 @@ def test_interleaved_exeutions() -> None:
         assert len(result.asset_events) == 6
         assert all(isinstance(event, AssetMaterialization) for event in result.asset_events)
         assert_expected_key_order(result.asset_events, ["a", "b", "c", "d", "5", "6"])  # type: ignore
+
+
+def test_dependencies_within_tasks() -> None:
+    """Test that a complex asset graph structure can be ingested in correct order from the sensor.
+    Where a, b, and c are part of task 1, and d, e, and f are part of task 2.
+    """
+    # Asset graph structure:
+    #   a
+    #  / \
+    # b   c
+    #  \ /
+    #   d
+    #  / \
+    # e   f
+    freeze_datetime = datetime(2021, 1, 1)
+
+    instance = make_test_instance()
+    with freeze_time(freeze_datetime):
+        result = build_and_invoke_sensor(
+            instance=instance,
+            defs=build_dag_assets(
+                tasks_to_asset_deps_graph={
+                    "1": {"a": [], "b": ["a"], "c": ["a"]},
+                    "2": {"d": ["b", "c"], "e": ["d"], "f": ["d"]},
+                },
+            ),
+        )
+        assert len(result.asset_events) == 7
+        assert all(isinstance(event, AssetMaterialization) for event in result.asset_events)
+        assert_expected_key_order(result.asset_events, ["a", "b", "c", "d", "e", "f", "3"])  # type: ignore
+
+
+def test_outside_of_dag_dependency() -> None:
+    """Test that if an asset has a transitive dependency on another asset within the same task, ordering is respected."""
+    # a -> b -> c where a and c are in the same task, and b is not in any dag.
+    freeze_datetime = datetime(2021, 1, 1)
+
+    instance = make_test_instance()
+    with freeze_time(freeze_datetime):
+        result = build_and_invoke_sensor(
+            instance=instance,
+            defs=[
+                *build_dag_assets(
+                    tasks_to_asset_deps_graph={
+                        "1": {"a": [], "c": ["b"]},
+                    },
+                ),
+                make_asset("b", ["a"]),
+            ],
+        )
+        assert len(result.asset_events) == 3
+        assert all(isinstance(event, AssetMaterialization) for event in result.asset_events)
+        assert_expected_key_order(result.asset_events, ["a", "c", "2"])  # type: ignore
