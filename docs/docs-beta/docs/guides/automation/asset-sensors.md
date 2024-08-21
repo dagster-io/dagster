@@ -1,6 +1,7 @@
 ---
-title: Trigger jobs with Asset Sensors
+title: Trigger cross-job dependencies with Asset Sensors
 sidebar_position: 30
+sidebar_label: Trigger cross-job dependencies
 ---
 
 Asset sensors in Dagster provide a powerful mechanism for monitoring asset materializations and triggering downstream computations or notifications based on those events.
