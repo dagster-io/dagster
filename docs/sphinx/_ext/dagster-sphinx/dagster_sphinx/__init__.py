@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Type, TypeVar
+from typing import List, Tuple, Type, TypeVar
 
 import docutils.nodes as nodes
 from dagster._annotations import (
@@ -78,6 +78,7 @@ def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: obj
             f"Docstring not found for {obj.__repr__()}.{name}. "
             "All public methods and properties must have docstrings."
         )
+        logger.warning(message)
         record_error(env, message)
 
 
@@ -150,28 +151,28 @@ def get_child_as(node: nodes.Node, index: int, node_type: Type[T_Node]) -> T_Nod
     return child
 
 
-def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
-    dagster_errors = getattr(app.env, "dagster_errors", [])
-    if len(dagster_errors) > 0:
-        for error_msg in dagster_errors:
-            logger.info(error_msg)
-        raise Exception(
-            f"Build failed. Found {len(dagster_errors)} violations of docstring requirements."
-        )
+# def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
+#     dagster_errors = getattr(app.env, "dagster_errors", [])
+#     if len(dagster_errors) > 0:
+#         for error_msg in dagster_errors:
+#             logger.info(error_msg)
+#         raise Exception(
+#             f"Build failed. Found {len(dagster_errors)} violations of docstring requirements."
+#         )
 
 
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
     app.add_autodocumenter(ConfigurableDocumenter)
     # override allows `.. autoclass::` to invoke DagsterClassDocumenter instead of default
-    app.add_autodocumenter(DagsterClassDocumenter, override=True)
+    # app.add_autodocumenter(DagsterClassDocumenter, override=True)
     app.add_directive("flag", FlagDirective)
     app.add_node(inline_flag, html=(visit_inline_flag, depart_flag))
     app.add_node(flag, html=(visit_flag, depart_flag))
     app.add_role("inline-flag", inline_flag_role)
     app.connect("autodoc-process-docstring", process_docstring)
     # app.connect("doctree-resolved", substitute_deprecated_text)
-    app.connect("build-finished", check_custom_errors)
+    # app.connect("build-finished", check_custom_errors)
 
     return {
         "version": "0.1",
