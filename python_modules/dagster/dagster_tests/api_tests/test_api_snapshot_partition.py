@@ -1,12 +1,14 @@
 import string
 
 import pytest
+from dagster import AssetKey, ConfigurableResource, Definitions, StaticPartitionsDefinition, asset
 from dagster._api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
 )
+from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
@@ -22,7 +24,27 @@ from dagster._serdes import deserialize_value
 
 ensure_dagster_tests_import()
 
-from dagster_tests.api_tests.utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location, get_code_location  # noqa: I001
+
+
+def get_repo_with_differently_partitioned_assets():
+    @asset(partitions_def=StaticPartitionsDefinition(["1", "2"]))
+    def asset1(): ...
+
+    ab_partitions_def = StaticPartitionsDefinition(["a", "b"])
+
+    @asset(partitions_def=ab_partitions_def)
+    def asset2(): ...
+
+    class MyResource(ConfigurableResource):
+        foo: str
+
+    @asset(partitions_def=ab_partitions_def)
+    def asset3(resource1: MyResource): ...
+
+    return Definitions(
+        assets=[asset1, asset2, asset3], resources={"resource1": MyResource(foo="bar")}
+    ).get_repository_def()
 
 
 def test_external_partition_names_grpc(instance: DagsterInstance):
@@ -45,6 +67,23 @@ def test_external_partition_names(instance: DagsterInstance):
         )
         assert isinstance(data, ExternalPartitionNamesData)
         assert data.partition_names == list(string.ascii_lowercase)
+
+
+def test_external_partition_names_asset_selection(instance: DagsterInstance):
+    with get_code_location(
+        python_file=__file__,
+        attribute="get_repo_with_differently_partitioned_assets",
+        location_name="something",
+        instance=instance,
+    ) as code_location:
+        data = code_location.get_external_partition_names(
+            repository_handle=code_location.get_repository(SINGLETON_REPOSITORY_NAME).handle,
+            job_name="__ASSET_JOB",
+            instance=instance,
+            selected_asset_keys={AssetKey("asset2"), AssetKey("asset3")},
+        )
+        assert isinstance(data, ExternalPartitionNamesData)
+        assert data.partition_names == ["a", "b"]
 
 
 def test_external_partition_names_deserialize_error_grpc(instance: DagsterInstance):
