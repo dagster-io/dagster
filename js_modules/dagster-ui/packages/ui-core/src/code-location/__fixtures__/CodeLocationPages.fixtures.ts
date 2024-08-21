@@ -1,6 +1,8 @@
 import faker from 'faker';
 
 import {
+  buildAssetKey,
+  buildAssetNode,
   buildCompositeSolidDefinition,
   buildDagsterLibraryVersion,
   buildPipeline,
@@ -17,9 +19,14 @@ import {
 import {OPS_ROOT_QUERY} from '../../ops/OpsRoot';
 import {OpsRootQuery, OpsRootQueryVariables} from '../../ops/types/OpsRoot.types';
 import {buildQueryMock} from '../../testing/mocking';
+import {WORKSPACE_ASSETS_QUERY} from '../../workspace/WorkspaceAssetsQuery';
 import {WORSKPACE_GRAPHS_QUERY} from '../../workspace/WorkspaceGraphsQuery';
 import {repoAddressToSelector} from '../../workspace/repoAddressToSelector';
 import {RepoAddress} from '../../workspace/types';
+import {
+  WorkspaceAssetsQuery,
+  WorkspaceAssetsQueryVariables,
+} from '../../workspace/types/WorkspaceAssetsQuery.types';
 import {
   WorkspaceGraphsQuery,
   WorkspaceGraphsQueryVariables,
@@ -144,6 +151,41 @@ export const buildSampleRepositoryGraphsQuery = (config: {
             isJob: true,
           });
         }),
+      }),
+    },
+    delay: 2000,
+    maxUsageCount: 100,
+  });
+};
+
+export const buildSampleRepositoryAssetsQuery = (config: {
+  repoAddress: RepoAddress;
+  groupCount: number;
+  assetsPerGroup: number;
+}) => {
+  const {repoAddress, groupCount, assetsPerGroup} = config;
+  const assetNodes = new Array(groupCount)
+    .fill(null)
+    .map(() => {
+      const groupName = faker.random.words(1).toLowerCase();
+      return new Array(assetsPerGroup).fill(null).map(() => {
+        const assetKeyPath = faker.random.words(2).toLowerCase().split(' ');
+        return buildAssetNode({
+          id: faker.random.words(2).split(' ').join('-').toLowerCase(),
+          assetKey: buildAssetKey({path: assetKeyPath}),
+          groupName,
+        });
+      });
+    })
+    .flat();
+  return buildQueryMock<WorkspaceAssetsQuery, WorkspaceAssetsQueryVariables>({
+    query: WORKSPACE_ASSETS_QUERY,
+    variables: {
+      selector: repoAddressToSelector(repoAddress),
+    },
+    data: {
+      repositoryOrError: buildRepository({
+        assetNodes,
       }),
     },
     delay: 2000,
