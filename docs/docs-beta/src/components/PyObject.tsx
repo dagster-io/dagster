@@ -1,3 +1,4 @@
+import Link from '@docusaurus/Link';
 import React from 'react';
 
 export const SearchIndexContext = React.createContext(null);
@@ -27,13 +28,13 @@ export const PyObject: React.FunctionComponent<{
   };
 
   return (
-    <a
+    <Link
       href="#"
       onClick={handleClick}
       className="pyobject underline cursor-pointer"
       title="PyObject not implemented yet"
     >
       <code>{textValue}</code>
-    </a>
+    </Link>
   );
 };

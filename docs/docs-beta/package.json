@@ -12,7 +12,7 @@
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "lint:ts": "tsc --noEmit",
+    "lint:tsc": "tsc --noEmit",
     "lint:vale": "vale ./docs --ext=.md,.mdx",
     "lint:eslint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx",
     "lint": "prettier . --check && yarn run lint:tsc && yarn run lint:eslint && yarn run lint:vale",

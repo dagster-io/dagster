@@ -11,7 +11,7 @@ const config: Config = {
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
-    onBrokenAnchors: 'throw',
+  onBrokenAnchors: 'throw',
   organizationName: 'dagster',
   projectName: 'dagster',
   markdown: {
