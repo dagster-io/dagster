@@ -1,4 +1,4 @@
 ---
-title: "Push operations to data warehouses"
-sidebar_position: 20
+title: "Pushing operations to data warehouses"
+sidebar_position: 2
 ---

@@ -1,4 +1,6 @@
 ---
-title: "Test for data freshness"
-sidebar_position: 20
+title: "Testing for data freshness"
+sidebar_position: 1
 ---
+
+# Testing for data freshness

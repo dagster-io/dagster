@@ -1,5 +1,5 @@
 ---
-title: "Create dependencies between assets"
+title: "Creating dependencies between assets"
 sidebar_position: 20
-sidebar_label: "Create asset dependencies"
+sidebar_label: "Creating asset dependencies"
 ---

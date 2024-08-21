@@ -1,8 +1,8 @@
 ---
-title: "Model your data"
+title: "Modeling your data"
 ---
 
-# Model your data
+# Modeling your data
 
 - Data Assets
 - Partitions

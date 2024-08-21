@@ -1,3 +1,3 @@
 ---
-title: Ingest Data
+title: Ingesting Data
 ---

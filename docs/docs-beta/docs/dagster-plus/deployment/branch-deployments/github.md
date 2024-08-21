@@ -5,4 +5,4 @@ sidebar_position: 1
 sidebar_label: "GitHub"
 ---
 
-# Use Branch Deployments with GitHub
+# Using Branch Deployments with GitHub

@@ -23,20 +23,20 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-## Step 1: Title that describes what this step will do
+## Step 1: Title that describes what this step will do {#step-1}
 
 For section / step headings:
 
 - Titles should describe an action, ex: "Generate a token"
 - Don't use gerunds (-ing) in titles, as it can cause issues with translation + SEO
-- Each section heading should have an identifier that includes the word 'step' and the number of the step, ex: `#step-1`
+- Each section heading should have an identifier that includes the word 'step' and the number of the step, ex: {#step-1}
 
-### Step 1.1: Title that describes a substep
+### Step 1.1: Title that describes a substep {#step-1-1}
 
 If a step would benefit by being broken into smaller steps, follow this section's formatting
 Each substep should get an H3 and start with Step N., followed by the number of the substep
 
-## Step 2: Another step
+## Step 2: Another step {#step-2}
 
 ## Next steps
 

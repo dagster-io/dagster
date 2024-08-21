@@ -1,4 +1,4 @@
 ---
-title: "Add Python libraries"
-sidebar_position: 30
+title: "Adding Python libraries"
+sidebar_position: 3
 ---

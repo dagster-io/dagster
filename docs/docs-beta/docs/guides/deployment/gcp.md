@@ -1,6 +1,6 @@
 ---
-title: "Deploy to Google Cloud Platform"
-sidebar_position: 20
+title: "Deploying to Google Cloud Platform"
+sidebar_position: 2
 ---
 
-# Deploy to Google Cloud Platform
+# Deploying to Google Cloud Platform

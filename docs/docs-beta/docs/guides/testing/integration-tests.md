@@ -1,4 +1,6 @@
 ---
 title: "Integration tests"
-sidebar_position: 40
+sidebar_position: 3
 ---
+
+# Integration tests

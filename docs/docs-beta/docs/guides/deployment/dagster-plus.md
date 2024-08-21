@@ -1,6 +1,6 @@
 ---
-title: "Deploy to Dagster+"
-sidebar_position: 40
+title: "Deploying to Dagster+"
+sidebar_position: 4
 ---
 
-# Deploy to Dagster+
+# Deploying to Dagster+

@@ -1,7 +1,6 @@
 ---
-title: "Managing code locations with Definitions"
-sidebar_position: 50
-sidebar_label: "Code locations and Definitions"
+title: "Managing code locations"
+sidebar_position: 5
 ---
 
-# Manage code locations
+# Managing code locations

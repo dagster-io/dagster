@@ -1,5 +1,5 @@
 ---
-title: "Add metadata to assets"
+title: "Adding metadata to assets"
 sidebar_position: 40
-sidebar_label: "Add metadata"
+sidebar_label: "Adding metadata"
 ---

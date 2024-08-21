@@ -1,4 +1,6 @@
 ---
-title: "Test assets with Asset Checks"
-sidebar_position: 10
+title: "Testing assets with Asset Checks"
+sidebar_position: 1
 ---
+
+# Testing assets with Asset Checks

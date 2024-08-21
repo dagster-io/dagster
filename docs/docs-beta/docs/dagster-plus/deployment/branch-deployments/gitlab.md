@@ -5,4 +5,4 @@ sidebar_position: 2
 sidebar_label: "Gitlab"
 ---
 
-# Use Branch Deployments with Gitlab
+# Using Branch Deployments with Gitlab

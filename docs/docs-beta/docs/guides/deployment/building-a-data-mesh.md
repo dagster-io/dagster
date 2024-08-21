@@ -1,6 +1,6 @@
 ---
-title: "Build a data mesh"
-sidebar_position: 60
+title: "Building a data mesh"
+sidebar_position: 6
 ---
 
-# Build a data mesh
+# Building a data mesh

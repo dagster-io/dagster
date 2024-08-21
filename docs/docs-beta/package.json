@@ -15,8 +15,8 @@
     "lint:ts": "tsc --noEmit",
     "lint:vale": "vale ./docs --ext=.md,.mdx",
     "lint:eslint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx",
-    "lint": "prettier . --check && yarn run lint:ts && yarn run lint:eslint ",
-    "lint:fix": "prettier . --write && yarn run lint:eslint --fix"
+    "lint": "prettier . --check && pnpm run lint:tsc && pnpm run lint:eslint && pnpm run lint:vale",
+    "lint:fix": "prettier . --write && pnpm run lint:eslint --fix"
   },
   "dependencies": {
     "@docusaurus/core": "3.5.2",

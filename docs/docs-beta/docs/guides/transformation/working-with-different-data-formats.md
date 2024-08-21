@@ -1,4 +1,4 @@
 ---
-title: "Work with different data file formats"
-sidebar_position: 30
+title: "Working with different data file formats"
+sidebar_position: 3
 ---
