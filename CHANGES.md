@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.8.2 (core) / 0.24.2 (libraries)
+
+### New
+
+- [ui] Improved performance of the Automation history view for partitioned assets
+- [ui] You can now delete dynamic partitions for an asset from the ui
+- [dagster-sdf] Added support for quoted table identifiers (Thanks, [@akbog](https://github.com/akbog)!)
+- [dagster-openai] Add additional configuration options for the `OpenAIResource` (Thanks, [@chasleslr](https://github.com/chasleslr)!)
+- [dagster-fivetran] Fivetran assets now have relation identifier metadata.
+
+### Bugfixes
+
+- [ui] Fixed a collection of broken links pointing to renamed Declarative Automation pages.
+- [dagster-dbt] Fixed issue preventing usage of `MultiPartitionMapping` with `@dbt_assets` (Thanks, [@arookieds](https://github.com/arookieds)!)
+- [dagster-azure] Fixed issue that would cause an error when configuring an `AzureBlobComputeLogManager` without a `secret_key` (Thanks, [@ion-elgreco](https://github.com/ion-elgreco) and [@HynekBlaha](https://github.com/HynekBlaha)!)
+
+### Documentation
+
+- Added API docs for `AutomationCondition` and associated static constructors.
+- [dagster-deltalake] Corrected some typos in the integration reference (Thanks, [@dargmuesli](https://github.com/dargmuesli)!)
+- [dagster-aws] Added API docs for the new `PipesCloudWatchMessageReader`
+
 # 1.8.1 (core) / 0.24.1 (libraries)
 
 ### New
