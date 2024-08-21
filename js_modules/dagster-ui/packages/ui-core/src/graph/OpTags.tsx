@@ -109,6 +109,7 @@ import scipy from './kindtag-images/tool-scipy-color.svg';
 import sdf from './kindtag-images/tool-sdf-color.svg';
 import secoda from './kindtag-images/tool-secoda-color.svg';
 import segment from './kindtag-images/tool-segment-color.svg';
+import sharepoint from './kindtag-images/tool-sharepoint-color.svg';
 import shell from './kindtag-images/tool-shell-color.svg';
 import shopify from './kindtag-images/tool-shopify-color.svg';
 import slack from './kindtag-images/tool-slack-color.svg';
@@ -136,7 +137,6 @@ import wandb from './kindtag-images/tool-w&b-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
-
 export interface IOpTag {
   label: string;
   onClick: (e: React.MouseEvent) => void;
@@ -774,6 +774,10 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
   net: {
     icon: microsoft,
     content: '.net',
+  },
+  sharepoint: {
+    icon: sharepoint,
+    content: 'Sharepoint',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
