@@ -165,6 +165,8 @@ class PanderaTypeRouter(BaseTypeRouter, Generic[T]):
     """Handles loading Pandera DataFrames."""
 
     def match(self) -> bool:
+        raise NotImplementedError("Generic types are not supported by Dagster type system. See https://github.com/dagster-io/dagster/issues/22694")
+
         try:
             import pandera
             import pandera.typing.polars
