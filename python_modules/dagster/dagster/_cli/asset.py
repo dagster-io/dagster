@@ -47,15 +47,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     asset_selection = AssetSelection.from_coercible(kwargs["select"].split(","))
     asset_keys = asset_selection.resolve(repo_def.asset_graph)
 
-    implicit_job_def = repo_def.get_implicit_job_def_for_assets(asset_keys)
-    # If we can't find an implicit job with all the given assets, it's because they couldn't be
-    # placed into the same implicit job, because of their conflicting PartitionsDefinitions.
-    if implicit_job_def is None:
-        raise DagsterInvalidSubsetError(
-            "All selected assets must share the same PartitionsDefinition or have no"
-            " PartitionsDefinition"
-        )
-
+    implicit_job_def = repo_def.get_implicit_global_asset_job_def()
     reconstructable_job = recon_job_from_origin(
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
