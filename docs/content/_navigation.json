@@ -343,6 +343,10 @@
                 "path": "/concepts/metadata-tags/asset-metadata/column-level-lineage"
               },
               {
+                "title": "Kind tags",
+                "path": "/concepts/metadata-tags/kind-tags"
+              },
+              {
                 "title": "Op job metadata",
                 "path": "/concepts/metadata-tags/op-job-metadata"
               },
