@@ -6,5 +6,4 @@ ignorecase: true
 nonword: true
 scope: raw
 tokens:
-  - '\#+ How it works'
   - '\#+ Overview'
