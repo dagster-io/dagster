@@ -42,4 +42,4 @@ jobs:
           vercel-args: "--prod"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
-          alias-domains: dagster-docs-beta.dagster.dagster-docs.io
+          alias-domains: dagster-.dagster.dagster-docs.io
