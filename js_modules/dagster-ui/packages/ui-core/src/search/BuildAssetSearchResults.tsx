@@ -98,12 +98,12 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
 
       const computeKind = assetDefinition.computeKind;
       if (computeKind) {
-        assetCountByComputeKind.increment(computeKind);
+        assetCountByComputeKind.increment(computeKind.toLowerCase());
       }
 
       assetDefinition.tags.forEach((tag) => {
         if (isCanonicalStorageKindTag(tag)) {
-          assetCountByStorageKind.increment(tag.value);
+          assetCountByStorageKind.increment(tag.value.toLowerCase());
         } else {
           const stringifiedTag = JSON.stringify(tag);
           assetCountByTag.increment(stringifiedTag);
