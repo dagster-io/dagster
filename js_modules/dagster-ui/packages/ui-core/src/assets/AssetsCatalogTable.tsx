@@ -90,6 +90,9 @@ export function useAllAssets({
   });
 
   const fetchAssets = useCallback(async () => {
+    if (groupSelector) {
+      return;
+    }
     try {
       const data = await fetchPaginatedData({
         async fetchData(cursor: string | null | undefined) {
@@ -134,11 +137,7 @@ export function useAllAssets({
         }));
       }
     }
-  }, [batchLimit, cacheManager, client]);
-
-  useEffect(() => {
-    fetchAssets();
-  }, [fetchAssets]);
+  }, [batchLimit, cacheManager, client, groupSelector]);
 
   const groupQuery = useCallback(async () => {
     if (!groupSelector) {
@@ -166,7 +165,7 @@ export function useAllAssets({
     onData(data);
   }, [groupSelector, client]);
 
-  return useMemo(() => {
+  const api = useMemo(() => {
     return {
       assets,
       error,
@@ -174,6 +173,14 @@ export function useAllAssets({
       query: groupSelector ? groupQuery : fetchAssets,
     };
   }, [assets, error, fetchAssets, groupQuery, groupSelector]);
+
+  const {query} = api;
+
+  useEffect(() => {
+    query();
+  }, [query]);
+
+  return api;
 }
 
 interface AssetCatalogTableProps {
@@ -187,6 +194,7 @@ export const AssetsCatalogTable = ({
   setPrefixPath,
   groupSelector,
 }: AssetCatalogTableProps) => {
+  console.log({prefixPath, groupSelector});
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
   useEffect(() => {
@@ -196,6 +204,8 @@ export const AssetsCatalogTable = ({
   const [view, setView] = useAssetView();
 
   const {assets, query, error} = useAllAssets({groupSelector});
+
+  console.log({assets});
 
   const {
     filtered: partiallyFiltered,
