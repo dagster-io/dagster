@@ -1,3 +1,4 @@
+import functools
 from typing import Any, Mapping, Optional, cast
 
 import dagster._check as check
@@ -6,6 +7,9 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -23,7 +27,9 @@ from .sensor_definition import (
 from .utils import check_valid_name, normalize_tags
 
 
-def evaluate_automation_conditions(context: SensorEvaluationContext):
+def evaluate_automation_conditions(
+    context: SensorEvaluationContext, sensor_def: "AutomationConditionSensorDefinition"
+):
     from dagster._core.definitions.asset_daemon_context import build_run_requests
     from dagster._daemon.asset_daemon import (
         asset_daemon_cursor_from_instigator_serialized_cursor,
@@ -61,7 +67,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
 
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
-        asset_keys=asset_graph.all_asset_keys,
+        asset_keys=sensor_def.asset_selection.resolve(asset_graph),
         asset_graph_view=asset_graph_view,
         logger=context.log,
         data_time_resolver=data_time_resolver,
@@ -69,6 +75,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
         respect_materialization_data_versions=True,
         auto_materialize_run_tags={},
         request_backfills=context.instance.da_request_backfills(),
+        default_automation_condition=sensor_def.default_automation_condition,
     )
     results, to_request = evaluator.evaluate()
     new_cursor = cursor.with_updates(
@@ -103,7 +110,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
 
 def not_supported(context) -> None:
     raise NotImplementedError(
-        "Automation policy sensors cannot be evaluated like regular user-space sensors."
+        "Automation condition sensors cannot be evaluated like regular user-space sensors."
     )
 
 
@@ -136,13 +143,26 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         **kwargs,
     ):
-        self._user_code = kwargs.get("user_code", False)
+        self._user_code = check.opt_bool_param(kwargs.get("user_code"), "user_code", default=False)
+        self._default_automation_condition = check.opt_inst_param(
+            kwargs.get("default_automation_condition"),
+            "default_automation_condition",
+            AutomationCondition,
+        )
+        if self._default_automation_condition:
+            check.param_invariant(
+                self._user_code,
+                "default_automation_condition",
+                "Default automation conditions unsupported for non-user-code sensors.",
+            )
         self._run_tags = normalize_tags(run_tags).tags
 
         super().__init__(
             name=check_valid_name(name),
             job_name=None,
-            evaluation_fn=evaluate_automation_conditions if self._user_code else not_supported,
+            evaluation_fn=functools.partial(evaluate_automation_conditions, sensor_def=self)
+            if self._user_code
+            else not_supported,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=None,
@@ -155,6 +175,10 @@ class AutomationConditionSensorDefinition(SensorDefinition):
     @property
     def run_tags(self) -> Mapping[str, str]:
         return self._run_tags
+
+    @property
+    def default_automation_condition(self) -> Optional[AutomationCondition]:
+        return self._default_automation_condition
 
     @property
     def asset_selection(self) -> AssetSelection:

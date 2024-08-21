@@ -4,10 +4,12 @@ import time
 from collections import defaultdict
 from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Sequence, Set, Tuple
 
-import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -41,6 +43,7 @@ class AutomationConditionEvaluator:
         # Should this be a supported feature in DS?
         auto_materialize_run_tags: Mapping[str, str],
         request_backfills: bool,
+        default_automation_condition: Optional[AutomationCondition],
     ):
         self.asset_graph = asset_graph
         self.asset_keys = asset_keys
@@ -58,6 +61,7 @@ class AutomationConditionEvaluator:
         self.num_checked_assets = 0
         self.num_asset_keys = len(asset_keys)
         self.request_backfills = request_backfills
+        self.default_automation_condition = default_automation_condition
 
     asset_graph: BaseAssetGraph
     asset_keys: AbstractSet[AssetKey]
@@ -116,9 +120,21 @@ class AutomationConditionEvaluator:
                 f" {asset_key.to_user_string()} ({self.num_checked_assets}/{self.num_asset_keys})"
             )
 
+            automation_condition = (
+                self.asset_graph.get(asset_key).automation_condition
+                or self.default_automation_condition
+            )
+
+            if automation_condition is None:
+                self.logger.debug("No automation_condition.")
+                continue
+
             try:
                 (result, expected_data_time) = self.evaluate_asset(
-                    asset_key, self.expected_data_time_mapping, self.current_results_by_key
+                    asset_key,
+                    automation_condition,
+                    self.expected_data_time_mapping,
+                    self.current_results_by_key,
                 )
             except Exception as e:
                 raise Exception(
@@ -173,12 +189,11 @@ class AutomationConditionEvaluator:
     def evaluate_asset(
         self,
         asset_key: AssetKey,
+        automation_condition: AutomationCondition,
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
         current_results_by_key: Mapping[AssetKey, AutomationResult],
     ) -> Tuple[AutomationResult, Optional[datetime.datetime]]:
         """Evaluates the AutomationCondition of a given asset key."""
-        automation_condition = check.not_none(self.asset_graph.get(asset_key).automation_condition)
-
         if automation_condition.has_rule_condition and self.request_backfills:
             raise DagsterInvalidDefinitionError(
                 "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."

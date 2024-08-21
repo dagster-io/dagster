@@ -8,7 +8,8 @@ from dagster._core.definitions.automation_condition_sensor_definition import (
 @pytest.mark.parametrize(
     "selection", [AssetSelection.all(), AssetSelection.assets("asset1", "asset2")]
 )
-def test_constructor(selection):
+@pytest.mark.parametrize("user_code", [True, False])
+def test_constructor(selection: AssetSelection, user_code: bool) -> None:
     tags = {"apple": "banana", "orange": "kiwi"}
     automation_sensor = AutomationConditionSensorDefinition(
         "foo",
@@ -17,6 +18,7 @@ def test_constructor(selection):
         description="fdsjkl",
         default_status=DefaultSensorStatus.RUNNING,
         minimum_interval_seconds=50,
+        user_code=user_code,
     )
     assert automation_sensor.name == "foo"
     assert automation_sensor.run_tags == tags
@@ -25,8 +27,9 @@ def test_constructor(selection):
     assert automation_sensor.default_status == DefaultSensorStatus.RUNNING
     assert automation_sensor.minimum_interval_seconds == 50
 
-    with pytest.raises(
-        NotImplementedError,
-        match="Automation policy sensors cannot be evaluated like regular user-space sensors.",
-    ):
-        automation_sensor(build_sensor_context())
+    if not user_code:
+        with pytest.raises(
+            NotImplementedError,
+            match="Automation condition sensors cannot be evaluated like regular user-space sensors.",
+        ):
+            automation_sensor(build_sensor_context())
