@@ -1427,3 +1427,30 @@ def test_graph_inputs_error():
 
     except DagsterInvalidDefinitionError as err:
         assert "except for Ins that have the Nothing dagster_type" not in str(err)
+
+
+def test_graph_asset_deps():
+    @asset
+    def upstream() -> None:
+        return None
+
+    @op
+    def one():
+        return 1
+
+    @graph_asset(deps=[upstream])
+    def foo():
+        return one()
+
+    result = materialize_to_memory([upstream, foo])
+    assert result.success
+    assert result.output_for_node("foo") == 1
+
+    @graph_multi_asset(outs={"first_asset": AssetOut()}, deps=[upstream])
+    def bar(one):
+        x = one()
+        return {"first_asset": x}
+
+    result = materialize_to_memory([upstream, bar])
+    assert result.success
+    assert result.output_for_node("bar", "first_asset") == 1

@@ -662,6 +662,7 @@ def graph_asset(
     name: Optional[str] = None,
     description: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
+    deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
@@ -687,6 +688,7 @@ def graph_asset(
     name: Optional[str] = None,
     description: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
+    deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     group_name: Optional[str] = None,
@@ -716,6 +718,10 @@ def graph_asset(
             A human-readable description of the asset.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
+        deps (Optional[Sequence[Union[AssetDep, AssetsDefinition, SourceAsset, AssetKey, str]]]):
+            The assets that are upstream dependencies, but do not correspond to a parameter of the
+            decorated function. If the AssetsDefinition for a multi_asset is provided, dependencies on
+            all assets created by the multi_asset will be created.
         config (Optional[Union[ConfigMapping], Mapping[str, Any]):
             Describes how the graph underlying the asset is configured at runtime.
 
@@ -773,6 +779,7 @@ def graph_asset(
             name=name,
             description=description,
             ins=ins,
+            deps=deps,
             config=config,
             key_prefix=key_prefix,
             group_name=group_name,
@@ -795,6 +802,7 @@ def graph_asset(
             name=name,
             description=description,
             ins=ins,
+            deps=deps,
             config=config,
             key_prefix=key_prefix,
             group_name=group_name,
@@ -819,6 +827,7 @@ def graph_asset_no_defaults(
     name: Optional[str],
     description: Optional[str],
     ins: Optional[Mapping[str, AssetIn]],
+    deps: Optional[Iterable[CoercibleToAssetDep]],
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]],
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
     group_name: Optional[str],
@@ -834,7 +843,12 @@ def graph_asset_no_defaults(
     key: Optional[CoercibleToAssetKey],
 ) -> AssetsDefinition:
     ins = ins or {}
-    named_ins = build_named_ins(compose_fn, ins or {}, set())
+    upstream_asset_deps = make_asset_deps(deps=deps)
+    named_ins = build_named_ins(
+        fn=compose_fn,
+        asset_ins=ins or {},
+        deps=({dep.asset_key for dep in upstream_asset_deps} if upstream_asset_deps else set()),
+    )
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
@@ -897,6 +911,7 @@ def graph_multi_asset(
     outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
+    deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     group_name: Optional[str] = None,
@@ -916,6 +931,10 @@ def graph_multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
+        deps (Optional[Sequence[Union[AssetDep, AssetsDefinition, SourceAsset, AssetKey, str]]]):
+            The assets that are upstream dependencies, but do not correspond to a parameter of the
+            decorated function. If the AssetsDefinition for a multi_asset is provided, dependencies on
+            all assets created by the multi_asset will be created.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for the asset.
@@ -946,7 +965,12 @@ def graph_multi_asset(
             if asset_in.partition_mapping
         }
 
-        named_ins = build_named_ins(fn, ins or {}, set())
+        upstream_asset_deps = make_asset_deps(deps=deps)
+        named_ins = build_named_ins(
+            fn=fn,
+            asset_ins=ins or {},
+            deps=({dep.asset_key for dep in upstream_asset_deps} if upstream_asset_deps else set()),
+        )
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in named_ins.items()
         }
