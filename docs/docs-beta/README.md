@@ -9,7 +9,7 @@ The site uses [yarn](https://yarnpkg.com/) for package management. Run `yarn ins
 
 It also uses [vale](https://vale.sh/) to check for issues in the documentation.
 
-Install value with:
+Install vale with:
 
 ```bash
 brew install vale
