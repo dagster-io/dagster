@@ -2586,7 +2586,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
         fresh_diamond_bottom = result.data["assetNodeOrError"]
-        assert fresh_diamond_bottom["tags"] == [{"key": "dagster/foo", "value": "asdf"}]
+        assert fresh_diamond_bottom["tags"] == [
+            {"key": ".dagster/bar", "value": "qwer"},
+            {"key": "dagster/foo", "value": "asdf"},
+        ]
 
     def test_has_asset_checks(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(graphql_context, HAS_ASSET_CHECKS)

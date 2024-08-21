@@ -61,6 +61,7 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {
   AssetComputeKindTag,
   AssetStorageKindTag,
+  HIDDEN_TAG_PREFIX,
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
 import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
@@ -266,7 +267,9 @@ export const AssetNodeOverview = ({
   );
 
   const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
-  const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+  const filteredTags = assetNode.tags?.filter(
+    (tag) => tag.key !== 'dagster/storage_kind' && !tag.key.startsWith(HIDDEN_TAG_PREFIX),
+  );
   const relationIdentifierMetadata = assetNode.metadataEntries?.find(
     isCanonicalRelationIdentifierEntry,
   );

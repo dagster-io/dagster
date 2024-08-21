@@ -1,6 +1,7 @@
 import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
+import {HIDDEN_TAG_PREFIX} from 'shared/graph/KindTags';
 
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
@@ -53,7 +54,12 @@ export function useAssetTagsForAssets(
       Array.from(
         new Set(
           assets
-            .flatMap((a) => a.definition?.tags?.map((tag) => JSON.stringify(tag)) ?? [])
+            .flatMap(
+              (a) =>
+                a.definition?.tags
+                  ?.filter((tag) => !tag.key.startsWith(HIDDEN_TAG_PREFIX))
+                  .map((tag) => JSON.stringify(tag)) ?? [],
+            )
             .filter((o) => o),
         ),
       )

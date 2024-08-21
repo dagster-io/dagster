@@ -13,6 +13,8 @@ export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
 export const STORAGE_KIND_TAG = 'dagster/storage_kind';
 
+export const HIDDEN_TAG_PREFIX = '.dagster/';
+
 // Older code servers may be using the legacy compute kind tag, so we need to check for both
 export const isCanonicalComputeKindTag = (tag: DefinitionTag) =>
   tag.key === COMPUTE_KIND_TAG || tag.key === LEGACY_COMPUTE_KIND_TAG;
