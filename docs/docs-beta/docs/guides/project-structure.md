@@ -5,7 +5,7 @@ title: "How to structure your Dagster project"
 # How to structure your Dagster project
 
 :::note
-If you are looking to scaffold a new Dagster project, please refer to the project scaffolding tutorial.
+Refer to the project scaffolding tutorial to learn how to create a new Dagster project.
 :::
 
 When it comes to organizing your project, there are many possibilities in how files and directories can be structured. Factors that can influence this includes the number of teams working on your data platform, and whether you want to structure files by Dagster object type, by technology, or by the overarching data concept.
@@ -51,7 +51,7 @@ This is a great structure as you are first getting started, however, as you begi
 
 ## Restructure your project
 
-There are several paradigms in which you can structure your project. Choosing one of these structures is often personal preference, and influenced by how you and your team members operate. We will discuss three possible project structures:
+There are several paradigms in which you can structure your project. Choosing one of these structures is often personal preference, and influenced by how you and your team members operate. This guide will outline three possible project structures:
 
 1. [Structured by Dagster object](#structured-by-object-type)
 2. [Structured by technology](#structured-by-technology)
@@ -103,7 +103,7 @@ The structure of the [fully featured project example](https://github.com/dagster
 
 ### Structured by technology
 
-Data engineer often have a strong understanding of the underlying technologies that are used in their data pipelines. For that reason, it is often beneficial to structure projects by the technology that are being used. This enables engineers to easily navigate the code base and locate files pertaining to the specific technology.
+Data engineer often have a strong understanding of the underlying technologies that are used in their data pipelines. For that reason, it's often beneficial to structure projects by the technology that are being used. This enables engineers to easily navigate the code base and locate files pertaining to the specific technology.
 
 Within the technology modules, sub-modules can be created to further organize your code.
 
@@ -129,7 +129,7 @@ Within the technology modules, sub-modules can be created to further organize yo
 
 ### Structured by concept
 
-It is also possible to introduce a layer of categorization by the overarching data processing concept. For example, whether the job is performing some kind of transformation, ingestion of data, or processing operation.
+It's also possible to introduce a layer of categorization by the overarching data processing concept. For example, whether the job is performing some kind of transformation, ingestion of data, or processing operation.
 
 This provides additional context to the engineers who may not have as strong of a familiarity with the underlying technologies that are being used.
 
@@ -156,7 +156,7 @@ This provides additional context to the engineers who may not have as strong of 
 
 ## Merge definitions objects
 
-It is possible to define multiple `Definitions` objects, often with one for each sub-module in your project. These definitions can then be merged at the root of your project using the `Definitions.merge` method.
+It's possible to define multiple `Definitions` objects, often with one for each sub-module in your project. These definitions can then be merged at the root of your project using the `Definitions.merge` method.
 
 The benefit of such a structure is that dependencies like resources and partitions can be scoped to their corresponding definitions.
 
@@ -173,9 +173,9 @@ defs = Definitions.merge(
 
 ## Multiple code locations
 
-So far, we've discussed our recommendations for structuring a large project which contains only one code location. Dagster also allows you to structure a project with multiple definitions.
+This guide has outlined how to structure a project within a single code location, however, Dagster also allows you to structure a project spanning multiple location.
 
-We don't recommend over-abstracting too early; in most cases, one code location should be sufficient. A helpful pattern uses multiple code locations to separate conflicting dependencies, where each definition has its own package requirements and deployment specs.
+In most cases, one code location should be sufficient. A helpful pattern uses multiple code locations to separate conflicting dependencies, where each definition has its own package requirements and deployment specs.
 
 To include multiple code locations in a single project, you'll need to add a configuration file to your project:
 
@@ -186,7 +186,7 @@ To include multiple code locations in a single project, you'll need to add a con
 
 As your data platform evolves, Dagster will enable you to orchestrate other data tools, such as dbt, Sling, or Jupyter notebooks.
 
-For these projects, we recommend storing them outside your Dagster project. See the `dbt_project` example below.
+For these projects, it's recommended to store them outside your Dagster project. See the `dbt_project` example below.
 
 ```
 .
