@@ -276,7 +276,7 @@ class SdfCliResource(ConfigurableResource):
             match = re.search(r"sdf (\d+\.\d+\.\d+)", output)
             if match:
                 version = match.group(1)
-                if version < SDF_VERSION_LOWER_BOUND or version > SDF_VERSION_UPPER_BOUND:
+                if version < SDF_VERSION_LOWER_BOUND or version >= SDF_VERSION_UPPER_BOUND:
                     logging.warn(
                         f"The sdf version '{version}' is not within the supported range of"
                         f" '{SDF_VERSION_LOWER_BOUND}' to '{SDF_VERSION_UPPER_BOUND}'. Check your"
