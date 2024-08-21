@@ -89,7 +89,10 @@ export function useAllAssets({
     ),
   });
 
-  const fetchAssets = useCallback(async () => {
+  const allAssetsQuery = useCallback(async () => {
+    if (groupSelector) {
+      return;
+    }
     try {
       const data = await fetchPaginatedData({
         async fetchData(cursor: string | null | undefined) {
@@ -134,11 +137,7 @@ export function useAllAssets({
         }));
       }
     }
-  }, [batchLimit, cacheManager, client]);
-
-  useEffect(() => {
-    fetchAssets();
-  }, [fetchAssets]);
+  }, [batchLimit, cacheManager, client, groupSelector]);
 
   const groupQuery = useCallback(async () => {
     if (!groupSelector) {
@@ -166,14 +165,20 @@ export function useAllAssets({
     onData(data);
   }, [groupSelector, client]);
 
+  const query = groupSelector ? groupQuery : allAssetsQuery;
+
+  useEffect(() => {
+    query();
+  }, [query]);
+
   return useMemo(() => {
     return {
       assets,
       error,
       loading: !assets && !error,
-      query: groupSelector ? groupQuery : fetchAssets,
+      query,
     };
-  }, [assets, error, fetchAssets, groupQuery, groupSelector]);
+  }, [assets, error, query]);
 }
 
 interface AssetCatalogTableProps {
