@@ -1,7 +1,7 @@
 import dlt
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 
-from dagster import AssetExecutionContext, SourceAsset
+from dagster import AssetExecutionContext, AssetSpec
 
 
 @dlt.source
@@ -25,6 +25,5 @@ def example_dlt_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
 
 
 thinkific_source_assets = [
-    SourceAsset(key, group_name="thinkific")
-    for key in example_dlt_assets.dependency_keys
+    AssetSpec(key, group_name="thinkific") for key in example_dlt_assets.dependency_keys
 ]
