@@ -12,13 +12,14 @@ import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
-import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
+import {
+  useAssetKindsForAssets,
+  useAssetTagFilter,
+  useAssetTagsForAssets,
+} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
-import {
-  useAssetKindTagsForAssets,
-  useComputeKindTagFilter,
-} from '../ui/Filters/useComputeKindTagFilter';
+import {useKindFilter} from '../ui/Filters/useKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -47,15 +48,14 @@ export function useAssetCatalogFiltering<
     filterFn,
     setAssetTags,
     setChangedInBranch,
-    setComputeKindTags,
     setGroups,
     setOwners,
     setCodeLocations,
+    setKinds,
     setSelectAllFilters,
   } = useAssetDefinitionFilterState({isEnabled});
 
   const allAssetGroupOptions = useAssetGroupSelectorsForAssets(assets);
-  const allComputeKindTags = useAssetKindTagsForAssets(assets);
   const allAssetOwners = useAssetOwnersForAssets(assets);
 
   const groupsFilter = useAssetGroupFilter({
@@ -71,13 +71,7 @@ export function useAssetCatalogFiltering<
       : filters.changedInBranch,
     setChangedInBranch,
   });
-  const computeKindFilter = useComputeKindTagFilter({
-    allComputeKindTags,
-    computeKindTags: filters.selectAllFilters.includes('computeKindTags')
-      ? allComputeKindTags
-      : filters.computeKindTags,
-    setComputeKindTags,
-  });
+
   const ownersFilter = useAssetOwnerFilter({
     allAssetOwners,
     owners: filters.selectAllFilters.includes('owners') ? allAssetOwners : filters.owners,
@@ -90,6 +84,13 @@ export function useAssetCatalogFiltering<
     allAssetTags: tags,
     tags: filters.selectAllFilters.includes('tags') ? tags : filters.tags,
     setTags: setAssetTags,
+  });
+
+  const allKinds = useAssetKindsForAssets(assets);
+  const kindFilter = useKindFilter({
+    allAssetKinds: allKinds,
+    kinds: filters.selectAllFilters.includes('kinds') ? [] : filters.kinds,
+    setKinds,
   });
 
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
@@ -109,7 +110,7 @@ export function useAssetCatalogFiltering<
   });
 
   const uiFilters = React.useMemo(() => {
-    const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter, tagsFilter];
+    const uiFilters: FilterObject[] = [groupsFilter, kindFilter, ownersFilter, tagsFilter];
     if (isBranchDeployment) {
       uiFilters.push(changedInBranchFilter);
     }
@@ -120,11 +121,11 @@ export function useAssetCatalogFiltering<
   }, [
     allRepos.length,
     changedInBranchFilter,
-    computeKindFilter,
     groupsFilter,
     includeRepos,
     isBranchDeployment,
     ownersFilter,
+    kindFilter,
     reposFilter,
     tagsFilter,
   ]);
@@ -155,7 +156,7 @@ export function useAssetCatalogFiltering<
     [
       ['owners', filters.owners, allAssetOwners] as const,
       ['tags', filters.tags, tags] as const,
-      ['computeKindTags', filters.computeKindTags, allComputeKindTags] as const,
+      ['kinds', filters.kinds, allKinds] as const,
       ['groups', filters.groups, allAssetGroupOptions] as const,
       ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
       ['codeLocations', filters.codeLocations, allRepos] as const,
@@ -182,11 +183,11 @@ export function useAssetCatalogFiltering<
   }, [
     allAssetGroupOptions,
     allAssetOwners,
-    allComputeKindTags,
     allRepos,
     didWaitAfterLoading,
     filters,
     loading,
+    allKinds,
     tags,
     setSelectAllFilters,
     isEnabled,
@@ -203,7 +204,7 @@ export function useAssetCatalogFiltering<
     isFiltered,
     filterFn,
     filtered,
-    computeKindFilter,
+    kindFilter,
     groupsFilter,
     renderFilterButton: components.renderButton,
   };

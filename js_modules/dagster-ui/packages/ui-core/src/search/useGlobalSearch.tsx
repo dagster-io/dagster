@@ -17,7 +17,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {buildStorageKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
+import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {AssetOwner, DefinitionTag, buildDefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -29,15 +29,9 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
 };
 
-export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
+export const linkToAssetTableWithKindFilter = (kind: string) => {
   return `/assets?${qs.stringify({
-    computeKindTags: JSON.stringify([computeKind]),
-  })}`;
-};
-
-export const linkToAssetTableWithStorageKindFilter = (storageKind: string) => {
-  return `/assets?${qs.stringify({
-    storageKindTags: JSON.stringify([buildStorageKindTag(storageKind)]),
+    kinds: JSON.stringify([kind]),
   })}`;
 };
 
@@ -239,7 +233,7 @@ const secondaryDataToSearchResults = (
         label: computeKind,
         description: '',
         type: AssetFilterSearchResultType.ComputeKind,
-        href: linkToAssetTableWithComputeKindFilter(computeKind),
+        href: linkToAssetTableWithKindFilter(computeKind),
         numResults: assetCount,
       }),
     );
@@ -248,7 +242,7 @@ const secondaryDataToSearchResults = (
         label: storageKind,
         description: '',
         type: AssetFilterSearchResultType.StorageKind,
-        href: linkToAssetTableWithStorageKindFilter(storageKind),
+        href: linkToAssetTableWithKindFilter(storageKind),
         numResults: assetCount,
       }),
     );

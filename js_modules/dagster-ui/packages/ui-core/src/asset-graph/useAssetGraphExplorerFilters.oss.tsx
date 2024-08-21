@@ -18,7 +18,7 @@ export function useAssetGraphExplorerFilters({
   loading,
   clearExplorerPath,
 }: Props) {
-  const {filterButton, computeKindFilter, groupsFilter, activeFiltersJsx, filterFn} =
+  const {filterButton, groupsFilter, activeFiltersJsx, kindFilter, filterFn} =
     useAssetCatalogFiltering({
       assets: nodes,
       includeRepos: isGlobalGraph,
@@ -26,7 +26,7 @@ export function useAssetGraphExplorerFilters({
     });
 
   return {
-    computeKindTagsFilter: computeKindFilter,
+    kindFilter,
     groupsFilter,
     button: filterButton,
     filterFn,

@@ -18,17 +18,16 @@ import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetComputeKindTag} from '../graph/KindTags';
+import {AssetKind} from '../graph/KindTags';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
-
 interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
-  computeKindTagsFilter?: StaticSetFilter<string>;
+  kindFilter?: StaticSetFilter<string>;
 }
 
-export const AssetNode = React.memo(({definition, selected, computeKindTagsFilter}: Props) => {
+export const AssetNode = React.memo(({definition, selected, kindFilter}: Props) => {
   const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
@@ -64,11 +63,14 @@ export const AssetNode = React.memo(({definition, selected, computeKindTagsFilte
           )}
         </AssetNodeBox>
         <Box flex={{direction: 'row-reverse', gap: 8}}>
-          <AssetComputeKindTag
-            definition={definition}
-            style={{position: 'relative', paddingTop: 7, margin: 0}}
-            currentPageFilter={computeKindTagsFilter}
-          />
+          {definition.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              kind={kind}
+              style={{position: 'relative', paddingTop: 7, margin: 0}}
+              currentPageFilter={kindFilter}
+            />
+          ))}
         </Box>
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
@@ -260,6 +262,7 @@ export const ASSET_NODE_FRAGMENT = gql`
       key
       value
     }
+    kinds
   }
 
   fragment AssetNodeKey on AssetKey {

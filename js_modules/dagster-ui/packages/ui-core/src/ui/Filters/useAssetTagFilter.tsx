@@ -68,6 +68,23 @@ export function useAssetTagsForAssets(
   );
 }
 
+export function useAssetKindsForAssets(
+  assets: {definition?: {kinds?: string[] | null} | null}[],
+): string[] {
+  return useMemo(
+    () =>
+      Array.from(
+        new Set(
+          assets
+            .map((a) => a?.definition?.kinds)
+            .filter((o) => o)
+            .flatMap((a) => a as string[]),
+        ),
+      ).sort(),
+    [assets],
+  );
+}
+
 export function doesFilterArrayMatchValueArray<T, V>(
   filterArray: T[],
   valueArray: V[],

@@ -58,12 +58,32 @@ describe('filterAssetDefinition', () => {
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });
 
-  it('returns false when computeKindTags filter does not match the definition', () => {
+  it('returns false when kinds filter does not match the definition', () => {
     const filters = {
-      computeKindTags: ['computeKind2'],
+      kinds: ['computeKind2'],
     };
     const definition = {
-      computeKind: 'computeKind1',
+      kinds: ['computeKind1'],
+    };
+    expect(filterAssetDefinition(filters, definition)).toBe(false);
+  });
+
+  it('returns true when kinds filter does match the definition', () => {
+    const filters = {
+      kinds: ['computeKind1'],
+    };
+    const definition = {
+      kinds: ['computeKind1', 'computeKind2'],
+    };
+    expect(filterAssetDefinition(filters, definition)).toBe(true);
+  });
+
+  it('returns false when kinds filter overspecifies the definition', () => {
+    const filters = {
+      kinds: ['computeKind1', 'computeKind3'],
+    };
+    const definition = {
+      kinds: ['computeKind1'],
     };
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });

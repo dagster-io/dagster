@@ -29,6 +29,7 @@ export type AssetViewDefinitionQuery = {
           jobNames: Array<string>;
           isMaterializable: boolean;
           isExecutable: boolean;
+          kinds: Array<string>;
           hasMaterializePermission: boolean;
           changedReasons: Array<Types.ChangeReason>;
           computeKind: string | null;
@@ -16308,6 +16309,7 @@ export type AssetViewDefinitionNodeFragment = {
   jobNames: Array<string>;
   isMaterializable: boolean;
   isExecutable: boolean;
+  kinds: Array<string>;
   hasMaterializePermission: boolean;
   changedReasons: Array<Types.ChangeReason>;
   computeKind: string | null;

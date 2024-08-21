@@ -20,7 +20,10 @@ type Nullable<T> = {
 
 export type FilterableAssetDefinition = Nullable<
   Partial<
-    Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'computeKind'> & {
+    Pick<
+      AssetNode,
+      'changedReasons' | 'owners' | 'groupName' | 'tags' | 'computeKind' | 'kinds'
+    > & {
       repository: Pick<AssetNode['repository'], 'name'> & {
         location: Pick<AssetNode['repository']['location'], 'name'>;
       };
@@ -30,7 +33,7 @@ export type FilterableAssetDefinition = Nullable<
 
 export type AssetFilterBaseType = {
   groups: AssetGroupSelector[];
-  computeKindTags: string[];
+  kinds: string[];
   changedInBranch: ChangeReason[];
   owners: AssetOwner[];
   tags: DefinitionTag[];
@@ -44,17 +47,9 @@ export type AssetFilterType = AssetFilterBaseType & {
 export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: boolean}) => {
   const [filters, setFilters] = useQueryPersistedState<AssetFilterType>({
     encode: isEnabled
-      ? ({
-          groups,
-          computeKindTags,
-          changedInBranch,
-          owners,
-          tags,
-          codeLocations,
-          selectAllFilters,
-        }) => ({
+      ? ({groups, kinds, changedInBranch, owners, tags, codeLocations, selectAllFilters}) => ({
           groups: groups?.length ? JSON.stringify(groups) : undefined,
-          computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
+          kinds: kinds?.length ? JSON.stringify(kinds) : undefined,
           changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
           owners: owners?.length ? JSON.stringify(owners) : undefined,
           tags: tags?.length ? JSON.stringify(tags) : undefined,
@@ -64,7 +59,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
       : () => ({}),
     decode: (qs) => ({
       groups: qs.groups && isEnabled ? JSON.parse(qs.groups) : [],
-      computeKindTags: qs.computeKindTags && isEnabled ? JSON.parse(qs.computeKindTags) : [],
+      kinds: qs.kinds && isEnabled ? JSON.parse(qs.kinds) : [],
       changedInBranch: qs.changedInBranch && isEnabled ? JSON.parse(qs.changedInBranch) : [],
       owners: qs.owners && isEnabled ? JSON.parse(qs.owners) : [],
       tags: qs.tags && isEnabled ? JSON.parse(qs.tags) : [],
@@ -84,7 +79,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
   );
 
   const {
-    setComputeKindTags,
+    setKinds,
     setGroups,
     setChangedInBranch,
     setOwners,
@@ -101,7 +96,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
       };
     }
     return {
-      setComputeKindTags: makeSetter('computeKindTags'),
+      setKinds: makeSetter('kinds'),
       setGroups: makeSetter('groups'),
       setChangedInBranch: makeSetter('changedInBranch'),
       setOwners: makeSetter('owners'),
@@ -115,7 +110,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
     filters,
     setFilters,
     filterFn,
-    setComputeKindTags,
+    setKinds,
     setGroups,
     setChangedInBranch,
     setOwners,
@@ -176,14 +171,13 @@ export function filterAssetDefinition(
     }
   }
 
-  const isAllComputeKindTagsSelected = filters.selectAllFilters?.includes('computeKindTags');
-  if (isAllComputeKindTagsSelected) {
-    if (!definition?.computeKind?.length) {
+  const isAllKindsSelected = filters.selectAllFilters?.includes('kinds');
+  if (isAllKindsSelected) {
+    if (!definition?.kinds?.length) {
       return false;
     }
-  } else if (filters.computeKindTags?.length) {
-    const lowercased = new Set(filters.computeKindTags.map((c) => c.toLowerCase()));
-    if (!definition?.computeKind || !lowercased.has(definition.computeKind.toLowerCase())) {
+  } else if (filters.kinds?.length) {
+    if (!definition?.kinds || !doesFilterArrayMatchValueArray(filters.kinds, definition.kinds)) {
       return false;
     }
   }

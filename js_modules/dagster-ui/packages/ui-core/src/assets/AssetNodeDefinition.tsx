@@ -317,6 +317,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    kinds
     owners {
       ... on TeamAssetOwner {
         team
