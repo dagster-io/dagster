@@ -1,9 +1,9 @@
 import {Box} from '@dagster-io/ui-components';
+import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 
 import {CodeLocationDefinitionsMain} from './CodeLocationDefinitionsMain';
 import {CodeLocationDefinitionsNav} from './CodeLocationDefinitionsNav';
 import {CodeLocationPageHeader} from './CodeLocationPageHeader';
-import {CodeLocationTabs} from './CodeLocationTabs';
 import {RepoAddress} from '../workspace/types';
 import {WorkspaceRepositoryFragment} from '../workspace/types/WorkspaceQueries.types';
 
