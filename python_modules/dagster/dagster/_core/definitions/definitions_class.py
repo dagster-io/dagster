@@ -550,21 +550,8 @@ class Definitions(IHaveNew):
         """
         return self.get_repository_def().get_all_jobs()
 
-    def has_implicit_global_asset_job_def(self) -> bool:
-        return self.get_repository_def().has_implicit_global_asset_job_def()
-
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
-        """A useful conveninence method when there is a single defined global asset job.
-        This occurs when all assets in the code location use a single partitioning scheme.
-        If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
-        instead to access to the correct implicit asset one.
-        """
         return self.get_repository_def().get_implicit_global_asset_job_def()
-
-    def get_implicit_job_def_for_assets(
-        self, asset_keys: Iterable[AssetKey]
-    ) -> Optional[JobDefinition]:
-        return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
