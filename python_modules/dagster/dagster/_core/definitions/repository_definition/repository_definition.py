@@ -260,18 +260,7 @@ class RepositoryDefinition:
         """Mapping[AssetCheckKey, AssetChecksDefinition]: The assets checks defined in the repository."""
         return self._repository_data.get_asset_checks_defs_by_key()
 
-    def has_implicit_global_asset_job_def(self) -> bool:
-        return self.has_job(IMPLICIT_ASSET_JOB_NAME)
-
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
-        return self.get_job(IMPLICIT_ASSET_JOB_NAME)
-
-    def get_implicit_asset_job_names(self) -> Sequence[str]:
-        return [IMPLICIT_ASSET_JOB_NAME]
-
-    def get_implicit_job_def_for_assets(
-        self, asset_keys: Iterable[AssetKey]
-    ) -> Optional[JobDefinition]:
         return self.get_job(IMPLICIT_ASSET_JOB_NAME)
 
     def get_maybe_subset_job_def(

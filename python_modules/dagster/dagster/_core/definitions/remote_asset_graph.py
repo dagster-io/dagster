@@ -18,7 +18,6 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -26,7 +25,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
 
 from .backfill_policy import BackfillPolicy
@@ -356,18 +354,6 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
             for k in self.materializable_asset_keys
             if job_name in self.get_materialization_job_names(k)
         ]
-
-    def get_implicit_job_name_for_assets(
-        self,
-        asset_keys: Iterable[AssetKey],
-        external_repo: Optional[ExternalRepository],
-    ) -> Optional[str]:
-        """Returns the name of the asset base job that contains all the given assets, or None if there is no such
-        job.
-
-        Note: all asset_keys should be in the same repository.
-        """
-        return IMPLICIT_ASSET_JOB_NAME
 
     def split_asset_keys_by_repository(
         self, asset_keys: AbstractSet[AssetKey]

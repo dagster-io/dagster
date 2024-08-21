@@ -46,7 +46,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import is_base_asset_job_name
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -516,10 +516,9 @@ class SensorSnap(IHaveNew):
 
         if sensor_def.asset_selection is not None:
             target_dict = {
-                base_asset_job_name: ExternalTargetData(
-                    job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
+                IMPLICIT_ASSET_JOB_NAME: ExternalTargetData(
+                    job_name=IMPLICIT_ASSET_JOB_NAME, mode=DEFAULT_MODE_NAME, op_selection=None
                 )
-                for base_asset_job_name in repository_def.get_implicit_asset_job_names()
             }
 
             serializable_asset_selection = (
@@ -1210,7 +1209,7 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
 
     for job_def in job_defs:
         job_name = job_def.name
-        if is_base_asset_job_name(job_name):
+        if job_name == IMPLICIT_ASSET_JOB_NAME:
             continue
 
         resource_usage: List[NodeHandleResourceUse] = []

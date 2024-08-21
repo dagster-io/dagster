@@ -61,10 +61,6 @@ if TYPE_CHECKING:
     from .asset_check_spec import AssetCheckSpec
 
 
-def is_base_asset_job_name(name: str) -> bool:
-    return name == IMPLICIT_ASSET_JOB_NAME
-
-
 def get_base_asset_job_lambda(
     asset_graph: AssetGraph,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
