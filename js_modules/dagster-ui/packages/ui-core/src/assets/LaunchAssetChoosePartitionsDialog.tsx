@@ -47,7 +47,6 @@ import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitio
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
@@ -60,13 +59,9 @@ import {
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
 } from '../instance/backfill/types/BackfillUtils.types';
-import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
+import {fetchTagsAndConfigForAssetJob} from '../launchpad/ConfigFetch';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
-import {
-  ConfigPartitionSelectionQuery,
-  ConfigPartitionSelectionQueryVariables,
-} from '../launchpad/types/ConfigEditorConfigPicker.types';
 import {
   DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
   DaemonNotRunningAlert,
@@ -86,7 +81,7 @@ import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
-interface Props {
+export interface LaunchAssetChoosePartitionsDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
@@ -99,7 +94,9 @@ interface Props {
   refetch?: () => Promise<void>;
 }
 
-export const LaunchAssetChoosePartitionsDialog = (props: Props) => {
+export const LaunchAssetChoosePartitionsDialog = (
+  props: LaunchAssetChoosePartitionsDialogProps,
+) => {
   const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
@@ -135,7 +132,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   target,
   upstreamAssetKeys,
   refetch: _refetch,
-}: Props) => {
+}: LaunchAssetChoosePartitionsDialogProps) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
   const {
@@ -269,50 +266,19 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       });
     }
 
-    const {data: tagAndConfigData} = await client.query<
-      ConfigPartitionSelectionQuery,
-      ConfigPartitionSelectionQueryVariables
-    >({
-      query: CONFIG_PARTITION_SELECTION_QUERY,
-      fetchPolicy: 'network-only',
-      variables: {
-        repositorySelector: {
-          repositoryLocationName: repoAddress.location,
-          repositoryName: repoAddress.name,
-        },
-        partitionSetName: target.partitionSetName,
-        partitionName: keysFiltered[0]!,
-      },
+    const config = await fetchTagsAndConfigForAssetJob(client, {
+      partitionName: keysFiltered[0]!,
+      repositoryLocationName: repoAddress.location,
+      repositoryName: repoAddress.name,
+      assetKeys: target.assetKeys,
+      jobName: target.jobName,
     });
-
-    if (
-      !tagAndConfigData ||
-      !tagAndConfigData.partitionSetOrError ||
-      tagAndConfigData.partitionSetOrError.__typename !== 'PartitionSet' ||
-      !tagAndConfigData.partitionSetOrError.partition
-    ) {
+    if (!config) {
       return;
     }
 
-    const {partition} = tagAndConfigData.partitionSetOrError;
-
-    if (partition.tagsOrError.__typename === 'PythonError') {
-      showCustomAlert({
-        title: 'Unable to load tags',
-        body: <PythonErrorInfo error={partition.tagsOrError} />,
-      });
-      return;
-    }
-    if (partition.runConfigOrError.__typename === 'PythonError') {
-      showCustomAlert({
-        title: 'Unable to load tags',
-        body: <PythonErrorInfo error={partition.runConfigOrError} />,
-      });
-      return;
-    }
-
-    const runConfigData = partition.runConfigOrError.yaml || '';
-    let allTags = [...partition.tagsOrError.results, ...tags];
+    const runConfigData = config.yaml || '';
+    let allTags = [...config.tags, ...tags];
 
     if (launchWithRangesAsTags) {
       allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
@@ -331,7 +297,6 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         executionParams: {
           ...executionParamsForAssetJob(repoAddress, target.jobName, assets, allTags),
           runConfigData,
-          mode: partition.mode,
         },
       },
       'toast',
@@ -351,7 +316,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             partitionNames: keysFiltered,
             fromFailure: false,
             selector: {
-              partitionSetName: target.partitionSetName,
+              // Todo: Fix after PR #23720 merges
+              partitionSetName: `${target.jobName}_partition_set`,
               repositorySelector: {
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,
@@ -618,9 +584,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       <DialogFooter
         topBorder={!previewNotice}
         left={
-          'partitionSetName' in target && (
-            <RunningBackfillsNotice partitionSetName={target.partitionSetName} />
-          )
+          'assetKeys' in target &&
+          target.assetKeys && <RunningBackfillsNotice assetSelection={target.assetKeys} />
         }
       >
         <Button intent="none" onClick={() => setOpen(false)}>
