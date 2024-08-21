@@ -1,20 +1,17 @@
 import logging
 import os
-import sys
 
 import click
 
-import dagster._check as check
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._grpc.server import LoadedRepositories
 
 from .job import apply_click_params
 from .workspace.cli_target import (
     ClickArgValue,
-    get_working_directory_from_kwargs,
+    get_workspace_load_target,
     python_file_option,
     python_module_option,
-    working_directory_option,
     workspace_option,
 )
 
@@ -23,60 +20,43 @@ def check_command_options(f):
     return apply_click_params(
         f,
         workspace_option(),
-        # TODO: Handle multiple files
-        python_file_option(allow_multiple=False),
-        python_module_option(allow_multiple=False),
-        working_directory_option(),
+        python_file_option(allow_multiple=True),
+        python_module_option(allow_multiple=True),
     )
 
 
 @check_command_options
 @click.command(
     name="check",
-    help="Load and check Dagster definitions and repositories.",
+    help="Validate if Dagster definitions are loadable.",
 )
 def check_command(**kwargs: ClickArgValue):
     logger = logging.getLogger("dagster")
 
-    # TODO: Read from pyproject.toml or workspace.yaml if present
+    workspace_load_target = get_workspace_load_target(kwargs)
+    workspace_origins = workspace_load_target.create_origins()
 
     # TODO: Allow another container image?
     container_image = os.getenv("DAGSTER_CURRENT_IMAGE")
     # TODO: Allow another entry point?
     entry_point = ["dagster"]
 
-    loadable_target_origin = None
-    if any(
-        kwargs[key]
-        for key in [
-            "working_directory",
-            "module_name",
-            "python_file",
-        ]
-    ):
-        # TODO: Handle multiple files by iterating
-        # in the gRPC api CLI we never load more than one module or python file at a time
-        module_name = check.opt_str_elem(kwargs, "module_name")
-        python_file = check.opt_str_elem(kwargs, "python_file")
+    for workspace_origin in workspace_origins:
+        # TODO: What to do with ?
+        if isinstance(workspace_origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+            # TODO: Raise exception is loadable_target_origin is None?
 
-        loadable_target_origin = LoadableTargetOrigin(
-            executable_path=sys.executable,
-            attribute=None,
-            working_directory=get_working_directory_from_kwargs(kwargs),
-            module_name=module_name,
-            python_file=python_file,
-            package_name=None,
-        )
+            logger.info("Starting check...")
 
-    # TODO: Raise exception is loadable_target_origin is None?
+            try:
+                # TODO: Logging when loading the repository would be great, where should it be implemented?
+                LoadedRepositories(
+                    loadable_target_origin=workspace_origin.loadable_target_origin,
+                    entry_point=entry_point,
+                    container_image=container_image,
+                )
+            except Exception as e:
+                print(e)
+                pass
 
-    logger.info("Starting check...")
-
-    # TODO: Logging when loading the repository would be great, where should it be implemented?
-    LoadedRepositories(
-        loadable_target_origin=loadable_target_origin,
-        entry_point=entry_point,
-        container_image=container_image,
-    )
-
-    logger.info("Ending check...")
+            logger.info("Ending check...")
