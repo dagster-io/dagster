@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import timedelta
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Sequence, Set, Tuple
 
 from dagster import (
     AssetKey,
@@ -18,6 +18,7 @@ from dagster import (
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
+from dagster._core.utils import toposort_flatten
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 
 from .airflow_instance import AirflowInstance, TaskInstance
@@ -42,6 +43,7 @@ def build_airflow_polling_sensor(
         )
         current_date = get_current_datetime()
         materializations_to_report: List[Tuple[float, AssetMaterialization]] = []
+        toposorted_keys = toposorted_asset_keys(repository_def)
         for dag_id, (dag_key, task_keys) in retrieve_unmigrated_dag_keys(repository_def).items():
             # For now, we materialize assets representing tasks only when the whole dag completes.
             # With a more robust cursor that can let us know when we've seen a particular task run already, then we can relax this constraint.
@@ -96,8 +98,10 @@ def build_airflow_polling_sensor(
                             ),
                         )
                     )
-        # Sort materialization
-        sorted_mats = sorted(materializations_to_report, key=lambda x: x[0])
+        # Sort materializations by end date and toposort order
+        sorted_mats = sorted(
+            materializations_to_report, key=lambda x: (x[0], toposorted_keys.index(x[1].asset_key))
+        )
         context.update_cursor(str(current_date.timestamp()))
         return SensorResult(
             asset_events=[sorted_mat[1] for sorted_mat in sorted_mats],
@@ -136,3 +140,14 @@ def retrieve_unmigrated_dag_keys(
             else:
                 task_keys_per_dag[dag_id].update((task_id, spec.key) for spec in assets_def.specs)
     return {dag_id: (key, task_keys_per_dag[dag_id]) for dag_id, key in key_per_dag.items()}
+
+
+def toposorted_asset_keys(
+    repository_def: RepositoryDefinition,
+) -> Sequence[AssetKey]:
+    asset_dep_graph = defaultdict(set)  # upstreams
+    for assets_def in repository_def.assets_defs_by_key.values():
+        for spec in assets_def.specs:
+            asset_dep_graph[spec.key].update(dep.asset_key for dep in spec.deps)
+
+    return toposort_flatten(asset_dep_graph)
