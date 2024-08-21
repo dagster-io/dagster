@@ -18,19 +18,17 @@ from typing import (
 
 from dagster import (
     AssetKey,
-    AssetOut,
     AssetsDefinition,
-    Nothing,
     OpExecutionContext,
-    Output,
     _check as check,
     multi_asset,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix, Output
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterStepOutputNotFoundError
@@ -64,6 +62,10 @@ def _build_fivetran_assets(
         table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
+    tracked_asset_key_to_user_facing_asset_key = {
+        tracked_key: user_facing_asset_keys[table_name]
+        for table_name, tracked_key in tracked_asset_keys.items()
+    }
 
     _metadata_by_table_name = check.opt_mapping_param(
         metadata_by_table_name, "metadata_by_table_name", key_type=str
@@ -71,19 +73,20 @@ def _build_fivetran_assets(
 
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
-        outs={
-            "_".join(key.path): AssetOut(
-                io_manager_key=io_manager_key,
-                key=user_facing_asset_keys[table],
-                metadata=_metadata_by_table_name.get(table),
-                dagster_type=Nothing,
-            )
-            for table, key in tracked_asset_keys.items()
-        },
         compute_kind="fivetran",
         resource_defs=resource_defs,
         group_name=group_name,
         op_tags=op_tags,
+        specs=[
+            AssetSpec(
+                key=user_facing_asset_keys[table],
+                metadata={
+                    **_metadata_by_table_name.get(table, {}),
+                    **({"dagster/io_manager_key": io_manager_key} if io_manager_key else {}),
+                },
+            )
+            for table in tracked_asset_keys.keys()
+        ],
     )
     def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
         fivetran_output = fivetran.sync_and_poll(
@@ -99,9 +102,10 @@ def _build_fivetran_assets(
             # scan through all tables actually created, if it was expected then emit an Output.
             # otherwise, emit a runtime AssetMaterialization
             if materialization.asset_key in tracked_asset_keys.values():
+                key = tracked_asset_key_to_user_facing_asset_key[materialization.asset_key]
                 yield Output(
                     value=None,
-                    output_name="_".join(materialization.asset_key.path),
+                    output_name=key.to_python_identifier(),
                     metadata=materialization.metadata,
                 )
                 materialized_asset_keys.add(materialization.asset_key)
@@ -112,10 +116,9 @@ def _build_fivetran_assets(
         unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
         if infer_missing_tables:
             for asset_key in unmaterialized_asset_keys:
-                yield Output(
-                    value=None,
-                    output_name="_".join(asset_key.path),
-                )
+                key = tracked_asset_key_to_user_facing_asset_key[asset_key]
+
+                yield Output(value=None, output_name=key.to_python_identifier())
 
         else:
             if unmaterialized_asset_keys:
