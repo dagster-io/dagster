@@ -156,7 +156,7 @@ def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
         for error_msg in dagster_errors:
             logger.info(error_msg)
         raise Exception(
-            f"Bulid failed. Found {len(dagster_errors)} violations of docstring requirements."
+            f"Build failed. Found {len(dagster_errors)} violations of docstring requirements."
         )
 
 
