@@ -102,8 +102,8 @@ describe('launchAssetChoosePartitionsDialog', () => {
               setOpen={(_open: boolean) => {}}
               repoAddress={buildRepoAddress('test', 'test')}
               target={{
-                jobName: '__ASSET_JOB',
-                assetKeys: [assetA.assetKey, assetB.assetKey],
+                jobName: '__ASSET_JOB_0',
+                partitionSetName: '__ASSET_JOB_0_partition_set',
                 type: 'job',
               }}
               assets={[assetA, assetB]}

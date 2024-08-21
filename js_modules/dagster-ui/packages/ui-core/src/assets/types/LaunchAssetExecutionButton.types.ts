@@ -1871,6 +1871,13 @@ export type LaunchAssetLoaderResourceQueryVariables = Types.Exact<{
 
 export type LaunchAssetLoaderResourceQuery = {
   __typename: 'Query';
+  partitionSetsOrError:
+    | {
+        __typename: 'PartitionSets';
+        results: Array<{__typename: 'PartitionSet'; id: string; name: string}>;
+      }
+    | {__typename: 'PipelineNotFoundError'; message: string}
+    | {__typename: 'PythonError'; message: string};
   pipelineOrError:
     | {__typename: 'InvalidSubsetError'; message: string}
     | {

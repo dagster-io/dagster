@@ -20,8 +20,7 @@ import styled from 'styled-components';
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorPipelinePresetFragment,
-  ConfigPartitionsAssetsQuery,
-  ConfigPartitionsAssetsQueryVariables,
+  ConfigPartitionResultFragment,
   ConfigPartitionsQuery,
   ConfigPartitionsQueryVariables,
   PartitionSetForConfigEditorFragment,
@@ -43,6 +42,7 @@ import {RepoAddress} from '../workspace/types';
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorPipelinePresetFragment;
 type PartitionSet = PartitionSetForConfigEditorFragment;
+type Partition = ConfigPartitionResultFragment;
 type ConfigGenerator = Preset | PartitionSet;
 
 interface ConfigEditorConfigPickerProps {
@@ -94,10 +94,8 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
     if ('presetName' in base) {
       return `Preset: ${base.presetName}`;
     }
-    if ('partitionsSetName' in base) {
-      return `Partition Set: ${base.partitionsSetName}`;
-    }
-    return `Partitions`;
+
+    return `Partition Set: ${base.partitionsSetName}`;
   };
 
   const onSelect = (item: ConfigGenerator) => {
@@ -105,7 +103,6 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
       onSaveSession({
         mode: item.mode,
         base: {
-          type: 'op-job-partition-set',
           partitionsSetName: item.name,
           partitionName: null,
           tags: base ? base.tags : null,
@@ -125,10 +122,10 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
           onSelect={onSelect}
         />
       )}
-      {base && 'partitionName' in base ? (
+      {base && 'partitionsSetName' in base ? (
         <ConfigEditorPartitionPicker
           pipeline={pipeline}
-          partitionSetName={'partitionsSetName' in base ? base.partitionsSetName : ''}
+          partitionSetName={base.partitionsSetName}
           value={base.partitionName}
           onSelect={onSelectPartition}
           repoAddress={repoAddress}
@@ -160,33 +157,19 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   const {basePath} = React.useContext(AppContext);
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResultNoAssets = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
+  const queryResult = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
     CONFIG_PARTITIONS_QUERY,
     {
-      skip: !!assetSelection,
-      variables: {repositorySelector, partitionSetName},
+      variables: {
+        repositorySelector,
+        partitionSetName,
+        assetKeys: assetSelection
+          ? assetSelection.map((selection) => ({path: selection.assetKey.path}))
+          : [],
+      },
       fetchPolicy: 'network-only',
     },
   );
-
-  const queryResultAssets = useQuery<
-    ConfigPartitionsAssetsQuery,
-    ConfigPartitionsAssetsQueryVariables
-  >(CONFIG_PARTITIONS_ASSETS_QUERY, {
-    skip: !assetSelection,
-    variables: {
-      params: {
-        ...repositorySelector,
-        pipelineName: props.pipeline.name,
-      },
-      assetKeys: assetSelection
-        ? assetSelection.map((selection) => ({path: selection.assetKey.path}))
-        : [],
-    },
-    fetchPolicy: 'network-only',
-  });
-
-  const queryResult = assetSelection ? queryResultAssets : queryResultNoAssets;
   const {data, refetch, loading} = queryResult;
   useBlockTraceOnQueryResult(queryResult, 'ConfigPartitionsQuery');
 
@@ -199,18 +182,26 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   );
 
   const doesAnyAssetHavePartitions = React.useMemo(
-    () =>
-      data && 'assetNodes' in data && data.assetNodes?.some((node) => !!node.partitionDefinition),
+    () => data?.assetNodes?.some((node) => !!node.partitionDefinition),
     [data],
   );
 
-  const partitions: string[] = React.useMemo(() => {
-    const retrieved = partitionKeysFromData(data);
+  const partitions: Partition[] = React.useMemo(() => {
+    const retrieved =
+      data?.partitionSetOrError.__typename === 'PartitionSet' &&
+      data?.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
+        ? data.partitionSetOrError.partitionsOrError.results
+        : [];
     return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
   }, [data, sortOrder]);
 
-  const error = errorFromData(data);
-  const selected = value && partitions.includes(value) ? value : undefined;
+  const error =
+    data?.partitionSetOrError.__typename === 'PartitionSet' &&
+    data?.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
+      ? data.partitionSetOrError.partitionsOrError
+      : null;
+
+  const selected = partitions.find((p) => p.name === value);
 
   const onClickSort = React.useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -234,7 +225,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   };
 
   const {isDynamicPartition, dynamicPartitionsDefinitionName} = React.useMemo(() => {
-    const assetNodes = data && 'assetNodes' in data ? data?.assetNodes : undefined;
+    const assetNodes = data?.assetNodes;
     const definition = assetNodes?.find((a) => !!a.partitionDefinition)?.partitionDefinition;
     if (
       !definition ||
@@ -249,7 +240,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
       isDynamicPartition: definition.type === PartitionDefinitionType.DYNAMIC,
       dynamicPartitionsDefinitionName: definition.name,
     };
-  }, [data]);
+  }, [data?.assetNodes]);
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
 
@@ -298,24 +289,24 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   // and ensure it is re-applied to the internal state when it changes (via `key` below).
   return (
     <>
-      <Suggest<string>
-        key={selected ? selected : 'none'}
+      <Suggest<Partition>
+        key={selected ? selected.name : 'none'}
         defaultSelectedItem={selected}
         items={partitions}
         inputProps={inputProps}
-        inputValueRenderer={(partition) => partition}
-        itemPredicate={(query, partition) => query.length === 0 || partition.includes(query)}
+        inputValueRenderer={(partition) => partition.name}
+        itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
         itemRenderer={(partition, props) => (
           <MenuItem
             active={props.modifiers.active}
             onClick={props.handleClick}
-            key={partition}
-            text={partition}
+            key={partition.name}
+            text={partition.name}
           />
         )}
         noResults={<MenuItem disabled={true} text="No presets." />}
         onItemSelect={(item) => {
-          onSelect(repositorySelector, partitionSetName, item);
+          onSelect(repositorySelector, partitionSetName, item.name);
         }}
       />
       {isDynamicPartition ? (
@@ -466,6 +457,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
     $repositorySelector: RepositorySelector!
     $partitionSetName: String!
+    $assetKeys: [AssetKeyInput!]
   ) {
     partitionSetOrError(
       repositorySelector: $repositorySelector
@@ -483,6 +475,13 @@ const CONFIG_PARTITIONS_QUERY = gql`
         }
       }
     }
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      partitionDefinition {
+        name
+        type
+      }
+    }
   }
 
   fragment ConfigPartitionResult on Partition {
@@ -492,30 +491,38 @@ const CONFIG_PARTITIONS_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const CONFIG_PARTITIONS_ASSETS_QUERY = gql`
-  query ConfigPartitionsAssetsQuery($params: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
-    pipelineOrError(params: $params) {
-      ...PythonErrorFragment
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on InvalidSubsetError {
-        message
-      }
-      ... on Pipeline {
+export const CONFIG_PARTITION_SELECTION_QUERY = gql`
+  query ConfigPartitionSelectionQuery(
+    $repositorySelector: RepositorySelector!
+    $partitionSetName: String!
+    $partitionName: String!
+  ) {
+    partitionSetOrError(
+      repositorySelector: $repositorySelector
+      partitionSetName: $partitionSetName
+    ) {
+      ... on PartitionSet {
         id
-        partitionKeysOrError(selectedAssetKeys: $assetKeys) {
-          ... on PartitionKeys {
-            partitionKeys
+        partition(partitionName: $partitionName) {
+          name
+          solidSelection
+          runConfigOrError {
+            ... on PartitionRunConfig {
+              yaml
+            }
+            ...PythonErrorFragment
+          }
+          mode
+          tagsOrError {
+            ... on PartitionTags {
+              results {
+                key
+                value
+              }
+            }
+            ...PythonErrorFragment
           }
         }
-      }
-    }
-    assetNodes(assetKeys: $assetKeys) {
-      id
-      partitionDefinition {
-        name
-        type
       }
     }
   }
@@ -564,44 +571,3 @@ export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
     solidSelection
   }
 `;
-
-function partitionKeysFromData(
-  data: ConfigPartitionsAssetsQuery | ConfigPartitionsQuery | undefined,
-) {
-  if (!data) {
-    return [];
-  }
-
-  if (
-    'partitionSetOrError' in data &&
-    data.partitionSetOrError.__typename === 'PartitionSet' &&
-    data.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
-  ) {
-    return data.partitionSetOrError.partitionsOrError.results.map((a) => a.name);
-  }
-  if ('pipelineOrError' in data && data.pipelineOrError.__typename === 'Pipeline') {
-    return data.pipelineOrError.partitionKeysOrError.partitionKeys;
-  }
-  return [];
-}
-
-function errorFromData(data: ConfigPartitionsAssetsQuery | ConfigPartitionsQuery | undefined) {
-  if (!data) {
-    return null;
-  }
-  if (
-    'partitionSetOrError' in data &&
-    data.partitionSetOrError.__typename === 'PartitionSet' &&
-    data.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
-  ) {
-    return data.partitionSetOrError.partitionsOrError;
-  }
-  if (
-    'pipelineOrError' in data &&
-    data.pipelineOrError &&
-    data.pipelineOrError.__typename !== 'Pipeline'
-  ) {
-    return data.pipelineOrError;
-  }
-  return null;
-}

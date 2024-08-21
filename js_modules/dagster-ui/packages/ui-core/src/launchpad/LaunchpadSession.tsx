@@ -24,9 +24,11 @@ import * as React from 'react';
 import styled from 'styled-components';
 import * as yaml from 'yaml';
 
-import {ConfigEditorConfigPicker} from './ConfigEditorConfigPicker';
+import {
+  CONFIG_PARTITION_SELECTION_QUERY,
+  ConfigEditorConfigPicker,
+} from './ConfigEditorConfigPicker';
 import {ConfigEditorModePicker} from './ConfigEditorModePicker';
-import {fetchTagsAndConfigForAssetJob, fetchTagsAndConfigForJob} from './ConfigFetch';
 import {LaunchpadConfigExpansionButton} from './LaunchpadConfigExpansionButton';
 import {useLaunchPadHooks} from './LaunchpadHooksContext';
 import {LoadingOverlay} from './LoadingOverlay';
@@ -36,7 +38,11 @@ import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
 import {LaunchpadType} from './types';
-import {ConfigEditorPipelinePresetFragment} from './types/ConfigEditorConfigPicker.types';
+import {
+  ConfigEditorPipelinePresetFragment,
+  ConfigPartitionSelectionQuery,
+  ConfigPartitionSelectionQueryVariables,
+} from './types/ConfigEditorConfigPicker.types';
 import {
   LaunchpadSessionPartitionSetsFragment,
   LaunchpadSessionPipelineFragment,
@@ -56,6 +62,7 @@ import {
   SessionBase,
 } from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
@@ -447,7 +454,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     const newBaseTags = preset.tags.map(onlyKeyAndValue);
 
     onSaveSession({
-      base: {type: 'preset', presetName: preset.name, tags: newBaseTags},
+      base: {presetName: preset.name, tags: newBaseTags},
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || '',
       solidSelection: preset.solidSelection,
@@ -467,35 +474,55 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     onConfigLoading();
     try {
       const {base} = currentSession;
+      const {data} = await client.query<
+        ConfigPartitionSelectionQuery,
+        ConfigPartitionSelectionQueryVariables
+      >({
+        query: CONFIG_PARTITION_SELECTION_QUERY,
+        variables: {repositorySelector, partitionSetName, partitionName},
+      });
 
-      const resp = props.session.assetSelection
-        ? await fetchTagsAndConfigForAssetJob(client, {
-            ...repositorySelector,
-            jobName: pipeline.name,
-            assetKeys: props.session.assetSelection.map(asAssetKeyInput),
-            partitionName,
-          })
-        : await fetchTagsAndConfigForJob(client, {
-            repositorySelector,
-            partitionSetName,
-            partitionName,
-          });
-
-      if (!resp) {
+      if (
+        !data ||
+        !data.partitionSetOrError ||
+        data.partitionSetOrError.__typename !== 'PartitionSet' ||
+        !data.partitionSetOrError.partition
+      ) {
         onConfigLoaded();
         return;
       }
 
-      const solidSelection = sessionSolidSelection || resp.solidSelection;
+      const {partition} = data.partitionSetOrError;
+
+      let newBaseTags: {key: string; value: string}[] = [];
+      if (partition.tagsOrError.__typename === 'PythonError') {
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.tagsOrError} />,
+        });
+      } else {
+        newBaseTags = partition.tagsOrError.results.map(onlyKeyAndValue);
+      }
+
+      let runConfigYaml;
+      if (partition.runConfigOrError.__typename === 'PythonError') {
+        runConfigYaml = '';
+        showCustomAlert({
+          body: <PythonErrorInfo error={partition.runConfigOrError} />,
+        });
+      } else {
+        runConfigYaml = mergeYaml(currentSession.runConfigYaml, partition.runConfigOrError.yaml);
+      }
+
+      const solidSelection = sessionSolidSelection || partition.solidSelection;
 
       onSaveSession({
-        name: partitionName,
-        base: Object.assign({}, base, {partitionName, tags: resp.tags}),
-        runConfigYaml: mergeYaml(currentSession.runConfigYaml, resp.yaml),
+        name: partition.name,
+        base: Object.assign({}, base, {partitionName: partition.name, tags: newBaseTags}),
+        runConfigYaml,
         solidSelection,
         solidSelectionQuery: solidSelection === null ? '*' : solidSelection.join(','),
-        mode: resp.mode,
-        tags: tagsApplyingNewBaseTags(resp.tags),
+        mode: partition.mode,
+        tags: tagsApplyingNewBaseTags(newBaseTags),
         needsRefresh: false,
       });
     } catch {}
@@ -517,16 +544,17 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     }
 
     // Otherwise, handle partition-based configuration.
+    const {partitionName, partitionsSetName} = base;
     const repositorySelector = repoAddressToSelector(repoAddress);
 
     // It is expected that `partitionName` is set here, since we shouldn't be showing the
     // button at all otherwise.
-    if (base.partitionName) {
+    if (partitionName) {
       onConfigLoading();
       await onSelectPartition(
         repositorySelector,
-        'partitionsSetName' in base ? base.partitionsSetName : '',
-        base.partitionName,
+        partitionsSetName,
+        partitionName,
         currentSession.solidSelection,
       );
       onConfigLoaded();
@@ -559,7 +587,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
     if (
       base &&
       needsRefresh &&
-      ('presetName' in base || ('partitionName' in base && base.partitionName))
+      ('presetName' in base || (base.partitionsSetName && base.partitionName))
     ) {
       return base;
     }

@@ -57,7 +57,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 export type LaunchAssetsChoosePartitionsTarget =
-  | {type: 'job'; jobName: string; assetKeys: AssetKey[]}
+  | {type: 'job'; jobName: string; partitionSetName: string}
   | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey}
   | {type: 'pureAll'};
 
@@ -525,6 +525,12 @@ async function stateForLaunchingAssets(
   if (pipeline.__typename !== 'Pipeline') {
     return {type: 'error', error: pipeline.message};
   }
+  const partitionSets = resourceResult.data.partitionSetsOrError;
+  if (partitionSets.__typename !== 'PartitionSets') {
+    return {type: 'error', error: partitionSets.message};
+  }
+
+  const partitionSetName = partitionSets.results[0]?.name;
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
   const resources = pipeline.modes[0]!.resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
@@ -559,17 +565,17 @@ async function stateForLaunchingAssets(
         ),
         includeSeparatelyExecutableChecks: true,
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
-        base: partitionDefinition
-          ? {type: 'asset-job-partition', partitionName: null, tags: []}
+        base: partitionSetName
+          ? {partitionsSetName: partitionSetName, partitionName: null, tags: []}
           : undefined,
       },
     };
   }
-  if (partitionDefinition) {
+  if (partitionDefinition && partitionSetName) {
     return {
       type: 'partitions',
       assets,
-      target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
+      target: {type: 'job', jobName, partitionSetName},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };
@@ -860,6 +866,27 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
     $repositoryLocationName: String!
     $repositoryName: String!
   ) {
+    partitionSetsOrError(
+      pipelineName: $pipelineName
+      repositorySelector: {
+        repositoryName: $repositoryName
+        repositoryLocationName: $repositoryLocationName
+      }
+    ) {
+      ... on PythonError {
+        message
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PartitionSets {
+        results {
+          id
+          name
+        }
+      }
+    }
+
     pipelineOrError(
       params: {
         pipelineName: $pipelineName
