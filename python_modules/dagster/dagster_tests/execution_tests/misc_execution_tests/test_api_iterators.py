@@ -13,7 +13,7 @@ from dagster import (
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, RunFailureReason
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import (
     create_execution_plan,
@@ -188,6 +188,14 @@ def test_restart_running_run_worker():
             [
                 f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"
                 " while the run was already in state DagsterRunStatus.STARTED. " in event.message
+                for event in events
+            ]
+        )
+        assert any(
+            [
+                event
+                and event.is_run_failure
+                and event.job_failure_data.failure_reason == RunFailureReason.RUN_WORKER_RESTART
                 for event in events
             ]
         )

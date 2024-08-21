@@ -24,7 +24,7 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
+from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -120,7 +120,12 @@ def execute_run_iterator(
                         " and is restarted by the cluster. Marking the run as failed.",
                         dagster_run,
                     )
-                    yield instance.report_run_failed(dagster_run)
+                    yield instance.report_run_failed(
+                        dagster_run,
+                        job_failure_data=JobFailureData(
+                            error=None, failure_reason=RunFailureReason.RUN_WORKER_RESTART
+                        ),
+                    )
 
                 return gen_fail_restarted_run_worker()
 
