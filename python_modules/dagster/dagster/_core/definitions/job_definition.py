@@ -685,14 +685,10 @@ class JobDefinition(IHasInternalInit):
 
         merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
-            ephemeral_job.validate_partition_key(
-                partition_key,
-                selected_asset_keys=asset_selection,
-                dynamic_partitions_store=instance,
-            )
             tags_for_partition_key = ephemeral_job.get_tags_for_partition_key(
                 partition_key,
                 selected_asset_keys=asset_selection,
+                dynamic_partitions_store=instance,
             )
 
             if not run_config and self.partitioned_config:
@@ -718,11 +714,18 @@ class JobDefinition(IHasInternalInit):
             asset_selection=frozenset(asset_selection),
         )
 
-    def _get_partitions_def(
-        self, selected_asset_keys: Optional[Iterable[AssetKey]]
-    ) -> PartitionsDefinition:
+    def get_tags_for_partition_key(
+        self,
+        partition_key: str,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
+        selected_asset_keys: Optional[Iterable[AssetKey]],
+    ) -> Mapping[str, str]:
+        """Gets tags for the given partition key and ensures that it's a member of the PartitionsDefinition
+        corresponding to every asset in the selection.
+        """
+        partitions_def = None
         if self.partitions_def:
-            return self.partitions_def
+            partitions_def = self.partitions_def
         elif self.asset_layer:
             if selected_asset_keys:
                 resolved_selected_asset_keys = selected_asset_keys
@@ -733,48 +736,21 @@ class JobDefinition(IHasInternalInit):
                     key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
                 ]
 
-            unique_partitions_defs: Set[PartitionsDefinition] = set()
-            for asset_key in resolved_selected_asset_keys:
-                partitions_def = self.asset_layer.get(asset_key).partitions_def
-                if partitions_def is not None:
-                    unique_partitions_defs.add(partitions_def)
-
+            unique_partitions_defs = {
+                self.asset_layer.get(asset_key).partitions_def
+                for asset_key in resolved_selected_asset_keys
+            } - {None}
             if len(unique_partitions_defs) == 1:
-                return check.not_none(next(iter(unique_partitions_defs)))
+                partitions_def = next(iter(unique_partitions_defs))
+            elif len(unique_partitions_defs) > 1:
+                check.failed("Attempted to execute a run for assets with different partitions")
 
-        if selected_asset_keys is not None:
-            check.failed("There is no PartitionsDefinition shared by all the provided assets")
-        else:
-            check.failed("Job has no PartitionsDefinition")
+        if partitions_def is None:
+            check.failed("Attempted to execute a partitioned run for a non-partitioned job")
 
-    def get_partition_keys(
-        self, selected_asset_keys: Optional[Iterable[AssetKey]]
-    ) -> Sequence[str]:
-        partitions_def = self._get_partitions_def(selected_asset_keys)
-        return partitions_def.get_partition_keys()
-
-    def validate_partition_key(
-        self,
-        partition_key: str,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
-        selected_asset_keys: Optional[Iterable[AssetKey]],
-    ) -> None:
-        """Ensures that the given partition_key is a member of the PartitionsDefinition
-        corresponding to every asset in the selection.
-        """
-        partitions_def = self._get_partitions_def(selected_asset_keys)
         partitions_def.validate_partition_key(
             partition_key, dynamic_partitions_store=dynamic_partitions_store
         )
-
-    def get_tags_for_partition_key(
-        self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
-    ) -> Mapping[str, str]:
-        """Gets tags for the given partition key."""
-        if self._partitioned_config is not None:
-            return self._partitioned_config.get_tags_for_partition_key(partition_key, self.name)
-
-        partitions_def = self._get_partitions_def(selected_asset_keys)
         return partitions_def.get_tags_for_partition_key(partition_key)
 
     def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:

@@ -203,16 +203,12 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             if dynamic_partitions_store
             else None
         )
-        target_definition.validate_partition_key(
-            self.partition_key,
-            dynamic_partitions_store=dynamic_partitions_store_after_requests,
-            selected_asset_keys=self.asset_selection,
-        )
-
         tags = {
             **(self.tags or {}),
             **target_definition.get_tags_for_partition_key(
-                self.partition_key, selected_asset_keys=self.asset_selection
+                self.partition_key,
+                dynamic_partitions_store=dynamic_partitions_store_after_requests,
+                selected_asset_keys=self.asset_selection,
             ),
         }
 

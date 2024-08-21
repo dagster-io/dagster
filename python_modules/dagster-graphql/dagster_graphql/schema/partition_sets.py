@@ -12,7 +12,6 @@ from dagster._core.remote_representation.external_data import (
     ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
-    job_name_for_external_partition_set_name,
 )
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -228,9 +227,8 @@ class GraphenePartition(graphene.ObjectType):
         return get_partition_config(
             graphene_info,
             self._external_repository_handle,
-            job_name_for_external_partition_set_name(self._external_partition_set.name),
+            self._external_partition_set.name,
             self._partition_name,
-            selected_asset_keys=None,
         )
 
     @capture_error
@@ -238,9 +236,8 @@ class GraphenePartition(graphene.ObjectType):
         return get_partition_tags(
             graphene_info,
             self._external_repository_handle,
-            job_name_for_external_partition_set_name(self._external_partition_set.name),
+            self._external_partition_set.name,
             self._partition_name,
-            selected_asset_keys=None,
         )
 
     def resolve_runs(
@@ -329,10 +326,8 @@ class GraphenePartitionSet(graphene.ObjectType):
     def _get_partition_names(self, graphene_info: ResolveInfo) -> Sequence[str]:
         if self._partition_names is None:
             result = graphene_info.context.get_external_partition_names(
-                repository_handle=self._external_repository_handle,
-                job_name=self._external_partition_set.job_name,
+                self._external_partition_set,
                 instance=graphene_info.context.instance,
-                selected_asset_keys=None,
             )
             if isinstance(result, ExternalPartitionExecutionErrorData):
                 raise DagsterUserCodeProcessError.from_error_info(result.error)

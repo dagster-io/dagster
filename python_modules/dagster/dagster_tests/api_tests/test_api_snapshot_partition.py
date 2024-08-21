@@ -16,32 +16,17 @@ from dagster._core.remote_representation import (
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
 )
-from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
 from dagster._serdes import deserialize_value
 
-ensure_dagster_tests_import()
-
-from dagster_tests.api_tests.utils import get_bar_repo_code_location
+from .utils import get_bar_repo_code_location
 
 
 def test_external_partition_names_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         repository_handle = code_location.get_repository("bar_repo").handle
         data = sync_get_external_partition_names_grpc(
-            code_location.client, repository_handle, "baz", None
-        )
-        assert isinstance(data, ExternalPartitionNamesData)
-        assert data.partition_names == list(string.ascii_lowercase)
-
-
-def test_external_partition_names(instance: DagsterInstance):
-    with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_external_partition_names(
-            repository_handle=code_location.get_repository("bar_repo").handle,
-            job_name="baz",
-            instance=instance,
-            selected_asset_keys=None,
+            code_location.client, repository_handle, "baz_partition_set"
         )
         assert isinstance(data, ExternalPartitionNamesData)
         assert data.partition_names == list(string.ascii_lowercase)
@@ -72,22 +57,8 @@ def test_external_partitions_config_grpc(instance: DagsterInstance):
         repository_handle = code_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_config_grpc(
-            code_location.client, repository_handle, "baz", "c", instance
+            code_location.client, repository_handle, "baz_partition_set", "c", instance
         )
-        assert isinstance(data, ExternalPartitionConfigData)
-        assert data.run_config
-        assert data.run_config["ops"]["do_input"]["inputs"]["x"]["value"] == "c"  # type: ignore
-
-
-def test_external_partition_config(instance: DagsterInstance):
-    with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_external_partition_config(
-            job_name="baz",
-            repository_handle=code_location.get_repository("bar_repo").handle,
-            partition_name="c",
-            instance=instance,
-        )
-
         assert isinstance(data, ExternalPartitionConfigData)
         assert data.run_config
         assert data.run_config["ops"]["do_input"]["inputs"]["x"]["value"] == "c"  # type: ignore
@@ -99,7 +70,11 @@ def test_external_partitions_config_error_grpc(instance: DagsterInstance):
 
         with pytest.raises(DagsterUserCodeProcessError):
             sync_get_external_partition_config_grpc(
-                code_location.client, repository_handle, "error_partition_config", "c", instance
+                code_location.client,
+                repository_handle,
+                "error_partition_config",
+                "c",
+                instance,
             )
 
 
@@ -130,28 +105,8 @@ def test_external_partitions_tags_grpc(instance: DagsterInstance):
         repository_handle = code_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_tags_grpc(
-            code_location.client,
-            repository_handle,
-            "baz",
-            "c",
-            instance=instance,
-            selected_asset_keys=None,
+            code_location.client, repository_handle, "baz_partition_set", "c", instance=instance
         )
-        assert isinstance(data, ExternalPartitionTagsData)
-        assert data.tags
-        assert data.tags["foo"] == "bar"
-
-
-def test_external_partition_tags(instance: DagsterInstance):
-    with get_bar_repo_code_location(instance) as code_location:
-        data = code_location.get_external_partition_tags(
-            repository_handle=code_location.get_repository("bar_repo").handle,
-            job_name="baz",
-            partition_name="c",
-            instance=instance,
-            selected_asset_keys=None,
-        )
-
         assert isinstance(data, ExternalPartitionTagsData)
         assert data.tags
         assert data.tags["foo"] == "bar"
@@ -185,7 +140,7 @@ def test_external_partitions_tags_error_grpc(instance: DagsterInstance):
 
         with pytest.raises(DagsterUserCodeProcessError):
             sync_get_external_partition_tags_grpc(
-                code_location.client, repository_handle, "error_partition_tags", "c", instance, None
+                code_location.client, repository_handle, "error_partition_tags", "c", instance
             )
 
 
@@ -242,14 +197,22 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         assert len(data.partition_data) == 3
 
         data = sync_get_external_partition_config_grpc(
-            code_location.client, repository_handle, "dynamic_job", "a", instance
+            code_location.client,
+            repository_handle,
+            "dynamic_job_partition_set",
+            "a",
+            instance,
         )
         assert isinstance(data, ExternalPartitionConfigData)
         assert data.name == "a"
         assert data.run_config == {}
 
         data = sync_get_external_partition_tags_grpc(
-            code_location.client, repository_handle, "dynamic_job", "a", instance, None
+            code_location.client,
+            repository_handle,
+            "dynamic_job_partition_set",
+            "a",
+            instance,
         )
         assert isinstance(data, ExternalPartitionTagsData)
         assert data.tags
@@ -264,3 +227,21 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         )
         assert isinstance(data, ExternalPartitionSetExecutionParamData)
         assert data.partition_data == []
+
+        with pytest.raises(DagsterUserCodeProcessError, match="Could not find a partition"):
+            sync_get_external_partition_config_grpc(
+                code_location.client,
+                repository_handle,
+                "dynamic_job_partition_set",
+                "nonexistent_partition",
+                instance,
+            )
+
+        with pytest.raises(DagsterUserCodeProcessError, match="Could not find a partition"):
+            sync_get_external_partition_tags_grpc(
+                code_location.client,
+                repository_handle,
+                "dynamic_job_partition_set",
+                "nonexistent_partition",
+                instance,
+            )

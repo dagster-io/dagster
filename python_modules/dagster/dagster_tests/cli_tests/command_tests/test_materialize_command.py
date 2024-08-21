@@ -118,8 +118,8 @@ def test_conflicting_partitions():
     with instance_for_test():
         result = invoke_materialize("partitioned_asset,differently_partitioned_asset")
         assert (
-            "All selected assets must share the same PartitionsDefinition or have no PartitionsDefinition"
-            in str(result.exception)
+            "All selected assets must share the same PartitionsDefinition or have no"
+            " PartitionsDefinition" in str(result.exception)
         )
 
 

@@ -613,14 +613,13 @@ class DagsterApiServer(DagsterApiServicer):
     ) -> api_pb2.ExternalPartitionNamesReply:
         try:
             partition_names_args = deserialize_value(
-                request.serialized_partition_names_args, PartitionNamesArgs
+                request.serialized_partition_names_args,
+                PartitionNamesArgs,
             )
-
             serialized_response = serialize_value(
                 get_partition_names(
                     self._get_repo_for_origin(partition_names_args.repository_origin),
-                    job_name=partition_names_args.job_name,
-                    selected_asset_keys=partition_names_args.selected_asset_keys,
+                    partition_names_args.partition_set_name,
                 )
             )
         except Exception:
@@ -682,8 +681,8 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_data = serialize_value(
                 get_partition_config(
                     self._get_repo_for_origin(args.repository_origin),
-                    job_name=args.job_name,
-                    partition_key=args.partition_name,
+                    args.partition_set_name,
+                    args.partition_name,
                     instance_ref=instance_ref,
                 )
             )
@@ -711,9 +710,8 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_data = serialize_value(
                 get_partition_tags(
                     self._get_repo_for_origin(partition_args.repository_origin),
-                    job_name=partition_args.job_name,
-                    partition_name=partition_args.partition_name,
-                    selected_asset_keys=partition_args.selected_asset_keys,
+                    partition_args.partition_set_name,
+                    partition_args.partition_name,
                     instance_ref=instance_ref,
                 )
             )

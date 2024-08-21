@@ -140,10 +140,7 @@ def create_and_launch_partition_backfill(
 
         if backfill_params.get("allPartitions"):
             result = graphene_info.context.get_external_partition_names(
-                repository_handle=repository.handle,
-                job_name=external_partition_set.job_name,
-                instance=graphene_info.context.instance,
-                selected_asset_keys=None,
+                external_partition_set, instance=graphene_info.context.instance
             )
             if isinstance(result, ExternalPartitionExecutionErrorData):
                 raise DagsterUserCodeProcessError.from_error_info(result.error)
