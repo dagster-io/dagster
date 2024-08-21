@@ -30,6 +30,7 @@ jobs:
       - name: Run Linting
         run: |
           cd docs/docs-beta
+          yarn install
           yarn run lint
 
       - name: Publish Preview to Vercel
