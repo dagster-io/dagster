@@ -165,22 +165,20 @@ export function useAllAssets({
     onData(data);
   }, [groupSelector, client]);
 
-  const api = useMemo(() => {
-    return {
-      assets,
-      error,
-      loading: !assets && !error,
-      query: groupSelector ? groupQuery : fetchAssets,
-    };
-  }, [assets, error, fetchAssets, groupQuery, groupSelector]);
-
-  const {query} = api;
+  const query = groupSelector ? groupQuery : fetchAssets;
 
   useEffect(() => {
     query();
   }, [query]);
 
-  return api;
+  return useMemo(() => {
+    return {
+      assets,
+      error,
+      loading: !assets && !error,
+      query,
+    };
+  }, [assets, error, query]);
 }
 
 interface AssetCatalogTableProps {
