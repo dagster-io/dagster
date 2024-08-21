@@ -1423,6 +1423,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 SYSTEM_METADATA_KEY_IO_MANAGER_KEY, DEFAULT_IO_MANAGER_KEY
             )
         else:
+            if SYSTEM_METADATA_KEY_IO_MANAGER_KEY in self._specs_by_key[key].metadata:
+                return self._specs_by_key[key].metadata[SYSTEM_METADATA_KEY_IO_MANAGER_KEY]
             check.invariant(
                 SYSTEM_METADATA_KEY_IO_MANAGER_KEY not in self._specs_by_key[key].metadata
             )
