@@ -194,7 +194,6 @@ export const AssetsCatalogTable = ({
   setPrefixPath,
   groupSelector,
 }: AssetCatalogTableProps) => {
-  console.log({prefixPath, groupSelector});
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
   useEffect(() => {
@@ -204,8 +203,6 @@ export const AssetsCatalogTable = ({
   const [view, setView] = useAssetView();
 
   const {assets, query, error} = useAllAssets({groupSelector});
-
-  console.log({assets});
 
   const {
     filtered: partiallyFiltered,
