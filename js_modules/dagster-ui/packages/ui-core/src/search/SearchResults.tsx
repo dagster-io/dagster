@@ -238,11 +238,10 @@ export type SearchResultsProps<T extends ResultType> = {
 export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>) => {
   const {highlight, onClickResult, queryString, results, loading} = props;
 
-  if (loading) {
-    return;
-  }
-
   if (!results.length && queryString) {
+    if (loading) {
+      return;
+    }
     return <NoResults>No results</NoResults>;
   }
 
