@@ -29,7 +29,7 @@ export const TextInput = React.forwardRef(
           <Icon name={icon} color={disabled ? Colors.accentGray() : Colors.accentPrimary()} />
         ) : null}
         <StyledInput
-          data-lpignore='true' 
+          data-lpignore="true"
           {...rest}
           $strokeColor={strokeColor}
           disabled={disabled}
