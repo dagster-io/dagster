@@ -907,6 +907,15 @@ class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
         self._key_prefix = key_prefix
 
     def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        """Uploads a chunk of messages to an S3 bucket.
+
+        Args:
+            payload (IO): The payload containing the messages to upload.
+            index (int): The index of the chunk.
+
+        Returns:
+            None
+        """
         key = f"{self._key_prefix}/{index}.json" if self._key_prefix else f"{index}.json"
         self._client.put_object(
             Body=payload.read(),

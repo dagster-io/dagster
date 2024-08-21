@@ -1086,8 +1086,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
-        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
-          MultiPartitionsDefinition with one time-partitioned dimension.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a MultiPartitionsDefinition with one time-partitioned dimension.
         """
         partitions_def = self._partitions_def_for_output(output_name)
 
@@ -1156,8 +1155,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
-        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
-          MultiPartitionsDefinition with one time-partitioned dimension.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a MultiPartitionsDefinition with one time-partitioned dimension.
         """
         asset_layer = self.job_def.asset_layer
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
