@@ -5,14 +5,15 @@ import {
   MiddleTruncate,
   Mono,
   StyledRawCodeMirror,
-  Subheading,
   Table,
 } from '@dagster-io/ui-components';
-import {ComponentProps, ReactNode, useMemo} from 'react';
+import {useMemo} from 'react';
+import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
 import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
+import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
 import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
@@ -57,7 +58,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
       <Box padding={{horizontal: 24}} border="bottom">
         <CodeLocationTabs selectedTab="overview" repoAddress={repoAddress} />
       </Box>
-      <SectionHeader label="Details" />
+      <CodeLocationOverviewSectionHeader label="Details" />
       {/* Fixed table layout to contain overflowing strings in right column */}
       <Table style={{width: '100%', tableLayout: 'fixed'}}>
         <tbody>
@@ -93,9 +94,10 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           ) : null}
         </tbody>
       </Table>
+      <CodeLocationServerSection />
       {libraryVersions?.length ? (
         <>
-          <SectionHeader label="Libraries" />
+          <CodeLocationOverviewSectionHeader label="Libraries" />
           <Table>
             <tbody>
               {libraryVersions.map((version) => (
@@ -112,7 +114,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           </Table>
         </>
       ) : null}
-      <SectionHeader label="Metadata" border="bottom" />
+      <CodeLocationOverviewSectionHeader label="Metadata" border="bottom" />
       <CodeLocationMetadataStyle />
       <StyledRawCodeMirror
         options={{readOnly: true, lineNumbers: false}}
@@ -129,19 +131,3 @@ const CodeLocationMetadataStyle = createGlobalStyle`
     padding: 12px 20px;
   }
 `;
-
-const SectionHeader = ({
-  label,
-  border = null,
-}: {
-  label: ReactNode;
-  border?: ComponentProps<typeof Box>['border'];
-}) => (
-  <Box
-    background={Colors.backgroundLight()}
-    border={border}
-    padding={{horizontal: 24, vertical: 8}}
-  >
-    <Subheading>{label}</Subheading>
-  </Box>
-);
