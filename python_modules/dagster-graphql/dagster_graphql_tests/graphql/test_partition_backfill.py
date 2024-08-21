@@ -576,6 +576,65 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "CANCELED"
 
+    def test_cancel_then_retry_backfill(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3"],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            CANCEL_BACKFILL_MUTATION,
+            variables={"backfillId": backfill_id},
+        )
+        assert result.data
+        assert result.data["cancelPartitionBackfill"]["__typename"] == "CancelBackfillSuccess"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={
+                "backfillId": backfill_id,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["retryPartitionBackfill"]["__typename"] == "RetryBackfillSuccess"
+        retried_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
+        retried_backfill = graphql_context.instance.get_backfill(retried_backfill_id)
+
+        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": retried_backfill_id},
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
+        assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
+        assert result.data["partitionBackfillOrError"]["fromFailure"]
+
     def test_cancel_asset_backfill(self, graphql_context):
         asset_key = AssetKey("hanging_partition_asset")
         partitions = ["a"]
@@ -651,6 +710,107 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             )
             assert len(runs) == 1
             assert runs[0].status == DagsterRunStatus.CANCELED
+
+    def test_cancel_then_retry_asset_backfill(self, graphql_context):
+        asset_key = AssetKey("hanging_partition_asset")
+        partitions = ["a"]
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "partitionNames": partitions,
+                    "assetSelection": [asset_key.to_graphql_input()],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        # Update asset backfill data to contain requested partition, but does not execute side effects,
+        # since launching the run will cause test process will hang forever.
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
+        asset_graph = repository.asset_graph
+        _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_id, asset_graph)
+
+        # Launch the run that runs forever
+        selector = infer_job_selector(graphql_context, "hanging_partition_asset_job")
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {
+                            "resources": {"hanging_asset_resource": {"config": {"file": path}}}
+                        },
+                        "executionMetadata": {
+                            "tags": [
+                                {"key": "dagster/partition", "value": "a"},
+                                {"key": BACKFILL_ID_TAG, "value": backfill_id},
+                            ]
+                        },
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                CANCEL_BACKFILL_MUTATION,
+                variables={"backfillId": backfill_id},
+            )
+            assert result.data
+            assert result.data["cancelPartitionBackfill"]["__typename"] == "CancelBackfillSuccess"
+
+            while (
+                graphql_context.instance.get_backfill(backfill_id).status
+                != BulkActionStatus.CANCELED
+            ):
+                _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
+
+            runs = graphql_context.instance.get_runs(
+                RunsFilter(tags={BACKFILL_ID_TAG: backfill_id})
+            )
+            assert len(runs) == 1
+            assert runs[0].status == DagsterRunStatus.CANCELED
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            RETRY_BACKFILL_MUTATION,
+            variables={
+                "backfillId": backfill_id,
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["retryPartitionBackfill"]["__typename"] == "RetryBackfillSuccess"
+        retry_backfill_id = result.data["retryPartitionBackfill"]["backfillId"]
+
+        first_backfill = graphql_context.instance.get_backfill(backfill_id)
+        retried_backfill = graphql_context.instance.get_backfill(retry_backfill_id)
+
+        # no runs were successful for the first backfill, so the retry target should be the same
+        # as the first backfill
+        assert (
+            first_backfill.asset_backfill_data.target_subset
+            == retried_backfill.asset_backfill_data.target_subset
+        )
+        assert retried_backfill.tags.get(PARENT_RUN_ID_TAG) == backfill_id
+        assert retried_backfill.tags.get(ROOT_RUN_ID_TAG) == backfill_id
 
     def test_resume_backfill(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
@@ -1480,7 +1640,6 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         asset_keys = [
             AssetKey("unpartitioned_upstream_of_partitioned"),
             AssetKey("upstream_daily_partitioned_asset"),
-            AssetKey("downstream_weekly_partitioned_asset"),
         ]
         partitions = ["2023-01-09"]
         result = execute_dagster_graphql(
@@ -1530,12 +1689,12 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
                 "backfillId": backfill_id,
             },
         )
-
+        # TestLaunchDaemonBackfillFromFailure::test_retry_successful_asset_backfill[sqlite_with_default_run_launcher_managed_grpc_env]
         assert not result.errors
         assert result.data
         assert result.data["retryPartitionBackfill"]["__typename"] == "PythonError"
         assert (
-            "Cannot retry an asset backfill that has no failed assets"
+            "Cannot retry an asset backfill that has no missing materializations"
             in result.data["retryPartitionBackfill"]["message"]
         )
 
