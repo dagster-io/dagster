@@ -13,6 +13,7 @@ export type RunningBackfillsNoticeQuery = {
           __typename: 'PartitionBackfill';
           id: string;
           partitionSetName: string | null;
+          assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         }>;
       }
     | {__typename: 'PythonError'};
