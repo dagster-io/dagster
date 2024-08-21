@@ -8,7 +8,7 @@ from dagster_dbt import DbtProject
 
 from dbt_example.dagster_defs.csv_to_duckdb_defs import CSVToDuckdbDefs
 
-from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
+from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME, dbt_project_path
 
 airflow_instance = AirflowInstance(
     auth_backend=BasicAuthBackend(
@@ -16,12 +16,6 @@ airflow_instance = AirflowInstance(
     ),
     name=AIRFLOW_INSTANCE_NAME,
 )
-
-
-def dbt_project_path() -> Path:
-    env_val = os.getenv("DBT_PROJECT_DIR")
-    assert env_val
-    return Path(env_val)
 
 
 defs = build_defs_from_airflow_instance(
