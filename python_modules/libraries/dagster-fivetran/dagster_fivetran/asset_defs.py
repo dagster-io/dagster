@@ -45,16 +45,17 @@ from dagster_fivetran.utils import (
 def _build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
-    poll_interval: float = DEFAULT_POLL_INTERVAL,
-    poll_timeout: Optional[float] = None,
-    io_manager_key: Optional[str] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]] = None,
-    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    group_name: Optional[str] = None,
-    infer_missing_tables: bool = False,
-    op_tags: Optional[Mapping[str, Any]] = None,
+    poll_interval: float,
+    poll_timeout: Optional[float],
+    io_manager_key: Optional[str],
+    asset_key_prefix: Optional[Sequence[str]],
+    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]],
+    table_to_asset_key_map: Optional[Mapping[str, AssetKey]],
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    group_name: Optional[str],
+    infer_missing_tables: bool,
+    op_tags: Optional[Mapping[str, Any]],
+    asset_tags: Optional[Mapping[str, Any]],
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -84,6 +85,7 @@ def _build_fivetran_assets(
                     **_metadata_by_table_name.get(table, {}),
                     **({"dagster/io_manager_key": io_manager_key} if io_manager_key else {}),
                 },
+                tags=asset_tags,
             )
             for table in tracked_asset_keys.keys()
         ],
@@ -224,6 +226,9 @@ def build_fivetran_assets(
         group_name=group_name,
         infer_missing_tables=infer_missing_tables,
         op_tags=op_tags,
+        asset_tags=None,
+        table_to_asset_key_map=None,
+        resource_defs=None,
     )
 
 
@@ -236,6 +241,7 @@ class FivetranConnectionMetadata(
             ("connector_url", str),
             ("schemas", Mapping[str, Any]),
             ("database", Optional[str]),
+            ("service", Optional[str]),
         ],
     )
 ):
@@ -284,6 +290,7 @@ class FivetranConnectionMetadata(
             extra_metadata={
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
+                "storage_kind": self.service,
             },
         )
 
@@ -297,6 +304,7 @@ def _build_fivetran_assets_from_metadata(
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
+    storage_kind = cast(Optional[str], metadata.get("storage_kind"))
 
     return _build_fivetran_assets(
         connector_id=connector_id,
@@ -315,6 +323,9 @@ def _build_fivetran_assets_from_metadata(
         group_name=assets_defn_meta.group_name,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
+        asset_tags={"dagster/storage_kind": storage_kind} if storage_kind else None,
+        infer_missing_tables=False,
+        op_tags=None,
     )[0]
 
 
@@ -379,6 +390,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
 
             group_details = self._fivetran_instance.get_destination_details(group_id)
             database = group_details.get("config", {}).get("database")
+            service = group_details.get("service")
 
             connectors = self._fivetran_instance.make_request(
                 "GET", f"groups/{group_id}/connectors"
@@ -405,6 +417,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                         connector_url=connector_url,
                         schemas=schemas,
                         database=database,
+                        service=service,
                     )
                 )
 
