@@ -364,24 +364,29 @@ def retry_partition_backfill(
 
     if backfill.is_asset_backfill:
         asset_backfill_data = backfill.get_asset_backfill_data(graphene_info.context.asset_graph)
-        if (
-            asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
-            == 0
-        ):
+        # determine the subset that should be retried by removing the successfully materialized subset from
+        # the target subset. This ensures that if the backfill was canceled or marked failed that all
+        # non-materialized asset partitions will be retried. asset_backfill_data.failed_and_downstream_asset
+        # only contains asset partitions who's materialization runs failed and their downsteam assets, not
+        # asset partitions that never got materialization runs.
+        not_materialized_assets = (
+            asset_backfill_data.target_subset - asset_backfill_data.materialized_subset
+        )
+        if not_materialized_assets.num_partitions_and_non_partitioned_assets == 0:
             raise DagsterInvariantViolationError(
-                "Cannot retry an asset backfill that has no failed assets."
+                "Cannot retry an asset backfill that has no missing materializations."
             )
         asset_graph = graphene_info.context.asset_graph
         assert_permission_for_asset_graph(
             graphene_info,
             asset_graph,
-            list(asset_backfill_data.failed_and_downstream_subset.asset_keys),
+            list(not_materialized_assets.asset_keys),
             Permissions.LAUNCH_PARTITION_BACKFILL,
         )
 
         new_backfill = PartitionBackfill.from_asset_graph_subset(
             backfill_id=make_new_backfill_id(),
-            asset_graph_subset=asset_backfill_data.failed_and_downstream_subset,
+            asset_graph_subset=not_materialized_assets,
             dynamic_partitions_store=graphene_info.context.instance,
             tags={
                 **backfill.tags,
@@ -392,7 +397,7 @@ def retry_partition_backfill(
             title=f"Retry of {backfill.title}" if backfill.title else None,
             description=backfill.description,
         )
-    else:
+    else:  # job backfill
         partition_set_origin = check.not_none(backfill.partition_set_origin)
         location_name = partition_set_origin.selector.location_name
         assert_permission_for_location(
