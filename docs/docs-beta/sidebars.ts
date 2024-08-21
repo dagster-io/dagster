@@ -30,7 +30,7 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: 'doc',
-          label: 'Project structure',
+          label: 'Structuring your project',
           id: 'guides/project-structure',
         },
         {
