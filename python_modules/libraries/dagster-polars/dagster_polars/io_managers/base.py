@@ -149,6 +149,18 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
         ldf = type_router.load(path, self.scan_df_from_path)
 
+        # missing files detection in UPathIOManager doesn't work with `LazyFrame`
+        # since the FileNotFoundError is raised only when calling `.collect()` outside of the UPathIOManager
+        # as a workaround, we check if the file exists and if not, we raise the error here
+        # this is needed for allow_missing_partitions input metadata setting to work correctly
+        if (
+            ldf is not None
+            and not self.type_router_is_eager(type_router)
+            and type_router
+            and not path.exists()
+        ):
+            raise FileNotFoundError(f"File {path} does not exist")
+
         columns = context.definition_metadata.get("columns")
         if columns is not None:
             context.log.debug(f"Loading {columns=}")

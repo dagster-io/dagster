@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 import polars as pl
 import pyarrow.dataset as ds
@@ -201,5 +201,5 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         path: "UPath",
         context: InputContext,
         partition_key: Optional[str] = None,
-    ) -> Union[pl.LazyFrame]:
+    ) -> pl.LazyFrame:
         return scan_parquet(path, context)
