@@ -2,4 +2,4 @@
 title: "Dagster+ alerts"
 ---
 
-# DAgster+ alerts
+# Dagster+ alerts

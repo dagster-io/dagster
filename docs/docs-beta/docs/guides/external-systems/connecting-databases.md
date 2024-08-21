@@ -1,4 +1,4 @@
 ---
-title: "Connecting databases"
-sidebar_position: 1
+title: "Connect databases"
+sidebar_position: 10
 ---

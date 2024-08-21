@@ -15,7 +15,7 @@
     "lint:ts": "tsc --noEmit",
     "lint:vale": "vale ./docs --ext=.md,.mdx",
     "lint:eslint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx",
-    "lint": "prettier . --check && yarn run lint:tsc && yarn run lint:eslint",
+    "lint": "prettier . --check && yarn run lint:tsc && yarn run lint:eslint && yarn run lint:vale",
     "lint:fix": "prettier . --write && yarn run lint:eslint --fix"
   },
   "dependencies": {
