@@ -29,6 +29,11 @@ const sidebars: SidebarsConfig = {
       label: 'Guides',
       items: [
         {
+          type: 'doc',
+          label: 'Project structure',
+          id: 'guides/project-structure',
+        },
+        {
           type: 'category',
           label: 'Data modeling',
           link: {
