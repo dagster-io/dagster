@@ -26,10 +26,12 @@ from .conftest import assert_link_exists
 
 
 @pytest.mark.flaky(reruns=2)
-def test_dag_peering(
+def test_dag_peering_and_observability(
     airflow_instance: None,
 ) -> None:
-    """Test that dags can be correctly peered from airflow, and certain metadata properties are retained."""
+    """Test that dags can be correctly peered from airflow, assets can be mapped to tasks and observed, 
+    and metadata properties are retained from the transition.
+    """
     instance = AirflowInstance(
         auth_backend=BasicAuthBackend(
             webserver_url="http://localhost:8080", username="admin", password="admin"
