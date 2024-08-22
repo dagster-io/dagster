@@ -39,6 +39,8 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "lkml",
+        "looker-sdk",
+        "pydantic",
         "sqlglot",
     ],
     zip_safe=False,
