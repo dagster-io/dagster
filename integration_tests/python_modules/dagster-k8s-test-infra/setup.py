@@ -2,6 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="dagster-k8s-test-infra",
+    version="1+dev",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",

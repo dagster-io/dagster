@@ -1,0 +1,11 @@
+[project]
+name = "mwaa-example"
+dependencies = [ "dagster", "dagster-airlift[core,mwaa]", "dagster-webserver",]
+requires-python = ">=3.11"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.optional-dependencies]
+test = [ "pytest",]

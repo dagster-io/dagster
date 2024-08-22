@@ -1,0 +1,20 @@
+[project]
+name = "dagster-sphinx"
+description = "Dagster-specific sphinx extension."
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+dependencies = [ "sphinx", "sphinx_toolbox",]
+requires-python = ">=3.11"
+version = "0.0.1"
+[[project.authors]]
+name = "Elementl"
+email = "hello@elementl.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster"

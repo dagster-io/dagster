@@ -1,0 +1,28 @@
+[project]
+name = "automation"
+description = "Tools for infrastructure automation"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+dependencies = [ "autoflake", "boto3", "packaging>=20.9", "pandas", "pytablereader", "requests", "twine==1.15.0", "urllib3", "virtualenv==20.25.0",]
+requires-python = ">=3.11"
+version = "0.0.1"
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/automation"
+
+[project.optional-dependencies]
+buildkite = [ "dagster",]
+
+[project.scripts]
+dagster-graphql-client = "automation.graphql.python_client.cli:main"
+dagster-image = "automation.docker.cli:main"

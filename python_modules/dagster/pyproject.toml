@@ -1,0 +1,41 @@
+[project]
+name = "dagster"
+description = "Dagster is an orchestration platform for the development, production, and observation of data assets."
+readme = "README.md"
+classifiers = [ "Development Status :: 5 - Production/Stable", "Environment :: Console", "Environment :: Web Environment", "Intended Audience :: Developers", "Intended Audience :: System Administrators", "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9", "Topic :: Software Development :: Libraries :: Application Frameworks", "Topic :: System :: Monitoring",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "Jinja2", "PyYAML>=5.1", "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0", "click>=5.0", "coloredlogs>=6.1,<=14.0", "croniter>=0.3.34", "dagster-pipes", "docstring-parser", "filelock", "grpcio-health-checking>=1.44.0", "grpcio>=1.44.0", "packaging>=20.9", "protobuf>=3.20.0,<5; python_version<'3.11'", "protobuf>=4,<5; python_version>='3.11'", "psutil>=1.0; platform_system==\"Windows\"", "pydantic>1.10.0,!= 1.10.7,<3", "python-dotenv", "pytz", "pywin32!=226; platform_system==\"Windows\"", "requests", "rich", "setuptools", "sqlalchemy>=1.0,<3", "structlog", "tabulate", "tomli<3", "toposort>=1.0", "tqdm<5", "typing_extensions>=4.4.0,<5", "tzdata; platform_system==\"Windows\"", "universal_pathlib; python_version<'3.12'", "universal_pathlib>=0.2.0; python_version>='3.12'", "watchdog>=0.8.3",]
+version = "1!0+dev"
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://dagster.io"
+GitHub = "https://github.com/dagster-io/dagster"
+Documentation = "https://docs.dagster.io"
+Changelog = "https://github.com/dagster-io/dagster/releases"
+"Issue Tracker" = "https://github.com/dagster-io/dagster/issues"
+Twitter = "https://twitter.com/dagster"
+YouTube = "https://www.youtube.com/@dagsterio"
+Slack = "https://dagster.io/slack"
+Blog = "https://dagster.io/blog"
+Newsletter = "https://dagster.io/newsletter-signup"
+
+[project.optional-dependencies]
+docker = [ "docker",]
+test = [ "buildkite-test-collector", "docker", "fsspec<2024.5.0", "grpcio-tools>=1.44.0", "mock==3.0.5", "morefs[asynclocal]", "mypy-protobuf", "objgraph", "pytest-cov==5.0.0", "pytest-mock==3.14.0", "pytest-rerunfailures==14.0", "pytest-xdist==3.6.1", "pytest>=8", "rapidfuzz", "responses<=0.23.1", "syrupy>=4.0.0", "tox>=4",]
+mypy = [ "mypy==1.8.0",]
+pyright = [ "pandas-stubs", "pyright==1.1.370", "types-PyYAML", "types-backports", "types-certifi", "types-chardet", "types-croniter", "types-cryptography", "types-mock", "types-paramiko", "types-pyOpenSSL", "types-python-dateutil~=2.9.0.20240316", "types-pytz", "types-requests", "types-simplejson", "types-six", "types-sqlalchemy==1.4.53.34", "types-tabulate", "types-toml", "types-tzlocal",]
+ruff = [ "ruff==0.5.5",]
+
+[project.scripts]
+dagster = "dagster.cli:main"
+dagster-daemon = "dagster.daemon.cli:main"

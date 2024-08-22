@@ -1,11 +1,11 @@
 [project]
-name = "dagster-pipes"
-description = "Toolkit for Dagster integrations with transform logic outside of Dagster"
-readme = "README.md"
-requires-python = ">=3.8,<3.13"
-dependencies = []
-classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+name = "dagster-twilio"
 version = "1!0+dev"
+description = "A Dagster integration for twilio"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster", "twilio",]
 [[project.authors]]
 name = "Dagster Labs"
 email = "hello@dagsterlabs.com"
@@ -18,4 +18,4 @@ build-backend = "hatchling.build"
 text = "Apache-2.0"
 
 [project.urls]
-Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-pipes"
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-twilio"

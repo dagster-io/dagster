@@ -1,0 +1,34 @@
+[project]
+name = "dagster-airflow"
+version = "1!0+dev"
+description = "Airflow plugin for Dagster"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+requires-python = ">=3.8,<3.13"
+dependencies = [ "dagster", "docker>=5.0.3,<6.0.0", "lazy_object_proxy", "pendulum", "setuptools<71.0.0", "urllib3<2",]
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster"
+"project-url/documentation" = "https://docs.dagster.io"
+
+[project.optional-dependencies]
+kubernetes = [ "cryptography>=2.0.0", "kubernetes>=3.0.0",]
+test_airflow_2 = [ "apache-airflow-providers-apache-spark", "apache-airflow-providers-docker>=3.2.0,<4", "apache-airflow-providers-http<4.1.1", "apache-airflow>=2.0.0,<2.8", "boto3>=1.26.7", "connexion<3.0.0", "flask-session<0.6.0", "kubernetes>=10.0.1",]
+test_airflow_1 = [ "WTForms<3.0.0", "apache-airflow>=1.0.0,<2.0.0", "boto3>=1.26.7", "connexion<3.0.0", "kubernetes>=10.0.1", "markupsafe<=2.0.1", "marshmallow-sqlalchemy<0.26.0", "sqlalchemy>=1.0,<1.4.0",]
+test = [ "connexion<3.0.0",]
+
+[project.entry-points."airflow.plugins"]
+dagster_airflow = "dagster_airflow.__init__:DagsterAirflowPlugin"
+
+[project.entry-points.apache_airflow_provider]
+provider_info = "dagster_airflow.__init__:get_provider_info"

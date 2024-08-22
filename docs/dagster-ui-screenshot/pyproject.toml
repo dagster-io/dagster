@@ -1,0 +1,21 @@
+[project]
+name = "dagster-ui-screenshot"
+description = "Utility for taking automated screenshots from the Dagster UI"
+readme = "README.md"
+classifiers = [ "License :: OSI Approved :: Apache Software License", "Operating System :: OS Independent", "Programming Language :: Python :: 3.6", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9",]
+dependencies = [ "click>=6", "pyyaml", "selenium", "typing-extensions>=4",]
+requires-python = ">=3.11"
+version = "1!0+dev"
+[[project.authors]]
+name = "Dagster Labs"
+email = "hello@dagsterlabs.com"
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.license]
+text = "Apache-2.0"
+
+[project.scripts]
+dagster-ui-screenshot = "dagster_ui_screenshot.cli:main"
