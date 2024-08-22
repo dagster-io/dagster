@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import (
@@ -9,7 +9,6 @@ from dagster._core.asset_graph_view.asset_graph_view import (
     TemporalContext,
 )
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -20,7 +19,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._time import get_current_datetime
 
@@ -28,7 +26,6 @@ from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 def _has_legacy_condition(condition: AutomationCondition):
@@ -37,37 +34,6 @@ def _has_legacy_condition(condition: AutomationCondition):
         return True
     else:
         return any(_has_legacy_condition(child) for child in condition.children)
-
-
-# This class exists purely for organizational purposes so that we understand
-# the interface between automation conditions and the instance much more
-# explicitly. This captures all interactions that do not go through AssetGraphView
-# so that we do not access the legacy context or the instance queryer directly
-# in automation conditions.
-class NonAGVInstanceInterface:
-    def __init__(self, queryer: "CachingInstanceQueryer"):
-        self._queryer = queryer
-
-    def get_asset_subset_updated_after_time(
-        self, *, asset_key: AssetKey, after_time: datetime.datetime
-    ) -> ValidAssetSubset:
-        return self._queryer.get_asset_subset_updated_after_time(
-            asset_key=asset_key, after_time=after_time
-        )
-
-    def get_parent_asset_partitions_updated_after_child(
-        self,
-        *,
-        asset_partition: AssetKeyPartitionKey,
-        parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
-        ignored_parent_keys: AbstractSet[AssetKey],
-    ) -> AbstractSet[AssetKeyPartitionKey]:
-        return self._queryer.get_parent_asset_partitions_updated_after_child(
-            asset_partition=asset_partition,
-            parent_asset_partitions=parent_asset_partitions,
-            respect_materialization_data_versions=False,
-            ignored_parent_keys=ignored_parent_keys,
-        )
 
 
 class AutomationContext(NamedTuple):
@@ -93,8 +59,6 @@ class AutomationContext(NamedTuple):
     # a mapping of information computed on the current tick for assets which are upstream of this
     # asset
     current_tick_results_by_key: Mapping[AssetKey, AutomationResult]
-
-    non_agv_instance_interface: NonAGVInstanceInterface
 
     # hack to avoid circular references during pydantic validation
     inner_legacy_context: Any
@@ -125,9 +89,6 @@ class AutomationContext(NamedTuple):
             cursor=condition_cursor,
             current_tick_results_by_key=current_tick_results_by_key,
             inner_legacy_context=legacy_context,
-            non_agv_instance_interface=NonAGVInstanceInterface(
-                asset_graph_view.get_inner_queryer_for_back_compat()
-            ),
             is_legacy_evaluation=_has_legacy_condition(automation_condition),
         )
 
@@ -153,7 +114,6 @@ class AutomationContext(NamedTuple):
                 ),
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
-            non_agv_instance_interface=self.non_agv_instance_interface,
             is_legacy_evaluation=self.is_legacy_evaluation,
         )
 
