@@ -11,9 +11,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
     build_time_partition_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.utils import (
-    unique_id_from_asset_and_check_keys,
-)
+from dagster._core.definitions.asset_check_factories.utils import unique_id_from_entity_keys
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_out import AssetOut
@@ -190,10 +188,10 @@ def test_params() -> None:
         deadline_cron="0 9 * * *",
     )[0]
     assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
-    unique_id = unique_id_from_asset_and_check_keys(
+    unique_id = unique_id_from_entity_keys(
         [my_partitioned_asset.key, my_other_partitioned_asset.key]
     )
-    unique_id_switched_order = unique_id_from_asset_and_check_keys(
+    unique_id_switched_order = unique_id_from_entity_keys(
         [my_other_partitioned_asset.key, my_partitioned_asset.key]
     )
     assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id}"

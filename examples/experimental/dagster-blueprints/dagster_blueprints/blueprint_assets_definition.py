@@ -3,7 +3,7 @@ from typing import AbstractSet, Any, Mapping, Optional, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
+from dagster._core.definitions.assets import unique_id_from_entity_keys
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.compute import AssetExecutionContext
@@ -41,7 +41,7 @@ class BlueprintAssetsDefinition(Blueprint):
         specs = [spec_model.to_asset_spec() for spec_model in self.assets]
 
         @multi_asset(
-            name=f"assets_{unique_id_from_asset_and_check_keys([spec.key for spec in specs])}",
+            name=f"assets_{unique_id_from_entity_keys([spec.key for spec in specs])}",
             specs=specs,
             required_resource_keys=self.get_required_resource_keys(),
         )

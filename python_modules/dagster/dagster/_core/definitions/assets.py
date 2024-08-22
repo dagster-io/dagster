@@ -63,7 +63,7 @@ from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
 from .asset_graph_computation import AssetGraphComputation
-from .asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
+from .asset_key import AssetCheckKey, AssetKey, EntityKey
 from .asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
 from .events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
@@ -957,7 +957,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @property
-    def asset_and_check_keys_by_output_name(self) -> Mapping[str, AssetKeyOrCheckKey]:
+    def entity_keys_by_output_name(self) -> Mapping[str, EntityKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -967,7 +967,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     @property
-    def asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
+    def entity_keys(self) -> AbstractSet[EntityKey]:
         return set(self.keys).union(self.check_keys)
 
     @property
@@ -1478,7 +1478,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @cached_property
     def unique_id(self) -> str:
-        return unique_id_from_asset_and_check_keys(itertools.chain(self.keys, self.check_keys))
+        return unique_id_from_entity_keys(itertools.chain(self.keys, self.check_keys))
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()
@@ -1538,24 +1538,24 @@ def _infer_keys_by_output_names(
 ) -> Mapping[str, AssetKey]:
     output_names = [output_def.name for output_def in node_def.output_defs]
     if keys_by_output_name:
-        overlapping_asset_and_check_outputs = set(keys_by_output_name.keys()) & set(
+        overlapping_spec_outputs = set(keys_by_output_name.keys()) & set(
             check_specs_by_output_name.keys()
         )
         check.invariant(
-            not overlapping_asset_and_check_outputs,
+            not overlapping_spec_outputs,
             "The set of output names associated with asset keys and checks overlap:"
-            f" {overlapping_asset_and_check_outputs}",
+            f" {overlapping_spec_outputs}",
         )
 
-        union_asset_and_check_outputs = set(keys_by_output_name.keys()) | set(
+        union_spec_outputs = set(keys_by_output_name.keys()) | set(
             check_specs_by_output_name.keys()
         )
         check.invariant(
-            union_asset_and_check_outputs == set(output_names),
+            union_spec_outputs == set(output_names),
             "The union of the set of output names keys specified in the keys_by_output_name and"
             " check_specs_by_output_name arguments must equal the set of asset keys outputted by"
             f" {node_def.name}. union keys:"
-            f" {union_asset_and_check_outputs} \nexpected keys: {set(output_names)}",
+            f" {union_spec_outputs} \nexpected keys: {set(output_names)}",
         )
 
     inferred_keys_by_output_names: Dict[str, AssetKey] = {
@@ -1878,10 +1878,10 @@ def get_partition_mappings_from_deps(
     return partition_mappings
 
 
-def unique_id_from_asset_and_check_keys(asset_or_check_keys: Iterable["AssetKeyOrCheckKey"]) -> str:
+def unique_id_from_entity_keys(entity_keys: Iterable["EntityKey"]) -> str:
     """Generate a unique ID from the provided asset keys.
 
     This is useful for generating op names that don't have collisions.
     """
-    sorted_key_strs = sorted(str(key) for key in asset_or_check_keys)
+    sorted_key_strs = sorted(str(key) for key in entity_keys)
     return non_secure_md5_hash_str(json.dumps(sorted_key_strs).encode("utf-8"))[:8]

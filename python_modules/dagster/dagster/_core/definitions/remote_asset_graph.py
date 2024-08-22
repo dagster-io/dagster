@@ -30,7 +30,7 @@ from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
 
 from .backfill_policy import BackfillPolicy
-from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph, BaseAssetNode
+from .base_asset_graph import BaseAssetGraph, BaseAssetNode, EntityKey
 from .events import AssetKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition
@@ -50,7 +50,7 @@ class RemoteAssetNode(BaseAssetNode):
         key: AssetKey,
         parent_keys: AbstractSet[AssetKey],
         child_keys: AbstractSet[AssetKey],
-        execution_set_keys: AbstractSet[AssetKeyOrCheckKey],
+        execution_set_keys: AbstractSet[EntityKey],
         repo_node_pairs: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
         check_keys: AbstractSet[AssetCheckKey],
     ):
@@ -159,10 +159,10 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
-        return {k for k in self.execution_set_asset_and_check_keys if isinstance(k, AssetKey)}
+        return {k for k in self.execution_set_entity_keys if isinstance(k, AssetKey)}
 
     @property
-    def execution_set_asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
+    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
         return self._execution_set_keys
 
     ##### REMOTE-SPECIFIC INTERFACE
@@ -226,7 +226,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         self,
         asset_nodes_by_key: Mapping[AssetKey, RemoteAssetNode],
         asset_checks_by_key: Mapping[AssetCheckKey, "ExternalAssetCheck"],
-        asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[AssetKeyOrCheckKey]],
+        asset_check_execution_sets_by_key: Mapping[AssetCheckKey, AbstractSet[EntityKey]],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_checks_by_key = asset_checks_by_key
@@ -304,13 +304,11 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
 
     ##### COMMON ASSET GRAPH INTERFACE
 
-    def get_execution_set_asset_and_check_keys(
-        self, asset_or_check_key: AssetKeyOrCheckKey
-    ) -> AbstractSet[AssetKeyOrCheckKey]:
-        if isinstance(asset_or_check_key, AssetKey):
-            return self.get(asset_or_check_key).execution_set_asset_and_check_keys
+    def get_execution_set_entity_keys(self, entity_key: EntityKey) -> AbstractSet[EntityKey]:
+        if isinstance(entity_key, AssetKey):
+            return self.get(entity_key).execution_set_entity_keys
         else:  # AssetCheckKey
-            return self._asset_check_execution_sets_by_key[asset_or_check_key]
+            return self._asset_check_execution_sets_by_key[entity_key]
 
     ##### REMOTE-SPECIFIC METHODS
 
@@ -431,19 +429,19 @@ def _warn_on_duplicates_within_subset(
 def _build_execution_set_index(
     external_asset_nodes: Iterable["ExternalAssetNode"],
     external_asset_checks: Iterable["ExternalAssetCheck"],
-) -> Mapping[AssetKeyOrCheckKey, AbstractSet[AssetKeyOrCheckKey]]:
+) -> Mapping[EntityKey, AbstractSet[EntityKey]]:
     from dagster._core.remote_representation.external_data import ExternalAssetNode
 
     all_items = [*external_asset_nodes, *external_asset_checks]
 
-    execution_sets_by_id: Dict[str, Set[AssetKeyOrCheckKey]] = defaultdict(set)
+    execution_sets_by_id: Dict[str, Set[EntityKey]] = defaultdict(set)
     for item in all_items:
         id = item.execution_set_identifier
         key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key
         if id is not None:
             execution_sets_by_id[id].add(key)
 
-    execution_sets_by_key: Dict[AssetKeyOrCheckKey, Set[AssetKeyOrCheckKey]] = {}
+    execution_sets_by_key: Dict[EntityKey, Set[EntityKey]] = {}
     for item in all_items:
         id = item.execution_set_identifier
         key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key

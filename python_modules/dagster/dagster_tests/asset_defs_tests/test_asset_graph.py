@@ -711,11 +711,11 @@ def test_required_assets_and_checks_by_key_check_decorator(
     def check1(): ...
 
     asset_graph = asset_graph_from_assets([asset0, check0, check1])
-    assert asset_graph.get_execution_set_asset_and_check_keys(asset0.key) == {asset0.key}
-    assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check0.check_keys))) == {
+    assert asset_graph.get_execution_set_entity_keys(asset0.key) == {asset0.key}
+    assert asset_graph.get_execution_set_entity_keys(next(iter(check0.check_keys))) == {
         AssetCheckKey(asset0.key, "check0")
     }
-    assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check1.check_keys))) == {
+    assert asset_graph.get_execution_set_entity_keys(next(iter(check1.check_keys))) == {
         AssetCheckKey(asset0.key, "check1")
     }
 
@@ -736,9 +736,9 @@ def test_required_assets_and_checks_by_key_asset_decorator(
 
     grouped_keys = [asset0.key, foo_check.key, bar_check.key]
     for key in grouped_keys:
-        assert asset_graph.get_execution_set_asset_and_check_keys(key) == set(grouped_keys)
+        assert asset_graph.get_execution_set_entity_keys(key) == set(grouped_keys)
 
-    assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check0.check_keys))) == {
+    assert asset_graph.get_execution_set_entity_keys(next(iter(check0.check_keys))) == {
         AssetCheckKey(asset0.key, "check0")
     }
 
@@ -773,14 +773,14 @@ def test_required_assets_and_checks_by_key_multi_asset(
         bar_check.key,
     ]
     for key in grouped_keys:
-        assert asset_graph.get_execution_set_asset_and_check_keys(key) == set(grouped_keys)
+        assert asset_graph.get_execution_set_entity_keys(key) == set(grouped_keys)
 
     for key in [
         AssetKey(["subsettable_asset0"]),
         AssetKey(["subsettable_asset1"]),
         biz_check.key,
     ]:
-        assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
+        assert asset_graph.get_execution_set_entity_keys(key) == {key}
 
 
 def test_required_assets_and_checks_by_key_multi_asset_single_asset(
@@ -799,7 +799,7 @@ def test_required_assets_and_checks_by_key_multi_asset_single_asset(
     asset_graph = asset_graph_from_assets([asset_fn])
 
     for key in [AssetKey(["asset0"]), foo_check.key, bar_check.key]:
-        assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
+        assert asset_graph.get_execution_set_entity_keys(key) == {key}
 
 
 def test_multi_asset_check(
@@ -828,13 +828,13 @@ def test_multi_asset_check(
     asset_graph = asset_graph_from_assets([asset0, multi_check_1, multi_check_2])
 
     for key in [foo_check.key, bar_check.key]:
-        assert asset_graph.get_execution_set_asset_and_check_keys(key) == {
+        assert asset_graph.get_execution_set_entity_keys(key) == {
             foo_check.key,
             bar_check.key,
         }
 
     for key in [biz_check.key, buz_check.key]:
-        assert asset_graph.get_execution_set_asset_and_check_keys(key) == {key}
+        assert asset_graph.get_execution_set_entity_keys(key) == {key}
 
 
 def test_cross_code_location_partition_mapping() -> None:

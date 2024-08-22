@@ -191,7 +191,7 @@ def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
             context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
         ): ...
 
-        for key in example_pipeline_assets.asset_and_check_keys:
+        for key in example_pipeline_assets.entity_keys:
             if isinstance(key, AssetKey):
                 assert (
                     example_pipeline_assets.tags_by_key[key].get("dagster/storage_kind")
