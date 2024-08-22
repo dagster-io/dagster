@@ -1,8 +1,8 @@
+from collections import defaultdict
 from typing import Sequence, Union
 
-from dagster import AssetChecksDefinition, AssetsDefinition, AssetSpec
+from dagster import AssetChecksDefinition, AssetsDefinition, AssetSpec, Definitions, multi_asset
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
-from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import TypeAlias
 
 from .utils import DAG_ID_TAG, TASK_ID_TAG
@@ -30,6 +30,7 @@ def combine_defs(
     """Combine provided :py:class:`Definitions` objects and assets into a single object, which contains all constituent definitions."""
     assets = []
     asset_checks = []
+    specs_by_task_and_dag = defaultdict(list)
     for _def in defs:
         if isinstance(_def, Definitions):
             continue
@@ -38,9 +39,18 @@ def combine_defs(
         elif isinstance(_def, AssetsDefinition):
             assets.append(_def)
         elif isinstance(_def, AssetSpec):
-            assets.append(_def)
+            dag_id = _def.tags[DAG_ID_TAG]
+            task_id = _def.tags[TASK_ID_TAG]
+            specs_by_task_and_dag[(dag_id, task_id)].append(_def)
         else:
             raise Exception(f"Unexpected type: {type(_def)}")
+    for (dag_id, task_id), specs in specs_by_task_and_dag.items():
+
+        @multi_asset(specs=specs, name=f"{dag_id}__{task_id}")
+        def _multi_asset():
+            pass
+
+        assets.append(_multi_asset)
 
     return Definitions.merge(
         *[the_def for the_def in defs if isinstance(the_def, Definitions)],
