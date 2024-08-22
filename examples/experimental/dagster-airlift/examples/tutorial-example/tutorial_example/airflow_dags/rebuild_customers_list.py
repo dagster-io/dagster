@@ -112,7 +112,7 @@ export_customers = ExportDuckDBToCSV(
     csv_path=Path(__file__).parent / "customers.csv",
 )
 
-load_raw_customers >> run_dbt_model >> export_customers
+load_raw_customers >> run_dbt_model >> export_customers  # type: ignore
 
 mark_as_dagster_migrating(
     global_vars=globals(),
