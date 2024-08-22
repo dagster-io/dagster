@@ -209,3 +209,7 @@ class AutomationContext:
         return TemporalContext(
             effective_dt=self.effective_dt, last_event_id=self.new_max_storage_id
         )
+
+    def get_empty_slice(self) -> AssetSlice:
+        """Returns an empty AssetSlice of the currently-evaluated asset."""
+        return self.asset_graph_view.get_empty_slice(asset_key=self.asset_key)

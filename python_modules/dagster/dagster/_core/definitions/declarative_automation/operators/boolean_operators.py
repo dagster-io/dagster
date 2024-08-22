@@ -62,7 +62,7 @@ class OrAutomationCondition(AutomationCondition):
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
-        true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+        true_slice = context.get_empty_slice()
         for i, child in enumerate(self.children):
             child_context = context.for_child_condition(
                 child_condition=child, child_index=i, candidate_slice=context.candidate_slice

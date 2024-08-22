@@ -33,7 +33,7 @@ class CodeVersionChangedCondition(AutomationCondition):
         previous_code_version = self._get_previous_code_version(context)
         current_code_version = context.asset_graph.get(context.asset_key).code_version
         if previous_code_version is None or previous_code_version == current_code_version:
-            true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+            true_slice = context.get_empty_slice()
         else:
             true_slice = context.candidate_slice
 
