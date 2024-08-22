@@ -27,47 +27,21 @@ from .dlt_test_sources.duckdb_with_transformer import (
 
 
 def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
-
-    assert {
-        AssetKey("dlt_pipeline_repos"),
-        AssetKey("dlt_pipeline_repo_issues"),
-    } == example_pipeline_assets.keys
-
-
-def test_computation_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
     assert {
         AssetKey("dlt_pipeline_repos"),
         AssetKey("dlt_pipeline_repo_issues"),
     } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.keys
 
 
+
 def test_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
-
-    # Since repo_issues is a transform of the repo data, its upstream
-    # asset key should be the repo data asset key as well.
-    assert {
-        AssetKey("dlt_pipeline_repos"): {AssetKey("pipeline_repos")},
-        AssetKey("dlt_pipeline_repo_issues"): {AssetKey("pipeline_repos")},
-    } == example_pipeline_assets.asset_deps
-
-
-def test_computation_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
     # Since repo_issues is a transform of the repo data, its upstream
     # asset key should be the repo data asset key as well.
     assert {
         AssetKey("dlt_pipeline_repos"): {AssetKey("pipeline_repos")},
         AssetKey("dlt_pipeline_repo_issues"): {AssetKey("pipeline_repos")},
     } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.asset_deps
+
 
 
 def test_example_pipeline_descs(dlt_pipeline: Pipeline) -> None:
@@ -149,27 +123,6 @@ def test_multi_asset_names_do_not_conflict(dlt_pipeline: Pipeline) -> None:
 
 
 def test_get_materialize_policy(dlt_pipeline: Pipeline):
-    class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_auto_materialize_policy(
-            self, resource: DltResource
-        ) -> Optional[AutoMaterializePolicy]:
-            return AutoMaterializePolicy.eager().with_rules(
-                AutoMaterializeRule.materialize_on_cron("0 1 * * *")
-            )
-
-    @dlt_assets(
-        dlt_source=pipeline(),
-        dlt_pipeline=dlt_pipeline,
-        dagster_dlt_translator=CustomDagsterDltTranslator(),
-    )
-    def assets():
-        pass
-
-    for item in assets.auto_materialize_policies_by_key.values():
-        assert "0 1 * * *" in str(item)
-
-
-def test_computation_get_materialize_policy(dlt_pipeline: Pipeline):
     assets = RunDlt(
         dlt_source=pipeline(),
         dlt_pipeline=dlt_pipeline,
@@ -184,6 +137,7 @@ def test_computation_get_materialize_policy(dlt_pipeline: Pipeline):
         assert "0 1 * * *" in str(item)
 
 
+
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     required_metadata_keys = {
         "destination_type",
@@ -194,39 +148,6 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
         "finished_at",
         "jobs",
     }
-
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        for asset in dlt_pipeline_resource.run(context=context):
-            assert asset.metadata
-            assert all(key in asset.metadata.keys() for key in required_metadata_keys)
-            yield asset
-
-    res = materialize(
-        [example_pipeline_assets],
-        resources={"dlt_pipeline_resource": DagsterDltResource()},
-    )
-    assert res.success
-
-
-def test_computation_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
-    required_metadata_keys = {
-        "destination_type",
-        "destination_name",
-        "dataset_name",
-        "first_run",
-        "started_at",
-        "finished_at",
-        "jobs",
-    }
-
-    RunDlt(
-        name="dlt_example",
-        dlt_source=pipeline(),
-        dlt_pipeline=dlt_pipeline,
-    )
 
     class ExampleDltComputation(RunDlt):
         def stream(self, context: ComputationContext) -> Iterable:
