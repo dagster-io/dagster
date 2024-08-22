@@ -70,15 +70,6 @@ Like `owners`, just pass a dictionary of tags to the `tags` argument when defini
 
 Keep in mind that tags must contain only strings as keys and values. Additionally, the Dagster UI will render tags with the empty string as a "label" rather than a key-value pair.
 
-## Adding custom icons using "kind" tags
-
-`kinds` are special tags that can be used to customize the appearance of assets in the UI by attaching a custom label and icon.
-
-<CodeExample filePath="guides/data-modeling/metadata/kinds.py" language="python" title="Using kinds" />
-
-The list of available icons is always growing and is available in the [Dagster UI source code](https://github.com/dagster-io/dagster/blob/master/js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx).
-
-If you add a `kind` that does not have an associated icon, it will simply be rendered as a textual label.
 
 ## Attaching metadata to an asset at definition time
 
