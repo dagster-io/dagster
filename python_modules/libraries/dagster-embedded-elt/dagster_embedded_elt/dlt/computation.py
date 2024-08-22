@@ -18,6 +18,7 @@ from dagster._core.execution.execute_in_process_result import ExecuteInProcessRe
 from typing_extensions import TypeAlias
 
 
+# Helper class to do group operations to a collection of specs
 class Specs:
     def __init__(self, specs: Sequence[Union[AssetSpec, AssetCheckSpec]]):
         self.specs = list(
@@ -54,6 +55,8 @@ class Specs:
         return [spec for spec in self.specs if isinstance(spec, AssetSpec)]
 
 
+# This might appear like overkill right now, but this would be our opportunity
+# to have a sane context api
 class ComputationContext:
     def __init__(self, context: AssetExecutionContext):
         self._ae_context = context

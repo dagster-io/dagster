@@ -132,7 +132,7 @@ class RunDlt(Computation):
         for result in dlt.run(
             context=context.to_asset_execution_context(),
             dlt_source=self.dlt_source,
-            # provide dummy instance of this
+            # provide dummy instance of this to avoid spurious exception
             dagster_dlt_translator=DagsterDltTranslator(),
         ):
             yield check.inst(
