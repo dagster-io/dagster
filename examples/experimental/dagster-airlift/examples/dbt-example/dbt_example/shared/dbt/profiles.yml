@@ -4,5 +4,5 @@ jaffle_shop:
   outputs:
     dev:
       type: duckdb
-      path: "{{ env_var('AIRFLOW_HOME') }}/jaffle_shop.duckdb"
+      path: "{{ env_var('DBT_PROJECT_DIR') }}/../jaffle_shop.duckdb"
       threads: 24
