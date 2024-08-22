@@ -69,6 +69,10 @@ class DepCondition(AutomationCondition):
             description += f" except for {self.ignore_selection}"
         return description
 
+    @property
+    def requires_cursor(self) -> bool:
+        return False
+
     def allow(self, selection: "AssetSelection") -> "DepCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.

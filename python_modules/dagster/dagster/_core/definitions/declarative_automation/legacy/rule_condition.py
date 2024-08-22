@@ -21,10 +21,6 @@ class RuleCondition(AutomationCondition):
     rule: AutoMaterializeRule
     label: Optional[str] = None
 
-    @property
-    def requires_cursor(self) -> bool:
-        return True
-
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:
         # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating
         # old serialized information
