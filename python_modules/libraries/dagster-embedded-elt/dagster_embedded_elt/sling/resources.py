@@ -375,29 +375,20 @@ class SlingResource(ConfigurableResource):
 
             end_time = time.time()
 
-            has_asset_def: bool = bool(context and context.has_assets_def)
-
             # TODO: In the future, it'd be nice to yield these materializations as they come in
             # rather than waiting until the end of the replication
             for stream in stream_definition:
                 asset_key = dagster_sling_translator.get_asset_key(stream)
 
-                if has_asset_def:
-                    yield MaterializeResult(
-                        asset_key=asset_key,
-                        metadata={
-                            "elapsed_time": end_time - start_time,
-                            "stream_name": stream["name"],
-                        },
-                    )
+                metadata = {
+                    "elapsed_time": end_time - start_time,
+                    "stream_name": stream["name"],
+                }
+
+                if context.has_assets_def:
+                    yield MaterializeResult(asset_key=asset_key, metadata=metadata)
                 else:
-                    yield AssetMaterialization(
-                        asset_key=asset_key,
-                        metadata={
-                            "elapsed_time": end_time - start_time,
-                            "stream_name": stream["name"],
-                        },
-                    )
+                    yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
         """Returns a generator of raw logs from the Sling CLI."""
