@@ -14,12 +14,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
-    install_requires=[
-        "dagster",
-        "dagster-webserver",
-        "dagster-embedded-elt",
-        "dagster-duckdb-pandas",
-    ],
+    install_requires=["dagster-cloud"],
     extras_require={
         "full": [
             "pytest",
