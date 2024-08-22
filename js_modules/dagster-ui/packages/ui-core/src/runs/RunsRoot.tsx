@@ -45,7 +45,7 @@ export const RunsRoot = () => {
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
-  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter);
+  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, PAGE_SIZE);
 
   useBlockTraceOnQueryResult(queryResult, 'RunsRootQuery');
 
