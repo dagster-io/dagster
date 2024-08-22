@@ -32,7 +32,7 @@ brew install vale
 - `./src` contains custom components, styles, themes, and layouts.
 - `./content-templates` contains the templates for the documentation pages.
 - `./docs/` is the source of truth for the documentation.
-- `./docs/code_examples` contains all code examples for the documentation.
+- `/examples/docs_beta_snippets/docs_beta_snippets/` contains all code examples for the documentation.
 
 The docs are broken down into the following sections:
 
@@ -68,6 +68,23 @@ yarn lint:vale
 yarn lint:fix
 ```
 
+To include code snippets, use the following format:
+
+```
+<CodeExample filePath="path/to/file.py" />
+```
+
+The `filePath` is relative to the `./examples/docs_beta_snippets/docs_beta_snippets/` directory.
+
+At minimum, all `.py` files in the `docs_beta_snippets` directory are tested by attempting to load the Python files.
+You can write additional tests for them in the `docs_beta_snippets_test` folder. See the folder for more information.
+
+To type-check the code snippets during development, run the following command from the Dagster root folder.
+This will run `pyright` on all new/changed files relative to the master branch.
+
+```
+make quick_pyright
+```
 ---
 
 ## Build

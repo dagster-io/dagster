@@ -9,7 +9,9 @@ def customer_data(): ...
 def sales_report(): ...
 
 
-daily_refresh_job = define_asset_job("daily_refresh", selection=["customer_data", "sales_report"])
+daily_refresh_job = define_asset_job(
+    "daily_refresh", selection=["customer_data", "sales_report"]
+)
 
 # highlight-start
 daily_schedule = ScheduleDefinition(
