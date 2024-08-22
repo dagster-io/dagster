@@ -1,18 +1,9 @@
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional
 
-from dagster import (
-    AssetKey,
-    AssetSpec,
-    MaterializeResult,
-    _check as check,
-)
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.result import AssetResult
+from dagster import AssetKey, AssetSpec, MaterializeResult
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
-
-from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 from .computation import Computation, ComputationContext, Specs, SpecsArg
 from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
@@ -127,16 +118,6 @@ class RunDlt(Computation):
         self.dlt_pipeline = dlt_pipeline
         super().__init__(name=name, specs=specs or self.default_specs(dlt_source, dlt_pipeline))
 
-    def stream(self, context: ComputationContext) -> Iterable[Union[AssetResult, AssetCheckResult]]:
+    def stream(self, context: ComputationContext) -> Iterable[MaterializeResult]:
         dlt = DagsterDltResource()
-        for result in dlt.run(
-            context=context.to_asset_execution_context(),
-            dlt_source=self.dlt_source,
-            # provide dummy instance of this to avoid spurious exception
-            dagster_dlt_translator=DagsterDltTranslator(),
-        ):
-            yield check.inst(
-                result,
-                MaterializeResult,
-                "Only MaterializeResult is supported since dlt is in an asset computation",
-            )
+        yield from dlt.stream(context, self.dlt_source, self.dlt_pipeline)

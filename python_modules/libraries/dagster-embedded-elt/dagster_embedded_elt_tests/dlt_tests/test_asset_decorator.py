@@ -125,9 +125,9 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
         dlt_source=pipeline(),
         dlt_pipeline=dlt_pipeline,
         specs=RunDlt.default_specs(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).replace(
-            automation_condition=AutoMaterializePolicy.eager().with_rules(
-                AutoMaterializeRule.materialize_on_cron("0 1 * * *")
-            ).to_automation_condition()
+            automation_condition=AutoMaterializePolicy.eager()
+            .with_rules(AutoMaterializeRule.materialize_on_cron("0 1 * * *"))
+            .to_automation_condition()
         ),
     ).assets_def
 

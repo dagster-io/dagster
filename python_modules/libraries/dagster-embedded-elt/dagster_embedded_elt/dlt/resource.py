@@ -112,10 +112,28 @@ class DagsterDltResource(ConfigurableResource):
 
         return base_metadata
 
+    # computation-friendly api
+    def stream(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext, ComputationContext],
+        dlt_source: Optional[DltSource] = None,
+        dlt_pipeline: Optional[Pipeline] = None,
+        **kwargs,
+    ) -> Iterator[MaterializeResult]:
+        for r in self.run(
+            context=context.to_asset_execution_context()
+            if isinstance(context, ComputationContext)
+            else context,
+            dlt_source=dlt_source,
+            dlt_pipeline=dlt_pipeline,
+            **kwargs,
+        ):
+            yield check.inst(r, MaterializeResult)
+
     @public
     def run(
         self,
-        context: Union[OpExecutionContext, AssetExecutionContext, ComputationContext],
+        context: Union[OpExecutionContext, AssetExecutionContext],
         dlt_source: Optional[DltSource] = None,
         dlt_pipeline: Optional[Pipeline] = None,
         dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
