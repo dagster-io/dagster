@@ -108,7 +108,7 @@ gql==3.5.0
 graphene==3.3
 graphql-core==3.2.3
 graphql-relay==3.2.0
-grpcio==1.65.5
+grpcio==1.66.0
 grpcio-health-checking==1.62.3
 grpcio-status==1.62.3
 grpcio-tools==1.62.3
@@ -236,7 +236,7 @@ python-slugify==8.0.4
 pytimeparse==1.1.8
 pytz==2024.1
 pyyaml==6.0.2
-pyzmq==26.1.1
+pyzmq==26.2.0
 rapidfuzz==3.9.6
 referencing==0.35.1
 requests==2.32.3
@@ -264,8 +264,8 @@ snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
 soupsieve==2.6
 sqlalchemy==1.4.53
-sqlglot==25.15.0
-sqlglotrs==0.2.8
+sqlglot==25.16.0
+sqlglotrs==0.2.9
 sqlparse==0.5.1
 stack-data==0.6.3
 starlette==0.38.2
@@ -299,7 +299,7 @@ types-python-dateutil==2.9.0.20240821
 types-pytz==2024.1.0.20240417
 types-pyyaml==6.0.12.20240808
 types-requests==2.32.0.20240712
-types-setuptools==72.2.0.20240821
+types-setuptools==73.0.0.20240822
 types-simplejson==3.19.0.20240801
 types-six==1.16.21.20240513
 types-sqlalchemy==1.4.53.34

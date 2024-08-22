@@ -59,8 +59,8 @@ bitmath==1.3.3.1
 bleach==6.1.0
 blinker==1.8.2
 bokeh==3.5.1
-boto3==1.35.3
-botocore==1.35.3
+boto3==1.35.4
+botocore==1.35.4
 buildkite-test-collector==0.1.8
 cachecontrol==0.14.0
 cached-property==1.5.2
@@ -166,7 +166,7 @@ daff==1.3.46
 -e python_modules/libraries/dagstermill
 dask==2024.8.0
 dask-expr==1.1.10
-dask-jobqueue==0.8.5
+dask-jobqueue==0.9.0
 dask-kubernetes==2022.9.0
 dask-yarn==0.9
 databricks-cli==0.18.0
@@ -255,7 +255,7 @@ graphql-core==3.2.3
 graphql-relay==3.2.0
 graphviz==0.20.3
 great-expectations==0.17.11
-grpcio==1.65.5
+grpcio==1.66.0
 grpcio-health-checking==1.62.3
 grpcio-status==1.62.3
 grpcio-tools==1.62.3
@@ -280,7 +280,7 @@ iniconfig==2.0.0
 ipykernel==6.29.5
 ipython==8.26.0
 ipython-genutils==0.2.0
-ipywidgets==8.1.3
+ipywidgets==8.1.5
 iso8601==2.1.0
 isodate==0.6.1
 isoduration==20.11.0
@@ -308,7 +308,7 @@ jupyter-server-terminals==0.5.3
 jupyterlab==4.2.4
 jupyterlab-pygments==0.3.0
 jupyterlab-server==2.27.3
-jupyterlab-widgets==3.0.11
+jupyterlab-widgets==3.0.13
 jwt==1.3.1
 kiwisolver==1.4.5
 kombu==5.4.0
@@ -320,7 +320,7 @@ langchain-community==0.2.9
 langchain-core==0.2.34
 langchain-openai==0.1.14
 langchain-text-splitters==0.2.2
-langsmith==0.1.101
+langsmith==0.1.102
 lazy-object-proxy==1.10.0
 leather==0.4.0
 limits==3.13.0
@@ -473,7 +473,7 @@ pytimeparse==1.1.8
 pytz==2024.1
 pytzdata==2020.1
 pyyaml==6.0.2
-pyzmq==26.1.1
+pyzmq==26.2.0
 querystring-parser==1.2.4
 rapidfuzz==3.9.6
 readme-renderer==44.0
@@ -493,7 +493,7 @@ rich-argparse==1.5.2
 rpds-py==0.20.0
 rsa==4.9
 ruamel-yaml==0.17.17
-ruff==0.6.1
+ruff==0.6.2
 s3transfer==0.10.2
 scikit-learn==1.5.1
 scipy==1.14.1
@@ -538,8 +538,8 @@ sphinxcontrib-serializinghtml==2.0.0
 sqlalchemy==1.4.53
 sqlalchemy-jsonfield==1.0.2
 sqlalchemy-utils==0.41.2
-sqlglot==25.15.0
-sqlglotrs==0.2.8
+sqlglot==25.16.0
+sqlglotrs==0.2.9
 sqlparse==0.5.1
 sshpubkeys==3.3.1
 sshtunnel==0.4.0
@@ -592,7 +592,7 @@ types-python-dateutil==2.9.0.20240821
 types-pytz==2024.1.0.20240417
 types-pyyaml==6.0.12.20240808
 types-requests==2.31.0.6
-types-setuptools==72.2.0.20240821
+types-setuptools==73.0.0.20240822
 types-simplejson==3.19.0.20240801
 types-six==1.16.21.20240513
 types-sqlalchemy==1.4.53.34
@@ -625,7 +625,7 @@ websocket-client==1.8.0
 websockets==13.0
 werkzeug==2.2.3
 wheel==0.44.0
-widgetsnbextension==4.0.11
+widgetsnbextension==4.0.13
 -e examples/with_airflow
 -e examples/with_great_expectations
 -e examples/with_openai
