@@ -841,11 +841,11 @@ class SqlRunStorage(RunStorage):
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
+        if status and filters:
+            raise DagsterInvariantViolationError(
+                "Cannot provide status and filters to get_backfills. Please use filters rather than status."
+            )
         if status or (filters and filters.statuses):
-            if status and filters and filters.statuses:
-                raise DagsterInvariantViolationError(
-                    "Conflicting status filters provided to get_backfills. Choose one of status or BulkActionsFilter.statuses."
-                )
             statuses = [status] if status else (filters.statuses if filters else None)
             assert statuses
             query = query.where(
