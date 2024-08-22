@@ -20,7 +20,7 @@ class DagsterSdfTranslatorSettings:
         enable_asset_checks (bool): Whether to load sdf table tests as Dagster asset checks.
             Defaults to False.
         enable_code_references (bool): Whether to enable Dagster code references for sdf tables.
-            Defaults to False.
+            Defaults to True.
         enable_raw_sql_description (bool): Whether to display sdf raw sql in Dagster descriptions.
             Defaults to True.
         enable_materialized_sql_description (bool): Whether to display sdf materialized sql in
@@ -29,7 +29,7 @@ class DagsterSdfTranslatorSettings:
     """
 
     enable_asset_checks: bool = False
-    enable_code_references: bool = False
+    enable_code_references: bool = True
     enable_raw_sql_description: bool = True
     enable_materialized_sql_description: bool = True
 

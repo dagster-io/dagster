@@ -33,14 +33,14 @@ class DagsterDbtTranslatorSettings:
         enable_duplicate_source_asset_keys (bool): Whether to allow dbt sources with duplicate
             Dagster asset keys. Defaults to False.
         enable_code_references (bool): Whether to enable Dagster code references for dbt resources.
-            Defaults to False.
+            Defaults to True.
         enable_dbt_selection_by_name (bool): Whether to enable selecting dbt resources by name,
             rather than fully qualified name. Defaults to False.
     """
 
     enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
-    enable_code_references: bool = False
+    enable_code_references: bool = True
     enable_dbt_selection_by_name: bool = False
 
 
