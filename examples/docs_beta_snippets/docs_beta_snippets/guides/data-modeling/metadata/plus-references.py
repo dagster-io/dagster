@@ -1,10 +1,6 @@
 from dagster_cloud.metadata.source_code import link_code_references_to_git_if_cloud
 
-from dagster import (
-    Definitions,
-    asset,
-    with_source_code_references,
-)
+from dagster import Definitions, asset, with_source_code_references
 
 
 @asset

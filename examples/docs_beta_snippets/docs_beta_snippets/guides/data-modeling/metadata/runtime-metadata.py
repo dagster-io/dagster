@@ -1,4 +1,5 @@
-from dagster import asset, MetadataValue, MaterializeResult
+from dagster import MaterializeResult, MetadataValue, asset
+
 
 @asset
 def my_asset():

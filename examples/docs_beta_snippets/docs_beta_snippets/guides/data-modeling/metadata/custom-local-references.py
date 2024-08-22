@@ -24,6 +24,4 @@ from dagster import (
 def my_asset_modeled_in_yaml(): ...
 
 
-defs = Definitions(
-    assets=with_source_code_references([my_asset_modeled_in_yaml])
-)
+defs = Definitions(assets=with_source_code_references([my_asset_modeled_in_yaml]))

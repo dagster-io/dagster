@@ -1,9 +1,4 @@
-from dagster import (
-    MaterializeResult,
-    TableColumn,
-    TableSchema,
-    asset,
-)
+from dagster import MaterializeResult, TableColumn, TableSchema, asset
 
 
 # Definition-time metadata
@@ -43,7 +38,5 @@ def my_other_asset():
     ]
 
     return MaterializeResult(
-        metadata={
-            "dagster/column_schema": TableSchema(columns=columns)
-        }
+        metadata={"dagster/column_schema": TableSchema(columns=columns)}
     )
