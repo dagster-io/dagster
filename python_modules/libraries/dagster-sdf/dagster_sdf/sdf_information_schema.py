@@ -23,6 +23,7 @@ from dagster import (
     AssetSpec,
     OpExecutionContext,
     TableColumn,
+    get_dagster_logger,
 )
 from dagster._core.definitions.metadata import (
     CodeReferencesMetadataSet,
@@ -48,6 +49,8 @@ from .constants import (
 )
 from .dagster_sdf_translator import DagsterSdfTranslator
 from .sdf_event_iterator import SdfDagsterEventType
+
+logger = get_dagster_logger()
 
 
 @record_custom(checked=False)
@@ -136,6 +139,11 @@ class SdfInformationSchema(IHaveNew):
         table_deps = self.read_table("table_deps").filter(
             ~pl.col("purpose").is_in(["system", "external-system"])
         )
+        table_columns: Dict[str, List[TableColumn]] = {}
+        try:
+            table_columns = self.get_columns()
+        except Exception:
+            logger.warn("Column information schema table could not be read.")
 
         # Step 1: Build Map of Table Deps to Rows
         table_rows_deps = {row["table_id"]: row for row in table_deps.rows(named=True)}
@@ -168,6 +176,12 @@ class SdfInformationSchema(IHaveNew):
             if dagster_sdf_translator.settings.enable_code_references:
                 code_references = self._extract_code_ref(table_row)
             metadata = {
+                **TableMetadataSet(
+                    column_schema=TableSchema(
+                        columns=table_columns.get(table_row["table_id"], []),
+                    ),
+                    relation_identifier=table_row["table_id"],
+                ),
                 **(code_references if code_references else {}),
                 DAGSTER_SDF_TABLE_ID: table_row["table_id"],
                 DAGSTER_SDF_CATALOG_NAME: table_row["catalog_name"],
