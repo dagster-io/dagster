@@ -18,9 +18,7 @@ def _create_sdf_invocation(
     run_workspace: bool = False,
     environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
 ):
-    sdf = SdfCliResource(
-        workspace_dir=os.fspath(workspace_dir), global_config_flags=["--log-form=nested"]
-    )
+    sdf = SdfCliResource(workspace_dir=os.fspath(workspace_dir))
 
     sdf_invocation = sdf.cli(
         ["compile", "--save", "table-deps"], environment=environment, raise_on_error=False

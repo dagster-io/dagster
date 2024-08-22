@@ -133,7 +133,9 @@ class SdfCliInvocation:
             workspace_dir=self.workspace_dir,
             target_dir=self.target_dir,
             environment=self.environment,
-        ).stream_asset_observations(dagster_sdf_translator=self.dagster_sdf_translator)
+        ).stream_asset_observations(
+            dagster_sdf_translator=self.dagster_sdf_translator, context=self.context
+        )
 
     @public
     def stream(
