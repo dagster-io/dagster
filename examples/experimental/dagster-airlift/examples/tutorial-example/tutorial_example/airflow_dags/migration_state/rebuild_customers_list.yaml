@@ -1,0 +1,7 @@
+tasks:
+  load_raw_customers:
+    migrated: False
+  build_dbt_models:
+    migrated: False
+  export_customers:
+    migrated: False
