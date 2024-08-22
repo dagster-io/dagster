@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.3 (core) / 0.24.3 (libraries)
+
+### New
+
+- When different assets within a code location have different `PartitionsDefinition`s, there will no longer be an implicit asset job `__ASSET_JOB_...` for each `PartitionsDefinition`; there will just be one with all the assets. This reduces the time it takes to load code locations with assets with many different `PartitionsDefinition`s.
+
 ## 1.8.2 (core) / 0.24.2 (libraries)
 
 ### New
