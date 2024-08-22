@@ -8,7 +8,7 @@ from typing import IO, Any, List, Mapping, Optional, Sequence
 from dagster import _seven
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.storage.captured_log_manager import CapturedLogManager, ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
 from dagster._core.utils import coerce_valid_log_level
 from dagster._utils.log import create_console_logger
 
@@ -47,7 +47,7 @@ class DispatchingLogHandler(logging.Handler):
 
 
 class CapturedLogHandler(logging.Handler):
-    """Persist logging records to an IO stream controlled by the CapturedLogManager."""
+    """Persist logging records to an IO stream controlled by the ComputeLogManager."""
 
     def __init__(self, write_stream: IO):
         self._write_stream = write_stream
@@ -105,7 +105,7 @@ class InstigationLogger(logging.Logger):
         if (
             self._log_key
             and self._instance
-            and isinstance(self._instance.compute_log_manager, CapturedLogManager)
+            and isinstance(self._instance.compute_log_manager, ComputeLogManager)
         ):
             write_stream = self._exit_stack.enter_context(
                 self._instance.compute_log_manager.open_log_stream(
@@ -147,9 +147,6 @@ class InstigationLogger(logging.Logger):
 def get_instigation_log_records(
     instance: DagsterInstance, log_key: Sequence[str]
 ) -> Sequence[Mapping[str, Any]]:
-    if not isinstance(instance.compute_log_manager, CapturedLogManager):
-        return []
-
     log_data = instance.compute_log_manager.get_log_data(log_key)
     raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
 

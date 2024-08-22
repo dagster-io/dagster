@@ -409,7 +409,7 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.run_coordinator import RunCoordinator
         from dagster._core.scheduler import Scheduler
         from dagster._core.secrets import SecretsLoader
-        from dagster._core.storage.captured_log_manager import CapturedLogManager
+        from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
@@ -427,7 +427,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         if compute_log_manager:
             self._compute_log_manager = check.inst_param(
-                compute_log_manager, "compute_log_manager", CapturedLogManager
+                compute_log_manager, "compute_log_manager", ComputeLogManager
             )
             self._compute_log_manager.register_instance(self)
         else:

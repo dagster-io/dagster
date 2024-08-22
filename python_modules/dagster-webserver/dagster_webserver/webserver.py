@@ -9,8 +9,8 @@ import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._annotations import deprecated
 from dagster._core.debug import DebugRunPayload
-from dagster._core.storage.captured_log_manager import ComputeIOType
 from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext

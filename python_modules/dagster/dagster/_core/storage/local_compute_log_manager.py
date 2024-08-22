@@ -23,15 +23,14 @@ from dagster._seven import json
 from dagster._utils import ensure_dir, ensure_file, touch_file
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .captured_log_manager import (
+from .compute_log_manager import (
     CapturedLogContext,
     CapturedLogData,
-    CapturedLogManager,
     CapturedLogMetadata,
     CapturedLogSubscription,
     ComputeIOType,
+    ComputeLogManager,
 )
-from .compute_log_manager import ComputeLogManager
 
 DEFAULT_WATCHDOG_POLLING_TIMEOUT: Final = 2.5
 
@@ -43,7 +42,7 @@ IO_TYPE_EXTENSION: Final[Mapping[ComputeIOType, str]] = {
 MAX_FILENAME_LENGTH: Final = 255
 
 
-class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
+class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 
     def __init__(

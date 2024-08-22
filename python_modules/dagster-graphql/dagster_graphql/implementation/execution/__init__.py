@@ -24,7 +24,6 @@ from dagster._core.events import (
     EngineEventData,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.captured_log_manager import CapturedLogData, CapturedLogManager
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -46,6 +45,8 @@ from .backfill import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.storage.compute_log_manager import CapturedLogData
+
     from dagster_graphql.schema.logs.compute_logs import GrapheneCapturedLogs
     from dagster_graphql.schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -315,13 +316,10 @@ async def gen_captured_log_data(
     instance = graphene_info.context.instance
 
     compute_log_manager = instance.compute_log_manager
-    if not isinstance(compute_log_manager, CapturedLogManager):
-        return
-
     subscription = compute_log_manager.subscribe(log_key, cursor)
 
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[CapturedLogData] = asyncio.Queue()
+    queue: asyncio.Queue["CapturedLogData"] = asyncio.Queue()
 
     def _enqueue(new_event):
         loop.call_soon_threadsafe(queue.put_nowait, new_event)
