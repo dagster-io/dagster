@@ -1,1 +1,1 @@
-select * from {{ source('iris_dataset', 'iris_lakehouse_table') }} where species = 'Iris-setosa'
+select * from {{ source('lakehouse', 'iris_lakehouse_table') }} where species = 'Iris-setosa'
