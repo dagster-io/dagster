@@ -97,9 +97,7 @@ class AutomationContext:
             parent_context=self,
             _cursor=self._cursor,
             _legacy_context=self._legacy_context.for_child(
-                child_condition,
-                condition_unqiue_id,
-                candidate_slice.convert_to_valid_asset_subset(),
+                child_condition, condition_unqiue_id, candidate_slice
             )
             if self._legacy_context
             else None,
