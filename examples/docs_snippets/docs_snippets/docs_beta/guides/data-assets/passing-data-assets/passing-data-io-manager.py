@@ -1,9 +1,12 @@
 import pandas as pd
-from dagster import Definitions, asset
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 
+from dagster import Definitions, asset
+
 # highlight-start
-duckdb_io_manager = DuckDBPandasIOManager(database="my_database.duckdb", schema="my_schema")
+duckdb_io_manager = DuckDBPandasIOManager(
+    database="my_database.duckdb", schema="my_schema"
+)
 
 
 @asset

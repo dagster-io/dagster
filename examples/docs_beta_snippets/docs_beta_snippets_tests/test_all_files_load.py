@@ -23,4 +23,4 @@ def test_file_loads(file_path):
     try:
         spec.loader.exec_module(module)
     except Exception as e:
-        pytest.fail(f"Failed to load {file_path}: {str(e)}")
+        pytest.fail(f"Failed to load {file_path}: {e!s}")
