@@ -2,7 +2,6 @@ import isEqual from 'lodash/isEqual';
 import {SetStateAction, useCallback, useMemo} from 'react';
 
 import {buildAssetGroupSelector} from './AssetGroupSuggest';
-import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {
   AssetGroupSelector,
   AssetNode,
@@ -32,7 +31,6 @@ export type FilterableAssetDefinition = Nullable<
 export type AssetFilterBaseType = {
   groups: AssetGroupSelector[];
   computeKindTags: string[];
-  storageKindTags: DefinitionTag[];
   changedInBranch: ChangeReason[];
   owners: AssetOwner[];
   tags: DefinitionTag[];
@@ -49,7 +47,6 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
       ? ({
           groups,
           computeKindTags,
-          storageKindTags,
           changedInBranch,
           owners,
           tags,
@@ -58,7 +55,6 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
         }) => ({
           groups: groups?.length ? JSON.stringify(groups) : undefined,
           computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
-          storageKindTags: storageKindTags?.length ? JSON.stringify(storageKindTags) : undefined,
           changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
           owners: owners?.length ? JSON.stringify(owners) : undefined,
           tags: tags?.length ? JSON.stringify(tags) : undefined,
@@ -69,7 +65,6 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
     decode: (qs) => ({
       groups: qs.groups && isEnabled ? JSON.parse(qs.groups) : [],
       computeKindTags: qs.computeKindTags && isEnabled ? JSON.parse(qs.computeKindTags) : [],
-      storageKindTags: qs.storageKindTags && isEnabled ? JSON.parse(qs.storageKindTags) : [],
       changedInBranch: qs.changedInBranch && isEnabled ? JSON.parse(qs.changedInBranch) : [],
       owners: qs.owners && isEnabled ? JSON.parse(qs.owners) : [],
       tags: qs.tags && isEnabled ? JSON.parse(qs.tags) : [],
@@ -90,7 +85,6 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
 
   const {
     setComputeKindTags,
-    setStorageKindTags,
     setGroups,
     setChangedInBranch,
     setOwners,
@@ -108,7 +102,6 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
     }
     return {
       setComputeKindTags: makeSetter('computeKindTags'),
-      setStorageKindTags: makeSetter('storageKindTags'),
       setGroups: makeSetter('groups'),
       setChangedInBranch: makeSetter('changedInBranch'),
       setOwners: makeSetter('owners'),
@@ -123,7 +116,6 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
     setFilters,
     filterFn,
     setComputeKindTags,
-    setStorageKindTags,
     setGroups,
     setChangedInBranch,
     setOwners,
@@ -192,21 +184,6 @@ export function filterAssetDefinition(
   } else if (filters.computeKindTags?.length) {
     const lowercased = new Set(filters.computeKindTags.map((c) => c.toLowerCase()));
     if (!definition?.computeKind || !lowercased.has(definition.computeKind.toLowerCase())) {
-      return false;
-    }
-  }
-
-  const isAllStorageKindTagsSelected = filters.selectAllFilters?.includes('storageKindTags');
-  const storageKindTag = definition?.tags?.find(isCanonicalStorageKindTag);
-  if (isAllStorageKindTagsSelected) {
-    if (!storageKindTag) {
-      return false;
-    }
-  } else if (filters.storageKindTags?.length) {
-    if (
-      !storageKindTag ||
-      !doesFilterArrayMatchValueArray(filters.storageKindTags, [storageKindTag])
-    ) {
       return false;
     }
   }

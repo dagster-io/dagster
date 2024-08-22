@@ -26,7 +26,7 @@ import {
   AssetStorageKindTag,
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
-import {AssetKeyInput, DefinitionTag} from '../graphql/types';
+import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
@@ -51,7 +51,6 @@ interface AssetRowProps {
   start: number;
   onRefresh: () => void;
   computeKindFilter?: StaticSetFilter<string>;
-  storageKindFilter?: StaticSetFilter<DefinitionTag>;
 }
 
 export const VirtualizedAssetRow = (props: AssetRowProps) => {
@@ -69,7 +68,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     showRepoColumn,
     view = 'flat',
     computeKindFilter,
-    storageKindFilter,
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
@@ -125,7 +123,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 reduceText
                 storageKind={storageKindTag.value}
                 style={{position: 'relative'}}
-                currentPageFilter={storageKindFilter}
               />
             )}
           </Box>

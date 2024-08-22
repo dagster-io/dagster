@@ -208,7 +208,6 @@ export const AssetsCatalogTable = ({
     filterButton,
     activeFiltersJsx,
     computeKindFilter,
-    storageKindFilter,
   } = useAssetCatalogFiltering({assets});
 
   const {searchPath, filterInput, filtered} = useBasicAssetSearchInput(
@@ -286,7 +285,6 @@ export const AssetsCatalogTable = ({
       searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
       computeKindFilter={computeKindFilter}
-      storageKindFilter={storageKindFilter}
     />
   );
 };
