@@ -63,7 +63,9 @@ from . import constants
 
 import pandas as pd
 
-@asset(deps=["taxi_trips"])
+@asset(
+    deps=["taxi_trips"]
+)
 def trips_by_week() -> None:
     conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
 
