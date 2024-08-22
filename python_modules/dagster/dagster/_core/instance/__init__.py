@@ -123,7 +123,11 @@ if TYPE_CHECKING:
         JobFailureData,
     )
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionsFilter,
+        BulkActionStatus,
+        PartitionBackfill,
+    )
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
@@ -3076,8 +3080,11 @@ class DagsterInstance(DynamicPartitionsStore):
         status: Optional["BulkActionStatus"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        filters: Optional["BulkActionsFilter"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._run_storage.get_backfills(status=status, cursor=cursor, limit=limit)
+        return self._run_storage.get_backfills(
+            status=status, cursor=cursor, limit=limit, filters=filters
+        )
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._run_storage.get_backfill(backfill_id)

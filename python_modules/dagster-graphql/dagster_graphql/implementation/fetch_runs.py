@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -18,13 +19,13 @@ from dagster import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
-from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._record import record
-from dagster._time import datetime_from_timestamp, get_current_timestamp
+from dagster._time import datetime_from_timestamp
 
 from .external import ensure_valid_config, get_external_job_or_raise
 
@@ -436,14 +437,10 @@ def _fetch_runs_not_in_backfill(
     instance: DagsterInstance,
     cursor: Optional[str],
     limit: int,
-    created_before: Optional[float],
+    created_before: Optional[datetime.datetime],
 ) -> Sequence[RunRecord]:
     """Fetches limit RunRecords that are not part of a backfill and were created before a given timestamp."""
-    runs_filter = (
-        RunsFilter(created_before=datetime_from_timestamp(created_before))
-        if created_before
-        else None
-    )
+    runs_filter = RunsFilter(created_before=created_before) if created_before else None
 
     runs = []
     while len(runs) < limit:
@@ -456,38 +453,6 @@ def _fetch_runs_not_in_backfill(
         runs.extend([run for run in new_runs if run.dagster_run.tags.get(BACKFILL_ID_TAG) is None])
 
     return runs[:limit]
-
-
-def _fetch_backfills_created_before_timestamp(
-    instance: DagsterInstance,
-    cursor: Optional[str],
-    limit: int,
-    created_before: Optional[float] = None,
-) -> Sequence[PartitionBackfill]:
-    """Fetches limit PartitionBackfills that were created before a given timestamp.
-
-    Note: This is a reasonable filter to add to the get_backfills instance method. However, we should have a
-    more generalized way of adding filters than adding new parameters to get_backfills. So for now, doing this
-    in a separate function.
-    """
-    created_before = created_before if created_before else get_current_timestamp()
-    backfills = []
-    while len(backfills) < limit:
-        # fetch backfills in a loop discarding backfills that were created after created_before until
-        # we have limit backfills to return or have reached the end of the backfills table
-        new_backfills = instance.get_backfills(cursor=cursor, limit=limit)
-        if len(new_backfills) == 0:
-            return backfills
-        cursor = new_backfills[-1].backfill_id
-        backfills.extend(
-            [
-                backfill
-                for backfill in new_backfills
-                if backfill.backfill_timestamp <= created_before
-            ]
-        )
-
-    return backfills[:limit]
 
 
 def get_runs_feed_entries(
@@ -518,13 +483,15 @@ def get_runs_feed_entries(
     fetch_limit = limit + 1
     # filter out any backfills/runs that are newer than the cursor timestamp. See RunsFeedCursor docstring
     # for case when theis is necessary
+    created_before_cursor = (
+        datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
+    )
     backfills = [
         GraphenePartitionBackfill(backfill)
-        for backfill in _fetch_backfills_created_before_timestamp(
-            instance,
+        for backfill in instance.get_backfills(
             cursor=runs_feed_cursor.backfill_cursor,
-            limit=fetch_limit,
-            created_before=runs_feed_cursor.timestamp,
+            limit=limit,
+            filters=BulkActionsFilter(created_before=created_before_cursor),
         )
     ]
     runs = [
@@ -533,7 +500,7 @@ def get_runs_feed_entries(
             instance,
             cursor=runs_feed_cursor.run_cursor,
             limit=fetch_limit,
-            created_before=runs_feed_cursor.timestamp,
+            created_before=created_before_cursor,
         )
     ]
 

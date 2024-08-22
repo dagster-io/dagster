@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
@@ -14,6 +15,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -36,6 +38,28 @@ class BulkActionStatus(Enum):
     @staticmethod
     def from_graphql_input(graphql_str):
         return BulkActionStatus(graphql_str)
+
+
+@record
+class BulkActionsFilter:
+    """Filters to use when querying for bulk actions (i.e. backfills) from the BulkActionsTable.
+
+    Each field of the BulkActionsFilter represents a logical AND with each other. For
+    example, if you specify status and created_before, then you will receive only bulk actions
+    with the specified states AND the created before created_before. If left blank, then
+    all values will be permitted for that field.
+
+    Args:
+        status (Optional[BulkActionStatus]): A status to filter by.
+        created_before (Optional[DateTime]): Filter by bulk actions that were created before this datetime. Note that the
+            create_time for each bulk action is stored in UTC.
+        created_after (Optional[DateTime]): Filter by bulk actions that were created after this datetime. Note that the
+            create_time for each bulk action is stored in UTC.
+    """
+
+    status: Optional[BulkActionStatus] = None
+    created_before: Optional[datetime] = None
+    created_after: Optional[datetime] = None
 
 
 @whitelist_for_serdes

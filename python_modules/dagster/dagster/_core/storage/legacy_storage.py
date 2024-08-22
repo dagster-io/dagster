@@ -33,7 +33,11 @@ if TYPE_CHECKING:
     from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionsFilter,
+        BulkActionStatus,
+        PartitionBackfill,
+    )
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.instance import DagsterInstance
     from dagster._core.remote_representation.origin import RemoteJobOrigin
@@ -312,8 +316,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         status: Optional["BulkActionStatus"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        filters: Optional["BulkActionsFilter"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._storage.run_storage.get_backfills(status, cursor, limit)
+        return self._storage.run_storage.get_backfills(status, cursor, limit, filters=filters)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)

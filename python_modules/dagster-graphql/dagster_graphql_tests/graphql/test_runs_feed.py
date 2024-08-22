@@ -51,7 +51,7 @@ query RunsFeedEntryQuery($cursor: String, $limit: Int!) {
 # CURRENT_TIMESTAMP only has second precision for sqlite, so if we create runs and backfills without any delay
 # the resulting list is a chunk of runs and then a chunk of backfills when ordered by time. Adding a small
 # delay between creating a run and a backfill makes the resulting list more interwoven
-CREATE_DELAY = 0.5
+CREATE_DELAY = 1
 
 
 def _create_run(graphql_context) -> DagsterRun:
@@ -99,6 +99,20 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
         return class_scoped_graphql_context
 
     def test_get_runs_feed(self, gql_context_with_runs_and_backfills):
+        result = execute_dagster_graphql(
+            gql_context_with_runs_and_backfills.create_request_context(),
+            GET_RUNS_FEED_QUERY,
+            variables={
+                "limit": 25,
+                "cursor": None,
+            },
+        )
+        prev_run_time = None
+        for res in result.data["runsFeedOrError"]["results"]:
+            if prev_run_time:
+                assert res["creationTime"] <= prev_run_time
+            prev_run_time = res["creationTime"]
+
         result = execute_dagster_graphql(
             gql_context_with_runs_and_backfills.create_request_context(),
             GET_RUNS_FEED_QUERY,
