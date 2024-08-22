@@ -151,7 +151,7 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
 
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         # if it's the first time evaluating, just return the empty slice
-        if context.cursor is None:
+        if context.previous_evaluation_effective_dt is None:
             return context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
         else:
             return context.asset_graph_view.compute_updated_since_cursor_slice(
