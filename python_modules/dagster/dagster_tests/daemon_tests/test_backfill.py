@@ -2108,7 +2108,7 @@ def test_asset_backfill_with_single_run_backfill_policy(
         partitions_by_assets=[
             PartitionsByAssetSelector(
                 asset_with_single_run_backfill_policy.key,
-                PartitionsSelector(PartitionRangeSelector(partitions[0], partitions[-1])),
+                PartitionsSelector([PartitionRangeSelector(partitions[0], partitions[-1])]),
             )
         ],
         title=None,

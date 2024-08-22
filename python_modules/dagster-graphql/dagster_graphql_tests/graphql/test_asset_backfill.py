@@ -145,7 +145,7 @@ BACKFILLS_WITH_FILTERS_QUERY = """
 
 
 def get_repo() -> RepositoryDefinition:
-    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f", "g"])
 
     @asset(partitions_def=partitions_def)
     def asset1(): ...
@@ -347,7 +347,7 @@ def test_launch_asset_backfill_all_partitions():
             )
             target_subset = asset_backfill_data.target_subset
             assert target_subset.asset_keys == all_asset_keys
-            all_partition_keys = {"a", "b", "c"}
+            all_partition_keys = {"a", "b", "c", "d", "e", "f", "g"}
             assert (
                 target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys()
                 == all_partition_keys
@@ -379,7 +379,7 @@ def test_launch_asset_backfill_all_partitions_asset_selection():
             )
             target_subset = asset_backfill_data.target_subset
             assert target_subset.asset_keys == {AssetKey("asset2")}
-            all_partition_keys = {"a", "b", "c"}
+            all_partition_keys = {"a", "b", "c", "d", "e", "f", "g"}
             assert (
                 target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
                 == all_partition_keys
@@ -426,7 +426,7 @@ def test_launch_asset_backfill_partitions_by_asset():
             )
             target_subset = asset_backfill_data.target_subset
             assert target_subset.asset_keys == all_asset_keys
-            all_partition_keys = {"a", "b", "c"}
+            all_partition_keys = {"a", "b", "c", "d", "e", "f", "g"}
             assert target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys() == {
                 "b",
                 "c",
@@ -436,6 +436,49 @@ def test_launch_asset_backfill_partitions_by_asset():
                 == all_partition_keys
             )
             assert target_subset.non_partitioned_asset_keys == {AssetKey("asset3")}
+
+
+def test_launch_asset_backfill_partitions_by_asset_multiple_ranges():
+    repo = get_repo()
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": AssetKey("asset1").to_graphql_input(),
+                                "partitions": {
+                                    "ranges": [
+                                        {"start": "b", "end": "d"},
+                                        {"start": "f", "end": "g"},
+                                    ]
+                                },
+                            },
+                            {"assetKey": AssetKey("asset2").to_graphql_input()},
+                        ],
+                    }
+                },
+            )
+
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            target_subset = asset_backfill_data.target_subset
+            all_partition_keys = {"a", "b", "c", "d", "e", "f", "g"}
+            target_partition_keys = {"b", "c", "d", "f", "g"}
+
+            assert (
+                target_subset.get_partitions_subset(AssetKey("asset1")).get_partition_keys()
+                == target_partition_keys
+            )
+            assert (
+                target_subset.get_partitions_subset(AssetKey("asset2")).get_partition_keys()
+                == all_partition_keys
+            )
 
 
 def test_launch_asset_backfill_all_partitions_root_assets_different_partitions():
@@ -1065,6 +1108,47 @@ def test_asset_backfill_error_raised_upon_invalid_params_provided():
             )
             assert (
                 "partitions_by_assets cannot be used together with asset_selection, selector, or partitionNames"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
+
+def test_asset_backfill_error_raised_upon_conflicting_range_params_provided():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(
+            __file__, "get_daily_hourly_non_partitioned_repo", instance
+        ) as context:
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": {"path": ["hourly"]},
+                                "partitions": {
+                                    "range": {
+                                        "start": "2024-01-01-00:00",
+                                        "end": "2024-01-01-01:00",
+                                    },
+                                    "ranges": [
+                                        {
+                                            "start": "2024-01-01-00:00",
+                                            "end": "2024-01-01-01:00",
+                                        }
+                                    ],
+                                },
+                            }
+                        ],
+                    }
+                },
+            )
+            assert launch_backfill_result.data
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "Received partitionsSelector with values for both 'range' and 'ranges'. Only one should be provided."
                 in launch_backfill_result.data["launchPartitionBackfill"]["message"]
             )
 
