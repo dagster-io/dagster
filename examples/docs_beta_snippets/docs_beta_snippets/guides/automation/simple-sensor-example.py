@@ -27,7 +27,7 @@ def check_for_new_files() -> List[str]:
     return []
 
 
-@sensor(target=my_job, minimum_interval_seconds=5)
+@sensor(job=my_job, minimum_interval_seconds=5)
 def new_file_sensor():
     new_files = check_for_new_files()
     if new_files:

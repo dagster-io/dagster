@@ -18,6 +18,7 @@ setup(
         "dagster",
         "dagster-webserver",
         "dagster-embedded-elt",
+        "dagster-duckdb-pandas",
     ],
     extras_require={
         "full": [
