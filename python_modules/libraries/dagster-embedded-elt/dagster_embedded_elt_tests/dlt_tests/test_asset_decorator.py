@@ -33,7 +33,6 @@ def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
     } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.keys
 
 
-
 def test_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
     # Since repo_issues is a transform of the repo data, its upstream
     # asset key should be the repo data asset key as well.
@@ -41,7 +40,6 @@ def test_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
         AssetKey("dlt_pipeline_repos"): {AssetKey("pipeline_repos")},
         AssetKey("dlt_pipeline_repo_issues"): {AssetKey("pipeline_repos")},
     } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.asset_deps
-
 
 
 def test_example_pipeline_descs(dlt_pipeline: Pipeline) -> None:
@@ -135,7 +133,6 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
 
     for item in assets.auto_materialize_policies_by_key.values():
         assert "0 1 * * *" in str(item)
-
 
 
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
@@ -321,12 +318,11 @@ def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
             dagster_dlt_resource = DagsterDltResource()
             yield from dagster_dlt_resource.run(context=asset_context, dlt_source=pipeline(month))
 
-
     async def run_partition(year: str):
         return PartitionedDltRun(
-            specs=RunDlt.default_specs(
-                dlt_source=pipeline(), dlt_pipeline=dlt_pipeline
-            ).replace(partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09")),
+            specs=RunDlt.default_specs(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).replace(
+                partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09")
+            ),
             dlt_source=pipeline(),
             dlt_pipeline=dlt_pipeline,
         ).test(partitions=year)

@@ -58,6 +58,11 @@ class ComputationContext:
     def __init__(self, context: AssetExecutionContext):
         self._ae_context = context
 
+    # this property here to not freak people out temporarily
+    @property
+    def partition_key(self) -> Optional[str]:
+        return self._ae_context.partition_key
+
     def to_asset_execution_context(self) -> AssetExecutionContext:
         return self._ae_context
 

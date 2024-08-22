@@ -37,36 +37,7 @@ def get_description(resource: DltResource) -> Optional[str]:
     return None
 
 
-class Dlt(Computation):
-    @classmethod
-    def default_specs(cls, dlt_source: DltSource, dlt_pipeline: Pipeline) -> Specs:
-        return Specs(
-            [
-                Dlt.default_spec(dlt_source, dlt_pipeline, resource)
-                for resource in dlt_source.selected_resources.values()
-            ]
-        )
-
-    @classmethod
-    def default_spec(
-        cls, dlt_source: DltSource, dlt_pipeline: Pipeline, dlt_resource: DltResource
-    ) -> AssetSpec:
-        return AssetSpec(
-            key=f"dlt_{dlt_resource.source_name}_{dlt_resource.name}",
-            deps=get_upstream_deps(dlt_resource),
-            description=get_description(dlt_resource),
-            metadata={
-                META_KEY_SOURCE: dlt_source,
-                META_KEY_PIPELINE: dlt_pipeline,
-                META_KEY_TRANSLATOR: None,
-            },
-            tags={
-                "dagster/compute_kind": dlt_pipeline.destination.destination_name,
-            },
-        )
-
-
-class RunDlt(Dlt):
+class RunDlt(Computation):
     """Asset Factory for using data load tool (dlt).
 
     Args:
@@ -116,6 +87,33 @@ class RunDlt(Dlt):
                 specs=RunDlt.default_specs().replace(group_name="github"),
             )
     """
+
+    @classmethod
+    def default_specs(cls, dlt_source: DltSource, dlt_pipeline: Pipeline) -> Specs:
+        return Specs(
+            [
+                RunDlt.default_spec(dlt_source, dlt_pipeline, resource)
+                for resource in dlt_source.selected_resources.values()
+            ]
+        )
+
+    @classmethod
+    def default_spec(
+        cls, dlt_source: DltSource, dlt_pipeline: Pipeline, dlt_resource: DltResource
+    ) -> AssetSpec:
+        return AssetSpec(
+            key=f"dlt_{dlt_resource.source_name}_{dlt_resource.name}",
+            deps=get_upstream_deps(dlt_resource),
+            description=get_description(dlt_resource),
+            metadata={
+                META_KEY_SOURCE: dlt_source,
+                META_KEY_PIPELINE: dlt_pipeline,
+                META_KEY_TRANSLATOR: None,
+            },
+            tags={
+                "dagster/compute_kind": dlt_pipeline.destination.destination_name,
+            },
+        )
 
     def __init__(
         self,
