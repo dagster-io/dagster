@@ -1,7 +1,7 @@
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Mapping, Optional
+from typing import TYPE_CHECKING, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import (
@@ -19,6 +19,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionCursor,
     AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
+    StructuredCursor,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._time import get_current_datetime
@@ -27,6 +28,8 @@ from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+
+T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
 
 def _has_legacy_condition(condition: AutomationCondition):
@@ -125,7 +128,7 @@ class AutomationContext:
         return self.parent_context.root_context if self.parent_context is not None else self
 
     @property
-    def node_cursor(self) -> Optional[AutomationConditionNodeCursor]:
+    def _node_cursor(self) -> Optional[AutomationConditionNodeCursor]:
         """Returns the evaluation node for this node from the previous evaluation, if this node
         was evaluated on the previous tick.
         """
@@ -136,13 +139,18 @@ class AutomationContext:
         )
 
     @property
+    def cursor(self) -> Optional[str]:
+        """The cursor value returned on the previous evaluation for this condition, if any."""
+        return self._node_cursor.get_structured_cursor(as_type=str) if self._node_cursor else None
+
+    @property
     def previous_true_slice(self) -> Optional[AssetSlice]:
         """Returns the true slice for this node from the previous evaluation, if this node was
         evaluated on the previous tick.
         """
         return (
-            self.asset_graph_view.get_asset_slice_from_subset(self.node_cursor.true_subset)
-            if self.node_cursor
+            self.asset_graph_view.get_asset_slice_from_subset(self._node_cursor.true_subset)
+            if self._node_cursor
             else None
         )
 
@@ -175,7 +183,7 @@ class AutomationContext:
         """Returns the candidate slice for the previous evaluation. If this node has never been
         evaluated, returns None.
         """
-        candidate_subset = self.node_cursor.candidate_subset if self.node_cursor else None
+        candidate_subset = self._node_cursor.candidate_subset if self._node_cursor else None
         if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
             return self.asset_graph_view.get_asset_slice(asset_key=self.asset_key)
         else:
@@ -213,3 +221,10 @@ class AutomationContext:
     def get_empty_slice(self) -> AssetSlice:
         """Returns an empty AssetSlice of the currently-evaluated asset."""
         return self.asset_graph_view.get_empty_slice(asset_key=self.asset_key)
+
+    def get_structured_cursor(
+        self, as_type: Type[T_StructuredCursor]
+    ) -> Optional[T_StructuredCursor]:
+        return (
+            self._node_cursor.get_structured_cursor(as_type=as_type) if self._node_cursor else None
+        )

@@ -449,7 +449,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         Accounts for cases in which the partitions definition may have changed between ticks.
         """
         previous_handled_subset = (
-            context.legacy_context.node_cursor.get_extra_state(AssetSubset)
+            context.legacy_context.node_cursor.get_structured_cursor(AssetSubset)
             if context.legacy_context.node_cursor
             else None
         )
@@ -539,7 +539,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             ),
             # we keep track of the handled subset instead of the unhandled subset because new
             # partitions may spontaneously jump into existence at any time
-            extra_state=handled_subset,
+            structured_cursor=handled_subset,
         )
 
 
@@ -809,7 +809,9 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             )
         else:
             # previous state still valid
-            previous_parent_subsets = context.legacy_context.node_cursor.get_extra_state(list) or []
+            previous_parent_subsets = (
+                context.legacy_context.node_cursor.get_structured_cursor(list) or []
+            )
             previous_parent_subset = next(
                 (s for s in previous_parent_subsets if s.asset_key == parent_asset_key),
                 ValidAssetSubset.empty(
@@ -971,7 +973,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
                 context.legacy_context.candidate_subset - all_parents_updated_subset
             ),
-            extra_state=list(updated_subsets_by_key.values()),
+            structured_cursor=list(updated_subsets_by_key.values()),
         )
 
 
