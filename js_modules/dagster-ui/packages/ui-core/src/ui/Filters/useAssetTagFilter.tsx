@@ -1,8 +1,8 @@
 import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
-import {HIDDEN_TAG_PREFIX} from 'shared/graph/KindTags';
 
+import {HIDDEN_TAG_PREFIX} from '../../graph/KindTags';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
