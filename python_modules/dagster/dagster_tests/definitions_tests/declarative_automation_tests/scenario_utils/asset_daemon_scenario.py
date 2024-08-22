@@ -250,9 +250,7 @@ class AssetDaemonScenarioState(ScenarioState):
 
             new_run_requests.extend(backfill_requests)
             new_evaluations = [
-                e.get_evaluation_with_run_ids(
-                    self.asset_graph.get(e.asset_key).partitions_def
-                ).evaluation
+                e.get_evaluation_with_run_ids().evaluation
                 for e in check.not_none(
                     self.instance.schedule_storage
                 ).get_auto_materialize_evaluations_for_evaluation_id(new_cursor.evaluation_id)
@@ -399,12 +397,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 ]
             )
         )
-        assert (
-            new_run_ids_for_asset
-            == evaluation_record.get_evaluation_with_run_ids(
-                self.asset_graph.get(key).partitions_def
-            ).run_ids
-        )
+        assert new_run_ids_for_asset == evaluation_record.get_evaluation_with_run_ids().run_ids
 
     def assert_evaluation(
         self,

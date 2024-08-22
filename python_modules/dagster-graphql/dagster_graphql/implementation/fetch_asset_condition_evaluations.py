@@ -79,14 +79,8 @@ def fetch_asset_condition_evaluation_record_for_partition(
             )
         )
     )
-    asset_node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key)
-    partitions_def = (
-        asset_node.external_asset_node.partitions_def_data.get_partitions_definition()
-        if asset_node and asset_node.external_asset_node.partitions_def_data
-        else None
-    )
     return GrapheneAssetConditionEvaluation(
-        record.get_evaluation_with_run_ids(partitions_def).evaluation, partition_key
+        record.get_evaluation_with_run_ids().evaluation, partition_key
     )
 
 
@@ -114,7 +108,7 @@ def fetch_true_partitions_for_evaluation_node(
     )
 
     # it's no longer necessary to pass in the partitions def in to get_evaluation_with_run_ids
-    root_evaluation = record.get_evaluation_with_run_ids(None).evaluation
+    root_evaluation = record.get_evaluation_with_run_ids().evaluation
     for evaluation in root_evaluation.iter_nodes():
         if evaluation.condition_snapshot.unique_id == node_unique_id:
             return list(evaluation.true_subset.subset_value.get_partition_keys())
