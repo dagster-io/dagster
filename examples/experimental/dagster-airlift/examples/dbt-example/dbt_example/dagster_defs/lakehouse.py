@@ -1,32 +1,33 @@
-from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Sequence
 
-from dagster import AssetKey, AssetSpec, Definitions, multi_asset
-from dagster_airlift.core import DefsFactory
+from dagster import AssetKey, AssetsDefinition, AssetSpec, multi_asset
+from dagster_airlift.core import specs_from_task
 
 from dbt_example.shared.load_iris import id_from_path, load_csv_to_duckdb
 
 
-@dataclass
-class CSVToDuckdbDefs(DefsFactory):
-    name: str
-    csv_path: Path
-    duckdb_path: Optional[Path] = None
-    columns: Optional[List[str]] = None
+def lakehouse_asset_key(*, csv_path) -> AssetKey:
+    return AssetKey(["lakehouse", id_from_path(csv_path)])
 
-    def build_defs(self) -> Definitions:
-        asset_spec = AssetSpec(key=AssetKey(["lakehouse", id_from_path(self.csv_path)]))
 
-        @multi_asset(specs=[asset_spec], name=self.name)
-        def _multi_asset() -> None:
-            if self.duckdb_path is None or self.columns is None:
-                raise Exception("This asset is not yet executable. Need to provide a duckdb_path.")
-            else:
-                load_csv_to_duckdb(
-                    csv_path=self.csv_path,
-                    db_path=self.duckdb_path,
-                    columns=self.columns,
-                )
+def specs_from_lakehouse(*, task_id: str, dag_id: str, csv_path: Path) -> Sequence[AssetSpec]:
+    return specs_from_task(
+        task_id=task_id,
+        dag_id=dag_id,
+        assets=[lakehouse_asset_key(csv_path=csv_path)],
+    )
 
-        return Definitions(assets=[_multi_asset])
+
+def defs_from_lakehouse(
+    *, task_id: str, dag_id: str, csv_path: Path, duckdb_path: Path, columns: List[str]
+) -> AssetsDefinition:
+    @multi_asset(specs=specs_from_lakehouse(task_id=task_id, dag_id=dag_id, csv_path=csv_path))
+    def _multi_asset() -> None:
+        load_csv_to_duckdb(
+            csv_path=csv_path,
+            db_path=duckdb_path,
+            columns=columns,
+        )
+
+    return _multi_asset

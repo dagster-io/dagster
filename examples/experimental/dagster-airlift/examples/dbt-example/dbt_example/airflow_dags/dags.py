@@ -8,7 +8,7 @@ from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.migration_state import load_migration_state_from_yaml
-from dbt_example.shared.load_iris import iris_path, load_csv_to_duckdb
+from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS, load_csv_to_duckdb
 
 default_args = {
     "owner": "airflow",
@@ -45,15 +45,9 @@ dag = DAG("load_lakehouse", default_args=default_args, schedule_interval=None)
 load_iris = LoadToLakehouseOperator(
     task_id="load_iris",
     dag=dag,
-    csv_path=iris_path(),
-    db_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-    columns=[
-        "sepal_length_cm",
-        "sepal_width_cm",
-        "petal_length_cm",
-        "petal_width_cm",
-        "species",
-    ],
+    csv_path=CSV_PATH,
+    db_path=DB_PATH,
+    columns=IRIS_COLUMNS,
 )
 
 mark_as_dagster_migrating(

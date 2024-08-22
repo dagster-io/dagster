@@ -17,3 +17,7 @@ def dbt_project_path() -> Path:
     env_val = os.getenv("DBT_PROJECT_DIR")
     assert env_val
     return Path(env_val)
+
+
+def dbt_manifest_path() -> Path:
+    return dbt_project_path() / "target" / "manifest.json"

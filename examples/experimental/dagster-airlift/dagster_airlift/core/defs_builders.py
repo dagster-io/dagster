@@ -1,8 +1,7 @@
 from typing import Sequence, Union
 
-from dagster import AssetChecksDefinition, AssetsDefinition, AssetSpec
+from dagster import AssetChecksDefinition, AssetsDefinition, AssetSpec, Definitions
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
-from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import TypeAlias
 
 from .utils import DAG_ID_TAG, TASK_ID_TAG
@@ -35,9 +34,7 @@ def combine_defs(
             continue
         elif isinstance(_def, AssetChecksDefinition):
             asset_checks.append(_def)
-        elif isinstance(_def, AssetsDefinition):
-            assets.append(_def)
-        elif isinstance(_def, AssetSpec):
+        elif isinstance(_def, (AssetsDefinition, AssetSpec)):
             assets.append(_def)
         else:
             raise Exception(f"Unexpected type: {type(_def)}")

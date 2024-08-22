@@ -4,13 +4,21 @@ from typing import List
 import duckdb
 import pandas as pd
 
+IRIS_COLUMNS = [
+    "sepal_length_cm",
+    "sepal_width_cm",
+    "petal_length_cm",
+    "petal_width_cm",
+    "species",
+]
+
 
 def id_from_path(csv_path: Path) -> str:
     return csv_path.stem
 
 
-def iris_path() -> Path:
-    return Path(__file__).parent.parent / "shared" / "iris.csv"
+def shared_folder() -> Path:
+    return Path(__file__).parent
 
 
 def load_csv_to_duckdb(
@@ -37,3 +45,7 @@ def load_csv_to_duckdb(
         f"CREATE TABLE IF NOT EXISTS {db_name}.lakehouse.{table_name} AS SELECT * FROM df"
     ).fetchall()
     con.close()
+
+
+DB_PATH = shared_folder() / "jaffle_shop.duckdb"
+CSV_PATH = shared_folder() / "iris.csv"

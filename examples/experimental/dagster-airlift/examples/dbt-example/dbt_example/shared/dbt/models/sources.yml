@@ -5,4 +5,4 @@ sources:
     database: jaffle_shop
     schema: lakehouse
     tables:
-      - name: iris_lakehouse_table
+      - name: iris
