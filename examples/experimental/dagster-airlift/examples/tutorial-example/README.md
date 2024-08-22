@@ -16,6 +16,7 @@ Launch airflow, where we've loaded the `rebuild_customers_list` DAG.
 ```bash
 make run_airflow
 ```
+
 This DAG consists of three seqeuential tasks:
 
 1. `load_raw_customers` loads a CSV file of raw customer data into duckdb.
