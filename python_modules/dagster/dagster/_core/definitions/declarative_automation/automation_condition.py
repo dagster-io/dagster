@@ -1,9 +1,11 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
+from functools import cached_property
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
 
+import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -412,191 +414,144 @@ class AutomationCondition(ABC):
         return AnyDownstreamConditionsCondition()
 
 
-class AutomationResult(NamedTuple):
-    condition: AutomationCondition
-    condition_unique_id: str
-    value_hash: str
+class AutomationResult:
+    """The result of evaluating an AutomationCondition."""
 
-    start_timestamp: float
-    end_timestamp: float
+    def __init__(
+        self,
+        context: "AutomationContext",
+        true_slice: AssetSlice,
+        child_results: Optional[Sequence["AutomationResult"]] = None,
+        subsets_with_metadata: Optional[Sequence[AssetSubsetWithMetadata]] = None,
+        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
+    ):
+        from dagster._core.definitions.declarative_automation.automation_context import (
+            AutomationContext,
+        )
 
-    temporal_context: TemporalContext
+        self._context = check.inst_param(context, "context", AutomationContext)
+        self._true_slice = check.inst_param(true_slice, "true_slice", AssetSlice)
+        self._child_results = check.opt_sequence_param(
+            child_results, "child_results", of_type=AutomationResult
+        )
 
-    true_slice: AssetSlice
-    candidate_slice: AssetSlice
+        self._start_timestamp = context.create_time.timestamp()
+        self._end_timestamp = get_current_timestamp()
 
-    child_results: Sequence["AutomationResult"]
+        self._subsets_with_metadata = check.opt_sequence_param(
+            subsets_with_metadata, "subsets_with_metadata", AssetSubsetWithMetadata
+        )
+        self._extra_state = extra_state
 
-    node_cursor: Optional[AutomationConditionNodeCursor]
-    serializable_evaluation: AutomationConditionEvaluation
-
-    extra_state: Any
-    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
+        # used to enable the evaluator class to modify the evaluation in some edge cases
+        self._serializable_evaluation_override: Optional[AutomationConditionEvaluation] = None
 
     @property
     def asset_key(self) -> AssetKey:
-        return self.true_slice.asset_key
+        return self._true_slice.asset_key
+
+    @property
+    def true_slice(self) -> AssetSlice:
+        return self._true_slice
 
     @property
     def true_subset(self) -> AssetSubset:
         return self.true_slice.convert_to_valid_asset_subset()
 
-    @staticmethod
-    def _create(
-        context: "AutomationContext",
-        true_slice: AssetSlice,
-        subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
-        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]],
-        child_results: Sequence["AutomationResult"],
-    ) -> "AutomationResult":
-        start_timestamp = context.create_time.timestamp()
-        end_timestamp = get_current_timestamp()
+    @property
+    def start_timestamp(self) -> float:
+        return self._start_timestamp
 
-        return AutomationResult(
-            condition=context.condition,
-            condition_unique_id=context.condition_unique_id,
-            value_hash=_compute_value_hash(
-                condition_unique_id=context.condition_unique_id,
-                condition_description=context.condition.description,
-                true_slice=true_slice,
-                candidate_slice=context.candidate_slice,
-                subsets_with_metadata=subsets_with_metadata,
-                child_results=child_results,
+    @property
+    def end_timestamp(self) -> float:
+        return self._end_timestamp
+
+    @property
+    def child_results(self) -> Sequence["AutomationResult"]:
+        return self._child_results
+
+    @property
+    def condition(self) -> AutomationCondition:
+        return self._context.condition
+
+    @property
+    def condition_unique_id(self) -> str:
+        return self._context.condition_unique_id
+
+    @cached_property
+    def value_hash(self) -> str:
+        """An identifier for the contents of this AutomationResult. This will be identical for
+        results with identical values, allowing us to avoid storing redundant information.
+        """
+        components: Sequence[str] = [
+            self.condition_unique_id,
+            self.condition.description,
+            _compute_subset_value_str(self.true_subset),
+            _compute_subset_value_str(
+                self._context.candidate_slice.convert_to_valid_asset_subset()
             ),
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
-            temporal_context=context.new_temporal_context,
-            true_slice=true_slice,
-            candidate_slice=context.candidate_slice,
-            subsets_with_metadata=[],
-            child_results=child_results,
-            extra_state=None,
-            node_cursor=_create_node_cursor(
-                true_slice=true_slice,
-                candidate_slice=context.candidate_slice,
-                subsets_with_metadata=subsets_with_metadata,
-                extra_state=extra_state,
-            )
-            if context.condition.requires_cursor
-            else None,
-            serializable_evaluation=_create_serializable_evaluation(
-                context=context,
-                true_slice=true_slice,
-                candidate_slice=context.candidate_slice,
-                subsets_with_metadata=subsets_with_metadata,
-                start_timestamp=start_timestamp,
-                end_timestamp=end_timestamp,
-                child_results=child_results,
+            *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
+            *(child_result.value_hash for child_result in self._child_results),
+        ]
+        return non_secure_md5_hash_str("".join(components).encode("utf-8"))
+
+    @cached_property
+    def node_cursor(self) -> Optional[AutomationConditionNodeCursor]:
+        """Cursor value storing information about this specific evaluation node, if required."""
+        if not self.condition.requires_cursor:
+            return None
+        return AutomationConditionNodeCursor(
+            true_subset=self.true_subset,
+            candidate_subset=get_serializable_candidate_subset(
+                self._context.candidate_slice.convert_to_valid_asset_subset()
             ),
+            subsets_with_metadata=self._subsets_with_metadata,
+            extra_state=self._extra_state,
         )
 
-    @staticmethod
-    def create_from_children(
-        context: "AutomationContext",
-        true_slice: AssetSlice,
-        child_results: Sequence["AutomationResult"],
-        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
-    ) -> "AutomationResult":
-        """Returns a new AutomationResult from the given child results."""
-        return AutomationResult._create(
-            context=context,
-            true_slice=true_slice,
-            subsets_with_metadata=[],
-            extra_state=extra_state,
-            child_results=child_results,
+    @cached_property
+    def _serializable_evaluation(self) -> AutomationConditionEvaluation:
+        return AutomationConditionEvaluation(
+            condition_snapshot=self.condition.get_snapshot(self.condition_unique_id),
+            true_subset=self.true_subset,
+            candidate_subset=get_serializable_candidate_subset(
+                self._context.candidate_slice.convert_to_valid_asset_subset()
+            ),
+            subsets_with_metadata=self._subsets_with_metadata,
+            start_timestamp=self._start_timestamp,
+            end_timestamp=self._end_timestamp,
+            child_evaluations=[
+                child_result.serializable_evaluation for child_result in self._child_results
+            ],
         )
 
-    @staticmethod
-    def create(
-        context: "AutomationContext",
-        true_slice: AssetSlice,
-        subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
-        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
-    ) -> "AutomationResult":
-        """Returns a new AutomationResult from the given parameters."""
-        return AutomationResult._create(
-            context=context,
-            true_slice=true_slice,
-            subsets_with_metadata=subsets_with_metadata,
-            extra_state=extra_state,
-            child_results=[],
-        )
+    @property
+    def serializable_evaluation(self) -> AutomationConditionEvaluation:
+        """Serializable representation of the evaluation of this condition."""
+        return self._serializable_evaluation_override or self._serializable_evaluation
+
+    def set_internal_serializable_evaluation_override(
+        self, override: AutomationConditionEvaluation
+    ) -> None:
+        """Internal method for handling edge cases in which the serializable evaluation must be
+        updated after evaluation completes.
+        """
+        self._serializable_evaluation_override = override
 
     def get_child_node_cursors(self) -> Mapping[str, AutomationConditionNodeCursor]:
         node_cursors = {self.condition_unique_id: self.node_cursor} if self.node_cursor else {}
-        for child_result in self.child_results:
+        for child_result in self._child_results:
             node_cursors.update(child_result.get_child_node_cursors())
         return node_cursors
 
     def get_new_cursor(self) -> AutomationConditionCursor:
         return AutomationConditionCursor(
             previous_requested_subset=self.serializable_evaluation.true_subset,
-            effective_timestamp=self.temporal_context.effective_dt.timestamp(),
-            last_event_id=self.temporal_context.last_event_id,
+            effective_timestamp=self._context.effective_dt.timestamp(),
+            last_event_id=self._context.new_max_storage_id,
             node_cursors_by_unique_id=self.get_child_node_cursors(),
             result_value_hash=self.value_hash,
         )
-
-
-def _create_node_cursor(
-    true_slice: AssetSlice,
-    candidate_slice: AssetSlice,
-    subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
-    extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]],
-) -> AutomationConditionNodeCursor:
-    return AutomationConditionNodeCursor(
-        true_subset=true_slice.convert_to_valid_asset_subset(),
-        candidate_subset=get_serializable_candidate_subset(
-            candidate_slice.convert_to_valid_asset_subset()
-        ),
-        subsets_with_metadata=subsets_with_metadata,
-        extra_state=extra_state,
-    )
-
-
-def _create_serializable_evaluation(
-    context: "AutomationContext",
-    true_slice: AssetSlice,
-    candidate_slice: AssetSlice,
-    subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
-    start_timestamp: float,
-    end_timestamp: float,
-    child_results: Sequence[AutomationResult],
-) -> AutomationConditionEvaluation:
-    return AutomationConditionEvaluation(
-        condition_snapshot=context.condition.get_snapshot(context.condition_unique_id),
-        true_subset=true_slice.convert_to_valid_asset_subset(),
-        candidate_subset=get_serializable_candidate_subset(
-            candidate_slice.convert_to_valid_asset_subset()
-        ),
-        subsets_with_metadata=subsets_with_metadata,
-        start_timestamp=start_timestamp,
-        end_timestamp=end_timestamp,
-        child_evaluations=[child_result.serializable_evaluation for child_result in child_results],
-    )
-
-
-def _compute_value_hash(
-    condition_unique_id: str,
-    condition_description: str,
-    true_slice: AssetSlice,
-    candidate_slice: AssetSlice,
-    subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
-    child_results: Sequence[AutomationResult],
-) -> str:
-    """Computes a unique hash representing the values contained within an evaluation result. This
-    string will be identical for results which have identical values, allowing us to detect changes
-    without serializing the entire value.
-    """
-    components: Sequence[str] = [
-        condition_unique_id,
-        condition_description,
-        _compute_subset_value_str(true_slice.convert_to_valid_asset_subset()),
-        _compute_subset_value_str(candidate_slice.convert_to_valid_asset_subset()),
-        *(_compute_subset_with_metadata_value_str(swm) for swm in subsets_with_metadata),
-        *(child_result.value_hash for child_result in child_results),
-    ]
-    return non_secure_md5_hash_str("".join(components).encode("utf-8"))
 
 
 def _compute_subset_value_str(subset: AssetSubset) -> str:

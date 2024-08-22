@@ -154,16 +154,15 @@ class AutomationConditionEvaluator:
                     # all these neighbors must be executed as a unit, we need to union together
                     # the subset of all required neighbors
                     if neighbor_key in self.current_results_by_key:
-                        neighbor_result = self.current_results_by_key[neighbor_key]
                         neighbor_true_subset = result.serializable_evaluation.true_subset._replace(
                             asset_key=neighbor_key
                         )
                         neighbor_evaluation = result.serializable_evaluation._replace(
                             true_subset=neighbor_true_subset
                         )
-                        self.current_results_by_key[neighbor_key] = neighbor_result._replace(
-                            serializable_evaluation=neighbor_evaluation
-                        )
+                        self.current_results_by_key[
+                            neighbor_key
+                        ].set_internal_serializable_evaluation_override(neighbor_evaluation)
                     self.to_request |= {
                         ap._replace(asset_key=neighbor_key)
                         for ap in result.true_subset.asset_partitions

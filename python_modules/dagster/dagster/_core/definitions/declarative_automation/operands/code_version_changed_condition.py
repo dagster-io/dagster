@@ -37,4 +37,4 @@ class CodeVersionChangedCondition(AutomationCondition):
         else:
             true_slice = context.candidate_slice
 
-        return AutomationResult.create(context, true_slice, extra_state=current_code_version)
+        return AutomationResult(context, true_slice, extra_state=current_code_version)

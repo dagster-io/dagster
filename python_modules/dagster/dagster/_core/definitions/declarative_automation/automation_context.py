@@ -37,7 +37,7 @@ def _has_legacy_condition(condition: AutomationCondition):
         return any(_has_legacy_condition(child) for child in condition.children)
 
 
-@dataclass
+@dataclass(frozen=True)
 class AutomationContext:
     condition: AutomationCondition
     condition_unique_id: str

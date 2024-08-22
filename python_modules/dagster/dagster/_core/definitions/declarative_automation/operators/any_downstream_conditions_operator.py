@@ -33,7 +33,7 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
                 child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
             )
         )
-        return AutomationResult.create_from_children(
+        return AutomationResult(
             context=context, true_slice=child_result.true_slice, child_results=[child_result]
         )
 
@@ -89,6 +89,4 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             child_results.append(child_result)
             true_slice = true_slice.compute_union(child_result.true_slice)
 
-        return AutomationResult.create_from_children(
-            context=context, true_slice=true_slice, child_results=child_results
-        )
+        return AutomationResult(context=context, true_slice=true_slice, child_results=child_results)
