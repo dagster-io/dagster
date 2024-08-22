@@ -22,10 +22,10 @@ class AirflowAuthBackend(ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
 
-@record
 class AirflowInstance:
-    auth_backend: AirflowAuthBackend
-    name: str
+    def __init__(self, auth_backend: AirflowAuthBackend, name: str) -> None:
+        self.auth_backend = auth_backend
+        self.name = name
 
     @property
     def normalized_name(self) -> str:
