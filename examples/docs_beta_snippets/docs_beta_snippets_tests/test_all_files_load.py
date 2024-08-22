@@ -1,8 +1,9 @@
 import importlib.util
 import os
-from dagster import file_relative_path
 
 import pytest
+
+from dagster import file_relative_path
 
 snippets_folder = file_relative_path(__file__, "../docs_beta_snippets/")
 
