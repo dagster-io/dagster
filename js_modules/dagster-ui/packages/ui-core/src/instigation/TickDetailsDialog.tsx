@@ -61,7 +61,7 @@ export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}
 };
 
 interface InnerProps {
-  tickId: number | undefined;
+  tickId: string | undefined;
   instigationSelector: InstigationSelector;
 }
 

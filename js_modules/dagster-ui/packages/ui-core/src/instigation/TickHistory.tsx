@@ -308,9 +308,9 @@ export const TickHistoryTimeline = ({
   afterTimestamp?: number;
   statuses?: InstigationTickStatus[];
 }) => {
-  const [selectedTickId, setSelectedTickId] = useQueryPersistedState<number | undefined>({
+  const [selectedTickId, setSelectedTickId] = useQueryPersistedState<string | undefined>({
     encode: (tickId) => ({tickId}),
-    decode: (qs) => (qs['tickId'] ? Number(qs['tickId']) : undefined),
+    decode: (qs) => qs['tickId'] ?? undefined,
   });
 
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
@@ -364,7 +364,7 @@ export const TickHistoryTimeline = ({
   const {ticks = []} = data.instigationStateOrError;
 
   const onTickClick = (tick?: InstigationTick) => {
-    setSelectedTickId(tick ? Number(tick.tickId) : undefined);
+    setSelectedTickId(tick ? tick.tickId : undefined);
   };
 
   const onTickHover = (tick?: InstigationTick) => {
@@ -376,6 +376,7 @@ export const TickHistoryTimeline = ({
       pausePolling(true);
     }
   };
+
   return (
     <>
       <TickDetailsDialog
@@ -512,7 +513,7 @@ function TickRow({
           ) : null}
           <TickDetailsDialog
             isOpen={showResults}
-            tickId={Number(tick.tickId)}
+            tickId={tick.tickId}
             instigationSelector={instigationSelector}
             onClose={() => {
               setShowResults(false);
