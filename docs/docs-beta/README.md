@@ -3,25 +3,36 @@
 This is the home of the new Dagster documentation. It is currently in beta and incomplete.
 The documentation site is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
-### Installation
+---
 
-The site uses [yarn](https://yarnpkg.com/) for package management. Run `yarn install` to install dependencies. Note that the yarn binary is checked in, so you do not need to install yarn yourself.
+## Installation
 
-It also uses [vale](https://vale.sh/) to check for issues in the documentation.
+The site uses [yarn](https://yarnpkg.com/) for package management. 
 
-Install value with:
+To install dependencies: 
+
+```
+yarn install
+```
+
+**Note**: The yarn binary is checked in, so you do not need to install yarn yourself.
+
+It also uses [Vale](https://vale.sh/) to check for issues in the documentation.
+
+Install Vale with:
 
 ```bash
 brew install vale
 ```
 
-### Overview of the docs
+---
 
-Code in `./src` contains custom components, styles, themes, and layouts.
-Code `./content-templates` contains the templates for the documentation pages.
-Code in `./docs/` is the source of truth for the documentation.
+## Overview of the docs
 
-`./docs/code_examples` contains all code examples for the documentation.
+- `./src` contains custom components, styles, themes, and layouts.
+- `./content-templates` contains the templates for the documentation pages.
+- `./docs/` is the source of truth for the documentation.
+- `./docs/code_examples` contains all code examples for the documentation.
 
 The docs are broken down into the following sections:
 
@@ -31,7 +42,9 @@ The docs are broken down into the following sections:
 
 `sidebar.ts` and `docusaurus.config.ts` are the main configuration files for the documentation.
 
-### Local Development
+---
+
+## Local Development
 
 To start the local development server:
 
@@ -41,19 +54,23 @@ yarn start
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server. Access the website at [http://localhost:3050](http://localhost:3050).
 
-To lint the documentation for issues:
+To check the documentation for different issues, use the following:
 
 ```bash
+## Lints Markdown content using prettier
 yarn lint
-```
 
-To autofix linting issues and format with prettier:
+## Lints documentation content using Vale Server
+## Checks for style guide adherence, grammar, spelling, etc.
+yarn lint:vale
 
-```bash
+## Autofixes issues caught by prettier
 yarn lint:fix
 ```
 
-### Build
+---
+
+## Build
 
 To build the site for production:
 
