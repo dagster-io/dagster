@@ -56,10 +56,9 @@ from dagster._record import (
     has_generated_new,
     is_record,
 )
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
-
-from .errors import DeserializationError, SerdesUsageError, SerializationError
 
 if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this

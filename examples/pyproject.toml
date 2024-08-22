@@ -4,3 +4,8 @@
 # has the effect of making each example package treated as first-party, where `dagster` and
 # integrations will be treated as third-party. This is appropriate for example code.
 extend = "../pyproject.toml"
+
+[tool.ruff.lint]
+extend-ignore = [
+    "TID252"
+]

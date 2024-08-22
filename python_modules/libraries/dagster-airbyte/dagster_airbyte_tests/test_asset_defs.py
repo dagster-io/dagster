@@ -15,7 +15,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.events import StepMaterializationData
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
 
-from .utils import get_sample_connection_json, get_sample_job_json
+from dagster_airbyte_tests.utils import get_sample_connection_json, get_sample_job_json
 
 
 @responses.activate

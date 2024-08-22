@@ -3,13 +3,12 @@ from typing import AbstractSet, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
+from dagster._core.remote_representation.job_index import JobIndex
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.dep_snapshot import DependencyStructureIndex
 from dagster._core.snap.job_snapshot import JobSnapshot
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
-
-from .job_index import JobIndex
 
 
 class RepresentedJob(ABC):

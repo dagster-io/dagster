@@ -20,7 +20,7 @@ from dagster._core.execution.context.op_execution_context import OpExecutionCont
 from typing_extensions import TypeVar
 
 if TYPE_CHECKING:
-    from .resources import SlingResource
+    from dagster_embedded_elt.sling.resources import SlingResource
 
 
 SlingEventType = Union[AssetMaterialization, MaterializeResult]

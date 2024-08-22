@@ -11,7 +11,7 @@ from dagster._core.execution.plan.instance_concurrency_context import (
 )
 from dagster._core.utils import make_new_run_id
 
-from .conftest import CUSTOM_SLEEP_INTERVAL
+from dagster_tests.core_tests.execution_tests.conftest import CUSTOM_SLEEP_INTERVAL
 
 
 def define_foo_job():

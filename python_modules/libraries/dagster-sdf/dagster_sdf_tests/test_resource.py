@@ -22,7 +22,7 @@ from dagster_sdf.resource import SdfCliResource
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from .sdf_workspaces import moms_flower_shop_path
+from dagster_sdf_tests.sdf_workspaces import moms_flower_shop_path
 
 
 @pytest.fixture(name="sdf", scope="module")

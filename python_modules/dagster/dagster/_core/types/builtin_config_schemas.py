@@ -14,9 +14,8 @@ from dagster._config import (
     ScalarUnion,
     Selector,
 )
+from dagster._core.types.config_schema import dagster_type_loader
 from dagster._utils.warnings import disable_dagster_warnings
-
-from .config_schema import dagster_type_loader
 
 
 def define_typed_input_schema_dict(value_config_type):

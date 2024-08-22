@@ -53,7 +53,7 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._utils.merger import merge_dicts
 
-from .utils import (
+from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
     dagster_name_fn,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
@@ -61,8 +61,8 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
-    from .dbt_project import DbtProject
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
+    from dagster_dbt.dbt_project import DbtProject
 
 DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
@@ -276,7 +276,7 @@ def build_dbt_asset_selection(
     dbt_assets_select = dbt_assets_definition.op.tags[DAGSTER_DBT_SELECT_METADATA_KEY]
     dbt_assets_exclude = dbt_assets_definition.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY)
 
-    from .dbt_manifest_asset_selection import DbtManifestAssetSelection
+    from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
     return DbtManifestAssetSelection.build(
         manifest=manifest,
@@ -744,7 +744,7 @@ def build_dbt_multi_asset_args(
     Dict[str, Set[AssetKey]],
     Sequence[AssetCheckSpec],
 ]:
-    from .dagster_dbt_translator import DbtManifestWrapper
+    from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
 
     unique_ids = select_unique_ids_from_manifest(
         select=select, exclude=exclude or "", manifest_json=manifest
@@ -939,7 +939,7 @@ def get_asset_deps(
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
-    from .dagster_dbt_translator import DbtManifestWrapper, validate_translator
+    from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper, validate_translator
 
     dagster_dbt_translator = validate_translator(dagster_dbt_translator)
 

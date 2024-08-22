@@ -1119,7 +1119,7 @@ def infer_partition_mapping(
     downstream_partitions_def: Optional[PartitionsDefinition],
     upstream_partitions_def: Optional[PartitionsDefinition],
 ) -> PartitionMapping:
-    from .time_window_partition_mapping import TimeWindowPartitionMapping
+    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     if partition_mapping is not None:
         return partition_mapping

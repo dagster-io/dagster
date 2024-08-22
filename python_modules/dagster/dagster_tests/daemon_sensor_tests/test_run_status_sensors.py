@@ -31,8 +31,8 @@ from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .conftest import create_workspace_load_target
-from .test_sensor_run import (
+from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
+from dagster_tests.daemon_sensor_tests.test_sensor_run import (
     daily_partitioned_job,
     evaluate_sensors,
     failure_job,
@@ -870,7 +870,9 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import another_success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                another_success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
@@ -955,7 +957,9 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import another_failure_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                another_failure_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 another_failure_job,
@@ -1046,7 +1050,9 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,
@@ -1143,7 +1149,9 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,
@@ -1190,7 +1198,9 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import another_success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                another_success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 another_success_job,
@@ -1286,7 +1296,9 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,
@@ -1322,7 +1334,9 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
-            from .locations_for_xlocation_sensor_test.job_defs import success_job
+            from dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs import (
+                success_job,
+            )
 
             dagster_run = instance.create_run_for_job(
                 success_job,

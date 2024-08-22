@@ -26,10 +26,14 @@ import dagster._check as check
 from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_graph_computation import AssetGraphComputation
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
+    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
     AssetExecutionType,
+    AssetSpec,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -37,11 +41,21 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
-from dagster._core.definitions.partition_mapping import MultiPartitionMapping
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition_mapping import (
+    MultiPartitionMapping,
+    PartitionMapping,
+    infer_partition_mapping,
+    warn_if_partition_mapping_not_builtin,
+)
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
     ExternalAssetIOManagerRequirement,
     ResourceAddable,
@@ -49,12 +63,15 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     merge_resource_defs,
 )
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import (
+    DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
     normalize_group_name,
     validate_asset_owner,
+    validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import IHasInternalInit
@@ -62,24 +79,8 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
-from .asset_graph_computation import AssetGraphComputation
-from .asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
-from .asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
-from .events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from .node_definition import NodeDefinition
-from .op_definition import OpDefinition
-from .partition import PartitionsDefinition
-from .partition_mapping import (
-    PartitionMapping,
-    infer_partition_mapping,
-    warn_if_partition_mapping_not_builtin,
-)
-from .resource_definition import ResourceDefinition
-from .source_asset import SourceAsset
-from .utils import DEFAULT_GROUP_NAME, validate_tags_strict
-
 if TYPE_CHECKING:
-    from .graph_definition import GraphDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
@@ -153,9 +154,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):
+        from dagster._core.definitions.graph_definition import GraphDefinition
         from dagster._core.execution.build_resources import wrap_resources_for_execution
-
-        from .graph_definition import GraphDefinition
 
         if isinstance(node_def, GraphDefinition):
             _validate_graph_def(node_def)
@@ -411,8 +411,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
-        from .composition import is_in_composition
-        from .graph_definition import GraphDefinition
+        from dagster._core.definitions.composition import is_in_composition
+        from dagster._core.definitions.graph_definition import GraphDefinition
 
         # defer to GraphDefinition.__call__ for graph backed assets, or if invoked in composition
         if (
@@ -1435,7 +1435,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
-        from .graph_definition import GraphDefinition
+        from dagster._core.definitions.graph_definition import GraphDefinition
 
         if self.is_executable:
             if isinstance(self.node_def, GraphDefinition):

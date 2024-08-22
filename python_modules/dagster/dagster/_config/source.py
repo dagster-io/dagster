@@ -1,10 +1,9 @@
 import os
 
 import dagster._check as check
-
-from .config_type import ScalarUnion
-from .errors import PostProcessingError
-from .field_utils import Selector
+from dagster._config.config_type import ScalarUnion
+from dagster._config.errors import PostProcessingError
+from dagster._config.field_utils import Selector
 
 VALID_STRING_SOURCE_TYPES = (str, dict)
 

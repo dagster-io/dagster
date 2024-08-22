@@ -10,7 +10,7 @@ from dagster_sdf.asset_decorator import sdf_assets
 from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator, DagsterSdfTranslatorSettings
 from dagster_sdf.sdf_workspace import SdfWorkspace
 
-from .sdf_workspaces import moms_flower_shop_path
+from dagster_sdf_tests.sdf_workspaces import moms_flower_shop_path
 
 
 def test_basic_attach_code_references(moms_flower_shop_target_dir: Path) -> None:

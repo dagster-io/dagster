@@ -5,7 +5,7 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._model.pydantic_compat_layer import compat_model_validator
 from pydantic import Field
 
-from .databricks import DatabricksClient
+from dagster_databricks.databricks import DatabricksClient
 
 
 class OauthCredentials(Config):

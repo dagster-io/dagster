@@ -18,12 +18,7 @@ from dagster import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.execution.compute_logs import mirror_stream_to_file
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._seven import json
-from dagster._utils import ensure_dir, ensure_file, touch_file
-from dagster._utils.security import non_secure_md5_hash_str
-
-from .compute_log_manager import (
+from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
     CapturedLogData,
     CapturedLogMetadata,
@@ -31,6 +26,10 @@ from .compute_log_manager import (
     ComputeIOType,
     ComputeLogManager,
 )
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._seven import json
+from dagster._utils import ensure_dir, ensure_file, touch_file
+from dagster._utils.security import non_secure_md5_hash_str
 
 DEFAULT_WATCHDOG_POLLING_TIMEOUT: Final = 2.5
 

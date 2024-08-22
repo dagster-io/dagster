@@ -1,13 +1,12 @@
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
-
-from ..execution.context.hook import BoundHookContext, UnboundHookContext
-from .resource_requirement import ensure_requirements_satisfied
+from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.execution.context.hook import BoundHookContext, UnboundHookContext
 
 if TYPE_CHECKING:
-    from ..events import DagsterEvent
-    from .hook_definition import HookDefinition
+    from dagster._core.definitions.hook_definition import HookDefinition
+    from dagster._core.events import DagsterEvent
 
 
 def hook_invocation_result(

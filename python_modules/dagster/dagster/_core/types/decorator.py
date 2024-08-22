@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, Union, overload
 
 import dagster._check as check
-
-from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
+from dagster._core.types.dagster_type import (
+    PythonObjectDagsterType,
+    make_python_type_usable_as_dagster_type,
+)
 
 if TYPE_CHECKING:
     from dagster._core.types.config_schema import DagsterTypeLoader

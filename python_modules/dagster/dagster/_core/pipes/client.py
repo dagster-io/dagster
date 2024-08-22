@@ -15,11 +15,10 @@ from dagster._annotations import public
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.compute import OpExecutionContext
-
-from .context import PipesExecutionResult, PipesSession
+from dagster._core.pipes.context import PipesExecutionResult, PipesSession
 
 if TYPE_CHECKING:
-    from .context import PipesMessageHandler
+    from dagster._core.pipes.context import PipesMessageHandler
 
 
 class PipesClient(ABC):

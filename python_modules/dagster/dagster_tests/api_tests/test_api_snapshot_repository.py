@@ -18,7 +18,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes.serdes import deserialize_value
 
-from .utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 
 def test_streaming_external_repositories_api_grpc(instance):

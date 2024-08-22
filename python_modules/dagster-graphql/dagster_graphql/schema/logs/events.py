@@ -7,17 +7,16 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 
+from dagster_graphql.implementation.events import construct_basic_params
+from dagster_graphql.implementation.fetch_runs import gen_run_by_id, get_step_stats
+from dagster_graphql.schema.asset_checks import GrapheneAssetCheckEvaluation
+from dagster_graphql.schema.asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
+from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRunNotFoundError
+from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.runs import GrapheneStepEventStatus
 from dagster_graphql.schema.tags import GrapheneEventTag
-
-from ...implementation.events import construct_basic_params
-from ...implementation.fetch_runs import gen_run_by_id, get_step_stats
-from ..asset_checks import GrapheneAssetCheckEvaluation
-from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
-from ..errors import GraphenePythonError, GrapheneRunNotFoundError
-from ..metadata import GrapheneMetadataEntry
-from ..runs import GrapheneStepEventStatus
-from ..util import ResolveInfo, non_null_list
-from .log_level import GrapheneLogLevel
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
@@ -198,7 +197,7 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
         name = "ObjectStoreOperationResult"
 
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
-        from ...implementation.events import _to_metadata_entries
+        from dagster_graphql.implementation.events import _to_metadata_entries
 
         return _to_metadata_entries(self.metadata)
 
@@ -211,7 +210,7 @@ class GrapheneExpectationResult(graphene.ObjectType):
         name = "ExpectationResult"
 
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
-        from ...implementation.events import _to_metadata_entries
+        from dagster_graphql.implementation.events import _to_metadata_entries
 
         return _to_metadata_entries(self.metadata)
 
@@ -224,7 +223,7 @@ class GrapheneTypeCheck(graphene.ObjectType):
         name = "TypeCheck"
 
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
-        from ...implementation.events import _to_metadata_entries
+        from dagster_graphql.implementation.events import _to_metadata_entries
 
         return _to_metadata_entries(self.metadata)
 
@@ -235,7 +234,7 @@ class GrapheneFailureMetadata(graphene.ObjectType):
         name = "FailureMetadata"
 
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
-        from ...implementation.events import _to_metadata_entries
+        from dagster_graphql.implementation.events import _to_metadata_entries
 
         return _to_metadata_entries(self.metadata)
 
@@ -345,7 +344,7 @@ class AssetEventMixin:
         return stats[0]
 
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
-        from ...implementation.events import _to_metadata_entries
+        from dagster_graphql.implementation.events import _to_metadata_entries
 
         return _to_metadata_entries(self._metadata.metadata)
 

@@ -297,8 +297,10 @@ class AutoMaterializePolicy(
 
     def to_automation_condition(self) -> "AutomationCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
-        from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
-        from .declarative_automation.operators import (
+        from dagster._core.definitions.auto_materialize_rule_impls import (
+            DiscardOnMaxMaterializationsExceededRule,
+        )
+        from dagster._core.definitions.declarative_automation.operators import (
             AndAutomationCondition,
             NotAutomationCondition,
             OrAutomationCondition,

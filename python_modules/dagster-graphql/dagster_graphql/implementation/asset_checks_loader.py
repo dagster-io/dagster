@@ -18,19 +18,18 @@ from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.context import WorkspaceRequestContext
 from packaging import version
 
+from dagster_graphql.implementation.fetch_asset_checks import asset_checks_iter
 from dagster_graphql.schema.asset_checks import (
     AssetChecksOrErrorUnion,
     GrapheneAssetCheck,
     GrapheneAssetCheckCanExecuteIndividually,
+    GrapheneAssetCheckExecution,
     GrapheneAssetCheckNeedsAgentUpgradeError,
     GrapheneAssetCheckNeedsMigrationError,
     GrapheneAssetCheckNeedsUserCodeUpgrade,
     GrapheneAssetChecks,
 )
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
-
-from ..schema.asset_checks import GrapheneAssetCheckExecution
-from .fetch_asset_checks import asset_checks_iter
 
 
 class AssetChecksLoader:
@@ -244,7 +243,9 @@ class AssetChecksExecutionForLatestMaterializationLoader:
         ] = None
 
     def _fetch_executions(self) -> Mapping[AssetCheckKey, Optional[GrapheneAssetCheckExecution]]:
-        from .fetch_asset_checks import get_asset_check_execution_statuses_by_id
+        from dagster_graphql.implementation.fetch_asset_checks import (
+            get_asset_check_execution_statuses_by_id,
+        )
 
         latest_executions_by_check_key = (
             self._instance.event_log_storage.get_latest_asset_check_execution_by_key(

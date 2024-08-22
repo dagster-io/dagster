@@ -3,11 +3,16 @@ from typing import Callable, List, Optional, Union
 
 import packaging.version
 
-from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
-from ..package_spec import PackageSpec, UnsupportedVersionsFunction
-from ..python_version import AvailablePythonVersion
-from ..step_builder import BuildkiteQueue
-from ..utils import (
+from dagster_buildkite.defines import (
+    GCP_CREDS_FILENAME,
+    GCP_CREDS_LOCAL_FILE,
+    LATEST_DAGSTER_RELEASE,
+)
+from dagster_buildkite.package_spec import PackageSpec, UnsupportedVersionsFunction
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import BuildkiteQueue
+from dagster_buildkite.steps.test_project import test_project_depends_fn
+from dagster_buildkite.utils import (
     BuildkiteStep,
     BuildkiteTopLevelStep,
     connect_sibling_docker_container,
@@ -15,7 +20,6 @@ from ..utils import (
     library_version_from_core_version,
     network_buildkite_container,
 )
-from .test_project import test_project_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"

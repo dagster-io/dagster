@@ -16,12 +16,9 @@ from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import serialize_value
-from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .__generated__ import DagsterApiStub, api_pb2
-from .server import GrpcServerProcess
-from .types import (
+from dagster._grpc.__generated__ import DagsterApiStub, api_pb2
+from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
     ExecuteExternalJobArgs,
@@ -33,7 +30,7 @@ from .types import (
     PartitionSetExecutionParamArgs,
     SensorExecutionArgs,
 )
-from .utils import (
+from dagster._grpc.utils import (
     default_grpc_timeout,
     default_repository_grpc_timeout,
     default_schedule_grpc_timeout,
@@ -41,6 +38,8 @@ from .utils import (
     max_rx_bytes,
     max_send_bytes,
 )
+from dagster._serdes import serialize_value
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 

@@ -5,7 +5,7 @@ from dagster import AssetCheckResult, AssetMaterialization, AssetObservation, Ou
 from typing_extensions import TypeVar
 
 if TYPE_CHECKING:
-    from .sdf_cli_invocation import SdfCliInvocation
+    from dagster_sdf.sdf_cli_invocation import SdfCliInvocation
 
 SdfDagsterEventType = Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]
 

@@ -13,7 +13,7 @@ from dagster import (
     define_asset_job,
 )
 
-from .constants import SDF_TARGET_DIR
+from dagster_sdf.constants import SDF_TARGET_DIR
 
 
 def dagster_name_fn(catalog: str, schema: str, table: str) -> str:

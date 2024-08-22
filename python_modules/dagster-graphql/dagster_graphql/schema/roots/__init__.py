@@ -1,7 +1,11 @@
 def types():
-    from .assets import GrapheneAssetConnection, GrapheneAssetOrError, GrapheneAssetsOrError
-    from .execution_plan import GrapheneExecutionPlanOrError
-    from .mutation import (
+    from dagster_graphql.schema.roots.assets import (
+        GrapheneAssetConnection,
+        GrapheneAssetOrError,
+        GrapheneAssetsOrError,
+    )
+    from dagster_graphql.schema.roots.execution_plan import GrapheneExecutionPlanOrError
+    from dagster_graphql.schema.roots.mutation import (
         GrapheneDeletePipelineRunResult,
         GrapheneDeletePipelineRunSuccess,
         GrapheneDeleteRunMutation,
@@ -22,7 +26,7 @@ def types():
         GrapheneTerminateRunResult,
         GrapheneTerminateRunSuccess,
     )
-    from .pipeline import GraphenePipelineOrError
+    from dagster_graphql.schema.roots.pipeline import GraphenePipelineOrError
 
     return [
         GrapheneAssetConnection,

@@ -28,18 +28,17 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
-from dagster._core.instance import DagsterInstance
-from dagster._utils import get_run_crash_explanation, start_termination_thread
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
-
-from .child_process_executor import (
+from dagster._core.executor.child_process_executor import (
     ChildProcessCommand,
     ChildProcessCrashException,
     ChildProcessEvent,
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
+from dagster._core.instance import DagsterInstance
+from dagster._utils import get_run_crash_explanation, start_termination_thread
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
 
 if TYPE_CHECKING:
     from dagster._core.instance.ref import InstanceRef

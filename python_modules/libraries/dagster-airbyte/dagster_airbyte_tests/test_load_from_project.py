@@ -5,7 +5,7 @@ from dagster._utils import file_relative_path
 from dagster_airbyte import AirbyteResource, airbyte_resource, load_assets_from_airbyte_project
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata
 
-from .utils import get_project_connection_json, get_project_job_json
+from dagster_airbyte_tests.utils import get_project_connection_json, get_project_job_json
 
 
 @pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")

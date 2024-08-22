@@ -5,7 +5,7 @@ from typing import Any, Mapping, Union, cast
 import dagster._check as check
 import orjson
 
-from .errors import DagsterDbtManifestNotFoundError
+from dagster_dbt.errors import DagsterDbtManifestNotFoundError
 
 DbtManifestParam = Union[Mapping[str, Any], str, Path]
 

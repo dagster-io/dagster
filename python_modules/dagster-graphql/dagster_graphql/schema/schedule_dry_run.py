@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Any, Mapping
 import graphene
 from dagster._core.definitions.selector import ScheduleSelector
 
-from ..implementation.utils import capture_error
-from .errors import GraphenePythonError, GrapheneScheduleNotFoundError
-from .inputs import GrapheneScheduleSelector
-from .instigation import GrapheneDryRunInstigationTick
+from dagster_graphql.implementation.utils import capture_error
+from dagster_graphql.schema.errors import GraphenePythonError, GrapheneScheduleNotFoundError
+from dagster_graphql.schema.inputs import GrapheneScheduleSelector
+from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo

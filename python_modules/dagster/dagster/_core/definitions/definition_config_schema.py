@@ -107,7 +107,7 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
         config_schema: Optional[IDefinitionConfigSchema],
         config_or_config_fn: object,
     ):
-        from .configurable import ConfigurableDefinition
+        from dagster._core.definitions.configurable import ConfigurableDefinition
 
         self.parent_def = check.inst_param(
             parent_definition, "parent_definition", ConfigurableDefinition

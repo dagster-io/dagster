@@ -21,7 +21,7 @@ from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, validator
 
-from .constants import (
+from dagster_snowflake.constants import (
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
     SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_SQLALCHEMY,
 )

@@ -8,6 +8,7 @@ from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+from dagster._core.storage.daemon_cursor import DaemonCursorStorage
 from dagster._core.storage.dagster_run import (
     DagsterRun,
     JobBucket,
@@ -19,8 +20,6 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.sql import AlembicVersion
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
-
-from ..daemon_cursor import DaemonCursorStorage
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.origin import RemoteJobOrigin

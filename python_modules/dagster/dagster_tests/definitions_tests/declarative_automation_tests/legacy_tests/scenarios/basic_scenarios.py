@@ -1,4 +1,4 @@
-from ...scenario_utils.base_scenario import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetReconciliationScenario,
     asset_def,
     multi_asset_def,

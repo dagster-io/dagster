@@ -11,7 +11,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ, instance_for_test
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from .utils import start_celery_worker
+from dagster_celery_tests.utils import start_celery_worker
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

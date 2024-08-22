@@ -70,7 +70,7 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .conftest import loadable_target_origin, workspace_load_target
+from dagster_tests.scheduler_tests.conftest import loadable_target_origin, workspace_load_target
 
 
 def _throw(_context):

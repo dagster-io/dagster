@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Extra
 
-from ...utils import kubernetes
-from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
-from .config import IntSource
+from schema.charts.dagster.subschema.config import IntSource
+from schema.charts.utils import kubernetes
+from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class RunCoordinatorType(str, Enum):

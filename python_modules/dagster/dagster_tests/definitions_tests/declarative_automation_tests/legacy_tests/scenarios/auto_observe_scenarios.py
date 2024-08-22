@@ -11,7 +11,10 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._time import create_datetime
 
-from ...scenario_utils.base_scenario import AssetReconciliationScenario, run_request
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    AssetReconciliationScenario,
+    run_request,
+)
 
 
 @observable_source_asset(auto_observe_interval_minutes=30)

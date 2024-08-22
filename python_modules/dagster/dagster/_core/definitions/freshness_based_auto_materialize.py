@@ -18,9 +18,13 @@ from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
-    from .auto_materialize_rule_evaluation import TextRuleEvaluationData
-    from .declarative_automation.legacy.legacy_context import LegacyRuleEvaluationContext
-    from .declarative_automation.serialized_objects import AssetSubsetWithMetadata
+    from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
+    from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
+        LegacyRuleEvaluationContext,
+    )
+    from dagster._core.definitions.declarative_automation.serialized_objects import (
+        AssetSubsetWithMetadata,
+    )
 
 
 def get_execution_period_for_policy(
@@ -68,7 +72,7 @@ def get_execution_period_and_evaluation_data_for_policies(
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
-    from .auto_materialize_rule_evaluation import TextRuleEvaluationData
+    from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
 
     merged_period = None
     contains_local = False
@@ -161,7 +165,9 @@ def freshness_evaluation_results_for_asset_key(
 
     Attempts to minimize the total number of asset executions.
     """
-    from .declarative_automation.serialized_objects import AssetSubsetWithMetadata
+    from dagster._core.definitions.declarative_automation.serialized_objects import (
+        AssetSubsetWithMetadata,
+    )
 
     asset_key = context.asset_key
     current_time = context.evaluation_time

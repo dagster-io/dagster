@@ -3,10 +3,10 @@ from typing import List, Optional
 import click
 import dagster._check as check
 
-from .dagster_docker import DagsterDockerImage
-from .ecr import ensure_ecr_login
-from .image_defs import get_image, list_images
-from .utils import current_time_str, execute_docker_push, execute_docker_tag
+from automation.docker.dagster_docker import DagsterDockerImage
+from automation.docker.ecr import ensure_ecr_login
+from automation.docker.image_defs import get_image, list_images
+from automation.docker.utils import current_time_str, execute_docker_push, execute_docker_tag
 
 CLI_HELP = """This CLI is used for building the various Dagster images we use in test
 """

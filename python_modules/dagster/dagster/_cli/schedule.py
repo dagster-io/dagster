@@ -9,6 +9,7 @@ from dagster import (
     DagsterInvariantViolationError,
     __version__ as dagster_version,
 )
+from dagster._cli.utils import get_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
@@ -18,8 +19,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorStatus
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
-
-from .utils import get_instance_for_cli
 
 
 @click.group(name="schedule")

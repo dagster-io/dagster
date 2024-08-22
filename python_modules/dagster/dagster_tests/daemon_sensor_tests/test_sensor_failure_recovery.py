@@ -21,7 +21,10 @@ from dagster._time import create_datetime, get_timezone
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from mock import patch
 
-from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
+from dagster_tests.daemon_sensor_tests.test_sensor_run import (
+    create_workspace_load_target,
+    wait_for_all_runs_to_start,
+)
 
 spawn_ctx = multiprocessing.get_context("spawn")
 

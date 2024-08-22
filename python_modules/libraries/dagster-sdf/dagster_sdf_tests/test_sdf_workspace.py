@@ -6,7 +6,7 @@ from dagster._core.test_utils import environ
 from dagster_sdf.sdf_information_schema import SdfInformationSchema
 from dagster_sdf.sdf_workspace import SdfWorkspace
 
-from .sdf_workspaces import moms_flower_shop_path
+from dagster_sdf_tests.sdf_workspaces import moms_flower_shop_path
 
 
 def test_local_dev(tmp_path: Path) -> None:

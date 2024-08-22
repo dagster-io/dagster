@@ -4,7 +4,7 @@ from dagster import ConfigurableResource
 from deltalake import DeltaTable
 from pydantic import Field
 
-from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
+from dagster_deltalake.config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 
 
 class DeltaTableResource(ConfigurableResource):

@@ -9,7 +9,7 @@ from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 
 def _test_job_subset_grpc(job_handle, api_client, op_selection=None, include_parent_snapshot=True):

@@ -1,8 +1,7 @@
 from typing import Dict, Mapping
 
 from dagster._core.utils import check_dagster_package_version
-
-from ..version import __version__
+from dagster.version import __version__
 
 
 class DagsterLibraryRegistry:

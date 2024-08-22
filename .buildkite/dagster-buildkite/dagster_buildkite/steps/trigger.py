@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from ..utils import TriggerStep, safe_getenv
+from dagster_buildkite.utils import TriggerStep, safe_getenv
 
 
 def build_trigger_step(

@@ -33,27 +33,26 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
-from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
-from dagster._time import datetime_from_timestamp, get_current_datetime
-from dagster._utils import PrintFn
-
-from .base import ScheduleStorage
-from .migration import (
+from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._core.storage.schedules.migration import (
     OPTIONAL_SCHEDULE_DATA_MIGRATIONS,
     REQUIRED_SCHEDULE_DATA_MIGRATIONS,
     SCHEDULE_JOBS_SELECTOR_ID,
     SCHEDULE_TICKS_SELECTOR_ID,
 )
-from .schema import (
+from dagster._core.storage.schedules.schema import (
     AssetDaemonAssetEvaluationsTable,
     InstigatorsTable,
     JobTable,
     JobTickTable,
     SecondaryIndexMigrationTable,
 )
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
+from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
+from dagster._time import datetime_from_timestamp, get_current_datetime
+from dagster._utils import PrintFn
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 

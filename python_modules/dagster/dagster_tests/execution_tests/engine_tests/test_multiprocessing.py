@@ -28,7 +28,7 @@ from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, segfault
 
-from .retry_jobs import (
+from dagster_tests.execution_tests.engine_tests.retry_jobs import (
     assert_expected_failure_behavior,
     get_dynamic_job_op_failure,
     get_dynamic_job_resource_init_failure,

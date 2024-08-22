@@ -26,7 +26,7 @@ PATH_IN_PACKAGE = "/dagster_tests/asset_defs_tests/"
 EXPECTED_ORIGINS = {
     "james_brown": DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:12",
     "chuck_berry": (
-        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:16"
+        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:18"
     ),
     "little_richard": (DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:4"),
     "fats_domino": DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/__init__.py:16",
@@ -36,15 +36,14 @@ EXPECTED_ORIGINS = {
         + "asset_package/asset_subpackage/another_module_with_assets.py:6"
     ),
     "graph_backed_asset": (
-        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:39"
+        DAGSTER_PACKAGE_PATH + PATH_IN_PACKAGE + "asset_package/module_with_assets.py:41"
     ),
 }
 
 
 def test_asset_code_origins() -> None:
     from dagster_tests.asset_defs_tests import asset_package
-
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     collection = load_assets_from_modules([asset_package, module_with_assets])
 
@@ -107,8 +106,7 @@ def test_asset_code_origins() -> None:
 
 def test_asset_code_origins_source_control() -> None:
     from dagster_tests.asset_defs_tests import asset_package
-
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     collection = load_assets_from_modules([asset_package, module_with_assets])
 
@@ -164,8 +162,7 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
     # test custom source_control_file_path_mapping fn
 
     from dagster_tests.asset_defs_tests import asset_package
-
-    from .asset_package import module_with_assets
+    from dagster_tests.asset_defs_tests.asset_package import module_with_assets
 
     collection = load_assets_from_modules([asset_package, module_with_assets])
 

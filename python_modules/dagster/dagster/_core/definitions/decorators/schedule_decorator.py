@@ -5,16 +5,8 @@ from typing import TYPE_CHECKING, Callable, List, Mapping, Optional, Sequence, S
 import dagster._check as check
 from dagster._annotations import experimental_param
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.sensor_definition import get_context_param_name
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    ScheduleExecutionError,
-    user_code_error_boundary,
-)
-from dagster._utils import ensure_gen
-
-from ..run_request import RunRequest, SkipReason
-from ..schedule_definition import (
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.schedule_definition import (
     DecoratedScheduleFunction,
     DefaultScheduleStatus,
     RawScheduleEvaluationFunction,
@@ -24,8 +16,15 @@ from ..schedule_definition import (
     has_at_least_one_parameter,
     validate_and_get_schedule_resource_dict,
 )
-from ..target import ExecutableDefinition
-from ..utils import normalize_tags
+from dagster._core.definitions.sensor_definition import get_context_param_name
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    ScheduleExecutionError,
+    user_code_error_boundary,
+)
+from dagster._utils import ensure_gen
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection

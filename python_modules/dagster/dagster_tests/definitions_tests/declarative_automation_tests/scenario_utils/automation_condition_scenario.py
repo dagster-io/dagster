@@ -30,7 +30,9 @@ from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAs
 from dagster._core.test_utils import freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .scenario_state import ScenarioState
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_state import (
+    ScenarioState,
+)
 
 
 class FalseAutomationCondition(AutomationCondition):

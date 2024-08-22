@@ -28,6 +28,7 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
+from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation import (
     CodeLocation,
     CodeLocationOrigin,
@@ -47,23 +48,21 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
-from dagster._utils.aiodataloader import DataLoader
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-
-from ..loader import LoadingContext
-from .load_target import WorkspaceLoadTarget
-from .permissions import (
+from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace.permissions import (
     PermissionResult,
     get_location_scoped_user_permissions,
     get_user_permissions,
 )
-from .workspace import (
+from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
     CodeLocationStatusEntry,
     IWorkspace,
     location_status_from_location_entry,
 )
+from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation import (

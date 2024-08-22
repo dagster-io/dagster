@@ -25,26 +25,25 @@ from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
+from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
+    DagsterInvalidInvocationError,
+    DagsterUnknownPartitionError,
+)
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import normalize_renamed_param
-
-from ..errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidDeserializationVersionError,
-    DagsterInvalidInvocationError,
-    DagsterUnknownPartitionError,
-)
-from .config import ConfigMapping
-from .utils import normalize_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -1284,7 +1283,7 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        from .time_window_partitions import (
+        from dagster._core.definitions.time_window_partitions import (
             BaseTimeWindowPartitionsSubset,
             TimeWindowPartitionsSubset,
         )

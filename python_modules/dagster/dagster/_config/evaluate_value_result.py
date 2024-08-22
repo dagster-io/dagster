@@ -2,8 +2,7 @@
 from typing import Any, Generator, Generic, Optional, Sequence, TypeVar
 
 import dagster._check as check
-
-from .errors import EvaluationError
+from dagster._config.errors import EvaluationError
 
 T = TypeVar("T")
 

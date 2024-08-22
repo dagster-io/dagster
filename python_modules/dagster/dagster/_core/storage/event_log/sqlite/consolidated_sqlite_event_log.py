@@ -14,6 +14,8 @@ import dagster._check as check
 from dagster._config import StringSource
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.schema import SqlEventLogStorageMetadata
+from dagster._core.storage.event_log.sql_event_log import SqlDbConnection, SqlEventLogStorage
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -24,9 +26,6 @@ from dagster._core.storage.sql import (
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
-
-from ..schema import SqlEventLogStorageMetadata
-from ..sql_event_log import SqlDbConnection, SqlEventLogStorage
 
 SQLITE_EVENT_LOG_FILENAME = "event_log"
 

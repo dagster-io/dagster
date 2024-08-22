@@ -4,10 +4,9 @@ import graphene
 from dagster._core.definitions.selector import SensorSelector
 
 from dagster_graphql.implementation.utils import capture_error
-
-from .errors import GraphenePythonError, GrapheneSensorNotFoundError
-from .inputs import GrapheneSensorSelector
-from .instigation import GrapheneDryRunInstigationTick
+from dagster_graphql.schema.errors import GraphenePythonError, GrapheneSensorNotFoundError
+from dagster_graphql.schema.inputs import GrapheneSensorSelector
+from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo

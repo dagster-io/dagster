@@ -1,11 +1,11 @@
-from .asset_check_result import (
+from dagster._core.definitions.asset_check_result import (
     AssetCheckEvaluation as AssetCheckEvaluation,
     AssetCheckResult as AssetCheckResult,
     AssetCheckSeverity as AssetCheckSeverity,
 )
-from .composition import PendingNodeInvocation as PendingNodeInvocation
-from .config import ConfigMapping as ConfigMapping
-from .dependency import (
+from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
+from dagster._core.definitions.config import ConfigMapping as ConfigMapping
+from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,
     Node as Node,
@@ -14,11 +14,11 @@ from .dependency import (
     NodeInvocation as NodeInvocation,
     NodeOutput as NodeOutput,
 )
-from .dynamic_partitions_request import (
+from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
 )
-from .events import (
+from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
     AssetObservation as AssetObservation,
@@ -30,7 +30,7 @@ from .events import (
     RetryRequested as RetryRequested,
     TypeCheck as TypeCheck,
 )
-from .executor_definition import (
+from dagster._core.definitions.executor_definition import (
     ExecutorDefinition as ExecutorDefinition,
     ExecutorRequirement as ExecutorRequirement,
     executor as executor,
@@ -39,20 +39,20 @@ from .executor_definition import (
     multiple_process_executor_requirements as multiple_process_executor_requirements,
     multiprocess_executor as multiprocess_executor,
 )
-from .hook_definition import HookDefinition as HookDefinition
-from .input import (
+from dagster._core.definitions.hook_definition import HookDefinition as HookDefinition
+from dagster._core.definitions.input import (
     GraphIn as GraphIn,
     In as In,
     InputDefinition as InputDefinition,
     InputMapping as InputMapping,
 )
-from .job_base import IJob as IJob
-from .logger_definition import (
+from dagster._core.definitions.job_base import IJob as IJob
+from dagster._core.definitions.logger_definition import (
     LoggerDefinition as LoggerDefinition,
     build_init_logger_context as build_init_logger_context,
     logger as logger,
 )
-from .metadata import (
+from dagster._core.definitions.metadata import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
     DagsterJobMetadataValue as DagsterJobMetadataValue,
@@ -76,9 +76,11 @@ from .metadata import (
     TextMetadataValue as TextMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
-from .node_container import create_execution_structure as create_execution_structure
-from .node_definition import NodeDefinition as NodeDefinition
-from .output import (
+from dagster._core.definitions.node_container import (
+    create_execution_structure as create_execution_structure,
+)
+from dagster._core.definitions.node_definition import NodeDefinition as NodeDefinition
+from dagster._core.definitions.output import (
     DynamicOut as DynamicOut,
     DynamicOutputDefinition as DynamicOutputDefinition,
     GraphOut as GraphOut,
@@ -86,48 +88,50 @@ from .output import (
     OutputDefinition as OutputDefinition,
     OutputMapping as OutputMapping,
 )
-from .reconstruct import (
+from dagster._core.definitions.reconstruct import (
     ReconstructableJob as ReconstructableJob,
     build_reconstructable_job as build_reconstructable_job,
     reconstructable as reconstructable,
 )
-from .repository_definition import (
+from dagster._core.definitions.repository_definition import (
     RepositoryData as RepositoryData,
     RepositoryDefinition as RepositoryDefinition,
 )
-from .resolved_asset_deps import ResolvedAssetDependencies as ResolvedAssetDependencies
-from .resource_definition import (
+from dagster._core.definitions.resolved_asset_deps import (
+    ResolvedAssetDependencies as ResolvedAssetDependencies,
+)
+from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,
     make_values_resource as make_values_resource,
     resource as resource,
 )
-from .run_config_schema import (
+from dagster._core.definitions.run_config_schema import (
     RunConfigSchema as RunConfigSchema,
     create_run_config_schema as create_run_config_schema,
 )
-from .run_request import (
+from dagster._core.definitions.run_request import (
     InstigatorType as InstigatorType,
     RunRequest as RunRequest,
     SensorResult as SensorResult,
     SkipReason as SkipReason,
 )
-from .schedule_definition import (
+from dagster._core.definitions.schedule_definition import (
     DefaultScheduleStatus as DefaultScheduleStatus,
     ScheduleDefinition as ScheduleDefinition,
     ScheduleEvaluationContext as ScheduleEvaluationContext,
 )
-from .sensor_definition import (
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus as DefaultSensorStatus,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
 )
 
 # ruff: isort: split
-from .asset_in import AssetIn as AssetIn
-from .asset_out import AssetOut as AssetOut
-from .asset_selection import AssetSelection as AssetSelection
-from .assets import AssetsDefinition as AssetsDefinition
-from .decorators import (
+from dagster._core.definitions.asset_in import AssetIn as AssetIn
+from dagster._core.definitions.asset_out import AssetOut as AssetOut
+from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
+from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinition
+from dagster._core.definitions.decorators import (
     asset as asset,
     asset_sensor as asset_sensor,
     config_mapping as config_mapping,
@@ -142,20 +146,20 @@ from .decorators import (
     sensor as sensor,
     success_hook as success_hook,
 )
-from .graph_definition import GraphDefinition as GraphDefinition
-from .job_definition import JobDefinition as JobDefinition
-from .load_assets_from_modules import (
+from dagster._core.definitions.graph_definition import GraphDefinition as GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
+from dagster._core.definitions.load_assets_from_modules import (
     load_assets_from_current_module as load_assets_from_current_module,
     load_assets_from_modules as load_assets_from_modules,
     load_assets_from_package_module as load_assets_from_package_module,
     load_assets_from_package_name as load_assets_from_package_name,
 )
-from .materialize import (
+from dagster._core.definitions.materialize import (
     materialize as materialize,
     materialize_to_memory as materialize_to_memory,
 )
-from .op_definition import OpDefinition as OpDefinition
-from .partition import (
+from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
+from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
     Partition as Partition,
     PartitionedConfig as PartitionedConfig,
@@ -164,8 +168,8 @@ from .partition import (
     dynamic_partitioned_config as dynamic_partitioned_config,
     static_partitioned_config as static_partitioned_config,
 )
-from .partition_key_range import PartitionKeyRange as PartitionKeyRange
-from .partition_mapping import (
+from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
+from dagster._core.definitions.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     DimensionPartitionMapping as DimensionPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
@@ -174,19 +178,21 @@ from .partition_mapping import (
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
 )
-from .partitioned_schedule import (
+from dagster._core.definitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
 )
-from .run_status_sensor_definition import (
+from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext as RunFailureSensorContext,
     RunStatusSensorContext as RunStatusSensorContext,
     RunStatusSensorDefinition as RunStatusSensorDefinition,
     run_failure_sensor as run_failure_sensor,
     run_status_sensor as run_status_sensor,
 )
-from .source_asset import SourceAsset as SourceAsset
-from .time_window_partition_mapping import TimeWindowPartitionMapping as TimeWindowPartitionMapping
-from .time_window_partitions import (
+from dagster._core.definitions.source_asset import SourceAsset as SourceAsset
+from dagster._core.definitions.time_window_partition_mapping import (
+    TimeWindowPartitionMapping as TimeWindowPartitionMapping,
+)
+from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition as DailyPartitionsDefinition,
     HourlyPartitionsDefinition as HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition as MonthlyPartitionsDefinition,

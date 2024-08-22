@@ -18,7 +18,7 @@ from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._serdes import deserialize_value
 from dagster._time import get_current_datetime
 
-from .utils import get_bar_repo_handle
+from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 
 def test_external_schedule_execution_data_api_grpc():

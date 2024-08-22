@@ -1,14 +1,18 @@
-from .any_downstream_conditions_operator import (
+from dagster._core.definitions.declarative_automation.operators.any_downstream_conditions_operator import (
     AnyDownstreamConditionsCondition as AnyDownstreamConditionsCondition,
 )
-from .boolean_operators import (
+from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
     AndAutomationCondition as AndAutomationCondition,
     NotAutomationCondition as NotAutomationCondition,
     OrAutomationCondition as OrAutomationCondition,
 )
-from .dep_operators import (
+from dagster._core.definitions.declarative_automation.operators.dep_operators import (
     AllDepsCondition as AllDepsCondition,
     AnyDepsCondition as AnyDepsCondition,
 )
-from .newly_true_operator import NewlyTrueCondition as NewlyTrueCondition
-from .since_operator import SinceCondition as SinceCondition
+from dagster._core.definitions.declarative_automation.operators.newly_true_operator import (
+    NewlyTrueCondition as NewlyTrueCondition,
+)
+from dagster._core.definitions.declarative_automation.operators.since_operator import (
+    SinceCondition as SinceCondition,
+)

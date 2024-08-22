@@ -11,19 +11,18 @@ from dagster._time import get_current_timestamp
 
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
-
-from ..errors import (
+from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
     GrapheneScheduleNotFoundError,
 )
-from ..instigation import (
+from dagster_graphql.schema.instigation import (
     GrapheneDryRunInstigationTick,
     GrapheneDryRunInstigationTicks,
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
-from ..util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneSchedule(graphene.ObjectType):
@@ -123,7 +122,7 @@ class GrapheneSchedule(graphene.ObjectType):
         return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
     def resolve_partition_set(self, graphene_info: ResolveInfo):
-        from ..partition_sets import GraphenePartitionSet
+        from dagster_graphql.schema.partition_sets import GraphenePartitionSet
 
         if self._external_schedule.partition_set_name is None:
             return None

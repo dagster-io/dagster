@@ -11,6 +11,15 @@ from dagster import (
     Shape,
 )
 from dagster._config.field_utils import EnvVar, IntEnvVar, Permissive
+from dagster._config.pythonic_config.attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
+from dagster._config.pythonic_config.conversion_utils import (
+    _convert_pydantic_field,
+    safe_is_subclass,
+)
+from dagster._config.pythonic_config.type_check_utils import is_literal
+from dagster._config.pythonic_config.typing_utils import BaseConfigMeta
 from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
@@ -26,13 +35,6 @@ from dagster._model.pydantic_compat_layer import (
     model_fields,
 )
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-from .conversion_utils import _convert_pydantic_field, safe_is_subclass
-from .type_check_utils import is_literal
-from .typing_utils import BaseConfigMeta
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -85,7 +87,7 @@ class MakeConfigCacheable(BaseModel):
             keep_untouched = (cached_property,)
 
     def __setattr__(self, name: str, value: Any):
-        from .resource import ConfigurableResourceFactory
+        from dagster._config.pythonic_config.resource import ConfigurableResourceFactory
 
         # This is a hack to allow us to set attributes on the class that are not part of the
         # config schema. Pydantic will normally raise an error if you try to set an attribute
@@ -398,8 +400,11 @@ def infer_schema_from_config_class(
     description: Optional[str] = None,
     fields_to_omit: Optional[Set[str]] = None,
 ) -> DagsterField:
-    from .config import Config
-    from .resource import ConfigurableResourceFactory, _is_annotated_as_resource_type
+    from dagster._config.pythonic_config.config import Config
+    from dagster._config.pythonic_config.resource import (
+        ConfigurableResourceFactory,
+        _is_annotated_as_resource_type,
+    )
 
     """Parses a structured config class and returns a corresponding Dagster config Field."""
     fields_to_omit = fields_to_omit or set()

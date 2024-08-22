@@ -10,6 +10,9 @@ from dagster import (
 )
 from dagster._config.config_type import Array, ConfigType, Noneable
 from dagster._config.post_process import resolve_defaults
+from dagster._config.pythonic_config.attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import validate_config
 from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
@@ -18,10 +21,6 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidPythonicConfigDefinitionError,
-)
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 
 try:
@@ -35,10 +34,9 @@ except ImportError:
 import dagster._check as check
 from dagster import Field, Selector
 from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, convert_potential_field
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
 from dagster._utils.typing_api import is_closed_python_optional_type
-
-from .type_check_utils import safe_is_subclass
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
@@ -103,7 +101,7 @@ def _convert_pydantic_field(
         model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
             used for error messages.
     """
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     if pydantic_field.discriminator:
         return _convert_pydantic_discriminated_union_field(pydantic_field)
@@ -195,7 +193,7 @@ def _config_type_for_type_on_pydantic_field(
             _config_type_for_type_on_pydantic_field(value_type),
         )
 
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     if safe_is_subclass(potential_dagster_type, Config):
         inferred_field = infer_schema_from_config_class(
@@ -242,7 +240,7 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
       })
     })
     """
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     field_type = pydantic_field.annotation
     discriminator = pydantic_field.discriminator if pydantic_field.discriminator else None
@@ -320,7 +318,7 @@ def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
     """Parses a structured config class or primitive type and returns a corresponding Dagster config Field."""
-    from .config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
 
     if safe_is_subclass(model_cls, Config):
         check.invariant(

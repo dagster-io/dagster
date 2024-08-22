@@ -20,8 +20,8 @@ from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._utils.warnings import suppress_dagster_warnings
 from pydantic import Field, validator
 
-from .asset_utils import dagster_name_fn, get_test_prefix
-from .constants import (
+from dagster_sdf.asset_utils import dagster_name_fn, get_test_prefix
+from dagster_sdf.constants import (
     DAGSTER_SDF_CATALOG_NAME,
     DAGSTER_SDF_DIALECT,
     DAGSTER_SDF_SCHEMA_NAME,
@@ -32,10 +32,10 @@ from .constants import (
     SDF_EXECUTABLE,
     SDF_WORKSPACE_YML,
 )
-from .dagster_sdf_translator import DagsterSdfTranslator, validate_opt_translator
-from .sdf_cli_invocation import SdfCliInvocation
-from .sdf_version import SDF_VERSION_LOWER_BOUND, SDF_VERSION_UPPER_BOUND
-from .sdf_workspace import SdfWorkspace
+from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator, validate_opt_translator
+from dagster_sdf.sdf_cli_invocation import SdfCliInvocation
+from dagster_sdf.sdf_version import SDF_VERSION_LOWER_BOUND, SDF_VERSION_UPPER_BOUND
+from dagster_sdf.sdf_workspace import SdfWorkspace
 
 logging = get_dagster_logger()
 

@@ -12,8 +12,11 @@ from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.merger import merge_dicts
 
-from ..external import ensure_valid_config, get_external_execution_plan_or_raise
-from ..utils import ExecutionParams
+from dagster_graphql.implementation.external import (
+    ensure_valid_config,
+    get_external_execution_plan_or_raise,
+)
+from dagster_graphql.implementation.utils import ExecutionParams
 
 
 def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:

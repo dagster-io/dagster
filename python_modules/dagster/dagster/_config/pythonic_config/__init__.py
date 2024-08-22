@@ -1,21 +1,21 @@
-from .config import (
+from dagster._config.pythonic_config.config import (
     Config as Config,
     PermissiveConfig as PermissiveConfig,
     _config_value_to_dict_representation as _config_value_to_dict_representation,
     infer_schema_from_config_class as infer_schema_from_config_class,
 )
-from .conversion_utils import (
+from dagster._config.pythonic_config.conversion_utils import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
     infer_schema_from_config_annotation as infer_schema_from_config_annotation,
     safe_is_subclass as safe_is_subclass,
 )
-from .io_manager import (
+from dagster._config.pythonic_config.io_manager import (
     ConfigurableIOManager as ConfigurableIOManager,
     ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
     ConfigurableIOManagerFactoryResourceDefinition as ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
 )
-from .resource import (
+from dagster._config.pythonic_config.resource import (
     ConfigurableResource as ConfigurableResource,
     ConfigurableResourceFactory as ConfigurableResourceFactory,
     ConfigurableResourceFactoryResourceDefinition as ConfigurableResourceFactoryResourceDefinition,

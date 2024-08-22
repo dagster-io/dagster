@@ -17,9 +17,8 @@ from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
 
+from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
-from .container_context import DockerContainerContext
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 

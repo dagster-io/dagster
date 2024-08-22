@@ -4,7 +4,7 @@ from datetime import datetime
 import click
 import dagster_graphql
 
-from .utils import (
+from automation.graphql.python_client.utils import (
     LegacyQueryHistoryInfo,
     are_queries_compatible,
     deserialize_from_query_filename,

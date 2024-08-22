@@ -34,10 +34,10 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
-from .compat import ExecutionError
-from .engine import DagstermillEngine
-from .errors import DagstermillError
-from .translator import DagsterTranslator
+from dagstermill.compat import ExecutionError
+from dagstermill.engine import DagstermillEngine
+from dagstermill.errors import DagstermillError
+from dagstermill.translator import DagsterTranslator
 
 
 def _clean_path_for_windows(notebook_path: str) -> str:

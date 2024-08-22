@@ -32,11 +32,10 @@ from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import AssetResult, ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.compute import ExecutionContextTypes
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
-
-from ..context.compute import ExecutionContextTypes
 
 
 def create_op_compute_wrapper(

@@ -41,17 +41,52 @@ from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
 from dagster_graphql.implementation.fetch_assets import (
+    build_partition_statuses,
     get_asset_materializations,
     get_asset_observations,
+    get_freshness_info,
+    get_partition_subsets,
 )
+from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
+from dagster_graphql.schema import external
+from dagster_graphql.schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
+from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.dagster_types import (
+    GrapheneDagsterType,
+    GrapheneListDagsterType,
+    GrapheneNullableDagsterType,
+    GrapheneRegularDagsterType,
+    to_dagster_type,
+)
+from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
+from dagster_graphql.schema.freshness_policy import (
+    GrapheneAssetFreshnessInfo,
+    GrapheneFreshnessPolicy,
+)
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
 from dagster_graphql.schema.instigators import GrapheneInstigator
+from dagster_graphql.schema.logs.events import (
+    GrapheneMaterializationEvent,
+    GrapheneObservationEvent,
+)
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.partition_mappings import GraphenePartitionMapping
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
     GraphenePartitionDefinition,
     GraphenePartitionDefinitionType,
+)
+from dagster_graphql.schema.pipelines.pipeline import (
+    GrapheneAssetPartitionStatuses,
+    GrapheneDefaultPartitionStatuses,
+    GrapheneMultiPartitionStatuses,
+    GraphenePartitionStats,
+    GraphenePipeline,
+    GrapheneRun,
+    GrapheneTimePartitionStatuses,
 )
 from dagster_graphql.schema.schedules import GrapheneSchedule
 from dagster_graphql.schema.sensors import GrapheneSensor
@@ -61,42 +96,10 @@ from dagster_graphql.schema.solids import (
     GrapheneSolidDefinition,
 )
 from dagster_graphql.schema.tags import GrapheneDefinitionTag
-
-from ..implementation.fetch_assets import (
-    build_partition_statuses,
-    get_freshness_info,
-    get_partition_subsets,
-)
-from ..implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
-from ..schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
-from . import external
-from .asset_key import GrapheneAssetKey
-from .auto_materialize_policy import GrapheneAutoMaterializePolicy
-from .backfill import GrapheneBackfillPolicy
-from .dagster_types import (
-    GrapheneDagsterType,
-    GrapheneListDagsterType,
-    GrapheneNullableDagsterType,
-    GrapheneRegularDagsterType,
-    to_dagster_type,
-)
-from .errors import GrapheneAssetNotFoundError
-from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
-from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
-from .partition_mappings import GraphenePartitionMapping
-from .pipelines.pipeline import (
-    GrapheneAssetPartitionStatuses,
-    GrapheneDefaultPartitionStatuses,
-    GrapheneMultiPartitionStatuses,
-    GraphenePartitionStats,
-    GraphenePipeline,
-    GrapheneRun,
-    GrapheneTimePartitionStatuses,
-)
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from .external import GrapheneRepository
+    from dagster_graphql.schema.external import GrapheneRepository
 
 GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatus")
 GrapheneAssetStaleCauseCategory = graphene.Enum.from_enum(
@@ -350,7 +353,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
         asset_graph_differ: Optional[AssetGraphDiffer] = None,
     ):
-        from ..implementation.fetch_assets import get_unique_asset_id
+        from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
         self._repository_location = check.inst_param(
             repository_location,

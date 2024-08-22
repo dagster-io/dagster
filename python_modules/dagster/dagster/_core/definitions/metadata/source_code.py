@@ -7,14 +7,13 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._model import DagsterModel
-from dagster._serdes import whitelist_for_serdes
-
-from .metadata_set import (
+from dagster._core.definitions.metadata.metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,
     TableMetadataSet as TableMetadataSet,
 )
-from .metadata_value import MetadataValue
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._model import DagsterModel
+from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset

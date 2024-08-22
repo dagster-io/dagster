@@ -52,6 +52,13 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
+
+# test utils from separate light weight file since are exported top level
+from dagster._core.instance_for_test import (
+    cleanup_test_instance as cleanup_test_instance,
+    environ as environ,
+    instance_for_test as instance_for_test,
+)
 from dagster._core.launcher import RunLauncher
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
@@ -66,13 +73,6 @@ from dagster._serdes.config_class import ConfigurableClassData
 from dagster._time import create_datetime, get_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
-
-# test utils from separate light weight file since are exported top level
-from .instance_for_test import (
-    cleanup_test_instance as cleanup_test_instance,
-    environ as environ,
-    instance_for_test as instance_for_test,
-)
 
 T = TypeVar("T")
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)

@@ -4,10 +4,10 @@ import dagster._check as check
 from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._annotations import experimental
 
-from .asset_utils import build_dbt_multi_asset_args
-from .dagster_dbt_translator import DagsterDbtTranslator, validate_translator
-from .dbt_manifest import DbtManifestParam, validate_manifest
-from .dbt_project import DbtProject
+from dagster_dbt.asset_utils import build_dbt_multi_asset_args
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
+from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
+from dagster_dbt.dbt_project import DbtProject
 
 
 @experimental

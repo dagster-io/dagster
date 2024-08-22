@@ -3,6 +3,7 @@ from typing import Mapping
 import click
 
 import dagster._check as check
+from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     get_repository_python_origin_from_kwargs,
     python_origin_target_argument,
@@ -16,8 +17,6 @@ from dagster._core.origin import JobPythonOrigin
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import recon_job_from_origin, recon_repository_from_origin
 from dagster._utils.interrupts import capture_interrupts
-
-from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 
 @click.group(name="asset")

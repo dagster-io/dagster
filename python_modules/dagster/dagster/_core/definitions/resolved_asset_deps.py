@@ -3,12 +3,11 @@ from collections import defaultdict
 from typing import AbstractSet, Dict, Iterable, List, Mapping, Sequence, Tuple, cast
 
 from dagster import _check as check
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import experimental_warning
-
-from .assets import AssetsDefinition
-from .source_asset import SourceAsset
 
 
 class ResolvedAssetDependencies:

@@ -12,14 +12,13 @@ from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
-from dagster_aws.utils import ResourceWithBoto3Configuration
-
-from .parameters import (
+from dagster_aws.ssm.parameters import (
     construct_ssm_client,
     get_parameters_by_name,
     get_parameters_by_paths,
     get_parameters_by_tags,
 )
+from dagster_aws.utils import ResourceWithBoto3Configuration
 
 if TYPE_CHECKING:
     import botocore

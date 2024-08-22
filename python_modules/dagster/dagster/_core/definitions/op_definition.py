@@ -19,9 +19,17 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.definition_config_schema import (
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.inference import infer_output_props
+from dagster._core.definitions.input import In, InputDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
+from dagster._core.definitions.output import Out, OutputDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
     InputManagerRequirement,
@@ -29,6 +37,7 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
+from dagster._core.definitions.result import MaterializeResult, ObserveResult
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -40,21 +49,10 @@ from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
-from .definition_config_schema import (
-    IDefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
-)
-from .hook_definition import HookDefinition
-from .inference import infer_output_props
-from .input import In, InputDefinition
-from .output import Out, OutputDefinition
-from .result import MaterializeResult, ObserveResult
-
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
-
-    from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
@@ -133,7 +131,10 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
-        from .decorators.op_decorator import DecoratedOpFunction, resolve_checked_op_fn_inputs
+        from dagster._core.definitions.decorators.op_decorator import (
+            DecoratedOpFunction,
+            resolve_checked_op_fn_inputs,
+        )
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
@@ -301,7 +302,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return super(OpDefinition, self).with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
-        from .decorators.op_decorator import DecoratedOpFunction
+        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
         return isinstance(self._compute_fn, DecoratedOpFunction)
 
@@ -449,7 +450,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return []
 
     def __call__(self, *args, **kwargs) -> Any:
-        from .composition import is_in_composition
+        from dagster._core.definitions.composition import is_in_composition
 
         if is_in_composition():
             return super(OpDefinition, self).__call__(*args, **kwargs)
@@ -471,7 +472,7 @@ def _resolve_output_defs_from_outs(
     outs: Optional[Mapping[str, Out]],
     default_code_version: Optional[str],
 ) -> Sequence[OutputDefinition]:
-    from .decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     if isinstance(compute_fn, DecoratedOpFunction):
         inferred_output_props = infer_output_props(compute_fn.decorated_fn)

@@ -52,8 +52,7 @@ from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
 import dagster._seven as seven
-
-from .internal_init import IHasInternalInit as IHasInternalInit
+from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if sys.version_info > (3,):
     from pathlib import Path

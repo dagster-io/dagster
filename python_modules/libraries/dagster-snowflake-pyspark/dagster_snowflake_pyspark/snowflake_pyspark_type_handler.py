@@ -9,7 +9,7 @@ from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import StructType
 
-from .constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_PYSPARK
+from dagster_snowflake_pyspark.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER_PYSPARK
 
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 

@@ -5,21 +5,20 @@ from dagster._config import validate_config_from_snap
 from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 
+from dagster_graphql.implementation.external import get_external_job_or_raise
+from dagster_graphql.implementation.utils import JobSubsetSelector, UserFacingGraphQLError
 from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo
 
-from .external import get_external_job_or_raise
-from .utils import JobSubsetSelector, UserFacingGraphQLError
-
 if TYPE_CHECKING:
-    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
-    from ..schema.run_config import GrapheneRunConfigSchema
+    from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
+    from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 
 
 def resolve_run_config_schema_or_error(
     graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: Optional[str] = None
 ) -> "GrapheneRunConfigSchema":
-    from ..schema.run_config import GrapheneRunConfigSchema
+    from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
@@ -43,7 +42,7 @@ def resolve_is_run_config_valid(
     mode: str,
     run_config: Mapping[str, object],
 ) -> "GraphenePipelineConfigValidationValid":
-    from ..schema.pipelines.config import (
+    from dagster_graphql.schema.pipelines.config import (
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationValid,
         GrapheneRunConfigValidationInvalid,

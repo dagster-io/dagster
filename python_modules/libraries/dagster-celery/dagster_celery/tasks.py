@@ -14,9 +14,13 @@ from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import serialize_value, unpack_value
 from dagster._serdes.serdes import JsonSerializableValue
 
-from .config import TASK_EXECUTE_JOB_NAME, TASK_EXECUTE_PLAN_NAME, TASK_RESUME_JOB_NAME
-from .core_execution_loop import DELEGATE_MARKER
-from .executor import CeleryExecutor
+from dagster_celery.config import (
+    TASK_EXECUTE_JOB_NAME,
+    TASK_EXECUTE_PLAN_NAME,
+    TASK_RESUME_JOB_NAME,
+)
+from dagster_celery.core_execution_loop import DELEGATE_MARKER
+from dagster_celery.executor import CeleryExecutor
 
 
 def create_task(celery_app, **task_kwargs):

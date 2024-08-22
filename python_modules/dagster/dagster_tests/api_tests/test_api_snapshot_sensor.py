@@ -14,7 +14,7 @@ from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import SensorExecutionArgs
 from dagster._serdes import deserialize_value
 
-from .utils import get_bar_repo_handle
+from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 
 def test_external_sensor_grpc(instance):

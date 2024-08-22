@@ -61,19 +61,12 @@ from dagster._core.types.loadable_target_origin import (
 )
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
-from dagster._utils import find_free_port, get_run_crash_explanation, safe_tempfile_path_unmanaged
-from dagster._utils.container import (
-    ContainerUtilizationMetrics,
-    retrieve_containerized_utilization_metrics,
+from dagster._grpc.__generated__ import api_pb2
+from dagster._grpc.__generated__.api_pb2_grpc import (
+    DagsterApiServicer,
+    add_DagsterApiServicer_to_server,
 )
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.typed_dict import init_optional_typeddict
-
-from .__generated__ import api_pb2
-from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
-from .impl import (
+from dagster._grpc.impl import (
     RunInSubprocessComplete,
     StartRunInSubprocessSuccessful,
     get_external_execution_plan_snapshot,
@@ -87,7 +80,7 @@ from .impl import (
     get_partition_tags,
     start_run_in_subprocess,
 )
-from .types import (
+from dagster._grpc.types import (
     CanCancelExecutionRequest,
     CanCancelExecutionResult,
     CancelExecutionRequest,
@@ -107,12 +100,21 @@ from .types import (
     ShutdownServerResult,
     StartRunResult,
 )
-from .utils import (
+from dagster._grpc.utils import (
     default_grpc_server_shutdown_grace_period,
     get_loadable_targets,
     max_rx_bytes,
     max_send_bytes,
 )
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
+from dagster._utils import find_free_port, get_run_crash_explanation, safe_tempfile_path_unmanaged
+from dagster._utils.container import (
+    ContainerUtilizationMetrics,
+    retrieve_containerized_utilization_metrics,
+)
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.typed_dict import init_optional_typeddict
 
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent

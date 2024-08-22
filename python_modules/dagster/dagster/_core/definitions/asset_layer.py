@@ -3,11 +3,10 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, NamedTup
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-
-from ..errors import DagsterInvariantViolationError
-from .asset_key import AssetKey, AssetKeyOrCheckKey
-from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
-from .graph_definition import GraphDefinition
+from dagster._core.definitions.asset_key import AssetKey, AssetKeyOrCheckKey
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph, AssetNode

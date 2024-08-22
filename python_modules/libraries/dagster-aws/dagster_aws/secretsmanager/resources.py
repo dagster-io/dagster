@@ -11,9 +11,12 @@ from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
+from dagster_aws.secretsmanager.secrets import (
+    construct_secretsmanager_client,
+    get_secrets_from_arns,
+    get_tagged_secrets,
+)
 from dagster_aws.utils import ResourceWithBoto3Configuration
-
-from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
 if TYPE_CHECKING:
     import botocore

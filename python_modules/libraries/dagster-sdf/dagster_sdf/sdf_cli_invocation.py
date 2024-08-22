@@ -11,12 +11,12 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
 from typing_extensions import Literal
 
-from .constants import SDF_TARGET_DIR
-from .dagster_sdf_translator import DagsterSdfTranslator
-from .errors import DagsterSdfCliRuntimeError
-from .sdf_cli_event import SdfCliEventMessage
-from .sdf_event_iterator import SdfDagsterEventType, SdfEventIterator
-from .sdf_information_schema import SdfInformationSchema
+from dagster_sdf.constants import SDF_TARGET_DIR
+from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator
+from dagster_sdf.errors import DagsterSdfCliRuntimeError
+from dagster_sdf.sdf_cli_event import SdfCliEventMessage
+from dagster_sdf.sdf_event_iterator import SdfDagsterEventType, SdfEventIterator
+from dagster_sdf.sdf_information_schema import SdfInformationSchema
 
 logger = get_dagster_logger()
 

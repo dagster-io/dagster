@@ -50,19 +50,17 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
 from dagster._core.execution.context.compute import enter_execution_context
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
-from dagster._core.execution.plan.compute import execute_core_compute
+from dagster._core.execution.plan.compute import OpOutputUnion, execute_core_compute
+from dagster._core.execution.plan.compute_generator import create_op_compute_wrapper
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
+from dagster._core.execution.plan.utils import op_execution_error_boundary
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
 from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
-
-from .compute import OpOutputUnion
-from .compute_generator import create_op_compute_wrapper
-from .utils import op_execution_error_boundary
 
 
 class AssetResultOutput(Output):

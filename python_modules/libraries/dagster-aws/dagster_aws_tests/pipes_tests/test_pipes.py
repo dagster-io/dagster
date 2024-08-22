@@ -36,8 +36,12 @@ from dagster_aws.pipes import (
 )
 from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
 
-from .fake_glue import LocalGlueMockClient
-from .fake_lambda import LOG_TAIL_LIMIT, FakeLambdaClient, LambdaFunctions
+from dagster_aws_tests.pipes_tests.fake_glue import LocalGlueMockClient
+from dagster_aws_tests.pipes_tests.fake_lambda import (
+    LOG_TAIL_LIMIT,
+    FakeLambdaClient,
+    LambdaFunctions,
+)
 
 _PYTHON_EXECUTABLE = shutil.which("python") or "python"
 

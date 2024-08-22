@@ -3,8 +3,15 @@ from typing import Sequence
 from dagster import AssetsDefinition, FreshnessPolicy
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-from ...scenario_utils.base_scenario import AssetReconciliationScenario, asset_def, run, run_request
-from .basic_scenarios import diamond
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.basic_scenarios import (
+    diamond,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    AssetReconciliationScenario,
+    asset_def,
+    run,
+    run_request,
+)
 
 freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
 freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)

@@ -18,7 +18,9 @@ from dagster_graphql.implementation.utils import (
 from dagster_graphql.schema.util import ResolveInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 PERMISSIONS_QUERY = """
     query PermissionsQuery {

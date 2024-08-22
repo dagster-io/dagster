@@ -13,7 +13,7 @@ from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster._grpc.types import ListRepositoriesResponse
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     ReadonlyGraphQLContextTestMatrix,
     make_graphql_context_test_suite,

@@ -6,7 +6,10 @@ from dagster import AssetKey, Definitions
 from dagster_looker.asset_specs import build_looker_asset_specs
 from dagster_looker.dagster_looker_translator import DagsterLookerTranslator, LookMLStructureType
 
-from .looker_projects import test_exception_derived_table_path, test_retail_demo_path
+from dagster_looker_tests.looker_projects import (
+    test_exception_derived_table_path,
+    test_retail_demo_path,
+)
 
 
 def test_build_looker_asset_specs_as_external_assets() -> None:

@@ -8,7 +8,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.handle import JobHandle
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
-from .utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 
 def test_execution_plan_error_grpc(instance: DagsterInstance):

@@ -12,14 +12,13 @@ from dagster._core.remote_representation.external_data import (
 )
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
     GrapheneResourceNotFoundError,
 )
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
-
-from .config_types import GrapheneConfigTypeField
 
 
 class GrapheneConfiguredValueType(graphene.Enum):

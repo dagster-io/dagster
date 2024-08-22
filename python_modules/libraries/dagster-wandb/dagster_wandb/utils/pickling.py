@@ -1,7 +1,7 @@
 import os
 import pickle
 
-from .errors import WandbArtifactsIOManagerError
+from dagster_wandb.utils.errors import WandbArtifactsIOManagerError
 
 PICKLE_FILENAME = "output.pickle"
 DILL_FILENAME = "output.dill"

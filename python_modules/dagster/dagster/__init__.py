@@ -1,6 +1,6 @@
 import sys
 
-from . import _module_alias_map
+from dagster import _module_alias_map
 
 # Imports of a key will return the module named by the corresponding value.
 sys.meta_path.insert(

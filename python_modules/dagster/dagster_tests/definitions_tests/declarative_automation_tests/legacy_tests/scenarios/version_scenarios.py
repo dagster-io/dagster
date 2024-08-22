@@ -1,6 +1,11 @@
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 
-from ...scenario_utils.base_scenario import AssetReconciliationScenario, asset_def, run, run_request
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    AssetReconciliationScenario,
+    asset_def,
+    run,
+    run_request,
+)
 
 three_partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 

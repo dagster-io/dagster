@@ -12,7 +12,7 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from google.cloud import bigquery
 from pydantic import Field
 
-from .utils import setup_gcp_creds
+from dagster_gcp.bigquery.utils import setup_gcp_creds
 
 
 class BigQueryResource(ConfigurableResource, IAttachDifferentObjectToOpContext):

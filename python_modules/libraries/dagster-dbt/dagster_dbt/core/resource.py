@@ -31,17 +31,20 @@ from packaging import version
 from pydantic import Field, validator
 from typing_extensions import Final
 
-from ..asset_utils import (
+from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
     dagster_name_fn,
     get_manifest_and_translator_from_dbt_assets,
 )
-from ..dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
-from ..dbt_manifest import DbtManifestParam, validate_manifest
-from ..dbt_project import DbtProject
-from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
-from .dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
+from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
+from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
+from dagster_dbt.dbt_project import DbtProject
+from dagster_dbt.utils import (
+    ASSET_RESOURCE_TYPES,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
+)
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
 if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:

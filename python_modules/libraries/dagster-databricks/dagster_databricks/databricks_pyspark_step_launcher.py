@@ -38,9 +38,7 @@ from databricks.sdk.core import DatabricksError
 from databricks.sdk.service import iam, jobs
 
 from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
-
-from .configs import (
+from dagster_databricks.configs import (
     define_azure_credentials,
     define_databricks_env_variables,
     define_databricks_permissions,
@@ -49,6 +47,7 @@ from .configs import (
     define_databricks_submit_run_config,
     define_oauth_credentials,
 )
+from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
 
 CODE_ZIP_NAME = "code.zip"
 PICKLED_CONFIG_FILE_NAME = "config.pkl"

@@ -18,7 +18,7 @@ DEFAULT_MAX_WAIT_TIME_SECONDS = 24 * 60 * 60
 from dagster import Config
 
 if TYPE_CHECKING:
-    from .databricks import DatabricksClient
+    from dagster_databricks.databricks import DatabricksClient
 
 
 def create_databricks_run_now_op(

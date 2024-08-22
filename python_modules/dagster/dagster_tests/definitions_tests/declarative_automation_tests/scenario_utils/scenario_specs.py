@@ -16,7 +16,10 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._time import parse_time_string
 
-from .scenario_state import MultiAssetSpec, ScenarioSpec
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_state import (
+    MultiAssetSpec,
+    ScenarioSpec,
+)
 
 ############
 # PARTITIONS

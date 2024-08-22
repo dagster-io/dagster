@@ -22,10 +22,28 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, experimental_param, public
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.sensor_definition import (
+    DagsterRunReaction,
+    DefaultSensorStatus,
+    RawSensorEvaluationFunctionReturn,
+    RunRequest,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SensorResult,
+    SensorType,
+    SkipReason,
+    get_context_param_name,
+    get_or_create_sensor_context,
+    validate_and_get_resource_dict,
+)
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -43,25 +61,6 @@ from dagster._seven import JSONDecodeError
 from dagster._time import datetime_from_timestamp, parse_time_string
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param
-
-from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
-from .sensor_definition import (
-    DagsterRunReaction,
-    DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
-    RunRequest,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SensorResult,
-    SensorType,
-    SkipReason,
-    get_context_param_name,
-    get_or_create_sensor_context,
-    validate_and_get_resource_dict,
-)
-from .target import ExecutableDefinition
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.resource_definition import ResourceDefinition

@@ -7,22 +7,11 @@ from typing_extensions import TypeAlias, TypeVar
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, deprecated_param
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.errors import DagsterInvalidMetadata
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    PackableValue,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-)
-from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
-
-from .metadata_set import (
+from dagster._core.definitions.metadata.metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,
     TableMetadataSet as TableMetadataSet,
 )
-from .metadata_value import (
+from dagster._core.definitions.metadata.metadata_value import (
     BoolMetadataValue as BoolMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
     DagsterJobMetadataValue as DagsterJobMetadataValue,
@@ -43,7 +32,7 @@ from .metadata_value import (
     TimestampMetadataValue as TimestampMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
-from .source_code import (
+from dagster._core.definitions.metadata.source_code import (
     DEFAULT_SOURCE_FILE_KEY as DEFAULT_SOURCE_FILE_KEY,
     AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     CodeReferencesMetadataSet as CodeReferencesMetadataSet,
@@ -54,7 +43,7 @@ from .source_code import (
     link_code_references_to_git as link_code_references_to_git,
     with_source_code_references as with_source_code_references,
 )
-from .table import (  # re-exported
+from dagster._core.definitions.metadata.table import (
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
     TableColumnDep as TableColumnDep,
@@ -63,6 +52,16 @@ from .table import (  # re-exported
     TableRecord as TableRecord,
     TableSchema as TableSchema,
 )
+from dagster._core.errors import DagsterInvalidMetadata
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    FieldSerializer,
+    PackableValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+)
+from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 

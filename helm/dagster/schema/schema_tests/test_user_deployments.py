@@ -18,7 +18,7 @@ from schema.charts.dagster_user_deployments.values import DagsterUserDeployments
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
-from .utils import create_complex_user_deployment, create_simple_user_deployment
+from schema_tests.utils import create_complex_user_deployment, create_simple_user_deployment
 
 
 @pytest.fixture(name="template")
