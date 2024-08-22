@@ -148,7 +148,7 @@ class DagsterDltResource(ConfigurableResource):
                 dlt_pipeline or first_asset_metadata.get(META_KEY_PIPELINE), Pipeline
             )
             dagster_dlt_translator = check.inst(
-                dagster_dlt_translator or first_asset_metadata.get(META_KEY_TRANSLATOR),
+                dagster_dlt_translator or first_asset_metadata.get(META_KEY_TRANSLATOR) or DagsterDltTranslator(),
                 DagsterDltTranslator,
             )
 

@@ -169,6 +169,21 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
         assert "0 1 * * *" in str(item)
 
 
+def test_computation_get_materialize_policy(dlt_pipeline: Pipeline):
+    assets = RunDlt(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        specs=RunDlt.default_specs(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).replace(
+            auto_materialize_policy=AutoMaterializePolicy.eager().with_rules(
+                AutoMaterializeRule.materialize_on_cron("0 1 * * *")
+            )
+        ),
+    ).assets_def
+
+    for item in assets.auto_materialize_policies_by_key.values():
+        assert "0 1 * * *" in str(item)
+
+
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     required_metadata_keys = {
         "destination_type",
@@ -196,7 +211,7 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     assert res.success
 
 
-def test_example_pipeline_has_required_metadata_keys_dlt_computation(dlt_pipeline: Pipeline):
+def test_computation_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     required_metadata_keys = {
         "destination_type",
         "destination_name",
@@ -335,24 +350,24 @@ def test_resource_failure_aware_materialization(dlt_pipeline: Pipeline) -> None:
 
 
 def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
-    class CustomDagsterDltTranslator(DagsterDltTranslator):
-        metadata_by_resource_name = {
-            "repos": {"mode": "upsert", "primary_key": "id"},
-            "repo_issues": {"mode": "upsert", "primary_key": ["repo_id", "issue_id"]},
-        }
+    dlt_source = pipeline()
 
-        def get_metadata(self, resource: DltResource) -> Mapping[str, Any]:
-            return self.metadata_by_resource_name.get(resource.name, {})
-
-    @dlt_assets(
-        dlt_source=pipeline(),
+    example_pipeline_assets = RunDlt(
+        dlt_source=dlt_source,
         dlt_pipeline=dlt_pipeline,
-        dagster_dlt_translator=CustomDagsterDltTranslator(),
-    )
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
+        specs=[
+            RunDlt.default_spec(
+                dlt_source, dlt_pipeline, dlt_source.selected_resources["repos"]
+            ).with_metadata(
+                {"mode": "upsert", "primary_key": "id"},
+            ),
+            RunDlt.default_spec(
+                dlt_source, dlt_pipeline, dlt_source.selected_resources["repo_issues"]
+            ).with_metadata(
+                {"mode": "upsert", "primary_key": ["repo_id", "issue_id"]},
+            ),
+        ],
+    ).assets_def
 
     first_asset_metadata = next(iter(example_pipeline_assets.metadata_by_key.values()))
     dagster_dlt_source = first_asset_metadata.get("dagster_dlt/source")
@@ -378,23 +393,22 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
 
 
 def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
-    @dlt_assets(
-        dlt_source=pipeline(),
-        dlt_pipeline=dlt_pipeline,
-        partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09"),
-    )
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        month = context.partition_key[:-3]
-        yield from dlt_pipeline_resource.run(context=context, dlt_source=pipeline(month))
+    class PartitionedDltRun(RunDlt):
+        def stream(self, context: ComputationContext) -> Iterable:
+            asset_context = context.to_asset_execution_context()
+            month = asset_context.partition_key[:-3]
+            dagster_dlt_resource = DagsterDltResource()
+            yield from dagster_dlt_resource.run(context=asset_context, dlt_source=pipeline(month))
+
 
     async def run_partition(year: str):
-        return materialize(
-            [example_pipeline_assets],
-            resources={"dlt_pipeline_resource": DagsterDltResource()},
-            partition_key=year,
-        )
+        return PartitionedDltRun(
+            specs=RunDlt.default_specs(
+                dlt_source=pipeline(), dlt_pipeline=dlt_pipeline
+            ).replace(partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09")),
+            dlt_source=pipeline(),
+            dlt_pipeline=dlt_pipeline,
+        ).test(partitions=year)
 
     async def main():
         [res1, res2] = await asyncio.gather(

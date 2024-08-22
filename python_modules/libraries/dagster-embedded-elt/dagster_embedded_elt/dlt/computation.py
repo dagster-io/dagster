@@ -50,6 +50,9 @@ class Specs:
     def to_list(self) -> List[Union[AssetSpec, AssetCheckSpec]]:
         return self.specs
 
+    def to_asset_specs(self) -> List[AssetSpec]:
+        return [spec for spec in self.specs if isinstance(spec, AssetSpec)]
+
 
 class ComputationContext:
     def __init__(self, context: AssetExecutionContext):
@@ -135,8 +138,9 @@ class Computation:
         self, context: ComputationContext, **kwargs
     ) -> Iterable[Union[SpecResult, ExecutionComplete]]: ...
 
-    def test(self) -> ExecuteInProcessResult:
-        return materialize([self.assets_def])
+    def test(self, partitions: Optional[str] = None) -> ExecuteInProcessResult:
+        # TODO handle all partition varietals (list, range)
+        return materialize([self.assets_def], partition_key=partitions)
 
     @cached_property
     def assets_def(self) -> AssetsDefinition:

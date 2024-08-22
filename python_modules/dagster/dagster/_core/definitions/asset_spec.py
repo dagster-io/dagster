@@ -223,3 +223,6 @@ class AssetSpec(
             if self.automation_condition
             else None
         )
+
+    def with_metadata(self, metadata: Mapping[str, Any]) -> "AssetSpec":
+        return self._replace(metadata={**self.metadata, **metadata})

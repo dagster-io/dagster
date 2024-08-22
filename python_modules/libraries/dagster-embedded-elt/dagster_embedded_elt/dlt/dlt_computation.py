@@ -15,7 +15,7 @@ from dlt.pipeline.pipeline import Pipeline
 from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 from .computation import Computation, ComputationContext, Specs, SpecsArg
-from .constants import META_KEY_PIPELINE, META_KEY_SOURCE
+from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from .resource import DagsterDltResource
 
 
@@ -42,22 +42,27 @@ class Dlt(Computation):
     def default_specs(cls, dlt_source: DltSource, dlt_pipeline: Pipeline) -> Specs:
         return Specs(
             [
-                AssetSpec(
-                    key=f"dlt_{resource.source_name}_{resource.name}",
-                    deps=get_upstream_deps(resource),
-                    description=get_description(resource),
-                    group_name=None,
-                    metadata={
-                        META_KEY_SOURCE: dlt_source,
-                        META_KEY_PIPELINE: dlt_pipeline,
-                    },
-                    owners=None,
-                    tags={
-                        "dagster/compute_kind": dlt_pipeline.destination.destination_name,
-                    },
-                )
+                Dlt.default_spec(dlt_source, dlt_pipeline, resource)
                 for resource in dlt_source.selected_resources.values()
             ]
+        )
+
+    @classmethod
+    def default_spec(
+        cls, dlt_source: DltSource, dlt_pipeline: Pipeline, dlt_resource: DltResource
+    ) -> AssetSpec:
+        return AssetSpec(
+            key=f"dlt_{dlt_resource.source_name}_{dlt_resource.name}",
+            deps=get_upstream_deps(dlt_resource),
+            description=get_description(dlt_resource),
+            metadata={
+                META_KEY_SOURCE: dlt_source,
+                META_KEY_PIPELINE: dlt_pipeline,
+                META_KEY_TRANSLATOR: None,
+            },
+            tags={
+                "dagster/compute_kind": dlt_pipeline.destination.destination_name,
+            },
         )
 
 
