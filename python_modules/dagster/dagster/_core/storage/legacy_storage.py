@@ -313,12 +313,14 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def get_backfills(
         self,
-        status: Optional["BulkActionStatus"] = None,
+        filters: Optional["BulkActionsFilter"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        filters: Optional["BulkActionsFilter"] = None,
+        status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._storage.run_storage.get_backfills(status, cursor, limit, filters=filters)
+        return self._storage.run_storage.get_backfills(
+            cursor=cursor, limit=limit, filters=filters, status=status
+        )
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)

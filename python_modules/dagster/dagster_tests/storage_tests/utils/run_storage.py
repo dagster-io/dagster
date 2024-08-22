@@ -1329,6 +1329,7 @@ class TestRunStorage:
         )
         storage.add_backfill(one)
         assert len(storage.get_backfills()) == 1
+        # maintain a test that uses the old status parameter
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 1
         backfill = storage.get_backfill(one.backfill_id)
         assert backfill == one

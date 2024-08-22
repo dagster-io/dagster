@@ -834,10 +834,10 @@ class SqlRunStorage(RunStorage):
 
     def get_backfills(
         self,
-        status: Optional[BulkActionStatus] = None,
+        filters: Optional[BulkActionsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-        filters: Optional[BulkActionsFilter] = None,
+        status: Optional[BulkActionStatus] = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
