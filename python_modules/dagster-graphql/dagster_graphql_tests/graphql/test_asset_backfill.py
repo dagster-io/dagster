@@ -1203,5 +1203,5 @@ def test_get_backfills_with_filters():
             get_backfills_result = execute_dagster_graphql(
                 context,
                 BACKFILLS_WITH_FILTERS_QUERY,
-                variables={"filters": {"status": "REQUESTED"}},
+                variables={"filters": {"statuses": ["REQUESTED"]}},
             )

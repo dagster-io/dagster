@@ -50,14 +50,14 @@ class BulkActionsFilter:
     all values will be permitted for that field.
 
     Args:
-        status (Optional[BulkActionStatus]): A status to filter by.
+        statuses (Optional[Sequence[BulkActionStatus]]): A list of statuses to filter by.
         created_before (Optional[DateTime]): Filter by bulk actions that were created before this datetime. Note that the
             create_time for each bulk action is stored in UTC.
         created_after (Optional[DateTime]): Filter by bulk actions that were created after this datetime. Note that the
             create_time for each bulk action is stored in UTC.
     """
 
-    status: Optional[BulkActionStatus] = None
+    statuses: Optional[Sequence[BulkActionStatus]] = None
     created_before: Optional[datetime] = None
     created_after: Optional[datetime] = None
 

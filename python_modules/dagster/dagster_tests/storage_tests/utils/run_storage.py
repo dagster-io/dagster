@@ -1353,26 +1353,73 @@ class TestRunStorage:
         )
         storage.add_backfill(one)
         assert (
-            len(storage.get_backfills(filters=BulkActionsFilter(status=BulkActionStatus.REQUESTED)))
+            len(
+                storage.get_backfills(
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
+                )
+            )
             == 1
         )
         assert (
-            len(storage.get_backfills(filters=BulkActionsFilter(status=BulkActionStatus.COMPLETED)))
+            len(
+                storage.get_backfills(
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED])
+                )
+            )
             == 0
         )
+        assert (
+            len(
+                storage.get_backfills(
+                    filters=BulkActionsFilter(
+                        statuses=[BulkActionStatus.COMPLETED, BulkActionStatus.REQUESTED]
+                    )
+                )
+            )
+            == 1
+        )
         backfills = storage.get_backfills(
-            filters=BulkActionsFilter(status=BulkActionStatus.REQUESTED)
+            filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
         )
         assert backfills[0] == one
 
         storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
         assert (
-            len(storage.get_backfills(filters=BulkActionsFilter(status=BulkActionStatus.REQUESTED)))
+            len(
+                storage.get_backfills(
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
+                )
+            )
             == 0
         )
         assert (
-            len(storage.get_backfills(filters=BulkActionsFilter(status=BulkActionStatus.COMPLETED)))
+            len(
+                storage.get_backfills(
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED])
+                )
+            )
             == 1
+        )
+
+        two = PartitionBackfill(
+            "two",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(two)
+        assert (
+            len(
+                storage.get_backfills(
+                    filters=BulkActionsFilter(
+                        statuses=[BulkActionStatus.COMPLETED, BulkActionStatus.REQUESTED]
+                    )
+                )
+            )
+            == 2
         )
 
     def test_backfill_created_time_filtering(self, storage: RunStorage):
