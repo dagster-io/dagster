@@ -156,7 +156,6 @@ export function useAssetCatalogFiltering<
     [
       ['owners', filters.owners, allAssetOwners] as const,
       ['tags', filters.tags, tags] as const,
-      ['kinds', filters.kinds, allKinds] as const,
       ['groups', filters.groups, allAssetGroupOptions] as const,
       ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
       ['codeLocations', filters.codeLocations, allRepos] as const,
