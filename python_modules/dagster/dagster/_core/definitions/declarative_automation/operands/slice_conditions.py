@@ -149,11 +149,11 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
 
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         # if it's the first time evaluating, just return the empty slice
-        if context.previous_evaluation_effective_dt is None:
+        if context.previous_evaluation_time is None:
             return context.get_empty_slice()
         else:
             return context.asset_graph_view.compute_updated_since_cursor_slice(
-                asset_key=context.asset_key, cursor=context.previous_evaluation_max_storage_id
+                asset_key=context.asset_key, cursor=context.previous_max_storage_id
             )
 
 
@@ -181,12 +181,12 @@ class CronTickPassedCondition(SliceAutomationCondition):
         return next(previous_ticks)
 
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
-        previous_cron_tick = self._get_previous_cron_tick(context.effective_dt)
+        previous_cron_tick = self._get_previous_cron_tick(context.evaluation_time)
         if (
             # no previous evaluation
-            context.previous_evaluation_effective_dt is None
+            context.previous_evaluation_time is None
             # cron tick was not newly passed
-            or previous_cron_tick < context.previous_evaluation_effective_dt
+            or previous_cron_tick < context.previous_evaluation_time
         ):
             return context.get_empty_slice()
         else:
