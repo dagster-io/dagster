@@ -15,7 +15,7 @@ from typing import (
 )
 
 from dagster._annotations import deprecated, experimental
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
@@ -23,6 +23,9 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     WaitingOnAssetsRuleEvaluationData,
 )
 from dagster._core.definitions.base_asset_graph import sort_key_for_asset_partition
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
@@ -70,7 +73,7 @@ class MaterializeOnRequiredForFreshnessRule(
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
             context.legacy_context.root_context
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
         return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
@@ -198,18 +201,18 @@ class MaterializeOnCronRule(
                 ).asset_partitions
             )
 
-        asset_subset_to_request = AssetSubset.from_asset_partitions_set(
+        asset_subset_to_request = ValidAssetSubset.from_asset_partitions_set(
             context.legacy_context.asset_key,
             context.legacy_context.partitions_def,
             new_asset_partitions,
         ) | (
-            context.legacy_context.previous_true_subset.as_valid(
-                context.legacy_context.partitions_def
+            ValidAssetSubset.coerce_from_subset(
+                context.legacy_context.previous_true_subset, context.legacy_context.partitions_def
             )
             - context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
             asset_subset_to_request
         )
         return AutomationResult(context, true_slice=true_slice)
@@ -436,7 +439,7 @@ class MaterializeOnParentUpdatedRule(
                 ignore_subset=context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset,
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
         return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
@@ -490,7 +493,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             handled_subset = self.get_handled_subset(context)
             unhandled_candidates = (
                 context.legacy_context.candidate_subset
-                & handled_subset.as_valid(context.legacy_context.partitions_def).inverse(
+                & ValidAssetSubset.coerce_from_subset(
+                    handled_subset, context.legacy_context.partitions_def
+                ).inverse(
                     context.legacy_context.partitions_def,
                     context.legacy_context.evaluation_time,
                     context.legacy_context.instance_queryer,
@@ -526,7 +531,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
 
             handled_subset = None
             unhandled_candidates = (
-                AssetSubset.from_asset_partitions_set(
+                ValidAssetSubset.from_asset_partitions_set(
                     context.legacy_context.asset_key,
                     context.legacy_context.partitions_def,
                     {
@@ -542,7 +547,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
 
         return AutomationResult(
             context,
-            true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
+            true_slice=context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
                 unhandled_candidates
             ),
             # we keep track of the handled subset instead of the unhandled subset because new
@@ -600,7 +605,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
         return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
@@ -659,7 +664,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
         return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
@@ -755,7 +760,7 @@ class SkipOnNotAllParentsUpdatedRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
         return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
@@ -802,6 +807,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         then this value will be calculated incrementally from the previous value to avoid expensive
         queries.
         """
+        parent_partitions_def = context.asset_graph.get(parent_asset_key).partitions_def
         if (
             # first tick of evaluating this condition
             context.legacy_context.node_cursor is None
@@ -818,8 +824,11 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             or passed_time_window.end.timestamp()
             > context.legacy_context.previous_evaluation_timestamp
         ):
-            return context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
-                asset_key=parent_asset_key, after_time=passed_time_window.end
+            return ValidAssetSubset.coerce_from_subset(
+                context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
+                    asset_key=parent_asset_key, after_time=passed_time_window.end
+                ),
+                parent_partitions_def,
             )
         else:
             # previous state still valid
@@ -834,11 +843,12 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             )
 
             # the set of asset partitions that have been updated since the previous evaluation
-            new_parent_subset = (
+            new_parent_subset = ValidAssetSubset.coerce_from_subset(
                 context.legacy_context.instance_queryer.get_asset_subset_updated_after_cursor(
                     asset_key=parent_asset_key,
                     after_cursor=context.legacy_context.previous_max_storage_id,
-                )
+                ),
+                parent_partitions_def,
             )
             return new_parent_subset | previous_parent_subset
 
@@ -948,7 +958,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         )
 
         # the set of candidates for whom all parents have been updated since the previous cron tick
-        all_parents_updated_subset = AssetSubset.from_asset_partitions_set(
+        all_parents_updated_subset = ValidAssetSubset.from_asset_partitions_set(
             context.legacy_context.asset_key,
             context.legacy_context.partitions_def,
             {
@@ -978,15 +988,16 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         # that will still be true unless a new cron tick has happened since the previous evaluation
         if not has_new_passed_time_window:
             all_parents_updated_subset = (
-                context.legacy_context.previous_candidate_subset.as_valid(
-                    context.legacy_context.partitions_def
+                ValidAssetSubset.coerce_from_subset(
+                    context.legacy_context.previous_candidate_subset,
+                    context.legacy_context.partitions_def,
                 )
                 - context.legacy_context.previous_true_subset
             ) | all_parents_updated_subset
 
         return AutomationResult(
             context,
-            true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
+            true_slice=context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
                 context.legacy_context.candidate_subset - all_parents_updated_subset
             ),
             structured_cursor=list(updated_subsets_by_key.values()),
@@ -1039,7 +1050,7 @@ class SkipOnRequiredButNonexistentParentsRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
         return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
 
 
@@ -1064,14 +1075,15 @@ class SkipOnBackfillInProgressRule(
             AutomationResult,
         )
 
-        backfilling_subset = (
+        backfilling_subset = ValidAssetSubset.coerce_from_subset(
             # this backfilling subset is aware of the current partitions definitions, and so will
             # be valid
             (
                 context.legacy_context.instance_queryer.get_active_backfill_target_asset_graph_subset()
-            )
-            .get_asset_subset(context.legacy_context.asset_key, context.legacy_context.asset_graph)
-            .as_valid(context.legacy_context.partitions_def)
+            ).get_asset_subset(
+                context.legacy_context.asset_key, context.legacy_context.asset_graph
+            ),
+            context.legacy_context.partitions_def,
         )
 
         if backfilling_subset.size == 0:
@@ -1081,7 +1093,7 @@ class SkipOnBackfillInProgressRule(
         else:
             true_subset = context.legacy_context.candidate_subset & backfilling_subset
 
-        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
+        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
         return AutomationResult(context, true_slice)
 
 
@@ -1112,8 +1124,8 @@ class DiscardOnMaxMaterializationsExceededRule(
 
         return AutomationResult(
             context,
-            context.asset_graph_view.get_asset_slice_from_valid_subset(
-                AssetSubset.from_asset_partitions_set(
+            context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
+                ValidAssetSubset.from_asset_partitions_set(
                     context.legacy_context.asset_key,
                     context.legacy_context.partitions_def,
                     rate_limited_asset_partitions,
@@ -1152,13 +1164,13 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
             if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
                 return AutomationResult(
                     context,
-                    context.asset_graph_view.get_asset_slice_from_valid_subset(
+                    context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
                         context.legacy_context.candidate_subset
                     ),
                 )
         return AutomationResult(
             context,
-            context.asset_graph_view.get_asset_slice_from_valid_subset(
+            context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
                 context.legacy_context.empty_subset()
             ),
         )

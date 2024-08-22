@@ -568,7 +568,7 @@ class AutomationResult:
 
     @property
     def true_subset(self) -> AssetSubset:
-        return self.true_slice.convert_to_valid_asset_subset()
+        return self.true_slice.convert_to_asset_subset()
 
     @property
     def start_timestamp(self) -> float:
@@ -599,9 +599,7 @@ class AutomationResult:
             self.condition_unique_id,
             self.condition.description,
             _compute_subset_value_str(self.true_subset),
-            _compute_subset_value_str(
-                self._context.candidate_slice.convert_to_valid_asset_subset()
-            ),
+            _compute_subset_value_str(self._context.candidate_slice.convert_to_asset_subset()),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
         ]
@@ -615,7 +613,7 @@ class AutomationResult:
         return AutomationConditionNodeCursor(
             true_subset=self.true_subset,
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_valid_asset_subset()
+                self._context.candidate_slice.convert_to_asset_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             extra_state=self._extra_state,
@@ -627,7 +625,7 @@ class AutomationResult:
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
             true_subset=self.true_subset,
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_valid_asset_subset()
+                self._context.candidate_slice.convert_to_asset_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             start_timestamp=self._start_timestamp,

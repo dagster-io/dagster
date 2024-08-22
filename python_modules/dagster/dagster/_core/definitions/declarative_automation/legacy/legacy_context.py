@@ -18,8 +18,12 @@ from typing import (
     TypeVar,
 )
 
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -127,7 +131,7 @@ class LegacyRuleEvaluationContext:
             )
             if cursor
             else None,
-            candidate_subset=AssetSubset.all(
+            candidate_subset=ValidAssetSubset.all(
                 asset_key,
                 partitions_def,
                 instance_queryer,
@@ -147,7 +151,7 @@ class LegacyRuleEvaluationContext:
         self,
         child_condition: "AutomationCondition",
         child_unique_id: str,
-        candidate_subset: AssetSubset,
+        candidate_slice: AssetSlice,
     ) -> "LegacyRuleEvaluationContext":
         return dataclasses.replace(
             self,
@@ -155,7 +159,9 @@ class LegacyRuleEvaluationContext:
             node_cursor=self.cursor.node_cursors_by_unique_id.get(child_unique_id)
             if self.cursor
             else None,
-            candidate_subset=candidate_subset,
+            candidate_subset=ValidAssetSubset(
+                asset_key=candidate_slice.asset_key, value=candidate_slice.get_internal_value()
+            ),
             root_ref=self.root_context,
             start_timestamp=get_current_timestamp(),
         )
@@ -198,7 +204,7 @@ class LegacyRuleEvaluationContext:
             return self.empty_subset()
         candidate_subset = self.node_cursor.candidate_subset
         if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
-            return AssetSubset.all(
+            return ValidAssetSubset.all(
                 self.asset_key, self.partitions_def, self.instance_queryer, self.evaluation_time
             )
         else:
@@ -223,7 +229,9 @@ class LegacyRuleEvaluationContext:
             parent_result = self.current_results_by_key.get(parent_key)
             if not parent_result:
                 continue
-            parent_subset = parent_result.true_subset.as_valid(self.partitions_def)
+            parent_subset = ValidAssetSubset.coerce_from_subset(
+                parent_result.true_subset, self.partitions_def
+            )
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
 
@@ -231,7 +239,7 @@ class LegacyRuleEvaluationContext:
     @root_property
     def materialized_since_previous_tick_subset(self) -> ValidAssetSubset:
         """Returns the set of asset partitions that were materialized since the previous tick."""
-        return AssetSubset.from_asset_partitions_set(
+        return ValidAssetSubset.from_asset_partitions_set(
             self.asset_key,
             self.partitions_def,
             self.instance_queryer.get_asset_partitions_updated_after_cursor(
@@ -294,7 +302,8 @@ class LegacyRuleEvaluationContext:
         discarded_subset = self._previous_tick_discarded_subset
         requested_subset = self.cursor.previous_requested_subset
         return (
-            requested_subset.as_valid(self.partitions_def) | discarded_subset
+            ValidAssetSubset.coerce_from_subset(requested_subset, self.partitions_def)
+            | discarded_subset
             if discarded_subset
             else requested_subset
         )
@@ -324,7 +333,7 @@ class LegacyRuleEvaluationContext:
             if max_child_partitions_str
             else None,
         )
-        return AssetSubset.from_asset_partitions_set(
+        return ValidAssetSubset.from_asset_partitions_set(
             self.asset_key, self.partitions_def, asset_partitions
         ), cursor
 
@@ -425,7 +434,7 @@ class LegacyRuleEvaluationContext:
         mapping = defaultdict(lambda: self.empty_subset())
         has_new_metadata_subset = self.empty_subset()
         for frozen_metadata, asset_partitions in asset_partitions_by_frozen_metadata.items():
-            mapping[frozen_metadata] = AssetSubset.from_asset_partitions_set(
+            mapping[frozen_metadata] = ValidAssetSubset.from_asset_partitions_set(
                 self.asset_key, self.partitions_def, asset_partitions
             )
             has_new_metadata_subset |= mapping[frozen_metadata]
@@ -435,7 +444,9 @@ class LegacyRuleEvaluationContext:
         ignore_subset = has_new_metadata_subset | ignore_subset
 
         for elt in self.previous_subsets_with_metadata:
-            carry_forward_subset = elt.subset.as_valid(self.partitions_def) - ignore_subset
+            carry_forward_subset = (
+                ValidAssetSubset.coerce_from_subset(elt.subset, self.partitions_def) - ignore_subset
+            )
             if carry_forward_subset.size > 0:
                 mapping[elt.frozen_metadata] |= carry_forward_subset
 
@@ -453,4 +464,4 @@ class LegacyRuleEvaluationContext:
         )
 
     def empty_subset(self) -> ValidAssetSubset:
-        return AssetSubset.empty(self.asset_key, self.partitions_def)
+        return ValidAssetSubset.empty(self.asset_key, self.partitions_def)

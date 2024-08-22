@@ -11,7 +11,9 @@
 import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
+)
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -227,9 +229,9 @@ def freshness_evaluation_results_for_asset_key(
         and expected_data_time >= execution_period.start
         and evaluation_data is not None
     ):
-        all_subset = AssetSubset.all(asset_key, None)
+        all_subset = ValidAssetSubset.all(asset_key, None)
         return (
-            AssetSubset.all(asset_key, None),
+            ValidAssetSubset.all(asset_key, None),
             [AssetSubsetWithMetadata(subset=all_subset, metadata=evaluation_data.metadata)],
         )
     else:
