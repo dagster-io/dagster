@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Iterable, Mapping, Optional, Sequence
 
 import dlt
 import duckdb
@@ -15,6 +15,8 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dagster_embedded_elt.dlt.computation import ComputationContext
+from dagster_embedded_elt.dlt.dlt_computation import RunDlt
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
 
@@ -37,6 +39,13 @@ def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
     } == example_pipeline_assets.keys
 
 
+def test_computation_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
+    assert {
+        AssetKey("dlt_pipeline_repos"),
+        AssetKey("dlt_pipeline_repo_issues"),
+    } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.keys
+
+
 def test_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
     @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
     def example_pipeline_assets(
@@ -50,6 +59,15 @@ def test_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
         AssetKey("dlt_pipeline_repos"): {AssetKey("pipeline_repos")},
         AssetKey("dlt_pipeline_repo_issues"): {AssetKey("pipeline_repos")},
     } == example_pipeline_assets.asset_deps
+
+
+def test_computation_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
+    # Since repo_issues is a transform of the repo data, its upstream
+    # asset key should be the repo data asset key as well.
+    assert {
+        AssetKey("dlt_pipeline_repos"): {AssetKey("pipeline_repos")},
+        AssetKey("dlt_pipeline_repo_issues"): {AssetKey("pipeline_repos")},
+    } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.asset_deps
 
 
 def test_example_pipeline_descs(dlt_pipeline: Pipeline) -> None:
@@ -176,6 +194,40 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
         resources={"dlt_pipeline_resource": DagsterDltResource()},
     )
     assert res.success
+
+
+def test_example_pipeline_has_required_metadata_keys_dlt_computation(dlt_pipeline: Pipeline):
+    required_metadata_keys = {
+        "destination_type",
+        "destination_name",
+        "dataset_name",
+        "first_run",
+        "started_at",
+        "finished_at",
+        "jobs",
+    }
+
+    RunDlt(
+        name="dlt_example",
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+    )
+
+    class ExampleDltComputation(RunDlt):
+        def stream(self, context: ComputationContext) -> Iterable:
+            for result in super().stream(context=context):
+                assert result.metadata
+                assert all(key in result.metadata.keys() for key in required_metadata_keys)
+                yield result
+
+    assert (
+        ExampleDltComputation(
+            dlt_source=pipeline(),
+            dlt_pipeline=dlt_pipeline,
+        )
+        .test()
+        .success
+    )
 
 
 def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
