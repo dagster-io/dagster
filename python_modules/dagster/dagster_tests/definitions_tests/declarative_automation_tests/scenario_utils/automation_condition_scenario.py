@@ -9,7 +9,6 @@ from dagster import AssetKey
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -66,11 +65,7 @@ class AutomationConditionScenarioState(ScenarioState):
             ap_by_key[ap.asset_key].add(ap)
         return {
             asset_key: mock.MagicMock(
-                true_slice=asset_graph_view.get_asset_slice_from_subset(
-                    AssetSubset.from_asset_partitions_set(
-                        asset_key, asset_graph_view.asset_graph.get(asset_key).partitions_def, aps
-                    )
-                ),
+                true_slice=asset_graph_view.get_asset_slice_from_asset_partitions(aps),
                 cursor=None,
             )
             for asset_key, aps in ap_by_key.items()
