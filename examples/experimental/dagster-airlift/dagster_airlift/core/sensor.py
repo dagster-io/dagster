@@ -83,8 +83,8 @@ def build_airflow_polling_sensor(
                         **metadata,
                         "Run Details": MarkdownMetadataValue(f"[View Run]({task_run.details_url})"),
                         "Task Logs": MarkdownMetadataValue(f"[View Logs]({task_run.log_url})"),
-                        "Start Date": TimestampMetadataValue(dag_run.start_date),
-                        "End Date": TimestampMetadataValue(dag_run.end_date),
+                        "Start Date": TimestampMetadataValue(task_run.start_date),
+                        "End Date": TimestampMetadataValue(task_run.end_date),
                     }
                     materializations_to_report.append(
                         (
