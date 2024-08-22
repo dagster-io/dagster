@@ -7,9 +7,9 @@ The documentation site is built using [Docusaurus](https://docusaurus.io/), a mo
 
 ## Installation
 
-The site uses [yarn](https://yarnpkg.com/) for package management. 
+The site uses [yarn](https://yarnpkg.com/) for package management.
 
-To install dependencies: 
+To install dependencies:
 
 ```
 yarn install
@@ -85,6 +85,7 @@ This will run `pyright` on all new/changed files relative to the master branch.
 ```
 make quick_pyright
 ```
+
 ---
 
 ## Build
