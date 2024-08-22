@@ -228,24 +228,13 @@ const secondaryDataToSearchResults = (
   } else {
     const countsBySection = buildAssetCountBySection(nodes);
 
-    const computeKindResults: SearchResult[] = countsBySection.countsByComputeKind.map(
-      ({computeKind, assetCount}) => ({
-        label: computeKind,
-        description: '',
-        type: AssetFilterSearchResultType.ComputeKind,
-        href: linkToAssetTableWithKindFilter(computeKind),
-        numResults: assetCount,
-      }),
-    );
-    const storageKindResults: SearchResult[] = countsBySection.countsByStorageKind.map(
-      ({storageKind, assetCount}) => ({
-        label: storageKind,
-        description: '',
-        type: AssetFilterSearchResultType.StorageKind,
-        href: linkToAssetTableWithKindFilter(storageKind),
-        numResults: assetCount,
-      }),
-    );
+    const kindResults: SearchResult[] = countsBySection.countsByKind.map(({kind, assetCount}) => ({
+      label: kind,
+      description: '',
+      type: AssetFilterSearchResultType.Kind,
+      href: linkToAssetTableWithKindFilter(kind),
+      numResults: assetCount,
+    }));
 
     const tagResults: SearchResult[] = countsBySection.countPerTag.map(({tag, assetCount}) => ({
       label: buildTagString(tag),
@@ -293,8 +282,7 @@ const secondaryDataToSearchResults = (
     );
     return [
       ...assets,
-      ...computeKindResults,
-      ...storageKindResults,
+      ...kindResults,
       ...tagResults,
       ...codeLocationResults,
       ...ownerResults,

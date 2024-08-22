@@ -49,7 +49,7 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'account_circle';
     case AssetFilterSearchResultType.AssetGroup:
       return 'asset_group';
-    case AssetFilterSearchResultType.ComputeKind:
+    case AssetFilterSearchResultType.Kind:
       return 'compute_kind';
     case AssetFilterSearchResultType.Tag:
       return 'tag';
@@ -68,7 +68,7 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
   switch (type) {
     case AssetFilterSearchResultType.CodeLocation:
       return 'Code location';
-    case AssetFilterSearchResultType.ComputeKind:
+    case AssetFilterSearchResultType.Kind:
       return 'Compute kind';
     case AssetFilterSearchResultType.Tag:
       return 'Tag';
@@ -150,7 +150,7 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
     }
   }
 
-  if (item.type === AssetFilterSearchResultType.ComputeKind) {
+  if (item.type === AssetFilterSearchResultType.Kind) {
     if (KNOWN_TAGS[item.label]) {
       const computeKindSearchIcon = <TagIcon label={item.label} />;
 

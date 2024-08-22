@@ -28,7 +28,7 @@ export enum SearchResultType {
 export enum AssetFilterSearchResultType {
   // Add types with corresponding strings to distinguish
   // between SearchResultType.AssetGroup
-  ComputeKind = 'AssetFilterSearchResultType.ComputeKind',
+  Kind = 'AssetFilterSearchResultType.ComputeKind',
   Tag = 'AssetFilterSearchResultType.Tag',
   CodeLocation = 'AssetFilterSearchResultType.CodeLocation',
   Owner = 'AssetFilterSearchResultType.Owner',
@@ -43,7 +43,7 @@ export function isAssetFilterSearchResultType(
   return (
     type === AssetFilterSearchResultType.AssetGroup ||
     type === AssetFilterSearchResultType.CodeLocation ||
-    type === AssetFilterSearchResultType.ComputeKind ||
+    type === AssetFilterSearchResultType.Kind ||
     type === AssetFilterSearchResultType.StorageKind ||
     type === AssetFilterSearchResultType.Owner ||
     type === AssetFilterSearchResultType.Tag ||
