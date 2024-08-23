@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
 
 import {ExplorerPath} from './PipelinePathUtils';
@@ -12,6 +11,7 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
+import {gql, useQuery} from '../apollo-client';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {LoadingSpinner} from '../ui/Loading';

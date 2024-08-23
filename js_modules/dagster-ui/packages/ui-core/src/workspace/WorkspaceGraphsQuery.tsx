@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 
 const REPOSITORY_GRAPHS_FRAGMENT = gql`

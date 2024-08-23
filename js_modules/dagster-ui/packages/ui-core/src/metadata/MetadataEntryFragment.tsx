@@ -1,6 +1,5 @@
-import {gql} from '@apollo/client';
-
 import {TABLE_SCHEMA_FRAGMENT} from './TableSchemaFragment';
+import {gql} from '../apollo-client';
 
 export const METADATA_ENTRY_FRAGMENT = gql`
   fragment MetadataEntryFragment on MetadataEntry {

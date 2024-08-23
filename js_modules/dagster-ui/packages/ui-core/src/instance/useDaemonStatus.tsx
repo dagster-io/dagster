@@ -1,9 +1,9 @@
-import {gql, useQuery} from '@apollo/client';
 import {useMemo} from 'react';
 
 import {StatusAndMessage} from './DeploymentStatusType';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstanceWarningQuery, InstanceWarningQueryVariables} from './types/useDaemonStatus.types';
+import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';

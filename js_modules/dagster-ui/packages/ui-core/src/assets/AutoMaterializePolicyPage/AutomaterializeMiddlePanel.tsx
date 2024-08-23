@@ -1,4 +1,3 @@
-import {useQuery} from '@apollo/client';
 import {Body2, Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
 import React from 'react';
 
@@ -14,6 +13,7 @@ import {
   GetEvaluationsSpecificPartitionQuery,
   GetEvaluationsSpecificPartitionQueryVariables,
 } from './types/GetEvaluationsQuery.types';
+import {useQuery} from '../../apollo-client';
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {SensorType} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';

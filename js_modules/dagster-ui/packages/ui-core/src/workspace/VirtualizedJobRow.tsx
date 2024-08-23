@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {Box, MiddleTruncate} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -9,6 +8,7 @@ import {buildPipelineSelector} from './WorkspaceContext';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';

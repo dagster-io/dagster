@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Body2, Box, Colors, Mono, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
@@ -6,6 +5,7 @@ import {
   AutomaterializeRunsQuery,
   AutomaterializeRunsQueryVariables,
 } from './types/AutomaterializeRunsTable.types';
+import {gql, useQuery} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';

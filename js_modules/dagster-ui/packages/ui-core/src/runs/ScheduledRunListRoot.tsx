@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -15,6 +14,7 @@ import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
 } from './types/ScheduledRunListRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {

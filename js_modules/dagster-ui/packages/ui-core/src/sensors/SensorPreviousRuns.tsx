@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {CursorHistoryControls} from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -7,6 +6,7 @@ import {
   PreviousRunsForSensorQuery,
   PreviousRunsForSensorQueryVariables,
 } from './types/SensorPreviousRuns.types';
+import {gql} from '../apollo-client';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunTable} from '../runs/RunTable';

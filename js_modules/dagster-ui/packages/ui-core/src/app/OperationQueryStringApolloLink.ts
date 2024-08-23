@@ -1,4 +1,4 @@
-import {ApolloLink} from '@apollo/client';
+import {ApolloLink} from '../apollo-client';
 
 export const createOperationQueryStringApolloLink = (basePath: string) =>
   new ApolloLink((operation, forward) => {

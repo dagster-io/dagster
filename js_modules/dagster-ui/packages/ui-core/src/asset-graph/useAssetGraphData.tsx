@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
@@ -11,6 +10,7 @@ import {
   AssetGraphQueryVariables,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
+import {gql} from '../apollo-client';
 import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';

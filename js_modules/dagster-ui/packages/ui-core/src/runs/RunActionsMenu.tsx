@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -36,6 +35,7 @@ import {
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
+import {gql, useLazyQuery} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';

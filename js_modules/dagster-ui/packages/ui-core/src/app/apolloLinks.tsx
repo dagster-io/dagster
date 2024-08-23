@@ -1,6 +1,5 @@
-import {ApolloLink} from '@apollo/client';
-
 import {debugLog, formatElapsedTimeWithMsec} from './Util';
+import {ApolloLink} from '../apollo-client';
 
 const getCalls = (response: any) => {
   try {

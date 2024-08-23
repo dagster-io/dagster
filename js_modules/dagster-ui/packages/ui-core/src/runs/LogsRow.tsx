@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo, useState} from 'react';
@@ -14,6 +13,7 @@ import {
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
+import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

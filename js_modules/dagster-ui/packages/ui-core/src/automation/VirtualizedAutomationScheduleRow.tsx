@@ -1,10 +1,10 @@
-import {useLazyQuery} from '@apollo/client';
 import {Box, Caption, Checkbox, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
 import {forwardRef, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
+import {useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';

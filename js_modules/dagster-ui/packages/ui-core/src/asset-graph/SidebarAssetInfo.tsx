@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -6,6 +5,7 @@ import styled from 'styled-components';
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
+import {gql, useQuery} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';

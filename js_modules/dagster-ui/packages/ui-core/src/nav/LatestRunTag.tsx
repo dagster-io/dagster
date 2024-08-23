@@ -1,9 +1,9 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, StyledTable, Tag, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTag.types';
+import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunStatus} from '../graphql/types';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';

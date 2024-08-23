@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
@@ -12,6 +11,7 @@ import {
   AssetGroupMetadataQuery,
   AssetGroupMetadataQueryVariables,
 } from './types/AssetGroupRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';

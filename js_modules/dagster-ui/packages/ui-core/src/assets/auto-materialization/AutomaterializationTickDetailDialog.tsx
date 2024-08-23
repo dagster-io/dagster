@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Caption, Colors, Icon, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {memo, useMemo, useRef, useState} from 'react';
@@ -10,6 +9,7 @@ import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
 } from './types/AutomaterializationTickDetailDialog.types';
+import {gql, useQuery} from '../../apollo-client';
 import {Timestamp} from '../../app/time/Timestamp';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';

@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Caption,
@@ -17,6 +16,7 @@ import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';

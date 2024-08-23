@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {NonIdealState, Page, Tab, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
@@ -18,6 +17,7 @@ import {
   ScheduleRootQueryVariables,
 } from './types/ScheduleRoot.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';

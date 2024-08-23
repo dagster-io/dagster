@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Body,
   Box,
@@ -11,6 +10,7 @@ import {
 } from '@dagster-io/ui-components';
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunTable} from '../runs/RunTable';

@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Colors, JoinedButtons, TokenizingFieldValue} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import {useMemo} from 'react';
@@ -8,6 +7,7 @@ import styled, {css} from 'styled-components';
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
 import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
+import {gql, useQuery} from '../apollo-client';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';

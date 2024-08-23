@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {ButtonLink, Caption, Colors, Group} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {memo, useCallback, useMemo} from 'react';
@@ -11,6 +10,7 @@ import {
   SchedulePartitionStatusResultFragment,
 } from './types/SchedulePartitionStatus.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
+import {gql, useLazyQuery} from '../apollo-client';
 import {assertUnreachable} from '../app/Util';
 import {RunStatus} from '../graphql/types';
 import {StatusTable} from '../instigation/InstigationUtils';

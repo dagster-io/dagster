@@ -1,4 +1,3 @@
-import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Icon,
@@ -16,6 +15,7 @@ import {
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
+import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';

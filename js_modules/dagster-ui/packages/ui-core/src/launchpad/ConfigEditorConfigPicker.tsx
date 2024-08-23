@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
@@ -26,6 +25,7 @@ import {
   ConfigPartitionsQueryVariables,
   PartitionSetForConfigEditorFragment,
 } from './types/ConfigEditorConfigPicker.types';
+import {gql, useQuery} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';

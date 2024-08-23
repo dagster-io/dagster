@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -7,6 +6,7 @@ import {
   TypeListContainerQuery,
   TypeListContainerQueryVariables,
 } from './types/TypeListContainer.types';
+import {gql, useQuery} from '../apollo-client';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';

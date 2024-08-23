@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Caption, Colors} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useMemo} from 'react';
@@ -8,6 +7,7 @@ import {
   StepSummaryForRunQuery,
   StepSummaryForRunQueryVariables,
 } from './types/StepSummaryForRun.types';
+import {gql, useQuery} from '../apollo-client';
 import {StepEventStatus} from '../graphql/types';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';

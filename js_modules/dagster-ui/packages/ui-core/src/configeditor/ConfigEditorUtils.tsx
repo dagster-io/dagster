@@ -1,8 +1,8 @@
-import {gql} from '@apollo/client';
 import {YamlModeValidationResult} from '@dagster-io/ui-components';
 import yaml from 'yaml';
 
 import {ConfigEditorValidationFragment} from './types/ConfigEditorUtils.types';
+import {gql} from '../apollo-client';
 
 export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
   fragment ConfigEditorRunConfigSchemaFragment on RunConfigSchema {

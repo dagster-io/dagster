@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -28,6 +27,7 @@ import {
   ResourceRootQuery,
   ResourceRootQueryVariables,
 } from './types/ResourceRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';

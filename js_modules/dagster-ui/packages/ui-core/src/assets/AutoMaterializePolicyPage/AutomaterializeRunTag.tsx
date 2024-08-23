@@ -1,8 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
 import {Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {RunStatusOnlyQuery, RunStatusOnlyQueryVariables} from './types/AutomaterializeRunTag.types';
+import {gql, useQuery} from '../../apollo-client';
 import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 

@@ -1,4 +1,3 @@
-import {useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -14,6 +13,7 @@ import {ChangeEvent, useCallback, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {SearchableListRow} from './CodeLocationSearchableList';
+import {useQuery} from '../apollo-client';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useAssetSearch} from '../assets/useAssetSearch';

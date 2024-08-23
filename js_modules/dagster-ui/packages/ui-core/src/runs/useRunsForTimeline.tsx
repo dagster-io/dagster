@@ -1,4 +1,3 @@
-import {QueryResult, gql, useApolloClient} from '@apollo/client';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
@@ -17,6 +16,7 @@ import {
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
+import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';

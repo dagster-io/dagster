@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
 import {History} from 'history';
 import * as React from 'react';
@@ -9,6 +8,7 @@ import {
   DaemonNotRunningAlertQueryVariables,
   UsingDefaultLauncherAlertInstanceFragment,
 } from './types/BackfillMessaging.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

@@ -1,4 +1,3 @@
-import {gql, useMutation} from '@apollo/client';
 import {
   Box,
   Button,
@@ -19,6 +18,7 @@ import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,
 } from './types/CreatePartitionDialog.types';
+import {gql, useMutation} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {invalidatePartitions} from '../assets/PartitionSubscribers';

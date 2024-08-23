@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Button, Colors, Dialog, DialogFooter, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
@@ -15,6 +14,7 @@ import {
   BackfillPolicyForLaunchAssetFragment,
   PartitionDefinitionForLaunchAssetFragment,
 } from './types/LaunchAssetExecutionButton.types';
+import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';

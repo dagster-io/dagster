@@ -1,8 +1,8 @@
-import {useMutation} from '@apollo/client';
 import {useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showLaunchError} from './showLaunchError';
+import {useMutation} from '../apollo-client';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,

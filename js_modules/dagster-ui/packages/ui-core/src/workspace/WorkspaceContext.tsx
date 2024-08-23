@@ -1,4 +1,3 @@
-import {useApolloClient} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {useSetRecoilState} from 'recoil';
@@ -18,6 +17,7 @@ import {
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
 } from './types/WorkspaceQueries.types';
+import {useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';

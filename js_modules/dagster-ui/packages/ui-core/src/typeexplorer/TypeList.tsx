@@ -1,9 +1,9 @@
-import {gql} from '@apollo/client';
 import {Box, Colors} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
 import {TypeListFragment} from './types/TypeList.types';
+import {gql} from '../apollo-client';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
 interface ITypeListProps {

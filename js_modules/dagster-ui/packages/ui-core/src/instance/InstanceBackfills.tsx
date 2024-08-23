@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -12,6 +11,7 @@ import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {

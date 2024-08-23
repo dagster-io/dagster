@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -13,6 +12,7 @@ import {
 
 import {INSTIGATION_EVENT_LOG_FRAGMENT, InstigationEventLogTable} from './InstigationEventLogTable';
 import {TickLogEventsQuery, TickLogEventsQueryVariables} from './types/TickLogDialog.types';
+import {gql, useQuery} from '../apollo-client';
 import {InstigationSelector} from '../graphql/types';
 import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';

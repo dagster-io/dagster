@@ -1,4 +1,3 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
   Body,
   Box,
@@ -48,6 +47,7 @@ import {
   PreviewConfigQueryVariables,
 } from './types/LaunchpadSession.types';
 import {mergeYaml, sanitizeConfigYamlString} from './yamlUtils';
+import {gql, useApolloClient, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {
   IExecutionSession,

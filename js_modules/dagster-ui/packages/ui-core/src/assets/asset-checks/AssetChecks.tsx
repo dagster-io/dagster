@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Body2,
   Box,
@@ -44,6 +43,7 @@ import {
 } from './types/AssetCheckDetailModal.types';
 import {AssetChecksQuery, AssetChecksQueryVariables} from './types/AssetChecks.types';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
+import {gql, useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';

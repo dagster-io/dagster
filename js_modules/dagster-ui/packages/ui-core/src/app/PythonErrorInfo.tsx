@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Button, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import {Fragment, useRef} from 'react';
 import styled from 'styled-components';
@@ -6,6 +5,7 @@ import styled from 'styled-components';
 import {showSharedToaster} from './DomUtils';
 import {useCopyToClipboard} from './browser';
 import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
+import {gql} from '../apollo-client';
 import {ErrorSource} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';

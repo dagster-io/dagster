@@ -1,4 +1,3 @@
-import {useLazyQuery} from '@apollo/client';
 import {Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
@@ -9,6 +8,7 @@ import {
   AssetSensorTicksQueryVariables,
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
+import {useLazyQuery} from '../apollo-client';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';

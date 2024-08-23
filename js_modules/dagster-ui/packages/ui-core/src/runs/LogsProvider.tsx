@@ -1,10 +1,3 @@
-import {
-  OnSubscriptionDataOptions,
-  gql,
-  useApolloClient,
-  useQuery,
-  useSubscription,
-} from '@apollo/client';
 import {TokenizingFieldValue} from '@dagster-io/ui-components';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
@@ -22,6 +15,13 @@ import {
   RunLogsSubscriptionSuccessFragment,
 } from './types/LogsProvider.types';
 import {RunDagsterRunEventFragment} from './types/RunFragments.types';
+import {
+  OnSubscriptionDataOptions,
+  gql,
+  useApolloClient,
+  useQuery,
+  useSubscription,
+} from '../apollo-client';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../graphql/types';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';

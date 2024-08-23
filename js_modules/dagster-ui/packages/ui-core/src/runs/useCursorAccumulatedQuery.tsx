@@ -1,7 +1,7 @@
-import {OperationVariables, useApolloClient} from '@apollo/client';
 import {DocumentNode} from 'graphql';
 import {useEffect, useMemo, useState} from 'react';
 
+import {OperationVariables, useApolloClient} from '../apollo-client';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 
 type FetchResult<DataType, CursorType, ErrorType> = {
