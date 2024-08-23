@@ -1,6 +1,11 @@
 module.exports = {
   parser: '@babel/eslint-parser',
-  extends: ['plugin:react/recommended', 'plugin:@docusaurus/recommended', 'plugin:mdx/recommended'],
+  extends: [
+    'plugin:react/recommended',
+    'plugin:@docusaurus/recommended',
+    'plugin:mdx/recommended',
+    'plugin:prettier/recommended',
+  ],
   rules: {
     'import/no-default-export': 'off',
     'react/react-in-jsx-scope': 'off',
