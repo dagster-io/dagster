@@ -42,7 +42,7 @@ def test_transitive_deps(airflow_instance: None) -> None:
     )
     cacheable_assets = AirflowCacheableAssetsDefinition(
         airflow_instance=instance,
-        orchestrated_defs=Definitions(
+        defs=Definitions(
             assets=[
                 create_asset_for_task("one", "first", "first_one"),
                 create_asset_for_task("two", "first", "first_two", dep_keys=["second_one"]),

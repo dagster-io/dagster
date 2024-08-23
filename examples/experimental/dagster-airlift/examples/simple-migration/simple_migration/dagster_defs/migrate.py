@@ -31,5 +31,5 @@ t3 = PythonDefs(name="simple__t3", specs=[a4], python_fn=t3_work)
 
 
 defs = build_defs_from_airflow_instance(
-    airflow_instance=airflow_instance, orchestrated_defs=defs_from_factories(t1, t2, t3)
+    airflow_instance=airflow_instance, defs=defs_from_factories(t1, t2, t3)
 )

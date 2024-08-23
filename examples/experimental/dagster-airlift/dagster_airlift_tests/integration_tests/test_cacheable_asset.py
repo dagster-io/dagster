@@ -73,7 +73,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
     ]:
         cacheable_assets = AirflowCacheableAssetsDefinition(
             airflow_instance=instance,
-            orchestrated_defs=Definitions(
+            defs=Definitions(
                 assets=[
                     first_asset,
                     print_dag__downstream_print_task,
