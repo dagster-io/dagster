@@ -1,15 +1,15 @@
-from dagster import Definitions, asset, with_source_code_references
+import dagster as dg
 
 
-@asset
+@dg.asset
 def my_asset(): ...
 
 
-@asset
+@dg.asset
 def another_asset(): ...
 
 
-defs = Definitions(
+defs = dg.Definitions(
     # with_source_code_references() automatically attaches the proper metadata
-    assets=with_source_code_references([my_asset, another_asset])
+    assets=dg.with_source_code_references([my_asset, another_asset])
 )

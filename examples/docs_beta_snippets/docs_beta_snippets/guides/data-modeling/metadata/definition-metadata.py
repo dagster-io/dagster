@@ -1,21 +1,21 @@
-from dagster import AssetSpec, MetadataValue, asset
+import dagster as dg
 
 
 # You can attach metadata via the `metadata` argument on the `@asset` decorator.
-@asset(
+@dg.asset(
     metadata={
-        "link_to_docs": MetadataValue.url("https://..."),
-        "snippet": MetadataValue.md("# Embedded markdown\n..."),
+        "link_to_docs": dg.MetadataValue.url("https://..."),
+        "snippet": dg.MetadataValue.md("# Embedded markdown\n..."),
     }
 )
 def my_asset(): ...
 
 
 # You can also use `metadata` with `AssetSpec`
-my_external_asset = AssetSpec(
+my_external_asset = dg.AssetSpec(
     "my_external_asset",
     metadata={
-        "link_to_docs": MetadataValue.url("https://..."),
-        "snippet": MetadataValue.md("# Embedded markdown\n..."),
+        "link_to_docs": dg.MetadataValue.url("https://..."),
+        "snippet": dg.MetadataValue.md("# Embedded markdown\n..."),
     },
 )
