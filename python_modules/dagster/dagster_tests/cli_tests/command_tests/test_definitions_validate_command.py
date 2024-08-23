@@ -16,14 +16,15 @@ def invoke_validate(options: Optional[Sequence[str]] = None):
     return runner.invoke(definitions_validate_command, options)
 
 
-def test_empty_project():
-    os.chdir(EMPTY_PROJECT_PATH)
-    result = invoke_validate()
-    assert result.exit_code == 2
-    assert (
-        "Error: No arguments given and no [tool.dagster] block in pyproject.toml found."
-        in result.output
-    )
+def test_empty_project(monkeypatch):
+    with monkeypatch.context() as m:
+        m.chdir(EMPTY_PROJECT_PATH)
+        result = invoke_validate()
+        assert result.exit_code == 2
+        assert (
+            "Error: No arguments given and no [tool.dagster] block in pyproject.toml found."
+            in result.output
+        )
 
 
 @pytest.mark.parametrize(
@@ -36,21 +37,23 @@ def test_empty_project():
         ["-w", "workspace.yaml"],
     ],
 )
-def test_valid_project(options):
-    os.chdir(VALID_PROJECT_PATH)
-    result = invoke_validate(options=options)
-    assert result.exit_code == 0
-    assert "Validation successful!" in result.output
+def test_valid_project(options, monkeypatch):
+    with monkeypatch.context() as m:
+        m.chdir(VALID_PROJECT_PATH)
+        result = invoke_validate(options=options)
+        assert result.exit_code == 0
+        assert "Validation successful!" in result.output
 
 
-def test_valid_project_with_multiple_definitions_files():
-    os.chdir(VALID_PROJECT_PATH)
-    options = ["-f", "valid_project/definitions.py", "-f", "valid_project/more_definitions.py"]
-    result = invoke_validate(options=options)
-    assert result.exit_code == 0
-    assert "Validating definitions in valid_project/definitions.py." in result.output
-    assert "Validating definitions in valid_project/more_definitions.py." in result.output
-    assert "Validation successful!" in result.output
+def test_valid_project_with_multiple_definitions_files(monkeypatch):
+    with monkeypatch.context() as m:
+        m.chdir(VALID_PROJECT_PATH)
+        options = ["-f", "valid_project/definitions.py", "-f", "valid_project/more_definitions.py"]
+        result = invoke_validate(options=options)
+        assert result.exit_code == 0
+        assert "Validating definitions in valid_project/definitions.py." in result.output
+        assert "Validating definitions in valid_project/more_definitions.py." in result.output
+        assert "Validation successful!" in result.output
 
 
 @pytest.mark.parametrize(
@@ -62,11 +65,12 @@ def test_valid_project_with_multiple_definitions_files():
         ["-w", "workspace.yaml"],
     ],
 )
-def test_invalid_project(options):
-    os.chdir(INVALID_PROJECT_PATH)
-    result = invoke_validate(options=options)
-    assert result.exit_code == 1
-    assert (
-        "Validation failed with exception: Duplicate asset key: AssetKey(['my_asset'])"
-        in result.output
-    )
+def test_invalid_project(options, monkeypatch):
+    with monkeypatch.context() as m:
+        m.chdir(INVALID_PROJECT_PATH)
+        result = invoke_validate(options=options)
+        assert result.exit_code == 1
+        assert (
+            "Validation failed with exception: Duplicate asset key: AssetKey(['my_asset'])"
+            in result.output
+        )
