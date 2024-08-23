@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.8.3 (core) / 0.24.3 (libraries)
+## 1.8.3 (core) / 0.24.3 (libraries) (YANKED - This version of Dagster resulted in errors when trying to launch runs that target individual asset partitions)
 
 ### New
 
