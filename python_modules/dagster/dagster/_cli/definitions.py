@@ -1,4 +1,5 @@
 import click
+import sys
 
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
@@ -58,8 +59,8 @@ def definitions_validate_command(**kwargs: ClickArgValue):
             click.echo(
                 click.style("Validation failed with exception: ", fg="red") + f"{e}.", err=True
             )
-            exit(1)
+            sys.exit(1)
         else:
             click.echo("Validation successful!")
     click.echo("Ending validation...")
-    exit(0)
+    sys.exit(0)
