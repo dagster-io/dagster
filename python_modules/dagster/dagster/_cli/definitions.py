@@ -1,5 +1,6 @@
-import click
 import sys
+
+import click
 
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
