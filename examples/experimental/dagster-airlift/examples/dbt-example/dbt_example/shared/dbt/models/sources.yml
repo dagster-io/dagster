@@ -1,8 +1,8 @@
 version: 2
 
 sources:
-  - name: iris_dataset
+  - name: lakehouse
     database: jaffle_shop
-    schema: iris_dataset
+    schema: lakehouse
     tables:
       - name: iris_lakehouse_table
