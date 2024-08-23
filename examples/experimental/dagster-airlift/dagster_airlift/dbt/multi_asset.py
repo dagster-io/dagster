@@ -94,16 +94,6 @@ class DbtProjectDefs(DefsFactory):
             )
 
 
-def specs_from_airflow_dbt(
-    *, dag_id: str, task_id: str, manifest: DbtManifestParam
-) -> Sequence[AssetSpec]:
-    return (
-        Specs(build_dbt_asset_specs(manifest=manifest))
-        .with_tags({DAG_ID_TAG: dag_id, TASK_ID_TAG: task_id})
-        .to_asset_spec_list()
-    )
-
-
 def build_dbt_assets(
     manifest: DbtManifestParam,
     project: DbtProject,
@@ -111,30 +101,6 @@ def build_dbt_assets(
     @dbt_assets(
         manifest=manifest,
         project=project,
-        dagster_dbt_translator=DagsterDbtTranslator(
-            settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
-        ),
-    )
-    def _dbt_asset(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
-
-    return Definitions(
-        assets=[_dbt_asset],
-        resources={"dbt": DbtCliResource(project_dir=project)},
-    )
-
-
-def defs_from_airflow_dbt(
-    *,
-    dag_id: str,
-    task_id: str,
-    manifest: DbtManifestParam,
-    project: DbtProject,
-) -> Definitions:
-    @dbt_assets(
-        manifest=manifest,
-        project=project,
-        op_tags={DAG_ID_TAG: dag_id, TASK_ID_TAG: task_id},
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
         ),
