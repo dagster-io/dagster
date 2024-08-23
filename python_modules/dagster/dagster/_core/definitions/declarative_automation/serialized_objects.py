@@ -14,8 +14,10 @@ from typing import (
     Union,
 )
 
+import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_subset import AssetSubset, EntitySubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -44,10 +46,10 @@ class HistoricalAllPartitionsSubsetSentinel:
 
 
 def get_serializable_candidate_subset(
-    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel],
-) -> Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]:
+    candidate_subset: Union[EntitySubset, HistoricalAllPartitionsSubsetSentinel],
+) -> Union[EntitySubset, HistoricalAllPartitionsSubsetSentinel]:
     """Do not serialize the candidate subset directly if it is an AllPartitionsSubset."""
-    if isinstance(candidate_subset, AssetSubset) and isinstance(
+    if isinstance(candidate_subset, EntitySubset) and isinstance(
         candidate_subset.value, AllPartitionsSubset
     ):
         return HistoricalAllPartitionsSubsetSentinel()
@@ -93,26 +95,15 @@ class AutomationConditionEvaluation(NamedTuple):
     start_timestamp: Optional[float]
     end_timestamp: Optional[float]
 
-    true_subset: AssetSubset
-    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
+    true_subset: EntitySubset
+    candidate_subset: Union[EntitySubset, HistoricalAllPartitionsSubsetSentinel]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
 
     @property
     def asset_key(self) -> AssetKey:
-        return self.true_subset.key
-
-    def discarded_subset(self) -> Optional[AssetSubset]:
-        """Returns the AssetSubset representing asset partitions that were discarded during this
-        evaluation. Note that 'discarding' is a deprecated concept that is only used for backwards
-        compatibility.
-        """
-        if len(self.child_evaluations) != 3:
-            return None
-        not_discard_evaluation = self.child_evaluations[-1]
-        discard_evaluation = not_discard_evaluation.child_evaluations[0]
-        return discard_evaluation.true_subset
+        return check.inst(self.true_subset.key, AssetKey)
 
     def for_child(self, child_unique_id: str) -> Optional["AutomationConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -126,20 +117,6 @@ class AutomationConditionEvaluation(NamedTuple):
 
     def with_run_ids(self, run_ids: AbstractSet[str]) -> "AutomationConditionEvaluationWithRunIds":
         return AutomationConditionEvaluationWithRunIds(evaluation=self, run_ids=frozenset(run_ids))
-
-    def legacy_num_skipped(self) -> int:
-        if len(self.child_evaluations) < 2:
-            return 0
-
-        not_skip_evaluation = self.child_evaluations[-1]
-        skip_evaluation = not_skip_evaluation.child_evaluations[0]
-        return skip_evaluation.true_subset.size - self.legacy_num_discarded()
-
-    def legacy_num_discarded(self) -> int:
-        discarded_subset = self.discarded_subset()
-        if discarded_subset is None:
-            return 0
-        return discarded_subset.size
 
     def iter_nodes(self) -> Iterator["AutomationConditionEvaluation"]:
         """Convenience utility for iterating through all nodes in an evaluation tree."""
@@ -191,14 +168,14 @@ class AutomationConditionEvaluationState:
         return self.previous_evaluation.asset_key
 
     @property
-    def true_subset(self) -> AssetSubset:
+    def true_subset(self) -> EntitySubset:
         return self.previous_evaluation.true_subset
 
 
 @whitelist_for_serdes
 class AutomationConditionNodeCursor(NamedTuple):
-    true_subset: AssetSubset
-    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
+    true_subset: EntitySubset
+    candidate_subset: Union[EntitySubset, HistoricalAllPartitionsSubsetSentinel]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
 
@@ -226,7 +203,7 @@ class AutomationConditionCursor(NamedTuple):
             has changed since the last time this was evaluated.
     """
 
-    previous_requested_subset: AssetSubset
+    previous_requested_subset: EntitySubset
     effective_timestamp: float
     last_event_id: Optional[int]
 
@@ -284,7 +261,7 @@ class AutomationConditionCursor(NamedTuple):
         )
 
     @property
-    def asset_key(self) -> AssetKey:
+    def key(self) -> EntityKey:
         return self.previous_requested_subset.key
 
     @property

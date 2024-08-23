@@ -31,16 +31,9 @@ def get_hardcoded_condition():
             return "..."
 
         def evaluate(self, context: AutomationContext) -> AutomationResult:
-            true_candidates = {
-                candidate
-                for candidate in context.candidate_slice.convert_to_asset_subset().asset_partitions
-                if candidate in true_set
-            }
             return AutomationResult(
                 context,
-                true_slice=context.asset_graph_view.get_asset_slice_from_asset_partitions(
-                    true_candidates
-                ),
+                true_slice=context.asset_graph_view.get_asset_slice_from_asset_partitions(true_set),
             )
 
     return HardcodedCondition(), true_set

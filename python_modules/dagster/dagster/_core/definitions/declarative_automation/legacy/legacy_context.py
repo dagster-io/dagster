@@ -18,6 +18,7 @@ from typing import (
     TypeVar,
 )
 
+import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -29,7 +30,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._record import copy
 from dagster._time import get_current_timestamp
 
-from ...asset_subset import AssetSubset
+from ...asset_subset import AssetSubset, EntitySubset
 from ..serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -167,6 +168,9 @@ class LegacyRuleEvaluationContext:
             start_timestamp=get_current_timestamp(),
         )
 
+    def _coerce_to_asset_subset(self, entity_subset: EntitySubset) -> AssetSubset:
+        return AssetSubset(key=check.inst(entity_subset.key, AssetKey), value=entity_subset.value)
+
     @property
     def root_context(self) -> "LegacyRuleEvaluationContext":
         """A reference to the context of the root condition for this evaluation."""
@@ -197,7 +201,7 @@ class LegacyRuleEvaluationContext:
     def previous_true_subset(self) -> AssetSubset:
         if self.node_cursor is None:
             return self.empty_subset()
-        return self.node_cursor.true_subset
+        return self._coerce_to_asset_subset(self.node_cursor.true_subset)
 
     @property
     def previous_candidate_subset(self) -> AssetSubset:
@@ -209,7 +213,7 @@ class LegacyRuleEvaluationContext:
                 self.asset_key, self.partitions_def, self.instance_queryer, self.evaluation_time
             )
         else:
-            return candidate_subset
+            return self._coerce_to_asset_subset(candidate_subset)
 
     @property
     def previous_subsets_with_metadata(self) -> Sequence[AssetSubsetWithMetadata]:
@@ -285,7 +289,7 @@ class LegacyRuleEvaluationContext:
         discard_cursor = (
             self.cursor.node_cursors_by_unique_id.get(unique_id) if self.cursor else None
         )
-        return discard_cursor.true_subset if discard_cursor else None
+        return self._coerce_to_asset_subset(discard_cursor.true_subset) if discard_cursor else None
 
     @property
     @root_property
@@ -300,7 +304,7 @@ class LegacyRuleEvaluationContext:
             ValidAssetSubset.coerce_from_subset(requested_subset, self.partitions_def)
             | discarded_subset
             if discarded_subset
-            else requested_subset
+            else self._coerce_to_asset_subset(requested_subset)
         )
 
     @property
@@ -372,7 +376,9 @@ class LegacyRuleEvaluationContext:
         # were *not* evaluated on the previous tick
         elif isinstance(self.node_cursor.candidate_subset, HistoricalAllPartitionsSubsetSentinel):
             return self.empty_subset()
-        return self.candidate_subset - self.node_cursor.candidate_subset
+        return self.candidate_subset - self._coerce_to_asset_subset(
+            self.node_cursor.candidate_subset
+        )
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
@@ -402,7 +408,7 @@ class LegacyRuleEvaluationContext:
         parent_result = self.current_results_by_key.get(asset_partition.asset_key)
         if not parent_result:
             return False
-        return asset_partition in parent_result.true_subset
+        return asset_partition in self._coerce_to_asset_subset(parent_result.true_subset)
 
     def add_evaluation_data_from_previous_tick(
         self,

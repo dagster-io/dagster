@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -90,7 +91,7 @@ class AssetDaemonCursor:
         )
 
     @cached_property
-    def previous_condition_cursors_by_key(self) -> Mapping[AssetKey, "AutomationConditionCursor"]:
+    def previous_condition_cursors_by_key(self) -> Mapping[EntityKey, "AutomationConditionCursor"]:
         """Efficient lookup of previous cursor by asset key."""
         from dagster._core.definitions.declarative_automation.serialized_objects import (
             AutomationConditionCursor,
@@ -105,7 +106,7 @@ class AssetDaemonCursor:
                 for evaluation_state in self.previous_evaluation_state or []
             }
         else:
-            return {cursor.asset_key: cursor for cursor in self.previous_condition_cursors}
+            return {cursor.key: cursor for cursor in self.previous_condition_cursors}
 
     def get_previous_condition_cursor(
         self, asset_key: AssetKey
@@ -125,7 +126,7 @@ class AssetDaemonCursor:
         # do not "forget" about values for non-evaluated assets
         new_condition_cursors = dict(self.previous_condition_cursors_by_key)
         for cursor in condition_cursors:
-            new_condition_cursors[cursor.asset_key] = cursor
+            new_condition_cursors[cursor.key] = cursor
 
         return dataclasses.replace(
             self,

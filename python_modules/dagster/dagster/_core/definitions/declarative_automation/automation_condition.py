@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_subset import EntitySubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -482,8 +482,8 @@ class AutomationResult:
         return self._true_slice
 
     @property
-    def true_subset(self) -> AssetSubset:
-        return self.true_slice.convert_to_asset_subset()
+    def true_subset(self) -> EntitySubset:
+        return self.true_slice.convert_to_entity_subset()
 
     @property
     def start_timestamp(self) -> float:
@@ -514,7 +514,7 @@ class AutomationResult:
             self.condition_unique_id,
             self.condition.description,
             _compute_subset_value_str(self.true_subset),
-            _compute_subset_value_str(self._context.candidate_slice.convert_to_asset_subset()),
+            _compute_subset_value_str(self._context.candidate_slice.convert_to_entity_subset()),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
         ]
@@ -528,7 +528,7 @@ class AutomationResult:
         return AutomationConditionNodeCursor(
             true_subset=self.true_subset,
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_asset_subset()
+                self._context.candidate_slice.convert_to_entity_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             extra_state=self._extra_state,
@@ -540,7 +540,7 @@ class AutomationResult:
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
             true_subset=self.true_subset,
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_asset_subset()
+                self._context.candidate_slice.convert_to_entity_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             start_timestamp=self._start_timestamp,
@@ -579,7 +579,7 @@ class AutomationResult:
         )
 
 
-def _compute_subset_value_str(subset: AssetSubset) -> str:
+def _compute_subset_value_str(subset: EntitySubset) -> str:
     """Computes a unique string representing a given AssetSubsets. This string will be equal for
     equivalent AssetSubsets.
     """
@@ -595,7 +595,7 @@ def _compute_subset_value_str(subset: AssetSubset) -> str:
             ]
         )
     else:
-        return str(list(sorted(subset.asset_partitions)))
+        return str(list(sorted(subset.subset_value.get_partition_keys())))
 
 
 def _compute_subset_with_metadata_value_str(subset_with_metadata: AssetSubsetWithMetadata):

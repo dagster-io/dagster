@@ -1,13 +1,12 @@
 from abc import ABC, abstractproperty
 from enum import Enum
-from typing import Dict, FrozenSet, NamedTuple, Optional, Sequence, Tuple
+from typing import Dict, FrozenSet, NamedTuple, Optional, Tuple
 
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
-    PackableValue,
     UnpackContext,
     UnpackedValue,
     WhitelistMap,
@@ -15,7 +14,6 @@ from dagster._serdes.serdes import (
 )
 
 from .declarative_automation.serialized_objects import (
-    AssetSubsetWithMetadata,
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
     AutomationConditionNodeSnapshot,
@@ -100,9 +98,6 @@ class WaitingOnAssetsRuleEvaluationData(
                 for i, k in enumerate(sorted(self.waiting_on_asset_keys))
             },
         }
-
-
-RuleEvaluations = Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"], PackableValue]
 
 
 # BACKCOMPAT GRAVEYARD

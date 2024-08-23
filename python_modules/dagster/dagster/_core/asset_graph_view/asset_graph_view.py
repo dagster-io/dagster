@@ -14,7 +14,7 @@ from typing import (
 )
 
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.asset_subset import EntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
@@ -72,15 +72,18 @@ class TemporalContext(NamedTuple):
     last_event_id: Optional[int]
 
 
-# We reserve the right to constraints on the AssetSubset that we are going to use
+# We reserve the right to constraints on the EntitySubset that we are going to use
 # in AssetSlice internals. Adding a NewType enforces that we do that conversion
 # in one spot (see _slice_from_subset)
-_AssetSliceCompatibleSubset = NewType("_AssetSliceCompatibleSubset", AssetSubset)
+_AssetSliceCompatibleSubset = NewType("_AssetSliceCompatibleSubset", EntitySubset)
 
 
 def _slice_from_subset(
-    asset_graph_view: "AssetGraphView", subset: AssetSubset
+    asset_graph_view: "AssetGraphView", subset: EntitySubset
 ) -> Optional["AssetSlice"]:
+    # checks not currently supported
+    if not isinstance(subset.key, AssetKey):
+        return None
     partitions_def = asset_graph_view.asset_graph.get(subset.key).partitions_def
     if subset.is_compatible_with_partitions_def(partitions_def):
         return AssetSlice(asset_graph_view, _AssetSliceCompatibleSubset(subset))
@@ -117,7 +120,7 @@ class AssetSlice:
       We also use this prefix to indicate that they fully materialize partition sets
       These can potentially be very expensive if the underlying partition set has
       an in-memory representation that involves large time windows. I.e. if the
-      underlying PartitionsSubset in the AssetSubset is a
+      underlying PartitionsSubset in the EntitySubset is a
       TimeWindowPartitionsSubset. Usage of these methods should be avoided if
       possible if you are potentially dealing with slices with large time-based
       partition windows.
@@ -129,24 +132,21 @@ class AssetSlice:
         self._asset_graph_view = asset_graph_view
         self._compatible_subset = compatible_subset
 
-    def convert_to_asset_subset(self) -> AssetSubset:
+    def convert_to_entity_subset(self) -> EntitySubset:
         return self._compatible_subset
 
-    # only works for partitioned assets for now
-    def compute_partition_keys(self) -> AbstractSet[str]:
-        return {
-            check.not_none(akpk.partition_key, "No None partition keys")
-            for akpk in self._compatible_subset.asset_partitions
-        }
+    def expensively_compute_partition_keys(self) -> AbstractSet[str]:
+        return set(self.get_internal_subset_value().get_partition_keys())
 
     def expensively_compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        # this method requires computing all partition keys of the definition, which
-        # may be expensive
-        return self._compatible_subset.asset_partitions
+        return {
+            AssetKeyPartitionKey(self.asset_key, pk)
+            for pk in self.expensively_compute_partition_keys()
+        }
 
     @property
     def asset_key(self) -> AssetKey:
-        return self._compatible_subset.key
+        return check.inst(self._compatible_subset.key, AssetKey)
 
     @property
     def parent_keys(self) -> AbstractSet[AssetKey]:
@@ -180,7 +180,7 @@ class AssetSlice:
         value = oper(self.get_internal_value(), other.get_internal_value())
         return AssetSlice(
             self._asset_graph_view,
-            _AssetSliceCompatibleSubset(AssetSubset(key=self.asset_key, value=value)),
+            _AssetSliceCompatibleSubset(EntitySubset(key=self.asset_key, value=value)),
         )
 
     def compute_difference(self, other: "AssetSlice") -> "AssetSlice":
@@ -383,14 +383,11 @@ class AssetGraphView:
             else True
         )
         return AssetSlice(
-            self, _AssetSliceCompatibleSubset(AssetSubset(key=asset_key, value=value))
+            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
         )
 
-    def get_asset_slice_from_subset(self, subset: AssetSubset) -> Optional["AssetSlice"]:
-        if subset.is_compatible_with_partitions_def(self._get_partitions_def(subset.key)):
-            return _slice_from_subset(self, subset)
-        else:
-            return None
+    def get_asset_slice_from_subset(self, subset: EntitySubset) -> Optional["AssetSlice"]:
+        return _slice_from_subset(self, subset)
 
     def legacy_get_asset_slice_from_valid_subset(self, subset: "ValidAssetSubset") -> "AssetSlice":
         return AssetSlice(self, _AssetSliceCompatibleSubset(subset))
@@ -411,7 +408,7 @@ class AssetGraphView:
             else bool(asset_partitions)
         )
         return AssetSlice(
-            self, _AssetSliceCompatibleSubset(AssetSubset(key=asset_key, value=value))
+            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
         )
 
     @cached_method
@@ -419,7 +416,7 @@ class AssetGraphView:
         partitions_def = self._get_partitions_def(asset_key)
         value = partitions_def.empty_subset() if partitions_def else False
         return AssetSlice(
-            self, _AssetSliceCompatibleSubset(AssetSubset(key=asset_key, value=value))
+            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
         )
 
     def compute_parent_asset_slice(
@@ -454,7 +451,7 @@ class AssetGraphView:
         return AssetSlice(
             self,
             _AssetSliceCompatibleSubset(
-                AssetSubset(key=parent_asset_key, value=parent_partitions_subset)
+                EntitySubset(key=parent_asset_key, value=parent_partitions_subset)
             ),
         )
 
@@ -484,7 +481,7 @@ class AssetGraphView:
             return AssetSlice(
                 self,
                 _AssetSliceCompatibleSubset(
-                    AssetSubset(key=child_asset_key, value=child_partitions_subset)
+                    EntitySubset(key=child_asset_key, value=child_partitions_subset)
                 ),
             )
 

@@ -1,11 +1,15 @@
 import datetime
 import operator
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union
 
 import dagster._check as check
-from dagster._core.definitions.asset_subset import AssetSubset, EntitySubsetSerializer
+from dagster._core.definitions.asset_subset import AssetSubset, EntitySubset, EntitySubsetSerializer
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    PartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._record import copy
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -19,6 +23,9 @@ class ValidAssetSubset(AssetSubset):
     """Legacy construct used for doing operations over AssetSubsets that are known to be valid. This
     functionality is subsumed by AssetSlice.
     """
+
+    key: AssetKey
+    value: Union[bool, PartitionsSubset]
 
     def inverse(
         self,
@@ -60,15 +67,16 @@ class ValidAssetSubset(AssetSubset):
 
     @staticmethod
     def coerce_from_subset(
-        subset: AssetSubset, partitions_def: Optional[PartitionsDefinition]
+        subset: EntitySubset, partitions_def: Optional[PartitionsDefinition]
     ) -> "ValidAssetSubset":
         """Converts an AssetSubset to a ValidAssetSubset by returning a copy of this AssetSubset
         if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
         """
+        key = check.inst(subset.key, AssetKey)
         if subset.is_compatible_with_partitions_def(partitions_def):
-            return ValidAssetSubset(key=subset.key, value=subset.value)
+            return ValidAssetSubset(key=key, value=subset.value)
         else:
-            return ValidAssetSubset.empty(subset.key, partitions_def)
+            return ValidAssetSubset.empty(key, partitions_def)
 
     def _is_compatible_with_subset(self, other: "AssetSubset") -> bool:
         if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
