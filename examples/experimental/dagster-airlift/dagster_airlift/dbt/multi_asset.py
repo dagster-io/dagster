@@ -9,6 +9,7 @@ from dagster_dbt import (
     build_dbt_asset_specs,
     dbt_assets,
 )
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 
 from dagster_airlift.core import DefsFactory
@@ -41,14 +42,12 @@ class DbtProjectDefs(DefsFactory):
         self,
         dbt_manifest: DbtManifestParam,
         name: str,
-        translator: Optional[DagsterDbtTranslator] = None,
         select: str = "fqn:*",
         exclude: Optional[str] = None,
         project: Optional[DbtProject] = None,
     ):
         self.dbt_manifest = validate_manifest(dbt_manifest)
         self.name = name
-        self.translator = translator
         self.select = select
         self.exclude = exclude
         self.project = project
@@ -60,7 +59,6 @@ class DbtProjectDefs(DefsFactory):
                 name=self.name,
                 specs=build_dbt_asset_specs(
                     manifest=self.dbt_manifest,
-                    dagster_dbt_translator=self.translator,
                     select=self.select,
                     exclude=self.exclude,
                     project=self.project,
@@ -78,7 +76,9 @@ class DbtProjectDefs(DefsFactory):
                 manifest=self.dbt_manifest,
                 name=self.name,
                 project=self.project,
-                dagster_dbt_translator=self.translator,
+                dagster_dbt_translator=DagsterDbtTranslator(
+                    settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
+                ),
                 select=self.select,
                 exclude=self.exclude,
             )
