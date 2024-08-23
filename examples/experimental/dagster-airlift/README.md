@@ -22,7 +22,7 @@ Airlift is a toolkit for observing Airflow instances from within Dagster and for
 - **Migrate**
   - Selectively move execution of Airflow tasks to Dagster Software Defined Assets
 
-## Compatilibility
+## Compatibility
 
 ### REST API Availability
 
@@ -42,7 +42,7 @@ In the below guide, we'll be working with a sample project, found in [`examples/
 
 The first step is to peer the Dagster code location and the Airflow instance, which will create an asset representation of each of your Airflow DAGs in Dagster. This process does not require any changes to your Airflow instance.
 
-First, you will need to install `dagster-airlift`:
+First, you will need to install `dagster-airlift` in your Dagster environment:
 
 ```bash
 pip install uv
@@ -120,19 +120,65 @@ defs = Definitions.merge(
 
 The next step is to observe data assets that are orchestrated from Airflow. In order to do this, we must define the relevant assets in the Dagster code location.
 
-To add definitions corresponding to Airflow tasks, you need to use the `orchestrated_defs` argument to `build_defs_from_airflow_instance`.
-
-(TODO: New observation logic)
-
-In our example, we have three seqeuential tasks:
+In our example, we have three sequential tasks:
 
 1. `load_raw_customers` loads a CSV file of raw customer data into duckdb.
 2. `run_dbt_model` builds a series of dbt models (from [jaffle shop](https://github.com/dbt-labs/jaffle_shop_duckdb)) combining customer, order, and payment data.
 3. `export_customers` exports a CSV representation of the final customer file from duckdb to disk.
 
-The first and third tasks involve a single table each. We can manually construct `AssetSpec`s that match the assets which they build.
+The first and third tasks involve a single table each. We can manually construct `AssetSpec`s that match the assets which they build, and provide them to the `orchestrated_defs` argument to `build_defs_from_airflow_instance`:
 
-To build assets for our dbt invocation, we can use a Dagster-supplied factory (in `examples/experimental/dagster-airlift/dagster_airlift/dbt/multi_asset.py` and installable by `uv pip install dagster-airlift[dbt]`).
+```python
+defs = build_defs_from_airflow_instance(
+    airflow_instance=airflow_instance,
+    orchestrated_defs=dag_defs(
+        "rebuild_customers_list",
+        task_defs(
+            "load_raw_customers",
+            AssetSpec(key=AssetKey(["raw_data", "raw_customers"]))
+        ),
+        # encode dependency on customers output
+        task_defs(
+            "export_customers",
+            AssetSpec(key=AssetKey("customers_csv"), deps={
+                AssetKey("customers")
+            })
+        ),
+        # todo: dbt assets
+    )
+)
+```
+
+To build assets for our dbt invocation, we can use the Dagster-supplied factory `DbtProjectDefs`, installable via `uv pip install dagster-airlift[dbt]`. This will load each dbt model as its own asset:
+
+```python
+defs = build_defs_from_airflow_instance(
+    airflow_instance=airflow_instance,
+    orchestrated_defs=Definitions.merge(
+        dag_defs(
+            "rebuild_customers_list",
+            task_defs(
+                "load_raw_customers",
+                AssetSpec(key=AssetKey(["raw_data", "raw_customers"]))
+            ),
+            # encode dependency on customers output
+            task_defs(
+                "export_customers",
+                AssetSpec(key=AssetKey("customers_csv"), deps={
+                    AssetKey("customers")
+                })
+            ),
+        ),
+        defs_from_factories(
+            DbtProjectDefs(
+                name="dbt_dag__build_dbt_models",
+                dbt_project_path=dbt_project_path(),
+                group="dbt",
+            ),
+        )
+    )
+)
+```
 
 ### Mapping assets to tasks
 
@@ -167,12 +213,13 @@ tasks:
 Next, you will need to modify your Airflow DAG to make it aware of the migration status:
 
 ```python
-dag = ...
-...
-
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.migration_state import load_migration_state_from_yaml
 from pathlib import Path
+from airflow import DAG
+
+dag = DAG("rebuild_customers_list")
+...
 
 mark_as_dagster_migrating(
     global_vars=globals(),
@@ -188,7 +235,7 @@ The DAG will now display its migration state in the Airflow UI.
 
 In order to migrate a task, you must do two things:
 
-1. First, ensure all associated assets are executable in Dagster by providing software-defined asset definitions in place of bare `AssetSpec`s.
+1. First, ensure all associated assets are executable in Dagster by providing asset definitions in place of bare `AssetSpec`s.
 2. The `migrated: False` status in the `migration_state` YAML folder must be adjusted to `migrated: True`.
 
 Any task marked as migrated will use the `DagsterOperator` when executed as part of the DAG. This operator will use the Dagster GraphQL API to initiate a Dagster run of the assets corresponding to the task.
