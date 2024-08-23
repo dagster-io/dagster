@@ -50,6 +50,7 @@ def build_defs_from_airflow_instance(
     )
     return Definitions(
         assets=[assets_defs],
+        asset_checks=orchestrated_defs.asset_checks if orchestrated_defs else None,
         sensors=[airflow_sensor],
         resources=orchestrated_defs.resources if orchestrated_defs else None,
     )

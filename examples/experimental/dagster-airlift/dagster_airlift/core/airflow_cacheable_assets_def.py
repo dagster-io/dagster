@@ -276,6 +276,8 @@ def construct_cacheable_assets_and_infer_dependencies(
             asset, AssetsDefinition, "Expected orchestrated defs to all be AssetsDefinitions."
         )
         task_info = get_task_info_for_asset(airflow_instance, assets_def)
+        if task_info is None:
+            continue
         task_level_metadata = {
             "Task Info (raw)": JsonMetadataValue(task_info.metadata),
             # In this case,
@@ -328,6 +330,10 @@ def construct_assets_with_task_migration_info_applied(
         assets_def = check.inst(
             asset, AssetsDefinition, "Expected orchestrated defs to all be AssetsDefinitions."
         )
+        dag_id = get_dag_id_from_asset(assets_def)
+        if dag_id is None:
+            new_assets_defs.append(assets_def)
+            continue
         overall_migration_status = None
         overall_task_id = None
         overall_dag_id = None
@@ -402,15 +408,11 @@ def construct_assets_with_task_migration_info_applied(
 # We expect that every asset which is passed to this function has all relevant specs mapped to a task.
 def get_task_info_for_asset(
     airflow_instance: AirflowInstance, assets_def: AssetsDefinition
-) -> TaskInfo:
-    task_id = check.not_none(
-        get_task_id_from_asset(assets_def),
-        "Expected task ID to be set. Can be set either via tags or using the node name",
-    )
-    dag_id = check.not_none(
-        get_dag_id_from_asset(assets_def),
-        "Expected dag ID to be set. Can be set either via tags or using the node name",
-    )
+) -> Optional[TaskInfo]:
+    task_id = get_task_id_from_asset(assets_def)
+    dag_id = get_dag_id_from_asset(assets_def)
+    if task_id is None or dag_id is None:
+        return None
     return airflow_instance.get_task_info(dag_id, task_id)
 
 
