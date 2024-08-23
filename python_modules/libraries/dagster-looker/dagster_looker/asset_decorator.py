@@ -16,7 +16,6 @@ def looker_assets(
     *,
     project_dir: Path,
     name: Optional[str] = None,
-    group_name: Optional[str] = None,
     dagster_looker_translator: Optional[DagsterLookerTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -27,7 +26,6 @@ def looker_assets(
         )
     return multi_asset(
         name=name,
-        group_name=group_name,
         compute_kind="looker",
         can_subset=True,
         partitions_def=partitions_def,
