@@ -27,7 +27,7 @@ def dbt_project_path() -> Path:
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=defs_from_factories(
+    defs=defs_from_factories(
         CSVToDuckdbDefs(
             name="rebuild_customers_list__load_raw_customers",
             table_name="raw_customers",

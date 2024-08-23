@@ -18,7 +18,7 @@ airflow_instance = AirflowInstance(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=defs_from_factories(
+    defs=defs_from_factories(
         CSVToDuckdbDefs(
             name="load_lakehouse__load_iris",
             csv_path=Path("iris.csv"),
