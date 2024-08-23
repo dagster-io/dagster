@@ -25,6 +25,12 @@ Install Vale with:
 brew install vale
 ```
 
+or
+
+```bash
+pip install vale
+```
+
 ---
 
 ## Overview of the docs
