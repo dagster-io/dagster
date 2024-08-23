@@ -9,7 +9,13 @@ import requests
 from .generate import _should_skip_file
 
 # Examples aren't that can't be downloaded from the dagster project CLI
-EXAMPLES_TO_IGNORE = ["docs_snippets", "experimental", "temp_pins.txt", "use_case_repository"]
+EXAMPLES_TO_IGNORE = [
+    "docs_snippets",
+    "docs_beta_snippets",
+    "experimental",
+    "temp_pins.txt",
+    "use_case_repository",
+]
 # Hardcoded list of available examples. The list is tested against the examples folder in this mono
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
@@ -19,21 +25,21 @@ AVAILABLE_EXAMPLES = [
     "assets_pandas_pyspark",
     "assets_pandas_type_metadata",
     "assets_smoke_test",
+    "deploy_docker",
+    "deploy_ecs",
+    "deploy_k8s",
+    "development_to_production",
+    "feature_graph_backed_assets",
+    "project_analytics",
+    "project_dagster_university_start",
+    "project_du_dbt_starter",
+    "project_fully_featured",
     "quickstart_aws",
     "quickstart_etl",
     "quickstart_gcp",
     "quickstart_snowflake",
     "tutorial",
     "tutorial_notebook_assets",
-    "deploy_docker",
-    "deploy_ecs",
-    "deploy_k8s",
-    "development_to_production",
-    "feature_graph_backed_assets",
-    "project_dagster_university_start",
-    "project_du_dbt_starter",
-    "project_fully_featured",
-    "project_analytics",
     "with_airflow",
     "with_great_expectations",
     "with_openai",
