@@ -3,7 +3,7 @@ from typing import Dict, Mapping, Sequence, Union
 from dagster import AssetsDefinition, AssetSpec, Definitions
 from typing_extensions import TypeAlias
 
-from dagster_airlift.core import combine_defs
+from dagster_airlift.core.defs_builders import combine_defs
 from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
 CoercibleToDefs: TypeAlias = Union[AssetsDefinition, AssetSpec, Definitions]
