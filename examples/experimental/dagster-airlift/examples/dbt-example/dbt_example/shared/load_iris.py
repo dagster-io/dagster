@@ -9,6 +9,10 @@ def id_from_path(csv_path: Path) -> str:
     return csv_path.stem
 
 
+def iris_path() -> Path:
+    return Path(__file__).parent.parent / "shared" / "iris.csv"
+
+
 def load_csv_to_duckdb(
     *,
     csv_path: Path,
