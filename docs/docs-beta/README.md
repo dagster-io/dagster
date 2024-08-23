@@ -63,15 +63,12 @@ This command starts a local development server and opens up a browser window. Mo
 To check the documentation for different issues, use the following:
 
 ```bash
-## Lints Markdown content using prettier
+## Lints all content, applies lint autofixes and prettier changes
 yarn lint
 
 ## Lints documentation content using Vale Server
 ## Checks for style guide adherence, grammar, spelling, etc.
-yarn lint:vale
-
-## Autofixes issues caught by prettier
-yarn lint:fix
+yarn vale
 ```
 
 To include code snippets, use the following format:
