@@ -26,6 +26,7 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     AutoMaterializePolicy,
+    AutomationCondition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
@@ -757,7 +758,7 @@ def build_dbt_multi_asset_args(
         asset_resource_types=ASSET_RESOURCE_TYPES,
     )
 
-    deps: Set[AssetDep] = set()
+    deps: Dict[AssetKey, AssetDep] = {}
     outs: Dict[str, AssetOut] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
@@ -825,7 +826,7 @@ def build_dbt_multi_asset_args(
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
             code_version=default_code_version_fn(dbt_resource_props),
             freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
-            auto_materialize_policy=dagster_dbt_translator.get_auto_materialize_policy(
+            automation_condition=dagster_dbt_translator.get_automation_condition(
                 dbt_resource_props
             ),
         )
@@ -869,11 +870,9 @@ def build_dbt_multi_asset_args(
 
             # Mark this parent as an input if it has no dependencies
             if parent_unique_id not in dbt_unique_id_deps:
-                deps.add(
-                    AssetDep(
-                        asset=parent_asset_key,
-                        partition_mapping=parent_partition_mapping,
-                    )
+                deps[parent_asset_key] = AssetDep(
+                    asset=parent_asset_key,
+                    partition_mapping=parent_partition_mapping,
                 )
 
         self_partition_mapping = dagster_dbt_translator.get_partition_mapping(
@@ -881,11 +880,9 @@ def build_dbt_multi_asset_args(
             dbt_parent_resource_props=dbt_resource_props,
         )
         if self_partition_mapping and has_self_dependency(dbt_resource_props):
-            deps.add(
-                AssetDep(
-                    asset=asset_key,
-                    partition_mapping=self_partition_mapping,
-                )
+            deps[asset_key] = AssetDep(
+                asset=asset_key,
+                partition_mapping=self_partition_mapping,
             )
             output_internal_deps.add(asset_key)
 
@@ -922,7 +919,7 @@ def build_dbt_multi_asset_args(
             "\n\n".join([DUPLICATE_ASSET_KEY_ERROR_MESSAGE, *error_messages])
         )
 
-    return list(deps), outs, internal_asset_deps, list(check_specs_by_key.values())
+    return list(deps.values()), outs, internal_asset_deps, list(check_specs_by_key.values())
 
 
 def get_asset_deps(
@@ -937,7 +934,7 @@ def get_asset_deps(
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
     Dict[AssetKey, FreshnessPolicy],
-    Dict[AssetKey, AutoMaterializePolicy],
+    Dict[AssetKey, AutomationCondition],
     Dict[str, AssetCheckSpec],
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
@@ -954,7 +951,7 @@ def get_asset_deps(
     # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
     freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
-    auto_materialize_policies_by_key: Dict[AssetKey, AutoMaterializePolicy] = {}
+    automation_conditions_by_key: Dict[AssetKey, AutomationCondition] = {}
     check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
@@ -1002,11 +999,9 @@ def get_asset_deps(
         if freshness_policy is not None:
             freshness_policies_by_key[asset_key] = freshness_policy
 
-        auto_materialize_policy = dagster_dbt_translator.get_auto_materialize_policy(
-            dbt_resource_props
-        )
-        if auto_materialize_policy is not None:
-            auto_materialize_policies_by_key[asset_key] = auto_materialize_policy
+        automation_condition = dagster_dbt_translator.get_automation_condition(dbt_resource_props)
+        if automation_condition is not None:
+            automation_conditions_by_key[asset_key] = automation_condition
 
         test_unique_ids = []
         if manifest:
@@ -1051,7 +1046,7 @@ def get_asset_deps(
         asset_outs,
         group_names_by_key,
         freshness_policies_by_key,
-        auto_materialize_policies_by_key,
+        automation_conditions_by_key,
         check_specs_by_output_name,
         fqns_by_output_name,
         metadata_by_output_name,

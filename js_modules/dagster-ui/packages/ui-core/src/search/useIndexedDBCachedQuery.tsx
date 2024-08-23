@@ -77,10 +77,11 @@ interface QueryHookParams<TVariables extends OperationVariables, TQuery> {
 
 export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVariables>({
   key,
+  skip,
   query,
   version,
   variables,
-}: QueryHookParams<TVariables, TQuery>) {
+}: QueryHookParams<TVariables, TQuery> & {skip?: boolean}) {
   const client = useApolloClient();
   const [data, setData] = React.useState<TQuery | undefined>(undefined);
   const [error, setError] = React.useState<ApolloError | undefined>(undefined);
@@ -119,20 +120,27 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   );
 
   React.useEffect(() => {
+    if (skip) {
+      return;
+    }
     getCachedData<TQuery>({key, version}).then((data) => {
       if (data && !dataRef.current) {
         setData(data);
         setLoading(false);
       }
     });
-  }, [key, version, getCachedData, dataRef]);
+  }, [key, version, getCachedData, dataRef, skip]);
 
   React.useEffect(() => {
+    if (skip) {
+      return;
+    }
     fetch(true);
-  }, [fetch]);
+  }, [fetch, skip]);
 
   return {
     data,
+    called: true, // Add called for compatibility with useBlockTraceOnQueryResult
     error,
     loading,
     fetch: useCallback(() => fetch(true), [fetch]),

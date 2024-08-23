@@ -281,7 +281,7 @@ def _synthesize_events(
             loggers=_default_loggers(_append_event),
             resources=_default_resources(),
             executor=in_process_executor,
-        ).get_implicit_global_asset_job_def()
+        ).get_implicit_job_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
         assert job_def
         a_job = job_def
     else:  # op_fn
@@ -1999,7 +1999,7 @@ class TestEventLogStorage:
             )
             assert _get_storage_ids(result) == [storage_id_3, storage_id_1]
 
-    def test_get_event_records_sqlite(self, storage):
+    def test_get_event_records_sqlite(self, storage, instance):
         if not self.is_sqlite(storage):
             pytest.skip()
 
@@ -2032,119 +2032,109 @@ class TestEventLogStorage:
         def a_job():
             materialize_one()
 
-        with instance_for_test() as instance:
-            if not storage.has_instance:
-                storage.register_instance(instance)
+        instance.wipe()
 
-            # first run
-            execute_run(
-                InMemoryJob(a_job),
-                instance.create_run_for_job(
-                    a_job,
-                    run_id=run_id_1,
-                    run_config={"loggers": {"callback": {}, "console": {}}},
-                ),
-                instance,
-            )
+        # first run
+        execute_run(
+            InMemoryJob(a_job),
+            instance.create_run_for_job(
+                a_job,
+                run_id=run_id_1,
+                run_config={"loggers": {"callback": {}, "console": {}}},
+            ),
+            instance,
+        )
 
-            for event in events:
-                storage.store_event(event)
+        run_records = instance.get_run_records()
+        assert len(run_records) == 1
 
-            run_records = instance.get_run_records()
-            assert len(run_records) == 1
+        # second run
+        events = []
+        execute_run(
+            InMemoryJob(a_job),
+            instance.create_run_for_job(
+                a_job,
+                run_id=run_id_2,
+                run_config={"loggers": {"callback": {}, "console": {}}},
+            ),
+            instance,
+        )
+        run_records = instance.get_run_records()
+        assert len(run_records) == 2
 
-            # second run
-            events = []
-            execute_run(
-                InMemoryJob(a_job),
-                instance.create_run_for_job(
-                    a_job,
-                    run_id=run_id_2,
-                    run_config={"loggers": {"callback": {}, "console": {}}},
-                ),
-                instance,
-            )
-            run_records = instance.get_run_records()
-            assert len(run_records) == 2
-            for event in events:
-                storage.store_event(event)
+        # third run
+        events = []
+        execute_run(
+            InMemoryJob(a_job),
+            instance.create_run_for_job(
+                a_job,
+                run_id=run_id_3,
+                run_config={"loggers": {"callback": {}, "console": {}}},
+            ),
+            instance,
+        )
+        run_records = instance.get_run_records()
+        assert len(run_records) == 3
 
-            # third run
-            events = []
-            execute_run(
-                InMemoryJob(a_job),
-                instance.create_run_for_job(
-                    a_job,
-                    run_id=run_id_3,
-                    run_config={"loggers": {"callback": {}, "console": {}}},
-                ),
-                instance,
-            )
-            run_records = instance.get_run_records()
-            assert len(run_records) == 3
-            for event in events:
-                storage.store_event(event)
+        update_timestamp = run_records[-1].update_timestamp
 
-            update_timestamp = run_records[-1].update_timestamp
+        # use tz-aware cursor
+        filtered_records = storage.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.RUN_SUCCESS,
+                after_cursor=RunShardedEventsCursor(
+                    id=0, run_updated_after=update_timestamp
+                ),  # events after first run
+            ),
+            ascending=True,
+        )
 
-            # use tz-aware cursor
-            filtered_records = storage.get_event_records(
+        assert len(filtered_records) == 2
+        assert _event_types([r.event_log_entry for r in filtered_records]) == [
+            DagsterEventType.RUN_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+        ]
+        assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
+
+        # use tz-naive cursor
+        filtered_records = storage.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.RUN_SUCCESS,
+                after_cursor=RunShardedEventsCursor(
+                    id=0, run_updated_after=update_timestamp.replace(tzinfo=None)
+                ),  # events after first run
+            ),
+            ascending=True,
+        )
+        assert len(filtered_records) == 2
+        assert _event_types([r.event_log_entry for r in filtered_records]) == [
+            DagsterEventType.RUN_SUCCESS,
+            DagsterEventType.RUN_SUCCESS,
+        ]
+        assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
+
+        # use invalid cursor
+        with pytest.raises(Exception, match="Add a RunShardedEventsCursor to your query filter"):
+            storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.RUN_SUCCESS,
-                    after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=update_timestamp
-                    ),  # events after first run
+                    after_cursor=0,
                 ),
-                ascending=True,
             )
-            assert len(filtered_records) == 2
-            assert _event_types([r.event_log_entry for r in filtered_records]) == [
-                DagsterEventType.RUN_SUCCESS,
-                DagsterEventType.RUN_SUCCESS,
-            ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
 
-            # use tz-naive cursor
-            filtered_records = storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.RUN_SUCCESS,
-                    after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=update_timestamp.replace(tzinfo=None)
-                    ),  # events after first run
-                ),
-                ascending=True,
-            )
-            assert len(filtered_records) == 2
-            assert _event_types([r.event_log_entry for r in filtered_records]) == [
-                DagsterEventType.RUN_SUCCESS,
-                DagsterEventType.RUN_SUCCESS,
-            ]
-            assert [r.event_log_entry.run_id for r in filtered_records] == [run_id_2, run_id_3]
-
-            # use invalid cursor
-            with pytest.raises(
-                Exception, match="Add a RunShardedEventsCursor to your query filter"
-            ):
-                storage.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.RUN_SUCCESS,
-                        after_cursor=0,
-                    ),
-                )
-
-            # check that events were double-written to the index shard
-            with storage.index_connection() as conn:
-                run_status_change_events = conn.execute(
-                    db_select([SqlEventLogStorageTable.c.id]).where(
-                        SqlEventLogStorageTable.c.dagster_event_type.in_(
-                            [
-                                event_type.value
-                                for event_type in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys()
-                            ]
-                        )
+        # check that events were double-written to the index shard
+        with storage.index_connection() as conn:
+            run_status_change_events = conn.execute(
+                db_select([SqlEventLogStorageTable.c.id]).where(
+                    SqlEventLogStorageTable.c.dagster_event_type.in_(
+                        [
+                            event_type.value
+                            for event_type in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.keys()
+                        ]
                     )
-                ).fetchall()
-                assert len(run_status_change_events) == 6
+                )
+            ).fetchall()
+            assert len(run_status_change_events) == 6
 
     # .watch() is async, there's a small chance they don't run before the asserts
     @pytest.mark.flaky(reruns=1)

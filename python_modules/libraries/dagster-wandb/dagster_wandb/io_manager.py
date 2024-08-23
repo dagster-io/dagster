@@ -547,7 +547,7 @@ class ArtifactsIOManager(IOManager):
                 path = artifact.get_path(path)
                 return path.download(root=artifacts_path)
 
-            artifact_dir = artifact.download(root=artifacts_path, recursive=True)
+            artifact_dir = artifact.download(root=artifacts_path)
 
             unpickled_content = unpickle_artifact_content(artifact_dir)
             if unpickled_content is not None:

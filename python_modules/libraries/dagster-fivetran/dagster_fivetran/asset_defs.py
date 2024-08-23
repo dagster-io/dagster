@@ -18,19 +18,17 @@ from typing import (
 
 from dagster import (
     AssetKey,
-    AssetOut,
     AssetsDefinition,
-    Nothing,
     OpExecutionContext,
-    Output,
     _check as check,
     multi_asset,
 )
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix, Output
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterStepOutputNotFoundError
@@ -47,16 +45,17 @@ from dagster_fivetran.utils import (
 def _build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
-    poll_interval: float = DEFAULT_POLL_INTERVAL,
-    poll_timeout: Optional[float] = None,
-    io_manager_key: Optional[str] = None,
-    asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]] = None,
-    table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    group_name: Optional[str] = None,
-    infer_missing_tables: bool = False,
-    op_tags: Optional[Mapping[str, Any]] = None,
+    poll_interval: float,
+    poll_timeout: Optional[float],
+    io_manager_key: Optional[str],
+    asset_key_prefix: Optional[Sequence[str]],
+    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]],
+    table_to_asset_key_map: Optional[Mapping[str, AssetKey]],
+    resource_defs: Optional[Mapping[str, ResourceDefinition]],
+    group_name: Optional[str],
+    infer_missing_tables: bool,
+    op_tags: Optional[Mapping[str, Any]],
+    asset_tags: Optional[Mapping[str, Any]],
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -64,6 +63,10 @@ def _build_fivetran_assets(
         table: AssetKey([*asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
     user_facing_asset_keys = table_to_asset_key_map or tracked_asset_keys
+    tracked_asset_key_to_user_facing_asset_key = {
+        tracked_key: user_facing_asset_keys[table_name]
+        for table_name, tracked_key in tracked_asset_keys.items()
+    }
 
     _metadata_by_table_name = check.opt_mapping_param(
         metadata_by_table_name, "metadata_by_table_name", key_type=str
@@ -71,19 +74,21 @@ def _build_fivetran_assets(
 
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
-        outs={
-            "_".join(key.path): AssetOut(
-                io_manager_key=io_manager_key,
-                key=user_facing_asset_keys[table],
-                metadata=_metadata_by_table_name.get(table),
-                dagster_type=Nothing,
-            )
-            for table, key in tracked_asset_keys.items()
-        },
         compute_kind="fivetran",
         resource_defs=resource_defs,
         group_name=group_name,
         op_tags=op_tags,
+        specs=[
+            AssetSpec(
+                key=user_facing_asset_keys[table],
+                metadata={
+                    **_metadata_by_table_name.get(table, {}),
+                    **({"dagster/io_manager_key": io_manager_key} if io_manager_key else {}),
+                },
+                tags=asset_tags,
+            )
+            for table in tracked_asset_keys.keys()
+        ],
     )
     def _assets(context: OpExecutionContext, fivetran: FivetranResource) -> Any:
         fivetran_output = fivetran.sync_and_poll(
@@ -99,9 +104,10 @@ def _build_fivetran_assets(
             # scan through all tables actually created, if it was expected then emit an Output.
             # otherwise, emit a runtime AssetMaterialization
             if materialization.asset_key in tracked_asset_keys.values():
+                key = tracked_asset_key_to_user_facing_asset_key[materialization.asset_key]
                 yield Output(
                     value=None,
-                    output_name="_".join(materialization.asset_key.path),
+                    output_name=key.to_python_identifier(),
                     metadata=materialization.metadata,
                 )
                 materialized_asset_keys.add(materialization.asset_key)
@@ -112,10 +118,9 @@ def _build_fivetran_assets(
         unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
         if infer_missing_tables:
             for asset_key in unmaterialized_asset_keys:
-                yield Output(
-                    value=None,
-                    output_name="_".join(asset_key.path),
-                )
+                key = tracked_asset_key_to_user_facing_asset_key[asset_key]
+
+                yield Output(value=None, output_name=key.to_python_identifier())
 
         else:
             if unmaterialized_asset_keys:
@@ -221,6 +226,9 @@ def build_fivetran_assets(
         group_name=group_name,
         infer_missing_tables=infer_missing_tables,
         op_tags=op_tags,
+        asset_tags=None,
+        table_to_asset_key_map=None,
+        resource_defs=None,
     )
 
 
@@ -232,6 +240,8 @@ class FivetranConnectionMetadata(
             ("connector_id", str),
             ("connector_url", str),
             ("schemas", Mapping[str, Any]),
+            ("database", Optional[str]),
+            ("service", Optional[str]),
         ],
     )
 ):
@@ -253,7 +263,11 @@ class FivetranConnectionMetadata(
                         if table["enabled"]:
                             table_name = table["name_in_destination"]
                             schema_table_meta[f"{schema_name}.{table_name}"] = metadata_for_table(
-                                table, self.connector_url
+                                table,
+                                self.connector_url,
+                                database=self.database,
+                                schema=schema_name,
+                                table=table_name,
                             )
         else:
             schema_table_meta[self.name] = {}
@@ -276,6 +290,7 @@ class FivetranConnectionMetadata(
             extra_metadata={
                 "connector_id": self.connector_id,
                 "io_manager_key": io_manager_key,
+                "storage_kind": self.service,
             },
         )
 
@@ -289,6 +304,7 @@ def _build_fivetran_assets_from_metadata(
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
+    storage_kind = cast(Optional[str], metadata.get("storage_kind"))
 
     return _build_fivetran_assets(
         connector_id=connector_id,
@@ -307,6 +323,9 @@ def _build_fivetran_assets_from_metadata(
         group_name=assets_defn_meta.group_name,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
+        asset_tags={"dagster/storage_kind": storage_kind} if storage_kind else None,
+        infer_missing_tables=False,
+        op_tags=None,
     )[0]
 
 
@@ -369,6 +388,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         for group in groups:
             group_id = group["id"]
 
+            group_details = self._fivetran_instance.get_destination_details(group_id)
+            database = group_details.get("config", {}).get("database")
+            service = group_details.get("service")
+
             connectors = self._fivetran_instance.make_request(
                 "GET", f"groups/{group_id}/connectors"
             )["items"]
@@ -393,6 +416,8 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                         connector_id=connector_id,
                         connector_url=connector_url,
                         schemas=schemas,
+                        database=database,
+                        service=service,
                     )
                 )
 

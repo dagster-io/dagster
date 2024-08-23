@@ -154,16 +154,15 @@ class AutomationConditionEvaluator:
                     # all these neighbors must be executed as a unit, we need to union together
                     # the subset of all required neighbors
                     if neighbor_key in self.current_results_by_key:
-                        neighbor_result = self.current_results_by_key[neighbor_key]
                         neighbor_true_subset = result.serializable_evaluation.true_subset._replace(
                             asset_key=neighbor_key
                         )
                         neighbor_evaluation = result.serializable_evaluation._replace(
                             true_subset=neighbor_true_subset
                         )
-                        self.current_results_by_key[neighbor_key] = neighbor_result._replace(
-                            serializable_evaluation=neighbor_evaluation
-                        )
+                        self.current_results_by_key[
+                            neighbor_key
+                        ].set_internal_serializable_evaluation_override(neighbor_evaluation)
                     self.to_request |= {
                         ap._replace(asset_key=neighbor_key)
                         for ap in result.true_subset.asset_partitions
@@ -177,11 +176,10 @@ class AutomationConditionEvaluator:
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
         current_results_by_key: Mapping[AssetKey, AutomationResult],
     ) -> Tuple[AutomationResult, Optional[datetime.datetime]]:
-        """Evaluates the auto materialize policy of a given asset key."""
-        # convert the legacy AutoMaterializePolicy to an Evaluator
+        """Evaluates the AutomationCondition of a given asset key."""
         automation_condition = check.not_none(self.asset_graph.get(asset_key).automation_condition)
 
-        if automation_condition.is_rule_condition() and self.request_backfills:
+        if automation_condition.has_rule_condition and self.request_backfills:
             raise DagsterInvalidDefinitionError(
                 "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
             )
@@ -202,7 +200,7 @@ class AutomationConditionEvaluator:
         context = AutomationContext.create(
             asset_key=asset_key,
             asset_graph_view=self.asset_graph_view,
-            logger=self.logger,
+            log=self.logger,
             current_tick_results_by_key=current_results_by_key,
             condition_cursor=self.cursor.get_previous_condition_cursor(asset_key),
             legacy_context=legacy_context,

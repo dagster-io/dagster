@@ -1,0 +1,7 @@
+extends: existence
+message: "Remove whitespace characters from the end of the line."
+link: https://docs.gitlab.com/ee/development/documentation/versions.html
+level: warning
+scope: raw
+raw:
+  - ' +\n'

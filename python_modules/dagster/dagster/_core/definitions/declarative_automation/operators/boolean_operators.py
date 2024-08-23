@@ -16,16 +16,20 @@ class AndAutomationCondition(AutomationCondition):
     label: Optional[str] = None
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
-        return self.operands
-
-    @property
     def description(self) -> str:
         return "All of"
 
     @property
     def name(self) -> str:
         return "AND"
+
+    @property
+    def children(self) -> Sequence[AutomationCondition]:
+        return self.operands
+
+    @property
+    def requires_cursor(self) -> bool:
+        return False
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
@@ -37,7 +41,7 @@ class AndAutomationCondition(AutomationCondition):
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
             true_slice = true_slice.compute_intersection(child_result.true_slice)
-        return AutomationResult.create_from_children(context, true_slice, child_results)
+        return AutomationResult(context, true_slice, child_results=child_results)
 
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")
@@ -49,10 +53,6 @@ class OrAutomationCondition(AutomationCondition):
     label: Optional[str] = None
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
-        return self.operands
-
-    @property
     def description(self) -> str:
         return "Any of"
 
@@ -60,9 +60,17 @@ class OrAutomationCondition(AutomationCondition):
     def name(self) -> str:
         return "OR"
 
+    @property
+    def children(self) -> Sequence[AutomationCondition]:
+        return self.operands
+
+    @property
+    def requires_cursor(self) -> bool:
+        return False
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
-        true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+        true_slice = context.get_empty_slice()
         for i, child in enumerate(self.children):
             child_context = context.for_child_condition(
                 child_condition=child, child_index=i, candidate_slice=context.candidate_slice
@@ -71,7 +79,7 @@ class OrAutomationCondition(AutomationCondition):
             child_results.append(child_result)
             true_slice = true_slice.compute_union(child_result.true_slice)
 
-        return AutomationResult.create_from_children(context, true_slice, child_results)
+        return AutomationResult(context, true_slice, child_results=child_results)
 
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
@@ -101,4 +109,4 @@ class NotAutomationCondition(AutomationCondition):
         child_result = self.operand.evaluate(child_context)
         true_slice = context.candidate_slice.compute_difference(child_result.true_slice)
 
-        return AutomationResult.create_from_children(context, true_slice, [child_result])
+        return AutomationResult(context, true_slice, child_results=[child_result])

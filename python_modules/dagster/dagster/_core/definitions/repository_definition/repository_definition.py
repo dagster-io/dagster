@@ -145,9 +145,6 @@ class RepositoryDefinition:
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._repository_data.get_env_vars_by_top_level_resource()
 
-    def get_resource_key_mapping(self) -> Mapping[int, str]:
-        return self._repository_data.get_resource_key_mapping()
-
     @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
@@ -263,7 +260,18 @@ class RepositoryDefinition:
         """Mapping[AssetCheckKey, AssetChecksDefinition]: The assets checks defined in the repository."""
         return self._repository_data.get_asset_checks_defs_by_key()
 
+    def has_implicit_global_asset_job_def(self) -> bool:
+        return self.has_job(IMPLICIT_ASSET_JOB_NAME)
+
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
+        return self.get_job(IMPLICIT_ASSET_JOB_NAME)
+
+    def get_implicit_asset_job_names(self) -> Sequence[str]:
+        return [IMPLICIT_ASSET_JOB_NAME]
+
+    def get_implicit_job_def_for_assets(
+        self, asset_keys: Iterable[AssetKey]
+    ) -> Optional[JobDefinition]:
         return self.get_job(IMPLICIT_ASSET_JOB_NAME)
 
     def get_maybe_subset_job_def(
@@ -382,7 +390,6 @@ class PendingRepositoryDefinition:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-        _resource_key_mapping: Optional[Mapping[int, str]] = None,
     ):
         self._repository_definitions = check.list_param(
             repository_definitions,
@@ -397,7 +404,6 @@ class PendingRepositoryDefinition:
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
-        self._resource_key_mapping = _resource_key_mapping
 
     @property
     def name(self) -> str:
@@ -442,7 +448,6 @@ class PendingRepositoryDefinition:
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
             top_level_resources=self._top_level_resources,
-            resource_key_mapping=self._resource_key_mapping,
         )
 
         return RepositoryDefinition(

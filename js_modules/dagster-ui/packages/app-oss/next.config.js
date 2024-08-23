@@ -21,8 +21,6 @@ const nextConfig = {
       bufferutil: 'commonjs bufferutil',
     });
 
-    config.resolve.alias['src'] = path.resolve(__dirname, '../ui-core/src');
-
     const prefix = config.assetPrefix ?? config.basePath ?? '';
     // Use file-loader to load mp4 files.
     config.module.rules.push({

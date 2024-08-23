@@ -1,6 +1,6 @@
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Sequence
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence
 
 from dagster import (
     AssetCheckKey,
@@ -16,27 +16,27 @@ from dagster import (
 from .constants import SDF_TARGET_DIR
 
 
-def dagster_name_fn(table_id: str) -> str:
-    return table_id.replace(".", "_").replace("-", "_").replace("*", "_star")
+def dagster_name_fn(catalog: str, schema: str, table: str) -> str:
+    fmt_catalog = catalog.replace(".", "_").replace("-", "_").replace("*", "_star")
+    fmt_schema = schema.replace(".", "_").replace("-", "_").replace("*", "_star")
+    fmt_table = table.replace(".", "_").replace("-", "_").replace("*", "_star")
+    return f"{fmt_catalog}__{fmt_schema}__{fmt_table}"
 
 
-def default_asset_key_fn(fqn: str) -> AssetKey:
+def default_asset_key_fn(catalog: str, schema: str, table: str) -> AssetKey:
     """Get the asset key for an sdf asset. An Sdf asset's key is its fully qualified name."""
-    return AssetKey(fqn.split("."))
+    return AssetKey([catalog, schema, table])
 
 
-def default_asset_check_key_fn(fqn: str) -> AssetCheckKey:
+def default_asset_check_key_fn(catalog: str, schema: str, table: str) -> AssetCheckKey:
     """Get the asset check key for an sdf asset. An Sdf asset's check key is its fully qualified name."""
-    asset_check_key = fqn.split(".")
-    # Get table name from the asset key
-    table_name = asset_check_key[-1]
     # If table_name starts with "test_", this is a column or table test (to be updated with something more formal)
-    if table_name.lower().startswith("test_"):
-        asset_key = AssetKey(asset_check_key[:-1] + [table_name[5:]])
+    if table.lower().startswith("test_"):
+        asset_key = AssetKey([catalog, schema, table[5:]])
     else:
-        asset_key = AssetKey(asset_check_key)
+        asset_key = AssetKey([catalog, schema, table])
     return AssetCheckKey(
-        name=fqn,
+        name="test",
         asset_key=asset_key,
     )
 
@@ -122,6 +122,8 @@ def get_asset_key_for_table_id(sdf_assets: Sequence[AssetsDefinition], table_id:
             def upstream_python_asset():
                 ...
     """
+    # Strip table_id of any quotes
+    table_id = table_id.replace('"', "").replace("`", "")
     asset_keys_by_output_name = {}
     for sdf_asset in sdf_assets:
         for name, key in sdf_asset.keys_by_output_name.items():
@@ -134,6 +136,8 @@ def get_asset_key_for_table_id(sdf_assets: Sequence[AssetsDefinition], table_id:
             f"Table {table_id} has more than one table associated with two or more unique dagster asset names:"
             f" {asset_keys_by_output_name.keys()}."
         )
+    if not asset_keys_by_output_name:
+        raise KeyError(f"Table {table_id} not found in the provided sdf assets.")
     return next(iter(asset_keys_by_output_name.values()))
 
 
@@ -197,3 +201,37 @@ def default_description_fn(
                 f"#### Materialized SQL:\n```\n{_read_sql_file(path_to_file)}\n```"
             )
     return "\n\n".join(filter(None, description_sections))
+
+
+def get_test_prefix(table_dialect: str) -> str:
+    if table_dialect == "snowflake":
+        return "TEST_"
+    else:
+        return "test_"
+
+
+def exists_in_selected(
+    catalog_name: str,
+    schema_name: str,
+    table_name: str,
+    purpose: str,
+    dialect: str,
+    selected_output_names: AbstractSet[str],
+    asset_checks_enabled: bool,
+) -> bool:
+    asset_output_name = dagster_name_fn(catalog_name, schema_name, table_name)
+    # If asset checks are enabled, ensure tests are only yielded for selected assets
+    if asset_checks_enabled:
+        # Strip test_name_prefix from start of table_id if it exists
+        if purpose == "test":
+            test_name_prefix = get_test_prefix(dialect)
+            asset_output_name = (
+                dagster_name_fn(catalog_name, schema_name, table_name[len(test_name_prefix) :])
+                if table_name.startswith(test_name_prefix)
+                else asset_output_name
+            )
+
+    if asset_output_name in selected_output_names:
+        return True
+    else:
+        return False

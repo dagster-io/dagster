@@ -38,7 +38,7 @@ from dagster._core.events import (
     DagsterEventType,
     RunFailureReason,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
@@ -834,19 +834,32 @@ class SqlRunStorage(RunStorage):
 
     def get_backfills(
         self,
-        status: Optional[BulkActionStatus] = None,
+        filters: Optional[BulkActionsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        status: Optional[BulkActionStatus] = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
-        query = db_select([BulkActionsTable.c.body])
-        if status:
-            query = query.where(BulkActionsTable.c.status == status.value)
+        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
+        if status and filters:
+            raise DagsterInvariantViolationError(
+                "Cannot provide status and filters to get_backfills. Please use filters rather than status."
+            )
+        if status or (filters and filters.statuses):
+            statuses = [status] if status else (filters.statuses if filters else None)
+            assert statuses
+            query = query.where(
+                BulkActionsTable.c.status.in_([status.value for status in statuses])
+            )
         if cursor:
             cursor_query = db_select([BulkActionsTable.c.id]).where(
                 BulkActionsTable.c.key == cursor
             )
             query = query.where(BulkActionsTable.c.id < cursor_query)
+        if filters and filters.created_after:
+            query = query.where(BulkActionsTable.c.timestamp > filters.created_after)
+        if filters and filters.created_before:
+            query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
         if limit:
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())

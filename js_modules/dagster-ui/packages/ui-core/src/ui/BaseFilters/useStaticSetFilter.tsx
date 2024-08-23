@@ -20,7 +20,10 @@ export type SetFilterValue<T> = {
 };
 
 export type StaticBaseConfig<TValue> = {
+  // Label that shows up in the filter menu
   name: string;
+  // Label that shows up in the active filters bar.
+  filterBarTagLabel?: JSX.Element;
   icon: IconName;
   renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
   renderActiveStateLabel?: (props: {value: TValue; isActive: boolean}) => JSX.Element;
@@ -28,6 +31,7 @@ export type StaticBaseConfig<TValue> = {
   getStringValue: (value: TValue) => string;
   getTooltipText?: (value: TValue) => string;
   matchType?: 'any-of' | 'all-of';
+  isLoadingFilters?: boolean;
 };
 
 type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
@@ -45,11 +49,13 @@ type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
   canSelectAll?: boolean;
   menuWidth?: number | string;
   closeOnSelect?: boolean;
+  isLoadingFilters?: boolean;
 };
 
 export type StaticSetFilter<TValue> = FilterObject & {
   state: Set<TValue>;
   setState: (state: Set<TValue>) => void;
+  selectAll: () => void;
 };
 
 const selectAllSymbol = Symbol.for('useStaticSetFilter:SelectAll');
@@ -61,6 +67,8 @@ export function useStaticSetFilter<TValue>({
   allValues: _unsortedValues,
   renderLabel,
   renderActiveStateLabel,
+  filterBarTagLabel,
+  isLoadingFilters,
   state,
   getStringValue,
   getTooltipText,
@@ -109,6 +117,7 @@ export function useStaticSetFilter<TValue>({
       icon,
       state: innerState,
       isActive: innerState.size > 0,
+      isLoadingFilters,
       getResults: (query) => {
         currentQueryRef.current = query;
         let results;
@@ -212,6 +221,14 @@ export function useStaticSetFilter<TValue>({
           close();
         }
       },
+      selectAll() {
+        this.onSelect({
+          value: selectAllSymbol,
+          close: () => {},
+          createPortal: () => () => {},
+          clearSearch: () => {},
+        });
+      },
 
       activeJSX: (
         <SetFilterActiveState
@@ -225,6 +242,7 @@ export function useStaticSetFilter<TValue>({
           }}
           icon={icon}
           matchType={matchType}
+          filterBarTagLabel={filterBarTagLabel}
         />
       ),
       setState,
@@ -243,6 +261,7 @@ export function useStaticSetFilter<TValue>({
       allowMultipleSelections,
       getKey,
       selectAllText,
+      isLoadingFilters,
     ],
   );
   const filterObjRef = useUpdatingRef(filterObj);
@@ -261,8 +280,10 @@ export function SetFilterActiveState({
   matchType = 'any-of',
   getTooltipText,
   theme,
+  filterBarTagLabel,
 }: {
   name: string;
+  filterBarTagLabel?: JSX.Element;
   icon: IconName;
   state: Set<any> | any[];
   getStringValue: (value: any) => string;
@@ -276,13 +297,25 @@ export function SetFilterActiveState({
   const highlightColor = theme === 'cyan' ? Colors.accentCyan() : undefined;
   const isAnyOf = matchType === 'any-of';
   const arr = useMemo(() => Array.from(state), [state]);
+  const startingMessage = useMemo(() => {
+    return (
+      <>
+        {filterBarTagLabel ?? (
+          <>
+            {capitalizeFirstLetter(name)} is {arr.length === 1 ? '' : isAnyOf ? 'any of' : 'all of'}
+          </>
+        )}
+        &nbsp;
+      </>
+    );
+  }, [arr.length, filterBarTagLabel, isAnyOf, name]);
   const label = useMemo(() => {
     if (arr.length === 0) {
       return null;
     } else if (arr.length <= MAX_VALUES_TO_SHOW) {
       return (
         <>
-          is&nbsp;{arr.length === 1 ? '' : <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>}
+          {startingMessage}
           {arr.map((value, index) => {
             return (
               <Fragment key={index}>
@@ -301,12 +334,20 @@ export function SetFilterActiveState({
     } else {
       return (
         <Box flex={{direction: 'row', alignItems: 'center'}}>
-          is <>{isAnyOf ? 'any of' : 'all of'}&nbsp;</>
+          {startingMessage}
           <Popover
             interactionKind="hover"
             position="bottom"
             content={
-              <Box padding={{vertical: 8, horizontal: 12}} flex={{direction: 'column', gap: 4}}>
+              <Box
+                padding={{vertical: 8, horizontal: 12}}
+                style={{
+                  maxHeight: 'min(500px, 50vh)',
+                  overflowY: 'scroll',
+                  display: 'grid',
+                  gap: 4,
+                }}
+              >
                 {arr.map((value, index) => (
                   <div
                     key={index}
@@ -330,7 +371,7 @@ export function SetFilterActiveState({
         </Box>
       );
     }
-  }, [arr, getStringValue, getTooltipText, highlightColor, isAnyOf, renderLabel]);
+  }, [arr, getStringValue, getTooltipText, highlightColor, renderLabel, startingMessage]);
 
   if (arr.length === 0) {
     return null;
@@ -339,11 +380,7 @@ export function SetFilterActiveState({
     <FilterTag
       iconName={icon}
       theme={theme}
-      label={
-        <Box flex={{direction: 'row', alignItems: 'center'}}>
-          {capitalizeFirstLetter(name)}&nbsp;{label}
-        </Box>
-      }
+      label={<Box flex={{direction: 'row', alignItems: 'center'}}>{label}</Box>}
       onRemove={onRemove}
     />
   );

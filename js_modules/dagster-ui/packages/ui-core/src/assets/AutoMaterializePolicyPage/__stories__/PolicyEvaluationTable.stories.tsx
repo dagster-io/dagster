@@ -1,6 +1,4 @@
 import {
-  buildAssetSubset,
-  buildAssetSubsetValue,
   buildAutomationConditionEvaluationNode,
   buildPartitionedAssetConditionEvaluationNode,
   buildSpecificPartitionAssetConditionEvaluationNode,
@@ -34,6 +32,8 @@ export const NonPartitioned = () => {
   return (
     <PolicyEvaluationTable
       evaluationNodes={nodes}
+      assetKeyPath={['foo', 'bar']}
+      evaluationId={1}
       rootUniqueId="a"
       isLegacyEvaluation
       selectPartition={() => {}}
@@ -76,6 +76,8 @@ export const NewTableStyle = () => {
   return (
     <PolicyEvaluationTable
       evaluationNodes={nodes}
+      assetKeyPath={['foo', 'bar']}
+      evaluationId={1}
       rootUniqueId="a"
       isLegacyEvaluation={false}
       selectPartition={() => {}}
@@ -90,11 +92,7 @@ export const Partitioned = () => {
       endTimestamp: 10,
       uniqueId: 'a',
       description: 'hi i am partitioned',
-      candidateSubset: buildAssetSubset({
-        subsetValue: buildAssetSubsetValue({
-          partitionKeys: ['100', '101', '102'],
-        }),
-      }),
+      numCandidates: 3,
       childUniqueIds: ['b'],
     }),
     buildPartitionedAssetConditionEvaluationNode({
@@ -102,17 +100,15 @@ export const Partitioned = () => {
       endTimestamp: 10,
       uniqueId: 'b',
       description: 'child condition',
-      candidateSubset: buildAssetSubset({
-        subsetValue: buildAssetSubsetValue({
-          partitionKeys: ['100', '101', '102'],
-        }),
-      }),
+      numCandidates: 3,
     }),
   ];
 
   return (
     <PolicyEvaluationTable
       evaluationNodes={nodes}
+      assetKeyPath={['foo', 'bar']}
+      evaluationId={1}
       rootUniqueId="a"
       isLegacyEvaluation
       selectPartition={() => {}}
@@ -136,6 +132,8 @@ export const SpecificPartition = () => {
   return (
     <PolicyEvaluationTable
       evaluationNodes={nodes}
+      assetKeyPath={['foo', 'bar']}
+      evaluationId={1}
       rootUniqueId="a"
       isLegacyEvaluation
       selectPartition={() => {}}

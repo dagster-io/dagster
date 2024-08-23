@@ -55,7 +55,7 @@ from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
@@ -485,7 +485,7 @@ def test_implicit_global_job():
 
     defs = Definitions(assets=[asset_one])
 
-    assert defs.get_implicit_global_asset_job_def()
+    assert defs.has_implicit_global_asset_job_def()
     assert len(defs.get_all_job_defs()) == 1
 
 
@@ -496,7 +496,7 @@ def test_implicit_global_job_with_job_defined():
 
     defs = Definitions(assets=[asset_one], jobs=[define_asset_job("all_assets_job", selection="*")])
 
-    assert defs.get_implicit_global_asset_job_def()
+    assert defs.has_implicit_global_asset_job_def()
     assert defs.get_job_def("all_assets_job")
     assert defs.get_job_def("all_assets_job") is not defs.get_implicit_global_asset_job_def()
 
@@ -534,6 +534,8 @@ def test_implicit_job_with_source_assets():
     defs = Definitions(assets=[source_asset, downstream_of_source])
     assert defs.get_all_job_defs()
     assert len(defs.get_all_job_defs()) == 1
+    assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
+    assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
 
 
@@ -1007,6 +1009,23 @@ def test_hoist_automation_assets():
 
     # We can define and execute asset jobs that reference assets only defined in targets
     assert defs.get_job_def(foo_job.name).execute_in_process().success
+
+
+def test_definitions_failure_on_asset_job_resolve():
+    @asset
+    def asset_not_in_defs():
+        pass
+
+    invalid_job = define_asset_job("invalid_job", selection=[asset_not_in_defs])
+
+    defs = Definitions(
+        jobs=[invalid_job],
+    )
+
+    with pytest.raises(
+        DagsterInvalidSubsetError, match="no AssetsDefinition objects supply these keys"
+    ):
+        Definitions.validate_loadable(defs)
 
 
 def test_definitions_dedupe_reference_equality():

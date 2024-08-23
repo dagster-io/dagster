@@ -289,9 +289,9 @@ def test_asset_io_manager_transitive_dependencies():
         assert context.resources.foo == "bar"
 
     with pytest.raises(
-        DagsterInvariantViolationError,
+        DagsterInvalidDefinitionError,
         match=(
-            "Resource with key 'foo' required by resource with key 'the_resource', but not"
+            "resource with key 'foo' required by resource with key 'the_resource' was not"
             " provided."
         ),
     ):

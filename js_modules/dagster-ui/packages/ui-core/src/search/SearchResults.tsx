@@ -18,6 +18,7 @@ import {
   SearchResultType,
   isAssetFilterSearchResultType,
 } from './types';
+import {assertUnreachable} from '../app/Util';
 import {isCanonicalComputeKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
 import {KNOWN_TAGS, TagIcon} from '../graph/OpTags';
 
@@ -54,8 +55,12 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'tag';
     case AssetFilterSearchResultType.StorageKind:
       return 'storage_kind';
-    default:
+    case SearchResultType.Page:
       return 'source';
+    case AssetFilterSearchResultType.Column:
+      return 'view_column';
+    default:
+      assertUnreachable(type);
   }
 };
 
@@ -73,16 +78,19 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Group';
     case AssetFilterSearchResultType.StorageKind:
       return 'Storage kind';
+    case AssetFilterSearchResultType.Column:
+      return 'Column';
     default:
-      return '';
+      assertUnreachable(type);
   }
 };
 
-interface ItemProps {
+type ResultType = Fuse.FuseResult<SearchResult> | Pick<Fuse.FuseResult<SearchResult>, 'item'>;
+type ItemProps<T extends ResultType> = {
   isHighlight: boolean;
-  onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
-  result: Fuse.FuseResult<SearchResult>;
-}
+  onClickResult: (result: T) => void;
+  result: T;
+};
 
 function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] {
   // Fuse provides indices of the label that match the query string.
@@ -164,7 +172,11 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
   return icons;
 }
 
-export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
+export const SearchResultItem = <T extends ResultType>({
+  isHighlight,
+  onClickResult,
+  result,
+}: ItemProps<T>) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
 
@@ -184,7 +196,7 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
     [onClickResult, result],
   );
 
-  const labelComponents = buildSearchLabel(result);
+  const labelComponents = 'refIndex' in result ? buildSearchLabel(result) : [<>{item.label}</>];
 
   return (
     <Item isHighlight={isHighlight} ref={element}>
@@ -200,7 +212,7 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
               {isAssetFilterSearchResultType(item.type) && (
                 <Caption>{assetFilterPrefixString(item.type)}:</Caption>
               )}
-              <div>{labelComponents.map((component) => component)}</div>
+              <div>{labelComponents}</div>
               {item.repoPath && <Caption>in {item.repoPath}</Caption>}
             </Box>
           </StyledTag>
@@ -213,19 +225,23 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
       </ResultLink>
     </Item>
   );
-});
+};
 
-export interface SearchResultsProps {
+export type SearchResultsProps<T extends ResultType> = {
   highlight: number;
-  onClickResult: (result: Fuse.FuseResult<SearchResult>) => void;
+  onClickResult: (result: T) => void;
   queryString: string;
-  results: Fuse.FuseResult<SearchResult>[];
-}
+  results: T[];
+  searching: boolean;
+};
 
-export const SearchResults = (props: SearchResultsProps) => {
-  const {highlight, onClickResult, queryString, results} = props;
+export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>) => {
+  const {highlight, onClickResult, queryString, results, searching} = props;
 
   if (!results.length && queryString) {
+    if (searching) {
+      return;
+    }
     return <NoResults>No results</NoResults>;
   }
 

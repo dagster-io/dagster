@@ -1,9 +1,11 @@
 import os
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from typing import Any, Mapping, Optional, Sequence
 
 import dagster._seven as seven
 from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobSasPermissions, BlobServiceClient, UserDelegationKey
 from dagster import (
     Field,
     Noneable,
@@ -43,7 +45,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
           config:
             storage_account: my-storage-account
             container: my-container
-            credential: sas-token-or-secret-key
+            secret_key: sas-token-or-secret-key
             default_azure_credential:
               exclude_environment_credential: true
             prefix: "dagster-test-"
@@ -83,12 +85,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             default_azure_credential, "default_azure_credential"
         )
         check.opt_str_param(secret_key, "secret_key")
-        check.invariant(
-            secret_key is not None or default_azure_credential is not None,
-            "Missing config: need to provide one of secret_key or default_azure_credential",
-        )
 
-        if default_azure_credential is None:
+        if secret_key is not None:
             self._blob_client = create_blob_client(storage_account, secret_key)
         else:
             credential = DefaultAzureCredential(**self._default_azure_credential)
@@ -121,13 +119,13 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         return {
             "storage_account": StringSource,
             "container": StringSource,
-            "secret_key": Field(StringSource, is_required=False),
+            "secret_key": Field(Noneable(StringSource), is_required=False, default_value=None),
             "default_azure_credential": Field(
                 Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
                 is_required=False,
                 default_value=None,
             ),
-            "local_dir": Field(StringSource, is_required=False),
+            "local_dir": Field(Noneable(StringSource), is_required=False, default_value=None),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
         }
@@ -205,15 +203,43 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         if blob_key in self._download_urls:
             return self._download_urls[blob_key]
         blob = self._container_client.get_blob_client(blob_key)
+        user_delegation_key = None
+        account_key = None
+        if hasattr(self._blob_client.credential, "account_key"):
+            account_key = self._blob_client.credential.account_key
+        else:
+            user_delegation_key = self._request_user_delegation_key(self._blob_client)
+
         sas = generate_blob_sas(
             self._storage_account,
             self._container,
             blob_key,
-            account_key=self._blob_client.credential.account_key,
+            account_key=account_key,
+            user_delegation_key=user_delegation_key,
+            expiry=datetime.now() + timedelta(hours=6),
+            permission=BlobSasPermissions(read=True),
         )
-        url = blob.url + sas
+        url = blob.url + "?" + sas
         self._download_urls[blob_key] = url
         return url
+
+    def _request_user_delegation_key(
+        self,
+        blob_service_client: BlobServiceClient,
+    ) -> UserDelegationKey:
+        """Creates user delegation key when a service principal is used or other authentication other than
+        account key.
+        """
+        # Get a user delegation key that's valid for 1 day
+        delegation_key_start_time = datetime.now(timezone.utc)
+        delegation_key_expiry_time = delegation_key_start_time + timedelta(days=1)
+
+        user_delegation_key = blob_service_client.get_user_delegation_key(
+            key_start_time=delegation_key_start_time,
+            key_expiry_time=delegation_key_expiry_time,
+        )
+
+        return user_delegation_key
 
     def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):
@@ -238,7 +264,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         blob_key = self._blob_key(log_key, io_type, partial=partial)
         with open(path, "rb") as data:
             blob = self._container_client.get_blob_client(blob_key)
-            blob.upload_blob(data)
+            blob.upload_blob(data, **{"overwrite": partial})  # type: ignore
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False

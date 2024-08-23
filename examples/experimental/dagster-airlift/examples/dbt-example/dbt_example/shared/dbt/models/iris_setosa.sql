@@ -1,0 +1,1 @@
+select * from {{ source('lakehouse', 'iris_lakehouse_table') }} where species = 'Iris-setosa'

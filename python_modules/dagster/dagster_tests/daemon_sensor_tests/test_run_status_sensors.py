@@ -19,7 +19,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation import CodeLocation, ExternalRepository
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
     environ,
@@ -1747,5 +1746,4 @@ def test_logging_run_status_sensor(
         assert records
         record = records[0]
         assert record[LOG_RECORD_METADATA_ATTR]["orig_message"] == f"run succeeded: {run.run_id}"
-        assert isinstance(instance.compute_log_manager, CapturedLogManager)
         instance.compute_log_manager.delete_logs(log_key=tick.log_key)

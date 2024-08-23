@@ -1,0 +1,48 @@
+## This rule finds section headings that don't use sentence casing.
+## Ex: This is correct, but This Is Not Correct
+
+extends: capitalization
+message: "'%s' should be in sentence case"
+level: error
+scope: heading
+match: $sentence
+exceptions:
+  - Airbyte
+  - AirFlow
+  - "Amazon (ECS|Redshift)"
+  - Azure Active Directory
+  - BigQuery
+  - Branch Deployments
+  - Change Tracking
+  - CI
+  - CLI
+  - Databricks
+  - Datadog
+  - dbt
+  - DuckDB
+  - ETL
+  - GitHub
+  - Gitlab
+  - "Google (BigQuery|Cloud Platform|Workspace)"
+  - Hybrid
+  - Insights
+  - IP
+  - Microsoft Teams
+  - MLflow
+  - MongoDB
+  - MySQL
+  - OneLogin
+  - Okta
+  - OpenAI
+  - PagerDuty
+  - Pandera
+  - PingOne
+  - Postgres
+  - Role-based Access Control
+  - S3
+  - SCIM
+  - Slack
+  - Snowflake
+  - SSO
+  - Twilio
+  - UI

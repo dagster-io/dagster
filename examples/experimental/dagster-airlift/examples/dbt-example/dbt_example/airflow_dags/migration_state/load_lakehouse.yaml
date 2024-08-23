@@ -1,0 +1,3 @@
+tasks:
+  load_iris:
+    migrated: True 

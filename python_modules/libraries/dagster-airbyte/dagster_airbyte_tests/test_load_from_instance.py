@@ -288,7 +288,9 @@ def test_load_from_instance(
 
 
 def test_load_from_instance_cloud() -> None:
-    airbyte_cloud_instance = AirbyteCloudResource(api_key="foo", poll_interval=0)
+    airbyte_cloud_instance = AirbyteCloudResource(
+        client_id="some_client_id", client_secret="some_client_secret", poll_interval=0
+    )
 
     with pytest.raises(
         DagsterInvalidInvocationError,

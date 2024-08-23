@@ -8,7 +8,7 @@ from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionEvaluation,
-    AutomationConditionSnapshot,
+    AutomationConditionNodeSnapshot,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
@@ -735,7 +735,7 @@ class TestScheduleStorage:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
 
-        condition_snapshot = AutomationConditionSnapshot(
+        condition_snapshot = AutomationConditionNodeSnapshot(
             class_name="foo", description="bar", unique_id=""
         )
 
@@ -773,36 +773,36 @@ class TestScheduleStorage:
                 asset_key=AssetKey("asset_one"), limit=100
             )
             assert len(res) == 1
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+            assert res[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey(
                 "asset_one"
             )
             assert res[0].evaluation_id == 10
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 0
+            assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 0
 
             res = storage.get_auto_materialize_asset_evaluations(
                 asset_key=AssetKey("asset_two"), limit=100
             )
             assert len(res) == 1
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+            assert res[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey(
                 "asset_two"
             )
             assert res[0].evaluation_id == 10
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+            assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 1
 
             res = storage.get_auto_materialize_evaluations_for_evaluation_id(evaluation_id=10)
 
             assert len(res) == 2
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+            assert res[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey(
                 "asset_one"
             )
             assert res[0].evaluation_id == 10
-            assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 0
+            assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 0
 
-            assert res[1].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+            assert res[1].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey(
                 "asset_two"
             )
             assert res[1].evaluation_id == 10
-            assert res[1].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+            assert res[1].get_evaluation_with_run_ids().evaluation.true_subset.size == 1
 
         storage.add_auto_materialize_asset_evaluations(
             evaluation_id=11,
@@ -841,7 +841,7 @@ class TestScheduleStorage:
         # add a mix of keys - one that already is using the unique index and one that is not
 
         eval_one = AutomationConditionEvaluation(
-            condition_snapshot=AutomationConditionSnapshot(
+            condition_snapshot=AutomationConditionNodeSnapshot(
                 class_name="foo", description="bar", unique_id=""
             ),
             start_timestamp=0,
@@ -853,7 +853,7 @@ class TestScheduleStorage:
         ).with_run_ids(set())
 
         eval_asset_three = AutomationConditionEvaluation(
-            condition_snapshot=AutomationConditionSnapshot(
+            condition_snapshot=AutomationConditionNodeSnapshot(
                 class_name="foo", description="bar", unique_id=""
             ),
             start_timestamp=0,
@@ -877,7 +877,7 @@ class TestScheduleStorage:
         )
         assert len(res) == 2
         assert res[0].evaluation_id == 11
-        assert res[0].get_evaluation_with_run_ids(None).evaluation == eval_one.evaluation
+        assert res[0].get_evaluation_with_run_ids().evaluation == eval_one.evaluation
 
         res = storage.get_auto_materialize_asset_evaluations(
             asset_key=AssetKey("asset_three"), limit=100
@@ -885,7 +885,7 @@ class TestScheduleStorage:
 
         assert len(res) == 1
         assert res[0].evaluation_id == 11
-        assert res[0].get_evaluation_with_run_ids(None).evaluation == eval_asset_three.evaluation
+        assert res[0].get_evaluation_with_run_ids().evaluation == eval_asset_three.evaluation
 
     def test_auto_materialize_asset_evaluations_with_partitions(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
@@ -906,7 +906,7 @@ class TestScheduleStorage:
             evaluation_id=10,
             asset_evaluations=[
                 AutomationConditionEvaluation(
-                    condition_snapshot=AutomationConditionSnapshot(
+                    condition_snapshot=AutomationConditionNodeSnapshot(
                         class_name="foo", description="bar", unique_id=""
                     ),
                     start_timestamp=0,
@@ -923,14 +923,12 @@ class TestScheduleStorage:
             asset_key=AssetKey("asset_two"), limit=100
         )
         assert len(res) == 1
-        assert res[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-            "asset_two"
-        )
+        assert res[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey("asset_two")
         assert res[0].evaluation_id == 10
-        assert res[0].get_evaluation_with_run_ids(None).evaluation.true_subset.size == 1
+        assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 1
 
         assert (
-            res[0].get_evaluation_with_run_ids(None).evaluation.subsets_with_metadata[0]
+            res[0].get_evaluation_with_run_ids().evaluation.subsets_with_metadata[0]
             == asset_subset_with_metadata
         )
 
@@ -942,7 +940,7 @@ class TestScheduleStorage:
             evaluation_id=11,
             asset_evaluations=[
                 AutomationConditionEvaluation(
-                    condition_snapshot=AutomationConditionSnapshot(
+                    condition_snapshot=AutomationConditionNodeSnapshot(
                         class_name="foo", description="bar", unique_id=""
                     ),
                     start_timestamp=0,

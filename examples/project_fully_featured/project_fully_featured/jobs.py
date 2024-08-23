@@ -1,8 +1,8 @@
 from dagster import AssetSelection, build_schedule_from_partitioned_job, define_asset_job
 
-from .assets import ACTIVITY_ANALYTICS, CORE, RECOMMENDER
+from .constants import ACTIVITY_ANALYTICS, CORE, RECOMMENDER
 from .partitions import hourly_partitions
-from .sensors import make_hn_tables_updated_sensor
+from .sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 
 activity_analytics_assets_sensor = make_hn_tables_updated_sensor(
     # selecting by group allows us to include the activity_analytics assets that are defined in dbt

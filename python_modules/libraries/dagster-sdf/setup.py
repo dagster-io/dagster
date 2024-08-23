@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 from setuptools import find_packages, setup
 
 
-def get_version() -> Tuple[str, str]:
+def get_version() -> Tuple[str, str, str]:
     version: Dict[str, str] = {}
     sdf_version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_sdf/version.py", encoding="utf8") as fp:
@@ -13,10 +13,14 @@ def get_version() -> Tuple[str, str]:
     with open(Path(__file__).parent / "dagster_sdf/sdf_version.py", encoding="utf8") as fp:
         exec(fp.read(), sdf_version)
 
-    return version["__version__"], sdf_version["SDF_VERSION_UPPER_BOUND"]
+    return (
+        version["__version__"],
+        sdf_version["SDF_VERSION_UPPER_BOUND"],
+        sdf_version["SDF_VERSION_LOWER_BOUND"],
+    )
 
 
-dagster_sdf_version, SDF_VERSION_UPPER_BOUND = get_version()
+dagster_sdf_version, SDF_VERSION_UPPER_BOUND, SDF_VERSION_LOWER_BOUND = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if dagster_sdf_version == "1!0+dev" else f"=={dagster_sdf_version}"
 setup(
@@ -41,7 +45,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
-        f"sdf-cli>=0.3.16,<{SDF_VERSION_UPPER_BOUND}",
+        f"sdf-cli>={SDF_VERSION_LOWER_BOUND},<{SDF_VERSION_UPPER_BOUND}",
         "orjson",
         "polars",
         "typer>=0.9.0",

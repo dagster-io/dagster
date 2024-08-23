@@ -87,8 +87,11 @@ class AssetSpec(
     ),
     IHasInternalInit,
 ):
-    """Specifies the core attributes of an asset. This object is attached to the decorated
-    function that defines how it materialized.
+    """Specifies the core attributes of an asset, except for the function that materializes or
+    observes it.
+
+    An asset spec plus any materialization or observation function for the asset constitutes an
+    "asset definition".
 
     Attributes:
         key (AssetKey): The unique identifier for this asset.
@@ -114,6 +117,8 @@ class AssetSpec(
             e.g. `team:finops`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the asset.
     """
 
     def __new__(

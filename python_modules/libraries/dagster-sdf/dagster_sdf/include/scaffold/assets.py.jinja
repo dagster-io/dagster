@@ -10,4 +10,4 @@ workspace = SdfWorkspace(workspace_dir=sdf_workspace_dir, target_dir=target_dir,
 
 @sdf_assets(workspace=workspace)
 def {{ sdf_assets_name }}(context: AssetExecutionContext, sdf: SdfCliResource):
-    yield from sdf.cli(["run", "--save", "info-schema", "--cache", "write-only"], target_dir=target_dir, environment=environment, context=context).stream()
+    yield from sdf.cli(["run", "--save", "info-schema"], target_dir=target_dir, environment=environment, context=context).stream()

@@ -9,9 +9,9 @@ import {ClearButton} from '../ui/ClearButton';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 type Asset = {
-  definition: {
-    groupName: string | null;
-    repository: {name: string; location: {name: string}};
+  definition?: {
+    groupName?: string | null;
+    repository?: {name: string; location: {name: string}} | null;
   } | null;
 };
 
@@ -121,11 +121,11 @@ export const buildAssetGroupSelector = memoize(
     return a.definition && a.definition.groupName
       ? {
           groupName: a.definition.groupName,
-          repositoryName: a.definition.repository.name,
-          repositoryLocationName: a.definition.repository.location.name,
+          repositoryName: a.definition.repository?.name,
+          repositoryLocationName: a.definition.repository?.location.name,
         }
       : null;
   },
   (a: Asset) =>
-    `${a.definition?.groupName}@!${a.definition?.repository.name}@!${a.definition?.repository.location.name}`,
+    `${a.definition?.groupName}@!${a.definition?.repository?.name}@!${a.definition?.repository?.location.name}`,
 );

@@ -34,8 +34,8 @@ from dagster import (
 from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
-    ResourceWithKeyMapping,
 )
+from dagster._config.pythonic_config.resource import coerce_to_resource, is_coercible_to_resource
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions import (
     AssetSelection,
@@ -46,16 +46,19 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
+from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
+)
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionSnapshot,
 )
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
@@ -82,6 +85,7 @@ from dagster._core.definitions.partition_mapping import (
     get_builtin_partition_mapping_types,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
@@ -97,7 +101,7 @@ from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
-from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._time import datetime_from_timestamp
@@ -266,7 +270,7 @@ class ExternalPresetData(IHaveNew):
     old_fields={"is_job": True},
 )
 @record
-class ExternalJobData(LegacyNamedTupleMixin):
+class ExternalJobData:
     name: str
     job_snapshot: JobSnapshot
     active_presets: Sequence[ExternalPresetData]
@@ -278,7 +282,7 @@ class ExternalJobData(LegacyNamedTupleMixin):
     storage_field_names={"external_job_data": "external_pipeline_data"},
 )
 @record
-class ExternalJobSubsetResult(LegacyNamedTupleMixin):
+class ExternalJobSubsetResult:
     success: bool
     error: Optional[SerializableErrorInfo] = None
     external_job_data: Optional[ExternalJobData] = None
@@ -515,9 +519,10 @@ class SensorSnap(IHaveNew):
 
         if sensor_def.asset_selection is not None:
             target_dict = {
-                IMPLICIT_ASSET_JOB_NAME: ExternalTargetData(
-                    job_name=IMPLICIT_ASSET_JOB_NAME, mode=DEFAULT_MODE_NAME, op_selection=None
+                base_asset_job_name: ExternalTargetData(
+                    job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
                 )
+                for base_asset_job_name in repository_def.get_implicit_asset_job_names()
             }
 
             serializable_asset_selection = (
@@ -1009,6 +1014,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
     storage_field_names={
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
+        "description": "op_description",
     },
     field_serializers={
         "metadata": MetadataFieldSerializer,
@@ -1033,13 +1039,10 @@ class ExternalAssetNode(IHaveNew):
     code_version: Optional[str]
     node_definition_name: Optional[str]
     graph_name: Optional[str]
-    # op_description is a misleading name - this is the description for the asset, not for
-    # the op
-    op_description: Optional[str]
+    description: Optional[str]
     job_names: Sequence[str]
     partitions_def_data: Optional[ExternalPartitionsDefinitionData]
     output_name: Optional[str]
-    output_description: Optional[str]
     metadata: Mapping[str, MetadataValue]
     tags: Optional[Mapping[str, str]]
     group_name: str
@@ -1052,6 +1055,7 @@ class ExternalAssetNode(IHaveNew):
     execution_set_identifier: Optional[str]
     required_top_level_resources: Optional[Sequence[str]]
     auto_materialize_policy: Optional[AutoMaterializePolicy]
+    automation_condition_snapshot: Optional[AutomationConditionSnapshot]
     backfill_policy: Optional[BackfillPolicy]
     auto_observe_interval_minutes: Optional[Union[float, int]]
     owners: Optional[Sequence[str]]
@@ -1068,11 +1072,10 @@ class ExternalAssetNode(IHaveNew):
         code_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
-        op_description: Optional[str] = None,
+        description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
-        output_description: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
         tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
@@ -1082,6 +1085,7 @@ class ExternalAssetNode(IHaveNew):
         execution_set_identifier: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[Union[float, int]] = None,
         owners: Optional[Sequence[str]] = None,
@@ -1131,6 +1135,14 @@ class ExternalAssetNode(IHaveNew):
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
 
+        if auto_materialize_policy and auto_materialize_policy.asset_condition:
+            automation_condition_snapshot = (
+                auto_materialize_policy.to_automation_condition().get_snapshot()
+            )
+            # do not include automation conditions containing user-defined info on the ExternalAssetNode
+            if not auto_materialize_policy.asset_condition.is_serializable:
+                auto_materialize_policy = None
+
         return super().__new__(
             cls,
             asset_key=asset_key,
@@ -1142,11 +1154,10 @@ class ExternalAssetNode(IHaveNew):
             code_version=code_version,
             node_definition_name=node_definition_name,
             graph_name=graph_name,
-            op_description=op_description or output_description,
+            description=description,
             job_names=job_names or [],
             partitions_def_data=partitions_def_data,
             output_name=output_name,
-            output_description=output_description,
             metadata=metadata,
             tags=tags or {},
             # Newer code always passes a string group name when constructing these, but we assign
@@ -1158,6 +1169,7 @@ class ExternalAssetNode(IHaveNew):
             execution_set_identifier=execution_set_identifier,
             required_top_level_resources=required_top_level_resources or [],
             auto_materialize_policy=auto_materialize_policy,
+            automation_condition_snapshot=automation_condition_snapshot,
             backfill_policy=backfill_policy,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
@@ -1200,7 +1212,8 @@ def _get_resource_usage_from_node(
     handle = NodeHandle(node.name, parent_handle)
     if isinstance(node, OpNode):
         for resource_req in node.get_resource_requirements(pipeline.graph):
-            yield NodeHandleResourceUse(resource_req.key, handle)
+            if isinstance(resource_req, ResourceKeyRequirement):
+                yield NodeHandleResourceUse(resource_req.key, handle)
     elif isinstance(node, GraphNode):
         for nested_node in node.definition.nodes:
             yield from _get_resource_usage_from_node(pipeline, nested_node, handle)
@@ -1211,7 +1224,7 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
 
     for job_def in job_defs:
         job_name = job_def.name
-        if job_name == IMPLICIT_ASSET_JOB_NAME:
+        if is_base_asset_job_name(job_name):
             continue
 
         resource_usage: List[NodeHandleResourceUse] = []
@@ -1259,7 +1272,7 @@ def external_repository_data_from_def(
     )
 
     nested_resource_map = _get_nested_resources_map(
-        resource_datas, repository_def.get_resource_key_mapping()
+        resource_datas, repository_def.get_top_level_resources()
     )
     inverted_nested_resources_map: Dict[str, Dict[str, str]] = defaultdict(dict)
     for resource_key, nested_resources in nested_resource_map.items():
@@ -1470,7 +1483,7 @@ def external_asset_nodes_from_defs(
                 code_version=asset_node.code_version,
                 node_definition_name=node_definition_name,
                 graph_name=graph_name,
-                op_description=asset_node.description,
+                description=asset_node.description,
                 job_names=job_names,
                 partitions_def_data=(
                     external_partitions_definition_from_def(asset_node.partitions_def)
@@ -1526,20 +1539,32 @@ def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
 
 
 def _get_nested_resources_map(
-    resource_datas: Mapping[str, ResourceDefinition], resource_key_mapping: Mapping[int, str]
+    resource_datas: Mapping[str, ResourceDefinition],
+    top_level_resources: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, Mapping[str, NestedResource]]:
     out_map: Mapping[str, Mapping[str, NestedResource]] = {}
     for resource_name, resource_def in resource_datas.items():
-        out_map[resource_name] = _get_nested_resources(resource_def, resource_key_mapping)
+        out_map[resource_name] = _get_nested_resources(resource_def, top_level_resources)
     return out_map
 
 
-def _get_nested_resources(
-    resource_def: ResourceDefinition, resource_key_mapping: Mapping[int, str]
-) -> Mapping[str, NestedResource]:
-    if isinstance(resource_def, ResourceWithKeyMapping):
-        resource_def = resource_def.wrapped_resource
+def _find_match(nested_resource, resource_defs) -> Optional[str]:
+    if is_coercible_to_resource(nested_resource):
+        defn = coerce_to_resource(nested_resource)
+    else:
+        return None
 
+    for k, v in resource_defs.items():
+        if defn is v:
+            return k
+
+    return None
+
+
+def _get_nested_resources(
+    resource_def: ResourceDefinition,
+    top_level_resources: Mapping[str, ResourceDefinition],
+) -> Mapping[str, NestedResource]:
     # ConfigurableResources may have "anonymous" nested resources, which are not
     # explicitly specified as top-level resources
     if isinstance(
@@ -1549,18 +1574,16 @@ def _get_nested_resources(
             ConfigurableIOManagerFactoryResourceDefinition,
         ),
     ):
-        return {
-            k: (
-                NestedResource(
-                    NestedResourceType.TOP_LEVEL, resource_key_mapping[id(nested_resource)]
-                )
-                if id(nested_resource) in resource_key_mapping
-                else NestedResource(
+        results = {}
+        for k, nested_resource in resource_def.nested_resources.items():
+            top_level_key = _find_match(nested_resource, top_level_resources)
+            if top_level_key:
+                results[k] = NestedResource(NestedResourceType.TOP_LEVEL, top_level_key)
+            else:
+                results[k] = NestedResource(
                     NestedResourceType.ANONYMOUS, nested_resource.__class__.__name__
                 )
-            )
-            for k, nested_resource in resource_def.nested_resources.items()
-        }
+        return results
     else:
         return {
             k: NestedResource(NestedResourceType.TOP_LEVEL, k)
@@ -1615,8 +1638,6 @@ def external_resource_data_from_def(
     }
 
     resource_type_def = resource_def
-    if isinstance(resource_type_def, ResourceWithKeyMapping):
-        resource_type_def = resource_type_def.wrapped_resource
 
     # use the resource function name as the resource type if it's a function resource
     # (ie direct instantiation of ResourceDefinition or IOManagerDefinition)

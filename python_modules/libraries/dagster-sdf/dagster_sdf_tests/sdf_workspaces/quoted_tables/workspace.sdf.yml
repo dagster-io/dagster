@@ -1,0 +1,9 @@
+workspace:
+  edition: "1.3"
+  name: quoted_tables
+  defaults:
+    dialect: snowflake
+    preprocessor: jinja
+    materialization: table
+  includes:
+    - path: models

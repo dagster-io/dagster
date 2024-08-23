@@ -331,6 +331,7 @@ export enum AssetConditionEvaluationStatus {
 
 export type AssetConnection = {
   __typename: 'AssetConnection';
+  cursor: Maybe<Scalars['String']['output']>;
   nodes: Array<Asset>;
 };
 
@@ -599,20 +600,6 @@ export type AssetSelection = {
   assetsOrError: AssetsOrError;
 };
 
-export type AssetSubset = {
-  __typename: 'AssetSubset';
-  assetKey: AssetKey;
-  subsetValue: AssetSubsetValue;
-};
-
-export type AssetSubsetValue = {
-  __typename: 'AssetSubsetValue';
-  boolValue: Maybe<Scalars['Boolean']['output']>;
-  isPartitioned: Scalars['Boolean']['output'];
-  partitionKeyRanges: Maybe<Array<PartitionKeyRange>>;
-  partitionKeys: Maybe<Array<Scalars['String']['output']>>;
-};
-
 export type AssetWipeMutationResult =
   | AssetNotFoundError
   | AssetWipeSuccess
@@ -699,14 +686,13 @@ export type AutoMaterializeRuleWithRuleEvaluations = {
 
 export type AutomationConditionEvaluationNode = {
   __typename: 'AutomationConditionEvaluationNode';
-  candidateSubset: Maybe<AssetSubset>;
   childUniqueIds: Array<Scalars['String']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
   expandedLabel: Array<Scalars['String']['output']>;
   isPartitioned: Scalars['Boolean']['output'];
+  numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
-  trueSubset: AssetSubset;
   uniqueId: Scalars['String']['output'];
   userLabel: Maybe<Scalars['String']['output']>;
 };
@@ -743,6 +729,12 @@ export enum BulkActionStatus {
   FAILED = 'FAILED',
   REQUESTED = 'REQUESTED',
 }
+
+export type BulkActionsFilter = {
+  createdAfter?: InputMaybe<Scalars['Float']['input']>;
+  createdBefore?: InputMaybe<Scalars['Float']['input']>;
+  statuses?: InputMaybe<Array<BulkActionStatus>>;
+};
 
 export type CancelBackfillResult = CancelBackfillSuccess | PythonError | UnauthorizedError;
 
@@ -1878,11 +1870,6 @@ export type InputMapping = {
   mappedInput: Input;
 };
 
-export type InputTag = {
-  name: Scalars['String']['input'];
-  value: Scalars['String']['input'];
-};
-
 export type Instance = {
   __typename: 'Instance';
   autoMaterializePaused: Scalars['Boolean']['output'];
@@ -2093,6 +2080,8 @@ export type Job = IPipelineSnapshot &
     modes: Array<Mode>;
     name: Scalars['String']['output'];
     parentSnapshotId: Maybe<Scalars['String']['output']>;
+    partition: Maybe<PartitionTagsAndConfig>;
+    partitionKeysOrError: PartitionKeys;
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
@@ -2107,6 +2096,18 @@ export type Job = IPipelineSnapshot &
 
 export type JobDagsterTypeOrErrorArgs = {
   dagsterTypeName: Scalars['String']['input'];
+};
+
+export type JobPartitionArgs = {
+  partitionName: Scalars['String']['input'];
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
+};
+
+export type JobPartitionKeysOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  reverse?: InputMaybe<Scalars['Boolean']['input']>;
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
 export type JobRunsArgs = {
@@ -3056,20 +3057,24 @@ export type PartitionRunsArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
-export type PartitionBackfill = {
+export type PartitionBackfill = RunsFeedEntry & {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
+  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
   assetSelection: Maybe<Array<AssetKey>>;
   cancelableRuns: Array<Run>;
+  creationTime: Scalars['Float']['output'];
   description: Maybe<Scalars['String']['output']>;
+  endTime: Maybe<Scalars['Float']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean']['output'];
   hasCancelPermission: Scalars['Boolean']['output'];
   hasResumePermission: Scalars['Boolean']['output'];
-  id: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
   isAssetBackfill: Scalars['Boolean']['output'];
   isValidSerialization: Scalars['Boolean']['output'];
+  jobName: Maybe<Scalars['String']['output']>;
   logEvents: InstigationEventConnection;
   numCancelable: Scalars['Int']['output'];
   numPartitions: Maybe<Scalars['Int']['output']>;
@@ -3080,7 +3085,9 @@ export type PartitionBackfill = {
   partitionStatuses: Maybe<PartitionStatuses>;
   partitionsTargetedForAssetKey: Maybe<AssetBackfillTargetPartitions>;
   reexecutionSteps: Maybe<Array<Scalars['String']['output']>>;
+  runStatus: RunStatus;
   runs: Array<Run>;
+  startTime: Maybe<Scalars['Float']['output']>;
   status: BulkActionStatus;
   tags: Array<PipelineTag>;
   timestamp: Scalars['Float']['output'];
@@ -3275,19 +3282,24 @@ export type PartitionTags = {
   results: Array<PipelineTag>;
 };
 
+export type PartitionTagsAndConfig = {
+  __typename: 'PartitionTagsAndConfig';
+  jobName: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  runConfigOrError: PartitionRunConfigOrError;
+  tagsOrError: PartitionTagsOrError;
+};
+
 export type PartitionTagsOrError = PartitionTags | PythonError;
 
 export type PartitionedAssetConditionEvaluationNode = {
   __typename: 'PartitionedAssetConditionEvaluationNode';
-  candidateSubset: Maybe<AssetSubset>;
   childUniqueIds: Array<Scalars['String']['output']>;
   description: Scalars['String']['output'];
   endTimestamp: Maybe<Scalars['Float']['output']>;
-  numFalse: Maybe<Scalars['Int']['output']>;
-  numSkipped: Maybe<Scalars['Int']['output']>;
+  numCandidates: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
-  trueSubset: AssetSubset;
   uniqueId: Scalars['String']['output'];
 };
 
@@ -3364,6 +3376,8 @@ export type Pipeline = IPipelineSnapshot &
     modes: Array<Mode>;
     name: Scalars['String']['output'];
     parentSnapshotId: Maybe<Scalars['String']['output']>;
+    partition: Maybe<PartitionTagsAndConfig>;
+    partitionKeysOrError: PartitionKeys;
     pipelineSnapshotId: Scalars['String']['output'];
     presets: Array<PipelinePreset>;
     repository: Repository;
@@ -3378,6 +3392,18 @@ export type Pipeline = IPipelineSnapshot &
 
 export type PipelineDagsterTypeOrErrorArgs = {
   dagsterTypeName: Scalars['String']['input'];
+};
+
+export type PipelinePartitionArgs = {
+  partitionName: Scalars['String']['input'];
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
+};
+
+export type PipelinePartitionKeysOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  reverse?: InputMaybe<Scalars['Boolean']['input']>;
+  selectedAssetKeys?: InputMaybe<Array<AssetKeyInput>>;
 };
 
 export type PipelineRunsArgs = {
@@ -3709,6 +3735,7 @@ export type Query = {
   runOrError: RunOrError;
   runTagKeysOrError: Maybe<RunTagKeysOrError>;
   runTagsOrError: Maybe<RunTagsOrError>;
+  runsFeedOrError: RunsFeedConnectionOrError;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -3718,6 +3745,7 @@ export type Query = {
   shouldShowNux: Scalars['Boolean']['output'];
   test: Maybe<TestFields>;
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
+  truePartitionsForAutomationConditionEvaluationNode: Array<Scalars['String']['output']>;
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String']['output'];
   workspaceLocationEntryOrError: Maybe<WorkspaceLocationEntryOrError>;
@@ -3855,6 +3883,7 @@ export type QueryPartitionBackfillOrErrorArgs = {
 
 export type QueryPartitionBackfillsOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
+  filters?: InputMaybe<BulkActionsFilter>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<BulkActionStatus>;
 };
@@ -3921,6 +3950,11 @@ export type QueryRunTagsOrErrorArgs = {
   valuePrefix?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type QueryRunsFeedOrErrorArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit: Scalars['Int']['input'];
+};
+
 export type QueryRunsOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   filter?: InputMaybe<RunsFilter>;
@@ -3947,6 +3981,12 @@ export type QuerySensorsOrErrorArgs = {
 
 export type QueryTopLevelResourceDetailsOrErrorArgs = {
   resourceSelector: ResourceSelector;
+};
+
+export type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
+  assetKey: AssetKeyInput;
+  evaluationId: Scalars['Int']['input'];
+  nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type QueryUtilizedEnvVarsOrErrorArgs = {
@@ -4355,47 +4395,49 @@ export type ResumeBackfillSuccess = {
   backfillId: Scalars['String']['output'];
 };
 
-export type Run = PipelineRun & {
-  __typename: 'Run';
-  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
-  assetMaterializations: Array<MaterializationEvent>;
-  assetSelection: Maybe<Array<AssetKey>>;
-  assets: Array<Asset>;
-  canTerminate: Scalars['Boolean']['output'];
-  capturedLogs: CapturedLogs;
-  creationTime: Scalars['Float']['output'];
-  endTime: Maybe<Scalars['Float']['output']>;
-  eventConnection: EventConnection;
-  executionPlan: Maybe<ExecutionPlan>;
-  hasConcurrencyKeySlots: Scalars['Boolean']['output'];
-  hasDeletePermission: Scalars['Boolean']['output'];
-  hasReExecutePermission: Scalars['Boolean']['output'];
-  hasTerminatePermission: Scalars['Boolean']['output'];
-  hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
-  id: Scalars['ID']['output'];
-  jobName: Scalars['String']['output'];
-  mode: Scalars['String']['output'];
-  parentPipelineSnapshotId: Maybe<Scalars['String']['output']>;
-  parentRunId: Maybe<Scalars['String']['output']>;
-  pipeline: PipelineSnapshot | UnknownPipeline;
-  pipelineName: Scalars['String']['output'];
-  pipelineSnapshotId: Maybe<Scalars['String']['output']>;
-  repositoryOrigin: Maybe<RepositoryOrigin>;
-  resolvedOpSelection: Maybe<Array<Scalars['String']['output']>>;
-  rootConcurrencyKeys: Maybe<Array<Scalars['String']['output']>>;
-  rootRunId: Maybe<Scalars['String']['output']>;
-  runConfig: Scalars['RunConfigData']['output'];
-  runConfigYaml: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidSelection: Maybe<Array<Scalars['String']['output']>>;
-  startTime: Maybe<Scalars['Float']['output']>;
-  stats: RunStatsSnapshotOrError;
-  status: RunStatus;
-  stepKeysToExecute: Maybe<Array<Scalars['String']['output']>>;
-  stepStats: Array<RunStepStats>;
-  tags: Array<PipelineTag>;
-  updateTime: Maybe<Scalars['Float']['output']>;
-};
+export type Run = PipelineRun &
+  RunsFeedEntry & {
+    __typename: 'Run';
+    assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+    assetMaterializations: Array<MaterializationEvent>;
+    assetSelection: Maybe<Array<AssetKey>>;
+    assets: Array<Asset>;
+    canTerminate: Scalars['Boolean']['output'];
+    capturedLogs: CapturedLogs;
+    creationTime: Scalars['Float']['output'];
+    endTime: Maybe<Scalars['Float']['output']>;
+    eventConnection: EventConnection;
+    executionPlan: Maybe<ExecutionPlan>;
+    hasConcurrencyKeySlots: Scalars['Boolean']['output'];
+    hasDeletePermission: Scalars['Boolean']['output'];
+    hasReExecutePermission: Scalars['Boolean']['output'];
+    hasTerminatePermission: Scalars['Boolean']['output'];
+    hasUnconstrainedRootNodes: Scalars['Boolean']['output'];
+    id: Scalars['ID']['output'];
+    jobName: Scalars['String']['output'];
+    mode: Scalars['String']['output'];
+    parentPipelineSnapshotId: Maybe<Scalars['String']['output']>;
+    parentRunId: Maybe<Scalars['String']['output']>;
+    pipeline: PipelineSnapshot | UnknownPipeline;
+    pipelineName: Scalars['String']['output'];
+    pipelineSnapshotId: Maybe<Scalars['String']['output']>;
+    repositoryOrigin: Maybe<RepositoryOrigin>;
+    resolvedOpSelection: Maybe<Array<Scalars['String']['output']>>;
+    rootConcurrencyKeys: Maybe<Array<Scalars['String']['output']>>;
+    rootRunId: Maybe<Scalars['String']['output']>;
+    runConfig: Scalars['RunConfigData']['output'];
+    runConfigYaml: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    runStatus: RunStatus;
+    solidSelection: Maybe<Array<Scalars['String']['output']>>;
+    startTime: Maybe<Scalars['Float']['output']>;
+    stats: RunStatsSnapshotOrError;
+    status: RunStatus;
+    stepKeysToExecute: Maybe<Array<Scalars['String']['output']>>;
+    stepStats: Array<RunStepStats>;
+    tags: Array<PipelineTag>;
+    updateTime: Maybe<Scalars['Float']['output']>;
+  };
 
 export type RunCapturedLogsArgs = {
   fileKey: Scalars['String']['input'];
@@ -4692,6 +4734,27 @@ export type Runs = PipelineRuns & {
   __typename: 'Runs';
   count: Maybe<Scalars['Int']['output']>;
   results: Array<Run>;
+};
+
+export type RunsFeedConnection = {
+  __typename: 'RunsFeedConnection';
+  cursor: Scalars['String']['output'];
+  hasMore: Scalars['Boolean']['output'];
+  results: Array<PartitionBackfill | Run>;
+};
+
+export type RunsFeedConnectionOrError = PythonError | RunsFeedConnection;
+
+export type RunsFeedEntry = {
+  assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
+  assetSelection: Maybe<Array<AssetKey>>;
+  creationTime: Scalars['Float']['output'];
+  endTime: Maybe<Scalars['Float']['output']>;
+  id: Scalars['ID']['output'];
+  jobName: Maybe<Scalars['String']['output']>;
+  runStatus: Maybe<RunStatus>;
+  startTime: Maybe<Scalars['Float']['output']>;
+  tags: Array<PipelineTag>;
 };
 
 export type RunsFilter = {
@@ -5297,6 +5360,11 @@ export type TableSchemaMetadataEntry = MetadataEntry & {
   description: Maybe<Scalars['String']['output']>;
   label: Scalars['String']['output'];
   schema: TableSchema;
+};
+
+export type TagInput = {
+  key: Scalars['String']['input'];
+  value: Scalars['String']['input'];
 };
 
 export type Target = {
@@ -6115,6 +6183,7 @@ export const buildAssetConnection = (
   relationshipsToOmit.add('AssetConnection');
   return {
     __typename: 'AssetConnection',
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'quo',
     nodes: overrides && overrides.hasOwnProperty('nodes') ? overrides.nodes! : [],
   };
 };
@@ -6666,49 +6735,6 @@ export const buildAssetSelection = (
   };
 };
 
-export const buildAssetSubset = (
-  overrides?: Partial<AssetSubset>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'AssetSubset'} & AssetSubset => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AssetSubset');
-  return {
-    __typename: 'AssetSubset',
-    assetKey:
-      overrides && overrides.hasOwnProperty('assetKey')
-        ? overrides.assetKey!
-        : relationshipsToOmit.has('AssetKey')
-        ? ({} as AssetKey)
-        : buildAssetKey({}, relationshipsToOmit),
-    subsetValue:
-      overrides && overrides.hasOwnProperty('subsetValue')
-        ? overrides.subsetValue!
-        : relationshipsToOmit.has('AssetSubsetValue')
-        ? ({} as AssetSubsetValue)
-        : buildAssetSubsetValue({}, relationshipsToOmit),
-  };
-};
-
-export const buildAssetSubsetValue = (
-  overrides?: Partial<AssetSubsetValue>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'AssetSubsetValue'} & AssetSubsetValue => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('AssetSubsetValue');
-  return {
-    __typename: 'AssetSubsetValue',
-    boolValue: overrides && overrides.hasOwnProperty('boolValue') ? overrides.boolValue! : false,
-    isPartitioned:
-      overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : false,
-    partitionKeyRanges:
-      overrides && overrides.hasOwnProperty('partitionKeyRanges')
-        ? overrides.partitionKeyRanges!
-        : [],
-    partitionKeys:
-      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
-  };
-};
-
 export const buildAssetWipeSuccess = (
   overrides?: Partial<AssetWipeSuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -6878,12 +6904,6 @@ export const buildAutomationConditionEvaluationNode = (
   relationshipsToOmit.add('AutomationConditionEvaluationNode');
   return {
     __typename: 'AutomationConditionEvaluationNode',
-    candidateSubset:
-      overrides && overrides.hasOwnProperty('candidateSubset')
-        ? overrides.candidateSubset!
-        : relationshipsToOmit.has('AssetSubset')
-        ? ({} as AssetSubset)
-        : buildAssetSubset({}, relationshipsToOmit),
     childUniqueIds:
       overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
     endTimestamp:
@@ -6892,15 +6912,11 @@ export const buildAutomationConditionEvaluationNode = (
       overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
     isPartitioned:
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
+    numCandidates:
+      overrides && overrides.hasOwnProperty('numCandidates') ? overrides.numCandidates! : 6123,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.42,
-    trueSubset:
-      overrides && overrides.hasOwnProperty('trueSubset')
-        ? overrides.trueSubset!
-        : relationshipsToOmit.has('AssetSubset')
-        ? ({} as AssetSubset)
-        : buildAssetSubset({}, relationshipsToOmit),
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sit',
     userLabel:
       overrides && overrides.hasOwnProperty('userLabel') ? overrides.userLabel! : 'dolorem',
@@ -6954,6 +6970,21 @@ export const buildBoolMetadataEntry = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'illum',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'dolorum',
+  };
+};
+
+export const buildBulkActionsFilter = (
+  overrides?: Partial<BulkActionsFilter>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): BulkActionsFilter => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BulkActionsFilter');
+  return {
+    createdAfter:
+      overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 6.09,
+    createdBefore:
+      overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 1.5,
+    statuses: overrides && overrides.hasOwnProperty('statuses') ? overrides.statuses! : [],
   };
 };
 
@@ -8690,18 +8721,6 @@ export const buildInputMapping = (
   };
 };
 
-export const buildInputTag = (
-  overrides?: Partial<InputTag>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): InputTag => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('InputTag');
-  return {
-    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'possimus',
-    value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'quod',
-  };
-};
-
 export const buildInstance = (
   overrides?: Partial<Instance>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9093,6 +9112,18 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
         : 'tempore',
+    partition:
+      overrides && overrides.hasOwnProperty('partition')
+        ? overrides.partition!
+        : relationshipsToOmit.has('PartitionTagsAndConfig')
+        ? ({} as PartitionTagsAndConfig)
+        : buildPartitionTagsAndConfig({}, relationshipsToOmit),
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
     pipelineSnapshotId:
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
@@ -10654,14 +10685,21 @@ export const buildPartitionBackfill = (
         : relationshipsToOmit.has('AssetBackfillData')
         ? ({} as AssetBackfillData)
         : buildAssetBackfillData({}, relationshipsToOmit),
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     cancelableRuns:
       overrides && overrides.hasOwnProperty('cancelableRuns') ? overrides.cancelableRuns! : [],
+    creationTime:
+      overrides && overrides.hasOwnProperty('creationTime') ? overrides.creationTime! : 1.18,
     description:
       overrides && overrides.hasOwnProperty('description')
         ? overrides.description!
         : 'reprehenderit',
+    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 4.91,
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:
@@ -10680,13 +10718,17 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('hasResumePermission')
         ? overrides.hasResumePermission!
         : true,
-    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'recusandae',
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : 'f1a3860d-b771-4e91-ada6-719fa6fdc27f',
     isAssetBackfill:
       overrides && overrides.hasOwnProperty('isAssetBackfill') ? overrides.isAssetBackfill! : false,
     isValidSerialization:
       overrides && overrides.hasOwnProperty('isValidSerialization')
         ? overrides.isValidSerialization!
         : false,
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'est',
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!
@@ -10727,7 +10769,12 @@ export const buildPartitionBackfill = (
         : buildAssetBackfillTargetPartitions({}, relationshipsToOmit),
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps') ? overrides.reexecutionSteps! : [],
+    runStatus:
+      overrides && overrides.hasOwnProperty('runStatus')
+        ? overrides.runStatus!
+        : RunStatus.CANCELED,
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
+    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 9.35,
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
@@ -11063,6 +11110,31 @@ export const buildPartitionTags = (
   };
 };
 
+export const buildPartitionTagsAndConfig = (
+  overrides?: Partial<PartitionTagsAndConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionTagsAndConfig'} & PartitionTagsAndConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionTagsAndConfig');
+  return {
+    __typename: 'PartitionTagsAndConfig',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'quia',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'eaque',
+    runConfigOrError:
+      overrides && overrides.hasOwnProperty('runConfigOrError')
+        ? overrides.runConfigOrError!
+        : relationshipsToOmit.has('PartitionRunConfig')
+        ? ({} as PartitionRunConfig)
+        : buildPartitionRunConfig({}, relationshipsToOmit),
+    tagsOrError:
+      overrides && overrides.hasOwnProperty('tagsOrError')
+        ? overrides.tagsOrError!
+        : relationshipsToOmit.has('PartitionTags')
+        ? ({} as PartitionTags)
+        : buildPartitionTags({}, relationshipsToOmit),
+  };
+};
+
 export const buildPartitionedAssetConditionEvaluationNode = (
   overrides?: Partial<PartitionedAssetConditionEvaluationNode>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -11073,29 +11145,17 @@ export const buildPartitionedAssetConditionEvaluationNode = (
   relationshipsToOmit.add('PartitionedAssetConditionEvaluationNode');
   return {
     __typename: 'PartitionedAssetConditionEvaluationNode',
-    candidateSubset:
-      overrides && overrides.hasOwnProperty('candidateSubset')
-        ? overrides.candidateSubset!
-        : relationshipsToOmit.has('AssetSubset')
-        ? ({} as AssetSubset)
-        : buildAssetSubset({}, relationshipsToOmit),
     childUniqueIds:
       overrides && overrides.hasOwnProperty('childUniqueIds') ? overrides.childUniqueIds! : [],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quam',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 9.74,
-    numFalse: overrides && overrides.hasOwnProperty('numFalse') ? overrides.numFalse! : 4729,
-    numSkipped: overrides && overrides.hasOwnProperty('numSkipped') ? overrides.numSkipped! : 5678,
+    numCandidates:
+      overrides && overrides.hasOwnProperty('numCandidates') ? overrides.numCandidates! : 9986,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 3015,
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.96,
-    trueSubset:
-      overrides && overrides.hasOwnProperty('trueSubset')
-        ? overrides.trueSubset!
-        : relationshipsToOmit.has('AssetSubset')
-        ? ({} as AssetSubset)
-        : buildAssetSubset({}, relationshipsToOmit),
     uniqueId: overrides && overrides.hasOwnProperty('uniqueId') ? overrides.uniqueId! : 'sed',
   };
 };
@@ -11236,6 +11296,18 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('parentSnapshotId')
         ? overrides.parentSnapshotId!
         : 'et',
+    partition:
+      overrides && overrides.hasOwnProperty('partition')
+        ? overrides.partition!
+        : relationshipsToOmit.has('PartitionTagsAndConfig')
+        ? ({} as PartitionTagsAndConfig)
+        : buildPartitionTagsAndConfig({}, relationshipsToOmit),
+    partitionKeysOrError:
+      overrides && overrides.hasOwnProperty('partitionKeysOrError')
+        ? overrides.partitionKeysOrError!
+        : relationshipsToOmit.has('PartitionKeys')
+        ? ({} as PartitionKeys)
+        : buildPartitionKeys({}, relationshipsToOmit),
     pipelineSnapshotId:
       overrides && overrides.hasOwnProperty('pipelineSnapshotId')
         ? overrides.pipelineSnapshotId!
@@ -12010,6 +12082,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    runsFeedOrError:
+      overrides && overrides.hasOwnProperty('runsFeedOrError')
+        ? overrides.runsFeedOrError!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runsOrError:
       overrides && overrides.hasOwnProperty('runsOrError')
         ? overrides.runsOrError!
@@ -12060,6 +12138,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    truePartitionsForAutomationConditionEvaluationNode:
+      overrides && overrides.hasOwnProperty('truePartitionsForAutomationConditionEvaluationNode')
+        ? overrides.truePartitionsForAutomationConditionEvaluationNode!
+        : [],
     utilizedEnvVarsOrError:
       overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
         ? overrides.utilizedEnvVarsOrError!
@@ -12840,6 +12922,10 @@ export const buildRun = (
     runConfigYaml:
       overrides && overrides.hasOwnProperty('runConfigYaml') ? overrides.runConfigYaml! : 'eveniet',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'fuga',
+    runStatus:
+      overrides && overrides.hasOwnProperty('runStatus')
+        ? overrides.runStatus!
+        : RunStatus.CANCELED,
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection') ? overrides.solidSelection! : [],
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 2.52,
@@ -13379,6 +13465,51 @@ export const buildRuns = (
     __typename: 'Runs',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 319,
     results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildRunsFeedConnection = (
+  overrides?: Partial<RunsFeedConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunsFeedConnection'} & RunsFeedConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunsFeedConnection');
+  return {
+    __typename: 'RunsFeedConnection',
+    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'iure',
+    hasMore: overrides && overrides.hasOwnProperty('hasMore') ? overrides.hasMore! : false,
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
+export const buildRunsFeedEntry = (
+  overrides?: Partial<RunsFeedEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunsFeedEntry'} & RunsFeedEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunsFeedEntry');
+  return {
+    __typename: 'RunsFeedEntry',
+    assetCheckSelection:
+      overrides && overrides.hasOwnProperty('assetCheckSelection')
+        ? overrides.assetCheckSelection!
+        : [],
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    creationTime:
+      overrides && overrides.hasOwnProperty('creationTime') ? overrides.creationTime! : 5.76,
+    endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 9.19,
+    id:
+      overrides && overrides.hasOwnProperty('id')
+        ? overrides.id!
+        : '6d9ebb9a-e183-4642-b24f-468c247b375f',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'sed',
+    runStatus:
+      overrides && overrides.hasOwnProperty('runStatus')
+        ? overrides.runStatus!
+        : RunStatus.CANCELED,
+    startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.94,
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
   };
 };
 
@@ -14540,6 +14671,18 @@ export const buildTableSchemaMetadataEntry = (
         : relationshipsToOmit.has('TableSchema')
         ? ({} as TableSchema)
         : buildTableSchema({}, relationshipsToOmit),
+  };
+};
+
+export const buildTagInput = (
+  overrides?: Partial<TagInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): TagInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TagInput');
+  return {
+    key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ut',
+    value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'nostrum',
   };
 };
 

@@ -10,14 +10,16 @@ from .def_factory import DefsFactory
 class PythonDefs(DefsFactory):
     specs: List[AssetSpec]
     name: str
+    group: Optional[str] = None
     python_fn: Optional[Callable] = None
 
     def build_defs(self) -> Definitions:
         @multi_asset(
             specs=self.specs,
             name=self.name,
+            group_name=self.group,
         )
-        def _multi_asset() -> None:
+        def _multi_asset():
             if self.python_fn:
                 self.python_fn()
 

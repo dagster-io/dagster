@@ -3,15 +3,18 @@ import 'chartjs-adapter-date-fns';
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
+  Button,
   ButtonLink,
   Caption,
-  Checkbox,
   Colors,
   CursorHistoryControls,
   FontFamily,
   Icon,
   IconWrapper,
+  Menu,
+  MenuItem,
   NonIdealState,
+  Select,
   Spinner,
   Subheading,
   Table,
@@ -55,24 +58,22 @@ Chart.register(zoomPlugin);
 type InstigationTick = HistoryTickFragment;
 
 const PAGE_SIZE = 25;
-interface ShownStatusState {
-  [InstigationTickStatus.SUCCESS]: boolean;
-  [InstigationTickStatus.FAILURE]: boolean;
-  [InstigationTickStatus.STARTED]: boolean;
-  [InstigationTickStatus.SKIPPED]: boolean;
+
+enum TickStatusDisplay {
+  ALL,
+  FAILED,
+  SUCCESS,
 }
 
-const DEFAULT_SHOWN_STATUS_STATE = {
-  [InstigationTickStatus.SUCCESS]: true,
-  [InstigationTickStatus.FAILURE]: true,
-  [InstigationTickStatus.STARTED]: true,
-  [InstigationTickStatus.SKIPPED]: true,
-};
-const STATUS_TEXT_MAP = {
-  [InstigationTickStatus.SUCCESS]: 'Requested',
-  [InstigationTickStatus.FAILURE]: 'Failed',
-  [InstigationTickStatus.STARTED]: 'In progress',
-  [InstigationTickStatus.SKIPPED]: 'Skipped',
+const STATUS_DISPLAY_MAP = {
+  [TickStatusDisplay.ALL]: [
+    InstigationTickStatus.SUCCESS,
+    InstigationTickStatus.FAILURE,
+    InstigationTickStatus.STARTED,
+    InstigationTickStatus.SKIPPED,
+  ],
+  [TickStatusDisplay.FAILED]: [InstigationTickStatus.FAILURE],
+  [TickStatusDisplay.SUCCESS]: [InstigationTickStatus.SUCCESS],
 };
 
 export const TicksTable = ({
@@ -88,33 +89,15 @@ export const TicksTable = ({
   setTimerange?: (range?: [number, number]) => void;
   setParentStatuses?: (statuses?: InstigationTickStatus[]) => void;
 }) => {
-  const [shownStates, setShownStates] = useQueryPersistedState<ShownStatusState>({
-    encode: (states) => {
-      const queryState = {};
-      Object.keys(states).map((state) => {
-        (queryState as any)[state.toLowerCase()] = String(states[state as keyof typeof states]);
-      });
-      return queryState;
-    },
-    decode: (queryState) => {
-      const status: ShownStatusState = {...DEFAULT_SHOWN_STATUS_STATE};
-      Object.keys(DEFAULT_SHOWN_STATUS_STATE).forEach((state) => {
-        if (state.toLowerCase() in queryState) {
-          (status as any)[state] = !(queryState[state.toLowerCase()] === 'false');
-        }
-      });
-
-      return status;
-    },
+  const [tickStatus, setTickStatus] = useQueryPersistedState<TickStatusDisplay>({
+    queryKey: 'status',
+    defaults: {status: TickStatusDisplay.ALL},
   });
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = React.useMemo(
-    () =>
-      Object.keys(shownStates)
-        .filter((status) => shownStates[status as keyof typeof shownStates])
-        .map((status) => status as InstigationTickStatus),
-    [shownStates],
+    () => STATUS_DISPLAY_MAP[tickStatus] || STATUS_DISPLAY_MAP[TickStatusDisplay.ALL],
+    [tickStatus],
   );
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -205,19 +188,9 @@ export const TicksTable = ({
 
   const {instigationType} = data.instigationStateOrError;
 
-  if (!ticks.length && statuses.length === Object.keys(DEFAULT_SHOWN_STATUS_STATE).length) {
+  if (!ticks.length && tickStatus === TickStatusDisplay.ALL) {
     return null;
   }
-
-  const StatusFilter = ({status}: {status: InstigationTickStatus}) => (
-    <Checkbox
-      label={STATUS_TEXT_MAP[status]}
-      checked={shownStates[status]}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-        setShownStates({...shownStates, [status]: e.target.checked});
-      }}
-    />
-  );
 
   return (
     <>
@@ -232,10 +205,7 @@ export const TicksTable = ({
         <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
           {tabs}
           <Box flex={{direction: 'row', gap: 16}}>
-            <StatusFilter status={InstigationTickStatus.STARTED} />
-            <StatusFilter status={InstigationTickStatus.SUCCESS} />
-            <StatusFilter status={InstigationTickStatus.FAILURE} />
-            <StatusFilter status={InstigationTickStatus.SKIPPED} />
+            <StatusFilter status={tickStatus} onChange={setTickStatus} />
           </Box>
         </Box>
       </Box>
@@ -277,6 +247,52 @@ export const TicksTable = ({
   );
 };
 
+const StatusFilter = ({
+  status,
+  onChange,
+}: {
+  status: TickStatusDisplay;
+  onChange: (value: TickStatusDisplay) => void;
+}) => {
+  const items = [
+    {key: TickStatusDisplay.ALL, label: 'All ticks'},
+    {key: TickStatusDisplay.SUCCESS, label: 'Requested'},
+    {key: TickStatusDisplay.FAILED, label: 'Failed'},
+  ];
+  const activeItem = items.find(({key}) => key === status);
+  return (
+    <Select<(typeof items)[0]>
+      popoverProps={{position: 'bottom-right'}}
+      filterable={false}
+      activeItem={activeItem}
+      items={items}
+      itemRenderer={(item, props) => {
+        return (
+          <MenuItem
+            active={props.modifiers.active}
+            onClick={props.handleClick}
+            key={item.key}
+            text={item.label}
+            style={{width: '300px'}}
+          />
+        );
+      }}
+      itemListRenderer={({renderItem, filteredItems}) => {
+        const renderedItems = filteredItems.map(renderItem).filter(Boolean);
+        return <Menu>{renderedItems}</Menu>;
+      }}
+      onItemSelect={(item) => onChange(item.key)}
+    >
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
+        {activeItem?.label}
+      </Button>
+    </Select>
+  );
+};
+
 export const TickHistoryTimeline = ({
   name,
   repoAddress,
@@ -292,9 +308,9 @@ export const TickHistoryTimeline = ({
   afterTimestamp?: number;
   statuses?: InstigationTickStatus[];
 }) => {
-  const [selectedTickId, setSelectedTickId] = useQueryPersistedState<number | undefined>({
+  const [selectedTickId, setSelectedTickId] = useQueryPersistedState<string | undefined>({
     encode: (tickId) => ({tickId}),
-    decode: (qs) => (qs['tickId'] ? Number(qs['tickId']) : undefined),
+    decode: (qs) => qs['tickId'] ?? undefined,
   });
 
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
@@ -348,7 +364,7 @@ export const TickHistoryTimeline = ({
   const {ticks = []} = data.instigationStateOrError;
 
   const onTickClick = (tick?: InstigationTick) => {
-    setSelectedTickId(tick ? Number(tick.tickId) : undefined);
+    setSelectedTickId(tick ? tick.tickId : undefined);
   };
 
   const onTickHover = (tick?: InstigationTick) => {
@@ -360,6 +376,7 @@ export const TickHistoryTimeline = ({
       pausePolling(true);
     }
   };
+
   return (
     <>
       <TickDetailsDialog
@@ -496,7 +513,7 @@ function TickRow({
           ) : null}
           <TickDetailsDialog
             isOpen={showResults}
-            tickId={Number(tick.tickId)}
+            tickId={tick.tickId}
             instigationSelector={instigationSelector}
             onClose={() => {
               setShowResults(false);

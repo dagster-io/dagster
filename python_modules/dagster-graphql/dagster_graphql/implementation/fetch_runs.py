@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -17,11 +18,14 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import DagsterRunNotFoundError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
+from dagster._core.execution.backfill import BulkActionsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.event_log.base import AssetRecord
-from dagster._core.storage.tags import TagType, get_tag_type
+from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
+from dagster._record import record
+from dagster._time import datetime_from_timestamp
 
 from .external import ensure_valid_config, get_external_job_or_raise
 
@@ -36,7 +40,11 @@ if TYPE_CHECKING:
     from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
     from ..schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
+    from ..schema.runs_feed import GrapheneRunsFeedConnection
     from ..schema.util import ResolveInfo
+
+
+_DELIMITER = "::"
 
 
 async def gen_run_by_id(
@@ -378,4 +386,170 @@ def get_logs_for_run(
         events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
         cursor=conn.cursor,
         hasMore=conn.has_more,
+    )
+
+
+@record
+class RunsFeedCursor:
+    """Three part cursor for paginating the Runs Feed. The run_cursor is the run_id of the oldest run that
+    has been returned. The backfill_cursor is the id of the oldest backfill that has been returned. The
+    timestamp is the timestamp of the oldest entry (run or backfill).
+
+    If the run/backfill cursor is None, that means that no runs/backfills have been returned yet and querying
+    should begin at the start of the table. Once all runs/backfills in the table have been returned, the
+    corresponding cursor should still be set to the id of the last run/backfill returned.
+
+    The timestamp is used for the following case. If a deployment has 20 runs and 0 backfills, and a query is
+    made for 10 Runs Feed entries, the first 10 runs will be returned. At this time, the run_cursor will be an id,
+    and the backfill_cursor will be None. Then a backfill is created. If a second query is made for 10 Runs Feed entries
+    the newly created backfill will get included in the list, even though it should be included on the first page by time
+    order. To prevent this, the timestamp is used to ensure that all returned entires are older than the entries on the
+    previous page.
+    """
+
+    run_cursor: Optional[str]
+    backfill_cursor: Optional[str]
+    timestamp: Optional[float]
+
+    def to_string(self) -> str:
+        return f"{self.run_cursor if self.run_cursor else ''}{_DELIMITER}{self.backfill_cursor if self.backfill_cursor else ''}{_DELIMITER}{self.timestamp if self.timestamp else ''}"
+
+    @staticmethod
+    def from_string(serialized: Optional[str]):
+        if serialized is None:
+            return RunsFeedCursor(
+                run_cursor=None,
+                backfill_cursor=None,
+                timestamp=None,
+            )
+        parts = serialized.split(_DELIMITER)
+        if len(parts) != 3:
+            raise DagsterInvariantViolationError(f"Invalid cursor for querying runs: {serialized}")
+
+        return RunsFeedCursor(
+            run_cursor=parts[0] if parts[0] else None,
+            backfill_cursor=parts[1] if parts[1] else None,
+            timestamp=float(parts[2]) if parts[2] else None,
+        )
+
+
+def _fetch_runs_not_in_backfill(
+    instance: DagsterInstance,
+    cursor: Optional[str],
+    limit: int,
+    created_before: Optional[datetime.datetime],
+) -> Sequence[RunRecord]:
+    """Fetches limit RunRecords that are not part of a backfill and were created before a given timestamp."""
+    runs_filter = RunsFilter(created_before=created_before) if created_before else None
+
+    runs = []
+    while len(runs) < limit:
+        # fetch runs in a loop and discard runs that are part of a backfill until we have
+        # limit runs to return or have reached the end of the runs table
+        new_runs = instance.get_run_records(limit=limit, cursor=cursor, filters=runs_filter)
+        if len(new_runs) == 0:
+            return runs
+        cursor = new_runs[-1].dagster_run.run_id
+        runs.extend([run for run in new_runs if run.dagster_run.tags.get(BACKFILL_ID_TAG) is None])
+
+    return runs[:limit]
+
+
+def get_runs_feed_entries(
+    graphene_info: "ResolveInfo",
+    limit: int,
+    cursor: Optional[str] = None,
+) -> "GrapheneRunsFeedConnection":
+    """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
+    single runs (runs that are not part of a backfill), the cursor to fetch the next page,
+    and a boolean indicating if there are more results to fetch.
+
+    Args:
+        limit (int): max number of results to return
+        cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
+            that querying should start at the beginning of the table for both runs and backfills.
+    """
+    from ..schema.backfill import GraphenePartitionBackfill
+    from ..schema.pipelines.pipeline import GrapheneRun
+    from ..schema.runs_feed import GrapheneRunsFeedConnection
+
+    check.opt_str_param(cursor, "cursor")
+    check.int_param(limit, "limit")
+
+    instance = graphene_info.context.instance
+    runs_feed_cursor = RunsFeedCursor.from_string(cursor)
+
+    # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
+    fetch_limit = limit + 1
+    # filter out any backfills/runs that are newer than the cursor timestamp. See RunsFeedCursor docstring
+    # for case when theis is necessary
+    created_before_cursor = (
+        datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
+    )
+    backfills = [
+        GraphenePartitionBackfill(backfill)
+        for backfill in instance.get_backfills(
+            cursor=runs_feed_cursor.backfill_cursor,
+            limit=limit,
+            filters=BulkActionsFilter(created_before=created_before_cursor),
+        )
+    ]
+    runs = [
+        GrapheneRun(run)
+        for run in _fetch_runs_not_in_backfill(
+            instance,
+            cursor=runs_feed_cursor.run_cursor,
+            limit=fetch_limit,
+            created_before=created_before_cursor,
+        )
+    ]
+
+    # if we fetched limit+1 of either runs or backfills, we know there must be more results
+    # to fetch on the next call since we will return limit results for this call. Additionally,
+    # if we fetched more than limit of runs and backfill combined, we know there are more results
+    has_more = (
+        len(backfills) == fetch_limit
+        or len(runs) == fetch_limit
+        or len(backfills) + len(runs) > limit
+    )
+
+    all_entries = backfills + runs
+
+    # order runs and backfills by create_time. typically we sort by storage id but that won't work here since
+    # they are different tables
+    all_entries = sorted(
+        all_entries,
+        key=lambda x: x.creation_timestamp,
+        reverse=True,
+    )
+
+    if limit:
+        to_return = all_entries[:limit]
+    else:
+        to_return = all_entries
+
+    new_run_cursor = None
+    new_backfill_cursor = None
+    for run in reversed(to_return):
+        if new_run_cursor is not None and new_backfill_cursor is not None:
+            break
+        if new_backfill_cursor is None and isinstance(run, GraphenePartitionBackfill):
+            new_backfill_cursor = run.id
+        if new_run_cursor is None and isinstance(run, GrapheneRun):
+            new_run_cursor = run.runId
+
+    new_timestamp = to_return[-1].creation_timestamp if to_return else None
+
+    # if either of the new cursors are None, replace with the cursor passed in so the next call doesn't
+    # restart at the top the table.
+    final_cursor = RunsFeedCursor(
+        run_cursor=new_run_cursor if new_run_cursor else runs_feed_cursor.run_cursor,
+        backfill_cursor=new_backfill_cursor
+        if new_backfill_cursor
+        else runs_feed_cursor.backfill_cursor,
+        timestamp=new_timestamp if new_timestamp else runs_feed_cursor.timestamp,
+    )
+
+    return GrapheneRunsFeedConnection(
+        results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
     )

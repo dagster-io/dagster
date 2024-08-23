@@ -1093,13 +1093,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if not partitions_def:
             raise ValueError(
-                "Tried to get asset partitions for an output that does not correspond to a "
+                f"Tried to get asset partitions for an output '{output_name}' that does not correspond to a "
                 "partitioned asset."
             )
 
         if not has_one_dimension_time_window_partitioning(partitions_def):
             raise ValueError(
-                "Tried to get asset partitions for an output that correponds to a partitioned "
+                f"Tried to get asset partitions for an output '{output_name}' that correponds to a partitioned "
                 "asset that is not time-partitioned."
             )
 
@@ -1163,19 +1163,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         if upstream_asset_key is None:
-            raise ValueError("The input has no corresponding asset")
+            raise ValueError(f"The input '{input_name}' has no corresponding asset")
 
         upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
 
         if not upstream_asset_partitions_def:
             raise ValueError(
-                "Tried to get asset partitions for an input that does not correspond to a "
+                f"Tried to get asset partitions for an input '{input_name}' that does not correspond to a "
                 "partitioned asset."
             )
 
         if not has_one_dimension_time_window_partitioning(upstream_asset_partitions_def):
             raise ValueError(
-                "Tried to get asset partitions for an input that correponds to a partitioned "
+                f"Tried to get asset partitions for an input '{input_name}' that correponds to a partitioned "
                 "asset that is not time-partitioned."
             )
 

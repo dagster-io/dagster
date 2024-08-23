@@ -219,8 +219,11 @@ def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
     if target is None:
         return "None"
 
+    if target is NoneType:
+        return "check.NoneType"
+
     if isinstance(target, tuple):
-        return f"({', '.join(tup_type.__name__ if tup_type is not NoneType else 'check.NoneType' for tup_type in target)})"
+        return f"({', '.join(_name(tup_type) for tup_type in target)})"
 
     if hasattr(target, "__name__"):
         return target.__name__
@@ -285,6 +288,8 @@ def build_check_call_str(
             return name  # no-op
     elif origin is Literal:
         return f'check.literal_param({name}, "{name}", {args})'
+    elif origin is Callable or origin is collections.abc.Callable:
+        return f'check.callable_param({name}, "{name}")'
     else:
         if _is_annotated(origin, args):
             _process_annotated(ttype, args, eval_ctx)

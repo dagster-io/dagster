@@ -111,7 +111,9 @@ class ConfigType:
     def get_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         from .snap import ConfigSchemaSnapshot
 
-        return ConfigSchemaSnapshot({ct.key: ct.get_snapshot() for ct in self.type_iterator()})
+        return ConfigSchemaSnapshot(
+            all_config_snaps_by_key={ct.key: ct.get_snapshot() for ct in self.type_iterator()}
+        )
 
 
 @whitelist_for_serdes

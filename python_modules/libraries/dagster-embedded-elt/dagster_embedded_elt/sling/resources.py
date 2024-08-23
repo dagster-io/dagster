@@ -17,6 +17,7 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     EnvVar,
+    MaterializeResult,
     OpExecutionContext,
     PermissiveConfig,
     get_dagster_logger,
@@ -32,7 +33,7 @@ from dagster_embedded_elt.sling.asset_decorator import (
     streams_with_default_dagster_meta,
 )
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
-from dagster_embedded_elt.sling.sling_event_iterator import SlingEventIterator
+from dagster_embedded_elt.sling.sling_event_iterator import SlingEventIterator, SlingEventType
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
 
 logger = get_dagster_logger()
@@ -294,7 +295,7 @@ class SlingResource(ConfigurableResource):
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-    ) -> SlingEventIterator[AssetMaterialization]:
+    ) -> SlingEventIterator[SlingEventType]:
         """Runs a Sling replication from the given replication config.
 
         Args:
@@ -304,7 +305,7 @@ class SlingResource(ConfigurableResource):
             debug: Whether to run the replication in debug mode.
 
         Returns:
-            Generator[Union[MaterializeResult, AssetMaterialization], None, None]: A generator of MaterializeResult or AssetMaterialization
+            SlingEventIterator[MaterializeResult]: A generator of MaterializeResult
         """
         if not (replication_config or dagster_sling_translator):
             metadata_by_key = context.assets_def.metadata_by_key
@@ -333,7 +334,7 @@ class SlingResource(ConfigurableResource):
         replication_config: Dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         debug: bool,
-    ) -> Iterator[AssetMaterialization]:
+    ) -> Iterator[SlingEventType]:
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
 
         # convert to dict to enable updating the index
@@ -377,11 +378,17 @@ class SlingResource(ConfigurableResource):
             # TODO: In the future, it'd be nice to yield these materializations as they come in
             # rather than waiting until the end of the replication
             for stream in stream_definition:
-                output_name = dagster_sling_translator.get_asset_key(stream)
-                yield AssetMaterialization(
-                    asset_key=output_name,
-                    metadata={"elapsed_time": end_time - start_time, "stream_name": stream["name"]},
-                )
+                asset_key = dagster_sling_translator.get_asset_key(stream)
+
+                metadata = {
+                    "elapsed_time": end_time - start_time,
+                    "stream_name": stream["name"],
+                }
+
+                if context.has_assets_def:
+                    yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+                else:
+                    yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
 
     def stream_raw_logs(self) -> Generator[str, None, None]:
         """Returns a generator of raw logs from the Sling CLI."""

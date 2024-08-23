@@ -12,7 +12,6 @@ from .sdf_workspaces import lineage_asset_checks_path
 def test_asset_checks_passing() -> None:
     sdf = SdfCliResource(
         workspace_dir=os.fspath(lineage_asset_checks_path),
-        global_config_flags=["--log-form=nested"],
     )
     environment = "passing_tests"
     sdf_cli_invocation = sdf.cli(["compile", "--save", "table-deps"], environment=environment)
@@ -37,14 +36,30 @@ def test_asset_checks_passing() -> None:
             context=context,
         ).stream()
 
-    result = materialize(
+    first_result = materialize(
         [my_sdf_assets],
         resources={"sdf": SdfCliResource(workspace_dir=lineage_asset_checks_path)},
     )
 
-    assert result.success
-    assert len(result.get_asset_check_evaluations()) > 0
-    evaluation = result.get_asset_check_evaluations()[0]
+    first_num_asset_check_evaluations = len(first_result.get_asset_check_evaluations())
+
+    assert first_result.success
+    assert first_num_asset_check_evaluations > 0
+    evaluation = first_result.get_asset_check_evaluations()[0]
+    assert evaluation.asset_key == AssetKey(["lineage", "pub", "middle"])
+    assert evaluation.passed
+
+    cache_result = materialize(
+        [my_sdf_assets],
+        resources={"sdf": SdfCliResource(workspace_dir=lineage_asset_checks_path)},
+    )
+
+    cached_num_asset_check_evaluations = len(cache_result.get_asset_check_evaluations())
+
+    assert cache_result.success
+    assert cached_num_asset_check_evaluations > 0
+    assert first_num_asset_check_evaluations == cached_num_asset_check_evaluations
+    evaluation = cache_result.get_asset_check_evaluations()[0]
     assert evaluation.asset_key == AssetKey(["lineage", "pub", "middle"])
     assert evaluation.passed
 
@@ -52,7 +67,6 @@ def test_asset_checks_passing() -> None:
 def test_asset_checks_failing() -> None:
     sdf = SdfCliResource(
         workspace_dir=os.fspath(lineage_asset_checks_path),
-        global_config_flags=["--log-form=nested"],
     )
     dagster_sdf_translator = DagsterSdfTranslator(
         settings=DagsterSdfTranslatorSettings(enable_asset_checks=True)
@@ -78,13 +92,29 @@ def test_asset_checks_failing() -> None:
             raise_on_error=False,
         ).stream()
 
-    result = materialize(
+    first_result = materialize(
         [my_sdf_assets],
         resources={"sdf": SdfCliResource(workspace_dir=lineage_asset_checks_path)},
     )
 
-    assert result.success
-    assert len(result.get_asset_check_evaluations()) > 0
-    evaluation = result.get_asset_check_evaluations()[0]
+    first_num_asset_check_evaluations = len(first_result.get_asset_check_evaluations())
+
+    assert first_result.success
+    assert first_num_asset_check_evaluations > 0
+    evaluation = first_result.get_asset_check_evaluations()[0]
+    assert evaluation.asset_key == AssetKey(["lineage", "pub", "middle"])
+    assert not evaluation.passed
+
+    cache_result = materialize(
+        [my_sdf_assets],
+        resources={"sdf": SdfCliResource(workspace_dir=lineage_asset_checks_path)},
+    )
+
+    cached_num_asset_check_evaluations = len(cache_result.get_asset_check_evaluations())
+
+    assert cache_result.success
+    assert cached_num_asset_check_evaluations > 0
+    assert first_num_asset_check_evaluations == cached_num_asset_check_evaluations
+    evaluation = cache_result.get_asset_check_evaluations()[0]
     assert evaluation.asset_key == AssetKey(["lineage", "pub", "middle"])
     assert not evaluation.passed

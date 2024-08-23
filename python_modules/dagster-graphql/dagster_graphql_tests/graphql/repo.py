@@ -84,7 +84,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
@@ -1788,9 +1788,7 @@ def multipartitions_fail(context):
 
 
 multi_partitions_job = define_asset_job(
-    "multipartitions_job",
-    AssetSelection.assets(multipartitions_1, multipartitions_2),
-    partitions_def=multipartitions_def,
+    "multipartitions_job", AssetSelection.assets(multipartitions_1, multipartitions_2)
 )
 
 
@@ -1815,15 +1813,11 @@ dynamic_in_multipartitions_def = MultiPartitionsDefinition(
 )
 
 no_multi_partitions_job = define_asset_job(
-    "no_multipartitions_job",
-    AssetSelection.assets(no_multipartitions_1),
-    partitions_def=no_partitions_multipartitions_def,
+    "no_multipartitions_job", AssetSelection.assets(no_multipartitions_1)
 )
 
 multi_partitions_fail_job = define_asset_job(
-    "multipartitions_fail_job",
-    AssetSelection.assets(multipartitions_fail),
-    partitions_def=multipartitions_def,
+    "multipartitions_fail_job", AssetSelection.assets(multipartitions_fail)
 )
 
 
@@ -1840,7 +1834,6 @@ def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success)
 dynamic_in_multipartitions_success_job = define_asset_job(
     "dynamic_in_multipartitions_success_job",
     AssetSelection.assets(dynamic_in_multipartitions_success, dynamic_in_multipartitions_fail),
-    partitions_def=dynamic_in_multipartitions_def,
 )
 
 

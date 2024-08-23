@@ -1,8 +1,8 @@
-import {Alert, Box, Colors, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Alert, Box, Colors, Icon} from '@dagster-io/ui-components';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 
-const LearnMoreLink =
+const LEARN_MORE_LINK =
   'https://docs.dagster.io/concepts/assets/asset-auto-execution#auto-materializing-assets-';
 
 export const AutoMaterializeExperimentalBanner = () => {
@@ -14,7 +14,7 @@ export const AutoMaterializeExperimentalBanner = () => {
     <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
       <Alert
         intent="info"
-        title="Automation policies are experimental"
+        title="Automation conditions are experimental"
         icon={<Icon name="info" color={Colors.accentBlue()} />}
         onClose={() => {
           setClosed(true);
@@ -22,7 +22,7 @@ export const AutoMaterializeExperimentalBanner = () => {
         description={
           <span>
             You can learn more about this new feature and provide feedback{' '}
-            <a target="_blank" href={LearnMoreLink} rel="noreferrer">
+            <a target="_blank" href={LEARN_MORE_LINK} rel="noreferrer">
               here
             </a>
             .
@@ -30,15 +30,5 @@ export const AutoMaterializeExperimentalBanner = () => {
         }
       />
     </Box>
-  );
-};
-
-export const AutoMaterializeExperimentalTag = () => {
-  return (
-    <Tooltip content="Click to learn more about this new feature and provide feedback">
-      <a target="_blank" href={LearnMoreLink} rel="noreferrer">
-        <Tag intent="primary">Experimental</Tag>
-      </a>
-    </Tooltip>
   );
 };

@@ -37,7 +37,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           <TabLink id="schedules" title="Schedules" to="/overview/schedules" />
         )}
         {flagSettingsPage ? null : <TabLink id="sensors" title="Sensors" to="/overview/sensors" />}
-        {!flagSettingsPage && automaterializeSensorsFlagState === 'has-global-amp' ? (
+        {automaterializeSensorsFlagState === 'has-global-amp' ? (
           <TabLink
             id="amp"
             title={
@@ -64,9 +64,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
           />
         ) : null}
         <TabLink id="resources" title="Resources" to="/overview/resources" />
-        {flagSettingsPage ? null : (
-          <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
-        )}
+        <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>

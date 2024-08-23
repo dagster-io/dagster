@@ -1,9 +1,32 @@
 import os
+import subprocess
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Generator, List
 
+import pytest
 from dagster import AssetKey, AssetsDefinition
+from dagster._core.test_utils import environ
 from dagster_airlift.dbt import DbtProjectDefs
+from dagster_dbt import DbtProject
+
+
+@pytest.fixture(name="dbt_project_dir")
+def dbt_project_fixture() -> Generator[Path, None, None]:
+    path = Path(__file__).parent / "dbt_project"
+    with environ(
+        {"DBT_PROJECT_DIR": str(path), "DUCKDB_PATH": str(path / "target" / "local.duckdb")}
+    ):
+        yield path
+
+
+@pytest.fixture
+def dbt_project(dbt_project_dir: Path) -> None:
+    """Builds dbt project."""
+    subprocess.run(
+        ["dbt", "build", "--project-dir", dbt_project_dir, "--profiles-dir", dbt_project_dir],
+        check=True,
+        env=os.environ.copy(),
+    )
 
 
 def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
@@ -12,7 +35,8 @@ def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
         dbt_project_dir
     ), "Expected dbt project dir to be set as env var"
     defs = DbtProjectDefs(
-        dbt_project_path=dbt_project_dir,
+        dbt_manifest=dbt_project_dir / "target" / "manifest.json",
+        project=DbtProject(project_dir=dbt_project_dir),
         name="my_dbt_multi_asset",
     ).build_defs()
     assert defs.assets

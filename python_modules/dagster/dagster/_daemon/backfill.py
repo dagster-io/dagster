@@ -12,7 +12,7 @@ from dagster._core.errors import (
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
@@ -53,8 +53,12 @@ def execute_backfill_iteration(
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
 
-    in_progress_backfills = instance.get_backfills(status=BulkActionStatus.REQUESTED)
-    canceling_backfills = instance.get_backfills(status=BulkActionStatus.CANCELING)
+    in_progress_backfills = instance.get_backfills(
+        filters=BulkActionsFilter(statuses=[BulkActionStatus.REQUESTED])
+    )
+    canceling_backfills = instance.get_backfills(
+        filters=BulkActionsFilter(statuses=[BulkActionStatus.CANCELING])
+    )
 
     if not in_progress_backfills and not canceling_backfills:
         logger.debug("No backfill jobs in progress or canceling.")

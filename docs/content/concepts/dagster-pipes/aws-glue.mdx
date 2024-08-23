@@ -47,23 +47,24 @@ import boto3
 from dagster_pipes import (
     PipesCliArgsParamsLoader,
     PipesS3ContextLoader,
-    PipesS3MessageWriter,
     open_dagster_pipes,
 )
 
 client = boto3.client("s3")
 context_loader = PipesS3ContextLoader(client)
-message_writer = PipesS3MessageWriter(client)
 params_loader = PipesCliArgsParamsLoader()
 
 
 def main():
     with open_dagster_pipes(
         context_loader=context_loader,
-        message_writer=message_writer,
         params_loader=params_loader,
     ) as pipes:
         pipes.log.info("Hello from AWS Glue job!")
+        pipes.report_asset_materialization(
+            metadata={"some_metric": {"raw_value": 0, "type": "int"}},
+            data_version="alpha",
+        )
 
 
 if __name__ == "__main__":
@@ -107,7 +108,7 @@ Next, add the `PipesGlueClient` resource to your project's <PyObject object="Def
 
 ```python file=/guides/dagster/dagster_pipes/glue/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa
-from dagster_aws.pipes import PipesGlueContextInjector, PipesS3MessageReader
+from dagster_aws.pipes import PipesS3ContextInjector, PipesCloudWatchMessageReader
 
 
 bucket = os.environ["DAGSTER_GLUE_S3_CONTEXT_BUCKET"]
@@ -118,19 +119,21 @@ defs = Definitions(
     resources={
         "pipes_glue_client": PipesGlueClient(
             client=boto3.client("glue"),
-            context_injector=PipesGlueContextInjector(
+            context_injector=PipesS3ContextInjector(
                 client=boto3.client("s3"),
                 bucket=bucket,
             ),
-            message_reader=PipesS3MessageReader(
-                client=boto3.client("s3"), bucket=bucket
-            ),
+            message_reader=PipesCloudWatchMessageReader(client=boto3.client("logs")),
         )
     },
 )
 ```
 
 Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` asset.
+
+By default, the client uses the CloudWatch log stream (`.../output/<job-run-id>`) created by the Glue job to receive Dagster events. The client will also forward the stream to `stdout`.
+
+To customize this behavior, the client can be configured to use <PyObject object="PipesS3MessageReader" module="dagster_aws.pipes" />, and the Glue job to use <PyObject object="PipesS3MessageWriter" module="dagster_pipes" /> .
 
 ---
 

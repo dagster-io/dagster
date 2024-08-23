@@ -1,14 +1,14 @@
-import {TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useMemo} from 'react';
-import {useAssetDefinitionFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
+import {useEffect, useMemo, useState} from 'react';
+import {
+  FilterableAssetDefinition,
+  useAssetDefinitionFilterState,
+} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
-import {AssetTableFragment} from './types/AssetTableFragment.types';
-import {useAssetSearch} from './useAssetSearch';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
@@ -22,15 +22,28 @@ import {
 } from '../ui/Filters/useComputeKindTagFilter';
 import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const EMPTY_ARRAY: any[] = [];
 
-export function useAssetCatalogFiltering(
-  assets: AssetTableFragment[] | undefined,
-  prefixPath: string[],
-) {
-  const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
+const ALL_CHANGED_IN_BRANCH_VALUES = Object.values(ChangeReason);
 
+export function useAssetCatalogFiltering<
+  T extends {
+    id: string;
+    definition?: FilterableAssetDefinition | null;
+  },
+>({
+  assets = EMPTY_ARRAY,
+  includeRepos = true,
+  loading = false,
+  isEnabled = true,
+}: {
+  assets: T[] | undefined;
+  includeRepos?: boolean;
+  loading?: boolean;
+  isEnabled?: boolean;
+}) {
   const {
     filters,
     filterFn,
@@ -41,48 +54,40 @@ export function useAssetCatalogFiltering(
     setOwners,
     setCodeLocations,
     setStorageKindTags,
-  } = useAssetDefinitionFilterState();
+    setSelectAllFilters,
+  } = useAssetDefinitionFilterState({isEnabled});
 
-  const searchPath = (search || '')
-    .replace(/(( ?> ?)|\.|\/)/g, '/')
-    .toLowerCase()
-    .trim();
-
-  const pathMatches = useAssetSearch(
-    searchPath,
-    assets ?? (EMPTY_ARRAY as NonNullable<typeof assets>),
-  );
-
-  const filtered = React.useMemo(
-    () => pathMatches.filter((a) => filterFn(a.definition ?? {})),
-    [filterFn, pathMatches],
-  );
-
-  const allAssetGroupOptions = useAssetGroupSelectorsForAssets(pathMatches);
-  const allComputeKindTags = useAssetKindTagsForAssets(pathMatches);
-  const allAssetOwners = useAssetOwnersForAssets(pathMatches);
+  const allAssetGroupOptions = useAssetGroupSelectorsForAssets(assets);
+  const allComputeKindTags = useAssetKindTagsForAssets(assets);
+  const allAssetOwners = useAssetOwnersForAssets(assets);
 
   const groupsFilter = useAssetGroupFilter({
     allAssetGroups: allAssetGroupOptions,
-    assetGroups: filters.groups,
+    assetGroups: filters.selectAllFilters.includes('groups')
+      ? allAssetGroupOptions
+      : filters.groups,
     setGroups,
   });
   const changedInBranchFilter = useChangedFilter({
-    changedInBranch: filters.changedInBranch,
+    changedInBranch: filters.selectAllFilters.includes('changedInBranch')
+      ? ALL_CHANGED_IN_BRANCH_VALUES
+      : filters.changedInBranch,
     setChangedInBranch,
   });
   const computeKindFilter = useComputeKindTagFilter({
     allComputeKindTags,
-    computeKindTags: filters.computeKindTags,
+    computeKindTags: filters.selectAllFilters.includes('computeKindTags')
+      ? allComputeKindTags
+      : filters.computeKindTags,
     setComputeKindTags,
   });
   const ownersFilter = useAssetOwnerFilter({
     allAssetOwners,
-    owners: filters.owners,
+    owners: filters.selectAllFilters.includes('owners') ? allAssetOwners : filters.owners,
     setOwners,
   });
 
-  const tags = useAssetTagsForAssets(pathMatches);
+  const tags = useAssetTagsForAssets(assets);
   const storageKindTags = useMemo(() => tags.filter(isCanonicalStorageKindTag), [tags]);
   const nonStorageKindTags = useMemo(
     () => tags.filter((tag) => !isCanonicalStorageKindTag(tag)),
@@ -91,20 +96,30 @@ export function useAssetCatalogFiltering(
 
   const tagsFilter = useAssetTagFilter({
     allAssetTags: nonStorageKindTags,
-    tags: filters.tags,
+    tags: filters.selectAllFilters.includes('tags') ? nonStorageKindTags : filters.tags,
     setTags: setAssetTags,
   });
   const storageKindFilter = useStorageKindFilter({
     allAssetStorageKindTags: storageKindTags,
-    storageKindTags: filters.storageKindTags,
+    storageKindTags: filters.selectAllFilters.includes('storageKindTags')
+      ? storageKindTags
+      : filters.storageKindTags,
     setStorageKindTags,
   });
 
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
   const {allRepos} = React.useContext(WorkspaceContext);
 
+  const allRepoAddresses = useMemo(() => {
+    return allRepos.map((repo) =>
+      buildRepoAddress(repo.repository.name, repo.repositoryLocation.name),
+    );
+  }, [allRepos]);
+
   const reposFilter = useCodeLocationFilter({
-    codeLocations: filters.codeLocations,
+    codeLocations: filters.selectAllFilters?.includes('codeLocations')
+      ? allRepoAddresses
+      : filters.codeLocations,
     setCodeLocations,
   });
 
@@ -119,7 +134,7 @@ export function useAssetCatalogFiltering(
     if (isBranchDeployment) {
       uiFilters.push(changedInBranchFilter);
     }
-    if (allRepos.length > 1) {
+    if (allRepos.length > 1 && includeRepos) {
       uiFilters.unshift(reposFilter);
     }
     return uiFilters;
@@ -128,6 +143,7 @@ export function useAssetCatalogFiltering(
     changedInBranchFilter,
     computeKindFilter,
     groupsFilter,
+    includeRepos,
     isBranchDeployment,
     ownersFilter,
     reposFilter,
@@ -136,35 +152,84 @@ export function useAssetCatalogFiltering(
   ]);
   const components = useFilters({filters: uiFilters});
 
-  const filterInput = (
-    <TextInput
-      value={search || ''}
-      style={{width: '30vw', minWidth: 150, maxWidth: 400}}
-      placeholder={
-        prefixPath.length ? `Filter asset keys in ${prefixPath.join('/')}…` : `Filter asset keys…`
-      }
-      onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
-    />
+  const isFiltered: boolean = !!Object.values(filters as Record<string, any[]>).some(
+    (filter) => filter?.length,
   );
 
-  const isFiltered: boolean = !!(
-    filters.changedInBranch?.length ||
-    filters.computeKindTags?.length ||
-    filters.storageKindTags?.length ||
-    filters.groups?.length ||
-    filters.owners?.length ||
-    filters.codeLocations?.length
-  );
+  const [didWaitAfterLoading, setDidWaitAfterLoading] = useState(false);
+
+  useEffect(() => {
+    /**
+     * This effect handles syncing the `selectAllFilters` query param state with the actual filtering state.
+     * eg: If all of the items are selected then we include that key, otherwise we remove it.
+     */
+    if (loading || !isEnabled) {
+      return;
+    }
+    if (!didWaitAfterLoading) {
+      requestAnimationFrame(() => setDidWaitAfterLoading(true));
+      return;
+    }
+    let nextAllFilters = [...filters.selectAllFilters];
+
+    let didChange = false;
+
+    [
+      ['owners', filters.owners, allAssetOwners] as const,
+      ['tags', filters.tags, nonStorageKindTags] as const,
+      ['computeKindTags', filters.computeKindTags, allComputeKindTags] as const,
+      ['storageKindTags', filters.storageKindTags, storageKindTags] as const,
+      ['groups', filters.groups, allAssetGroupOptions] as const,
+      ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
+      ['codeLocations', filters.codeLocations, allRepos] as const,
+    ].forEach(([key, activeItems, allItems]) => {
+      if (!allItems.length) {
+        return;
+      }
+      if ((activeItems?.length ?? 0) !== allItems.length) {
+        // Not all items are included, lets remove the key if its included
+        if (filters.selectAllFilters?.includes(key)) {
+          didChange = true;
+          nextAllFilters = nextAllFilters.filter((filter) => filter !== key);
+        }
+      } else if (activeItems?.length && !filters.selectAllFilters?.includes(key)) {
+        // All items are included, lets add the key since its not already included
+        didChange = true;
+        nextAllFilters.push(key);
+      }
+    });
+
+    if (didChange) {
+      setSelectAllFilters?.(nextAllFilters);
+    }
+  }, [
+    allAssetGroupOptions,
+    allAssetOwners,
+    allComputeKindTags,
+    allRepos,
+    didWaitAfterLoading,
+    filters,
+    loading,
+    nonStorageKindTags,
+    setSelectAllFilters,
+    storageKindTags,
+    isEnabled,
+  ]);
+
+  const filtered = React.useMemo(
+    () => assets.filter((a) => filterFn(a.definition ?? {})),
+    [filterFn, assets],
+  ) as T[];
 
   return {
-    searchPath,
     activeFiltersJsx: components.activeFiltersJsx,
     filterButton: components.button,
-    filterInput,
     isFiltered,
+    filterFn,
     filtered,
     computeKindFilter,
     storageKindFilter,
+    groupsFilter,
     renderFilterButton: components.renderButton,
   };
 }

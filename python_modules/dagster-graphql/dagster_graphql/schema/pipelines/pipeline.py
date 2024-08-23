@@ -1,11 +1,17 @@
-from typing import List, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, List, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
+from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import ExternalExecutionPlan, ExternalJob
-from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
+from dagster._core.remote_representation.external_data import (
+    DEFAULT_MODE_NAME,
+    ExternalPartitionExecutionErrorData,
+    ExternalPresetData,
+)
 from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.storage.dagster_run import (
     DagsterRunStatsSnapshot,
@@ -26,7 +32,11 @@ from ...implementation.fetch_pipelines import get_job_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
-from ...implementation.utils import UserFacingGraphQLError, capture_error
+from ...implementation.utils import (
+    UserFacingGraphQLError,
+    apply_cursor_limit_reverse,
+    capture_error,
+)
 from ..asset_checks import GrapheneAssetCheckHandle
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import (
@@ -37,6 +47,7 @@ from ..dagster_types import (
 )
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
+from ..inputs import GrapheneAssetKeyInput
 from ..logs.compute_logs import GrapheneCapturedLogs, from_captured_log_data
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -44,8 +55,10 @@ from ..logs.events import (
     GrapheneObservationEvent,
     GrapheneRunStepStats,
 )
+from ..partition_keys import GraphenePartitionKeys
 from ..repository_origin import GrapheneRepositoryOrigin
 from ..runs import GrapheneRunConfigData
+from ..runs_feed import GrapheneRunsFeedEntry
 from ..schedules.schedules import GrapheneSchedule
 from ..sensors import GrapheneSensor
 from ..solids import (
@@ -61,6 +74,10 @@ from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
 from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
 from .status import GrapheneRunStatus
+
+if TYPE_CHECKING:
+    from ..partition_sets import GrapheneJobSelectionPartition
+
 
 STARTED_STATUSES = {
     DagsterRunStatus.STARTED,
@@ -327,6 +344,10 @@ class GrapheneRun(graphene.ObjectType):
     parentPipelineSnapshotId = graphene.String()
     repositoryOrigin = graphene.Field(GrapheneRepositoryOrigin)
     status = graphene.NonNull(GrapheneRunStatus)
+    runStatus = graphene.Field(
+        graphene.NonNull(GrapheneRunStatus),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of status.",
+    )
     pipeline = graphene.NonNull(GraphenePipelineReference)
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
@@ -364,7 +385,7 @@ class GrapheneRun(graphene.ObjectType):
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
 
     class Meta:
-        interfaces = (GraphenePipelineRun,)
+        interfaces = (GraphenePipelineRun, GrapheneRunsFeedEntry)
         name = "Run"
 
     def __init__(self, record: RunRecord):
@@ -373,6 +394,7 @@ class GrapheneRun(graphene.ObjectType):
         super().__init__(
             runId=dagster_run.run_id,
             status=dagster_run.status.value,
+            runStatus=dagster_run.status.value,
             mode=DEFAULT_MODE_NAME,
         )
         self.dagster_run = dagster_run
@@ -391,6 +413,10 @@ class GrapheneRun(graphene.ObjectType):
             if location_name
             else graphene_info.context.has_permission(permission)
         )
+
+    @property
+    def creation_timestamp(self) -> float:
+        return self._run_record.create_timestamp.timestamp()
 
     def resolve_hasReExecutePermission(self, graphene_info: ResolveInfo):
         return self._get_permission_value(Permissions.LAUNCH_PIPELINE_REEXECUTION, graphene_info)
@@ -566,7 +592,7 @@ class GrapheneRun(graphene.ObjectType):
         return self._run_record.update_timestamp.timestamp()
 
     def resolve_creationTime(self, graphene_info: ResolveInfo):
-        return self._run_record.create_timestamp.timestamp()
+        return self.creation_timestamp
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance
@@ -861,6 +887,22 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
     repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
+    partitionKeysOrError = graphene.Field(
+        graphene.NonNull(GraphenePartitionKeys),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+        reverse=graphene.Boolean(),
+        selected_asset_keys=graphene.Argument(
+            graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+        ),
+    )
+    partition = graphene.Field(
+        "dagster_graphql.schema.partition_sets.GrapheneJobSelectionPartition",
+        partition_name=graphene.NonNull(graphene.String),
+        selected_asset_keys=graphene.Argument(
+            graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+        ),
+    )
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -900,6 +942,47 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             graphene_info.context,
             location.get_repository(handle.repository_name),
             location,
+        )
+
+    @capture_error
+    def resolve_partitionKeysOrError(
+        self,
+        graphene_info: ResolveInfo,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        reverse: Optional[bool] = None,
+        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+    ) -> GraphenePartitionKeys:
+        result = graphene_info.context.get_external_partition_names(
+            repository_handle=self._external_job.repository_handle,
+            job_name=self._external_job.name,
+            selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
+            instance=graphene_info.context.instance,
+        )
+
+        if isinstance(result, ExternalPartitionExecutionErrorData):
+            raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+        all_partition_keys = result.partition_names
+
+        return GraphenePartitionKeys(
+            partitionKeys=apply_cursor_limit_reverse(
+                all_partition_keys, cursor=cursor, limit=limit, reverse=reverse or False
+            )
+        )
+
+    def resolve_partition(
+        self,
+        graphene_info: ResolveInfo,
+        partition_name: str,
+        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+    ) -> "GrapheneJobSelectionPartition":
+        from ..partition_sets import GrapheneJobSelectionPartition
+
+        return GrapheneJobSelectionPartition(
+            external_job=self._external_job,
+            partition_name=partition_name,
+            selected_asset_keys=_asset_key_input_list_to_asset_key_set(selected_asset_keys),
         )
 
 
@@ -982,3 +1065,11 @@ class GrapheneRunOrError(graphene.Union):
     class Meta:
         types = (GrapheneRun, GrapheneRunNotFoundError, GraphenePythonError)
         name = "RunOrError"
+
+
+def _asset_key_input_list_to_asset_key_set(
+    asset_keys: Optional[List[GrapheneAssetKeyInput]],
+) -> Optional[AbstractSet[AssetKey]]:
+    return (
+        {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None
+    )

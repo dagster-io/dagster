@@ -44,7 +44,7 @@ from dagster import (
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators import op
@@ -79,7 +79,6 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -3055,7 +3054,6 @@ def test_sensor_logging_on_tick_failure(
     assert len(records) == 1
     assert records[0][LOG_RECORD_METADATA_ATTR]["orig_message"] == "hello hello"
 
-    assert isinstance(instance.compute_log_manager, CapturedLogManager)
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 

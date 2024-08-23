@@ -2,8 +2,6 @@ import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
-  buildAssetSubset,
-  buildAssetSubsetValue,
   buildAutomationConditionEvaluationNode,
   buildPartitionedAssetConditionEvaluationNode,
   buildUnpartitionedAssetConditionEvaluationNode,
@@ -24,6 +22,8 @@ describe('PolicyEvaluationTable', () => {
     render(
       <PolicyEvaluationTable
         evaluationNodes={nodes}
+        assetKeyPath={['foo', 'bar']}
+        evaluationId={1}
         rootUniqueId="a"
         isLegacyEvaluation
         selectPartition={() => {}}
@@ -45,17 +45,15 @@ describe('PolicyEvaluationTable', () => {
         endTimestamp: 10,
         uniqueId: 'a',
         description: 'hi i am partitioned',
-        candidateSubset: buildAssetSubset({
-          subsetValue: buildAssetSubsetValue({
-            partitionKeys: ['100', '101', '102'],
-          }),
-        }),
+        numCandidates: 3,
       }),
     ];
 
     render(
       <PolicyEvaluationTable
         evaluationNodes={nodes}
+        assetKeyPath={['foo', 'bar']}
+        evaluationId={1}
         rootUniqueId="a"
         isLegacyEvaluation
         selectPartition={() => {}}
@@ -84,6 +82,8 @@ describe('PolicyEvaluationTable', () => {
     render(
       <PolicyEvaluationTable
         evaluationNodes={nodes}
+        assetKeyPath={['foo', 'bar']}
+        evaluationId={1}
         rootUniqueId="a"
         isLegacyEvaluation={false}
         selectPartition={() => {}}
@@ -123,6 +123,8 @@ describe('PolicyEvaluationTable', () => {
       render(
         <PolicyEvaluationTable
           evaluationNodes={nodes}
+          assetKeyPath={['foo', 'bar']}
+          evaluationId={1}
           rootUniqueId="a"
           isLegacyEvaluation
           selectPartition={() => {}}
@@ -167,6 +169,8 @@ describe('PolicyEvaluationTable', () => {
       render(
         <PolicyEvaluationTable
           evaluationNodes={nodes}
+          assetKeyPath={['foo', 'bar']}
+          evaluationId={1}
           rootUniqueId="a"
           isLegacyEvaluation={false}
           selectPartition={() => {}}

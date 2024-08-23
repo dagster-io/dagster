@@ -3,7 +3,6 @@ import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-componen
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {AssetGlobalLineageLink} from 'shared/assets/AssetPageHeader.oss';
-import {useAssetDefinitionFilterState} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
@@ -15,7 +14,6 @@ import {
 } from './types/AssetGroupRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -93,16 +91,7 @@ export const AssetGroupRoot = ({
     [history],
   );
 
-  const assetFilterState = useAssetDefinitionFilterState();
-
-  const {filterFn} = assetFilterState;
-  const fetchOptions = React.useMemo(
-    () => ({
-      groupSelector,
-      hideNodesMatching: (node: AssetNodeForGraphQueryFragment) => !filterFn(node),
-    }),
-    [groupSelector, filterFn],
-  );
+  const fetchOptions = React.useMemo(() => ({groupSelector}), [groupSelector]);
 
   const lineageOptions = React.useMemo(
     () => ({preferAssetRendering: true, explodeComposites: true}),
@@ -135,7 +124,6 @@ export const AssetGroupRoot = ({
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
-          assetFilterState={assetFilterState}
         />
       ) : (
         <AssetsCatalogTable

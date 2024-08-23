@@ -223,6 +223,7 @@ export const SearchDialog = () => {
             queryString={queryString}
             results={renderedResults}
             onClickResult={onClickResult}
+            searching={loading || state.searching}
           />
         </Container>
       </Overlay>

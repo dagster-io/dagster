@@ -8,15 +8,14 @@ from contextlib import contextmanager
 from typing import IO, Iterator, Optional, Sequence
 
 from dagster._core.instance import T_DagsterInstance
-from dagster._core.storage.captured_log_manager import (
+from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
     CapturedLogData,
-    CapturedLogManager,
     CapturedLogMetadata,
     CapturedLogSubscription,
     ComputeIOType,
+    ComputeLogManager,
 )
-from dagster._core.storage.compute_log_manager import ComputeLogManager
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -25,7 +24,7 @@ from dagster._core.storage.local_compute_log_manager import (
 SUBSCRIPTION_POLLING_INTERVAL = 5
 
 
-class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_DagsterInstance]):
+class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
     """Abstract class that uses the local compute log manager to capture logs and stores them in
     remote cloud storage.
     """

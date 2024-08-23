@@ -1,7 +1,7 @@
 # pyright: reportMissingImports=none
 
 # start
-# __init__.py
+# definitions.py
 
 from my_dagster_project import assets
 from my_dagster_project.resources import GithubClientResource

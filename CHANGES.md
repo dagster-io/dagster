@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.8.3 (core) / 0.24.3 (libraries)
+
+### New
+
+- When different assets within a code location have different `PartitionsDefinition`s, there will no longer be an implicit asset job `__ASSET_JOB_...` for each `PartitionsDefinition`; there will just be one with all the assets. This reduces the time it takes to load code locations with assets with many different `PartitionsDefinition`s.
+
+## 1.8.2 (core) / 0.24.2 (libraries)
+
+### New
+
+- [ui] Improved performance of the Automation history view for partitioned assets
+- [ui] You can now delete dynamic partitions for an asset from the ui
+- [dagster-sdf] Added support for quoted table identifiers (Thanks, [@akbog](https://github.com/akbog)!)
+- [dagster-openai] Add additional configuration options for the `OpenAIResource` (Thanks, [@chasleslr](https://github.com/chasleslr)!)
+- [dagster-fivetran] Fivetran assets now have relation identifier metadata.
+
+### Bugfixes
+
+- [ui] Fixed a collection of broken links pointing to renamed Declarative Automation pages.
+- [dagster-dbt] Fixed issue preventing usage of `MultiPartitionMapping` with `@dbt_assets` (Thanks, [@arookieds](https://github.com/arookieds)!)
+- [dagster-azure] Fixed issue that would cause an error when configuring an `AzureBlobComputeLogManager` without a `secret_key` (Thanks, [@ion-elgreco](https://github.com/ion-elgreco) and [@HynekBlaha](https://github.com/HynekBlaha)!)
+
+### Documentation
+
+- Added API docs for `AutomationCondition` and associated static constructors.
+- [dagster-deltalake] Corrected some typos in the integration reference (Thanks, [@dargmuesli](https://github.com/dargmuesli)!)
+- [dagster-aws] Added API docs for the new `PipesCloudWatchMessageReader`
+
+# 1.8.1 (core) / 0.24.1 (libraries)
+
+### New
+
+- If the sensor daemon fails while submitting runs, it will now checkpoint its progress and attempt to submit the remaining runs on the next evaluation.
+- `build_op_context` and `build_asset_context` now accepts a `run_tags` argument.
+- Nested partially configured resources can now be used outside of `Definitions`.
+- [ui] Replaced GraphQL Explorer with GraphiQL.
+- [ui] The run timeline can now be grouped by job or by automation.
+- [ui] For users in the experimental navigation flag, schedules and sensors are now in a single merged automations table.
+- [ui] Logs can now be filtered by metadata keys and values.
+- [ui] Logs for `RUN_CANCELED` events now display relevant error messages.
+- [dagster-aws] The new `PipesCloudWatchMessageReader` can consume logs from CloudWatch as pipes messages.
+- [dagster-aws] Glue jobs launched via pipes can be automatically canceled if Dagster receives a termination signal.
+- [dagster-azure] `AzureBlobComputeLogManager` now supports service principals, thanks @[ion-elgreco](https://github.com/ion-elgreco)!
+- [dagster-databricks] `dagster-databricks` now supports `databricks-sdk<=0.17.0`.
+- [dagster-datahub] `dagster-datahub` now allows pydantic versions below 3.0.0, thanks @[kevin-longe-unmind](https://github.com/kevin-longe-unmind)!
+- [dagster-dbt] The `DagsterDbtTranslator` class now supports a modfiying the `AutomationCondition` for dbt models by overriding `get_automation_condition`.
+- [dagster-pandera] `dagster-pandera` now supports `polars`.
+- [dagster-sdf] Table and columns tests can now be used as asset checks.
+- [dagster-embedded-elt] Column metadata and lineage can be fetched on Sling assets by chaining the new `replicate(...).fetch_column_metadata()` method.
+- [dagster-embedded-elt] dlt resource docstrings will now be used to populate asset descriptions, by default.
+- [dagster-embedded-elt] dlt assets now generate column metadata.
+- [dagster-embedded-elt] dlt transformers now refer to the base resource as upstream asset.
+- [dagster-openai] `OpenAIResource` now supports `organization`, `project` and `base_url` for configurting the OpenAI client, thanks @[chasleslr](https://github.com/chasleslr)!
+- [dagster-pandas][dagster-pandera][dagster-wandb] These libraries no longer pin `numpy<2`, thanks @[judahrand](https://github.com/judahrand)!
+
+### Bugfixes
+
+- Fixed a bug for job backfills using backfill policies that materialized multiple partitions in a single run would be launched multiple times.
+- Fixed an issue where runs would sometimes move into a FAILURE state rather than a CANCELED state if an error occurred after a run termination request was started.
+- [ui] Fixed a bug where an incorrect dialog was shown when canceling a backfill.
+- [ui] Fixed the asset page header breadcrumbs for assets with very long key path elements.
+- [ui] Fixed the run timeline time markers for users in timezones that have off-hour offsets.
+- [ui] Fixed bar chart tooltips to use correct timezone for timestamp display.
+- [ui] Fixed an issue introduced in the 1.8.0 release where some jobs created from graph-backed assets were missing the “View as Asset Graph” toggle in the Dagster UI.
+
+### Breaking Changes
+
+- [dagster-airbyte] `AirbyteCloudResource` now supports `client_id` and `client_secret` for authentication - the `api_key` approach is no longer supported. This is motivated by the [deprecation of portal.airbyte.com](https://reference.airbyte.com/reference/portalairbytecom-deprecation) on August 15, 2024.
+
+### Deprecations
+
+- [dagster-databricks] Removed deprecated authentication clients provided by `databricks-cli` and `databricks_api`
+- [dagster-embedded-elt] Removed deprecated Sling resources `SlingSourceConnection`, `SlingTargetConnection`
+- [dagster-embedded-elt] Removed deprecated Sling resources `SlingSourceConnection`, `SlingTargetConnection`
+- [dagster-embedded-elt] Removed deprecated Sling methods `build_sling_assets`, and `sync`
+
+### Documentation
+
+- The Integrating Snowflake & dbt with Dagster+ Insights guide no longer erroneously references BigQuery, thanks @[dnxie12](https://github.com/dnxie12)!
+
+# 1.8.0 (core) / 0.24.0 (libraries)
+
 ## Major changes since 1.7.0 (core) / 0.22.0 (libraries)
 
 ### Core definition APIs
@@ -51,6 +133,7 @@
 - The `assets` argument on `Definitions` now accepts `AssetSpec`s.
 - The new `merge` method on `Definitions` enables combining multiple `Definitions` object into a single larger `Definition`s object with their combined contents.
 - Runs requested through the Declarative Automation system now have a `dagster/from_automation_condition: true` tag applied to them.
+- Changed the run tags query to be more performant. Thanks [@egordm](https://github.com/egordm)!
 - Dagster Pipes and its integrations with Lambda, Kubernetes, and Databricks are no longer experimental.
 - The `Definitions` constructor will no longer raise errors when the provided definitions aren’t mutually resolve-able – e.g. when there are conflicting definitions with the same name, unsatisfied resource dependencies, etc. These errors will still be raised at code location load time. The new `Definitions.validate_loadable` static method also allows performing the validation steps that used to occur in constructor.
 - `AssetsDefinitions` object provided to a `Definitions` object will now be deduped by reference equality. That is, the following will now work:
@@ -72,7 +155,7 @@
 
 - Dagster now raises an error when an op yields an output corresponding to an unselected asset.
 - Fixed a bug that caused downstream ops within a graph-backed asset to be skipped when they were downstream of assets within the graph-backed assets that aren’t part of the selection for the current run.
-- Fixed a bug where code references did not work properly for self-hosted GitLab instances. Thanks, @cooperellidge!
+- Fixed a bug where code references did not work properly for self-hosted GitLab instances. Thanks [@cooperellidge](https://github.com/cooperellidge)!
 - [ui] When engine events with errors appear in run logs, their metadata entries are now rendered correctly.
 - [ui] The asset catalog greeting now uses your first name from your identity provider.
 - [ui] The create alert modal now links to the alerting documentation, and links to the documentation have been updated.
@@ -117,7 +200,7 @@
 
 - The Asset Checks concept overview page now includes a table with all the built-in asset checks.
 - The Asset Metadata page concept page now includes a table with all the standard “dagster/” metadata keys.
-- Fixed a typo in the documentation for `MonthlyPartitionsDefinition` (thanks `@zero_stroke`!).
+- Fixed a typo in the documentation for `MonthlyPartitionsDefinition`. Thanks [@zero_stroke](https://github.com/zero_stroke)!
 - Added a new page about Declarative Automation and a guide about customizing automation conditions
 - Fixed a link in the Limiting concurrency guide.
 

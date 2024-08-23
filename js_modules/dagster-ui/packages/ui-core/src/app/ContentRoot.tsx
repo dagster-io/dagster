@@ -9,7 +9,7 @@ import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
-const AutomationRoot = lazy(() => import('../automation/AutomationRoot'));
+const MergedAutomationRoot = lazy(() => import('../automation/MergedAutomationRoot'));
 const FallthroughRoot = lazy(() =>
   import('shared/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
 );
@@ -86,7 +86,7 @@ export const ContentRoot = memo(() => {
             <JobsRoot />
           </Route>
           <Route path="/automation">
-            <AutomationRoot />
+            <MergedAutomationRoot />
           </Route>
           <Route path="/deployment">
             <SettingsRoot />

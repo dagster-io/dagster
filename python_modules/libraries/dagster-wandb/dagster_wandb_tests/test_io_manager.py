@@ -2329,7 +2329,7 @@ def test_wandb_artifacts_io_manager_load_input(
     assert run_mock.use_artifact.return_value.get_path.call_count == 0
 
     run_mock.use_artifact.return_value.download.assert_called_with(
-        recursive=True, root=EndsWith(LOCAL_ARTIFACT_PATH)
+        root=EndsWith(LOCAL_ARTIFACT_PATH)
     )
 
     run_mock.use_artifact.return_value.verify.assert_called_with(root=EndsWith(LOCAL_ARTIFACT_PATH))
@@ -2558,7 +2558,7 @@ def test_wandb_artifacts_io_manager_load_input_with_specific_version(
     assert run_mock.use_artifact.return_value.get_path.call_count == 0
 
     run_mock.use_artifact.return_value.download.assert_called_with(
-        recursive=True, root=EndsWith(LOCAL_ARTIFACT_PATH)
+        root=EndsWith(LOCAL_ARTIFACT_PATH)
     )
 
     run_mock.use_artifact.return_value.verify.assert_called_with(root=EndsWith(LOCAL_ARTIFACT_PATH))
@@ -2612,7 +2612,7 @@ def test_wandb_artifacts_io_manager_load_input_with_specific_alias(
     assert run_mock.use_artifact.return_value.get_path.call_count == 0
 
     run_mock.use_artifact.return_value.download.assert_called_with(
-        recursive=True, root=EndsWith(LOCAL_ARTIFACT_PATH)
+        root=EndsWith(LOCAL_ARTIFACT_PATH)
     )
 
     run_mock.use_artifact.return_value.verify.assert_called_with(root=EndsWith(LOCAL_ARTIFACT_PATH))
@@ -2669,7 +2669,6 @@ def test_wandb_artifacts_io_manager_load_partitioned_input(
 
     LOCAL_PARTITIONED_ARTIFACT_PATH = f"/storage/wandb_artifacts_manager/artifacts/{ARTIFACT_NAME}.{PARTITION_KEY}.{ARTIFACT_VERSION}"
     run_mock.use_artifact.return_value.download.assert_called_with(
-        recursive=True,
         root=EndsWith(LOCAL_PARTITIONED_ARTIFACT_PATH),
     )
 

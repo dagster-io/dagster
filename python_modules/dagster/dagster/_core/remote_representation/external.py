@@ -12,6 +12,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Union,
 )
 
@@ -425,6 +426,33 @@ class ExternalRepository:
             external_asset_checks=self.get_external_asset_checks(),
         )
 
+    def get_partition_names_for_asset_job(
+        self,
+        job_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        instance: DagsterInstance,
+    ) -> Sequence[str]:
+        asset_nodes = self.get_external_asset_nodes(job_name)
+        unique_partitions_defs: Set[PartitionsDefinition] = set()
+        for asset_node in asset_nodes:
+            if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
+                continue
+
+            if asset_node.partitions_def_data is not None:
+                unique_partitions_defs.add(
+                    asset_node.partitions_def_data.get_partitions_definition()
+                )
+
+        if len(unique_partitions_defs) == 1:
+            return next(iter(unique_partitions_defs)).get_partition_keys(
+                dynamic_partitions_store=instance
+            )
+        else:
+            check.failed(
+                "There is no PartitionsDefinition shared by all the provided assets."
+                f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
+            )
+
 
 class ExternalJob(RepresentedJob):
     """ExternalJob is a object that represents a loaded job definition that
@@ -824,7 +852,7 @@ class ExternalSchedule:
             self._external_schedule_data.name,
         )
 
-    @property
+    @cached_property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
@@ -974,7 +1002,7 @@ class ExternalSensor:
             self._external_sensor_data.name,
         )
 
-    @property
+    @cached_property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
@@ -1084,6 +1112,12 @@ class ExternalPartitionSet:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
+        return self._external_partition_set_data.external_partitions_data is not None
+
+    def has_partitions_definition(self) -> bool:
+        # Partition sets from older versions of Dagster as well as partition sets using
+        # a DynamicPartitionsDefinition require calling out to user code to get the
+        # partitions definition
         return self._external_partition_set_data.external_partitions_data is not None
 
     def get_partitions_definition(self) -> PartitionsDefinition:

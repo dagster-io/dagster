@@ -29,10 +29,10 @@ Here are our asset definitions that define tables we want to materialize.
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/table_assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
-from dagster import AssetKey, SourceAsset, asset
+from dagster import AssetKey, AssetSpec, Definitions, asset
 from pandas import DataFrame
 
-sfo_q2_weather_sample = SourceAsset(
+sfo_q2_weather_sample = AssetSpec(
     key=AssetKey("sfo_q2_weather_sample"),
     description="Weather samples, taken every five minutes at SFO",
     metadata={"format": "csv"},
@@ -50,9 +50,12 @@ def daily_temperature_highs(sfo_q2_weather_sample: DataFrame) -> DataFrame:
 def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     """Computes the 10 hottest dates."""
     return daily_temperature_highs.nlargest(10, "max_tmpf")
+
+
+defs = Definitions(assets=[sfo_q2_weather_sample, daily_temperature_highs, hottest_dates])
 ```
 
-`sfo_q2_weather_sample` represents our base temperature table. It's a <PyObject module="dagster" object="SourceAsset" />, meaning that we rely on it, but don't generate it.
+`sfo_q2_weather_sample` represents our base temperature table. It's a table that's used by the assets in our pipeline, but that we're not responsible for generating. We define it using an <PyObject object="AssetSpec" />, which allows us to specify its attributes without providing a function that materializes it.
 
 `daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function, a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on in an <PyObject object="IOManager" />. This allows us to swap in different implementations in different environments. For example, in local development, we might want to store data in a local CSV file for easy testing. However in production, we would want to store data in a data warehouse.
 
@@ -71,7 +74,7 @@ To load definitions such as assets and resources, we use <PyObject object="Defin
 - We supply resources mapped to the assets using the `resources` argument to the <PyObject object="Definitions" /> object.
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/definitions.py startafter=gather_assets_start endbefore=gather_assets_end
-# __init__.py
+# definitions.py
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import table_assets
@@ -146,7 +149,7 @@ def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
 Here's an extended version of `weather_assets` that contains the new asset:
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/definitions.py  startafter=gather_spark_assets_start endbefore=gather_spark_assets_end
-# __init__.py
+# definitions.py
 
     from dagster import Definitions, load_assets_from_modules
 

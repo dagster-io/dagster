@@ -90,8 +90,8 @@ class SensorType(Enum):
 
     @property
     def is_handled_by_asset_daemon(self) -> bool:
-        # these "sensors" are currently evaluated by the asset daemon and not the sensor daemon
-        return self in (SensorType.AUTOMATION, SensorType.AUTO_MATERIALIZE)
+        # only the `AUTO_MATERIALIZE` sensor type is handled by the daemon
+        return self == SensorType.AUTO_MATERIALIZE
 
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
@@ -570,6 +570,9 @@ class SensorDefinition(IHasInternalInit):
             This can be provided instead of specifying a job.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the sensor will execute.
+            It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
+            It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
+            This is an experimental parameter that will replace `job`, `jobs`, and `asset_selection`.
     """
 
     def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
@@ -1390,10 +1393,10 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = check.not_none(context.repository_def).get_implicit_global_asset_job_def()
+        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name,
+                job_name=base_job.name,  # type: ignore  # (possible none)
                 asset_selection=list(asset_keys),
             )
         )

@@ -99,7 +99,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
           )}
         </DialogFooter>
       </Dialog>
-      {unfinishedMap && (
+      {!backfill.isAssetBackfill && unfinishedMap && (
         <TerminationDialog
           isOpen={
             !!backfill &&

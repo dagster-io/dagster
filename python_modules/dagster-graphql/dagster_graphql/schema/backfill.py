@@ -9,7 +9,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPo
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._core.errors import DagsterError
+from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillStatus,
     PartitionedAssetBackfillStatus,
@@ -18,7 +18,7 @@ from dagster._core.execution.asset_backfill import (
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalPartitionSet
-from dagster._core.storage.captured_log_manager import CapturedLogManager, ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -27,6 +27,8 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._core.workspace.permissions import Permissions
+
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
 
 from ..implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
@@ -46,6 +48,7 @@ from .errors import (
     create_execution_params_error_types,
 )
 from .pipelines.config import GrapheneRunConfigValidationInvalid
+from .runs_feed import GrapheneRunsFeedEntry
 from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
@@ -118,6 +121,25 @@ class GrapheneBulkActionStatus(graphene.Enum):
 
     class Meta:
         name = "BulkActionStatus"
+
+    def to_dagster_run_status(self) -> GrapheneRunStatus:
+        """Maps bulk action status to a run status for use with the RunsFeedEntry interface."""
+        # the pyright ignores are required because GrapheneBulkActionStatus.STATUS and GrapheneRunStatus.STATUS
+        # are interpreted as a Literal string during static analysis, but it is actually an Enum value
+        if self.args[0] == GrapheneBulkActionStatus.REQUESTED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.STARTED  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.CANCELED  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.CANCELING.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.CANCELING  # pyright: ignore[reportReturnType]
+
+        raise DagsterInvariantViolationError(
+            f"Unable to convert BulkActionStatus {self.args[0]} to a RunStatus. {self.args[0]} is an unknown status."
+        )
 
 
 class GrapheneAssetBackfillTargetPartitions(graphene.ObjectType):
@@ -275,10 +297,18 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
 
 class GraphenePartitionBackfill(graphene.ObjectType):
     class Meta:
+        interfaces = (GrapheneRunsFeedEntry,)
+
         name = "PartitionBackfill"
 
-    id = graphene.NonNull(graphene.String)
+    id = graphene.NonNull(graphene.ID)
     status = graphene.NonNull(GrapheneBulkActionStatus)
+    runStatus = graphene.Field(
+        graphene.NonNull(
+            GrapheneRunStatus,
+            description="Included to comply with RunsFeedEntry interface. Synthesizes status and the status of subruns to create a RunStatus.",
+        )
+    )
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
     numPartitions = graphene.Field(graphene.Int)
@@ -288,7 +318,21 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
+    creationTime = graphene.Field(
+        graphene.NonNull(
+            graphene.Float,
+            description="Included to comply with RunsFeedEntry interface. Duplicate of timestamp.",
+        )
+    )
+    startTime = graphene.Field(
+        graphene.Float(),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of timestamp.",
+    )
     endTimestamp = graphene.Field(graphene.Float)
+    endTime = graphene.Field(
+        graphene.Float(),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of endTimestamp.",
+    )
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
@@ -325,6 +369,13 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         graphene.NonNull("dagster_graphql.schema.instigation.GrapheneInstigationEventConnection"),
         cursor=graphene.String(),
     )
+    jobName = graphene.Field(
+        graphene.String(),
+        description="Included to comply with RunsFeedEntry interface. Duplicate of partitionSetName.",
+    )
+    assetCheckSelection = graphene.List(
+        graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
+    )
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -335,11 +386,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         super().__init__(
             id=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
+            jobName=backfill_job.partition_set_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
             timestamp=backfill_job.backfill_timestamp,
+            startTime=backfill_job.backfill_timestamp,
+            creationTime=backfill_job.backfill_timestamp,
             assetSelection=backfill_job.asset_selection,
+            assetCheckSelection=[],
         )
 
     def _get_partition_set(self, graphene_info: ResolveInfo) -> Optional[ExternalPartitionSet]:
@@ -425,6 +480,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         ]
 
+    @property
+    def creation_timestamp(self) -> float:
+        return self.timestamp
+
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
         from .pipelines.pipeline import GrapheneRun
 
@@ -452,6 +511,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             if get_tag_type(key) != TagType.HIDDEN
         ]
 
+    def resolve_runStatus(self, _graphene_info: ResolveInfo) -> GrapheneRunStatus:
+        return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
+
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
             # if it's still in progress then there is no end time
@@ -461,6 +523,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         for record in records:
             max_end_time = max(record.end_time or 0, max_end_time)
         return max_end_time
+
+    def resolve_endTime(self, graphene_info: ResolveInfo) -> Optional[float]:
+        return self.resolve_endTimestamp(graphene_info)
 
     def resolve_isValidSerialization(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_valid_serialization(_graphene_info.context)
@@ -585,9 +650,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         backfill_log_key_prefix = self._backfill_job.log_storage_prefix
 
         instance = graphene_info.context.instance
-
-        if not isinstance(instance.compute_log_manager, CapturedLogManager):
-            return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
         if not instance.backfill_log_storage_enabled():
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)

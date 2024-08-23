@@ -1,16 +1,19 @@
 import base64
 import inspect
 import json
+import multiprocessing
+import os
 import re
 import shutil
 import textwrap
+import time
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Literal
 
 import boto3
 import pytest
-from dagster import asset, materialize, open_pipes_session
+from dagster import AssetsDefinition, asset, materialize, open_pipes_session
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -24,6 +27,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._core.pipes.utils import PipesEnvContextInjector
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster_aws.pipes import (
+    PipesCloudWatchMessageReader,
     PipesGlueClient,
     PipesLambdaClient,
     PipesLambdaLogsMessageReader,
@@ -283,6 +287,7 @@ GLUE_JOB_NAME = "test-job"
 def external_s3_glue_script(s3_client) -> Iterator[str]:
     # This is called in an external process and so cannot access outer scope
     def script_fn():
+        import os
         import time
 
         import boto3
@@ -293,12 +298,18 @@ def external_s3_glue_script(s3_client) -> Iterator[str]:
             open_dagster_pipes,
         )
 
-        client = boto3.client("s3", region_name="us-east-1", endpoint_url="http://localhost:5193")
-        context_loader = PipesS3ContextLoader(client=client)
-        message_writer = PipesS3MessageWriter(client, interval=0.001)
+        s3_client = boto3.client(
+            "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
+        )
+
+        messages_backend = os.environ["TESTING_PIPES_MESSAGES_BACKEND"]
+        if messages_backend == "s3":
+            message_writer = PipesS3MessageWriter(s3_client, interval=0.001)
+        else:
+            message_writer = None
 
         with open_dagster_pipes(
-            context_loader=context_loader,
+            context_loader=PipesS3ContextLoader(client=s3_client),
             message_writer=message_writer,
             params_loader=PipesCliArgsParamsLoader(),
         ) as context:
@@ -341,10 +352,19 @@ def glue_client(moto_server, external_s3_glue_script, s3_client) -> boto3.client
     return client
 
 
-def test_glue_s3_pipes(capsys, s3_client, glue_client):
-    context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
-    message_reader = PipesS3MessageReader(bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001)
+@pytest.fixture
+def cloudwatch_client(moto_server, external_s3_glue_script, s3_client) -> boto3.client:
+    return boto3.client("logs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
 
+
+@pytest.mark.parametrize("pipes_messages_backend", ["s3", "cloudwatch"])
+def test_glue_pipes(
+    capsys,
+    s3_client,
+    glue_client,
+    cloudwatch_client,
+    pipes_messages_backend: Literal["s3", "cloudwatch"],
+):
     @asset(check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey(["foo"]))])
     def foo(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
         results = pipes_glue_client.run(
@@ -354,8 +374,21 @@ def test_glue_s3_pipes(capsys, s3_client, glue_client):
         ).get_results()
         return results
 
+    context_injector = PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client)
+    message_reader = (
+        PipesS3MessageReader(bucket=_S3_TEST_BUCKET, client=s3_client, interval=0.001)
+        if pipes_messages_backend == "s3"
+        else PipesCloudWatchMessageReader(client=cloudwatch_client)
+    )
+
     pipes_glue_client = PipesGlueClient(
-        client=LocalGlueMockClient(glue_client=glue_client, s3_client=s3_client),
+        client=LocalGlueMockClient(
+            aws_endpoint_url=_MOTO_SERVER_URL,
+            glue_client=glue_client,
+            s3_client=s3_client,
+            cloudwatch_client=cloudwatch_client,
+            pipes_messages_backend=pipes_messages_backend,
+        ),
         context_injector=context_injector,
         message_reader=message_reader,
     )
@@ -379,3 +412,127 @@ def test_glue_s3_pipes(capsys, s3_client, glue_client):
         )
         assert len(asset_check_executions) == 1
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+
+@pytest.fixture
+def long_glue_job(s3_client, glue_client) -> Iterator[str]:
+    job_name = "Very Long Job"
+
+    def script_fn():
+        import os
+        import time
+
+        import boto3
+        from dagster_pipes import PipesCliArgsParamsLoader, PipesS3ContextLoader, open_dagster_pipes
+
+        s3_client = boto3.client(
+            "s3", region_name="us-east-1", endpoint_url="http://localhost:5193"
+        )
+
+        with open_dagster_pipes(
+            context_loader=PipesS3ContextLoader(client=s3_client),
+            params_loader=PipesCliArgsParamsLoader(),
+        ) as context:
+            context.log.info("Glue job sleeping...")
+            time.sleep(int(os.getenv("SLEEP_SECONDS", "1")))
+
+    with temp_script(script_fn) as script_path:
+        s3_key = "long_glue_script.py"
+        s3_client.upload_file(script_path, _S3_TEST_BUCKET, s3_key)
+
+        glue_client.create_job(
+            Name=job_name,
+            Description="Test job",
+            Command={
+                "Name": "glueetl",  # Spark job type
+                "ScriptLocation": f"s3://{_S3_TEST_BUCKET}/{s3_key}",
+                "PythonVersion": "3.10",
+            },
+            GlueVersion="4.0",
+            Role="arn:aws:iam::012345678901:role/service-role/AWSGlueServiceRole-test",
+        )
+
+        yield job_name
+
+
+@pytest.fixture
+def foo_asset(long_glue_job: str) -> AssetsDefinition:
+    @asset
+    def foo(context: AssetExecutionContext, pipes_glue_client: PipesGlueClient):
+        results = pipes_glue_client.run(
+            context=context,
+            job_name=long_glue_job,
+        ).get_results()
+        return results
+
+    return foo
+
+
+@pytest.fixture
+def local_glue_mock_client(glue_client, s3_client, cloudwatch_client) -> LocalGlueMockClient:
+    return LocalGlueMockClient(
+        aws_endpoint_url=_MOTO_SERVER_URL,
+        glue_client=glue_client,
+        s3_client=s3_client,
+        cloudwatch_client=cloudwatch_client,
+        pipes_messages_backend="cloudwatch",
+    )
+
+
+@pytest.fixture
+def pipes_glue_client(local_glue_mock_client, s3_client, cloudwatch_client) -> PipesGlueClient:
+    return PipesGlueClient(
+        client=local_glue_mock_client,
+        context_injector=PipesS3ContextInjector(bucket=_S3_TEST_BUCKET, client=s3_client),
+        message_reader=PipesCloudWatchMessageReader(client=cloudwatch_client),
+    )
+
+
+def test_glue_pipes_interruption_forwarding_asset_is_valid(
+    foo_asset, pipes_glue_client, local_glue_mock_client
+):
+    # make sure this runs without multiprocessing first
+
+    with instance_for_test() as instance:
+        materialize(
+            [foo_asset], instance=instance, resources={"pipes_glue_client": pipes_glue_client}
+        )
+
+
+def test_glue_pipes_interruption_forwarding(
+    long_glue_job, foo_asset, pipes_glue_client, local_glue_mock_client
+):
+    def materialize_asset(env, return_dict):
+        os.environ.update(env)
+        try:
+            with instance_for_test() as instance:
+                materialize(  # this will be interrupted and raise an exception
+                    [foo_asset],
+                    instance=instance,
+                    resources={"pipes_glue_client": pipes_glue_client},
+                )
+        finally:
+            job_run_id = next(iter(local_glue_mock_client._job_runs.keys()))  # noqa
+            return_dict[0] = local_glue_mock_client.get_job_run(long_glue_job, job_run_id)
+
+    with multiprocessing.Manager() as manager:
+        return_dict = manager.dict()
+
+        p = multiprocessing.Process(
+            target=materialize_asset,
+            args=(
+                {"SLEEP_SECONDS": "10"},
+                return_dict,
+            ),
+        )
+        p.start()
+
+        while p.is_alive():
+            # we started executing the run
+            # time to interrupt it!
+            time.sleep(3)
+            p.terminate()
+
+        p.join()
+        assert not p.is_alive()
+        assert return_dict[0]["JobRun"]["JobRunState"] == "STOPPED"

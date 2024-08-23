@@ -7,6 +7,7 @@ from ..util import non_null_list
 
 class GrapheneAssetConnection(graphene.ObjectType):
     nodes = non_null_list(GrapheneAsset)
+    cursor = graphene.Field(graphene.String)
 
     class Meta:
         name = "AssetConnection"

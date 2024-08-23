@@ -14,7 +14,6 @@ from dagster import (
     io_manager,
 )
 from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance_for_test import environ
@@ -32,6 +31,7 @@ from dagster_fivetran_tests.utils import (
     get_sample_connector_response,
     get_sample_connectors_response,
     get_sample_connectors_response_multiple,
+    get_sample_destination_details_response,
     get_sample_groups_response,
     get_sample_sync_response,
     get_sample_update_response,
@@ -56,7 +56,7 @@ def test_load_from_instance(
     connector_to_asset_key_fn,
     multiple_connectors,
     destination_ids,
-):
+) -> None:
     with environ({"FIVETRAN_API_KEY": "some_key", "FIVETRAN_API_SECRET": "some_secret"}):
         load_calls = []
 
@@ -64,7 +64,6 @@ def test_load_from_instance(
         def test_io_manager(_context) -> IOManager:
             class TestIOManager(IOManager):
                 def handle_output(self, context: OutputContext, obj) -> None:
-                    assert context.dagster_type.is_nothing
                     return
 
                 def load_input(self, context: InputContext) -> Any:
@@ -85,6 +84,13 @@ def test_load_from_instance(
                 method=rsps.GET,
                 url=ft_resource.api_base_url + "groups",
                 json=get_sample_groups_response(),
+                status=200,
+                match=[matchers.header_matcher(expected_auth_header)],
+            )
+            rsps.add(
+                method=rsps.GET,
+                url=ft_resource.api_base_url + "destinations/some_group",
+                json=(get_sample_destination_details_response()),
                 status=200,
                 match=[matchers.header_matcher(expected_auth_header)],
             )
@@ -148,7 +154,14 @@ def test_load_from_instance(
         if connector_to_asset_key_fn:
             tables = {
                 connector_to_asset_key_fn(
-                    FivetranConnectionMetadata("some_service.some_name", "", "=", []),
+                    FivetranConnectionMetadata(
+                        "some_service.some_name",
+                        "",
+                        "=",
+                        {},
+                        database="example_database",
+                        service="snowflake",
+                    ),
                     ".".join(t.path),
                 )
                 for t in tables
@@ -157,7 +170,14 @@ def test_load_from_instance(
         # Set up a downstream asset to consume the xyz output table
         xyz_asset_key = (
             connector_to_asset_key_fn(
-                FivetranConnectionMetadata("some_service.some_name", "", "=", []),
+                FivetranConnectionMetadata(
+                    "some_service.some_name",
+                    "",
+                    "=",
+                    {},
+                    database="example_database",
+                    service="snowflake",
+                ),
                 "abc.xyz",
             )
             if connector_to_asset_key_fn
@@ -168,7 +188,7 @@ def test_load_from_instance(
         def downstream_asset(xyz):
             return
 
-        all_assets = [downstream_asset] + ft_assets
+        all_assets = [downstream_asset] + ft_assets  # type: ignore
 
         if destination_ids:
             # if destination_ids is truthy then we should skip the API call to get groups
@@ -177,9 +197,10 @@ def test_load_from_instance(
             )
 
         # Check schema metadata is added correctly to asset def
+        assets_def = ft_assets[0]
         assert any(
-            out.metadata.get("table_schema")
-            == MetadataValue.table_schema(
+            metadata.get("dagster/column_schema")
+            == (
                 TableSchema(
                     columns=[
                         TableColumn(name="column_1", type="any"),
@@ -188,8 +209,13 @@ def test_load_from_instance(
                     ]
                 )
             )
-            for out in ft_assets[0].node_def.output_defs
+            for key, metadata in assets_def.metadata_by_key.items()
         )
+        for key, metadata in assets_def.metadata_by_key.items():
+            assert metadata.get("dagster/relation_identifier") == (
+                "example_database." + ".".join(key.path[-2:])
+            )
+            assert assets_def.tags_by_key[key]["dagster/storage_kind"] == "snowflake"
 
         assert ft_assets[0].keys == tables
         assert all(
@@ -242,7 +268,8 @@ def test_load_from_instance(
             ]
             assert len(asset_materializations) == 3
             asset_keys = set(
-                mat.event_specific_data.materialization.asset_key for mat in asset_materializations
+                mat.event_specific_data.materialization.asset_key  # type: ignore
+                for mat in asset_materializations
             )
             assert asset_keys == tables
 

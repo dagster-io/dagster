@@ -6,13 +6,10 @@ import dagster._check as check
 from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
-)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
-    AutomationConditionSnapshot,
+    AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
@@ -227,12 +224,6 @@ fragment evaluationFields on AssetConditionEvaluation {
             startTimestamp
             endTimestamp
             numTrue
-            trueSubset {
-                subsetValue {
-                    isPartitioned
-                    partitionKeys
-                }
-            }
             uniqueId
             childUniqueIds
         }
@@ -277,7 +268,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
     assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AssetConditionEvaluationRecords {
             records {
-                id
+                evaluationId
                 numRequested
                 assetKey {
                     path
@@ -310,7 +301,7 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
     assetConditionEvaluationsForEvaluationId(evaluationId: $evaluationId) {
         ... on AssetConditionEvaluationRecords {
             records {
-                id
+                evaluationId
                 numRequested
                 assetKey {
                     path
@@ -330,7 +321,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
     assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
         ... on AssetConditionEvaluationRecords {
             records {
-                id
+                evaluationId
                 isLegacy
                 numRequested
                 assetKey {
@@ -343,18 +334,18 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
                     startTimestamp
                     endTimestamp
                     numTrue
-                    trueSubset {
-                        subsetValue {
-                            isPartitioned
-                            partitionKeys
-                        }
-                    }
                     uniqueId
                     childUniqueIds
                 }
             }
         }
     }
+}
+"""
+
+TRUE_PARTITIONS_QUERY = """
+query GetTruePartitions($assetKey: AssetKeyInput!, $evaluationId: Int!, $nodeUniqueId: String!) {
+    truePartitionsForAutomationConditionEvaluationNode(assetKey: $assetKey, evaluationId: $evaluationId, nodeUniqueId: $nodeUniqueId)
 }
 """
 
@@ -420,124 +411,6 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             )
             assert results.data["assetNodeOrError"]["currentAutoMaterializeEvaluationId"] == 12345
 
-    def test_get_historic_rules_without_evaluation_data(
-        self, graphql_context: WorkspaceRequestContext
-    ):
-        evaluation1 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": null, "run_ids": {"__set__": []}}',
-            None,
-        )
-        evaluation2 = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["asset_two"]}, "num_discarded": 0, "num_requested": 1, "num_skipped": 0, "partition_subsets_by_condition": [], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
-            None,
-        )
-        check.not_none(
-            graphql_context.instance.schedule_storage
-        ).add_auto_materialize_asset_evaluations(
-            evaluation_id=10, asset_evaluations=[evaluation1, evaluation2]
-        )
-
-        results = execute_dagster_graphql(
-            graphql_context,
-            LEGACY_QUERY,
-            variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
-        )
-        assert len(results.data["assetConditionEvaluationRecordsOrError"]["records"]) == 1
-        asset_one_record = results.data["assetConditionEvaluationRecordsOrError"]["records"][0]
-        assert asset_one_record["assetKey"] == {"path": ["asset_one"]}
-        assert asset_one_record["evaluation"]["evaluationNodes"][0]["status"] == "FALSE"
-
-        results = execute_dagster_graphql(
-            graphql_context,
-            LEGACY_QUERY,
-            variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
-        )
-        assert len(results.data["assetConditionEvaluationRecordsOrError"]["records"]) == 1
-        asset_two_record = results.data["assetConditionEvaluationRecordsOrError"]["records"][0]
-        asset_two_root = asset_two_record["evaluation"]["evaluationNodes"][0]
-
-        assert asset_two_root["description"] == "All of"
-        assert asset_two_root["status"] == "FALSE"
-        assert len(asset_two_root["childUniqueIds"]) == 2
-
-        asset_two_child = self._get_node(
-            asset_two_root["childUniqueIds"][0], asset_two_record["evaluation"]["evaluationNodes"]
-        )
-        assert asset_two_child["description"] == "Any of"
-        assert asset_two_child["status"] == "FALSE"
-
-        asset_two_missing_node = self._get_node(
-            asset_two_child["childUniqueIds"][0], asset_two_record["evaluation"]["evaluationNodes"]
-        )
-        assert asset_two_missing_node["description"] == "materialization is missing"
-
-        results = execute_dagster_graphql(
-            graphql_context,
-            LEGACY_QUERY_FOR_EVALUATION_ID,
-            variables={"evaluationId": 10},
-        )
-
-        records = results.data["assetConditionEvaluationsForEvaluationId"]["records"]
-
-        assert len(records) == 2
-
-        # record from both previous queries are contained here
-        assert any(record == asset_one_record for record in records)
-        assert any(record == asset_two_record for record in records)
-
-        # this evaluationId doesn't exist
-        results = execute_dagster_graphql(
-            graphql_context,
-            LEGACY_QUERY_FOR_EVALUATION_ID,
-            variables={"evaluationId": 12345},
-        )
-
-        records = results.data["assetConditionEvaluationsForEvaluationId"]["records"]
-        assert len(records) == 0
-
-    def test_get_historic_evaluation_with_evaluation_data(
-        self, graphql_context: WorkspaceRequestContext
-    ):
-        evaluation = deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids(
-            '{"__class__": "AutoMaterializeAssetEvaluation", "asset_key": {"__class__": "AssetKey", "path": ["upstream_static_partitioned_asset"]}, "num_discarded": 0, "num_requested": 0, "num_skipped": 1, "partition_subsets_by_condition": [[{"__class__": "AutoMaterializeRuleEvaluation", "evaluation_data": {"__class__": "WaitingOnAssetsRuleEvaluationData", "waiting_on_asset_keys": {"__frozenset__": [{"__class__": "AssetKey", "path": ["blah"]}]}}, "rule_snapshot": {"__class__": "AutoMaterializeRuleSnapshot", "class_name": "SkipOnRequiredButNonexistentParentsRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.SKIP"}, "description": "required parent partitions do not exist"}}, {"__class__": "SerializedPartitionsSubset", "serialized_partitions_def_class_name": "StaticPartitionsDefinition", "serialized_partitions_def_unique_id": "7c2047f8b02e90a69136c1a657bd99ad80b433a2", "serialized_subset": "{\\"version\\": 1, \\"subset\\": [\\"a\\"]}"}]], "rule_snapshots": [{"__class__": "AutoMaterializeRuleSnapshot", "class_name": "MaterializeOnMissingRule", "decision_type": {"__enum__": "AutoMaterializeDecisionType.MATERIALIZE"}, "description": "materialization is missing"}], "run_ids": {"__set__": []}}',
-            StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"]),
-        )
-        check.not_none(
-            graphql_context.instance.schedule_storage
-        ).add_auto_materialize_asset_evaluations(
-            evaluation_id=10,
-            asset_evaluations=[evaluation],
-        )
-
-        results = execute_dagster_graphql(
-            graphql_context,
-            LEGACY_QUERY,
-            variables={
-                "assetKey": {"path": ["upstream_static_partitioned_asset"]},
-                "limit": 10,
-                "cursor": None,
-            },
-        )
-
-        records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
-        assert len(records) == 1
-
-        evaluation = records[0]["evaluation"]
-        rootNode = evaluation["evaluationNodes"][0]
-        assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
-
-        assert rootNode["numTrue"] == 0
-        assert len(rootNode["childUniqueIds"]) == 2
-
-        notSkipNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
-        assert notSkipNode["description"] == "Not"
-        assert notSkipNode["numTrue"] == 0
-        assert len(notSkipNode["childUniqueIds"]) == 1
-
-        skipNode = self._get_node(notSkipNode["childUniqueIds"][0], evaluation["evaluationNodes"])
-        assert skipNode["description"] == "Any of"
-        assert len(skipNode["childUniqueIds"]) == 1
-
     def _get_node(
         self, unique_id: str, evaluations: Sequence[Mapping[str, Any]]
     ) -> Mapping[str, Any]:
@@ -553,7 +426,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         child_evaluations: Optional[Sequence[AutomationConditionEvaluation]] = None,
     ) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
-            condition_snapshot=AutomationConditionSnapshot(
+            condition_snapshot=AutomationConditionNodeSnapshot(
                 class_name="...",
                 description=description,
                 unique_id=str(random.randint(0, 100000000)),
@@ -676,18 +549,29 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
         assert rootNode["description"] == "All of"
         assert rootNode["numTrue"] == 2
-        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
         assert len(rootNode["childUniqueIds"]) == 2
 
         notNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
         assert notNode["description"] == "Not"
         assert notNode["numTrue"] == 2
-        assert set(notNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
 
         skipNode = self._get_node(notNode["childUniqueIds"][0], evaluation["evaluationNodes"])
         assert skipNode["description"] == "Any of"
         assert skipNode["numTrue"] == 1
-        assert set(skipNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"c"}
+
+        evaluationId = records[0]["evaluationId"]
+        uniqueId = skipNode["uniqueId"]
+        results = execute_dagster_graphql(
+            graphql_context,
+            TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetKey": {"path": ["upstream_static_partitioned_asset"]},
+                "evaluationId": evaluationId,
+                "nodeUniqueId": uniqueId,
+            },
+        )
+
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == {"c"}
 
         # test one of the true partitions
         specific_result = execute_dagster_graphql(
@@ -809,12 +693,42 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "(NOT (in_progress))",
         ]
         assert rootNode["numTrue"] == 0
-        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == set()
         assert len(rootNode["childUniqueIds"]) == 5
+
+        evaluationId = record["evaluationId"]
+        uniqueId = rootNode["uniqueId"]
+        results = execute_dagster_graphql(
+            graphql_context,
+            TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetKey": {"path": ["A"]},
+                "evaluationId": evaluationId,
+                "nodeUniqueId": uniqueId,
+            },
+        )
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == set()
 
         childNode = record["evaluationNodes"][1]
         assert childNode["userLabel"] is None
         assert childNode["expandedLabel"] == ["in_latest_time_window"]
         assert childNode["numTrue"] == 4
-        assert set(childNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b", "c", "d"}
         assert len(childNode["childUniqueIds"]) == 0
+
+        evaluationId = record["evaluationId"]
+        uniqueId = childNode["uniqueId"]
+        results = execute_dagster_graphql(
+            graphql_context,
+            TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetKey": {"path": ["A"]},
+                "evaluationId": evaluationId,
+                "nodeUniqueId": uniqueId,
+            },
+        )
+
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == {
+            "a",
+            "b",
+            "c",
+            "d",
+        }

@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     FrozenSet,
+    Iterator,
     Mapping,
     NamedTuple,
     Optional,
@@ -30,7 +31,8 @@ if TYPE_CHECKING:
         AutomationContext,
     )
 
-T = TypeVar("T")
+StructuredCursor = Union[str, AssetSubset, Sequence[AssetSubset]]
+T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
 
 @whitelist_for_serdes
@@ -53,7 +55,7 @@ def get_serializable_candidate_subset(
 
 
 @whitelist_for_serdes(storage_name="AssetConditionSnapshot")
-class AutomationConditionSnapshot(NamedTuple):
+class AutomationConditionNodeSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
     class_name: str
@@ -61,6 +63,14 @@ class AutomationConditionSnapshot(NamedTuple):
     unique_id: str
     label: Optional[str] = None
     name: Optional[str] = None
+
+
+@whitelist_for_serdes
+class AutomationConditionSnapshot(NamedTuple):
+    """A serializable snapshot of an entire AutomationCondition tree."""
+
+    node_snapshot: AutomationConditionNodeSnapshot
+    children: Sequence["AutomationConditionSnapshot"]
 
 
 @whitelist_for_serdes
@@ -79,7 +89,7 @@ class AssetSubsetWithMetadata(NamedTuple):
 class AutomationConditionEvaluation(NamedTuple):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
-    condition_snapshot: AutomationConditionSnapshot
+    condition_snapshot: AutomationConditionNodeSnapshot
     start_timestamp: Optional[float]
     end_timestamp: Optional[float]
 
@@ -131,6 +141,12 @@ class AutomationConditionEvaluation(NamedTuple):
             return 0
         return discarded_subset.size
 
+    def iter_nodes(self) -> Iterator["AutomationConditionEvaluation"]:
+        """Convenience utility for iterating through all nodes in an evaluation tree."""
+        yield self
+        for evaluation in self.child_evaluations:
+            yield from evaluation.iter_nodes()
+
 
 @whitelist_for_serdes(storage_name="AssetConditionEvaluationWithRunIds")
 class AutomationConditionEvaluationWithRunIds(NamedTuple):
@@ -168,7 +184,7 @@ class AutomationConditionEvaluationState:
     previous_tick_evaluation_timestamp: Optional[float]
 
     max_storage_id: Optional[int]
-    extra_state_by_unique_id: Mapping[str, Optional[Union[AssetSubset, Sequence[AssetSubset]]]]
+    extra_state_by_unique_id: Mapping[str, Optional[StructuredCursor]]
 
     @property
     def asset_key(self) -> AssetKey:
@@ -184,9 +200,11 @@ class AutomationConditionNodeCursor(NamedTuple):
     true_subset: AssetSubset
     candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
-    extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]]
+    extra_state: Optional[StructuredCursor]
 
-    def get_extra_state(self, as_type: Type[T]) -> Optional[T]:
+    def get_structured_cursor(
+        self, as_type: Type[T_StructuredCursor]
+    ) -> Optional[T_StructuredCursor]:
         """Returns the extra_state value if it is of the expected type. Otherwise, returns None."""
         if isinstance(self.extra_state, as_type):
             return self.extra_state
@@ -259,8 +277,8 @@ class AutomationConditionCursor(NamedTuple):
 
         return AutomationConditionCursor(
             previous_requested_subset=result.true_subset,
-            effective_timestamp=context.effective_dt.timestamp(),
-            last_event_id=context.new_max_storage_id,
+            effective_timestamp=context.evaluation_time.timestamp(),
+            last_event_id=context.max_storage_id,
             node_cursors_by_unique_id=_gather_node_cursors(result),
             result_value_hash=result_hash,
         )

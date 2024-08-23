@@ -4,7 +4,6 @@ import dagster._check as check
 from dagster import AssetKey
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
-from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
     GrapheneAutoMaterializeAssetEvaluationRecord,
@@ -34,27 +33,11 @@ def _get_migration_error(
 
 
 def _get_graphene_records_from_evaluations(
-    graphene_info: "ResolveInfo",
-    evaluation_records: Sequence[AutoMaterializeAssetEvaluationRecord],
+    graphene_info: "ResolveInfo", evaluation_records: Sequence[AutoMaterializeAssetEvaluationRecord]
 ) -> GrapheneAutoMaterializeAssetEvaluationRecords:
-    asset_keys = {record.asset_key for record in evaluation_records}
-
-    partitions_defs = {}
-
-    nodes = get_asset_nodes_by_asset_key(graphene_info)
-    for asset_key in asset_keys:
-        asset_node = nodes.get(asset_key)
-        partitions_defs[asset_key] = (
-            asset_node.external_asset_node.partitions_def_data.get_partitions_definition()
-            if asset_node and asset_node.external_asset_node.partitions_def_data
-            else None
-        )
-
     return GrapheneAutoMaterializeAssetEvaluationRecords(
         records=[
-            GrapheneAutoMaterializeAssetEvaluationRecord(
-                evaluation, partitions_defs[evaluation.asset_key]
-            )
+            GrapheneAutoMaterializeAssetEvaluationRecord(evaluation)
             for evaluation in evaluation_records
         ]
     )

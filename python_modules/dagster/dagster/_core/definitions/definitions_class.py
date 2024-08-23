@@ -15,7 +15,6 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._config.pythonic_config import attach_resource_id_to_key_mapping
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -270,21 +269,7 @@ def _create_repository_using_definitions_args(
         else ExecutorDefinition.hardcoded_executor(executor)
     )
 
-    # Generate a mapping from each top-level resource instance ID to its resource key
-    resource_key_mapping = {id(v): k for k, v in resources.items()} if resources else {}
-
-    # Provide this mapping to each resource instance so that it can be used to resolve
-    # nested resources
-    resources_with_key_mapping = (
-        {
-            k: attach_resource_id_to_key_mapping(v, resource_key_mapping)
-            for k, v in resources.items()
-        }
-        if resources
-        else {}
-    )
-
-    resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
+    resource_defs = wrap_resources_for_execution(resources)
 
     # Binds top-level resources to jobs and any jobs attached to schedules or sensors
     (
@@ -298,7 +283,6 @@ def _create_repository_using_definitions_args(
         default_executor_def=executor_def,
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
-        _resource_key_mapping=resource_key_mapping,
     )
     def created_repo():
         return [
@@ -566,8 +550,21 @@ class Definitions(IHaveNew):
         """
         return self.get_repository_def().get_all_jobs()
 
+    def has_implicit_global_asset_job_def(self) -> bool:
+        return self.get_repository_def().has_implicit_global_asset_job_def()
+
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
+        """A useful conveninence method when there is a single defined global asset job.
+        This occurs when all assets in the code location use a single partitioning scheme.
+        If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
+        instead to access to the correct implicit asset one.
+        """
         return self.get_repository_def().get_implicit_global_asset_job_def()
+
+    def get_implicit_job_def_for_assets(
+        self, asset_keys: Iterable[AssetKey]
+    ) -> Optional[JobDefinition]:
+        return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
@@ -627,7 +624,7 @@ class Definitions(IHaveNew):
 
         Raises an error if any of the above are not true.
         """
-        defs.get_inner_repository()
+        defs.get_repository_def().load_all_definitions()
 
     @public
     @experimental
@@ -640,6 +637,14 @@ class Definitions(IHaveNew):
 
         Raises an error if the Definitions objects to be merged contain conflicting values for the
         same resource key or logger key, or if they have different executors defined.
+
+        Examples:
+            .. code-block:: python
+
+                import submodule1
+                import submodule2
+
+                defs = Definitions.merge(submodule1.defs, submodule2.defs)
 
         Returns:
             Definitions: The merged definitions.

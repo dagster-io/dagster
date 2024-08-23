@@ -1,5 +1,7 @@
 import graphene
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.events import DagsterEventType
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp
 from dagster._utils import check
@@ -14,6 +16,9 @@ class GrapheneAssetKeyInput(graphene.InputObjectType):
 
     class Meta:
         name = "AssetKeyInput"
+
+    def to_asset_key(self) -> AssetKey:
+        return AssetKey(self.path)
 
 
 class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
@@ -365,12 +370,37 @@ class GrapheneInstigationSelector(graphene.InputObjectType):
     name = graphene.NonNull(graphene.String)
 
 
-class GrapheneInputTag(graphene.InputObjectType):
-    name = graphene.NonNull(graphene.String)
+class GrapheneTagInput(graphene.InputObjectType):
+    key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "InputTag"
+        name = "TagInput"
+
+
+class GrapheneBulkActionsFilter(graphene.InputObjectType):
+    statuses = graphene.List(
+        graphene.NonNull("dagster_graphql.schema.backfill.GrapheneBulkActionStatus")
+    )
+    createdBefore = graphene.InputField(graphene.Float)
+    createdAfter = graphene.InputField(graphene.Float)
+
+    class Meta:
+        description = """This type represents a filter on Dagster Bulk Actions (backfills)."""
+        name = "BulkActionsFilter"
+
+    def to_selector(self):
+        statuses = (
+            [BulkActionStatus[status.value] for status in self.statuses] if self.statuses else None
+        )
+        created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
+
+        return BulkActionsFilter(
+            statuses=statuses,
+            created_before=created_before,
+            created_after=created_after,
+        )
 
 
 types = [
@@ -392,6 +422,7 @@ types = [
     GrapheneSensorSelector,
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
-    GrapheneInputTag,
+    GrapheneTagInput,
     GrapheneReportRunlessAssetEventsParams,
+    GrapheneBulkActionsFilter,
 ]

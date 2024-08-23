@@ -203,6 +203,7 @@ export const AssetPartitions = ({
       {timeDimensionIdx !== -1 && (
         <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
           <DimensionRangeWizard
+            dimensionType={selections[timeDimensionIdx]!.dimension.type}
             partitionKeys={selections[timeDimensionIdx]!.dimension.partitionKeys}
             health={{ranges: rangesForEachDimension[timeDimensionIdx]!}}
             selected={selections[timeDimensionIdx]!.selectedKeys}
@@ -211,7 +212,6 @@ export const AssetPartitions = ({
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
-            dimensionType={selections[timeDimensionIdx]!.dimension.type}
           />
         </Box>
       )}

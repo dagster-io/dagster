@@ -1,5 +1,5 @@
 # start
-# __init__.py
+# definitions.py
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from dagster import Definitions

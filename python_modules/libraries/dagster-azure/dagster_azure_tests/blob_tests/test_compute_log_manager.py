@@ -8,7 +8,7 @@ from dagster import DagsterEventType, graph, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.captured_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
@@ -18,7 +18,7 @@ from dagster._time import get_current_datetime
 from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 ensure_dagster_tests_import()
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -226,11 +226,11 @@ def test_get_log_keys_for_log_key_prefix(
     ]
 
 
-class TestAzureComputeLogManager(TestCapturedLogManager):
+class TestAzureComputeLogManager(TestComputeLogManager):
     __test__ = True
 
-    @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(
+    @pytest.fixture(name="compute_log_manager")
+    def compute_log_manager(
         self,
         blob_client,
         storage_account,
@@ -280,8 +280,8 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, captured_log_manager):
-        yield captured_log_manager
+    def read_manager(self, compute_log_manager):
+        yield compute_log_manager
 
 
 @mock.patch("dagster_azure.blob.compute_log_manager.DefaultAzureCredential")

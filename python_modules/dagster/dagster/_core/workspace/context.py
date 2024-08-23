@@ -6,11 +6,24 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from itertools import count
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -20,7 +33,6 @@ from dagster._core.remote_representation import (
     CodeLocationOrigin,
     ExternalExecutionPlan,
     ExternalJob,
-    ExternalPartitionSet,
     GrpcServerCodeLocation,
     RepositoryHandle,
 )
@@ -256,7 +268,7 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
     def get_external_partition_config(
         self,
         repository_handle: RepositoryHandle,
-        partition_set_name: str,
+        job_name: str,
         partition_name: str,
         instance: DagsterInstance,
     ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
@@ -264,7 +276,7 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
             repository_handle.location_name
         ).get_external_partition_config(
             repository_handle=repository_handle,
-            partition_set_name=partition_set_name,
+            job_name=job_name,
             partition_name=partition_name,
             instance=instance,
         )
@@ -272,23 +284,32 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
     def get_external_partition_tags(
         self,
         repository_handle: RepositoryHandle,
-        partition_set_name: str,
+        job_name: str,
         partition_name: str,
         instance: DagsterInstance,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         return self.get_code_location(repository_handle.location_name).get_external_partition_tags(
             repository_handle=repository_handle,
-            partition_set_name=partition_set_name,
+            job_name=job_name,
             partition_name=partition_name,
             instance=instance,
+            selected_asset_keys=selected_asset_keys,
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
+        self,
+        repository_handle: RepositoryHandle,
+        job_name: str,
+        instance: DagsterInstance,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
-        return self.get_code_location(
-            external_partition_set.repository_handle.location_name
-        ).get_external_partition_names(external_partition_set, instance=instance)
+        return self.get_code_location(repository_handle.location_name).get_external_partition_names(
+            repository_handle=repository_handle,
+            job_name=job_name,
+            instance=instance,
+            selected_asset_keys=selected_asset_keys,
+        )
 
     def get_external_partition_set_execution_param_data(
         self,

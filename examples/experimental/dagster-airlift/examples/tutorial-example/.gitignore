@@ -1,0 +1,3 @@
+.airflow_home
+.dagster_home
+customers.csv
