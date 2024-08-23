@@ -136,7 +136,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 condition_snapshot=AutomationConditionNodeSnapshot("", "", "", None, None),
                 start_timestamp=None,
                 end_timestamp=None,
-                true_subset=AssetSubset(asset_key=AssetKey("unknown"), value=False),
+                true_subset=AssetSubset(key=AssetKey("unknown"), value=False),
                 candidate_subset=HistoricalAllPartitionsSubsetSentinel(),
                 subsets_with_metadata=[],
                 child_evaluations=[],

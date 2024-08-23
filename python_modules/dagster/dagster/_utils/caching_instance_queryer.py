@@ -162,7 +162,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             value = self.asset_partition_has_materialization_or_observation(
                 AssetKeyPartitionKey(asset_key)
             )
-        return AssetSubset(asset_key=asset_key, value=value)
+        return AssetSubset(key=asset_key, value=value)
 
     @cached_method
     def get_in_progress_asset_subset(self, *, asset_key: AssetKey) -> AssetSubset:
@@ -189,7 +189,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 dagster_run = self.instance.get_run_by_id(planned_materialization_info.run_id)
                 value = dagster_run is not None and dagster_run.status in IN_PROGRESS_RUN_STATUSES
 
-        return AssetSubset(asset_key=asset_key, value=value)
+        return AssetSubset(key=asset_key, value=value)
 
     @cached_method
     def get_failed_asset_subset(self, *, asset_key: AssetKey) -> AssetSubset:
@@ -215,7 +215,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
                 value = dagster_run is not None and dagster_run.status == DagsterRunStatus.FAILURE
 
-        return AssetSubset(asset_key=asset_key, value=value)
+        return AssetSubset(key=asset_key, value=value)
 
     ####################
     # ASSET RECORDS / STORAGE IDS

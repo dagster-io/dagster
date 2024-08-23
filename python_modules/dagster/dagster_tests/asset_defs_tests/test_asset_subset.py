@@ -142,9 +142,9 @@ def test_operations(
 )
 def test_serialization(value, use_valid_asset_subset) -> None:
     if use_valid_asset_subset:
-        asset_subset = ValidAssetSubset(asset_key=AssetKey("foo"), value=value)
+        asset_subset = ValidAssetSubset(key=AssetKey("foo"), value=value)
     else:
-        asset_subset = AssetSubset(asset_key=AssetKey("foo"), value=value)
+        asset_subset = AssetSubset(key=AssetKey("foo"), value=value)
 
     serialized_asset_subset = serialize_value(asset_subset)
     assert "ValidAssetSubset" not in serialized_asset_subset
@@ -155,5 +155,5 @@ def test_serialization(value, use_valid_asset_subset) -> None:
     # should always be deserialized as an AssetSubset
     assert not isinstance(round_trip_asset_subset, ValidAssetSubset)
 
-    assert asset_subset.asset_key == round_trip_asset_subset.asset_key
+    assert asset_subset.key == round_trip_asset_subset.key
     assert asset_subset.asset_partitions == round_trip_asset_subset.asset_partitions

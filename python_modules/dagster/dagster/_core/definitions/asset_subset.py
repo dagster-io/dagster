@@ -1,41 +1,35 @@
-from typing import AbstractSet, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Optional, Union
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.asset_key import AssetKey, EntityKey
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._model import InstanceOf
+from dagster._record import copy, record
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 
-class AssetSubsetSerializer(NamedTupleSerializer):
+class EntitySubsetSerializer(NamedTupleSerializer):
     """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
 
     def get_storage_name(self) -> str:
-        # override this method so all ValidAssetSubsets are serialzied as AssetSubsets
+        # backcompat
         return "AssetSubset"
 
-    def before_pack(self, value: "AssetSubset") -> "AssetSubset":
+    def before_pack(self, value: "EntitySubset") -> "EntitySubset":
         if value.is_partitioned:
-            return value._replace(value=value.subset_value.to_serializable_subset())
+            return copy(value, value=value.subset_value.to_serializable_subset())
         return value
 
 
-@whitelist_for_serdes(serializer=AssetSubsetSerializer)
-class AssetSubset(NamedTuple):
-    """Represents a set of AssetKeyPartitionKeys for a given AssetKey. For partitioned assets, this
-    class uses a PartitionsSubset to represent the set of partitions, enabling lazy evaluation of the
-    underlying partition keys. For unpartitioned assets, this class uses a bool to represent whether
-    the asset is present or not.
-    """
-
-    # use InstanceOf to tell pydantic to just do an instanceof check instead of the default
-    # costly NamedTuple validation and reconstruction
-    asset_key: InstanceOf[AssetKey]
+@whitelist_for_serdes(serializer=EntitySubsetSerializer, storage_field_names={"key": "asset_key"})
+@record
+class EntitySubset:
+    key: EntityKey
     value: Union[bool, PartitionsSubset]
 
     @property
@@ -44,23 +38,11 @@ class AssetSubset(NamedTuple):
 
     @property
     def bool_value(self) -> bool:
-        check.invariant(isinstance(self.value, bool))
-        return cast(bool, self.value)
+        return check.inst(self.value, bool)
 
     @property
     def subset_value(self) -> PartitionsSubset:
-        check.invariant(isinstance(self.value, PartitionsSubset))
-        return cast(PartitionsSubset, self.value)
-
-    @property
-    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        if not self.is_partitioned:
-            return {AssetKeyPartitionKey(self.asset_key)} if self.bool_value else set()
-        else:
-            return {
-                AssetKeyPartitionKey(self.asset_key, partition_key)
-                for partition_key in self.subset_value.get_partition_keys()
-            }
+        return check.inst(self.value, PartitionsSubset)
 
     @property
     def size(self) -> int:
@@ -89,10 +71,24 @@ class AssetSubset(NamedTuple):
         else:
             return partitions_def is None
 
+
+@whitelist_for_serdes(serializer=EntitySubsetSerializer, storage_field_names={"key": "asset_key"})
+class AssetSubset(EntitySubset):
+    key: AssetKey
+    value: Union[bool, PartitionsSubset]
+
+    @property
+    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        if not self.is_partitioned:
+            return {AssetKeyPartitionKey(self.key)} if self.bool_value else set()
+        else:
+            return {
+                AssetKeyPartitionKey(self.key, partition_key)
+                for partition_key in self.subset_value.get_partition_keys()
+            }
+
     def __contains__(self, item: AssetKeyPartitionKey) -> bool:
         if not self.is_partitioned:
-            return (
-                item.asset_key == self.asset_key and item.partition_key is None and self.bool_value
-            )
+            return item.asset_key == self.key and item.partition_key is None and self.bool_value
         else:
-            return item.asset_key == self.asset_key and item.partition_key in self.subset_value
+            return item.asset_key == self.key and item.partition_key in self.subset_value

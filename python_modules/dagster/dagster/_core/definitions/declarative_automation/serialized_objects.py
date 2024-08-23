@@ -101,7 +101,7 @@ class AutomationConditionEvaluation(NamedTuple):
 
     @property
     def asset_key(self) -> AssetKey:
-        return self.true_subset.asset_key
+        return self.true_subset.key
 
     def discarded_subset(self) -> Optional[AssetSubset]:
         """Returns the AssetSubset representing asset partitions that were discarded during this
@@ -285,7 +285,7 @@ class AutomationConditionCursor(NamedTuple):
 
     @property
     def asset_key(self) -> AssetKey:
-        return self.previous_requested_subset.asset_key
+        return self.previous_requested_subset.key
 
     @property
     def temporal_context(self) -> TemporalContext:

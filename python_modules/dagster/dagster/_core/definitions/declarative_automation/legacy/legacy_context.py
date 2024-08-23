@@ -26,6 +26,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._record import copy
 from dagster._time import get_current_timestamp
 
 from ...asset_subset import AssetSubset
@@ -160,7 +161,7 @@ class LegacyRuleEvaluationContext:
             if self.cursor
             else None,
             candidate_subset=ValidAssetSubset(
-                asset_key=candidate_slice.asset_key, value=candidate_slice.get_internal_value()
+                key=candidate_slice.asset_key, value=candidate_slice.get_internal_value()
             ),
             root_ref=self.root_context,
             start_timestamp=get_current_timestamp(),
@@ -232,7 +233,7 @@ class LegacyRuleEvaluationContext:
             parent_subset = ValidAssetSubset.coerce_from_subset(
                 parent_result.true_subset, self.partitions_def
             )
-            subset |= parent_subset._replace(asset_key=self.asset_key)
+            subset |= copy(parent_subset, key=self.asset_key)
         return subset
 
     @functools.cached_property
