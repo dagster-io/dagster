@@ -542,5 +542,9 @@
   {
     "url": "https://release-1-8-2.dagster.dagster-docs.io/",
     "version": "1.8.2"
+  },
+  {
+    "url": "https://release-1-8-3.dagster.dagster-docs.io/",
+    "version": "1.8.3"
   }
 ]
