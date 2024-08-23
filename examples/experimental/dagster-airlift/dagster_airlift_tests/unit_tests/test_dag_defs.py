@@ -1,6 +1,6 @@
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
-from dagster_airlift.core.dag_defs import dag_defs, task_defs
+from dagster_airlift.core import dag_defs, task_defs
 from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
 
