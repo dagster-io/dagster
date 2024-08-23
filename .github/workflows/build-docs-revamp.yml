@@ -1,9 +1,10 @@
 name: Deploy Docs Revamp
 on:
-  push:
-    branches:
-      - master
-      - docs-prod
+  pull_request:
+    paths:
+      - .github/workflows/build-docs-revamp.yml
+      - docs/docs-beta/**
+      - examples/docs_beta_snippets/**
     paths:
       - docs/docs-beta/**
       - examples/docs_beta_snippets/**
