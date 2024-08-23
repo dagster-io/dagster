@@ -55,7 +55,9 @@ def definitions_validate_command(**kwargs: ClickArgValue):
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
             )
         except Exception as e:
-            click.echo(click.style("Validation failed with exception: ", fg="red") + f"{e}.", err=True)
+            click.echo(
+                click.style("Validation failed with exception: ", fg="red") + f"{e}.", err=True
+            )
             exit(1)
         else:
             click.echo("Validation successful!")
