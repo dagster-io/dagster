@@ -16,7 +16,12 @@ from .workspace.cli_target import (
 )
 
 
-def check_command_options(f):
+@click.group(name="definitions")
+def definitions_cli():
+    """Commands for working with Dagster definitions."""
+
+
+def validate_command_options(f):
     return apply_click_params(
         f,
         workspace_option(),
@@ -25,12 +30,12 @@ def check_command_options(f):
     )
 
 
-@check_command_options
-@click.command(
-    name="check",
+@validate_command_options
+@definitions_cli.command(
+    name="validate",
     help="Validate if Dagster definitions are loadable.",
 )
-def check_command(**kwargs: ClickArgValue):
+def definitions_validate_command(**kwargs: ClickArgValue):
     logger = logging.getLogger("dagster")
 
     workspace_load_target = get_workspace_load_target(kwargs)
