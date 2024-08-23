@@ -1,13 +1,15 @@
+from dagster import AssetSpec
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
     build_defs_from_airflow_instance,
     combine_defs,
 )
-from dagster_airlift.dbt import defs_from_airflow_dbt
+from dagster_airlift.core.defs_builders import from_airflow
+from dagster_airlift.dbt.multi_asset import build_dbt_assets
 from dagster_dbt import DbtProject
 
-from dbt_example.dagster_defs.lakehouse import defs_from_lakehouse
+from dbt_example.dagster_defs.lakehouse import lakehouse_asset_key, load_lakehouse_defs
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 from .constants import (
@@ -30,18 +32,22 @@ airflow_instance = AirflowInstance(
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     orchestrated_defs=combine_defs(
-        defs_from_lakehouse(
+        from_airflow(
             dag_id="load_lakehouse",
             task_id="load_iris",
-            csv_path=CSV_PATH,
-            duckdb_path=DB_PATH,
-            columns=IRIS_COLUMNS,
+        ).defs(
+            load_lakehouse_defs(
+                specs=[AssetSpec(lakehouse_asset_key(csv_path=CSV_PATH))],
+                csv_path=CSV_PATH,
+                duckdb_path=DB_PATH,
+                columns=IRIS_COLUMNS,
+            ),
         ),
-        defs_from_airflow_dbt(
+        from_airflow(
             dag_id="dbt_dag",
             task_id="build_dbt_models",
-            manifest=dbt_manifest_path(),
-            project=DbtProject(dbt_project_path()),
+        ).defs(
+            build_dbt_assets(manifest=dbt_manifest_path(), project=DbtProject(dbt_project_path())),
         ),
     ),
 )

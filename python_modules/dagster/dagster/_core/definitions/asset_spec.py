@@ -223,3 +223,6 @@ class AssetSpec(
             if self.automation_condition
             else None
         )
+
+    def with_tags(self, tags: Mapping[str, str]) -> "AssetSpec":
+        return self._replace(tags={**self.tags, **tags})

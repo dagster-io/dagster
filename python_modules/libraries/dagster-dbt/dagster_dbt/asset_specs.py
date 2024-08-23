@@ -18,6 +18,7 @@ def build_dbt_asset_specs(
     select: str = "fqn:*",
     exclude: Optional[str] = None,
     project: Optional[DbtProject] = None,
+    io_manager_key: Optional[str] = None,
 ) -> Sequence[AssetSpec]:
     """Build a list of asset specs from a set of dbt resources selected from a dbt manifest.
 
@@ -52,7 +53,7 @@ def build_dbt_asset_specs(
         dagster_dbt_translator=dagster_dbt_translator,
         select=select,
         exclude=exclude or "",
-        io_manager_key=None,
+        io_manager_key=io_manager_key,
         project=project,
     )
 
