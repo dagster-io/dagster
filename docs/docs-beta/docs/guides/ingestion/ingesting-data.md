@@ -1,3 +1,0 @@
----
-title: Ingest Data
----
