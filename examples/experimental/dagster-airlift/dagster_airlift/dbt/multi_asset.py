@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional
 
-from dagster import AssetExecutionContext, AssetSpec, Definitions, multi_asset
+from dagster import AssetExecutionContext, Definitions, multi_asset
 from dagster_dbt import (
     DagsterDbtTranslator,
     DagsterDbtTranslatorSettings,
@@ -13,8 +13,6 @@ from dagster_dbt import (
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 
 from dagster_airlift.core import DefsFactory
-from dagster_airlift.core.specs import Specs
-from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
 
 @dataclass

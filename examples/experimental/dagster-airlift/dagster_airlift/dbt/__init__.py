@@ -1,3 +1,1 @@
-from .multi_asset import (
-    DbtProjectDefs as DbtProjectDefs,
-)
+from .multi_asset import DbtProjectDefs as DbtProjectDefs

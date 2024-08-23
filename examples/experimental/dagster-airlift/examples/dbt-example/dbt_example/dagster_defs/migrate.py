@@ -5,7 +5,7 @@ from dagster_airlift.core import (
     build_defs_from_airflow_instance,
     combine_defs,
 )
-from dagster_airlift.core.defs_builders import from_airflow
+from dagster_airlift.core.dag_defs import dag_defs, task_defs
 from dagster_airlift.dbt.multi_asset import build_dbt_assets
 from dagster_dbt import DbtProject
 
@@ -32,22 +32,26 @@ airflow_instance = AirflowInstance(
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     orchestrated_defs=combine_defs(
-        from_airflow(
-            dag_id="load_lakehouse",
-            task_id="load_iris",
-        ).defs(
-            load_lakehouse_defs(
-                specs=[AssetSpec(lakehouse_asset_key(csv_path=CSV_PATH))],
-                csv_path=CSV_PATH,
-                duckdb_path=DB_PATH,
-                columns=IRIS_COLUMNS,
+        dag_defs(
+            "load_lakehouse",
+            task_defs(
+                "load_iris",
+                load_lakehouse_defs(
+                    specs=[AssetSpec(lakehouse_asset_key(csv_path=CSV_PATH))],
+                    csv_path=CSV_PATH,
+                    duckdb_path=DB_PATH,
+                    columns=IRIS_COLUMNS,
+                ),
             ),
         ),
-        from_airflow(
-            dag_id="dbt_dag",
-            task_id="build_dbt_models",
-        ).defs(
-            build_dbt_assets(manifest=dbt_manifest_path(), project=DbtProject(dbt_project_path())),
+        dag_defs(
+            "dbt_dag",
+            task_defs(
+                "build_dbt_models",
+                build_dbt_assets(
+                    manifest=dbt_manifest_path(), project=DbtProject(dbt_project_path())
+                ),
+            ),
         ),
     ),
 )
