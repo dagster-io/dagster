@@ -41,7 +41,8 @@ def definitions_validate_command(**kwargs: ClickArgValue):
 
     click.echo("Starting validation...")
     for code_location_origin in code_locations_origins:
-        # TODO clean isinstance
+        # CodeLocationOrigin objects are of type GrpcServerCodeLocationOrigin
+        # when loading from a grpc server in workspace.yaml.
         if not isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin):
             continue
 
