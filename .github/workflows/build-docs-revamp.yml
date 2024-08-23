@@ -2,14 +2,17 @@ name: Deploy Docs Revamp
 on:
   pull_request:
     paths:
-      - docs/docs-beta
       - .github/workflows/build-docs-revamp.yml
+      - docs/docs-beta/**
+      - examples/docs_beta_snippets/**
   push:
     branches:
-      - docs/revamp
+      - master
+      - docs-prod
     paths:
-      - docs/docs-beta
       - .github/workflows/build-docs-revamp.yml
+      - docs/docs-beta/**
+      - examples/docs_beta_snippets/**
 
 concurrency:
   group: ${{ github.workflow}}-${{github.ref}}
@@ -27,7 +30,7 @@ jobs:
         with:
           node-version: 18  
 
-      - name: Run Linting
+      - name: Lint Docs
         run: |
           cd docs/docs-beta
           yarn install
@@ -45,7 +48,7 @@ jobs:
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
-        if: github.event_name == 'push' && github.ref == 'refs/heads/docs/revamp'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -53,4 +56,4 @@ jobs:
           vercel-args: "--prod"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
-          alias-domains: dagster-docs-beta.dagster.dagster-docs.io
+          alias-domains: dagster-docs-beta.dagster-docs.io
