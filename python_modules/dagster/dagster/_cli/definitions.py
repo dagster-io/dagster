@@ -1,8 +1,6 @@
-import logging
-import os
-
 import click
 
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._grpc.server import LoadedRepositories
 
@@ -36,32 +34,30 @@ def validate_command_options(f):
     help="Validate if Dagster definitions are loadable.",
 )
 def definitions_validate_command(**kwargs: ClickArgValue):
-    logger = logging.getLogger("dagster")
-
     workspace_load_target = get_workspace_load_target(kwargs)
-    workspace_origins = workspace_load_target.create_origins()
+    code_locations_origins = workspace_load_target.create_origins()
 
-    # TODO: Allow another container image?
-    container_image = os.getenv("DAGSTER_CURRENT_IMAGE")
-    # TODO: Allow another entry point?
-    entry_point = ["dagster"]
+    click.echo("Starting validation...")
+    for code_location_origin in code_locations_origins:
+        # TODO clean isinstance
+        if not isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+            continue
 
-    for workspace_origin in workspace_origins:
-        # TODO: What to do with ?
-        if isinstance(workspace_origin, ManagedGrpcPythonEnvCodeLocationOrigin):
-            # TODO: Raise exception is loadable_target_origin is None?
-
-            logger.info("Starting check...")
-
-            try:
-                # TODO: Logging when loading the repository would be great, where should it be implemented?
-                LoadedRepositories(
-                    loadable_target_origin=workspace_origin.loadable_target_origin,
-                    entry_point=entry_point,
-                    container_image=container_image,
-                )
-            except Exception as e:
-                print(e)
-                pass
-
-            logger.info("Ending check...")
+        curr_target_origin = (
+            code_location_origin.loadable_target_origin.python_file
+            or code_location_origin.loadable_target_origin.module_name
+            or code_location_origin.loadable_target_origin.package_name
+        )
+        click.echo(f"Validating definitions in {curr_target_origin}.")
+        try:
+            LoadedRepositories(
+                loadable_target_origin=code_location_origin.loadable_target_origin,
+                entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+            )
+        except Exception as e:
+            click.echo(click.style("Validation failed with exception: ", fg="red") + f"{e}.", err=True)
+            exit(1)
+        else:
+            click.echo("Validation successful!")
+    click.echo("Ending validation...")
+    exit(0)
