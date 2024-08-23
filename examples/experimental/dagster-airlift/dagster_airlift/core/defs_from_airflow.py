@@ -51,6 +51,12 @@ def build_defs_from_airflow_instance(
     return Definitions(
         assets=[assets_defs],
         asset_checks=orchestrated_defs.asset_checks if orchestrated_defs else None,
-        sensors=[airflow_sensor],
+        sensors=[airflow_sensor, *orchestrated_defs.sensors]
+        if orchestrated_defs and orchestrated_defs.sensors
+        else [airflow_sensor],
+        schedules=orchestrated_defs.schedules if orchestrated_defs else None,
+        jobs=orchestrated_defs.jobs if orchestrated_defs else None,
+        executor=orchestrated_defs.executor if orchestrated_defs else None,
+        loggers=orchestrated_defs.loggers if orchestrated_defs else None,
         resources=orchestrated_defs.resources if orchestrated_defs else None,
     )
