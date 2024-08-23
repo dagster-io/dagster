@@ -23,7 +23,7 @@ from dagster._core.execution.backfill import BulkActionsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.event_log.base import AssetRecord
-from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_run_tag_type
+from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._record import record
 from dagster._time import datetime_from_timestamp
 
@@ -67,7 +67,7 @@ def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
         keys=[
             tag_key
             for tag_key in graphene_info.context.instance.get_run_tag_keys()
-            if get_run_tag_type(tag_key) != TagType.HIDDEN
+            if get_tag_type(tag_key) != TagType.HIDDEN
         ]
     )
 
@@ -88,7 +88,7 @@ def get_run_tags(
             for key, values in instance.get_run_tags(
                 tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
             )
-            if get_run_tag_type(key) != TagType.HIDDEN
+            if get_tag_type(key) != TagType.HIDDEN
         ]
     )
 
