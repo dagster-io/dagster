@@ -44,7 +44,7 @@ In a large organization, it's important to know who is responsible for a given d
 
 In Dagster, you can attach custom information to assets in two ways: **tags** and **metadata**.
 
-**Tags** are a simple way to organize assets in Dagster. You can attach several tags to an asset when it is defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [asset catalog](/#todo). They are structured as key-value pairs of strings.
+**Tags** are a simple way to organize assets in Dagster. You can attach several tags to an asset when it is defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [asset catalog](/todo). They are structured as key-value pairs of strings.
 
 Here's an example of some tags one might apply to an asset:
 ```python
@@ -77,7 +77,7 @@ Attaching metadata at definition time is quite similar to how you attach tags.
 
 <CodeExample filePath="guides/data-modeling/metadata/definition-metadata.py" language="python" title="Using metadata at definition time" />
 
-To learn more about the different types of metadata you can attach, see the [`MetadataValue`](#/todo) API docs.
+To learn more about the different types of metadata you can attach, see the [`MetadataValue`](/todo) API docs.
 
 Some metadata keys will be given special treatment in the Dagster UI. See the [Standard metadata types](#standard-metadata-types) section for more information.
 
@@ -96,17 +96,17 @@ Some metadata keys will be given special treatment in the Dagster UI.
 | Key                          | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `dagster/uri`                  | **Type:** `str` <br/><br/> The URI for the asset, e.g. "s3://my_bucket/my_object"                                       |
-| `dagster/column_schema`        | **Type:** [`TableSchema`](#/todo) <br/><br/> For an asset that's a table, the schema of the columns in the table. Refer to the [Table and column metadata](#table-and-column-metadata) secton for details. |
-| `dagster/column_lineage`       | **Type:** [`TableColumnLineage`](#/todo) <br/><br/> For an asset that's a table, the lineage of column inputs to column outputs for the table. Refer to the [Table and column metadata](#table-and-column-metadata) secton for details. |
+| `dagster/column_schema`        | **Type:** [`TableSchema`](/todo) <br/><br/> For an asset that's a table, the schema of the columns in the table. Refer to the [Table and column metadata](#table-and-column-metadata) secton for details. |
+| `dagster/column_lineage`       | **Type:** [`TableColumnLineage`](/todo) <br/><br/> For an asset that's a table, the lineage of column inputs to column outputs for the table. Refer to the [Table and column metadata](#table-and-column-metadata) secton for details. |
 | `dagster/row_count`            | **Type:** `int` <br/><br/> For an asset that's a table, the number of rows in the table. Refer to the Table metadata documentation for details. |
 | `dagster/partition_row_count`  | **Type:** `int` <br/><br/> For a partition of an asset that's a table, the number of rows in the partition.              |
 | `dagster/relation_identifier`  | **Type:** `str` <br/><br/> A unique identifier for the table/view, typically fully qualified. For example, my_database.my_schema.my_table |
-| `dagster/code_references`      | **Type:** [`CodeReferencesMetadataValue`](#/todo) <br/><br/> A list of code references for the asset, such as file locations or references to Github URLs. Refer to the [Linking your assets with their source code](#linking-your-assets-with-their-source-code) section for details. Should only be provided in definition-level metadata, not materialization metadata. |
+| `dagster/code_references`      | **Type:** [`CodeReferencesMetadataValue`](/todo) <br/><br/> A list of code references for the asset, such as file locations or references to Github URLs. Refer to the [Linking your assets with their source code](#linking-your-assets-with-their-source-code) section for details. Should only be provided in definition-level metadata, not materialization metadata. |
 
 
 ## Table and column metadata
 
-Two of the most powerful metadata types are [`TableSchema`](#/todo) and [`TableColumnLineage`](#/todo). These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate the [asset catalog](/#todo) via the column lineage.
+Two of the most powerful metadata types are [`TableSchema`](/todo) and [`TableColumnLineage`](/todo). These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate the [asset catalog](/todo) via the column lineage.
 
 ### Table schema metadata
 
@@ -114,7 +114,7 @@ Here's a quick example of how to attach this metadata at both definition time an
 
 <CodeExample filePath="guides/data-modeling/metadata/table-schema-metadata.py" language="python" title="Table schema metadata" />
 
-Note that there are several data types and constraints available on [`TableColumn`](#/todo) objects. Refer to the API documentation for more information.)
+Note that there are several data types and constraints available on [`TableColumn`](/todo) objects. Refer to the API documentation for more information.)
 
 ### Column lineage metadata
 
@@ -159,4 +159,4 @@ If you aren't using Dagster+, you can annotate your assets with code references 
 
 <CodeExample filePath="guides/data-modeling/metadata/oss-references.py" language="python" title="Production source code references (OSS)" />
 
-[`link_code_references_to_git`](#/todo) currently supports GitHub and GitLab repositories. It also supports customization of how file paths are mapped; see the [`AnchorBasedFilePathMapping`](#/todo) API docs for more information.
+[`link_code_references_to_git`](/todo) currently supports GitHub and GitLab repositories. It also supports customization of how file paths are mapped; see the [`AnchorBasedFilePathMapping`](/todo) API docs for more information.
