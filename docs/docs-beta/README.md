@@ -60,6 +60,8 @@ yarn start
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server. Access the website at [http://localhost:3050](http://localhost:3050).
 
+### Linters
+
 To check the documentation for different issues, use the following:
 
 ```bash
@@ -70,6 +72,19 @@ yarn lint
 ## Checks for style guide adherence, grammar, spelling, etc.
 yarn vale
 ```
+
+### Diagrams
+
+You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
+
+```mermaid
+flowchart LR
+    Start --> Stop
+```
+
+Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
+
+### Code examples
 
 To include code snippets, use the following format:
 
