@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from dagster import AssetCheckKey, AssetKey, asset_check
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.test_utils import freeze_time
 
@@ -161,3 +162,48 @@ def test_outside_of_dag_dependency() -> None:
         assert len(result.asset_events) == 3
         assert all(isinstance(event, AssetMaterialization) for event in result.asset_events)
         assert_expected_key_order(result.asset_events, ["a", "c", "2"])  # type: ignore
+
+
+def test_request_asset_checks() -> None:
+    """Test that when a new dag or task run is detected, a new check run is requested for all checks which may target that dag/task."""
+    freeze_datetime = datetime(2021, 1, 1)
+
+    instance = make_test_instance()
+
+    @asset_check(asset="a")
+    def check_task_asset():
+        pass
+
+    @asset_check(asset="2")
+    def check_dag_asset():
+        pass
+
+    @asset_check(asset="c")
+    def check_unrelated_asset():
+        pass
+
+    with freeze_time(freeze_datetime):
+        result = build_and_invoke_sensor(
+            instance=instance,
+            defs=[
+                *build_dag_assets(
+                    tasks_to_asset_deps_graph={
+                        "1": {"a": [], "b": []},
+                    },
+                ),
+                make_asset("c", []),
+                check_dag_asset,
+                check_task_asset,
+                check_unrelated_asset,
+            ],
+        )
+
+        assert len(result.asset_events) == 3
+        assert result.run_requests
+        assert len(result.run_requests) == 1
+        run_request = result.run_requests[0]
+        assert run_request.asset_check_keys
+        assert set(run_request.asset_check_keys) == {
+            AssetCheckKey(name="check_task_asset", asset_key=AssetKey(["a"])),
+            AssetCheckKey(name="check_dag_asset", asset_key=AssetKey(["2"])),
+        }
