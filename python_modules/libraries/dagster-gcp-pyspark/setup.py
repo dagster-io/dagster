@@ -37,8 +37,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.8.2",
-        "dagster-gcp==0.24.2",
+        "dagster==1.8.3",
+        "dagster-gcp==0.24.3",
         "pyspark",
     ],
     extras_require={"test": ["pandas-gbq"]},
