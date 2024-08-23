@@ -51,19 +51,18 @@ The evaluation function of an asset sensor can be customized to include custom l
 stateDiagram-v2
     direction LR
 
-
+    classDef userDefined fill: lightblue
 
     [*] --> AssetMaterialized
     AssetMaterialized --> [*]
 
-    AssetMaterialized --> UserEvaluationFunction
+    AssetMaterialized --> UserEvaluationFunction:::userDefined
+    UserEvaluationFunction: User Evaluation Function
+
     UserEvaluationFunction --> RunRequest
     UserEvaluationFunction --> SkipReason
     SkipReason --> [*]
     RunRequest --> [*]
-
-    class UserEvaluationFunction userDefined
-    classDef userDefined fill: lightblue
 ```
 
 In this example, the `@asset_sensor` decorator allows you to define a custom evaluation function that returns a `RunRequest` object when the asset is materialized and certain metadata is present,
