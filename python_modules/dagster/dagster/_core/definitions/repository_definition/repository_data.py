@@ -193,8 +193,8 @@ class RepositoryData(ABC):
         return {}
 
     @public
-    def get_asset_checks_defs_by_key(self) -> Mapping[AssetKey, "AssetChecksDefinition"]:
-        """Mapping[AssetKey, AssetChecksDefinition]: Get the asset checks definitions for the repository."""
+    def get_asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
+        """Mapping[AssetCheckKey, AssetChecksDefinition]: Get the asset checks definitions for the repository."""
         return {}
 
     def load_all_definitions(self):
