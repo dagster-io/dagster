@@ -1098,6 +1098,19 @@
         ]
       },
       {
+        "title": "Integrations",
+        "children": [
+          {
+            "title": "Approaches to writing integrations",
+            "path": "/guides/integrations/approaches-to-writing-integrations"
+          },
+          {
+            "title": "Writing a multi-asset decorator integration",
+            "path": "/guides/integrations/writing-a-multi-asset-decorator-integration"
+          }
+        ]
+      },
+      {
         "title": "Working with data assets",
         "children": [
           {
