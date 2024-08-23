@@ -1,6 +1,6 @@
 import hashlib
 from collections import defaultdict
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Set
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Union
 
 from dagster import (
     AssetDep,
@@ -272,10 +272,12 @@ def construct_cacheable_assets_and_infer_dependencies(
     if not definitions or not definitions.assets:
         return _CacheableData()
     for asset in definitions.assets:
-        assets_def = check.inst(
-            asset, AssetsDefinition, "Expected orchestrated defs to all be AssetsDefinitions."
+        asset = check.inst(  # noqa: PLW2901
+            asset,
+            (AssetsDefinition, AssetSpec),
+            "Expected orchestrated defs to all be AssetsDefinitions or AssetSpecs.",
         )
-        task_info = get_task_info_for_asset(airflow_instance, assets_def)
+        task_info = get_task_info_for_asset(airflow_instance, asset)
         if task_info is None:
             continue
         task_level_metadata = {
@@ -292,7 +294,8 @@ def construct_cacheable_assets_and_infer_dependencies(
         task_level_metadata[
             "Computed in Task ID" if migration_state_for_task is False else "Triggered by Task ID"
         ] = task_info.task_id
-        for spec in assets_def.specs:
+        specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
+        for spec in specs:
             spec_deps = []
             for dep in spec.deps:
                 spec_deps.append(CacheableAssetDep.from_asset_dep(dep))
@@ -327,18 +330,21 @@ def construct_assets_with_task_migration_info_applied(
 
     new_assets_defs = []
     for asset in definitions.assets:
-        assets_def = check.inst(
-            asset, AssetsDefinition, "Expected orchestrated defs to all be AssetsDefinitions."
+        asset = check.inst(  # noqa: PLW2901
+            asset,
+            (AssetSpec, AssetsDefinition),
+            "Expected orchestrated defs to all be AssetsDefinitions or AssetSpecs.",
         )
-        dag_id = get_dag_id_from_asset(assets_def)
+        dag_id = get_dag_id_from_asset(asset)
         if dag_id is None:
-            new_assets_defs.append(assets_def)
+            new_assets_defs.append(asset)
             continue
         overall_migration_status = None
         overall_task_id = None
         overall_dag_id = None
         new_specs = []
-        for spec in assets_def.specs:
+        specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
+        for spec in specs:
             check.invariant(
                 cacheable_specs.task_asset_specs.get(spec.key) is not None,
                 f"Could not find cacheable spec for asset key {spec.key.to_user_string()}",
@@ -381,16 +387,21 @@ def construct_assets_with_task_migration_info_applied(
 
         # We don't coerce to a bool here since bool("False") is True.
         if overall_migration_status == "True":
+            asset = check.inst(  # noqa: PLW2901
+                asset,
+                AssetsDefinition,
+                f"For an asset to be migrated, it must be an AssetsDefinition. Found an AssetSpec for task ID {task_id}.",
+            )
             check.invariant(
-                assets_def.is_executable,
+                asset.is_executable,
                 f"For an asset to be marked as migrated, it must also be executable in dagster. Found unexecutable assets for task ID {task_id}.",
             )
             new_assets_defs.append(
                 AssetsDefinition(
-                    keys_by_input_name=assets_def.keys_by_input_name,
-                    keys_by_output_name=assets_def.keys_by_output_name,
-                    node_def=assets_def.node_def,
-                    partitions_def=assets_def.partitions_def,
+                    keys_by_input_name=asset.keys_by_input_name,
+                    keys_by_output_name=asset.keys_by_output_name,
+                    node_def=asset.node_def,
+                    partitions_def=asset.partitions_def,
                     specs=new_specs,
                 )
             )
@@ -399,7 +410,7 @@ def construct_assets_with_task_migration_info_applied(
                 build_airflow_asset_from_specs(
                     specs=new_specs,
                     name=f"{overall_dag_id}__{overall_task_id}",
-                    tags=assets_def.node_def.tags,
+                    tags=asset.node_def.tags if isinstance(asset, AssetsDefinition) else {},
                 )
             )
     return new_assets_defs
@@ -407,10 +418,10 @@ def construct_assets_with_task_migration_info_applied(
 
 # We expect that every asset which is passed to this function has all relevant specs mapped to a task.
 def get_task_info_for_asset(
-    airflow_instance: AirflowInstance, assets_def: AssetsDefinition
+    airflow_instance: AirflowInstance, asset: Union[AssetsDefinition, AssetSpec]
 ) -> Optional[TaskInfo]:
-    task_id = get_task_id_from_asset(assets_def)
-    dag_id = get_dag_id_from_asset(assets_def)
+    task_id = get_task_id_from_asset(asset)
+    dag_id = get_dag_id_from_asset(asset)
     if task_id is None or dag_id is None:
         return None
     return airflow_instance.get_task_info(dag_id, task_id)
