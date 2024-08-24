@@ -256,7 +256,7 @@ class RepositoryDefinition:
 
     @public
     @property
-    def asset_checks_defs_by_key(self) -> Mapping[AssetKey, "AssetChecksDefinition"]:
+    def asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
         """Mapping[AssetCheckKey, AssetChecksDefinition]: The assets checks defined in the repository."""
         return self._repository_data.get_asset_checks_defs_by_key()
 
