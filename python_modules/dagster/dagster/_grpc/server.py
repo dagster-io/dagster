@@ -636,7 +636,6 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_response = serialize_value(
                 get_partition_names(
                     self._get_repo_for_origin(partition_names_args.repository_origin),
-                    selected_asset_keys=partition_names_args.selected_asset_keys,
                     job_name=partition_names_args.get_job_name(),
                 )
             )
@@ -733,7 +732,6 @@ class DagsterApiServer(DagsterApiServicer):
                     self._get_repo_for_origin(partition_args.repository_origin),
                     job_name=partition_args.get_job_name(),
                     partition_name=partition_args.partition_name,
-                    selected_asset_keys=partition_args.selected_asset_keys,
                     instance_ref=instance_ref,
                 )
             )
