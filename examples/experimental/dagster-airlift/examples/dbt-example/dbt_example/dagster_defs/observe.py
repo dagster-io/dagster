@@ -4,8 +4,8 @@ from dagster import build_last_update_freshness_checks, build_sensor_for_freshne
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
-    build_defs_from_airflow_instance,
     combine_defs,
+    sync_build_defs_from_airflow_instance,
 )
 from dagster_airlift.dbt import specs_from_airflow_dbt
 
@@ -37,7 +37,7 @@ dbt_freshness_checks = build_last_update_freshness_checks(
 freshness_sensor = build_sensor_for_freshness_checks(
     freshness_checks=dbt_freshness_checks,
 )
-defs = build_defs_from_airflow_instance(
+defs = sync_build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=combine_defs(
         *specs_from_lakehouse(

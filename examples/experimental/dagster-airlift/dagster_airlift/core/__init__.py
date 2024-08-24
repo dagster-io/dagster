@@ -14,6 +14,6 @@ from .defs_builders import (
 )
 from .defs_from_airflow import (
     AirflowInstance as AirflowInstance,
-    build_defs_from_airflow_instance as build_defs_from_airflow_instance,
+    sync_build_defs_from_airflow_instance as sync_build_defs_from_airflow_instance,
 )
 from .multi_asset import PythonDefs as PythonDefs

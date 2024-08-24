@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Union
 
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -15,9 +16,20 @@ if TYPE_CHECKING:
 
 @whitelist_for_serdes
 @record
+class AssetDepRecord:
+    asset_key: AssetKey
+    # todo partition mapping
+
+
+@whitelist_for_serdes
+@record
 class AssetSpecRecord:
     key: AssetKey
+    description: Optional[str] = None
     metadata: Optional[Mapping[str, Any]] = None
+    deps: Optional[Sequence[AssetDepRecord]] = None
+    tags: Optional[Mapping[str, str]] = None
+    group_name: Optional[str] = None
 
 
 @whitelist_for_serdes
@@ -26,7 +38,17 @@ class AssetCheckSpecRecord:
     key: AssetCheckKey
 
 
-# TODO support partitions and other more complex objects
+def record_to_asset_spec(asr: AssetSpecRecord) -> AssetSpec:
+    return AssetSpec(
+        key=asr.key,
+        metadata=asr.metadata,
+        description=asr.description,
+        tags=asr.tags,
+        deps=[AssetDep(apr.asset_key) for apr in (asr.deps or [])],
+        group_name=asr.group_name,
+    )
+
+
 @whitelist_for_serdes
 @record
 class DefsRecord:
@@ -35,9 +57,10 @@ class DefsRecord:
     # for backwards compat and weird shit
     extra: Any = None
 
+    # TODO eliminate additional values
     def to_asset_specs(self, **additional_values) -> Sequence[AssetSpec]:
         return [
-            AssetSpec(key=asr.key, metadata=asr.metadata)._replace(**additional_values)
+            record_to_asset_spec(asr)._replace(**additional_values)
             for asr in (self.asset_spec_records or [])
         ]
 
@@ -93,6 +116,10 @@ class LoadableDefs(ABC):
         # only return if successfully stored
         return definitions
 
+    def sync_load(self, instance: Optional["DagsterInstance"] = None) -> Definitions:
+        from dagster._core.instance import DagsterInstance
+        return self.load(DefLoadingContext(load_from_storage=False, instance=instance or DagsterInstance.get()))
+
     # This is a problematic bit. Probably should construct from context with repo and location name etc.
     def _get_key(self) -> str:
         return f"loadable_defs/{self.external_source_key}"
@@ -120,3 +147,6 @@ def load_defs(
 
     instance = instance or DagsterInstance.get()
     return defs_fn(DefLoadingContext(load_from_storage=False, instance=instance))
+
+def load_all_defs(context: DefLoadingContext, *defs: Union[LoadableDefs, Definitions]) -> Definitions:
+    return Definitions.merge(*[d.load(context) if isinstance(d, LoadableDefs) else d for d in defs])

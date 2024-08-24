@@ -1,4 +1,8 @@
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    sync_build_defs_from_airflow_instance,
+)
 
 from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
 
@@ -10,4 +14,4 @@ airflow_instance = AirflowInstance(
 )
 
 
-defs = build_defs_from_airflow_instance(airflow_instance=airflow_instance)
+defs = sync_build_defs_from_airflow_instance(airflow_instance=airflow_instance)

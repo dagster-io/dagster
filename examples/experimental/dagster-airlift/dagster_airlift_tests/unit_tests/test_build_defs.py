@@ -10,7 +10,7 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster_airlift.core import sync_build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import DagInfo
 
 from .conftest import make_test_instance
@@ -63,7 +63,7 @@ def the_job():
 
 def test_defs_passthrough() -> None:
     """Test that passed-through definitions are present in the final definitions."""
-    defs = build_defs_from_airflow_instance(
+    defs = sync_build_defs_from_airflow_instance(
         airflow_instance=make_test_instance(),
         defs=Definitions(
             assets=[a],
@@ -102,7 +102,7 @@ def test_coerce_specs() -> None:
         ]
 
     spec = AssetSpec(key="a", tags={"airlift/dag_id": "dag", "airlift/task_id": "task"})
-    defs = build_defs_from_airflow_instance(
+    defs = sync_build_defs_from_airflow_instance(
         airflow_instance=make_test_instance(list_dags_override=list_dags),
         defs=Definitions(
             assets=[spec],

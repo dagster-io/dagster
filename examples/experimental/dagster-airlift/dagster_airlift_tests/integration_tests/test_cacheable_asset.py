@@ -2,7 +2,7 @@ from dagster import Definitions, multi_asset
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster_airlift.core.airflow_cacheable_assets_def import AirflowCacheableAssetsDefinition
+from dagster_airlift.core.defs_from_airflow import sync_build_defs_from_airflow_instance 
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import BasicAuthBackend
 from dagster_airlift.migration_state import (
@@ -20,8 +20,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
         name="airflow_instance",
     )
     # Cacheable assets with just dag peering.
-    cacheable_assets = AirflowCacheableAssetsDefinition(airflow_instance=instance, poll_interval=1)
-    definitions = Definitions(assets=[cacheable_assets])
+    definitions = sync_build_defs_from_airflow_instance(airflow_instance=instance, cache_polling_interval=1 )
     repository_def = definitions.get_repository_def()
 
     assets_defs = repository_def.assets_defs_by_key
@@ -71,7 +70,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
         ),
         None,
     ]:
-        cacheable_assets = AirflowCacheableAssetsDefinition(
+        defs = sync_build_defs_from_airflow_instance(
             airflow_instance=instance,
             defs=Definitions(
                 assets=[
@@ -80,10 +79,9 @@ def test_cacheable_asset(airflow_instance: None) -> None:
                 ]
             ),
             migration_state_override=migration_state,
-            poll_interval=1,
+            cache_polling_interval=1
         )
 
-        defs = Definitions(assets=[cacheable_assets])
         repository_def = defs.get_repository_def()
         assets_defs = repository_def.assets_defs_by_key
         assert len(assets_defs) == 3

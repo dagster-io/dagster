@@ -1,11 +1,8 @@
 from dagster import AssetSpec
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    PythonDefs,
-    build_defs_from_airflow_instance,
-    defs_from_factories,
-)
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.loadable import DefLoadingContext
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, PythonDefs, defs_from_factories
+from dagster_airlift.core.defs_from_airflow import load_defs_from_airflow_instance
 
 from simple_migration.shared import t1_work, t2_work, t3_work
 
@@ -30,6 +27,9 @@ t2 = PythonDefs(name="simple__t2", specs=[a2, a3], python_fn=t2_work)
 t3 = PythonDefs(name="simple__t3", specs=[a4], python_fn=t3_work)
 
 
-defs = build_defs_from_airflow_instance(
-    airflow_instance=airflow_instance, defs=defs_from_factories(t1, t2, t3)
-)
+def defs(context: DefLoadingContext) -> Definitions:
+    return load_defs_from_airflow_instance(
+        context,
+        airflow_instance=airflow_instance,
+        defs=defs_from_factories(t1, t2, t3),
+    )

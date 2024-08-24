@@ -1,7 +1,11 @@
 import os
 from pathlib import Path
 
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    sync_build_defs_from_airflow_instance,
+)
 from dagster_airlift.core.def_factory import defs_from_factories
 from dagster_airlift.dbt import DbtProjectDefs
 from dagster_dbt import DbtProject
@@ -25,7 +29,7 @@ def dbt_project_path() -> Path:
     return Path(env_val)
 
 
-defs = build_defs_from_airflow_instance(
+defs = sync_build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=defs_from_factories(
         CSVToDuckdbDefs(

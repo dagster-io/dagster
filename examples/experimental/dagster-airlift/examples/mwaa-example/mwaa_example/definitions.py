@@ -1,7 +1,7 @@
-from dagster_airlift.core import AirflowInstance, build_defs_from_airflow_instance
+from dagster_airlift.core import AirflowInstance, sync_build_defs_from_airflow_instance
 from dagster_airlift.mwaa import MwaaSessionAuthBackend
 
-defs = build_defs_from_airflow_instance(
+defs = sync_build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
         name="example-instance",
         auth_backend=MwaaSessionAuthBackend(

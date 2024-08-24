@@ -5,7 +5,7 @@ import pytest
 from dagster import Definitions, multi_asset
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster_airlift.core.airflow_cacheable_assets_def import AirflowCacheableAssetsDefinition
+from dagster_airlift.core.defs_from_airflow import sync_build_defs_from_airflow_instance 
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import BasicAuthBackend
 
@@ -40,7 +40,7 @@ def test_transitive_deps(airflow_instance: None) -> None:
         ),
         name="airflow_instance",
     )
-    cacheable_assets = AirflowCacheableAssetsDefinition(
+    defs = sync_build_defs_from_airflow_instance(
         airflow_instance=instance,
         defs=Definitions(
             assets=[
@@ -52,10 +52,9 @@ def test_transitive_deps(airflow_instance: None) -> None:
             ]
         ),
         migration_state_override=None,
-        poll_interval=1,
+        cache_polling_interval=1
     )
 
-    defs = Definitions(assets=[cacheable_assets])
     repository_def = defs.get_repository_def()
     assets_defs = repository_def.assets_defs_by_key
     assert len(assets_defs) == 7  # 5 tasks + 2 dags

@@ -1,15 +1,38 @@
 from typing import Optional
 
 from dagster import Definitions
-
+from dagster._core.definitions.loadable import DefLoadingContext, load_all_defs
+from dagster._core.instance import DagsterInstance
+t st
 from dagster_airlift.core.sensor import build_airflow_polling_sensor
 
 from ..migration_state import AirflowMigrationState
-from .airflow_cacheable_assets_def import DEFAULT_POLL_INTERVAL, AirflowCacheableAssetsDefinition
+from .airflow_cacheable_assets_def import  DEFAULT_POLL_INTERVAL, LoadableAirflowInstanceDefs
 from .airflow_instance import AirflowInstance
 
 
-def build_defs_from_airflow_instance(
+def load_defs_from_airflow_instance(
+    context: DefLoadingContext,
+    airflow_instance: AirflowInstance,
+    cache_polling_interval: int = DEFAULT_POLL_INTERVAL,
+    defs: Optional[Definitions] = None,
+    # This parameter will go away once we can derive the migration state from airflow itself, using our built in utilities.
+    # Alternatively, we can keep it around to let people override the migration state if they want.
+    migration_state_override: Optional[AirflowMigrationState] = None,
+) -> Definitions:
+    return load_all_defs(
+        context,
+        *([defs] if defs else []),
+        LoadableAirflowInstanceDefs(
+            airflow_instance=airflow_instance,
+            poll_interval=cache_polling_interval,
+            migration_state_override=migration_state_override,
+        ),
+        Definitions(sensors=[build_airflow_polling_sensor(airflow_instance=airflow_instance)]),
+    )
+
+
+def sync_build_defs_from_airflow_instance(
     airflow_instance: AirflowInstance,
     cache_polling_interval: int = DEFAULT_POLL_INTERVAL,
     defs: Optional[Definitions] = None,
@@ -38,22 +61,11 @@ def build_defs_from_airflow_instance(
         Definitions: The definitions to use for the provided airflow instance. Contains an asset per dag, an asset per task in the provided orchestrated defs, all resources provided in the orchestrated defs, and a sensor to poll for airflow dag runs.
 
     """
-    assets_defs = AirflowCacheableAssetsDefinition(
+    return load_defs_from_airflow_instance(
+        context=DefLoadingContext(load_from_storage=False, instance=DagsterInstance.get()),
         airflow_instance=airflow_instance,
-        defs=defs,
-        poll_interval=cache_polling_interval,
+        cache_polling_interval=cache_polling_interval,
+        defs=defs, 
         migration_state_override=migration_state_override,
-    )
-    # Now, we construct the sensor that will poll airflow for dag runs.
-    airflow_sensor = build_airflow_polling_sensor(
-        airflow_instance=airflow_instance,
-    )
-    return Definitions(
-        assets=[assets_defs],
-        asset_checks=defs.asset_checks if defs else None,
-        sensors=[airflow_sensor, *defs.sensors] if defs and defs.sensors else [airflow_sensor],
-        schedules=defs.schedules if defs else None,
-        jobs=defs.jobs if defs else None,
-        executor=defs.executor if defs else None,
-        loggers=defs.loggers if defs else None,
+
     )

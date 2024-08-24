@@ -3,7 +3,6 @@ from collections import defaultdict
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Union
 
 from dagster import (
-    AssetDep,
     AssetKey,
     AssetsDefinition,
     AssetSpec,
@@ -17,18 +16,15 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._record import record
-from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    SerializableNonScalarKeyMapping,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-    unpack_value,
+from dagster._core.definitions.loadable import (
+    AssetDepRecord,
+    AssetSpecRecord,
+    DefLoadingContext,
+    DefsRecord,
+    LoadableDefs,
 )
+from dagster._record import record
+from dagster._serdes import deserialize_value, serialize_value
 
 from dagster_airlift.migration_state import AirflowMigrationState
 
@@ -41,89 +37,18 @@ from .utils import (
     get_task_id_from_asset,
 )
 
-
-# We serialize dictionaries as json, and json doesn't know how to serialize AssetKeys. So we wrap the mapping
-# to be able to serialize this dictionary with "non scalar" keys.
-class CacheableSpecMappingSerializer(FieldSerializer):
-    def pack(
-        self,
-        mapping: Mapping[str, "CacheableAssetSpec"],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> JsonSerializableValue:
-        return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
-
-    def unpack(
-        self,
-        unpacked_value: JsonSerializableValue,
-        whitelist_map: WhitelistMap,
-        context: UnpackContext,
-    ) -> PackableValue:
-        return unpack_value(unpacked_value, dict, whitelist_map, context)
-
-
-@whitelist_for_serdes(
-    field_serializers={
-        "task_asset_specs": CacheableSpecMappingSerializer,
-        "dag_asset_specs": CacheableSpecMappingSerializer,
-    }
-)
-@record
-class CacheableSpecs:
-    task_asset_specs: Dict[AssetKey, "CacheableAssetSpec"]
-    dag_asset_specs: Dict[AssetKey, "CacheableAssetSpec"]
-
-
-@whitelist_for_serdes
-@record
-class CacheableAssetSpec:
-    # A dumbed down version of AssetSpec that can be serialized easily to and from a dictionary.
-    asset_key: AssetKey
-    description: Optional[str]
-    metadata: Mapping[str, Any]
-    tags: Mapping[str, str]
-    deps: Optional[Sequence["CacheableAssetDep"]]
-    group_name: Optional[str]
-
-    def to_asset_spec(self, additional_metadata: Mapping[str, Any]) -> AssetSpec:
-        return AssetSpec(
-            key=self.asset_key,
-            description=self.description,
-            metadata={**additional_metadata, **self.metadata},
-            tags=self.tags,
-            deps=[AssetDep(asset=dep.asset_key) for dep in self.deps] if self.deps else [],
-            group_name=self.group_name,
-        )
-
-    @staticmethod
-    def from_asset_spec(asset_spec: AssetSpec) -> "CacheableAssetSpec":
-        return CacheableAssetSpec(
-            asset_key=asset_spec.key,
-            description=asset_spec.description,
-            metadata=asset_spec.metadata,
-            tags=asset_spec.tags,
-            deps=[CacheableAssetDep.from_asset_dep(dep) for dep in asset_spec.deps],
-            group_name=asset_spec.group_name,
-        )
-
-
-@whitelist_for_serdes
-@record
-class CacheableAssetDep:
-    # A dumbed down version of AssetDep that can be serialized easily to and from a dictionary.
-    asset_key: AssetKey
-
-    @staticmethod
-    def from_asset_dep(asset_dep: AssetDep) -> "CacheableAssetDep":
-        return CacheableAssetDep(asset_key=asset_dep.asset_key)
-
-
 DEFAULT_POLL_INTERVAL = 60
 
 
-class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
-    """Builds cacheable assets definitions for Airflow DAGs."""
+def is_task_affined_spec(spec: AssetSpec) -> bool:
+    return (spec.metadata or {}).get("airlift/airflow_artifact_type") == "task"
 
+
+def is_dag_spec(spec: AssetSpec) -> bool:
+    return (spec.metadata or {}).get("airlift/airflow_artifact_type") == "dag"
+
+
+class LoadableAirflowInstanceDefs(LoadableDefs):
     def __init__(
         self,
         airflow_instance: AirflowInstance,
@@ -135,27 +60,23 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
         self.poll_interval = poll_interval
         self.defs = defs
         self.migration_state_override = migration_state_override
+        super().__init__(
+            external_source_key=f"airlift/airflow_instance/{airflow_instance.normalized_name}"
+        )
 
-    @property
-    def unique_id(self) -> str:
-        airflow_instance_name_hash = hashlib.md5(
-            self.airflow_instance.normalized_name.encode()
-        ).hexdigest()
-        return f"airflow_assets_{airflow_instance_name_hash}"
-
-    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+    def compute_defs_record(self, context: DefLoadingContext) -> DefsRecord:
         dag_infos = {dag.dag_id: dag for dag in self.airflow_instance.list_dags()}
-        cacheable_task_data = construct_cacheable_assets_and_infer_dependencies(
+        cacheable_task_data = construct_records_and_infer_dependencies(
             definitions=self.defs,
             migration_state=self.migration_state_override,
             airflow_instance=self.airflow_instance,
             dag_infos=dag_infos,
         )
 
-        dag_specs_per_key: Dict[AssetKey, CacheableAssetSpec] = {}
+        dag_spec_records_per_key: Dict[AssetKey, AssetSpecRecord] = {}
         for dag in dag_infos.values():
             source_code = self.airflow_instance.get_dag_source_code(dag.metadata["file_token"])
-            dag_specs_per_key[dag.dag_asset_key] = get_cached_spec_for_dag(
+            dag_spec_records_per_key[dag.dag_asset_key] = asset_spec_record_for_dag(
                 airflow_instance=self.airflow_instance,
                 task_asset_keys_in_dag=cacheable_task_data.all_asset_keys_per_dag_id.get(
                     dag.dag_id, set()
@@ -164,52 +85,48 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
                 dag_info=dag,
                 source_code=source_code,
             )
-        return [
-            AssetsDefinitionCacheableData(
-                extra_metadata={
-                    "cacheable_specs": serialize_value(
-                        CacheableSpecs(
-                            task_asset_specs=cacheable_task_data.cacheable_specs_per_asset_key,
-                            dag_asset_specs=dag_specs_per_key,
-                        )
-                    ),
-                },
-            )
-        ]
 
-    def build_definitions(
-        self, data: Sequence[AssetsDefinitionCacheableData]
-    ) -> Sequence[AssetsDefinition]:
-        check.invariant(len(data) == 1, "Expected exactly one cacheable data object.")
-        metadata: Mapping[str, Any] = check.not_none(
-            data[0].extra_metadata, "Expected cacheable data to have extra_metadata field set."
-        )
-        cacheable_specs = deserialize_value(metadata["cacheable_specs"], CacheableSpecs)
+        asset_spec_records = []
+        asset_spec_records.extend(cacheable_task_data.spec_records_by_asset_key.values())
+        asset_spec_records.extend(dag_spec_records_per_key.values())
+        return DefsRecord(asset_spec_records=asset_spec_records)
+
+    def definitions_from_record(self, defs_record: DefsRecord) -> Definitions:
+        asset_specs = defs_record.to_asset_specs()
+
+        dag_specs = [asset_spec for asset_spec in asset_specs if is_dag_spec(asset_spec)]
+        task_specs = [asset_spec for asset_spec in asset_specs if is_task_affined_spec(asset_spec)]
 
         new_assets_defs = []
-        for dag_spec in cacheable_specs.dag_asset_specs.values():
-            key = dag_spec.asset_key
+        for dag_spec in dag_specs:
+            key = dag_spec.key
             dag_id = dag_spec.metadata["Dag ID"]
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
-                    specs=[dag_spec.to_asset_spec({})],
+                    specs=[dag_spec],
                     name=key.to_user_string().replace("/", "__"),
                     tags={DAG_ID_TAG: dag_id},
                 )
             )
-        return new_assets_defs + construct_assets_with_task_migration_info_applied(
-            definitions=self.defs,
-            cacheable_specs=cacheable_specs,
+
+        return Definitions(
+            new_assets_defs
+            + construct_assets_with_task_migration_info_applied(
+                definitions=self.defs,
+                task_specs=task_specs,
+            )
         )
 
 
-def get_cached_spec_for_dag(
+
+
+def asset_spec_record_for_dag(
     airflow_instance: AirflowInstance,
     task_asset_keys_in_dag: Set[AssetKey],
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
     dag_info: DagInfo,
     source_code: str,
-) -> CacheableAssetSpec:
+) -> AssetSpecRecord:
     leaf_asset_keys = get_leaf_assets_for_dag(
         asset_keys_in_dag=task_asset_keys_in_dag,
         downstreams_asset_dependency_graph=downstreams_asset_dependency_graph,
@@ -218,6 +135,7 @@ def get_cached_spec_for_dag(
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
         "Dag ID": dag_info.dag_id,
         "Link to DAG": MarkdownMetadataValue(f"[View DAG]({dag_info.url})"),
+        "airlift/airflow_artifact_type": "dag",
     }
     # Attempt to retrieve source code from the DAG.
     metadata["Source Code"] = MarkdownMetadataValue(
@@ -228,12 +146,12 @@ def get_cached_spec_for_dag(
             """
     )
 
-    return CacheableAssetSpec(
-        asset_key=dag_info.dag_asset_key,
+    return AssetSpecRecord(
+        key=dag_info.dag_asset_key,
         description=f"A materialization corresponds to a successful run of airflow DAG {dag_info.dag_id}.",
         metadata=metadata,
         tags={"dagster/compute_kind": "airflow", DAG_ID_TAG: dag_info.dag_id},
-        deps=[CacheableAssetDep(asset_key=key) for key in leaf_asset_keys],
+        deps=[AssetDepRecord(asset_key=key) for key in leaf_asset_keys],
         group_name=None,
     )
 
@@ -254,23 +172,24 @@ def build_airflow_asset_from_specs(
 
 
 @record
-class _CacheableData:
-    cacheable_specs_per_asset_key: Dict[AssetKey, CacheableAssetSpec] = {}
+class RecordsAndDependencies:
+    spec_records_by_asset_key: Dict[AssetKey, AssetSpecRecord] = {}
     all_asset_keys_per_dag_id: Dict[str, Set[AssetKey]] = {}
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]] = {}
 
 
-def construct_cacheable_assets_and_infer_dependencies(
+def construct_records_and_infer_dependencies(
     definitions: Optional[Definitions],
     migration_state: Optional[AirflowMigrationState],
     airflow_instance: AirflowInstance,
     dag_infos: Dict[str, DagInfo],
-) -> _CacheableData:
+) -> RecordsAndDependencies:
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
-    cacheable_specs_per_asset_key: Dict[AssetKey, CacheableAssetSpec] = {}
+    asset_spec_record_dict: Dict[AssetKey, AssetSpecRecord] = {}
     all_asset_keys_per_dag_id: Dict[str, Set[AssetKey]] = defaultdict(set)
     if not definitions or not definitions.assets:
-        return _CacheableData()
+        return RecordsAndDependencies()
+
     for asset in definitions.assets:
         asset = check.inst(  # noqa: PLW2901
             asset,
@@ -285,6 +204,7 @@ def construct_cacheable_assets_and_infer_dependencies(
             # In this case,
             "Dag ID": task_info.dag_id,
             "Link to DAG": MarkdownMetadataValue(f"[View DAG]({task_info.dag_url})"),
+            "airlift/airflow_artifact_type": "task",
         }
         migration_state_for_task = _get_migration_state_for_task(
             migration_state_override=migration_state,
@@ -296,12 +216,10 @@ def construct_cacheable_assets_and_infer_dependencies(
         ] = task_info.task_id
         specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
         for spec in specs:
-            spec_deps = []
             for dep in spec.deps:
-                spec_deps.append(CacheableAssetDep.from_asset_dep(dep))
                 downstreams_asset_dependency_graph[dep.asset_key].add(spec.key)
-            cacheable_specs_per_asset_key[spec.key] = CacheableAssetSpec(
-                asset_key=spec.key,
+            asset_spec_record_dict[spec.key] = AssetSpecRecord(
+                key=spec.key,
                 description=spec.description,
                 metadata=task_level_metadata,
                 tags={
@@ -310,23 +228,24 @@ def construct_cacheable_assets_and_infer_dependencies(
                     DAG_ID_TAG: task_info.dag_id,
                     TASK_ID_TAG: task_info.task_id,
                 },
-                deps=spec_deps,
+                deps=[AssetDepRecord(asset_key=dep.asset_key) for dep in spec.deps],
                 group_name=spec.group_name,
             )
             all_asset_keys_per_dag_id[task_info.dag_id].add(spec.key)
-    return _CacheableData(
-        cacheable_specs_per_asset_key=cacheable_specs_per_asset_key,
+    return RecordsAndDependencies(
+        spec_records_by_asset_key=asset_spec_record_dict,
         all_asset_keys_per_dag_id=all_asset_keys_per_dag_id,
         downstreams_asset_dependency_graph=downstreams_asset_dependency_graph,
     )
 
 
 def construct_assets_with_task_migration_info_applied(
-    definitions: Optional[Definitions],
-    cacheable_specs: CacheableSpecs,
+    definitions: Optional[Definitions], task_specs: Sequence[AssetSpec]
 ) -> List[AssetsDefinition]:
     if not definitions or not definitions.assets:
         return []
+
+    task_spec_by_key = {spec.key: spec for spec in task_specs}
 
     new_assets_defs = []
     for asset in definitions.assets:
@@ -346,13 +265,13 @@ def construct_assets_with_task_migration_info_applied(
         specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
         for spec in specs:
             check.invariant(
-                cacheable_specs.task_asset_specs.get(spec.key) is not None,
+                task_spec_by_key.get(spec.key) is not None,
                 f"Could not find cacheable spec for asset key {spec.key.to_user_string()}",
             )
             # We allow arbitrary (non-serdes) metadata in asset specs, which makes them non-serializable.
             # This means we need to "combine" the metadata from the cacheable spec with the non-serializable
             # metadata fields from the original spec it was built from after deserializing.
-            new_spec = cacheable_specs.task_asset_specs[spec.key].to_asset_spec(spec.metadata)
+            new_spec = task_spec_by_key[spec.key].with_metadata(spec.metadata)
             check.invariant(
                 MIGRATED_TAG in new_spec.tags,
                 f"Could not find migrated status for asset key {spec.key.to_user_string()}",

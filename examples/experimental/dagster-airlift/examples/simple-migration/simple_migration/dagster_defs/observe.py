@@ -3,8 +3,8 @@ from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
     PythonDefs,
-    build_defs_from_airflow_instance,
     defs_from_factories,
+    sync_build_defs_from_airflow_instance,
 )
 
 from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME
@@ -28,6 +28,6 @@ t2 = PythonDefs(name="simple__t2", specs=[a2, a3])
 t3 = PythonDefs(name="simple__t3", specs=[a4])
 
 
-defs = build_defs_from_airflow_instance(
+defs = sync_build_defs_from_airflow_instance(
     airflow_instance=airflow_instance, defs=defs_from_factories(t1, t2, t3)
 )

@@ -1,8 +1,8 @@
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
-    build_defs_from_airflow_instance,
     combine_defs,
+    sync_build_defs_from_airflow_instance,
 )
 from dagster_airlift.dbt import defs_from_airflow_dbt
 from dagster_dbt import DbtProject
@@ -27,7 +27,7 @@ airflow_instance = AirflowInstance(
 )
 
 
-defs = build_defs_from_airflow_instance(
+defs = sync_build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=combine_defs(
         defs_from_lakehouse(

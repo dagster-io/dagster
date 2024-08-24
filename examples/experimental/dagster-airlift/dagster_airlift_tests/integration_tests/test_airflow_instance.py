@@ -1,7 +1,11 @@
 import pytest
 from dagster import AssetCheckKey, AssetKey, Definitions, asset, asset_check
 from dagster._core.errors import DagsterError
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    sync_build_defs_from_airflow_instance,
+)
 
 from .conftest import assert_link_exists
 
@@ -91,7 +95,7 @@ def test_orchestrated_defs(airflow_instance: None) -> None:
         name="airflow_instance",
     )
 
-    defs = build_defs_from_airflow_instance(
+    defs = sync_build_defs_from_airflow_instance(
         airflow_instance=instance,
         defs=Definitions(
             assets=[print_dag__print_task, not_orchestrated_in_airflow],
