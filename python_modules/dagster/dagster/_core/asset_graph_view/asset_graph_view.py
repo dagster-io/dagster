@@ -7,14 +7,12 @@ from typing import (
     Callable,
     Mapping,
     NamedTuple,
-    NewType,
     Optional,
     Sequence,
-    Union,
 )
 
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import EntitySubset
+from dagster._core.definitions.asset_subset import EntitySubset, EntitySubsetValue
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
@@ -72,10 +70,10 @@ class TemporalContext(NamedTuple):
     last_event_id: Optional[int]
 
 
-# We reserve the right to constraints on the EntitySubset that we are going to use
-# in AssetSlice internals. Adding a NewType enforces that we do that conversion
-# in one spot (see _slice_from_subset)
-_AssetSliceCompatibleSubset = NewType("_AssetSliceCompatibleSubset", EntitySubset)
+class _ValidatedEntitySubsetValue(NamedTuple):
+    """Used to ensure that all values passed into Slice objects are validated."""
+
+    inner: EntitySubsetValue
 
 
 def _slice_from_subset(
@@ -86,7 +84,9 @@ def _slice_from_subset(
         return None
     partitions_def = asset_graph_view.asset_graph.get(subset.key).partitions_def
     if subset.is_compatible_with_partitions_def(partitions_def):
-        return AssetSlice(asset_graph_view, _AssetSliceCompatibleSubset(subset))
+        return AssetSlice(
+            asset_graph_view, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value)
+        )
     else:
         return None
 
@@ -127,13 +127,14 @@ class AssetSlice:
     """
 
     def __init__(
-        self, asset_graph_view: "AssetGraphView", compatible_subset: _AssetSliceCompatibleSubset
+        self, asset_graph_view: "AssetGraphView", key: AssetKey, value: _ValidatedEntitySubsetValue
     ):
         self._asset_graph_view = asset_graph_view
-        self._compatible_subset = compatible_subset
+        self._key = key
+        self._value = value.inner
 
     def convert_to_entity_subset(self) -> EntitySubset:
-        return self._compatible_subset
+        return EntitySubset(key=self._key, value=self._value)
 
     def expensively_compute_partition_keys(self) -> AbstractSet[str]:
         return set(self.get_internal_subset_value().get_partition_keys())
@@ -146,7 +147,7 @@ class AssetSlice:
 
     @property
     def asset_key(self) -> AssetKey:
-        return check.inst(self._compatible_subset.key, AssetKey)
+        return self._key
 
     @property
     def parent_keys(self) -> AbstractSet[AssetKey]:
@@ -178,10 +179,7 @@ class AssetSlice:
 
     def _oper(self, other: "AssetSlice", oper: Callable[..., Any]) -> "AssetSlice":
         value = oper(self.get_internal_value(), other.get_internal_value())
-        return AssetSlice(
-            self._asset_graph_view,
-            _AssetSliceCompatibleSubset(EntitySubset(key=self.asset_key, value=value)),
-        )
+        return AssetSlice(self._asset_graph_view, self._key, _ValidatedEntitySubsetValue(value))
 
     def compute_difference(self, other: "AssetSlice") -> "AssetSlice":
         if self._partitions_def is None:
@@ -211,17 +209,14 @@ class AssetSlice:
             self._time_window_partitions_def_in_context(), "Must be time windowed."
         )
 
-        if isinstance(self._compatible_subset.subset_value, BaseTimeWindowPartitionsSubset):
-            return [
-                tw.to_public_time_window()
-                for tw in self._compatible_subset.subset_value.included_time_windows
-            ]
-        elif isinstance(self._compatible_subset.subset_value, AllPartitionsSubset):
+        if isinstance(self._value, BaseTimeWindowPartitionsSubset):
+            return [tw.to_public_time_window() for tw in self._value.included_time_windows]
+        elif isinstance(self._value, AllPartitionsSubset):
             last_tw = tw_partitions_def.get_last_partition_window(
                 self._asset_graph_view.effective_dt
             )
             return [TimeWindow(datetime.min, last_tw.end)] if last_tw else []
-        elif isinstance(self._compatible_subset.subset_value, DefaultPartitionsSubset):
+        elif isinstance(self._value, DefaultPartitionsSubset):
             check.inst(
                 self._partitions_def,
                 MultiPartitionsDefinition,
@@ -229,7 +224,7 @@ class AssetSlice:
             )
             tw_partition_keys = set()
             for multi_partition_key in check.is_list(
-                list(self._compatible_subset.subset_value.get_partition_keys()),
+                list(self._value.get_partition_keys()),
                 MultiPartitionKey,
                 "Keys must be multi partition keys.",
             ):
@@ -244,10 +239,10 @@ class AssetSlice:
                 return [tw.to_public_time_window() for tw in subset_from_tw.included_time_windows]
             else:
                 check.failed(
-                    f"Unsupported subset value in generated subset {self._compatible_subset.subset_value} created by keys {tw_partition_keys}"
+                    f"Unsupported subset value in generated subset {self._value} created by keys {tw_partition_keys}"
                 )
 
-        check.failed(f"Unsupported subset value: {self._compatible_subset.subset_value}")
+        check.failed(f"Unsupported subset value: {self._value}")
 
     def _time_window_partitions_def_in_context(self) -> Optional[TimeWindowPartitionsDefinition]:
         pd = self._partitions_def
@@ -259,20 +254,26 @@ class AssetSlice:
 
     @property
     def is_empty(self) -> bool:
-        return self._compatible_subset.is_empty
+        if isinstance(self._value, bool):
+            return not self._value
+        else:
+            return self._value.is_empty
 
     @property
     def size(self) -> int:
-        return self._compatible_subset.size
+        if isinstance(self._value, bool):
+            return int(self._value)
+        else:
+            return len(self._value)
 
-    def get_internal_value(self) -> Union[bool, PartitionsSubset]:
-        return self._compatible_subset.value
+    def get_internal_value(self) -> EntitySubsetValue:
+        return self._value
 
     def get_internal_subset_value(self) -> PartitionsSubset:
-        return self._compatible_subset.subset_value
+        return check.inst(self._value, PartitionsSubset)
 
     def get_internal_bool_value(self) -> bool:
-        return self._compatible_subset.bool_value
+        return check.inst(self._value, bool)
 
 
 class AssetGraphView:
@@ -382,15 +383,13 @@ class AssetGraphView:
             if partitions_def
             else True
         )
-        return AssetSlice(
-            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
-        )
+        return AssetSlice(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
 
     def get_asset_slice_from_subset(self, subset: EntitySubset) -> Optional["AssetSlice"]:
         return _slice_from_subset(self, subset)
 
     def legacy_get_asset_slice_from_valid_subset(self, subset: "ValidAssetSubset") -> "AssetSlice":
-        return AssetSlice(self, _AssetSliceCompatibleSubset(subset))
+        return AssetSlice(self, key=subset.key, value=_ValidatedEntitySubsetValue(subset.value))
 
     def get_asset_slice_from_asset_partitions(
         self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
@@ -407,17 +406,13 @@ class AssetGraphView:
             if partitions_def
             else bool(asset_partitions)
         )
-        return AssetSlice(
-            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
-        )
+        return AssetSlice(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
 
     @cached_method
     def get_empty_slice(self, *, asset_key: AssetKey) -> AssetSlice:
         partitions_def = self._get_partitions_def(asset_key)
         value = partitions_def.empty_subset() if partitions_def else False
-        return AssetSlice(
-            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
-        )
+        return AssetSlice(self, key=asset_key, value=_ValidatedEntitySubsetValue(value))
 
     def compute_parent_asset_slice(
         self, parent_asset_key: AssetKey, asset_slice: AssetSlice
@@ -449,10 +444,7 @@ class AssetGraphView:
         ).partitions_subset
 
         return AssetSlice(
-            self,
-            _AssetSliceCompatibleSubset(
-                EntitySubset(key=parent_asset_key, value=parent_partitions_subset)
-            ),
+            self, key=parent_asset_key, value=_ValidatedEntitySubsetValue(parent_partitions_subset)
         )
 
     def compute_child_asset_slice(
@@ -480,9 +472,8 @@ class AssetGraphView:
             )
             return AssetSlice(
                 self,
-                _AssetSliceCompatibleSubset(
-                    EntitySubset(key=child_asset_key, value=child_partitions_subset)
-                ),
+                key=child_asset_key,
+                value=_ValidatedEntitySubsetValue(child_partitions_subset),
             )
 
     def compute_intersection_with_partition_keys(
@@ -561,7 +552,11 @@ class AssetGraphView:
         if self.asset_graph.get(asset_key).is_materializable:
             # cheap call which takes advantage of the partition status cache
             materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
-            materialized_slice = AssetSlice(self, _AssetSliceCompatibleSubset(materialized_subset))
+            materialized_slice = AssetSlice(
+                self,
+                key=materialized_subset.key,
+                value=_ValidatedEntitySubsetValue(materialized_subset.value),
+            )
             return from_slice.compute_difference(materialized_slice)
         else:
             # more expensive call
@@ -574,32 +569,22 @@ class AssetGraphView:
 
     @cached_method
     def compute_in_progress_asset_slice(self, *, asset_key: "AssetKey") -> "AssetSlice":
-        return AssetSlice(
-            self,
-            _AssetSliceCompatibleSubset(
-                self._queryer.get_in_progress_asset_subset(asset_key=asset_key)
-            ),
-        )
+        subset = self._queryer.get_in_progress_asset_subset(asset_key=asset_key)
+        return AssetSlice(self, key=asset_key, value=_ValidatedEntitySubsetValue(subset.value))
 
     @cached_method
     def compute_failed_asset_slice(self, *, asset_key: "AssetKey") -> "AssetSlice":
-        return AssetSlice(
-            self,
-            _AssetSliceCompatibleSubset(self._queryer.get_failed_asset_subset(asset_key=asset_key)),
-        )
+        subset = self._queryer.get_failed_asset_subset(asset_key=asset_key)
+        return AssetSlice(self, key=asset_key, value=_ValidatedEntitySubsetValue(subset.value))
 
     @cached_method
     def compute_updated_since_cursor_slice(
         self, *, asset_key: AssetKey, cursor: Optional[int]
     ) -> AssetSlice:
-        return AssetSlice(
-            self,
-            _AssetSliceCompatibleSubset(
-                self._queryer.get_asset_subset_updated_after_cursor(
-                    asset_key=asset_key, after_cursor=cursor
-                )
-            ),
+        subset = self._queryer.get_asset_subset_updated_after_cursor(
+            asset_key=asset_key, after_cursor=cursor
         )
+        return AssetSlice(self, key=asset_key, value=_ValidatedEntitySubsetValue(subset.value))
 
     @cached_method
     def compute_parent_updated_since_cursor_slice(

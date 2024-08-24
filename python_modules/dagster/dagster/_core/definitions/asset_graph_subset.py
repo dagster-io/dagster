@@ -80,12 +80,10 @@ class AssetGraphSubset(NamedTuple):
         """
         partitions_def = asset_graph.get(asset_key).partitions_def
         if partitions_def is None:
-            return AssetSubset(
-                asset_key=asset_key, value=asset_key in self.non_partitioned_asset_keys
-            )
+            return AssetSubset(key=asset_key, value=asset_key in self.non_partitioned_asset_keys)
         else:
             return AssetSubset(
-                asset_key=asset_key,
+                key=asset_key,
                 value=self.partitions_subsets_by_asset_key.get(
                     asset_key, partitions_def.empty_subset()
                 ),
