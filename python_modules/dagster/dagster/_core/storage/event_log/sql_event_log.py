@@ -87,6 +87,7 @@ from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetCheckSummaryRecord,
     AssetEntry,
+    AssetPartitionSummaryRecord,
     AssetRecord,
     AssetRecordsFilter,
     EventLogConnection,
@@ -1958,7 +1959,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey, after_storage_id: Optional[int] = None
-    ) -> Mapping[str, Tuple[str, int]]:
+    ) -> Mapping[str, AssetPartitionSummaryRecord]:
         """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
         These materializations could be in progress, or they could have failed. A separate query checking the run status
@@ -2025,9 +2026,15 @@ class SqlEventLogStorage(EventLogStorage):
         materialization_planned_rows_by_partition = {
             row["partition"]: (row["run_id"], row["id"]) for row in materialization_planned_rows
         }
+
+        materialization_rows_by_partition = {}
+
         for mat_row in materialization_rows:
             mat_partition = mat_row["partition"]
             mat_event_id = mat_row["id"]
+
+            materialization_rows_by_partition[mat_partition] = (mat_row["run_id"], mat_row["id"])
+
             if mat_partition not in materialization_planned_rows_by_partition:
                 continue
             _, planned_event_id = materialization_planned_rows_by_partition[mat_partition]
@@ -2035,7 +2042,31 @@ class SqlEventLogStorage(EventLogStorage):
                 # this planned materialization event was followed by a materialization event
                 materialization_planned_rows_by_partition.pop(mat_partition)
 
-        return materialization_planned_rows_by_partition
+        asset_partition_records = {}
+
+        for partition, (
+            last_planned_materialization_run_id,
+            last_planned_materialization_storage_id,
+        ) in materialization_planned_rows_by_partition.items():
+            last_materialization_run_id = None
+            last_materialization_storage_id = None
+
+            if partition in materialization_rows_by_partition:
+                last_materialization_run_id, last_materialization_storage_id = (
+                    materialization_rows_by_partition[partition]
+                )
+
+            asset_partition_records[partition] = AssetPartitionSummaryRecord(
+                partition=partition,
+                last_materialization_storage_id=last_materialization_storage_id,
+                last_materialization_run_id=last_materialization_run_id,
+                last_planned_materialization_storage_id=last_planned_materialization_storage_id,
+                last_planned_materialization_run_id=last_planned_materialization_run_id,
+                last_materialization_failure_storage_id=None,
+                last_materialization_failure_run_id=None,
+            )
+
+        return asset_partition_records
 
     def _check_partitions_table(self) -> None:
         # Guards against cases where the user is not running the latest migration for

@@ -1,15 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Iterable, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -122,6 +112,16 @@ class AssetEntry(
         if self.last_materialization_record is None:
             return None
         return self.last_materialization_record.storage_id
+
+
+class AssetPartitionSummaryRecord(NamedTuple):
+    partition: str
+    last_materialization_storage_id: Optional[int]
+    last_materialization_run_id: Optional[str]
+    last_planned_materialization_storage_id: Optional[int]
+    last_planned_materialization_run_id: Optional[str]
+    last_materialization_failure_storage_id: Optional[int]
+    last_materialization_failure_run_id: Optional[str]
 
 
 class AssetRecord(NamedTuple):
@@ -454,7 +454,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey, after_storage_id: Optional[int] = None
-    ) -> Mapping[str, Tuple[str, int]]:
+    ) -> Mapping[str, AssetPartitionSummaryRecord]:
         pass
 
     @abstractmethod
