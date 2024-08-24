@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional
 
-from dagster import AssetExecutionContext, AssetSpec, Definitions, multi_asset
+from dagster import AssetExecutionContext, Definitions, multi_asset
 from dagster_dbt import (
     DagsterDbtTranslator,
     DagsterDbtTranslatorSettings,
@@ -13,7 +13,6 @@ from dagster_dbt import (
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 
 from dagster_airlift.core import DefsFactory
-from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
 
 @dataclass
@@ -92,28 +91,14 @@ class DbtProjectDefs(DefsFactory):
             )
 
 
-def specs_from_airflow_dbt(
-    *, dag_id: str, task_id: str, manifest: DbtManifestParam
-) -> Sequence[AssetSpec]:
-    return [
-        spec._replace(tags={DAG_ID_TAG: dag_id, TASK_ID_TAG: task_id, **spec.tags})
-        for spec in build_dbt_asset_specs(
-            manifest=manifest,
-        )
-    ]
-
-
-def defs_from_airflow_dbt(
+def dbt_defs(
     *,
-    dag_id: str,
-    task_id: str,
     manifest: DbtManifestParam,
     project: DbtProject,
 ) -> Definitions:
     @dbt_assets(
         manifest=manifest,
         project=project,
-        op_tags={DAG_ID_TAG: dag_id, TASK_ID_TAG: task_id},
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
         ),

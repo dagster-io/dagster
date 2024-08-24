@@ -6,9 +6,11 @@ from dagster_airlift.core import (
     BasicAuthBackend,
     build_defs_from_airflow_instance,
     combine_defs,
+    dag_defs,
+    task_defs,
 )
-from dagster_airlift.dbt import specs_from_airflow_dbt
-from dagster_airlift.core import dag_defs, task_defs
+from dagster_dbt.asset_specs import build_dbt_asset_specs
+
 from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check, specs_from_lakehouse
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH
 
@@ -49,10 +51,14 @@ defs = build_defs_from_airflow_instance(
                 ),
             ),
         ),
-        *specs_from_airflow_dbt(
-            dag_id="dbt_dag",
-            task_id="build_dbt_models",
-            manifest=dbt_manifest_path(),
+        dag_defs(
+            "dbt_dag",
+            task_defs(
+                "build_dbt_models",
+                *build_dbt_asset_specs(
+                    manifest=dbt_manifest_path(),
+                ),
+            ),
         ),
         lakehouse_existence_check(
             csv_path=CSV_PATH,
