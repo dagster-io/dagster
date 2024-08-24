@@ -219,6 +219,7 @@ class LoadedRepositories:
         loadable_target_origin: Optional[LoadableTargetOrigin],
         entry_point: Sequence[str],
         container_image: Optional[str] = None,
+        instance: Optional["DagsterInstance"] = None,
     ):
         self._loadable_target_origin = loadable_target_origin
 
@@ -262,7 +263,7 @@ class LoadedRepositories:
                     lambda: "Error occurred during the loading of Dagster definitions in "
                     + pointer.describe(),
                 ):
-                    repo_def = recon_repo.get_definition()
+                    repo_def = recon_repo.get_definition(instance)
                     # force load of all lazy constructed code artifacts to prevent
                     # any thread-safety issues loading them later on when serving
                     # definitions from multiple threads
@@ -398,20 +399,18 @@ class DagsterApiServer(DagsterApiServicer):
         self._server_threadpool_executor = server_threadpool_executor
 
         try:
-            if inject_env_vars_from_instance:
-                from dagster._cli.utils import get_instance_for_cli
+            from dagster._cli.utils import get_instance_for_cli
 
-                # If arguments indicate it wants to load env vars, use the passed-in instance
-                # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
-                self._instance = self._exit_stack.enter_context(
-                    get_instance_for_cli(instance_ref=instance_ref)
-                )
+            # If arguments indicate it wants to load env vars, use the passed-in instance
+            # ref (or the dagster.yaml on the filesystem if no instance ref is provided)
+            self._instance = self._exit_stack.enter_context(
+                get_instance_for_cli(instance_ref=instance_ref)
+            )
+            if inject_env_vars_from_instance:
                 self._instance.inject_env_vars(location_name)
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
-                loadable_target_origin,
-                self._entry_point,
-                self._container_image,
+                loadable_target_origin, self._entry_point, self._container_image, self._instance
             )
         except Exception:
             if not lazy_load_user_code:

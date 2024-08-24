@@ -47,10 +47,24 @@ def loadable_targets_from_python_package(
     return loadable_targets_from_loaded_module(module)
 
 
+def _loadable_defs_function(module: ModuleType) -> Optional[Callable]:
+    if hasattr(module, "defs"):
+        maybe_defs_fn = getattr(module, "defs")
+        if callable(maybe_defs_fn):
+            return maybe_defs_fn
+    return None
+
+
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
     from dagster._core.definitions import JobDefinition
+    from dagster._core.definitions.loadable import DefinitionsFnWrapper
 
-    loadable_defs = _loadable_targets_of_type(module, Definitions)
+    loadable_defs_fn = _loadable_defs_function(module)
+
+    if loadable_defs_fn:
+        return [LoadableTarget("defs", DefinitionsFnWrapper(loadable_defs_fn))]
+    else:
+        loadable_defs = _loadable_targets_of_type(module, Definitions)
 
     if loadable_defs:
         if len(loadable_defs) > 1:

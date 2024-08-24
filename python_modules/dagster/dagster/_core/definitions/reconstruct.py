@@ -55,6 +55,7 @@ if TYPE_CHECKING:
         RepositoryLoadData,
     )
     from dagster._core.definitions.source_asset import SourceAsset
+    from dagster._core.instance import DagsterInstance
 
     from .graph_definition import GraphDefinition
     from .repository_definition import RepositoryDefinition
@@ -115,8 +116,10 @@ class ReconstructableRepository(
     ) -> "ReconstructableRepository":
         return self._replace(repository_load_data=metadata)
 
-    def get_definition(self) -> "RepositoryDefinition":
-        return repository_def_from_pointer(self.pointer, self.repository_load_data)
+    def get_definition(
+        self, instance: Optional["DagsterInstance"] = None
+    ) -> "RepositoryDefinition":
+        return repository_def_from_pointer(self.pointer, self.repository_load_data, instance)
 
     def get_reconstructable_job(self, name: str) -> "ReconstructableJob":
         return ReconstructableJob(self, name)
@@ -635,9 +638,12 @@ def load_def_in_python_file(
 
 def def_from_pointer(
     pointer: CodePointer,
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+    instance: Optional["DagsterInstance"] = None,
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
+    from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
@@ -656,11 +662,21 @@ def def_from_pointer(
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
 
+    # assume that it takes a context object
     if seven.get_arg_names(target):
-        raise DagsterInvariantViolationError(
-            f"Error invoking function at {pointer.describe()} with no arguments. "
-            "Reconstructable target must be callable with no arguments"
-        )
+        from dagster._core.definitions.loadable import DefLoadingContext
+
+        assert instance
+        context = DefLoadingContext(load_from_storage=False, instance=instance)
+        maybe_defs = target(context)
+        if not isinstance(maybe_defs, Definitions):
+            raise DagsterInvariantViolationError("must return a Definitions object")
+        return maybe_defs.get_inner_repository()
+        # old error
+        # raise DagsterInvariantViolationError(
+        #     f"Error invoking function at {pointer.describe()} with no arguments. "
+        #     "Reconstructable target must be callable with no arguments"
+        # )
 
     return _check_is_loadable(target())
 
@@ -683,18 +699,25 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
+    instance: Optional["DagsterInstance"] = None,
 ) -> "RepositoryDefinition": ...
 
 
 @overload
 def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+    target: object,
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+    instance: Optional["DagsterInstance"] = None,
 ) -> None: ...
 
 
 def repository_def_from_target_def(
-    target: object, repository_load_data: Optional["RepositoryLoadData"] = None
+    target: object,
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+    instance: Optional["DagsterInstance"] = None,
 ) -> Optional["RepositoryDefinition"]:
+    from dagster._core.definitions.loadable import DefinitionsFnWrapper, DefLoadingContext
+
     from .assets import AssetsDefinition
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
@@ -706,6 +729,14 @@ def repository_def_from_target_def(
         RepositoryDefinition,
     )
     from .source_asset import SourceAsset
+
+    if isinstance(target, DefinitionsFnWrapper):
+        # There are a bunch of code paths that hit this
+        # Just did enough to make the example work
+        assert instance
+        return target.def_fn(
+            DefLoadingContext(load_from_storage=False, instance=instance)
+        ).get_inner_repository()
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
@@ -738,10 +769,12 @@ def repository_def_from_target_def(
 
 
 def repository_def_from_pointer(
-    pointer: CodePointer, repository_load_data: Optional["RepositoryLoadData"] = None
+    pointer: CodePointer,
+    repository_load_data: Optional["RepositoryLoadData"] = None,
+    instance: Optional["DagsterInstance"] = None,
 ) -> "RepositoryDefinition":
-    target = def_from_pointer(pointer)
-    repo_def = repository_def_from_target_def(target, repository_load_data)
+    target = def_from_pointer(pointer, repository_load_data=repository_load_data, instance=instance)
+    repo_def = repository_def_from_target_def(target, repository_load_data, instance)
     if not repo_def:
         raise DagsterInvariantViolationError(
             f"CodePointer ({pointer.describe()}) must resolve to a "
