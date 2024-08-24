@@ -8,7 +8,7 @@ from dagster_airlift.core import (
     combine_defs,
 )
 from dagster_airlift.dbt import specs_from_airflow_dbt
-
+from dagster_airlift.core import dag_defs, task_defs
 from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check, specs_from_lakehouse
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH
 
@@ -40,10 +40,14 @@ freshness_sensor = build_sensor_for_freshness_checks(
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=combine_defs(
-        *specs_from_lakehouse(
-            dag_id="load_lakehouse",
-            task_id="load_iris",
-            csv_path=CSV_PATH,
+        dag_defs(
+            "load_lakehouse",
+            task_defs(
+                "load_iris",
+                *specs_from_lakehouse(
+                    csv_path=CSV_PATH,
+                ),
+            ),
         ),
         *specs_from_airflow_dbt(
             dag_id="dbt_dag",

@@ -12,12 +12,8 @@ def lakehouse_asset_key(*, csv_path) -> AssetKey:
     return AssetKey(["lakehouse", id_from_path(csv_path)])
 
 
-def specs_from_lakehouse(*, task_id: str, dag_id: str, csv_path: Path) -> Sequence[AssetSpec]:
-    return specs_from_task(
-        task_id=task_id,
-        dag_id=dag_id,
-        assets=[lakehouse_asset_key(csv_path=csv_path)],
-    )
+def specs_from_lakehouse(*, csv_path: Path) -> Sequence[AssetSpec]:
+    return [AssetSpec(key=lakehouse_asset_key(csv_path=csv_path))]
 
 
 def defs_from_lakehouse(
