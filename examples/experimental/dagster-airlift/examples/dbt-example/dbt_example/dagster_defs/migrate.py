@@ -7,7 +7,7 @@ from dagster_airlift.core import (
 from dagster_airlift.dbt import defs_from_airflow_dbt
 from dagster_dbt import DbtProject
 
-from dbt_example.dagster_defs.lakehouse import defs_from_lakehouse
+from dbt_example.dagster_defs.lakehouse import defs_from_lakehouse, lakehouse_existence_check
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 from .constants import (
@@ -42,6 +42,10 @@ defs = build_defs_from_airflow_instance(
             task_id="build_dbt_models",
             manifest=dbt_manifest_path(),
             project=DbtProject(dbt_project_path()),
+        ),
+        lakehouse_existence_check(
+            csv_path=CSV_PATH,
+            duckdb_path=DB_PATH,
         ),
     ),
 )
