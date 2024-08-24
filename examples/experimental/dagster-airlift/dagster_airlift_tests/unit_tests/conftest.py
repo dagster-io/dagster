@@ -17,7 +17,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._time import get_current_datetime
 from dagster_airlift.core import AirflowInstance
-from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
+from dagster_airlift.core.airflow_instance import DagRun, TaskInfo, TaskInstance
 from dagster_airlift.core.basic_auth import AirflowAuthBackend
 from dagster_airlift.core.sensor import build_airflow_polling_sensor
 
@@ -64,6 +64,14 @@ class DummyInstance(AirflowInstance):
             cur_date + timedelta(days=int(task_id)),
             cur_date + timedelta(days=int(task_id) + 1),
         )
+
+    def get_task_info(self, dag_id, task_id) -> TaskInfo:
+        return TaskInfo(
+            webserver_url="http://localhost:8080", dag_id=dag_id, task_id=task_id, metadata={}
+        )
+
+    def get_dag_source_code(self, file_token: str) -> str:
+        return "source code"
 
 
 def make_dag_run(dag_start: datetime, dag_end: datetime, dag_id: str) -> DagRun:
@@ -123,7 +131,7 @@ def build_dag_asset(
 
 
 def make_test_instance(
-    get_task_instance_override=None, get_dag_runs_override=None
+    get_task_instance_override=None, get_dag_runs_override=None, list_dags_override=None
 ) -> DummyInstance:
     klass_to_instantiate = DummyInstance
     if get_task_instance_override:
@@ -143,6 +151,14 @@ def make_test_instance(
                 return get_dag_runs_override(self, dag_id, start_date, end_date)
 
         klass_to_instantiate = DagRunsOverride
+
+    if list_dags_override:
+
+        class ListDagsOverride(klass_to_instantiate):  # type: ignore
+            def list_dags(self):
+                return list_dags_override(self)
+
+        klass_to_instantiate = ListDagsOverride
 
     return klass_to_instantiate()
 

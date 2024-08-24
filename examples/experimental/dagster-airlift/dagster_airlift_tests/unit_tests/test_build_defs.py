@@ -1,5 +1,17 @@
-from dagster import Definitions, asset, asset_check, executor, job, logger, schedule, sensor
+from dagster import (
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    asset,
+    asset_check,
+    executor,
+    job,
+    logger,
+    schedule,
+    sensor,
+)
 from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster_airlift.core.airflow_instance import DagInfo
 
 from .conftest import make_test_instance
 
@@ -79,3 +91,26 @@ def test_defs_passthrough() -> None:
     assert defs.jobs
     assert len(list(defs.jobs)) == 1
     assert next(iter(defs.jobs)) == the_job
+
+
+def test_coerce_specs() -> None:
+    def list_dags(self):
+        return [
+            DagInfo(
+                webserver_url="http://localhost:8080", dag_id="dag", metadata={"file_token": "blah"}
+            ),
+        ]
+
+    spec = AssetSpec(key="a", tags={"airlift/dag_id": "dag", "airlift/task_id": "task"})
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_test_instance(list_dags_override=list_dags),
+        defs=Definitions(
+            assets=[spec],
+        ),
+    )
+    repo = defs.get_repository_def()
+    assert len(repo.assets_defs_by_key) == 2
+    assert AssetKey("a") in repo.assets_defs_by_key
+    assets_def = repo.assets_defs_by_key[AssetKey("a")]
+    # Asset metadata properties have been glommed onto the asset
+    assert next(iter(assets_def.specs)).metadata["Dag ID"] == "dag"
