@@ -410,7 +410,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 execution_type=execution_type,
             )
 
-    def __call__(self, *args: object, **kwargs: object) -> object:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         from .composition import is_in_composition
         from .graph_definition import GraphDefinition
 
