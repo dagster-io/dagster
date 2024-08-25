@@ -1,7 +1,7 @@
 import pandas as pd
 from dagster_duckdb_pandas import DuckDBPandasIOManager
 
-from dagster import Definitions, asset
+import dagster as dg
 
 # highlight-start
 duckdb_io_manager = DuckDBPandasIOManager(
@@ -9,28 +9,26 @@ duckdb_io_manager = DuckDBPandasIOManager(
 )
 
 
-@asset
+@dg.asset
 def people():
     return pd.DataFrame({"id": [1, 2, 3], "name": ["Alice", "Bob", "Charlie"]})
 
 
-@asset
+@dg.asset
 def birds():
     return pd.DataFrame({"id": [1, 2, 3], "name": ["Bluebird", "Robin", "Eagle"]})
 
 
-@asset
+@dg.asset
 def combined_data(people, birds):
     return pd.concat([people, birds])
     # highlight-end
 
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[people, birds, combined_data],
     resources={"io_manager": duckdb_io_manager},
 )
 
 if __name__ == "__main__":
-    from dagster import materialize
-
-    materialize(assets=[people, birds, combined_data])
+    dg.materialize(assets=[people, birds, combined_data])

@@ -1,6 +1,6 @@
 from typing import List
 
-from dagster import asset
+import dagster as dg
 
 
 def download_files() -> str:
@@ -18,7 +18,7 @@ def load_data(files: List[str]):
     ...
 
 
-@asset
+@dg.asset
 def my_dataset():
     zipped_files = download_files()
     files = unzip_files(zipped_files)

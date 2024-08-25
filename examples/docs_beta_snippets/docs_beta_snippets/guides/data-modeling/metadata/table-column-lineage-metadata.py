@@ -1,13 +1,7 @@
-from dagster import (
-    AssetKey,
-    MaterializeResult,
-    TableColumnDep,
-    TableColumnLineage,
-    asset,
-)
+import dagster as dg
 
 
-@asset(deps=["source_bar", "source_baz"])
+@dg.asset(deps=["source_bar", "source_baz"])
 def my_asset():
     # The following TableColumnLineage models 3 tables:
     # source_bar, source_baz, and my_asset
@@ -17,23 +11,23 @@ def my_asset():
     #   - source_baz.column_baz
     # - my_asset.new_column_qux depends on:
     #   - source_bar.column_quuz
-    return MaterializeResult(
+    return dg.MaterializeResult(
         metadata={
-            "dagster/column_lineage": TableColumnLineage(
+            "dagster/column_lineage": dg.TableColumnLineage(
                 deps_by_column={
                     "new_column_foo": [
-                        TableColumnDep(
-                            asset_key=AssetKey("source_bar"),
+                        dg.TableColumnDep(
+                            asset_key=dg.AssetKey("source_bar"),
                             column_name="column_bar",
                         ),
-                        TableColumnDep(
-                            asset_key=AssetKey("source_baz"),
+                        dg.TableColumnDep(
+                            asset_key=dg.AssetKey("source_baz"),
                             column_name="column_baz",
                         ),
                     ],
                     "new_column_qux": [
-                        TableColumnDep(
-                            asset_key=AssetKey("source_bar"),
+                        dg.TableColumnDep(
+                            asset_key=dg.AssetKey("source_bar"),
                             column_name="column_quuz",
                         ),
                     ],

@@ -1,17 +1,11 @@
-from dagster import (
-    CodeReferencesMetadataValue,
-    Definitions,
-    LocalFileCodeReference,
-    asset,
-    with_source_code_references,
-)
+import dagster as dg
 
 
-@asset(
+@dg.asset(
     metadata={
-        "dagster/code_references": CodeReferencesMetadataValue(
+        "dagster/code_references": dg.CodeReferencesMetadataValue(
             code_references=[
-                LocalFileCodeReference(
+                dg.LocalFileCodeReference(
                     file_path="/path/to/source.yaml",
                     # Label and line number are optional
                     line_number=1,
@@ -24,4 +18,4 @@ from dagster import (
 def my_asset_modeled_in_yaml(): ...
 
 
-defs = Definitions(assets=with_source_code_references([my_asset_modeled_in_yaml]))
+defs = dg.Definitions(assets=dg.with_source_code_references([my_asset_modeled_in_yaml]))
