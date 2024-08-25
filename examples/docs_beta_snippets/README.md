@@ -10,6 +10,7 @@ Please use the following code style to keep imports short:
 ```python
 import dagster as dg
 
+@dg.asset
 def my_cool_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
     return dg.MaterializeResult(
         metadata={
