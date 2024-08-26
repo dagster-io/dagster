@@ -42,14 +42,14 @@ def test_operations(
     asset_graph_view = AssetGraphView.for_test(defs, instance)
 
     a = (
-        asset_graph_view.get_asset_slice(asset_key=foo.key)
+        asset_graph_view.get_full_slice(key=foo.key)
         if first_all
-        else asset_graph_view.get_empty_slice(asset_key=foo.key)
+        else asset_graph_view.get_empty_slice(key=foo.key)
     )
     b = (
-        asset_graph_view.get_asset_slice(asset_key=foo.key)
+        asset_graph_view.get_full_slice(key=foo.key)
         if second_all
-        else asset_graph_view.get_empty_slice(asset_key=foo.key)
+        else asset_graph_view.get_empty_slice(key=foo.key)
     )
 
     def _assert_matches_operation(res, oper):

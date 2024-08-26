@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, EntitySlice
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -41,7 +41,7 @@ def _has_legacy_condition(condition: AutomationCondition):
 class AutomationContext:
     condition: AutomationCondition
     condition_unique_id: str
-    candidate_slice: AssetSlice
+    candidate_slice: EntitySlice[AssetKey]
 
     create_time: datetime.datetime
 
@@ -71,7 +71,7 @@ class AutomationContext:
         return AutomationContext(
             condition=condition,
             condition_unique_id=condition_unqiue_id,
-            candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
+            candidate_slice=asset_graph_view.get_full_slice(key=asset_key),
             create_time=get_current_datetime(),
             asset_graph_view=asset_graph_view,
             current_tick_results_by_key=current_tick_results_by_key,
@@ -82,7 +82,10 @@ class AutomationContext:
         )
 
     def for_child_condition(
-        self, child_condition: AutomationCondition, child_index: int, candidate_slice: AssetSlice
+        self,
+        child_condition: AutomationCondition,
+        child_index: int,
+        candidate_slice: EntitySlice[AssetKey],
     ) -> "AutomationContext":
         condition_unqiue_id = child_condition.get_unique_id(
             parent_unique_id=self.condition_unique_id, index=child_index
@@ -114,14 +117,17 @@ class AutomationContext:
         return self.asset_graph_view.asset_graph
 
     @property
-    def asset_key(self) -> AssetKey:
+    def key(self) -> AssetKey:
         """The asset key over which this condition is being evaluated."""
-        return self.candidate_slice.asset_key
+        return self.candidate_slice.key
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         """The partitions definition for the asset being evaluated, if it exists."""
-        return self.asset_graph.get(self.asset_key).partitions_def
+        if isinstance(self.key, AssetKey):
+            return self.asset_graph.get(self.key).partitions_def
+        else:
+            return None
 
     @property
     def root_context(self) -> "AutomationContext":
@@ -151,12 +157,12 @@ class AutomationContext:
         return self._node_cursor.get_structured_cursor(as_type=str) if self._node_cursor else None
 
     @property
-    def previous_true_slice(self) -> Optional[AssetSlice]:
+    def previous_true_slice(self) -> Optional[EntitySlice[AssetKey]]:
         """Returns the true slice for this node from the previous evaluation, if this node was
         evaluated on the previous tick.
         """
         return (
-            self.asset_graph_view.get_asset_slice_from_subset(self._node_cursor.true_subset)
+            self.asset_graph_view.get_slice_from_subset(self._node_cursor.true_subset)
             if self._node_cursor
             else None
         )
@@ -194,36 +200,34 @@ class AutomationContext:
         )
 
     @property
-    def previous_requested_slice(self) -> Optional[AssetSlice]:
+    def previous_requested_slice(self) -> Optional[EntitySlice[AssetKey]]:
         """Returns the requested slice for the previous evaluation. If this asset has never been
         evaluated, returns None.
         """
         return (
-            self.asset_graph_view.get_asset_slice_from_subset(
-                self._cursor.previous_requested_subset
-            )
+            self.asset_graph_view.get_slice_from_subset(self._cursor.previous_requested_subset)
             if self._cursor
             else None
         )
 
     @property
-    def previous_candidate_slice(self) -> Optional[AssetSlice]:
+    def previous_candidate_slice(self) -> Optional[EntitySlice[AssetKey]]:
         """Returns the candidate slice for the previous evaluation. If this node has never been
         evaluated, returns None.
         """
         candidate_subset = self._node_cursor.candidate_subset if self._node_cursor else None
         if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
-            return self.asset_graph_view.get_asset_slice(asset_key=self.asset_key)
+            return self.asset_graph_view.get_full_slice(key=self.key)
         else:
             return (
-                self.asset_graph_view.get_asset_slice_from_subset(candidate_subset)
+                self.asset_graph_view.get_slice_from_subset(candidate_subset)
                 if candidate_subset
                 else None
             )
 
-    def get_empty_slice(self) -> AssetSlice:
+    def get_empty_slice(self) -> EntitySlice[AssetKey]:
         """Returns an empty AssetSlice of the currently-evaluated asset."""
-        return self.asset_graph_view.get_empty_slice(asset_key=self.asset_key)
+        return self.asset_graph_view.get_empty_slice(key=self.key)
 
     def get_structured_cursor(
         self, as_type: Type[T_StructuredCursor]

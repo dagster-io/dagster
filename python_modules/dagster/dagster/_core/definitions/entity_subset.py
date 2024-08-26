@@ -12,6 +12,8 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._serdes.serdes import DataclassSerializer, whitelist_for_serdes
 
+EntitySubsetValue = Union[bool, PartitionsSubset]
+
 
 class EntitySubsetSerializer(DataclassSerializer):
     """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
@@ -36,7 +38,7 @@ class EntitySubset(Generic[T_EntityKey]):
     """Represents a subset of a given EntityKey."""
 
     key: T_EntityKey
-    value: Union[bool, PartitionsSubset]
+    value: EntitySubsetValue
 
     @property
     def is_partitioned(self) -> bool:

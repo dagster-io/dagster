@@ -48,7 +48,7 @@ class DepConditionWrapperCondition(AutomationCondition):
         dep_result = self.operand.evaluate(dep_context)
 
         # find all children of the true dep slice
-        true_slice = dep_result.true_slice.compute_child_slice(context.asset_key)
+        true_slice = dep_result.true_slice.compute_child_slice(context.key)
         return AutomationResult(context=context, true_slice=true_slice, child_results=[dep_result])
 
 
@@ -123,9 +123,7 @@ class AnyDepsCondition(DepCondition):
         dep_results = []
         true_slice = context.get_empty_slice()
 
-        for i, dep_key in enumerate(
-            sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
-        ):
+        for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
@@ -155,9 +153,7 @@ class AllDepsCondition(DepCondition):
         dep_results = []
         true_slice = context.candidate_slice
 
-        for i, dep_key in enumerate(
-            sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
-        ):
+        for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
