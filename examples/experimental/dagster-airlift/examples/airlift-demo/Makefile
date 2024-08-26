@@ -7,8 +7,8 @@ endef
 MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
-export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
-export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/dbt_example/shared/dbt
+export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/airlift_demo/shared/dbt
+export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/airlift_demo/shared/dbt
 export DAGSTER_URL := http://localhost:3333
 
 help:
@@ -29,23 +29,23 @@ setup_local_env:
 	mkdir -p $$AIRFLOW_HOME && \
 	mkdir -p $$DAGSTER_HOME && \
 	chmod +x ../../airflow_setup.sh && \
-	../../airflow_setup.sh $(MAKEFILE_DIR)/dbt_example/airflow_dags && \
+	../../airflow_setup.sh $(MAKEFILE_DIR)/airlift_demo/airflow_dags && \
 	make dbt_setup
 
 run_airflow: 
 	airflow standalone
 
 run_complete:
-	dagster dev -m dbt_example.dagster_defs.complete -p 3333
+	dagster dev -m airlift_demo.dagster_defs.complete -p 3333
 
 run_peer:
-	dagster dev -m dbt_example.dagster_defs.peer -p 3333
+	dagster dev -m airlift_demo.dagster_defs.peer -p 3333
 
 run_observe:
-	dagster dev -m dbt_example.dagster_defs.observe -p 3333
+	dagster dev -m airlift_demo.dagster_defs.observe -p 3333
 
 run_migrate:
-	dagster dev -m dbt_example.dagster_defs.migrate -p 3333
+	dagster dev -m airlift_demo.dagster_defs.migrate -p 3333
 
 wipe: ## Wipe out all the files created by the Makefile
 	rm -rf $$AIRFLOW_HOME $$DAGSTER_HOME

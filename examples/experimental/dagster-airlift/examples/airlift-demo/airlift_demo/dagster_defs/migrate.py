@@ -9,12 +9,12 @@ from dagster_airlift.core import (
 from dagster_airlift.dbt import dbt_defs
 from dagster_dbt import DbtProject
 
-from dbt_example.dagster_defs.lakehouse import (
+from airlift_demo.dagster_defs.lakehouse import (
     defs_from_lakehouse,
     lakehouse_existence_check_defs,
     specs_from_lakehouse,
 )
-from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
+from airlift_demo.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 from .constants import (
     AIRFLOW_BASE_URL,

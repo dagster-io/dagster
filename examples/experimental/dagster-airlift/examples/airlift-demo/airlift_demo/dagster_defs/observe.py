@@ -11,8 +11,8 @@ from dagster_airlift.core import (
 )
 from dagster_dbt.asset_specs import build_dbt_asset_specs
 
-from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check_defs, specs_from_lakehouse
-from dbt_example.shared.load_iris import CSV_PATH, DB_PATH
+from airlift_demo.dagster_defs.lakehouse import lakehouse_existence_check_defs, specs_from_lakehouse
+from airlift_demo.shared.load_iris import CSV_PATH, DB_PATH
 
 from .constants import (
     AIRFLOW_BASE_URL,

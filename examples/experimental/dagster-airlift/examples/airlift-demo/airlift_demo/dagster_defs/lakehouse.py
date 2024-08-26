@@ -3,8 +3,8 @@ from typing import List, Sequence
 
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
 
-from dbt_example.dagster_defs.table_existence_check import build_table_existence_check
-from dbt_example.shared.lakehouse_utils import id_from_path, load_csv_to_duckdb
+from airlift_demo.dagster_defs.table_existence_check import build_table_existence_check
+from airlift_demo.shared.lakehouse_utils import id_from_path, load_csv_to_duckdb
 
 
 def lakehouse_asset_key(*, csv_path) -> AssetKey:

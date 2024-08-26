@@ -14,7 +14,7 @@ def local_env_fixture() -> Generator[None, None, None]:
     with environ(
         {
             "AIRFLOW_HOME": str(makefile_dir / ".airflow_home"),
-            "DBT_PROJECT_DIR": str(makefile_dir / "dbt_example" / "shared" / "dbt"),
+            "DBT_PROJECT_DIR": str(makefile_dir / "airlift_demo" / "shared" / "dbt"),
             "DAGSTER_HOME": str(makefile_dir / ".dagster_home"),
         }
     ):
@@ -24,7 +24,7 @@ def local_env_fixture() -> Generator[None, None, None]:
 
 @pytest.fixture(name="dags_dir")
 def dags_dir_fixture() -> Path:
-    return Path(__file__).parent.parent / "dbt_example" / "airflow_dags"
+    return Path(__file__).parent.parent / "airlift_demo" / "airflow_dags"
 
 
 @pytest.fixture(name="airflow_home")

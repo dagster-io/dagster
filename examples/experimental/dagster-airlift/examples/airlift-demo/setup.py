@@ -19,7 +19,7 @@ ver = get_version()
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 
 setup(
-    name="dbt-example",
+    name="airlift-demo",
     packages=find_packages(),
     install_requires=[
         f"dagster{pin}",

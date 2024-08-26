@@ -8,8 +8,8 @@ from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.migration_state import load_migration_state_from_yaml
-from dbt_example.shared.lakehouse_utils import load_csv_to_duckdb
-from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
+from airlift_demo.shared.lakehouse_utils import load_csv_to_duckdb
+from airlift_demo.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
 default_args = {
     "owner": "airflow",

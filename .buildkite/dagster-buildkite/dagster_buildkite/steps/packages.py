@@ -361,7 +361,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/experimental/dagster-airlift/examples/dbt-example",
+        "examples/experimental/dagster-airlift/examples/airlift-demo",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],
