@@ -264,6 +264,9 @@ GET_ASSET_IS_EXECUTABLE = """
         assetNodes(assetKeys: $assetKeys) {
             id
             isExecutable
+            configField {
+                name
+            }
         }
     }
 """
