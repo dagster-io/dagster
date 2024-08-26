@@ -37,6 +37,8 @@ To use the Resource written in Step 1, you can provide it to an asset like this:
 
 <CodeExample filePath="guides/external-systems/apis/use_minimal_resource_in_asset.py" language="python" title="Use the SFOSunResource in an asset" />
 
+When you materialize `sfo_sunrise`, dagster will provide an initialized `SFOSunResource` to the `sun_resource` parameter.
+
 
 ## Step 3: Configure your Resource
 Many APIs have configuration you can set to customize your usage. Here is an updated version of the Resource from Step 1 with configuration to allow for setting the query location:
@@ -49,11 +51,17 @@ The configurable Resource written in Step 3 can be provided to an asset exactly 
 
 <CodeExample filePath="guides/external-systems/apis/use_configurable_resource_in_asset.py" language="python" title="Use the configurable SunResource in an asset" />
 
+When you materialize `sfo_sunrise`, dagster will provide a `SunResource` initialized with the provided configuration values to the `sun_resource` parameter.
+
+
 ## Step 5: Sourcing configuration values from environment variables
 
 You can configure your Resource using values that are stored in environment variables using the `EnvVar` class. In this example, there is a new `home_sunrise` asset. Rather than hardcoding the location of your home, you can set it in environment variables, and configure the `SunResource` by reading those values:
 
 <CodeExample filePath="guides/external-systems/apis/env_var_configuration.py" language="python" title="Configure the Resource with values from environment variables" />
+
+When you materialize `home_sunrise`, dagster will read the values set for the `HOME_LATITUDE`, `HOME_LONGITUDE, and `HOME_TIMZONE` environment variables and initialize a `SunResource` with those values. That initialized `SunResource` will be provided to the `sun_resource` parameter. Note that the values are read **at materialization time**, so the environment variables must be set where the code is executing. 
+
 
 
 ## Next steps
