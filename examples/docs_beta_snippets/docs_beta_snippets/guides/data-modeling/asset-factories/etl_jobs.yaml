@@ -1,6 +1,6 @@
 aws:
-  access_key_id: "example_access_key_id"
-  secret_access_key: "example_secret_key_id"
+  access_key_id: "YOUR_ACCESS_KEY_ID"
+  secret_access_key: "YOUR_SECRET_ACCESS_KEY"
 
 etl_jobs:
   - bucket: my_bucket
