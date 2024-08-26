@@ -2,7 +2,8 @@ import datetime
 from abc import abstractmethod
 from typing import Optional
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -22,7 +23,7 @@ class SliceAutomationCondition(AutomationCondition):
         return False
 
     @abstractmethod
-    def compute_slice(self, context: AutomationContext) -> AssetSlice: ...
+    def compute_slice(self, context: AutomationContext) -> EntitySlice: ...
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         # don't compute anything if there are no candidates
@@ -47,9 +48,9 @@ class MissingAutomationCondition(SliceAutomationCondition):
     def name(self) -> str:
         return "missing"
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
         return context.asset_graph_view.compute_missing_subslice(
-            context.asset_key, from_slice=context.candidate_slice
+            context.key, from_slice=context.candidate_slice
         )
 
 
@@ -66,8 +67,8 @@ class InProgressAutomationCondition(SliceAutomationCondition):
     def name(self) -> str:
         return "in_progress"
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
-        return context.asset_graph_view.compute_in_progress_asset_slice(asset_key=context.asset_key)
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
+        return context.asset_graph_view.compute_in_progress_asset_slice(asset_key=context.key)
 
 
 @whitelist_for_serdes
@@ -83,8 +84,8 @@ class FailedAutomationCondition(SliceAutomationCondition):
     def name(self) -> str:
         return "failed"
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
-        return context.asset_graph_view.compute_failed_asset_slice(asset_key=context.asset_key)
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
+        return context.asset_graph_view.compute_failed_asset_slice(asset_key=context.key)
 
 
 @whitelist_for_serdes
@@ -104,15 +105,15 @@ class WillBeRequestedCondition(SliceAutomationCondition):
         # TODO: once we can launch backfills via the asset daemon, this can be removed
         from dagster._core.definitions.asset_graph import materializable_in_same_run
 
-        root_key = context.root_context.asset_key
+        root_key = context.root_context.key
         return materializable_in_same_run(
             asset_graph=context.asset_graph_view.asset_graph,
             child_key=root_key,
-            parent_key=context.asset_key,
+            parent_key=context.key,
         )
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
-        current_result = context.current_tick_results_by_key.get(context.asset_key)
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
+        current_result = context.current_tick_results_by_key.get(context.key)
         if (
             current_result
             and current_result.true_slice
@@ -136,7 +137,7 @@ class NewlyRequestedCondition(SliceAutomationCondition):
     def name(self) -> str:
         return "newly_requested"
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
         return context.previous_requested_slice or context.get_empty_slice()
 
 
@@ -153,13 +154,13 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
     def name(self) -> str:
         return "newly_updated"
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
         # if it's the first time evaluating, just return the empty slice
         if context.previous_evaluation_time is None:
             return context.get_empty_slice()
         else:
             return context.asset_graph_view.compute_updated_since_cursor_slice(
-                asset_key=context.asset_key, cursor=context.previous_max_storage_id
+                asset_key=context.key, cursor=context.previous_max_storage_id
             )
 
 
@@ -186,7 +187,7 @@ class CronTickPassedCondition(SliceAutomationCondition):
         )
         return next(previous_ticks)
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
         previous_cron_tick = self._get_previous_cron_tick(context.evaluation_time)
         if (
             # no previous evaluation
@@ -235,7 +236,7 @@ class InLatestTimeWindowCondition(SliceAutomationCondition):
     def name(self) -> str:
         return "in_latest_time_window"
 
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
         return context.asset_graph_view.compute_latest_time_window_slice(
-            context.asset_key, lookback_delta=self.lookback_timedelta
+            context.key, lookback_delta=self.lookback_timedelta
         )

@@ -65,7 +65,7 @@ class AutomationConditionScenarioState(ScenarioState):
             ap_by_key[ap.asset_key].add(ap)
         return {
             asset_key: mock.MagicMock(
-                true_slice=asset_graph_view.get_asset_slice_from_asset_partitions(aps),
+                true_slice=asset_graph_view.get_asset_slice_from_asset_partitions(asset_key, aps),
                 cursor=None,
             )
             for asset_key, aps in ap_by_key.items()

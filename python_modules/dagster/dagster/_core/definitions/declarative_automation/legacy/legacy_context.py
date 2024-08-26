@@ -18,7 +18,7 @@ from typing import (
     TypeVar,
 )
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
@@ -151,7 +151,7 @@ class LegacyRuleEvaluationContext:
         self,
         child_condition: "AutomationCondition",
         child_unique_id: str,
-        candidate_slice: AssetSlice,
+        candidate_slice: EntitySlice[AssetKey],
     ) -> "LegacyRuleEvaluationContext":
         return dataclasses.replace(
             self,
@@ -160,7 +160,7 @@ class LegacyRuleEvaluationContext:
             if self.cursor
             else None,
             candidate_subset=ValidAssetSubset(
-                key=candidate_slice.asset_key, value=candidate_slice.get_internal_value()
+                key=candidate_slice.key, value=candidate_slice.get_internal_value()
             ),
             root_ref=self.root_context,
             start_timestamp=get_current_timestamp(),
