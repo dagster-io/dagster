@@ -34,11 +34,6 @@ def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
     assert os.environ["DBT_PROJECT_DIR"] == str(
         dbt_project_dir
     ), "Expected dbt project dir to be set as env var"
-    # defs = DbtProjectDefs(
-    #     dbt_manifest=dbt_project_dir / "target" / "manifest.json",
-    #     project=DbtProject(project_dir=dbt_project_dir),
-    #     name="my_dbt_multi_asset",
-    # ).build_defs()
     defs = dbt_defs(
         name="my_dbt_multi_asset",
         manifest=dbt_project_dir / "target" / "manifest.json",
