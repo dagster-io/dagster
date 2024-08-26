@@ -27,7 +27,7 @@ export function usePaginatedRunsTableRuns(filter: RunsFilter, pageSize: number) 
       filter,
     },
     query: RUNS_ROOT_QUERY,
-    pageSize: pageSize,
+    pageSize,
   });
   return {queryResult, paginationProps};
 }
