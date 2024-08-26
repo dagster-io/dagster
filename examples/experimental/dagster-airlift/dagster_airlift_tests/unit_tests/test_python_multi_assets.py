@@ -33,7 +33,7 @@ def test_python_multi_asset_factory() -> None:
     assert assets_def.is_executable
     assert len(list(assets_def.specs)) == 1
     assert assets_def.node_def.name == "test_task"
-    spec = list(assets_def.specs)[0]  # noqa
+    spec = next(iter(assets_def.specs))
     assert spec.key == AssetKey(["my", "asset"])
     assert spec.deps == [AssetDep(asset=AssetKey(["upstream", "asset"]))]
     result = defs.get_implicit_global_asset_job_def().execute_in_process()
