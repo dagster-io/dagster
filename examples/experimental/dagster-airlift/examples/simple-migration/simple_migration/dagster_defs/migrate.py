@@ -1,11 +1,9 @@
+from typing import Callable, Sequence
+
 from dagster import AssetSpec
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    PythonDefs,
-    build_defs_from_airflow_instance,
-    defs_from_factories,
-)
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+from dagster_airlift.core.dag_defs import TaskDefs, dag_defs, task_defs
+from dagster_airlift.core.python_callable import defs_for_python_callable
 
 from simple_migration.shared import t1_work, t2_work, t3_work
 
@@ -24,12 +22,21 @@ a2 = AssetSpec(key="a2", deps=[a1])
 a3 = AssetSpec(key="a3", deps=[a1])
 a4 = AssetSpec(key="a4", deps=[a2, a3])
 
-# Factory instance per airflow task
-t1 = PythonDefs(name="simple__t1", specs=[a1], python_fn=t1_work)
-t2 = PythonDefs(name="simple__t2", specs=[a2, a3], python_fn=t2_work)
-t3 = PythonDefs(name="simple__t3", specs=[a4], python_fn=t3_work)
+
+def python_callable_defs_for_task(
+    task_id: str, python_callable: Callable, asset_specs: Sequence[AssetSpec]
+) -> TaskDefs:
+    return task_defs(
+        task_id, defs_for_python_callable(python_callable=python_callable, asset_specs=asset_specs)
+    )
 
 
 defs = build_defs_from_airflow_instance(
-    airflow_instance=airflow_instance, defs=defs_from_factories(t1, t2, t3)
+    airflow_instance=airflow_instance,
+    defs=dag_defs(
+        "simple",
+        python_callable_defs_for_task("t1", t1_work, [a1]),
+        python_callable_defs_for_task("t2", t2_work, [a2, a3]),
+        python_callable_defs_for_task("t3", t3_work, [a4]),
+    ),
 )
