@@ -3,7 +3,7 @@ title: Connecting to APIs
 sidebar_position: 20
 ---
 
-This guide describes how to connect to and interact with APIs in dagster. In this guide you will use dagster Resources to connect to an external API. Using a Resource allows you to standardize how you connect to an external API across your project, use configuration to customize your connections, and use difference implementations of a Resource for different environments.
+This guide describes how to connect to and interact with APIs in dagster. In this guide you will use dagster Resources to connect to an external API. Using a Resource allows you to standardize how you connect to an external API across your project and use configuration to customize your connections.
 
 
 ## What you'll learn
@@ -59,4 +59,5 @@ You can configure your Resource using values that are stored in environment vari
 ## Next steps
 
 - [Authenticate to a resource](/guides/external-systems/authentication.md)
+- [Use different Resources in different execution environments](/todo)
 - Learn what [dagster-provided Resources](/todo) are available to use
