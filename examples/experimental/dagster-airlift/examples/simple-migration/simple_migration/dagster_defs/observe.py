@@ -21,8 +21,8 @@ defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=dag_defs(
         "simple",
-        task_defs("t1", Definitions([a1])),
-        task_defs("t2", Definitions([a2, a3])),
-        task_defs("t3", Definitions([a4])),
+        task_defs("t1", Definitions(assets=[a1])),
+        task_defs("t2", Definitions(assets=[a2, a3])),
+        task_defs("t3", Definitions(assets=[a4])),
     ),
 )

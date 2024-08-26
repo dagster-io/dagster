@@ -52,12 +52,13 @@ defs = build_defs_from_airflow_instance(
     defs=Definitions.merge(
         dag_defs(
             "load_lakehouse",
-            task_defs("load_iris", Definitions(specs_from_lakehouse(csv_path=CSV_PATH))),
+            task_defs("load_iris", Definitions(assets=specs_from_lakehouse(csv_path=CSV_PATH))),
         ),
         dag_defs(
             "dbt_dag",
             task_defs(
-                "build_dbt_models", Definitions(build_dbt_asset_specs(manifest=dbt_manifest_path()))
+                "build_dbt_models",
+                Definitions(assets=build_dbt_asset_specs(manifest=dbt_manifest_path())),
             ),
         ),
         lakehouse_existence_check_defs(

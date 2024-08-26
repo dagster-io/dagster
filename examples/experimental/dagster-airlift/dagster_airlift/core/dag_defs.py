@@ -51,8 +51,8 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
     .. code-block:: python
         defs = dag_defs(
             "dag_one",
-            task_defs("task_one", Definitions(AssetSpec(key="asset_one"))),
-            task_defs("task_two", Definitions(AssetSpec(key="asset_two"), AssetSpec(key="asset_three"))),
+            task_defs("task_one", Definitions(assets=[AssetSpec(key="asset_one"]))),
+            task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
         )
     """
     defs_to_merge = []
