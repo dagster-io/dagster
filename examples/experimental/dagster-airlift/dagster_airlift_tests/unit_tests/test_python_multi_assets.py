@@ -17,7 +17,9 @@ def test_python_multi_asset_factory() -> None:
         deps=[AssetDep(ak("upstream/asset"))],
     )
 
-    defs = defs_for_python_callable("test_task", [asset_spec], compute_fn)
+    defs = defs_for_python_callable(
+        name="test_task", asset_specs=[asset_spec], python_callable=compute_fn
+    )
 
     assert len(defs.assets) == 1  # type: ignore
     assets_def: AssetsDefinition = defs.assets[0]  # type: ignore
