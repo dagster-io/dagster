@@ -126,12 +126,13 @@ In our example, we have three sequential tasks:
 2. `run_dbt_model` builds a series of dbt models (from [jaffle shop](https://github.com/dbt-labs/jaffle_shop_duckdb)) combining customer, order, and payment data.
 3. `export_customers` exports a CSV representation of the final customer file from duckdb to disk.
 
-The first and third tasks involve a single table each. We can manually construct `AssetSpec`s that match the assets which they build, and provide them to the `orchestrated_defs` argument to `build_defs_from_airflow_instance`:
+The first and third tasks involve a single table each. We can manually construct `AssetSpec`s that match the assets which they build. Dagster provides the `dag_defs` and `task_defs` utilities to annotate asset specs with the tasks that produce them. These annotated specs are then
+provided to the `defs` argument to `build_defs_from_airflow_instance`.
 
 ```python
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=dag_defs(
+    defs=dag_defs(
         "rebuild_customers_list",
         task_defs(
             "load_raw_customers",
@@ -144,39 +145,36 @@ defs = build_defs_from_airflow_instance(
                 AssetKey("customers")
             })
         ),
-        # todo: dbt assets
     )
 )
 ```
 
-To build assets for our dbt invocation, we can use the Dagster-supplied factory `DbtProjectDefs`, installable via `uv pip install dagster-airlift[dbt]`. This will load each dbt model as its own asset:
+To build assets for our dbt invocation, we can use the Dagster-supplied factory `dbt_defs`, installable via `uv pip install dagster-airlift[dbt]`. This will load each dbt model as its own asset:
 
 ```python
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=Definitions.merge(
-        dag_defs(
-            "rebuild_customers_list",
-            task_defs(
-                "load_raw_customers",
-                AssetSpec(key=AssetKey(["raw_data", "raw_customers"]))
-            ),
-            # encode dependency on customers output
-            task_defs(
-                "export_customers",
-                AssetSpec(key=AssetKey("customers_csv"), deps={
-                    AssetKey("customers")
-                })
+    defs=dag_defs(
+        "rebuild_customers_list",
+        task_defs(
+            "load_raw_customers",
+            AssetSpec(key=AssetKey(["raw_data", "raw_customers"]))
+        ),
+        # encode dependency on customers output
+        task_defs(
+            "export_customers",
+            AssetSpec(key=AssetKey("customers_csv"), deps={
+                AssetKey("customers")
+            })
+        ),
+        task_defs(
+            "build_dbt_models",
+            dbt_defs(
+                manifest=dbt_project_path() / "target" / "manifest.json",
+                project=DbtProject(dbt_project_path()),
             ),
         ),
-        defs_from_factories(
-            DbtProjectDefs(
-                name="dbt_dag__build_dbt_models",
-                dbt_project_path=dbt_project_path(),
-                group="dbt",
-            ),
-        )
-    )
+    ),
 )
 ```
 
@@ -249,14 +247,17 @@ For some common operator patterns, like our dbt operator, Dagster supplies facto
 ```python
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=defs_from_factories(
-        # todo: Insert asset specs for other DAGs here
-        DbtProjectDefs(
-            name="dbt_dag__build_dbt_models",
-            dbt_project_path=dbt_project_path(),
-            group="dbt",
+    defs=dag_defs(
+        "rebuild_customers_list",
+        ...,
+        task_defs(
+            "build_dbt_models",
+            dbt_defs(
+                manifest=dbt_project_path() / "target" / "manifest.json",
+                project=DbtProject(dbt_project_path()),
+            ),
         ),
-    ),
+    )
 )
 ```
 
@@ -272,37 +273,29 @@ from pathlib import Path
 from typing import List
 
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
-from dagster_airlift.core import DefsFactory
 
 from tutorial_example.shared.load_csv_to_duckdb import load_csv_to_duckdb
 
-@dataclass
-class CSVToDuckdbDefs(DefsFactory):
-    name: str
-    table_name: str
-    duckdb_schema: str
-    csv_path: Path
-    duckdb_path: Path
-    column_names: List[str]
-    duckdb_database_name: str
-
-    def build_defs(self) -> Definitions:
-        ...
-
-        @multi_asset(
-            specs=[AssetSpec(key=AssetKey([self.duckdb_schema, self.table_name]))], name=self.name
+def load_csv_to_duckdb_defs(
+    table_name: str,
+    csv_path: Path,
+    duckdb_path: Path,
+    column_names: List[str],
+    duckdb_schema: str,
+    duckdb_database_name: str,
+) -> Definitions:
+    @multi_asset(specs=[AssetSpec(key=AssetKey([duckdb_schema, table_name]))])
+    def _multi_asset() -> None:
+        load_csv_to_duckdb(
+            table_name=table_name,
+            csv_path=csv_path,
+            duckdb_path=duckdb_path,
+            names=column_names,
+            duckdb_schema=duckdb_schema,
+            duckdb_database_name=duckdb_database_name,
         )
-        def _multi_asset():
-            load_csv_to_duckdb(
-                table_name=self.table_name,
-                csv_path=self.csv_path,
-                duckdb_path=self.duckdb_path,
-                names=self.column_names,
-                duckdb_schema=self.duckdb_schema,
-                duckdb_database_name=self.duckdb_database_name,
-            )
 
-        return Definitions(assets=[_multi_asset])
+    return Definitions(assets=[_multi_asset])
 
 ```
 
@@ -311,26 +304,25 @@ We can then use our new factory to supply definitions:
 ```python
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=defs_from_factories(
-        # todo: Insert asset specs for other DAGs here
-        CSVToDuckdbDefs(
-            name="rebuild_customers_list__load_raw_customers",
-            table_name="raw_customers",
-            csv_path=Path(__file__).parent.parent / "airflow_dags" / "raw_customers.csv",
-            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-            column_names=[
-                "id",
-                "first_name",
-                "last_name",
-            ],
-            duckdb_schema="raw_data",
-            duckdb_database_name="jaffle_shop",
-        ),
-        DbtProjectDefs(
-            name="dbt_dag__build_dbt_models",
-            dbt_project_path=dbt_project_path(),
-            group="dbt",
-        ),
+    defs=dag_defs(
+        "rebuild_customers_list",
+        ...,
+        task_defs(
+            "load_raw_customers",
+            load_csv_to_duckdb_defs(
+                table_name="raw_customers",
+                csv_path=Path(__file__).parent.parent / "airflow_dags" / "raw_customers.csv",
+                duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                column_names=[
+                    "id",
+                    "first_name",
+                    "last_name",
+                ],
+                duckdb_schema="raw_data",
+                duckdb_database_name="jaffle_shop",
+            ),
+        )
+        ...
     ),
 )
 ```
