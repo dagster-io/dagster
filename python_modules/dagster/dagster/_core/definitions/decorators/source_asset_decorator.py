@@ -1,7 +1,7 @@
 from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import deprecated, experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -50,6 +50,10 @@ def observable_source_asset(
 
 
 @experimental
+@deprecated(
+    breaking_version="1.9",
+    additional_warn_text='Use @asset(result_type="observe") instead.',
+)
 def observable_source_asset(
     observe_fn: Optional[SourceAssetObserveFunction] = None,
     *,

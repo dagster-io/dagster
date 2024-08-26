@@ -41,6 +41,7 @@ from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_AS
 from dagster._core.errors import (
     DagsterAssetCheckFailedError,
     DagsterExecutionHandleOutputError,
+    DagsterInvalidObservationError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
@@ -135,6 +136,20 @@ def _process_user_event(
                 " ERROR severity."
             )
         yield output
+    elif isinstance(user_event, Output):
+        asset_layer = step_context.job_def.asset_layer
+        asset_key = asset_layer.asset_key_for_output(
+            step_context.node_handle, user_event.output_name
+        )
+        if asset_key is not None:
+            execution_type = asset_layer.asset_graph.get(asset_key).execution_type
+            if execution_type == AssetExecutionType.OBSERVATION and user_event.value is not None:
+                raise DagsterInvalidObservationError(
+                    "Observation function must return ObserveResult, but returned output with "
+                    f"value of type {type(user_event.value)}"
+                )
+
+        yield user_event
     else:
         yield user_event
 
