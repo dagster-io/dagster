@@ -20,15 +20,15 @@ def test_migration_state() -> None:
         dags={
             "first": DagMigrationState(
                 tasks={
-                    "first_task": TaskMigrationState(migrated=True),
-                    "second_task": TaskMigrationState(migrated=False),
-                    "third_task": TaskMigrationState(migrated=True),
+                    "first_task": TaskMigrationState(task_id="first_task", migrated=True),
+                    "second_task": TaskMigrationState(task_id="second_task", migrated=False),
+                    "third_task": TaskMigrationState(task_id="third_task", migrated=True),
                 }
             ),
             "second": DagMigrationState(
                 tasks={
-                    "some_task": TaskMigrationState(migrated=True),
-                    "other_task": TaskMigrationState(migrated=False),
+                    "some_task": TaskMigrationState("some_task", migrated=True),
+                    "other_task": TaskMigrationState("other_task", migrated=False),
                 }
             ),
         }
