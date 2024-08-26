@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import dagster_aws.s3 as s3
 import yaml
 
@@ -38,5 +36,7 @@ def load_etl_jobs_from_yaml(yaml_path: str) -> dg.Definitions:
     return dg.Definitions.merge(*defs)
 
 
-defs = load_etl_jobs_from_yaml(str(Path(__file__).parent / "etl_jobs.yaml"))
+defs = load_etl_jobs_from_yaml(
+    "docs_beta_snippets/guides/data-modeling/asset-factories/etl_jobs.yaml"
+)
 # highlight-end

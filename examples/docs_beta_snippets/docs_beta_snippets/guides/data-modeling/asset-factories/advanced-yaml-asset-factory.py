@@ -69,4 +69,6 @@ def load_etl_jobs_from_yaml(yaml_path: str) -> dg.Definitions:
 # highlight-end
 
 
-defs = load_etl_jobs_from_yaml(str(Path(__file__).parent / "etl_jobs_with_jinja.yaml"))
+defs = load_etl_jobs_from_yaml(
+    "docs_beta_snippets/guides/data-modeling/asset-factories/etl_jobs_with_jinja.yaml"
+)
