@@ -199,6 +199,9 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         in Dagster config as dicts with a single key, which is the discriminator value.
         """
         modified_data = {}
+        aliased_fields = {
+            f.alias: name for name, f in model_fields(self).items() if f.alias is not None
+        }
         for key, value in config_dict.items():
             field = model_fields(self).get(key)
 
@@ -241,7 +244,26 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
 
         for key, field in model_fields(self).items():
             if field.is_required() and key not in modified_data:
-                modified_data[key] = field.default if field.default != PydanticUndefined else None
+                if field.alias is not None and field.alias in modified_data:
+                    modified_data[key] = modified_data[field.alias]
+                else:
+                    modified_data[key] = (
+                        field.default if field.default != PydanticUndefined else None
+                    )
+
+        for alias, name in aliased_fields.items():
+            # Sanity check
+            if name in modified_data and alias in modified_data:
+                if modified_data[alias] != modified_data[name]:
+                    raise ValueError(
+                        f'Values for field "{name}" (aliased "{alias}") are different: {modified_data[name]} ({modified_data[alias]})'
+                    )
+
+            # Force attribute and alias to contain same value
+            elif alias in modified_data:
+                modified_data[name] = modified_data[alias]
+            elif name in modified_data:
+                modified_data[alias] = modified_data[name]
 
         super().__init__(**modified_data)
         if USING_PYDANTIC_2:
@@ -269,9 +291,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         meaning any nested config objects will be returned as config objects, not dictionaries.
         """
         output = {}
-
         for key, value in items.items():
-            if _is_field_internal(key):  # or key in alias_keys:
+            if _is_field_internal(key):
                 continue
             field = model_fields(cls).get(key)
 
