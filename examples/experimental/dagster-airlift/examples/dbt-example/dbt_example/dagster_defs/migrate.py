@@ -1,8 +1,8 @@
+from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
     build_defs_from_airflow_instance,
-    combine_defs,
     dag_defs,
     task_defs,
 )
@@ -11,7 +11,7 @@ from dagster_dbt import DbtProject
 
 from dbt_example.dagster_defs.lakehouse import (
     defs_from_lakehouse,
-    lakehouse_existence_check,
+    lakehouse_existence_check_defs,
     specs_from_lakehouse,
 )
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
@@ -35,7 +35,7 @@ airflow_instance = AirflowInstance(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    defs=combine_defs(
+    defs=Definitions.merge(
         dag_defs(
             "load_lakehouse",
             task_defs(
@@ -58,7 +58,7 @@ defs = build_defs_from_airflow_instance(
                 ),
             ),
         ),
-        lakehouse_existence_check(
+        lakehouse_existence_check_defs(
             csv_path=CSV_PATH,
             duckdb_path=DB_PATH,
         ),
