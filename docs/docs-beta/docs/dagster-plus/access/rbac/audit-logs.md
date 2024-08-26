@@ -5,3 +5,44 @@ sidebar_position: 4
 ---
 
 # Audit logs
+
+The Dagster Plus audit log enables enterprise organizations to track and attribute changes to their Dagster deployment.
+
+This guide walks through how to access the audit log and details the interactions which are tracked in the audit log.
+
+<details>
+<summary>Prerequisites</summary>
+- A Dagster Plus Pro organization
+- An [Organization Admin](/dagster-plus/access/rbac/users-roles-permissions) role in your Dagster Plus organization
+</details>
+
+## View audit logs
+
+Audit logs are available in the Organization settings pane, which can be accessed by clicking on your user icon on the top right side of the screen and selecting Organization settings in the dropdown menu. Once on the Organization settings pane, select Audit log on the top bar.
+
+Each entry in the audit log indicates when an action was taken, the user who performed the action, the action taken, and the deployment which the action affected. You may click the "Show" button to view additional details for any audit log action.
+
+## Filter the audit log
+
+The "Filter" button on the top left of the Audit log pane can be used to filter the list of logs. You can filter to a combination of user, event type, affected deployment, or time frame.
+
+## Audit log entry types
+
+| Event type                     | Description                                                                                                   | Additional data                                                         |
+|--------------------------------|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| Log in                         | A user logs in to the Dagster Plus organization                                                               |                                                                         |
+| Update sensor                  | A user toggles a sensor on or off                                                                             | The sensor name, code location, and cursor                              |
+| Update schedule                | A user toggles a schedule on or off                                                                           | The schedule name, code location, and cursor                            |
+| Update alert policy            | A user modifies an [alert policy](/dagster-plus/deployment/alerts/ui)                                         | The new configuration for the alert policy                              |
+| Create deployment              | A user creates a new [deployment](/dagster-plus/deployment-types)                                             | Whether the deployment is a branch deployment                           |
+| Delete deployment              | A user removes an existing [deployment](/dagster-plus/deployment-types)                                       | Whether the deployment is a branch deployment                           |
+| Create user token              | A user creates a new user token                                                                               |                                                                         |
+| Revoke user token              | A user revokes an existing user token                                                                         |                                                                         |
+| Change user permissions        | A user alters [permissions](/dagster-plus/access/rbac/users-roles-permissions) for another user               | The permission grant and targeted deployment                            |
+| Create agent token             | A user creates a new agent token                                                                              |                                                                         |
+| Revoke agent token             | A user revokes an existing agent token                                                                        |                                                                         |
+| Update agent token permissions | A user alters [permissions](/dagster-plus/access/rbac/users-roles-permissions) for an agent token             | The permission grant and targeted deployment                            |
+| Create secret                  | A user creates a new [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)        | The created secret name                                                 |
+| Update secret                  | A user modifies an existing [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui) | The previous and current secret names and whether the value was changed |
+| Delete secret                  | A user removes an [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)           | The deleted secret name                                                 |
+| Update subscription            | A user modifies the selected Dagster Plus subscription for the organization                                   | The previous and current plan types                                     |
