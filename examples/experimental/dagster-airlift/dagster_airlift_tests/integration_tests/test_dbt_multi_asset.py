@@ -35,7 +35,6 @@ def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
         dbt_project_dir
     ), "Expected dbt project dir to be set as env var"
     defs = dbt_defs(
-        name="my_dbt_multi_asset",
         manifest=dbt_project_dir / "target" / "manifest.json",
         project=DbtProject(project_dir=dbt_project_dir),
     )
@@ -44,7 +43,7 @@ def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
     assert len(all_assets) == 1
     assets_def = all_assets[0]
     assert isinstance(assets_def, AssetsDefinition)
-    assert assets_def.node_def.name == "my_dbt_multi_asset"
+    assert assets_def.node_def.name == "build_jaffle_shop"
     assert assets_def.is_executable
     specs_list = list(assets_def.specs)
     # In jaffle shop, there are 8 dbt models.

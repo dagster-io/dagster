@@ -170,7 +170,6 @@ defs = build_defs_from_airflow_instance(
         task_defs(
             "build_dbt_models",
             dbt_defs(
-                name="build_dbt_models",
                 manifest=dbt_project_path() / "target" / "manifest.json",
                 project=DbtProject(dbt_project_path()),
             ),
@@ -254,7 +253,6 @@ defs = build_defs_from_airflow_instance(
         task_defs(
             "build_dbt_models",
             dbt_defs(
-                name="build_dbt_models",
                 manifest=dbt_project_path() / "target" / "manifest.json",
                 project=DbtProject(dbt_project_path()),
             ),

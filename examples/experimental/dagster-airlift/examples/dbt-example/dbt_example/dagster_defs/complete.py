@@ -19,7 +19,6 @@ defs = Definitions.merge(
         columns=IRIS_COLUMNS,
     ),
     dbt_defs(
-        name="build_dbt_models",
         manifest=dbt_manifest_path(),
         project=DbtProject(dbt_project_path()),
     ),
