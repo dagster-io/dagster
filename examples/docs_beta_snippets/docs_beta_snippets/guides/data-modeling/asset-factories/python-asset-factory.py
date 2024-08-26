@@ -13,6 +13,7 @@ def build_etl_job(
     target_object: str,
     sql: str,
 ) -> dg.Definitions:
+    # asset keys cannot contain '.'
     name = f"etl_{bucket}_{target_object}".replace(".", "_")
 
     @dg.asset(name=name)

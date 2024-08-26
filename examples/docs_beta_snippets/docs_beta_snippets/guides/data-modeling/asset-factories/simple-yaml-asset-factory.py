@@ -13,7 +13,8 @@ def build_etl_job(
     target_object: str,
     sql: str,
 ) -> dg.Definitions:
-    return dg.Definitions()  # ...
+    # Code from previous example omitted
+    return dg.Definitions()
 
 
 # highlight-start
