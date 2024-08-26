@@ -7,7 +7,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
@@ -518,7 +518,7 @@ class AutomationResult:
     def __init__(
         self,
         context: "AutomationContext",
-        true_slice: AssetSlice,
+        true_slice: EntitySlice[AssetKey],
         cursor: Optional[str] = None,
         child_results: Optional[Sequence["AutomationResult"]] = None,
         **kwargs,
@@ -528,7 +528,7 @@ class AutomationResult:
         )
 
         self._context = check.inst_param(context, "context", AutomationContext)
-        self._true_slice = check.inst_param(true_slice, "true_slice", AssetSlice)
+        self._true_slice = check.inst_param(true_slice, "true_slice", EntitySlice)
         self._child_results = check.opt_sequence_param(
             child_results, "child_results", of_type=AutomationResult
         )
@@ -560,10 +560,10 @@ class AutomationResult:
 
     @property
     def asset_key(self) -> AssetKey:
-        return self._true_slice.asset_key
+        return self._true_slice.key
 
     @property
-    def true_slice(self) -> AssetSlice:
+    def true_slice(self) -> EntitySlice[AssetKey]:
         return self._true_slice
 
     @property

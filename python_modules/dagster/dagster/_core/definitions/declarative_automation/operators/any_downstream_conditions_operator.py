@@ -85,7 +85,7 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         ignored_conditions = self._get_ignored_conditions(context)
         downstream_conditions = self._get_validated_downstream_conditions(
-            context.asset_graph.get_downstream_automation_conditions(asset_key=context.asset_key)
+            context.asset_graph.get_downstream_automation_conditions(asset_key=context.key)
         )
 
         true_slice = context.get_empty_slice()
