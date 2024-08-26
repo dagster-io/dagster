@@ -4,13 +4,13 @@ sidebar_position: 80
 sidebar_label: 'Representing external data sources'
 ---
 
-One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization. This can include assets orchestrated by Dagster as well as assets orchestrated by other systems.
+One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization. This can include assets orchestrated by Dagster and assets orchestrated by other systems.
 
-**External assets** enable you to model assets orchestrated by other systems natively within Dagster's asset catalog, and create new data assets downstream of these external assets.
+**External assets** enable you to model assets orchestrated by other systems natively within Dagster's Asset catalog, and create new data assets downstream of these external assets.
 
-External assets differ from native Dagster assets in that Dagster cannot materialize them directly or put them on a schedule. Instead, an external system must inform Dagster of when an external asset is updated.
+External assets differ from native Dagster assets in that Dagster can't materialize them directly or put them on a schedule. Instead, an external system must inform Dagster of when an external asset is updated.
 
-Examples of external assets could be files in a data lake that are populated by a bespoke internal tool, a CSV file delivered daily via SFTP from a partner, or a table in a data warehouse populated by another orchestrator.
+Examples of external assets could be files in a data lake that are populated by a bespoke internal tool, a CSV file delivered daily by SFTP from a partner, or a table in a data warehouse populated by another orchestrator.
 
 ## What you'll learn
 
@@ -34,7 +34,7 @@ To follow the steps in this guide, you'll need:
 
 ## Creating and depending on external assets
 
-Let's imagine that we have a partner that sends us some raw transaction data via SFTP on, roughly, a daily basis, that is later cleaned and stored in an internal data lake. Because the raw transaction data is not materialized by Dagster, it makes sense to model it as an external asset.
+Let's imagine that we have a partner that sends us some raw transaction data by SFTP on, roughly, a daily basis, that's later cleaned and stored in an internal data lake. Because the raw transaction data isn't materialized by Dagster, it makes sense to model it as an external asset.
 
 <CodeExample filePath="guides/data-modeling/external-assets/creating-external-assets.py" language="python" title="Creating an external asset" />
 
@@ -42,9 +42,9 @@ See the [AssetSpec API docs](/todo) for all the potential parameters you can pro
 
 ## Recording materializations and metadata
 
-In the above example, we simply modeled the external asset in the asset graph. We also need to inform Dagster whenever an external asset is updated, and include any relevant metadata about the asset.
+In the preceding example, we modeled the external asset in the asset graph. We also need to inform Dagster whenever an external asset is updated, and include any relevant metadata about the asset.
 
-There are two main ways to do this: "pulling" external assets events with sensors, and "pushing" external asset events via the REST API.
+There are two main ways to do this: "pulling" external assets events with sensors, and "pushing" external asset events using the REST API.
 
 ### "Pulling" with sensors
 
@@ -58,7 +58,7 @@ See the [sensors guide](/guides/automation/sensors) for more information about s
 
 ### "Pushing" with the REST API
 
-You can inform Dagster that an external asset has materialized by "pushing" the event from an external system via the REST API.
+You can inform Dagster that an external asset has materialized by "pushing" the event from an external system to the REST API.
 
 For example, here's how we would inform Dagster of a materialization of the `raw_transactions` external asset in Dagster+:
 
@@ -77,7 +77,7 @@ curl \
 }'
 ```
 
-If you're using open-source, you don't need the authentication headers and should point it at your open-source URL (in this example, `http://localhost:3000`):
+If you're using open source, you don't need the authentication headers and should point it at your open source URL (in this example, `http://localhost:3000`):
 
 ```shell
 curl \
