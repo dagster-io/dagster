@@ -14,7 +14,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
-    # install_requires=["dagster-cloud"],
     install_requires=[],
     extras_require={
         "test": [

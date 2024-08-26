@@ -8,10 +8,15 @@ from dagster import file_relative_path
 snippets_folder = file_relative_path(__file__, "../docs_beta_snippets/")
 
 
+EXCLUDED_FILES = [
+    "plus-references.py"  #  No module named 'dagster_cloud'
+]
+
+
 def get_python_files(directory):
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith(".py"):
+            if file.endswith(".py") and file not in EXCLUDED_FILES:
                 yield os.path.join(root, file)
 
 
