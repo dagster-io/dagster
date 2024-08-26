@@ -1,5 +1,5 @@
 import threading
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Any, Optional, Tuple, Union
 
 import sqlalchemy as db
@@ -14,7 +14,7 @@ from typing_extensions import TypeAlias
 
 from dagster._utils import file_relative_path
 
-create_engine = db.create_engine  # exported
+create_engine = partial(db.create_engine, future=True)  # exported
 
 
 ALEMBIC_SCRIPTS_LOCATION = "dagster:_core/storage/alembic"
