@@ -16,6 +16,7 @@ const config: Config = {
   projectName: 'dagster',
   markdown: {
     mermaid: true,
+    format: 'detect',
   },
   themes: ['@docusaurus/theme-mermaid'],
   i18n: {defaultLocale: 'en', locales: ['en']},

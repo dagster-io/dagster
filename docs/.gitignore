@@ -4,3 +4,5 @@ next/.env
 docs-beta/.docusaurus
 *.duckdb
 *.sqlite
+
+docs-beta/docs/apidocs
