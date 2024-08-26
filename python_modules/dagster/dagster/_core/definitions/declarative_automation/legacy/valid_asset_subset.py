@@ -145,3 +145,13 @@ class ValidAssetSubset(AssetSubset):
         return ValidAssetSubset(
             asset_key=asset_key, value=partitions_def.subset_with_partition_keys(partition_keys)
         )
+
+    @property
+    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        if not self.is_partitioned:
+            return {AssetKeyPartitionKey(self.asset_key)} if self.bool_value else set()
+        else:
+            return {
+                AssetKeyPartitionKey(self.asset_key, partition_key)
+                for partition_key in self.subset_value.get_partition_keys()
+            }

@@ -128,10 +128,10 @@ class AutomationConditionEvaluator:
                     f"Error while evaluating conditions for asset {asset_key.to_user_string()}"
                 ) from e
 
-            num_requested = result.true_subset.size
+            num_requested = result.true_slice.size
             log_fn = self.logger.info if num_requested > 0 else self.logger.debug
 
-            to_request_asset_partitions = result.true_subset.asset_partitions
+            to_request_asset_partitions = result.true_slice.expensively_compute_asset_partitions()
             to_request_str = ",".join(
                 [(ap.partition_key or "No partition") for ap in to_request_asset_partitions]
             )
@@ -153,22 +153,19 @@ class AutomationConditionEvaluator:
                     self.expected_data_time_mapping[neighbor_key] = expected_data_time
 
                     # make sure that the true_subset of the neighbor is accurate -- when it was
-                    # evaluated it may have had a different requested AssetSubset. however, because
+                    # evaluated it may have had a different requested subset. however, because
                     # all these neighbors must be executed as a unit, we need to union together
                     # the subset of all required neighbors
                     if neighbor_key in self.current_results_by_key:
                         neighbor_true_subset = result.serializable_evaluation.true_subset._replace(
                             asset_key=neighbor_key
                         )
-                        neighbor_evaluation = result.serializable_evaluation._replace(
-                            true_subset=neighbor_true_subset
-                        )
                         self.current_results_by_key[
                             neighbor_key
-                        ].set_internal_serializable_evaluation_override(neighbor_evaluation)
+                        ].set_internal_serializable_subset_override(neighbor_true_subset)
                     self.to_request |= {
                         ap._replace(asset_key=neighbor_key)
-                        for ap in result.true_subset.asset_partitions
+                        for ap in result.true_slice.expensively_compute_asset_partitions()
                     }
 
         return list(self.current_results_by_key.values()), self.to_request
@@ -211,6 +208,6 @@ class AutomationConditionEvaluator:
 
         result = automation_condition.evaluate(context)
         expected_data_time = get_expected_data_time_for_asset_key(
-            legacy_context, will_materialize=result.true_subset.size > 0
+            legacy_context, will_materialize=result.true_slice.size > 0
         )
         return result, expected_data_time
