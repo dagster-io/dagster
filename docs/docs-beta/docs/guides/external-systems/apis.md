@@ -3,13 +3,15 @@ title: Connecting to APIs
 sidebar_position: 20
 ---
 
-This guide describes how to connect to and interact with APIs in dagster.
+This guide describes how to connect to and interact with APIs in dagster. In this guide you will use dagster Resources to connect to an external API. Using a Resource allows you to standardize how you connect to an external API across your project, use configuration to customize your connections, and use difference implementations of a Resource for different environments.
 
 
 ## What you'll learn
 
 - How to write a dagster Resource to connect to an API
 - How to use that Resource in an asset
+- How to configure a Resource
+- How to source configuration values from environment variables
 
 <details>
   <summary>Prerequisites</summary>
@@ -46,6 +48,13 @@ Many APIs have configuration you can set to customize your usage. Here is an upd
 The configurable Resource written in Step 3 can be provided to an asset exactly as before. When the Resource is initialized, you can pass values for each of the configuration options.
 
 <CodeExample filePath="guides/external-systems/apis/use_configurable_resource_in_asset.py" language="python" title="Use the configurable SunResource in an asset" />
+
+## Step 5: Sourcing configuration values from environment variables
+
+You can configure your Resource using values that are stored in environment variables using the `EnvVar` class. In this example, there is a new `home_sunrise` asset. Rather than hardcoding the location of your home, you can set it in environment variables, and configure the `SunResource` by reading those values:
+
+<CodeExample filePath="guides/external-systems/apis/env_var_configuration.py" language="python" title="Configure the Resource with values from environment variables" />
+
 
 ## Next steps
 
