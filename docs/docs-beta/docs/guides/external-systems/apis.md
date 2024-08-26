@@ -24,7 +24,7 @@ To follow the steps in this guide, you'll need:
 
 ## Step 1: Write a Resource to connect to an API
 
-Here is a minimal Resource for connecting to the an API that returns data about the sunrise and sunset times. In this example, the request URL has been hardcoded to query for data at San Francisco International Airport.
+Here is a minimal Resource for connecting to the an API that returns the sunrise time. In this example, the request URL has been hardcoded to query for data at San Francisco International Airport.
 
 <CodeExample filePath="guides/external-systems/apis/minimal_resource.py" language="python" title="Resource to connect to Sun API" />
 
