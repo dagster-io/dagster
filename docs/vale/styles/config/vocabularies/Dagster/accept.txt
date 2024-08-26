@@ -1,11 +1,13 @@
 [Cc]onfig
 \bDagster\b
+DAG
 DataFrame
 Declarative Automation
 dagster-.*
 gRPC
 [Mm]aterializations
 [Mm]emoization
+REST API
 [Ss]ubprocess
 REST API
 Serverless
@@ -33,3 +35,6 @@ Postgres
 S3
 Snowflake
 Twilio
+
+We have
+we have
