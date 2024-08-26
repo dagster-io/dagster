@@ -1,9 +1,6 @@
 import sqlite3
-import tempfile
 
 import dagster as dg
-
-database_file = tempfile.NamedTemporaryFile()
 
 
 # highlight-start
