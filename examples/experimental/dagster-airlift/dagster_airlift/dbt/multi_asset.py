@@ -1,3 +1,5 @@
+from typing import Optional
+import yaml
 from dagster import AssetExecutionContext, Definitions
 from dagster_dbt import (
     DagsterDbtTranslator,
@@ -13,8 +15,17 @@ def dbt_defs(
     *,
     manifest: DbtManifestParam,
     project: DbtProject,
-    name: str,  # TODO get default name from project file
+    name: Optional[str],
 ) -> Definitions:
+    if not name:
+        with open(project.project_dir.joinpath("dbt_project.yml")) as file:
+            dbt_project_yml = yaml.safe_load(file)
+            if "name" not in dbt_project_yml:
+                raise ValueError("name not found in dbt_project.yml")
+            if not dbt_project_yml["name"]:
+                raise ValueError("name in dbt_project.yml is empty")
+            name = dbt_project_yml["name"]
+
     @dbt_assets(
         name=name,
         manifest=manifest,
