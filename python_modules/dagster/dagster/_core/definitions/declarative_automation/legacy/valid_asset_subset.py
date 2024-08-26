@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore
 
 
-@whitelist_for_serdes(serializer=EntitySubsetSerializer)
+@whitelist_for_serdes(serializer=EntitySubsetSerializer, storage_field_names={"key": "asset_key"})
 class ValidAssetSubset(EntitySubset[AssetKey]):
     """Legacy construct used for doing operations over EntitySubsets that are known to be valid. This
     functionality is subsumed by AssetSlice.

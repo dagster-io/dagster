@@ -32,9 +32,7 @@ class SinceCondition(AutomationCondition):
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         # must evaluate child condition over the entire slice to avoid missing state transitions
-        child_candidate_slice = context.asset_graph_view.get_asset_slice(
-            asset_key=context.asset_key
-        )
+        child_candidate_slice = context.asset_graph_view.get_full_slice(key=context.key)
 
         # compute result for trigger condition
         trigger_context = context.for_child_condition(
