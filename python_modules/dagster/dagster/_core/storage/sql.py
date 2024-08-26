@@ -14,7 +14,7 @@ from typing_extensions import TypeAlias
 
 from dagster._utils import file_relative_path
 
-create_engine = partial(db.create_engine, future=True)  # exported
+create_engine = (partial(db.create_engine, future=True) if db.__version__.startswith("1.4") else db.create_engine) # exported
 
 
 ALEMBIC_SCRIPTS_LOCATION = "dagster:_core/storage/alembic"
