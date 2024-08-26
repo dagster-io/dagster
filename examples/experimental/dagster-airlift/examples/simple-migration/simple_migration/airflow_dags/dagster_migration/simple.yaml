@@ -1,7 +1,7 @@
 tasks:
-  t1:
+  -id: t1
     migrated: True 
-  t2:
+  -id: t2
     migrated: False 
-  t3:
+  -id: t3
     migrated: True

@@ -1,7 +1,7 @@
 tasks: 
-  first_task: 
+  - id: first_task 
     migrated: True
-  second_task: 
+  - id: second_task 
     migrated: False
-  third_task: 
+  - id: third_task 
     migrated: True

@@ -59,8 +59,8 @@ mark_as_dagster_migrating(
         dags={
             "the_dag": DagMigrationState(
                 tasks={
-                    "some_task": TaskMigrationState(migrated=True),
-                    "other_task": TaskMigrationState(migrated=True),
+                    "some_task": TaskMigrationState(task_id="some_task", migrated=True),
+                    "other_task": TaskMigrationState(task_id="other_task", migrated=True),
                 }
             )
         }
