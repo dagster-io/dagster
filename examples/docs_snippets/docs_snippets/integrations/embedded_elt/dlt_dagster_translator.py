@@ -1,13 +1,5 @@
-from collections.abc import Iterable
-
 import dlt
-from dagster_embedded_elt.dlt import (
-    DagsterDltResource,
-    DagsterDltTranslator,
-    dlt_assets,
-)
-
-from dagster import AssetExecutionContext, AssetKey
+from dagster_embedded_elt.dlt.dlt_computation import RunDlt
 
 
 @dlt.source
@@ -17,26 +9,23 @@ def example_dlt_source():
     return example_resource
 
 
-class CustomDagsterDltTranslator(DagsterDltTranslator):
-    def get_asset_key(self, resource: DagsterDltResource) -> AssetKey:
-        """Overrides asset key to be the dlt resource name."""
-        return AssetKey(f"{resource.name}")
-
-    def get_deps_asset_keys(self, resource: DagsterDltResource) -> Iterable[AssetKey]:
-        """Overrides upstream asset key to be a single source asset."""
-        return [AssetKey("common_upstream_dlt_dependency")]
-
-
-@dlt_assets(
-    name="example_dlt_assets",
-    dlt_source=example_dlt_source(),
-    dlt_pipeline=dlt.pipeline(
-        pipeline_name="example_pipeline_name",
-        dataset_name="example_dataset_name",
-        destination="snowflake",
-        progress="log",
-    ),
-    dagster_dlt_translator=CustomDagsterDltTranslator(),
+dlt_source = example_dlt_source()
+dlt_pipeline = dlt.pipeline(
+    pipeline_name="example_pipeline_name",
+    dataset_name="example_dataset_name",
+    destination="snowflake",
+    progress="log",
 )
-def dlt_example_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
-    yield from dlt.run(context=context)
+source_asset_key = "common_upstream_dlt_dependency"
+RunDlt(
+    name="example_dlt_assets",
+    dlt_source=dlt_source,
+    dlt_pipeline=dlt_pipeline,
+    specs=[
+        RunDlt.default_spec(dlt_source, dlt_pipeline, dlt_resource)._replace(
+            key=dlt_resource.name,  # overrides asset key to be resource name
+            deps=[source_asset_key],  # overrides upstream to be single source asset
+        )
+        for dlt_resource in dlt_source.resources.values()
+    ],
+)

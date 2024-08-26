@@ -17,6 +17,7 @@ from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
+from .computation import ComputationContext
 from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from .translator import DagsterDltTranslator
 
@@ -111,6 +112,24 @@ class DagsterDltResource(ConfigurableResource):
 
         return base_metadata
 
+    # computation-friendly api
+    def stream(
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext, ComputationContext],
+        dlt_source: Optional[DltSource] = None,
+        dlt_pipeline: Optional[Pipeline] = None,
+        **kwargs,
+    ) -> Iterator[MaterializeResult]:
+        for r in self.run(
+            context=context.to_asset_execution_context()
+            if isinstance(context, ComputationContext)
+            else context,
+            dlt_source=dlt_source,
+            dlt_pipeline=dlt_pipeline,
+            **kwargs,
+        ):
+            yield check.inst(r, MaterializeResult)
+
     @public
     def run(
         self,
@@ -133,6 +152,11 @@ class DagsterDltResource(ConfigurableResource):
             Iterator[Union[MaterializeResult, AssetMaterialization]]: An iterator of MaterializeResult or AssetMaterialization
 
         """
+        context = (
+            context.to_asset_execution_context()
+            if isinstance(context, ComputationContext)
+            else context
+        )
         # This resource can be used in both `asset` and `op` definitions. In the context of an asset
         # execution, we retrieve the dlt source, pipeline, and translator from the asset metadata
         # as a fallback mechanism. We give preference to explicit parameters to make it easy to
@@ -148,7 +172,9 @@ class DagsterDltResource(ConfigurableResource):
                 dlt_pipeline or first_asset_metadata.get(META_KEY_PIPELINE), Pipeline
             )
             dagster_dlt_translator = check.inst(
-                dagster_dlt_translator or first_asset_metadata.get(META_KEY_TRANSLATOR),
+                dagster_dlt_translator
+                or first_asset_metadata.get(META_KEY_TRANSLATOR)
+                or DagsterDltTranslator(),
                 DagsterDltTranslator,
             )
 

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Iterable, Mapping, Optional, Sequence
 
 import dlt
 import duckdb
@@ -15,6 +15,8 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dagster_embedded_elt.dlt.computation import ComputationContext
+from dagster_embedded_elt.dlt.dlt_computation import RunDlt
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
 
@@ -25,31 +27,19 @@ from .dlt_test_sources.duckdb_with_transformer import (
 
 
 def test_example_pipeline_asset_keys(dlt_pipeline: Pipeline) -> None:
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
-
     assert {
         AssetKey("dlt_pipeline_repos"),
         AssetKey("dlt_pipeline_repo_issues"),
-    } == example_pipeline_assets.keys
+    } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.keys
 
 
 def test_example_pipeline_deps(dlt_pipeline: Pipeline) -> None:
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
-
     # Since repo_issues is a transform of the repo data, its upstream
     # asset key should be the repo data asset key as well.
     assert {
         AssetKey("dlt_pipeline_repos"): {AssetKey("pipeline_repos")},
         AssetKey("dlt_pipeline_repo_issues"): {AssetKey("pipeline_repos")},
-    } == example_pipeline_assets.asset_deps
+    } == RunDlt(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).assets_def.asset_deps
 
 
 def test_example_pipeline_descs(dlt_pipeline: Pipeline) -> None:
@@ -131,21 +121,15 @@ def test_multi_asset_names_do_not_conflict(dlt_pipeline: Pipeline) -> None:
 
 
 def test_get_materialize_policy(dlt_pipeline: Pipeline):
-    class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_auto_materialize_policy(
-            self, resource: DltResource
-        ) -> Optional[AutoMaterializePolicy]:
-            return AutoMaterializePolicy.eager().with_rules(
-                AutoMaterializeRule.materialize_on_cron("0 1 * * *")
-            )
-
-    @dlt_assets(
+    assets = RunDlt(
         dlt_source=pipeline(),
         dlt_pipeline=dlt_pipeline,
-        dagster_dlt_translator=CustomDagsterDltTranslator(),
-    )
-    def assets():
-        pass
+        specs=RunDlt.default_specs(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).replace(
+            automation_condition=AutoMaterializePolicy.eager()
+            .with_rules(AutoMaterializeRule.materialize_on_cron("0 1 * * *"))
+            .to_automation_condition()
+        ),
+    ).assets_def
 
     for item in assets.auto_materialize_policies_by_key.values():
         assert "0 1 * * *" in str(item)
@@ -162,20 +146,21 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
         "jobs",
     }
 
-    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        for asset in dlt_pipeline_resource.run(context=context):
-            assert asset.metadata
-            assert all(key in asset.metadata.keys() for key in required_metadata_keys)
-            yield asset
+    class ExampleDltComputation(RunDlt):
+        def stream(self, context: ComputationContext) -> Iterable:
+            for result in super().stream(context=context):
+                assert result.metadata
+                assert all(key in result.metadata.keys() for key in required_metadata_keys)
+                yield result
 
-    res = materialize(
-        [example_pipeline_assets],
-        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    assert (
+        ExampleDltComputation(
+            dlt_source=pipeline(),
+            dlt_pipeline=dlt_pipeline,
+        )
+        .test()
+        .success
     )
-    assert res.success
 
 
 def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
@@ -283,24 +268,24 @@ def test_resource_failure_aware_materialization(dlt_pipeline: Pipeline) -> None:
 
 
 def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
-    class CustomDagsterDltTranslator(DagsterDltTranslator):
-        metadata_by_resource_name = {
-            "repos": {"mode": "upsert", "primary_key": "id"},
-            "repo_issues": {"mode": "upsert", "primary_key": ["repo_id", "issue_id"]},
-        }
+    dlt_source = pipeline()
 
-        def get_metadata(self, resource: DltResource) -> Mapping[str, Any]:
-            return self.metadata_by_resource_name.get(resource.name, {})
-
-    @dlt_assets(
-        dlt_source=pipeline(),
+    example_pipeline_assets = RunDlt(
+        dlt_source=dlt_source,
         dlt_pipeline=dlt_pipeline,
-        dagster_dlt_translator=CustomDagsterDltTranslator(),
-    )
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        yield from dlt_pipeline_resource.run(context=context)
+        specs=[
+            RunDlt.default_spec(
+                dlt_source, dlt_pipeline, dlt_source.selected_resources["repos"]
+            ).with_metadata(
+                {"mode": "upsert", "primary_key": "id"},
+            ),
+            RunDlt.default_spec(
+                dlt_source, dlt_pipeline, dlt_source.selected_resources["repo_issues"]
+            ).with_metadata(
+                {"mode": "upsert", "primary_key": ["repo_id", "issue_id"]},
+            ),
+        ],
+    ).assets_def
 
     first_asset_metadata = next(iter(example_pipeline_assets.metadata_by_key.values()))
     dagster_dlt_source = first_asset_metadata.get("dagster_dlt/source")
@@ -326,23 +311,21 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
 
 
 def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
-    @dlt_assets(
-        dlt_source=pipeline(),
-        dlt_pipeline=dlt_pipeline,
-        partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09"),
-    )
-    def example_pipeline_assets(
-        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
-    ):
-        month = context.partition_key[:-3]
-        yield from dlt_pipeline_resource.run(context=context, dlt_source=pipeline(month))
+    class PartitionedDltRun(RunDlt):
+        def stream(self, context: ComputationContext) -> Iterable:
+            asset_context = context.to_asset_execution_context()
+            month = asset_context.partition_key[:-3]
+            dagster_dlt_resource = DagsterDltResource()
+            yield from dagster_dlt_resource.run(context=asset_context, dlt_source=pipeline(month))
 
     async def run_partition(year: str):
-        return materialize(
-            [example_pipeline_assets],
-            resources={"dlt_pipeline_resource": DagsterDltResource()},
-            partition_key=year,
-        )
+        return PartitionedDltRun(
+            specs=RunDlt.default_specs(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline).replace(
+                partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09")
+            ),
+            dlt_source=pipeline(),
+            dlt_pipeline=dlt_pipeline,
+        ).test(partitions=year)
 
     async def main():
         [res1, res2] = await asyncio.gather(

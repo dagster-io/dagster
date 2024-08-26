@@ -1,9 +1,11 @@
-from typing import Optional
+from typing import Iterable, Optional
 
 import dlt
-from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
+from dagster_embedded_elt.dlt import DagsterDltResource
+from dagster_embedded_elt.dlt.computation import ComputationContext
+from dagster_embedded_elt.dlt.dlt_computation import RunDlt
 
-from dagster import AssetExecutionContext, StaticPartitionsDefinition
+from dagster import MaterializeResult, StaticPartitionsDefinition
 
 color_partitions = StaticPartitionsDefinition(["red", "green", "blue"])
 
@@ -19,16 +21,27 @@ def example_dlt_source(color: Optional[str] = None):
             ...
 
 
-@dlt_assets(
-    dlt_source=example_dlt_source(),
-    name="example_dlt_assets",
-    dlt_pipeline=dlt.pipeline(
-        pipeline_name="example_pipeline_name",
-        dataset_name="example_dataset_name",
-        destination="snowflake",
-    ),
-    partitions_def=color_partitions,
+dlt_source = example_dlt_source()
+dlt_pipeline = dlt.pipeline(
+    pipeline_name="example_pipeline_name",
+    dataset_name="example_dataset_name",
+    destination="snowflake",
 )
-def compute(context: AssetExecutionContext, dlt: DagsterDltResource):
-    color = context.partition_key
-    yield from dlt.run(context=context, dlt_source=example_dlt_source(color=color))
+
+
+class PartitionedRunDlt(RunDlt):
+    def stream(self, context: ComputationContext) -> Iterable[MaterializeResult]:
+        color = context.partition_key
+        yield from DagsterDltResource().stream(
+            context=context, dlt_source=example_dlt_source(color=color)
+        )
+
+
+PartitionedRunDlt(
+    name="example_dlt_assets",
+    dlt_source=dlt_source,
+    dlt_pipeline=dlt_pipeline,
+    specs=RunDlt.default_specs(dlt_source, dlt_pipeline).replace(
+        partitions_def=color_partitions
+    ),
+)
