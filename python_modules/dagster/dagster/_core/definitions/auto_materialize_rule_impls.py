@@ -195,11 +195,12 @@ class MaterializeOnCronRule(
         # before the previous evaluation, which
         # `context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset` would not capture
         if context.legacy_context.node_cursor is None:
-            new_asset_partitions -= (
+            new_asset_partitions -= ValidAssetSubset.coerce_from_subset(
                 context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
                     asset_key=context.legacy_context.asset_key, after_time=missed_ticks[-1]
-                ).asset_partitions
-            )
+                ),
+                context.partitions_def,
+            ).asset_partitions
 
         asset_subset_to_request = ValidAssetSubset.from_asset_partitions_set(
             context.legacy_context.asset_key,

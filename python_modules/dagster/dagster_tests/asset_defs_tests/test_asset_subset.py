@@ -1,6 +1,5 @@
 import datetime
-import operator
-from typing import Any, Callable, Optional
+from typing import Optional
 
 import pytest
 from dagster import (
@@ -51,8 +50,6 @@ def test_empty_subset_subset(partitions_def: Optional[PartitionsDefinition]) -> 
     for pk in partition_keys:
         assert AssetKeyPartitionKey(key, pk) not in empty_subset
 
-    assert empty_subset.asset_partitions == set()
-
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)
 def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
@@ -64,42 +61,6 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
     assert all_subset.size == len(partition_keys)
     for pk in partition_keys:
         assert AssetKeyPartitionKey(key, pk) in all_subset
-
-    assert all_subset.asset_partitions == {AssetKeyPartitionKey(key, pk) for pk in partition_keys}
-
-
-@pytest.mark.parametrize("partitions_def", partitions_defs)
-@pytest.mark.parametrize(
-    "operation",
-    [operator.and_, operator.or_, operator.sub],
-)
-@pytest.mark.parametrize("first_all", [True, False])
-@pytest.mark.parametrize("second_all", [True, False])
-def test_operations(
-    partitions_def: Optional[PartitionsDefinition],
-    operation: Callable[..., Any],
-    first_all: bool,
-    second_all: bool,
-) -> None:
-    key = AssetKey(["foo"])
-    subset_a = (
-        ValidAssetSubset.all(
-            key, partitions_def, DagsterInstance.ephemeral(), datetime.datetime.now()
-        )
-        if first_all
-        else ValidAssetSubset.empty(key, partitions_def)
-    )
-    subset_b = (
-        ValidAssetSubset.all(
-            key, partitions_def, DagsterInstance.ephemeral(), datetime.datetime.now()
-        )
-        if second_all
-        else ValidAssetSubset.empty(key, partitions_def)
-    )
-
-    actual_asset_partitions = operation(subset_a, subset_b).asset_partitions
-    expected_asset_partitions = operation(subset_a.asset_partitions, subset_b.asset_partitions)
-    assert actual_asset_partitions == expected_asset_partitions
 
 
 @pytest.mark.parametrize("use_valid_asset_subset", [True, False])
@@ -156,4 +117,4 @@ def test_serialization(value, use_valid_asset_subset) -> None:
     assert not isinstance(round_trip_asset_subset, ValidAssetSubset)
 
     assert asset_subset.asset_key == round_trip_asset_subset.asset_key
-    assert asset_subset.asset_partitions == round_trip_asset_subset.asset_partitions
+    assert asset_subset.value == round_trip_asset_subset.value

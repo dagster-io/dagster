@@ -1,4 +1,4 @@
-from typing import AbstractSet, NamedTuple, Optional, Union, cast
+from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -51,16 +51,6 @@ class AssetSubset(NamedTuple):
     def subset_value(self) -> PartitionsSubset:
         check.invariant(isinstance(self.value, PartitionsSubset))
         return cast(PartitionsSubset, self.value)
-
-    @property
-    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        if not self.is_partitioned:
-            return {AssetKeyPartitionKey(self.asset_key)} if self.bool_value else set()
-        else:
-            return {
-                AssetKeyPartitionKey(self.asset_key, partition_key)
-                for partition_key in self.subset_value.get_partition_keys()
-            }
 
     @property
     def size(self) -> int:

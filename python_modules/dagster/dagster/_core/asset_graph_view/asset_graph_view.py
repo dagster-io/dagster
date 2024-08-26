@@ -132,17 +132,19 @@ class AssetSlice:
     def convert_to_asset_subset(self) -> AssetSubset:
         return self._compatible_subset
 
-    # only works for partitioned assets for now
-    def compute_partition_keys(self) -> AbstractSet[str]:
+    def expensively_compute_partition_keys(self) -> AbstractSet[str]:
         return {
             check.not_none(akpk.partition_key, "No None partition keys")
-            for akpk in self._compatible_subset.asset_partitions
+            for akpk in self.expensively_compute_asset_partitions()
         }
 
     def expensively_compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        # this method requires computing all partition keys of the definition, which
-        # may be expensive
-        return self._compatible_subset.asset_partitions
+        internal_value = self.get_internal_value()
+        if isinstance(internal_value, PartitionsSubset):
+            partition_keys = internal_value.get_partition_keys()
+        else:
+            partition_keys = {None} if internal_value else set()
+        return {AssetKeyPartitionKey(self.asset_key, pk) for pk in partition_keys}
 
     @property
     def asset_key(self) -> AssetKey:
@@ -492,6 +494,9 @@ class AssetGraphView:
         self, partition_keys: AbstractSet[str], asset_slice: AssetSlice
     ) -> "AssetSlice":
         """Return a new AssetSlice with only the given partition keys if they are in the slice."""
+        if not partition_keys:
+            return self.get_empty_slice(asset_key=asset_slice.asset_key)
+
         partitions_def = check.not_none(
             self._get_partitions_def(asset_slice.asset_key), "Must have partitions def"
         )
