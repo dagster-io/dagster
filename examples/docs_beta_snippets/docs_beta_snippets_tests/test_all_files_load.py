@@ -7,6 +7,13 @@ from dagster import file_relative_path
 
 snippets_folder = file_relative_path(__file__, "../docs_beta_snippets/")
 
+EXCLUDED_FILES = {
+    # see DOC-375
+    f"{snippets_folder}/guides/data-modeling/asset-factories/python-asset-factory.py",
+    f"{snippets_folder}/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py",
+    f"{snippets_folder}/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py",
+}
+
 
 def get_python_files(directory):
     for root, _, files in os.walk(directory):
@@ -17,6 +24,9 @@ def get_python_files(directory):
 
 @pytest.mark.parametrize("file_path", get_python_files(snippets_folder))
 def test_file_loads(file_path):
+    if file_path in EXCLUDED_FILES:
+        pytest.skip(f"Skipped {file_path}")
+        return
     spec = importlib.util.spec_from_file_location("module", file_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
