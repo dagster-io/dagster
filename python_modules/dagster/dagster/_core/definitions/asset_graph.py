@@ -11,11 +11,7 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.base_asset_graph import (
-    AssetKeyOrCheckKey,
-    BaseAssetGraph,
-    BaseAssetNode,
-)
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode, EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -136,7 +132,7 @@ class AssetNode(BaseAssetNode):
         )
 
     @property
-    def execution_set_asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
+    def execution_set_asset_and_check_keys(self) -> AbstractSet[EntityKey]:
         if self.assets_def.can_subset:
             return {self.key}
         else:
@@ -267,17 +263,15 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         )
 
     def get_execution_set_asset_and_check_keys(
-        self, asset_or_check_key: AssetKeyOrCheckKey
-    ) -> AbstractSet[AssetKeyOrCheckKey]:
-        if isinstance(asset_or_check_key, AssetKey):
-            return self.get(asset_or_check_key).execution_set_asset_and_check_keys
+        self, entity_key: EntityKey
+    ) -> AbstractSet[EntityKey]:
+        if isinstance(entity_key, AssetKey):
+            return self.get(entity_key).execution_set_asset_and_check_keys
         else:  # AssetCheckKey
-            assets_def = self._assets_defs_by_check_key[asset_or_check_key]
-            return (
-                {asset_or_check_key} if assets_def.can_subset else assets_def.asset_and_check_keys
-            )
+            assets_def = self._assets_defs_by_check_key[entity_key]
+            return {entity_key} if assets_def.can_subset else assets_def.asset_and_check_keys
 
-    def get_execution_set_identifier(self, asset_or_check_key: AssetKeyOrCheckKey) -> Optional[str]:
+    def get_execution_set_identifier(self, entity_key: EntityKey) -> Optional[str]:
         """All assets and asset checks with the same execution_set_identifier must be executed
         together - i.e. you can't execute just a subset of them.
 
@@ -285,8 +279,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         """
         from dagster._core.definitions.graph_definition import GraphDefinition
 
-        if isinstance(asset_or_check_key, AssetKey):
-            assets_def = self.get(asset_or_check_key).assets_def
+        if isinstance(entity_key, AssetKey):
+            assets_def = self.get(entity_key).assets_def
             return (
                 assets_def.unique_id
                 if (
@@ -297,7 +291,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             )
 
         else:  # AssetCheckKey
-            assets_def = self._assets_defs_by_check_key[asset_or_check_key]
+            assets_def = self._assets_defs_by_check_key[entity_key]
             # Executing individual checks isn't supported in graph assets
             if isinstance(assets_def.node_def, GraphDefinition):
                 return assets_def.unique_id
@@ -313,12 +307,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             }
         )
 
-    def assets_defs_for_keys(
-        self, keys: Iterable[AssetKeyOrCheckKey]
-    ) -> Sequence[AssetsDefinition]:
+    def assets_defs_for_keys(self, keys: Iterable[EntityKey]) -> Sequence[AssetsDefinition]:
         return list({self.assets_def_for_key(key) for key in keys})
 
-    def assets_def_for_key(self, key: AssetKeyOrCheckKey) -> AssetsDefinition:
+    def assets_def_for_key(self, key: EntityKey) -> AssetsDefinition:
         if isinstance(key, AssetKey):
             return self.get(key).assets_def
         else:
