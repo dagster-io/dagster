@@ -27,7 +27,7 @@ from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph_computation import AssetGraphComputation
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
@@ -957,7 +957,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @property
-    def asset_and_check_keys_by_output_name(self) -> Mapping[str, AssetKeyOrCheckKey]:
+    def asset_and_check_keys_by_output_name(self) -> Mapping[str, EntityKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -967,7 +967,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     @property
-    def asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
+    def asset_and_check_keys(self) -> AbstractSet[EntityKey]:
         return set(self.keys).union(self.check_keys)
 
     @property
@@ -1878,10 +1878,10 @@ def get_partition_mappings_from_deps(
     return partition_mappings
 
 
-def unique_id_from_asset_and_check_keys(asset_or_check_keys: Iterable["AssetKeyOrCheckKey"]) -> str:
+def unique_id_from_asset_and_check_keys(entity_keys: Iterable["EntityKey"]) -> str:
     """Generate a unique ID from the provided asset keys.
 
     This is useful for generating op names that don't have collisions.
     """
-    sorted_key_strs = sorted(str(key) for key in asset_or_check_keys)
+    sorted_key_strs = sorted(str(key) for key in entity_keys)
     return non_secure_md5_hash_str(json.dumps(sorted_key_strs).encode("utf-8"))[:8]
