@@ -26,16 +26,28 @@ To follow the steps in this guide, you'll need:
 
 Here is a minimal Resource for connecting to the an API that returns data about the sunrise and sunset times. In this example, the request URL has been hardcoded to query for data at San Francisco International Airport.
 
-<CodeExample filePath="guides/external-systems/apis/minimal_resource.py" language="python" title="Simple Resource to connect to Sun API" />
+<CodeExample filePath="guides/external-systems/apis/minimal_resource.py" language="python" title="Resource to connect to Sun API" />
 
 
 ## Step 2: Use the Resource in an asset
 
-To use the Resource written in step 1, you can provide it to an asset like this:
+To use the Resource written in Step 1, you can provide it to an asset like this:
 
-<CodeExample filePath="guides/external-systems/apis/use_resource_in_asset.py" language="python" title="Use the XYZResource in an asset" />
+<CodeExample filePath="guides/external-systems/apis/use_minimal_resource_in_asset.py" language="python" title="Use the SFOSunResource in an asset" />
+
+
+## Step 3: Configure your Resource
+Many APIs have configuration you can set to customize your usage. Here is an updated version of the Resource from Step 1 with configuration to allow for setting the query location:
+
+<CodeExample filePath="guides/external-systems/apis/configurable_resource.py" language="python" title="Configurable Resource to connect to Sun API" />
+
+## Step 4: Use the configurable Resource in an asset
+
+The configurable Resource written in Step 3 can be provided to an asset exactly as before. When the Resource is initialized, you can pass values for each of the configuration options.
+
+<CodeExample filePath="guides/external-systems/apis/use_configurable_resource_in_asset.py" language="python" title="Use the configurable SunResource in an asset" />
 
 ## Next steps
 
-- [Customize resources with configuration](/todo)
+- [Authenticate to a resource](/guides/external-systems/authentication.md)
 - Learn what [dagster-provided Resources](/todo) are available to use
