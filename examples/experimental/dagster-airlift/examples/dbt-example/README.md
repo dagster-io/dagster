@@ -29,9 +29,9 @@ make run_airflow
 In another shell, we can run dagster at the `peer`, `observe`, or `migrate` steps of the migration using any of the following commands:
 
 ```bash
-make `run_peer`
-make `run_observe`
-make `run_migrate`
+make run_peer
+make run_observe
+make run_migrate
 ```
 
 Note that in order to run the observation step with `run_observe`, you must set `migrated` to `False` for each task in the dags. These can be found in `./airflow_dags/migration_state/<dag_name>.yaml`.
