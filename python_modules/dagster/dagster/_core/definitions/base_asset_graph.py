@@ -25,7 +25,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, AssetKeyOrCheckKey
+from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -531,8 +531,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
     @abstractmethod
     def get_execution_set_asset_and_check_keys(
-        self, asset_key_or_check_key: AssetKeyOrCheckKey
-    ) -> AbstractSet[AssetKeyOrCheckKey]:
+        self, asset_key_or_check_key: EntityKey
+    ) -> AbstractSet[EntityKey]:
         """For a given asset/check key, return the set of asset/check keys that must be
         materialized/computed at the same time.
         """
