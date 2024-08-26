@@ -35,7 +35,7 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
   }
 
   return (
-    <CodeBlock language={language} title={title || filePath}>
+    <CodeBlock language={language} title={title}>
       {content || 'Loading...'}
     </CodeBlock>
   );
