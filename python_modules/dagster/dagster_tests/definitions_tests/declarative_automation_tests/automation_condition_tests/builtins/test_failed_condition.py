@@ -21,17 +21,17 @@ def test_failed_unpartitioned() -> None:
 
     # no failed partitions
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now a partition fails
     state = state.with_failed_run_for_asset("A")
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
     # the next run completes successfully
     state = state.with_runs(run_request("A"))
     _, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
 
 def test_in_progress_static_partitioned() -> None:
@@ -41,18 +41,20 @@ def test_in_progress_static_partitioned() -> None:
 
     # no failed_runs
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now one partition fails
     state = state.with_failed_run_for_asset("A", partition_key="1")
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {AssetKeyPartitionKey(AssetKey("A"), "1")}
+    assert result.true_slice.size == 1
+    assert result.true_slice.expensively_compute_asset_partitions() == {
+        AssetKeyPartitionKey(AssetKey("A"), "1")
+    }
 
     # now that partition succeeds
     state = state.with_runs(run_request("A", partition_key="1"))
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now both partitions fail
     state = state.with_failed_run_for_asset(
@@ -63,7 +65,7 @@ def test_in_progress_static_partitioned() -> None:
         partition_key="2",
     )
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 2
+    assert result.true_slice.size == 2
 
     # now both partitions succeed
     state = state.with_runs(
@@ -71,4 +73,4 @@ def test_in_progress_static_partitioned() -> None:
         run_request("A", partition_key="2"),
     )
     _, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0

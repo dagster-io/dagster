@@ -50,11 +50,11 @@ def test_latest_time_slice_no_end() -> None:
 
     assert asset_graph_view_on_2_4.get_asset_slice(
         asset_key=daily.key
-    ).compute_partition_keys() == set(partition_key_list)
+    ).expensively_compute_partition_keys() == set(partition_key_list)
 
     assert asset_graph_view_on_2_4.compute_latest_time_window_slice(
         daily.key
-    ).compute_partition_keys() == {"2020-02-03"}
+    ).expensively_compute_partition_keys() == {"2020-02-03"}
 
     assert _tw(
         asset_graph_view_on_2_4.compute_latest_time_window_slice(daily.key)
@@ -72,11 +72,11 @@ def test_latest_time_slice_no_end() -> None:
 
     assert asset_graph_view_on_2_5.get_asset_slice(
         asset_key=daily.key
-    ).compute_partition_keys() == set(partition_key_list + ["2020-02-04"])
+    ).expensively_compute_partition_keys() == set(partition_key_list + ["2020-02-04"])
 
     assert asset_graph_view_on_2_5.compute_latest_time_window_slice(
         daily.key
-    ).compute_partition_keys() == {"2020-02-04"}
+    ).expensively_compute_partition_keys() == {"2020-02-04"}
 
     # in the past
 
@@ -85,12 +85,16 @@ def test_latest_time_slice_no_end() -> None:
     )
 
     assert (
-        asset_graph_view_on_1_1.get_asset_slice(asset_key=daily.key).compute_partition_keys()
+        asset_graph_view_on_1_1.get_asset_slice(
+            asset_key=daily.key
+        ).expensively_compute_partition_keys()
         == set()
     )
 
     assert (
-        asset_graph_view_on_1_1.compute_latest_time_window_slice(daily.key).compute_partition_keys()
+        asset_graph_view_on_1_1.compute_latest_time_window_slice(
+            daily.key
+        ).expensively_compute_partition_keys()
         == set()
     )
 
@@ -104,7 +108,7 @@ def test_latest_time_slice_no_end() -> None:
     )
     assert asset_graph_view_on_2_2_plus_1_min.get_asset_slice(
         asset_key=daily.key
-    ).compute_partition_keys() == set(["2020-02-01"])
+    ).expensively_compute_partition_keys() == set(["2020-02-01"])
 
     tw = _tw(asset_graph_view_on_2_2_plus_1_min.get_asset_slice(asset_key=daily.key))
 
@@ -130,7 +134,7 @@ def test_latest_time_slice_with_end() -> None:
     assert (
         asset_graph_view_before_start.compute_latest_time_window_slice(
             daily.key
-        ).compute_partition_keys()
+        ).expensively_compute_partition_keys()
         == set()
     )
 
@@ -140,7 +144,7 @@ def test_latest_time_slice_with_end() -> None:
     assert (
         asset_graph_view_at_start.compute_latest_time_window_slice(
             daily.key
-        ).compute_partition_keys()
+        ).expensively_compute_partition_keys()
         == set()
     )
 
@@ -149,14 +153,14 @@ def test_latest_time_slice_with_end() -> None:
     )
     assert asset_graph_view_after_start_before_end.compute_latest_time_window_slice(
         daily.key
-    ).compute_partition_keys() == set(["2020-01-02"])
+    ).expensively_compute_partition_keys() == set(["2020-01-02"])
 
     asset_graph_view_after_end = AssetGraphView.for_test(
         defs, instance, effective_dt=create_datetime(2020, 2, 5)
     )
     assert asset_graph_view_after_end.compute_latest_time_window_slice(
         daily.key
-    ).compute_partition_keys() == set(["2020-01-31"])
+    ).expensively_compute_partition_keys() == set(["2020-01-31"])
 
 
 def test_latest_time_slice_unpartitioned() -> None:
@@ -183,7 +187,7 @@ def test_latest_time_slice_static_partitioned() -> None:
 
     asset_graph_view = AssetGraphView.for_test(defs, instance)
     latest_up_slice = asset_graph_view.compute_latest_time_window_slice(up_numbers.key)
-    assert latest_up_slice.compute_partition_keys() == number_keys
+    assert latest_up_slice.expensively_compute_partition_keys() == number_keys
 
 
 def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
@@ -218,11 +222,11 @@ def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
     )
 
     md_slice = asset_graph_view_within_partition.get_asset_slice(asset_key=multi_dimensional.key)
-    assert md_slice.compute_partition_keys() == set(partition_keys)
+    assert md_slice.expensively_compute_partition_keys() == set(partition_keys)
     last_tw_slice = asset_graph_view_within_partition.compute_latest_time_window_slice(
         multi_dimensional.key
     )
-    assert last_tw_slice.compute_partition_keys() == set(jan_2_keys)
+    assert last_tw_slice.expensively_compute_partition_keys() == set(jan_2_keys)
     assert _tw(last_tw_slice).start == create_datetime(2020, 1, 2)
     assert _tw(last_tw_slice).end == create_datetime(2020, 1, 3)
 
@@ -233,7 +237,7 @@ def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
     md_slice_in_past = asset_graph_view_in_past.compute_latest_time_window_slice(
         multi_dimensional.key
     )
-    assert md_slice_in_past.compute_partition_keys() == set()
+    assert md_slice_in_past.expensively_compute_partition_keys() == set()
     assert not md_slice_in_past.time_windows
 
 
@@ -257,10 +261,10 @@ def test_multi_dimesional_without_time_partition_latest_time_window() -> None:
     instance = DagsterInstance.ephemeral()
     asset_graph_view = AssetGraphView.for_test(defs, instance)
     md_slice = asset_graph_view.get_asset_slice(asset_key=multi_dimensional.key)
-    assert md_slice.compute_partition_keys() == set(partition_keys)
+    assert md_slice.expensively_compute_partition_keys() == set(partition_keys)
     assert asset_graph_view.compute_latest_time_window_slice(
         multi_dimensional.key
-    ).compute_partition_keys() == set(partition_keys)
+    ).expensively_compute_partition_keys() == set(partition_keys)
 
 
 def test_dynamic_partitioning_latest_time_window() -> None:
@@ -286,13 +290,15 @@ def test_dynamic_partitioning_latest_time_window() -> None:
 
     asset_graph_view = AssetGraphView.for_test(defs, instance)
     assert (
-        asset_graph_view.get_asset_slice(asset_key=dynamic_asset.key).compute_partition_keys()
+        asset_graph_view.get_asset_slice(
+            asset_key=dynamic_asset.key
+        ).expensively_compute_partition_keys()
         == partition_keys
     )
     assert (
         asset_graph_view.compute_latest_time_window_slice(
             dynamic_asset.key
-        ).compute_partition_keys()
+        ).expensively_compute_partition_keys()
         == partition_keys
     )
 
@@ -309,10 +315,10 @@ def test_dynamic_partitioning_latest_time_window() -> None:
 
     assert asset_graph_view.get_asset_slice(
         asset_key=dynamic_multi_dimensional.key
-    ).compute_partition_keys() == set(partition_keys)
+    ).expensively_compute_partition_keys() == set(partition_keys)
     assert asset_graph_view.compute_latest_time_window_slice(
         dynamic_multi_dimensional.key
-    ).compute_partition_keys() == set(jan_2_keys)
+    ).expensively_compute_partition_keys() == set(jan_2_keys)
 
     assert _tw(
         asset_graph_view.compute_latest_time_window_slice(dynamic_multi_dimensional.key)
