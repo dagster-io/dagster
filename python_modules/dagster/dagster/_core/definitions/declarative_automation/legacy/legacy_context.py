@@ -230,7 +230,7 @@ class LegacyRuleEvaluationContext:
             if not parent_result:
                 continue
             parent_subset = ValidAssetSubset.coerce_from_subset(
-                parent_result.true_subset, self.partitions_def
+                parent_result.get_serializable_subset(), self.partitions_def
             )
             subset |= parent_subset._replace(asset_key=self.asset_key)
         return subset
@@ -409,7 +409,7 @@ class LegacyRuleEvaluationContext:
         parent_result = self.current_results_by_key.get(asset_partition.asset_key)
         if not parent_result:
             return False
-        return asset_partition in parent_result.true_subset
+        return asset_partition in parent_result.get_serializable_subset()
 
     def add_evaluation_data_from_previous_tick(
         self,

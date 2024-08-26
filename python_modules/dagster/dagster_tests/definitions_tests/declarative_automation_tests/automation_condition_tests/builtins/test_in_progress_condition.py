@@ -18,17 +18,17 @@ def test_in_progress_unpartitioned() -> None:
 
     # no run in progress
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # run now in progress
     state = state.with_in_progress_run_for_asset("A")
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
     # run completes
     state = state.with_in_progress_runs_completed()
     _, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
 
 def test_in_progress_static_partitioned() -> None:
@@ -39,18 +39,20 @@ def test_in_progress_static_partitioned() -> None:
     # no run in progress
     state, result = state.evaluate("A")
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now in progress
     state = state.with_in_progress_run_for_asset("A", partition_key="1")
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {AssetKeyPartitionKey(AssetKey("A"), "1")}
+    assert result.true_slice.size == 1
+    assert result.true_slice.expensively_compute_asset_partitions() == {
+        AssetKeyPartitionKey(AssetKey("A"), "1")
+    }
 
     # run completes
     state = state.with_in_progress_runs_completed()
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now both in progress
     state = state.with_in_progress_run_for_asset(
@@ -61,9 +63,9 @@ def test_in_progress_static_partitioned() -> None:
         partition_key="2",
     )
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 2
+    assert result.true_slice.size == 2
 
     # both runs complete
     state = state.with_in_progress_runs_completed()
     _, result = state.evaluate("A")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0

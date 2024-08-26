@@ -38,6 +38,7 @@ class DepConditionWrapperCondition(AutomationCondition):
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         # only evaluate parents of the current candidates
+
         dep_candidate_slice = context.candidate_slice.compute_parent_slice(self.dep_key)
         dep_context = context.for_child_condition(
             child_condition=self.operand, child_index=0, candidate_slice=dep_candidate_slice

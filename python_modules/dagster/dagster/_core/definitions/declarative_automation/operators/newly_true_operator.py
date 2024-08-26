@@ -57,5 +57,5 @@ class NewlyTrueCondition(AutomationCondition):
             context=context,
             true_slice=context.candidate_slice.compute_intersection(newly_true_child_slice),
             child_results=[child_result],
-            structured_cursor=child_result.true_subset,
+            structured_cursor=child_result.true_slice.convert_to_asset_subset(),
         )
