@@ -28,3 +28,13 @@ To follow the steps in this guide, you'll need:
 ---
 
 ## Adding configuration to your asset
+
+You must define a schema for the configuration you want to attach to your asset. For example, let's say we want to allow users to change a parallelism parameter for an asset:
+
+<CodeExample filePath="guides/data-modeling/configuring-assets/config-schema.py" language="python" title="Adding configuration" />
+
+## Modifying the configuration when launching a run
+
+When launching a run using Dagster's Launchpad, you can provide a run config file as YAML or JSON that overrides the default configuration for your asset:
+
+<CodeExample filePath="guides/data-modeling/configuring-assets/run_config.yaml" language="yaml" title="Run config provided via UI" />

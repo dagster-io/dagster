@@ -1,0 +1,4 @@
+ops:
+  forecast_model:
+    config:
+      parallelism: 10
