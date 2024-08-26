@@ -4,10 +4,9 @@ import {RUN_TABLE_RUN_FRAGMENT} from './RunTableRunFragment';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/usePaginatedRunsTableRuns.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PAGE_SIZE} from '../assets/AutoMaterializePolicyPage/useEvaluationsQueryResult';
 import {RunsFilter} from '../graphql/types';
 
-export function usePaginatedRunsTableRuns(filter: RunsFilter, pageSize: number = PAGE_SIZE) {
+export function usePaginatedRunsTableRuns(filter: RunsFilter, pageSize: number) {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
     RunsRootQueryVariables

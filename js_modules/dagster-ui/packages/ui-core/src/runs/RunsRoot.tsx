@@ -203,7 +203,7 @@ export const RunsRoot = () => {
               <>
                 <StickyTableContainer $top={0}>
                   <RunTable
-                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                    runs={pipelineRunsOrError.results}
                     onAddTag={onAddTag}
                     filter={filter}
                     actionBarComponents={actionBar()}
