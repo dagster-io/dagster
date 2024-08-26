@@ -11,10 +11,10 @@ from dagster import (
     PartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
@@ -103,18 +103,24 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
 )
 def test_serialization(value, use_valid_asset_subset) -> None:
     if use_valid_asset_subset:
-        asset_subset = ValidAssetSubset(asset_key=AssetKey("foo"), value=value)
+        asset_subset = ValidAssetSubset(key=AssetKey("foo"), value=value)
     else:
-        asset_subset = AssetSubset(asset_key=AssetKey("foo"), value=value)
+        asset_subset = EntitySubset(key=AssetKey("foo"), value=value)
 
     serialized_asset_subset = serialize_value(asset_subset)
     assert "ValidAssetSubset" not in serialized_asset_subset
 
-    round_trip_asset_subset = deserialize_value(serialized_asset_subset, AssetSubset)
+    round_trip_asset_subset = deserialize_value(serialized_asset_subset, EntitySubset)
 
-    assert isinstance(round_trip_asset_subset, AssetSubset)
+    assert isinstance(round_trip_asset_subset, EntitySubset)
     # should always be deserialized as an AssetSubset
     assert not isinstance(round_trip_asset_subset, ValidAssetSubset)
 
-    assert asset_subset.asset_key == round_trip_asset_subset.asset_key
-    assert asset_subset.value == round_trip_asset_subset.value
+    assert asset_subset.key == round_trip_asset_subset.key
+
+    if isinstance(asset_subset.value, bool):
+        assert asset_subset.value == round_trip_asset_subset.value
+    else:
+        assert set(asset_subset.value.get_partition_keys()) == set(
+            round_trip_asset_subset.subset_value.get_partition_keys()
+        )

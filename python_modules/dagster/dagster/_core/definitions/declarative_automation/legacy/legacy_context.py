@@ -4,7 +4,7 @@ import functools
 import logging
 import os
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -19,7 +19,6 @@ from typing import (
 )
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
@@ -30,6 +29,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
 )
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -160,7 +160,7 @@ class LegacyRuleEvaluationContext:
             if self.cursor
             else None,
             candidate_subset=ValidAssetSubset(
-                asset_key=candidate_slice.asset_key, value=candidate_slice.get_internal_value()
+                key=candidate_slice.asset_key, value=candidate_slice.get_internal_value()
             ),
             root_ref=self.root_context,
             start_timestamp=get_current_timestamp(),
@@ -193,13 +193,13 @@ class LegacyRuleEvaluationContext:
         return self.cursor.effective_timestamp if self.cursor else None
 
     @property
-    def previous_true_subset(self) -> AssetSubset:
+    def previous_true_subset(self) -> EntitySubset:
         if self.node_cursor is None:
             return self.empty_subset()
         return self.node_cursor.true_subset
 
     @property
-    def previous_candidate_subset(self) -> AssetSubset:
+    def previous_candidate_subset(self) -> EntitySubset:
         if self.node_cursor is None:
             return self.empty_subset()
         candidate_subset = self.node_cursor.candidate_subset
@@ -232,7 +232,7 @@ class LegacyRuleEvaluationContext:
             parent_subset = ValidAssetSubset.coerce_from_subset(
                 parent_result.get_serializable_subset(), self.partitions_def
             )
-            subset |= parent_subset._replace(asset_key=self.asset_key)
+            subset |= replace(parent_subset, key=self.asset_key)
         return subset
 
     @functools.cached_property
@@ -252,7 +252,7 @@ class LegacyRuleEvaluationContext:
 
     @property
     @root_property
-    def _previous_tick_discarded_subset(self) -> Optional[AssetSubset]:
+    def _previous_tick_discarded_subset(self) -> Optional[EntitySubset[AssetKey]]:
         """Fetches the unique id corresponding to the DiscardOnMaxMaterializationsExceededRule, if
         that rule is part of the broader condition.
         """
@@ -294,7 +294,7 @@ class LegacyRuleEvaluationContext:
 
     @property
     @root_property
-    def previous_tick_requested_subset(self) -> AssetSubset:
+    def previous_tick_requested_subset(self) -> EntitySubset:
         """The set of asset partitions that were requested (or discarded) on the previous tick."""
         if self.cursor is None:
             return self.empty_subset()
@@ -416,7 +416,7 @@ class LegacyRuleEvaluationContext:
         asset_partitions_by_frozen_metadata: Mapping[
             FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
         ],
-        ignore_subset: AssetSubset,
+        ignore_subset: EntitySubset,
     ) -> Tuple[ValidAssetSubset, Sequence[AssetSubsetWithMetadata]]:
         """Combines information calculated on this tick with information from the previous tick,
         returning a tuple of the combined true subset and the combined subsets with metadata.
@@ -424,7 +424,7 @@ class LegacyRuleEvaluationContext:
         Args:
             asset_partitions_by_frozen_metadata: A mapping from metadata to the set of asset
                 partitions that the rule applies to.
-            ignore_subset: An AssetSubset which represents information that we should *not* carry
+            ignore_subset: An EntitySubset which represents information that we should *not* carry
                 forward from the previous tick.
         """
         from dagster._core.definitions.declarative_automation.serialized_objects import (

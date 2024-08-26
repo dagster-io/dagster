@@ -23,7 +23,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass
@@ -157,8 +157,8 @@ class AutomationConditionEvaluator:
                     # all these neighbors must be executed as a unit, we need to union together
                     # the subset of all required neighbors
                     if neighbor_key in self.current_results_by_key:
-                        neighbor_true_subset = result.serializable_evaluation.true_subset._replace(
-                            asset_key=neighbor_key
+                        neighbor_true_subset = replace(
+                            result.serializable_evaluation.true_subset, key=neighbor_key
                         )
                         self.current_results_by_key[
                             neighbor_key

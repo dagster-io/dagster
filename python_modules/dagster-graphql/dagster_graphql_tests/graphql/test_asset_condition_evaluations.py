@@ -5,13 +5,13 @@ from unittest.mock import PropertyMock, patch
 import dagster._check as check
 from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
@@ -431,12 +431,12 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 description=description,
                 unique_id=str(random.randint(0, 100000000)),
             ),
-            true_subset=AssetSubset(
-                asset_key=asset_key,
+            true_subset=EntitySubset(
+                key=asset_key,
                 value=partitions_def.subset_with_partition_keys(true_partition_keys),
             ),
-            candidate_subset=AssetSubset(
-                asset_key=asset_key,
+            candidate_subset=EntitySubset(
+                key=asset_key,
                 value=partitions_def.subset_with_partition_keys(candidate_partition_keys),
             )
             if candidate_partition_keys

@@ -15,7 +15,6 @@ from typing import (
 )
 
 from dagster._annotations import deprecated, experimental
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
@@ -26,6 +25,7 @@ from dagster._core.definitions.base_asset_graph import sort_key_for_asset_partit
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
@@ -454,12 +454,12 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def description(self) -> str:
         return "materialization is missing"
 
-    def get_handled_subset(self, context: "AutomationContext") -> AssetSubset:
+    def get_handled_subset(self, context: "AutomationContext") -> EntitySubset:
         """Returns the AssetSubset which has been handled (materialized, requested, or discarded).
         Accounts for cases in which the partitions definition may have changed between ticks.
         """
         previous_handled_subset = (
-            context.legacy_context.node_cursor.get_structured_cursor(AssetSubset)
+            context.legacy_context.node_cursor.get_structured_cursor(EntitySubset)
             if context.legacy_context.node_cursor
             else None
         )
@@ -837,7 +837,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 context.legacy_context.node_cursor.get_structured_cursor(list) or []
             )
             previous_parent_subset = next(
-                (s for s in previous_parent_subsets if s.asset_key == parent_asset_key),
+                (s for s in previous_parent_subsets if s.key == parent_asset_key),
                 ValidAssetSubset.empty(
                     parent_asset_key, context.asset_graph.get(parent_asset_key).partitions_def
                 ),
@@ -925,7 +925,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 )
 
                 non_updated_parent_asset_partitions = (
-                    ValidAssetSubset(asset_key=parent_asset_key, value=parent_subset)
+                    ValidAssetSubset(key=parent_asset_key, value=parent_subset)
                     - updated_parent_subset
                 ).asset_partitions
 
