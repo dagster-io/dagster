@@ -3,10 +3,10 @@ import itertools
 from typing import Optional, Sequence
 
 import graphene
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
@@ -47,7 +47,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         self._evaluation = evaluation
         if evaluation.true_subset.size > 0:
             status = AssetConditionEvaluationStatus.TRUE
-        elif isinstance(evaluation.candidate_subset, AssetSubset) and (
+        elif isinstance(evaluation.candidate_subset, EntitySubset) and (
             evaluation.candidate_subset.size > 0
         ):
             status = AssetConditionEvaluationStatus.FALSE
@@ -98,7 +98,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
             numCandidates=evaluation.candidate_subset.size
-            if isinstance(evaluation.candidate_subset, AssetSubset)
+            if isinstance(evaluation.candidate_subset, EntitySubset)
             else None,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
@@ -131,7 +131,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
         elif partition_key in evaluation.true_subset.subset_value:
             status = AssetConditionEvaluationStatus.TRUE
         elif (
-            not isinstance(evaluation.candidate_subset, AssetSubset)
+            not isinstance(evaluation.candidate_subset, EntitySubset)
             or partition_key in evaluation.candidate_subset.subset_value
         ):
             status = AssetConditionEvaluationStatus.FALSE
@@ -236,7 +236,7 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
             numCandidates=evaluation.candidate_subset.size
-            if isinstance(evaluation.candidate_subset, AssetSubset)
+            if isinstance(evaluation.candidate_subset, EntitySubset)
             else None,
             isPartitioned=evaluation.true_subset.is_partitioned,
             childUniqueIds=[

@@ -10,14 +10,14 @@ from tempfile import TemporaryDirectory
 # for a model object from a NamedTuple to a dataclass or pydantic model (DagsterModel).
 import memray  # type: ignore
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.entity_subset import EntitySubset
 
 fixed_key = AssetKey("asset_key")
 
 
 def make_one(i: int = 0):
     """Create an instance of the object you want to profile."""
-    return AssetSubset(asset_key=fixed_key, value=False)
+    return EntitySubset(key=fixed_key, value=False)
 
 
 def make_n(n: int):

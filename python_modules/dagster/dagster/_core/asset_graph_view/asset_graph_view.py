@@ -14,7 +14,7 @@ from typing import (
 )
 
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
@@ -75,13 +75,13 @@ class TemporalContext(NamedTuple):
 # We reserve the right to constraints on the AssetSubset that we are going to use
 # in AssetSlice internals. Adding a NewType enforces that we do that conversion
 # in one spot (see _slice_from_subset)
-_AssetSliceCompatibleSubset = NewType("_AssetSliceCompatibleSubset", AssetSubset)
+_AssetSliceCompatibleSubset = NewType("_AssetSliceCompatibleSubset", EntitySubset)
 
 
 def _slice_from_subset(
-    asset_graph_view: "AssetGraphView", subset: AssetSubset
+    asset_graph_view: "AssetGraphView", subset: EntitySubset[AssetKey]
 ) -> Optional["AssetSlice"]:
-    partitions_def = asset_graph_view.asset_graph.get(subset.asset_key).partitions_def
+    partitions_def = asset_graph_view.asset_graph.get(subset.key).partitions_def
     if subset.is_compatible_with_partitions_def(partitions_def):
         return AssetSlice(asset_graph_view, _AssetSliceCompatibleSubset(subset))
     else:
@@ -129,7 +129,7 @@ class AssetSlice:
         self._asset_graph_view = asset_graph_view
         self._compatible_subset = compatible_subset
 
-    def convert_to_asset_subset(self) -> AssetSubset:
+    def convert_to_serializable_subset(self) -> EntitySubset:
         return self._compatible_subset
 
     def expensively_compute_partition_keys(self) -> AbstractSet[str]:
@@ -148,7 +148,7 @@ class AssetSlice:
 
     @property
     def asset_key(self) -> AssetKey:
-        return self._compatible_subset.asset_key
+        return self._compatible_subset.key
 
     @property
     def parent_keys(self) -> AbstractSet[AssetKey]:
@@ -182,7 +182,7 @@ class AssetSlice:
         value = oper(self.get_internal_value(), other.get_internal_value())
         return AssetSlice(
             self._asset_graph_view,
-            _AssetSliceCompatibleSubset(AssetSubset(asset_key=self.asset_key, value=value)),
+            _AssetSliceCompatibleSubset(EntitySubset(key=self.asset_key, value=value)),
         )
 
     def compute_difference(self, other: "AssetSlice") -> "AssetSlice":
@@ -385,11 +385,11 @@ class AssetGraphView:
             else True
         )
         return AssetSlice(
-            self, _AssetSliceCompatibleSubset(AssetSubset(asset_key=asset_key, value=value))
+            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
         )
 
-    def get_asset_slice_from_subset(self, subset: AssetSubset) -> Optional["AssetSlice"]:
-        if subset.is_compatible_with_partitions_def(self._get_partitions_def(subset.asset_key)):
+    def get_asset_slice_from_subset(self, subset: EntitySubset[AssetKey]) -> Optional["AssetSlice"]:
+        if subset.is_compatible_with_partitions_def(self._get_partitions_def(subset.key)):
             return _slice_from_subset(self, subset)
         else:
             return None
@@ -413,7 +413,7 @@ class AssetGraphView:
             else bool(asset_partitions)
         )
         return AssetSlice(
-            self, _AssetSliceCompatibleSubset(AssetSubset(asset_key=asset_key, value=value))
+            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
         )
 
     @cached_method
@@ -421,7 +421,7 @@ class AssetGraphView:
         partitions_def = self._get_partitions_def(asset_key)
         value = partitions_def.empty_subset() if partitions_def else False
         return AssetSlice(
-            self, _AssetSliceCompatibleSubset(AssetSubset(asset_key=asset_key, value=value))
+            self, _AssetSliceCompatibleSubset(EntitySubset(key=asset_key, value=value))
         )
 
     def compute_parent_asset_slice(
@@ -456,7 +456,7 @@ class AssetGraphView:
         return AssetSlice(
             self,
             _AssetSliceCompatibleSubset(
-                AssetSubset(asset_key=parent_asset_key, value=parent_partitions_subset)
+                EntitySubset(key=parent_asset_key, value=parent_partitions_subset)
             ),
         )
 
@@ -486,7 +486,7 @@ class AssetGraphView:
             return AssetSlice(
                 self,
                 _AssetSliceCompatibleSubset(
-                    AssetSubset(asset_key=child_asset_key, value=child_partitions_subset)
+                    EntitySubset(key=child_asset_key, value=child_partitions_subset)
                 ),
             )
 
