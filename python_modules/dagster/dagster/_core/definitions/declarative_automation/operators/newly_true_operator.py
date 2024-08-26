@@ -1,6 +1,7 @@
 from typing import Optional, Sequence
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -29,14 +30,16 @@ class NewlyTrueCondition(AutomationCondition):
     def children(self) -> Sequence[AutomationCondition]:
         return [self.operand]
 
-    def _get_previous_child_true_slice(self, context: AutomationContext) -> Optional[AssetSlice]:
+    def _get_previous_child_true_slice(
+        self, context: AutomationContext
+    ) -> Optional[EntitySlice[AssetKey]]:
         """Returns the true slice of the child from the previous tick, which is stored in the
         extra state field of the cursor.
         """
         true_subset = context.get_structured_cursor(as_type=EntitySubset)
         if not true_subset:
             return None
-        return context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        return context.asset_graph_view.get_slice_from_subset(true_subset)
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         # evaluate child condition
@@ -44,7 +47,7 @@ class NewlyTrueCondition(AutomationCondition):
             self.operand,
             child_index=0,
             # must evaluate child condition over the entire slice to avoid missing state transitions
-            candidate_slice=context.asset_graph_view.get_asset_slice(asset_key=context.asset_key),
+            candidate_slice=context.asset_graph_view.get_full_slice(key=context.key),
         )
         child_result = self.operand.evaluate(child_context)
 

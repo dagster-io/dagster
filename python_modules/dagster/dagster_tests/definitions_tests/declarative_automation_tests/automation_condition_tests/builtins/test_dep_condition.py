@@ -37,16 +37,16 @@ def get_hardcoded_condition():
             return "..."
 
         def evaluate(self, context: AutomationContext) -> AutomationResult:
-            filtered_true_set = {akpk for akpk in true_set if akpk.asset_key == context.asset_key}
+            filtered_true_set = {akpk for akpk in true_set if akpk.asset_key == context.key}
             if context.partitions_def:
                 true_slice = context.candidate_slice.compute_intersection_with_partition_keys(
                     {apk.partition_key for apk in filtered_true_set}
                 )
             else:
                 true_slice = (
-                    context.asset_graph_view.get_asset_slice(asset_key=context.asset_key)
+                    context.asset_graph_view.get_full_slice(key=context.key)
                     if filtered_true_set
-                    else context.asset_graph_view.get_empty_slice(asset_key=context.asset_key)
+                    else context.asset_graph_view.get_empty_slice(key=context.key)
                 )
             return AutomationResult(context, true_slice=true_slice)
 
