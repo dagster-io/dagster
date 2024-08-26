@@ -96,15 +96,15 @@ Any numerical metadata will be treated as a time series in the Dagster UI.
 
 Some metadata keys will be given special treatment in the Dagster UI.
 
-| Key                           | Description                                                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dagster/uri`                 | **Type:** `str` <br/><br/> The URI for the asset, e.g. "s3://my_bucket/my_object"                                                                                                                                                                                                                                                                                         |
-| `dagster/column_schema`       | **Type:** [`TableSchema`](/todo) <br/><br/> For an asset that's a table, the schema of the columns in the table. Refer to the [Table and column metadata](#table-and-column-metadata) section for details.                                                                                                                                                                |
-| `dagster/column_lineage`      | **Type:** [`TableColumnLineage`](/todo) <br/><br/> For an asset that's a table, the lineage of column inputs to column outputs for the table. Refer to the [Table and column metadata](#table-and-column-metadata) section for details.                                                                                                                                   |
-| `dagster/row_count`           | **Type:** `int` <br/><br/> For an asset that's a table, the number of rows in the table. Refer to the Table metadata documentation for details.                                                                                                                                                                                                                           |
-| `dagster/partition_row_count` | **Type:** `int` <br/><br/> For a partition of an asset that's a table, the number of rows in the partition.                                                                                                                                                                                                                                                               |
-| `dagster/relation_identifier` | **Type:** `str` <br/><br/> A unique identifier for the table/view, typically fully qualified. For example, my_database.my_schema.my_table                                                                                                                                                                                                                                 |
-| `dagster/code_references`     | **Type:** [`CodeReferencesMetadataValue`](/todo) <br/><br/> A list of code references for the asset, such as file locations or references to GitHub URLs. Refer to the [Linking your assets with their source code](#linking-your-assets-with-their-source-code) section for details. Should only be provided in definition-level metadata, not materialization metadata. |
+| Key                           | Description                                                                                                                                                                                                                                                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dagster/uri`                 | **Type:** `str` <br/><br/> The URI for the asset, e.g. "s3://my_bucket/my_object"                                                                                                                                                                                                                                                                                    |
+| `dagster/column_schema`       | **Type:** [`TableSchema`](/todo) <br/><br/> For an asset that's a table, the schema of the columns in the table. Refer to the [Table and column metadata](#table-and-column-metadata) section for details.                                                                                                                                                           |
+| `dagster/column_lineage`      | **Type:** [`TableColumnLineage`](/todo) <br/><br/> For an asset that's a table, the lineage of column inputs to column outputs for the table. Refer to the [Table and column metadata](#table-and-column-metadata) section for details.                                                                                                                              |
+| `dagster/row_count`           | **Type:** `int` <br/><br/> For an asset that's a table, the number of rows in the table. Refer to the Table metadata documentation for details.                                                                                                                                                                                                                      |
+| `dagster/partition_row_count` | **Type:** `int` <br/><br/> For a partition of an asset that's a table, the number of rows in the partition.                                                                                                                                                                                                                                                          |
+| `dagster/relation_identifier` | **Type:** `str` <br/><br/> A unique identifier for the table/view, typically fully qualified. For example, my_database.my_schema.my_table                                                                                                                                                                                                                            |
+| `dagster/code_references`     | **Type:** [`CodeReferencesMetadataValue`](/todo) <br/><br/> A list of code references for the asset, such as file locations or references to GitHub URLs. Refer to the [Linking assets with their source code](#linking-your-assets-with-their-source-code) section for details. Should only be provided in definition-level metadata, not materialization metadata. |
 
 ## Table and column metadata
 
@@ -136,7 +136,7 @@ Dagster+ provides rich visualization and navigation of column lineage in the ass
 
 :::
 
-## Linking your assets with their source code
+## Linking assets with their source code
 
 :::warning
 
@@ -154,22 +154,29 @@ Dagster can automatically attach code references to your assets during local dev
 
 <CodeExample filePath="guides/data-modeling/metadata/python-local-references.py" language="python" title="Local source code references" />
 
-### Attaching custom code references for local development
+### Customizing code references
 
-You can manually add the `dagster/code_references` metadata to your asset definitions to attach custom code references. This is useful when your asset's source code isn't primarily in Python (e.g. when parsing a YAML config or integrating with another language).
+If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/data-modeling/asset-factories) - you can manually add the `dagster/code_references` metadata to your asset definitions.
 
 <CodeExample filePath="guides/data-modeling/metadata/custom-local-references.py" language="python" title="Custom local source code references" />
 
-### Attaching code references in production (Dagster+)
+### Attaching code references in production
+
+<Tabs>
+  <TabItem value="dagster-plus" label="Dagster+">
 
 Dagster+ can automatically annotate your assets with code references to source control such as GitHub or Gitlab.
 
 <CodeExample filePath="guides/data-modeling/metadata/plus-references.py" language="python" title="Production source code references (Dagster+)" />
 
-### Attaching code references in production (OSS)
+</TabItem>
+<TabItem value="dagster-open-source" label="OSS">
 
 If you aren't using Dagster+, you can annotate your assets with code references to source control, but it requires a little more manual mapping.
 
 <CodeExample filePath="guides/data-modeling/metadata/oss-references.py" language="python" title="Production source code references (OSS)" />
 
 [`link_code_references_to_git`](/todo) currently supports GitHub and Gitlab repositories. It also supports customization of how file paths are mapped; see the [`AnchorBasedFilePathMapping`](/todo) API docs for more information.
+
+</TabItem>
+</Tabs>
