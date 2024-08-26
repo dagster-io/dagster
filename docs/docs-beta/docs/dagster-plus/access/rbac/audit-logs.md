@@ -46,3 +46,9 @@ The "Filter" button on the top left of the Audit log pane can be used to filter 
 | Update secret                  | A user modifies an existing [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui) | The previous and current variable names and whether the value was changed |
 | Delete secret                  | A user removes an [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)           | The deleted variable name                                                 |
 | Update subscription            | A user modifies the selected Dagster Plus subscription for the organization                                   | The previous and current plan types                                       |
+
+## Programmatic access to audit logs
+
+Audit logs can be accessed over the Dagster Plus GraphQL API in order to access them programatically:
+
+<CodeExample filePath="dagster-plus/access/rbac/audit-logs.graphql" language="graphql" title="Audit log GraphQL query" />
