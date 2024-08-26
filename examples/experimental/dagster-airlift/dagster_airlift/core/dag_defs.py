@@ -3,7 +3,6 @@ from typing import Dict, Mapping, Sequence, Union
 from dagster import AssetsDefinition, AssetSpec, Definitions
 from typing_extensions import TypeAlias
 
-from dagster_airlift.core.defs_builders import combine_defs
 from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
 CoercibleToDefs: TypeAlias = Union[AssetsDefinition, AssetSpec, Definitions]
@@ -19,18 +18,20 @@ def apply_tags_to_all_specs(
     defs_list: Sequence[CoercibleToDefs], tags: Dict[str, str]
 ) -> Definitions:
     new_defs = []
+    new_assets_defs = []
+    new_specs = []
     for def_ish in defs_list:
         if isinstance(def_ish, AssetSpec):
-            new_defs.append(spec_with_tags(def_ish, tags))
+            new_specs.append(spec_with_tags(def_ish, tags))
         elif isinstance(def_ish, AssetsDefinition):
-            new_defs.append(assets_def_with_af_tags(def_ish, tags))
+            new_assets_defs.append(assets_def_with_af_tags(def_ish, tags))
         else:
-            new_assets_defs = []
+            more_new_assets_defs = []
             for assets_def in def_ish.get_asset_graph().assets_defs:
-                new_assets_defs.append(assets_def_with_af_tags(assets_def, tags))
+                more_new_assets_defs.append(assets_def_with_af_tags(assets_def, tags))
             new_defs.append(
                 Definitions(
-                    assets=new_assets_defs,
+                    assets=more_new_assets_defs,
                     resources=def_ish.resources,
                     sensors=def_ish.sensors,
                     schedules=def_ish.schedules,
@@ -40,7 +41,7 @@ def apply_tags_to_all_specs(
                     asset_checks=def_ish.asset_checks,
                 )
             )
-    return combine_defs(*new_defs)
+    return Definitions.merge(Definitions(assets=new_specs + new_assets_defs), *new_defs)
 
 
 def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":

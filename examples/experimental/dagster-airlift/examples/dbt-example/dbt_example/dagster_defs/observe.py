@@ -1,17 +1,17 @@
 from datetime import timedelta
 
 from dagster import build_last_update_freshness_checks, build_sensor_for_freshness_checks
+from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
     build_defs_from_airflow_instance,
-    combine_defs,
     dag_defs,
     task_defs,
 )
 from dagster_dbt.asset_specs import build_dbt_asset_specs
 
-from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check, specs_from_lakehouse
+from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check_defs, specs_from_lakehouse
 from dbt_example.shared.load_iris import CSV_PATH, DB_PATH
 
 from .constants import (
@@ -30,18 +30,26 @@ airflow_instance = AirflowInstance(
     name=AIRFLOW_INSTANCE_NAME,
 )
 
-# We expect the dbt dag to have completed within an hour of 9:00 AM every day
-dbt_freshness_checks = build_last_update_freshness_checks(
-    assets=[DBT_DAG_ASSET_KEY],
-    lower_bound_delta=timedelta(hours=1),
-    deadline_cron="0 9 * * *",
-)
-freshness_sensor = build_sensor_for_freshness_checks(
-    freshness_checks=dbt_freshness_checks,
-)
+
+def freshness_defs() -> Definitions:
+    dbt_freshness_checks = build_last_update_freshness_checks(
+        assets=[DBT_DAG_ASSET_KEY],
+        lower_bound_delta=timedelta(hours=1),
+        deadline_cron="0 9 * * *",
+    )
+    return Definitions(
+        asset_checks=dbt_freshness_checks,
+        sensors=[
+            build_sensor_for_freshness_checks(
+                freshness_checks=dbt_freshness_checks,
+            )
+        ],
+    )
+
+
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    defs=combine_defs(
+    defs=Definitions.merge(
         dag_defs(
             "load_lakehouse",
             task_defs(
@@ -60,11 +68,10 @@ defs = build_defs_from_airflow_instance(
                 ),
             ),
         ),
-        lakehouse_existence_check(
+        lakehouse_existence_check_defs(
             csv_path=CSV_PATH,
             duckdb_path=DB_PATH,
         ),
-        *dbt_freshness_checks,
-        freshness_sensor,
+        freshness_defs(),
     ),
 )
