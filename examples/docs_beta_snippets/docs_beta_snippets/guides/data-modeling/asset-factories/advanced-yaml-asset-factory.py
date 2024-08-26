@@ -1,10 +1,13 @@
-import dagster as dg
-import dagster_aws.s3 as s3
-import yaml
-import pydantic
-import jinja2
 import os
+from pathlib import Path
 from typing import List
+
+import dagster_aws.s3 as s3
+import jinja2
+import pydantic
+import yaml
+
+import dagster as dg
 
 
 def build_etl_job(
@@ -13,7 +16,8 @@ def build_etl_job(
     source_object: str,
     target_object: str,
     sql: str,
-) -> dg.Definitions: ...
+) -> dg.Definitions:
+    return dg.Definitions()  # ...
 
 
 # highlight-start
@@ -64,4 +68,4 @@ def load_etl_jobs_from_yaml(yaml_path: str) -> dg.Definitions:
 # highlight-end
 
 
-defs = load_etl_jobs_from_yaml("etl_jobs_with_jinja.yaml")
+defs = load_etl_jobs_from_yaml(str(Path(__file__).parent / "etl_jobs_with_jinja.yaml"))

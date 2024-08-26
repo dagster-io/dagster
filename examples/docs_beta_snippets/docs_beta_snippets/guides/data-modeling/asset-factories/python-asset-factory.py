@@ -1,7 +1,9 @@
-import dagster as dg
+import tempfile
+
 import dagster_aws.s3 as s3
 import duckdb
-import tempfile
+
+import dagster as dg
 
 
 def build_etl_job(
@@ -11,7 +13,9 @@ def build_etl_job(
     target_object: str,
     sql: str,
 ) -> dg.Definitions:
-    @dg.asset(name=f"etl_{bucket}_{target_object}")
+    name = f"etl_{bucket}_{target_object}".replace(".", "_")
+
+    @dg.asset(name=name)
     def etl_asset(context):
         with tempfile.TemporaryDirectory() as root:
             source_path = f"{root}/{source_object}"

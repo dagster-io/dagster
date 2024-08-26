@@ -1,6 +1,9 @@
-import dagster as dg
+from pathlib import Path
+
 import dagster_aws.s3 as s3
 import yaml
+
+import dagster as dg
 
 
 def build_etl_job(
@@ -9,7 +12,8 @@ def build_etl_job(
     source_object: str,
     target_object: str,
     sql: str,
-) -> dg.Definitions: ...
+) -> dg.Definitions:
+    return dg.Definitions()  # ...
 
 
 # highlight-start
@@ -33,5 +37,5 @@ def load_etl_jobs_from_yaml(yaml_path: str) -> dg.Definitions:
     return dg.Definitions.merge(*defs)
 
 
-defs = load_etl_jobs_from_yaml("etl_jobs.yaml")
+defs = load_etl_jobs_from_yaml(str(Path(__file__).parent / "etl_jobs.yaml"))
 # highlight-end
