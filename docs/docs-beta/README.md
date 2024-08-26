@@ -71,6 +71,8 @@ yarn lint
 ## Lints documentation content using Vale Server
 ## Checks for style guide adherence, grammar, spelling, etc.
 yarn vale
+yarn vale /path/to/file      ## check individual file
+yarn vale --no-wrap          ## remove wrapping from output
 ```
 
 ### Diagrams
