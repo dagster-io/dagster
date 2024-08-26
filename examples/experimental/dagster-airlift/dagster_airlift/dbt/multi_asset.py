@@ -13,8 +13,10 @@ def dbt_defs(
     *,
     manifest: DbtManifestParam,
     project: DbtProject,
+    name: str, # TODO get default name from project file
 ) -> Definitions:
     @dbt_assets(
+        name=name,
         manifest=manifest,
         project=project,
         dagster_dbt_translator=DagsterDbtTranslator(

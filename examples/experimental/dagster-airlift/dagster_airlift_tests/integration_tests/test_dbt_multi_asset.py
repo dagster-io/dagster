@@ -6,7 +6,7 @@ from typing import Dict, Generator, List
 import pytest
 from dagster import AssetKey, AssetsDefinition
 from dagster._core.test_utils import environ
-from dagster_airlift.dbt import DbtProjectDefs
+from dagster_airlift.dbt import dbt_defs
 from dagster_dbt import DbtProject
 
 
@@ -34,11 +34,16 @@ def test_load_dbt_project(dbt_project_dir: Path, dbt_project: None) -> None:
     assert os.environ["DBT_PROJECT_DIR"] == str(
         dbt_project_dir
     ), "Expected dbt project dir to be set as env var"
-    defs = DbtProjectDefs(
-        dbt_manifest=dbt_project_dir / "target" / "manifest.json",
-        project=DbtProject(project_dir=dbt_project_dir),
+    # defs = DbtProjectDefs(
+    #     dbt_manifest=dbt_project_dir / "target" / "manifest.json",
+    #     project=DbtProject(project_dir=dbt_project_dir),
+    #     name="my_dbt_multi_asset",
+    # ).build_defs()
+    defs = dbt_defs(
         name="my_dbt_multi_asset",
-    ).build_defs()
+        manifest=dbt_project_dir / "target" / "manifest.json",
+        project=DbtProject(project_dir=dbt_project_dir),
+    )
     assert defs.assets
     all_assets = list(defs.assets)
     assert len(all_assets) == 1
