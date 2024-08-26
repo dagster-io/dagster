@@ -9,7 +9,6 @@ gRPC
 [Mm]emoization
 REST API
 [Ss]ubprocess
-REST API
 Serverless
 
 Airbyte
