@@ -13,7 +13,7 @@ This guide walks through how to access the audit log and details the interaction
 <details>
 <summary>Prerequisites</summary>
 - A Dagster Plus Pro organization
-- An [Organization Admin](/dagster-plus/access/rbac/users-roles-permissions) role in your Dagster Plus organization
+- An [Organization Admin](/dagster-plus/access/rbac/user-roles-permissions) role in your Dagster Plus organization
 </details>
 
 ## View audit logs
@@ -38,10 +38,10 @@ The "Filter" button on the top left of the Audit log pane can be used to filter 
 | Delete deployment              | A user removes an existing [deployment](/dagster-plus/deployment-types)                                       | Whether the deployment is a branch deployment                             |
 | Create user token              | A user creates a new user token                                                                               |                                                                           |
 | Revoke user token              | A user revokes an existing user token                                                                         |                                                                           |
-| Change user permissions        | A user alters [permissions](/dagster-plus/access/rbac/users-roles-permissions) for another user               | The permission grant and targeted deployment                              |
+| Change user permissions        | A user alters [permissions](/dagster-plus/access/rbac/user-roles-permissions) for another user               | The permission grant and targeted deployment                              |
 | Create agent token             | A user creates a new agent token                                                                              |                                                                           |
 | Revoke agent token             | A user revokes an existing agent token                                                                        |                                                                           |
-| Update agent token permissions | A user alters [permissions](/dagster-plus/access/rbac/users-roles-permissions) for an agent token             | The permission grant and targeted deployment                              |
+| Update agent token permissions | A user alters [permissions](/dagster-plus/access/rbac/user-roles-permissions) for an agent token             | The permission grant and targeted deployment                              |
 | Create secret                  | A user creates a new [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)        | The created variable name                                                 |
 | Update secret                  | A user modifies an existing [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui) | The previous and current variable names and whether the value was changed |
 | Delete secret                  | A user removes an [environment variable](/dagster-plus/deployment/environment-variables/dagster-ui)           | The deleted variable name                                                 |
