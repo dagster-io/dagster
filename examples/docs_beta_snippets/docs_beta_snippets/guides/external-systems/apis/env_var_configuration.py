@@ -4,8 +4,8 @@ import dagster as dg
 
 
 class SunResource(dg.ConfigurableResource):
-    latitude: float
-    longitude: float
+    latitude: str
+    longitude: str
     time_zone: str
 
     @property
@@ -28,8 +28,8 @@ defs = dg.Definitions(
     assets=[home_sunrise],
     resources={
         "sun_resource": SunResource(
-            latitude=float(dg.EnvVar("HOME_LATITUDE")),
-            longitude=float(dg.EnvVar("HOME_LONGITUDE")),
+            latitude=dg.EnvVar("HOME_LATITUDE"),
+            longitude=dg.EnvVar("HOME_LONGITUDE"),
             time_zone=dg.EnvVar("HOME_TIMEZONE"),
         )
     },

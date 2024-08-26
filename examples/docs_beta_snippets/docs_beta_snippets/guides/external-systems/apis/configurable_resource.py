@@ -4,8 +4,8 @@ import dagster as dg
 
 
 class SunResource(dg.ConfigurableResource):
-    latitude: float
-    longitude: float
+    latitude: str
+    longitude: str
     time_zone: str
 
     @property
