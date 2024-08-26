@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union
 
 import dagster._check as check
 import dagster._seven as seven
@@ -198,3 +198,4 @@ class AssetCheckKey(NamedTuple):
 
 
 EntityKey = Union[AssetKey, AssetCheckKey]
+T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey)
