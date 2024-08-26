@@ -6,7 +6,7 @@ Airlift is a toolkit for observing Airflow instances from within Dagster and for
 
 - Observe Airflow DAGs and their execution history with no changes to Airflow code
 - Model and observe assets orchestrated by Airflow with no changes to Airflow code
-- (Future) Enable a migration process that
+- Enable a migration process that
   - Can be done task-by-task in any order with minimal coordination
   - Has task-by-task rollback to reduce risk
   - That retains Airflow DAG structure and execution history during the migration
@@ -46,12 +46,13 @@ First, you will need to install `dagster-airlift` in your Dagster environment:
 
 ```bash
 pip install uv
-uv pip install dagster-airlift[core]
+uv pip install dagster-airlift[core] dagster-webserver
 ```
 
 Next, you should create a `Definitions` object using `build_defs_from_airflow_instance`.
 
 ```python
+# airlift.py
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -77,6 +78,10 @@ This function creates:
 - A sensor that polls the Airflow instance for operational information. This sensor is responsible for creating materializations when a DAG executes. The sensor must remain on in order to properly update execution status.
 
 _Note: When the code location loads, Dagster will query the Airflow REST API in order to build a representation of your DAGs. In order for Dagster to reflect changes to your DAGs, you will need to reload your code location._
+
+```bash
+dagster dev -f airlift.py
+```
 
 <details>
 <summary>
@@ -130,20 +135,22 @@ The first and third tasks involve a single table each. We can manually construct
 provided to the `defs` argument to `build_defs_from_airflow_instance`.
 
 ```python
+from dagster import AssetSpec
+
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=dag_defs(
         "rebuild_customers_list",
         task_defs(
             "load_raw_customers",
-            AssetSpec(key=AssetKey(["raw_data", "raw_customers"]))
+            AssetSpec(key=["raw_data", "raw_customers"])
         ),
         # encode dependency on customers output
         task_defs(
             "export_customers",
-            AssetSpec(key=AssetKey("customers_csv"), deps={
-                AssetKey("customers")
-            })
+            AssetSpec(key="customers_csv", deps=["customers"])
         ),
     )
 )
@@ -152,20 +159,22 @@ defs = build_defs_from_airflow_instance(
 To build assets for our dbt invocation, we can use the Dagster-supplied factory `dbt_defs`, installable via `uv pip install dagster-airlift[dbt]`. This will load each dbt model as its own asset:
 
 ```python
+from dagster import AssetSpec
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster_dbt import DbtProject
+
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=dag_defs(
         "rebuild_customers_list",
         task_defs(
             "load_raw_customers",
-            AssetSpec(key=AssetKey(["raw_data", "raw_customers"]))
+            AssetSpec(key=["raw_data", "raw_customers"])
         ),
         # encode dependency on customers output
         task_defs(
             "export_customers",
-            AssetSpec(key=AssetKey("customers_csv"), deps={
-                AssetKey("customers")
-            })
+            AssetSpec(key="customers_csv", deps=["customers"])
         ),
         task_defs(
             "build_dbt_models",
@@ -246,6 +255,9 @@ The migration file acts as the source of truth for migration status. A task whic
 For some common operator patterns, like our dbt operator, Dagster supplies factories to build software defined assets for our tasks:
 
 ```python
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster_dbt import DbtProject
+
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=dag_defs(
@@ -267,14 +279,15 @@ defs = build_defs_from_airflow_instance(
 
 For all other operator types, we recommend creating a new factory class whose arguments match the inputs to your Airflow operator. Then, you can use this factory to build definitions for each Airflow task.
 
-For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a `CSVToDuckDBDefs` factory to build corresponding software-defined assets:
+For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a function `load_csv_to_duckdb_defs` factory to build corresponding software-defined assets:
 
 ```python
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
-from dagster import AssetKey, AssetSpec, Definitions, multi_asset
+from dagster import AssetSpec, Definitions, multi_asset
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
 
 from tutorial_example.shared.load_csv_to_duckdb import load_csv_to_duckdb
 
@@ -286,7 +299,7 @@ def load_csv_to_duckdb_defs(
     duckdb_schema: str,
     duckdb_database_name: str,
 ) -> Definitions:
-    @multi_asset(specs=[AssetSpec(key=AssetKey([duckdb_schema, table_name]))])
+    @multi_asset(specs=[AssetSpec(key=[duckdb_schema, table_name])])
     def _multi_asset() -> None:
         load_csv_to_duckdb(
             table_name=table_name,
@@ -299,11 +312,6 @@ def load_csv_to_duckdb_defs(
 
     return Definitions(assets=[_multi_asset])
 
-```
-
-We can then use our new factory to supply definitions:
-
-```python
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=dag_defs(
