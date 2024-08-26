@@ -3,7 +3,7 @@ import requests
 import dagster as dg
 
 
-class SFOSunResource(dg.ConfigurableResource):
+class SunResource(dg.ConfigurableResource):
     @property
     def query_string(self) -> str:
         latittude = "37.615223"
@@ -18,15 +18,11 @@ class SFOSunResource(dg.ConfigurableResource):
 
 # highlight-start
 @dg.asset
-def sfo_sunrise(
-    context: dg.AssetExecutionContext, sun_resource: SFOSunResource
-) -> None:
+def sfo_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) -> None:
     sunrise = sun_resource.sunrise()
     context.log.info(f"Sunrise in San Francisco is at {sunrise}.")
 
 
-defs = dg.Definitions(
-    assets=[sfo_sunrise], resources={"sun_resource": SFOSunResource()}
-)
+defs = dg.Definitions(assets=[sfo_sunrise], resources={"sun_resource": SunResource()})
 
 # highlight-end

@@ -3,7 +3,7 @@ import requests
 import dagster as dg
 
 
-class SFOSunResource(dg.ConfigurableResource):
+class SunResource(dg.ConfigurableResource):
     @property
     def query_string(self) -> str:
         latittude = "37.615223"
