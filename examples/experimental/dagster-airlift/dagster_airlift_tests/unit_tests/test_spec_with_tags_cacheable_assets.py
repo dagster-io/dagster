@@ -12,8 +12,8 @@ from dagster_airlift.core.spec_tags_cacheable_assets import SpecWithTagsCacheabl
 
 class DummyCacheableAssetsDefinition(CacheableAssetsDefinition):
     def __init__(self, asset_key: CoercibleToAssetKey) -> None:
-        super().__init__(unique_id="unique_id")
         self.asset_key = AssetKey.from_coercible(asset_key)
+        super().__init__(unique_id=self.asset_key.to_python_identifier())
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
         return []
@@ -33,7 +33,8 @@ def test_spec_with_tags() -> None:
         tags={"tag_one": "value_one"},
     )
 
-    assert c_assets_def.unique_id != "unique_id"
+    assert c_assets_def.unique_id != AssetKey("a1").to_python_identifier()
+    assert c_assets_def.unique_id.startswith("spec_tags_wrapped_")
 
     assert isinstance(c_assets_def, CacheableAssetsDefinition)
     assets_def = (

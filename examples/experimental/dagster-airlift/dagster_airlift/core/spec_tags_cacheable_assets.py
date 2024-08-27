@@ -14,7 +14,8 @@ def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
     return spec._replace(tags={**spec.tags, **tags})
 
 
-# copied from cacheable_assets.py
+# Below is cargoculted from cacheable_assets.py
+# Consider moving this there.
 def _map_to_hashable(mapping: Mapping[Any, Any]) -> bytes:
     return json.dumps(
         {json.dumps(k, sort_keys=True): v for k, v in mapping.items()},
@@ -25,7 +26,7 @@ def _map_to_hashable(mapping: Mapping[Any, Any]) -> bytes:
 class SpecWithTagsCacheableAssetsDefinition(WrappedCacheableAssetsDefinition):
     def __init__(self, wrapped_def: CacheableAssetsDefinition, tags: Mapping[str, str]) -> None:
         self.tags = tags
-        unique_id = f"wrapped_{wrapped_def.unique_id}_spec_with_tags_{self._get_hash()}"
+        unique_id = f"spec_tags_wrapped_{wrapped_def.unique_id}_spec_with_tags_{self._get_hash()}"
         super().__init__(unique_id=unique_id, wrapped=wrapped_def)
 
     def transformed_assets_def(self, assets_def: AssetsDefinition) -> AssetsDefinition:
