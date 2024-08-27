@@ -598,6 +598,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        """Get the asset check keys that correspond to the current selection of assets this execution is expected to materialize."""
         return self.assets_def.check_keys if self.has_assets_def else set()
 
     @public
