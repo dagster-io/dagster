@@ -1,5 +1,5 @@
-import { themes as prismThemes } from 'prism-react-renderer';
-import type { Config } from '@docusaurus/types';
+import {themes as prismThemes} from 'prism-react-renderer';
+import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
@@ -49,6 +49,7 @@ const config: Config = {
       maxHeadingLevel: 4,
     },
     navbar: {
+      hideOnScroll: true,
       logo: {
         alt: 'Dagster Logo',
         src: 'img/dagster-docs-logo.svg',
