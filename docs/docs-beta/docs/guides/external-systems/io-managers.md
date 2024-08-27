@@ -30,7 +30,9 @@ To switch to using I/O managers, we can use the DuckDB / Pandas I/O manager prov
 
 To load an upstream asset using an I/O manager, that asset is specified as an input parameter to the asset function rather than within the `deps` list on the `@asset` decorator.  The `DuckDBPandasIOManager` reads the DuckDB table with the same name as the upstream asset and passes the data into the asset function as a Pandas dataframe. 
 
-To store data using an I/O manager, the data should be returned by the asset function.  The `DuckDBPandasIOManager` specifically takes the returned value from the asset function, which should be a Pandas dataframe, and writes it to the DuckDB file as a table with the same name as the asset.
+To store data using an I/O manager, return the data in the asset function. The data returned must be a valid type. The `DuckDBPandasIOManager` accepts Pandas data frames and writes them to DuckDB as a table with the same name as the asset.
+
+Refer to the individual I/O manager documentation for details on valid types and how they store data.
 
 <CodeExample filePath="guides/external-systems/assets-with-io-managers.py" language="python" title="Asset with I/O managers" />
 
