@@ -5,6 +5,10 @@ query AssetNodeQuery {
         assetKey {
             path
         }
+        tags {
+            key
+            value
+        }
         opName
         jobs {
             id
