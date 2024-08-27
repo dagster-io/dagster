@@ -1,19 +1,17 @@
 ---
 title: Ingesting data with Dagster
-description: Learn how to ingest data into Dagster
+description: Learn how to orchestrate data ingestion with Dagster
 sidebar_position: 10
 sidebar_label: Ingesting data
 ---
 
 This guide explains how to use Dagster to orchestrate the ingestion of data into a data warehouse or data lake, where it can be queried and transformed. Dagster integrates with several tools that are purpose-built for data ingestion, and it also enables writing custom code for ingesting data.
 
-A data platform typically centers on a small number of data warehouses or object stores, where data is consolidated in standard formats for reporting, transformation, and analysis. The data inside the platform often comes from a large and diverse set of sources, such as application logs, customer relationship management (CRM) software, spreadsheets, public data sources available on the internet, and more. Data ingestion is the process of extracting data from these sources to loading it into the data platform. Data ingestion makes up the "E" and "L" in the "ELT" paradigm (extract-load-transform).
-
 ## What you'll learn
 
 - How Dagster helps with data ingestion
-- How Dagster relates to different technologies and paradigms for data ingestion
-- How to get started using Dagster to ingest data using your preferred technology and paradigm
+- How to integrate Dagster with different data ingestion tools
+- How to write custom data ingestion pipelines
 
 <details>
   <summary>Prerequisites</summary>
@@ -27,35 +25,29 @@ As a data orchestrator, Dagster helps with data ingestion in the following ways:
 - It can coordinate data ingestion with downstream data transformation, for example to rebuild a set of dbt models after the upstream data they depend on is updated.
 - It can represent ingested data assets in its data asset graph, which enables understanding what ingested data exists, how ingested data is used, and where data is ingested from.
 
-### Batch vs. streaming data ingestion
-
-There are two main paradigms for data ingestion: batch and streaming. With batch data ingestion, data is moved in discrete batches. With streaming data ingestion, data continuously flows in.
-
-Dagster has a different relationship to streaming data ingestion than it does to batch data ingestion. For batch data ingestion, Dagster often takes responsibility for kicking off the computations to ingest the batches of data, either at a regular cadence or when it discovers that new data is available in the source system.
-
-For streaming data ingestion, Dagster doesn't orchestrate the data ingestion, but still often represents the ingested data assets in its asset graph. Dagster can hold metadata about these assets, represent the lineage between them and downstream assets, and automatically kick off computations to observe them.
+Note that this guide focuses on batch data ingestion, because streaming data ingestion doesn't typically rely on an orchestrator to kick off or coordinate computations. However, streaming data assets can still be represented in Dagster for lineage purposes.
 
 ## Orchestrate a data ingestion tool
 
 Dagster integrates with several tools that are purpose-built for data ingestion. These tools roughly fall into two main categories:
 - Hosted data ingestion services.
-- Embeddable data ingestion libraries.
+- Embedded data ingestion libraries.
 
 ### Hosted data ingestion services
 
-Dagster provides two integrations with two hosted data ingestion services: Fivetran and Airbyte.
+Hosted data ingestion services are tools that provide UIs for configuring and managing syncs between data sources and tables in a data warehouse. Dagster's integrations with these tools help you represent these ingested tables as assets in the Dagster asset graph. And they help you kick off asset materializations that use the REST APIs exposed by these tools to trigger syncs.
 
-With a hosted data ingestion service, the set of data sources to ingest into the data platform is defined inside the service. Dagster's integrations with these services invoke their REST APIs to find out about the set of data assets that they ingest and load those asset definitions into Dagster's asset graph. The "materialize" action on these Dagster asset definitions invokes REST APIs provided by these services to ingest the latest data from the source.
+Dagster provides two integrations with two hosted data ingestion services:
+- [Fivetran](/guides/ingestion-and-transformation/ingest-data-with-fivetran)
+- [Airbyte](/guides/ingestion-and-transformation/ingest-data-with-airbyte)
 
-To learn how to use Dagster to orchestrate a hosted data ingestion service, follow the link for that service above.
+### Embedded data ingestion libraries
 
-### Embeddable data ingestion libraries
+Embedded data ingestion libraries are tools that enable using code or configuration to manage syncs between data sources and tables in a data warehouse. The source of truth on syncs is typically in a git repository, rather than an external hosted service. Dagster's integrations with these tools help you represent these ingested tables as assets in the Dagster asset graph. And they help you kick off asset materializations that trigger syncs.
 
-With an embeddable data ingestion library, the set of data sources to ingest into the data platform is defined using files that are typically managed inside the same git repository as other Dagster pipelines. Dagster's integrations with these libraries invokes them to interpret these files and load the data assets defined in them into Dagster's asset graph. The "materialize" action on these Dagster asset definitions invokes the library to ingest the latest data from the source.
-
-Dagster provides two integrations with embeddable data ingestion libraries: Sling and DLT.
-
-To learn how to use Dagster to orchestrate a hosted data ingestion service, follow the link for that library above.
+Dagster provides two integrations with embedded data ingestion libraries:
+- [Sling](/guides/ingestion-and-transformation/ingest-data-with-sling)
+- [DLT](/guides/ingestion-and-transformation/ingest-data-with-dlt)
 
 ## Write a custom data ingestion pipeline
 
