@@ -363,5 +363,5 @@ defs = build_defs_from_airflow_instance(
 
 **TODO demonstrate deletion of a data**
 
-* Delete airflow code
-* Add schedule
+- Delete airflow code
+- Add schedule
