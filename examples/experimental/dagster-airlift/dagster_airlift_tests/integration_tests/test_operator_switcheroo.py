@@ -7,7 +7,18 @@ from dagster import AssetKey, DagsterInstance, DagsterRunStatus
 from dagster._time import get_current_timestamp
 
 
-@pytest.fixture(name="test_dir", params=["airflow_op_switcheroo", "airflow_op_switcheroo_tags"])
+# Two different test targets
+# The first uses convention-based binding of assets to tasks, e.g.
+# op named the_dag__some_task
+# The second uses `dag_defs` and `task_defs` to attach tags to assets, which
+# in turn are used to bind assets to tasks.
+@pytest.fixture(
+    name="test_dir",
+    params=[
+        "airflow_op_switcheroo_convention",
+        "airflow_op_switcheroo_tags",
+    ],
+)
 def test_dir_fixture(request: pytest.FixtureRequest) -> Path:
     return Path(__file__).parent / request.param
 
