@@ -1,11 +1,11 @@
 import time
-from typing import Any, Dict, Literal, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Dict, Literal, Mapping, Optional, cast
 
 import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import deprecated_param, experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -15,9 +15,27 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import open_pipes_session
+from mypy_boto3_glue.type_defs import StartJobRunRequestRequestTypeDef
 
 from dagster_aws.pipes.context_injectors import PipesS3ContextInjector
 from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
+
+if TYPE_CHECKING:
+    from mypy_boto3_glue.client import GlueClient
+
+RUN_PARAMS_BREAKING_VERSION = "1.9.0"
+
+
+def _param_deprecation_message(param: str) -> str:
+    return f"Set a corresponding (pascal-case) key in `start_job_run_params` argument instead of passing `{param}` directly."
+
+
+def _deprecated_run_param(param: str):
+    return deprecated_param(
+        param=param,
+        breaking_version=RUN_PARAMS_BREAKING_VERSION,
+        additional_warn_text=_param_deprecation_message(param),
+    )
 
 
 @experimental
@@ -44,7 +62,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         client: Optional[boto3.client] = None,  # pyright: ignore (reportGeneralTypeIssues)
         forward_termination: bool = True,
     ):
-        self._client = client or boto3.client("glue")
+        self._client: GlueClient = client or boto3.client("glue")
         self._context_injector = context_injector
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
@@ -53,13 +71,25 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @_deprecated_run_param("job_name")
+    @_deprecated_run_param("arguments")
+    @_deprecated_run_param("job_run_id")
+    @_deprecated_run_param("allocated_capacity")
+    @_deprecated_run_param("timeout")
+    @_deprecated_run_param("max_capacity")
+    @_deprecated_run_param("security_configuration")
+    @_deprecated_run_param("notification_property")
+    @_deprecated_run_param("worker_type")
+    @_deprecated_run_param("number_of_workers")
+    @_deprecated_run_param("execution_class")
     @public
     def run(
         self,
         *,
-        job_name: str,
         context: OpExecutionContext,
+        start_job_run_params: Optional[StartJobRunRequestRequestTypeDef] = None,
         extras: Optional[Dict[str, Any]] = None,
+        job_name: Optional[str] = None,
         arguments: Optional[Mapping[str, Any]] = None,
         job_run_id: Optional[str] = None,
         allocated_capacity: Optional[int] = None,
@@ -76,9 +106,10 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         See also: `AWS API Documentation <https://docs.aws.amazon.com/goto/WebAPI/glue-2017-03-31/StartJobRun>`_
 
         Args:
-            job_name (str): The name of the job to use.
             context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            start_job_run_params (Optional[dict]): Parameters for the ``start_job_run`` boto3 Glue client call.
             extras (Optional[Dict[str, Any]]): Additional Dagster metadata to pass to the Glue job.
+            job_name (Optional[str]): The name of the job to use.
             arguments (Optional[Dict[str, str]]): Arguments to pass to the Glue job Command
             job_run_id (Optional[str]): The ID of the previous job run to retry.
             allocated_capacity (Optional[int]): The amount of DPUs (Glue data processing units) to allocate to this job.
@@ -94,41 +125,71 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
             process.
         """
+        arguments = arguments or {}
+
+        params = start_job_run_params
+
+        if params is None:
+            if job_name is None:
+                raise ValueError("`JobName` key in `start_job_run_params` argument is required")
+            else:
+                params = {
+                    "JobName": job_name,
+                }
+
+        params = cast(StartJobRunRequestRequestTypeDef, params)
+
+        params["Arguments"] = arguments
+
+        if job_run_id is not None:
+            params["JobRunId"] = job_run_id
+
+        if allocated_capacity is not None:
+            params["AllocatedCapacity"] = allocated_capacity
+
+        if timeout is not None:
+            params["Timeout"] = timeout
+
+        if max_capacity is not None:
+            params["MaxCapacity"] = max_capacity
+
+        if security_configuration is not None:
+            params["SecurityConfiguration"] = security_configuration
+
+        if notification_property is not None:
+            params["NotificationProperty"] = notification_property  # pyright: ignore (reportGeneralTypeIssues)
+
+        if worker_type is not None:
+            params["WorkerType"] = worker_type  # pyright: ignore ()
+
+        if number_of_workers is not None:
+            params["NumberOfWorkers"] = number_of_workers
+
+        if execution_class is not None:
+            params["ExecutionClass"] = execution_class
+
+        # boto3 does not accept None as defaults for some of the parameters
+        # let's make sure they are not passed
+        params = {k: v for k, v in params.items() if v is not None}
+
+        # this variable is used in the code below, let's set it here
+        job_name = cast(str, params["JobName"])
+
         with open_pipes_session(
             context=context,
             message_reader=self._message_reader,
             context_injector=self._context_injector,
             extras=extras,
         ) as session:
-            arguments = arguments or {}
-
             pipes_args = session.get_bootstrap_cli_arguments()
 
             if isinstance(self._context_injector, PipesS3ContextInjector):
-                arguments = {**arguments, **pipes_args}
-
-            params = {
-                "JobName": job_name,
-                "Arguments": arguments,
-                "JobRunId": job_run_id,
-                "AllocatedCapacity": allocated_capacity,
-                "Timeout": timeout,
-                "MaxCapacity": max_capacity,
-                "SecurityConfiguration": security_configuration,
-                "NotificationProperty": notification_property,
-                "WorkerType": worker_type,
-                "NumberOfWorkers": number_of_workers,
-                "ExecutionClass": execution_class,
-            }
-
-            # boto3 does not accept None as defaults for some of the parameters
-            # so we need to filter them out
-            params = {k: v for k, v in params.items() if v is not None}
+                params["Arguments"].update(pipes_args)  # pyright: ignore (reportAttributeAccessIssue)
 
             start_timestamp = time.time() * 1000  # unix time in ms
 
             try:
-                run_id = self._client.start_job_run(**params)["JobRunId"]
+                run_id = self._client.start_job_run(**params)["JobRunId"]  # pyright: ignore (reportArgumentType)
 
             except ClientError as err:
                 context.log.error(
@@ -140,7 +201,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 raise
 
             response = self._client.get_job_run(JobName=job_name, RunId=run_id)
-            log_group = response["JobRun"]["LogGroupName"]
+            log_group = response["JobRun"]["LogGroupName"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
             context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
 
             try:
@@ -171,14 +232,14 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         while True:
             response = self._client.get_job_run(JobName=job_name, RunId=run_id)
             # https://docs.aws.amazon.com/glue/latest/dg/job-run-statuses.html
-            if response["JobRun"]["JobRunState"] in [
+            if response["JobRun"]["JobRunState"] in [  # pyright: ignore (reportTypedDictNotRequiredAccess)
                 "FAILED",
                 "SUCCEEDED",
                 "STOPPED",
                 "TIMEOUT",
                 "ERROR",
             ]:
-                return response
+                return response  # pyright: ignore (reportReturnType)
             time.sleep(5)
 
     def _terminate_job_run(self, context: OpExecutionContext, job_name: str, run_id: str):
@@ -192,5 +253,5 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             context.log.warning(f"Successfully stopped Glue job run {run_id}.")
         else:
             context.log.warning(
-                f"Something went wrong during Glue job run termination: {response['errors']}"
+                f"Something went wrong during Glue job run termination: {response['errors']}"  # pyright: ignore (reportGeneralTypeIssues)
             )
