@@ -180,3 +180,5 @@ autosectionlabel_prefix_document = True
 
 # Only support Google-style docstrings
 napoleon_numpy_docstring = False
+
+exclude_patterns = ["_ext"]
