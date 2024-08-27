@@ -47,7 +47,7 @@ const sidebars: SidebarsConfig = {
           label: 'Ingestion and Transformation',
           link: {
             type: 'doc',
-            id: 'guides/ingestion-and-transformation',
+            id: 'guides/ingestion-and-transformation/ingesting-data',
           },
           items: [
             {

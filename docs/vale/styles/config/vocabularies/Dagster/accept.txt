@@ -18,7 +18,9 @@ Crontab
 Databricks
 Datadog
 dbt
+DLT
 DuckDB
+Fivetran
 GitHub
 Gitlab
 Microsoft Teams
