@@ -165,7 +165,8 @@ class GraphenePartitionRangeSelector(graphene.InputObjectType):
 
 
 class GraphenePartitionsSelector(graphene.InputObjectType):
-    range = graphene.NonNull(GraphenePartitionRangeSelector)
+    range = graphene.InputField(GraphenePartitionRangeSelector)
+    ranges = graphene.InputField(graphene.List(graphene.NonNull(GraphenePartitionRangeSelector)))
 
     class Meta:
         description = """This type represents a partitions selection."""

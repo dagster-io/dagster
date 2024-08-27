@@ -2290,7 +2290,8 @@ input PartitionsByAssetSelector {
 }
 
 input PartitionsSelector {
-  range: PartitionRangeSelector!
+  range: PartitionRangeSelector
+  ranges: [PartitionRangeSelector!]
 }
 
 input PartitionRangeSelector {
