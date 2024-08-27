@@ -1,5 +1,5 @@
 ---
-title: Configuring assets and ops via the UI
+title: Configuring runs via the UI
 sidebar_label: Configuring assets via the UI
 sidebar_position: 50
 ---
