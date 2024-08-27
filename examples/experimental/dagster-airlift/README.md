@@ -77,8 +77,9 @@ uv pip install 'dagster-airlift[core]' dagster-webserver
 
 Next, create a new Python file to hold your Dagster code. Create a `Definitions` object using `build_defs_from_airflow_instance`:
 
-`airlift.py`
 ```python
+# airlift.py
+
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -105,11 +106,9 @@ This function creates:
 
 Let's run Dagster to see the asset created from our Airflow DAG:
 
-
 ```bash
 dagster dev -f airlift.py
 ```
-
 
 <p align="center">
 
@@ -119,7 +118,6 @@ dagster dev -f airlift.py
 
 If we kick off a run of the `rebuild_customers_list` DAG in Airflow, we should see the corresponding asset materialize in Dagster.
 
-
 <p align="center">
 
 ![Materialized peer asset in Dagster UI](./images/peer_materialize.svg)
@@ -127,7 +125,6 @@ If we kick off a run of the `rebuild_customers_list` DAG in Airflow, we should s
 </p>
 
 _Note: When the code location loads, Dagster will query the Airflow REST API in order to build a representation of your DAGs. In order for Dagster to reflect changes to your DAGs, you will need to reload your code location._
-
 
 <details>
 <summary>
@@ -179,14 +176,14 @@ In our example, we have three sequential tasks:
 
 We will first create a set of asset specs that correspond to the assets produced by these tasks. We will then annotate these asset specs so that Dagster can associate them with the Airflow tasks that produce them.
 
-
 The first and third tasks involve a single table each. We can manually construct `AssetSpec`s that match the assets which they build. Dagster provides the `dag_defs` and `task_defs` utilities to annotate asset specs with the tasks that produce them. Assets which are properly annotated will be materialized by the Airlift sensor once the corresponding task completes: These annotated specs are then
 provided to the `defs` argument to `build_defs_from_airflow_instance`.
 
 To build assets for our dbt invocation, we can use the Dagster-supplied factory `dbt_defs`, installable via `uv pip install dagster-airlift[dbt]`. This will load each dbt model as its own asset:
 
-`airlift.py`
 ```python
+# airlift.py
+
 import os
 from pathlib import Path
 
@@ -252,7 +249,6 @@ defs = build_defs_from_airflow_instance(
 )
 ```
 
-
 ### Viewing observed assets
 
 Once your assets are set up, you should be able to reload your Dagster definitions and see a full representation of the dbt project and other data assets in your code.
@@ -264,7 +260,6 @@ Once your assets are set up, you should be able to reload your Dagster definitio
 </p>
 
 Kicking off a run of the DAG in Airflow, you should see the newly created assets materialize in Dagster as each task completes.
-
 
 _Note: There will be some delay between task completion and assets materializing in Dagster, managed by the sensor. This sensor runs every 30 seconds by default (you can reduce down to one second via the `minimum_interval_seconds` argument to `sensor`), so there will be some delay._
 
@@ -307,7 +302,6 @@ mark_as_dagster_migrating(
 
 The DAG will now display its migration state in the Airflow UI.
 
-
 <p align="center">
 
 ![Migration state rendering in Airflow UI](./images/state_in_airflow.png)
@@ -341,7 +335,6 @@ tasks:
 
 You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run.
 
-
 <p align="center">
 
 ![dbt build executing in Dagster](./images/migrated_dag.png)
@@ -350,7 +343,7 @@ You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_
 
 #### Migrating custom operators
 
-For all other operator types, we recommend creating a new factory class whose arguments match the inputs to your Airflow operator. Then, you can use this factory to build asset definitions for each Airflow task.
+For all other operator types, we recommend creating a new factory function whose arguments match the inputs to your Airflow operator. Then, you can use this factory to build definitions for each Airflow task.
 
 For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a function `load_csv_to_duckdb_defs` factory to build corresponding software-defined assets:
 
