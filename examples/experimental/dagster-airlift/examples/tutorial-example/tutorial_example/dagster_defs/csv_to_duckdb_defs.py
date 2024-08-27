@@ -14,7 +14,10 @@ def load_csv_to_duckdb_defs(
     duckdb_schema: str,
     duckdb_database_name: str,
 ) -> Definitions:
-    @multi_asset(specs=[AssetSpec(key=AssetKey([duckdb_schema, table_name]))])
+    @multi_asset(
+        name=f"load_csv_to_duckdb_{table_name}",
+        specs=[AssetSpec(key=AssetKey([duckdb_schema, table_name]))],
+    )
     def _multi_asset() -> None:
         load_csv_to_duckdb(
             table_name=table_name,
