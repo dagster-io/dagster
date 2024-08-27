@@ -29,7 +29,7 @@ def test_python_multi_asset_factory() -> None:
 
     assets = check.is_list(defs.assets, of_type=AssetsDefinition)
     assert len(assets) == 1
-    assets_def: AssetsDefinition = assets[0]
+    assets_def = assets[0]
     assert assets_def.is_executable
     assert len(list(assets_def.specs)) == 1
     assert assets_def.node_def.name == "test_task"
