@@ -14,6 +14,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
-    install_requires=["dagster-cloud"],
-    extras_require={"test": ["pytest"]},
+    install_requires=["dagster-cloud", "dagster-aws"],
+    extras_require={"test": ["pytest", "mock"]},
 )
