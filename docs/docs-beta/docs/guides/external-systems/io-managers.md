@@ -15,7 +15,7 @@ I/O Managers in Dagster provide a way to separate the code that's responsible fo
 
 ## Extract I/O logic from an asset into a reuseable I/O Manager
 
-In many dagster jobs, assets can be broken down as the following steps:
+In many Dagster pipelines, assets can be broken down as the following steps:
 1. reading data from some data store into memory
 2. applying some in-memory transform
 3. writing the transformed data to some data store
