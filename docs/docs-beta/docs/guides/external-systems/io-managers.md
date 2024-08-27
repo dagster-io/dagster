@@ -39,7 +39,7 @@ Refer to the individual I/O manager documentation for details on valid types and
 
 ## Swapping data stores
 
-With I/O managers, swapping data stores consists of changing the implementation of the I/O manager resource.  The asset definitions (which should now only contain transformational logic) should not change.
+With I/O managers, swapping data stores consists of changing the implementation of the I/O manager resource. The asset definitions, which only contain transformational logic, will not need to be changed.
 
 <CodeExample filePath="guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="Asset with Snowflake I/O manager" />
 
