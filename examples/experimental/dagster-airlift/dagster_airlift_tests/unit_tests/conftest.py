@@ -67,7 +67,10 @@ class DummyInstance(AirflowInstance):
 
     def get_task_info(self, dag_id, task_id) -> TaskInfo:
         return TaskInfo(
-            webserver_url="http://localhost:8080", dag_id=dag_id, task_id=task_id, metadata={}
+            webserver_url="http://localhost:8080",
+            dag_id=dag_id,
+            task_id=task_id,
+            metadata={},
         )
 
     def get_dag_source_code(self, file_token: str) -> str:
@@ -111,9 +114,10 @@ def build_task_asset(
     task_id: str,
     dag_id: str,
 ) -> AssetsDefinition:
-    asset_specs = [AssetSpec(key=key, deps=deps) for key, deps in deps_graph.items()]
+    tags = {"airlift/task_id": task_id, "airlift/dag_id": dag_id}
+    asset_specs = [AssetSpec(key=key, deps=deps, tags=tags) for key, deps in deps_graph.items()]
 
-    @multi_asset(specs=asset_specs, op_tags={"airlift/task_id": task_id, "airlift/dag_id": dag_id})
+    @multi_asset(specs=asset_specs)
     def asset_fn():
         pass
 
@@ -123,7 +127,7 @@ def build_task_asset(
 def build_dag_asset(
     dag_id: str,
 ) -> AssetsDefinition:
-    @asset(op_tags={"airlift/dag_id": dag_id}, key=dag_id)
+    @asset(tags={"airlift/dag_id": dag_id}, key=dag_id)
     def asset_fn():
         pass
 

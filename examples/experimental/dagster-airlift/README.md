@@ -38,6 +38,28 @@ Airlift depends on the the availability of Airflow’s REST API. Airflow’s RES
 
 In the below guide, we'll be working with a sample project, found in [`examples/tutorial-example`](./examples/tutorial-example/).
 
+## Running airflow locally
+
+The tutorial example involves running a local airflow instance. This can be done by running the following commands from the root of the `examples/tutorial-example` directory.
+
+```bash
+make airflow_install
+```
+
+This command installs python packages required for running airflow.
+
+```bash
+make airflow_setup
+```
+
+This command scaffolds a local installation of airflow (setting AIRFLOW_HOME env var), and sets up a dbt project.
+
+```bash
+make airflow_run
+```
+
+Which runs `airflow standalone` with required env vars set.
+
 ## Peering
 
 The first step is to peer the Dagster code location and the Airflow instance, which will create an asset representation of each of your Airflow DAGs in Dagster. This process does not require any changes to your Airflow instance.

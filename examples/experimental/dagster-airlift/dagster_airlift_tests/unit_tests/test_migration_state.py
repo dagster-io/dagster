@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import yaml
 from dagster_airlift.core import load_migration_state_from_yaml
 from dagster_airlift.migration_state import (
     AirflowMigrationState,
@@ -40,3 +41,20 @@ def test_migration_state() -> None:
         incorrect_migration_file = Path(__file__).parent / "migration_state_yamls" / incorrect_dir
         with pytest.raises(MigrationStateParsingError, match="Error parsing migration yaml"):
             load_migration_state_from_yaml(incorrect_migration_file)
+
+
+def test_migration_state_from_yaml() -> None:
+    migration_dict = yaml.safe_load("""
+tasks:
+  - id: load_raw_customers
+    migrated: False
+  - id: build_dbt_models
+    migrated: False
+  - id: export_customers
+    migrated: True 
+ """)
+
+    migration_state = DagMigrationState.from_dict(migration_dict)
+    assert migration_state.is_task_migrated("load_raw_customers") is False
+    assert migration_state.is_task_migrated("build_dbt_models") is False
+    assert migration_state.is_task_migrated("export_customers") is True

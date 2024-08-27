@@ -1,4 +1,4 @@
-from typing import Dict, Mapping
+from typing import Dict, Mapping, Union
 
 from dagster import AssetsDefinition, AssetSpec, Definitions
 
@@ -15,7 +15,9 @@ def apply_tags_to_all_specs(defs: Definitions, tags: Dict[str, str]) -> Definiti
     return Definitions(
         assets=[
             assets_def_with_af_tags(assets_def, tags)
-            for assets_def in defs.get_asset_graph().assets_defs
+            # Note: Using get_asset_graph().assets_defs causes resource collisions for reasons unknown
+            # for assets_def in defs.get_asset_graph().assets_defs
+            for assets_def in defs.assets
         ],
         resources=defs.resources,
         sensors=defs.sensors,
@@ -31,10 +33,15 @@ def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
     return spec._replace(tags={**spec.tags, **tags})
 
 
+# because of the user of def.sassets in apply_tags_to_all_specs, we need to handle AssetSpecs here as well
 def assets_def_with_af_tags(
-    assets_def: AssetsDefinition, tags: Mapping[str, str]
+    assets_def_or_spec: Union[AssetSpec, AssetsDefinition], tags: Mapping[str, str]
 ) -> AssetsDefinition:
-    return assets_def.map_asset_specs(lambda spec: spec_with_tags(spec, tags))
+    if isinstance(assets_def_or_spec, AssetSpec):
+        return spec_with_tags(assets_def_or_spec, tags)
+    else:
+        assert isinstance(assets_def_or_spec, AssetsDefinition)
+        return assets_def_or_spec.map_asset_specs(lambda spec: spec_with_tags(spec, tags))
 
 
 def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:

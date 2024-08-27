@@ -38,6 +38,9 @@ def build_defs_from_airflow_instance(
         Definitions: The definitions to use for the provided airflow instance. Contains an asset per dag, an asset per task in the provided orchestrated defs, all resources provided in the orchestrated defs, and a sensor to poll for airflow dag runs.
 
     """
+    if defs:
+        Definitions.validate_loadable(defs)
+
     assets_defs = AirflowCacheableAssetsDefinition(
         airflow_instance=airflow_instance,
         defs=defs,
@@ -45,9 +48,7 @@ def build_defs_from_airflow_instance(
         migration_state_override=migration_state_override,
     )
     # Now, we construct the sensor that will poll airflow for dag runs.
-    airflow_sensor = build_airflow_polling_sensor(
-        airflow_instance=airflow_instance,
-    )
+    airflow_sensor = build_airflow_polling_sensor(airflow_instance=airflow_instance)
     return Definitions(
         assets=[assets_defs],
         asset_checks=defs.asset_checks if defs else None,

@@ -32,10 +32,8 @@ def test_migrating_dag(airflow_instance: None) -> None:
     assert len(tags) == 1
     assert json.loads(tags[0]["name"]) == {
         "DAGSTER_MIGRATION_STATUS": {
-            "tasks": {
-                "print_task": {
-                    "migrated": False,
-                }
-            }
+            "tasks": [
+                {"id": "print_task", "migrated": False},
+            ]
         }
     }
