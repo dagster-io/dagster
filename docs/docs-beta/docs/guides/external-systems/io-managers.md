@@ -20,7 +20,7 @@ In many Dagster pipelines, assets can be broken down as the following steps:
 2. applying some in-memory transform
 3. writing the transformed data to some data store
 
-For assets that follow this pattern, using an I/O manager can help remove the boiler-plate of the code responsible for reading and writing the data to and from a data source.
+Using an I/O manager can help simplify the code responsible for reading and writing the data to and from a data source for assets that follow this pattern.
 
 For example, both assets in the code below are constructing a DuckDB connection object, reading from an upstream table, applying some in-memory transform, and then writing the transformed result into a new table in DuckDB.
 
