@@ -229,6 +229,8 @@ To begin migration on a DAG, first you will need a file to track migration progr
 
 Given our example DAG `rebuild_customers_list` with three tasks, `load_raw_customers`, `run_dbt_model`, and `export_customers`, `migration_state/rebuild_customers_list.yaml` should look like the following:
 
+** TODO: update this to new format **
+
 ```yaml
 tasks:
   load_raw_customers:
@@ -356,3 +358,10 @@ defs = build_defs_from_airflow_instance(
     ),
 )
 ```
+
+**TODO section on adding an asset check to a DAG/External Asset**
+
+**TODO demonstrate deletion of a data**
+
+* Delete airflow code
+* Add schedule
