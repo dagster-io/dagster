@@ -10,7 +10,7 @@ class ForecastModelConfig(dg.Config):
 
 @dg.asset
 def forecast_model(config: ForecastModelConfig):
-    print("Running with parallelism:", config.lookback_window_days)  # noqa: T201
+    print("Forecasting over time window:", config.lookback_window_days)  # noqa: T201
     # ...more code here
 
 
