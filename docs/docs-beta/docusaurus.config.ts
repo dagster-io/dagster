@@ -7,6 +7,7 @@ const config: Config = {
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
+  noIndex: true, // TODO - remove when production-ready
 
   baseUrl: '/',
   onBrokenLinks: 'throw',
