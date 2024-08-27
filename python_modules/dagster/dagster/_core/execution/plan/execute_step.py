@@ -49,6 +49,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
 from dagster._core.execution.context.compute import enter_execution_context
+from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.execution.plan.compute import OpOutputUnion, execute_core_compute
 from dagster._core.execution.plan.compute_generator import create_op_compute_wrapper
@@ -700,9 +701,7 @@ def _build_data_version_tags(
     return tags
 
 
-def _build_data_version_observation_tags(
-    data_version: DataVersion,
-) -> Dict[str, str]:
+def _build_data_version_observation_tags(data_version: DataVersion) -> Dict[str, str]:
     return {
         DATA_VERSION_TAG: data_version.value,
         DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
@@ -831,8 +830,12 @@ def _store_output(
 
 
 def _log_materialization_or_observation_events_for_asset(
-    step_context, output_context, output, output_def, manager_metadata
-):
+    step_context: StepExecutionContext,
+    output_context: OutputContext,
+    output: Union[Output, DynamicOutput],
+    output_def: OutputDefinition,
+    manager_metadata: Mapping[str, MetadataValue],
+) -> Iterable[DagsterEvent]:
     # This is a temporary workaround to prevent duplicate observation events from external
     # observable assets that were auto-converted from source assets. These assets yield
     # observation events through the context in their body, and will continue to do so until we
@@ -888,7 +891,7 @@ def _dagster_event_for_asset_event(
     step_context: StepExecutionContext,
     asset_event: Union[AssetMaterialization, AssetObservation],
     batch_metadata: Optional[DagsterEventBatchMetadata],
-):
+) -> DagsterEvent:
     if isinstance(asset_event, AssetMaterialization):
         return DagsterEvent.asset_materialization(step_context, asset_event, batch_metadata)
     else:  # observation
