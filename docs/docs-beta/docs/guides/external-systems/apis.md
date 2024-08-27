@@ -29,7 +29,7 @@ To follow the steps in this guide, you'll need:
 
 ## Step 1: Write a resource to connect to an API
 
-This example fetches the sunrise time from a REST API for a given location. Begin by defining a Dagster resource with a method to return the sunrise time for a location. In the first version of this resource, the location will be hardcoded to San Francisco International Airport.
+This example fetches the sunrise time for a given location from a REST API. Begin by defining a Dagster resource with a method to return the sunrise time for a location. In the first version of this resource, the location will be hardcoded to San Francisco International Airport.
 
 
 <CodeExample filePath="guides/external-systems/apis/minimal_resource.py" language="python" title="Resource to connect to the Sunrise API" />
@@ -55,7 +55,7 @@ When you materialize `sfo_sunrise`, Dagster will provide a `SunResource` initial
 
 
 ## Step 4: Sourcing configuration values from environment variables
-Resources can also be configured with environment variables, specifically values referenced using the `EnvVar` class.
+Resources can also be configured with environment variables, You can either use the `os` module to fetch environment variables, or you can use Dagster's built-in `EnvVar` class. Configuration that is fetched using the `EnvVar` class will be redacted in the Dagster UI.
 
 In this example, there is a new `home_sunrise` asset. Rather than hardcoding the location of your home, you can set it in environment variables, and configure the `SunResource` by reading those values:
 
@@ -66,7 +66,7 @@ When you materialize `home_sunrise`, Dagster will read the values set for the `H
 The initialized `SunResource` will be provided to the `sun_resource` parameter.
 
 :::note
-Environment variables are read **at materialization time**, so they must be set where the code is executing.
+Environment variables that are fetched using `EnvVar` are read **at materialization time**, so they must be set where the code is executing.
 :::
 
 
