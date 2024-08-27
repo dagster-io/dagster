@@ -1,6 +1,7 @@
 from typing import Mapping
 
 import click
+from rich import print
 
 import dagster._check as check
 from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
@@ -9,7 +10,7 @@ from dagster._cli.workspace.cli_target import (
     python_origin_target_argument,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
@@ -111,7 +112,46 @@ def asset_list_command(**kwargs):
     asset_keys = asset_selection.resolve(repo_def.asset_graph, allow_missing=True)
 
     for asset_key in sorted(asset_keys):
-        print(asset_key.to_user_string())  # noqa: T201
+        print(asset_key.to_user_string())
+
+
+@asset_cli.command(name="report", help="Report asset materialization")
+@python_origin_target_argument
+@click.option("--select", help="Asset selection to target", required=True)
+@click.option("--partition", help="Asset partition to target", required=False)
+@click.option("--all", is_flag=True, help="Report all partitions", default=False)
+@click.option(
+    "--description",
+    help="Provide a description to the materialization(s)",
+    required=False,
+    default="Runless materialization",
+)
+def asset_materialization_report_command(**kwargs):
+    description = kwargs.get("description")
+    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_def = recon_repo.get_definition()
+
+    select = kwargs.get("select")
+    asset = repo_def.assets_defs_by_key.get(AssetKey(select), None)
+
+    partition = kwargs.get("partition", None)
+    report_all = kwargs.get("all", False)
+    if asset.partitions_def is not None and partition is None and not report_all:
+        raise click.UsageError(
+            f"Error, you must specify a partition for the asset '{asset.key.to_user_string()}'. Or use `--all` to select all partitions."
+        )
+
+    with get_instance_for_cli() as instance:
+        partitions = [partition] if not report_all else asset.partitions_def.get_partition_keys()
+        for partition in partitions:
+            instance.report_runless_asset_event(
+                AssetMaterialization(
+                    asset_key=asset.key,
+                    partition=partition,
+                    description=description,
+                )
+            )
 
 
 @asset_cli.command(name="wipe")
