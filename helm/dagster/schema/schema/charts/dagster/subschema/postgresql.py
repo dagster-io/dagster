@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from ...utils.kubernetes import ExternalImage
+from schema.charts.utils.kubernetes import ExternalImage
 
 
 class Service(BaseModel):

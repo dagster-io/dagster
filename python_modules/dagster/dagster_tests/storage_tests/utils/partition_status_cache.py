@@ -32,7 +32,7 @@ from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._utils import Counter, traced_counter
 
-from .event_log_storage import create_and_delete_test_runs
+from dagster_tests.storage_tests.utils.event_log_storage import create_and_delete_test_runs
 
 
 class TestPartitionStatusCache:

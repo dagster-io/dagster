@@ -6,18 +6,18 @@ from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 
-from ..implementation.run_config_schema import resolve_is_run_config_valid
-from ..implementation.utils import capture_error
-from .config_types import GrapheneConfigType, to_config_type
-from .errors import (
+from dagster_graphql.implementation.run_config_schema import resolve_is_run_config_valid
+from dagster_graphql.implementation.utils import capture_error
+from dagster_graphql.schema.config_types import GrapheneConfigType, to_config_type
+from dagster_graphql.schema.errors import (
     GrapheneInvalidSubsetError,
     GrapheneModeNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
 )
-from .pipelines.config_result import GraphenePipelineConfigValidationResult
-from .runs import GrapheneRunConfigData, parse_run_config_input
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.pipelines.config_result import GraphenePipelineConfigValidationResult
+from dagster_graphql.schema.runs import GrapheneRunConfigData, parse_run_config_input
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot

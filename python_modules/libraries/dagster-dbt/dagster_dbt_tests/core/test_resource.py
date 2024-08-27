@@ -22,7 +22,7 @@ from packaging import version
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from ..dbt_projects import (
+from dagster_dbt_tests.dbt_projects import (
     test_dbt_source_freshness_path,
     test_exceptions_path,
     test_jaffle_shop_path,

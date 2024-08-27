@@ -2,7 +2,7 @@ import pytest
 from dagster._core.utils import make_new_run_id
 from dagster_graphql import DagsterGraphQLClientError
 
-from .conftest import MockClient, python_client_test_suite
+from dagster_graphql_tests.client_tests.conftest import MockClient, python_client_test_suite
 
 RUN_ID = make_new_run_id()
 

@@ -1,9 +1,9 @@
 from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
-from .resources import DEFAULT_POLL_INTERVAL
-from .types import CensusOutput
-from .utils import generate_materialization
+from dagster_census.resources import DEFAULT_POLL_INTERVAL
+from dagster_census.types import CensusOutput
+from dagster_census.utils import generate_materialization
 
 
 @op(

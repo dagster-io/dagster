@@ -25,18 +25,7 @@ import dagster._check as check
 from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._core.types.dagster_type import (
-    DagsterType,
-    DagsterTypeKind,
-    construct_dagster_type_dictionary,
-)
-from dagster._core.utils import toposort_flatten
-from dagster._utils.warnings import normalize_renamed_param
-
-from .dependency import (
+from dagster._core.definitions.dependency import (
     DependencyMapping,
     DependencyStructure,
     GraphNode,
@@ -48,29 +37,46 @@ from .dependency import (
     NodeOutput,
     NodeOutputHandle,
 )
-from .hook_definition import HookDefinition
-from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
-from .logger_definition import LoggerDefinition
-from .metadata import RawMetadataValue
-from .node_container import create_execution_structure, normalize_dependency_dict
-from .node_definition import NodeDefinition
-from .output import OutputDefinition, OutputMapping
-from .resource_requirement import ResourceRequirement
-from .utils import NormalizedTags
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.input import (
+    FanInInputPointer,
+    InputDefinition,
+    InputMapping,
+    InputPointer,
+)
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.node_container import (
+    create_execution_structure,
+    normalize_dependency_dict,
+)
+from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.output import OutputDefinition, OutputMapping
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_requirement import ResourceRequirement
+from dagster._core.definitions.utils import NormalizedTags
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.selector.subset_selector import AssetSelectionData
+from dagster._core.types.dagster_type import (
+    DagsterType,
+    DagsterTypeKind,
+    construct_dagster_type_dictionary,
+)
+from dagster._core.utils import toposort_flatten
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.executor_definition import ExecutorDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
+    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+    from dagster._core.definitions.run_config import RunConfig
+    from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.instance import DagsterInstance
-
-    from .asset_layer import AssetLayer
-    from .assets import AssetsDefinition
-    from .composition import PendingNodeInvocation
-    from .executor_definition import ExecutorDefinition
-    from .job_definition import JobDefinition
-    from .op_definition import OpDefinition
-    from .partition import PartitionedConfig, PartitionsDefinition
-    from .run_config import RunConfig
-    from .source_asset import SourceAsset
 
 T = TypeVar("T")
 
@@ -221,8 +227,8 @@ class GraphDefinition(NodeDefinition):
         composition_fn: Optional[Callable] = None,
         **kwargs: Any,
     ):
-        from .external_asset import create_external_asset_from_source_asset
-        from .source_asset import SourceAsset
+        from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+        from dagster._core.definitions.source_asset import SourceAsset
 
         self._node_defs = _check_node_defs_arg(name, node_defs)
 
@@ -674,9 +680,8 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
+        from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.build_resources import wrap_resources_for_execution
-
-        from .job_definition import JobDefinition
 
         wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
 
@@ -747,11 +752,10 @@ class GraphDefinition(NodeDefinition):
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
         """
+        from dagster._core.definitions.executor_definition import execute_in_process_executor
+        from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.build_resources import wrap_resources_for_execution
         from dagster._core.instance import DagsterInstance
-
-        from .executor_definition import execute_in_process_executor
-        from .job_definition import JobDefinition
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_mapping_param(resources, "resources", key_type=str)
@@ -1039,7 +1043,7 @@ def _validate_in_mappings(
     name: str,
     class_name: str,
 ) -> Sequence[InputDefinition]:
-    from .composition import MappedInputPlaceholder
+    from dagster._core.definitions.composition import MappedInputPlaceholder
 
     input_defs_by_name: Dict[str, InputDefinition] = OrderedDict()
     mapping_keys: Set[str] = set()

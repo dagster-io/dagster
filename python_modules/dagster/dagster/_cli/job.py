@@ -8,6 +8,8 @@ import click
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._cli.config_scaffolder import scaffold_job_config
+from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     ClickArgMapping,
@@ -59,9 +61,6 @@ from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
-
-from .config_scaffolder import scaffold_job_config
-from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 
 T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])

@@ -10,7 +10,9 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
-    from ..automation_context import AutomationContext
+    from dagster._core.definitions.declarative_automation.automation_context import (
+        AutomationContext,
+    )
 
 
 @whitelist_for_serdes

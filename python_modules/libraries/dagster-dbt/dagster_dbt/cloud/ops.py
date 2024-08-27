@@ -4,9 +4,9 @@ from dagster import Config, In, Nothing, Out, Output, op
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
-from .resources import DEFAULT_POLL_INTERVAL
-from .types import DbtCloudOutput
-from .utils import generate_materializations
+from dagster_dbt.cloud.resources import DEFAULT_POLL_INTERVAL
+from dagster_dbt.cloud.types import DbtCloudOutput
+from dagster_dbt.cloud.utils import generate_materializations
 
 
 class DbtCloudRunOpConfig(Config):

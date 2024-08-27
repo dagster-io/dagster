@@ -19,11 +19,15 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
-from ..legacy_tests.scenarios.auto_materialize_policy_scenarios import (
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.auto_materialize_policy_scenarios import (
     auto_materialize_policy_scenarios,
 )
-from ..legacy_tests.scenarios.auto_observe_scenarios import auto_observe_scenarios
-from ..legacy_tests.scenarios.multi_code_location_scenarios import multi_code_location_scenarios
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.auto_observe_scenarios import (
+    auto_observe_scenarios,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.multi_code_location_scenarios import (
+    multi_code_location_scenarios,
+)
 
 daemon_scenarios = {
     **auto_materialize_policy_scenarios,

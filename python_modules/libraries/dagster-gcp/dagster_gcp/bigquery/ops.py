@@ -14,13 +14,13 @@ from google.cloud.bigquery.encryption_configuration import EncryptionConfigurati
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import TimePartitioning
 
-from .configs import (
+from dagster_gcp.bigquery.configs import (
     define_bigquery_create_dataset_config,
     define_bigquery_delete_dataset_config,
     define_bigquery_load_config,
     define_bigquery_query_config,
 )
-from .types import BigQueryLoadSource
+from dagster_gcp.bigquery.types import BigQueryLoadSource
 
 _START = "start"
 

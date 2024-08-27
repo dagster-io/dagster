@@ -11,7 +11,7 @@ from dagster_fivetran.resources import (
     FIVETRAN_CONNECTOR_PATH,
 )
 
-from .utils import (
+from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     get_sample_connector_response,
     get_sample_connector_schema_config,

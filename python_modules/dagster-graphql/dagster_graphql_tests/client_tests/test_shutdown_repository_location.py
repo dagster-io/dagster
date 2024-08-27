@@ -6,7 +6,7 @@ from dagster_graphql import ShutdownRepositoryLocationStatus
 from dagster_graphql.client.client_queries import SHUTDOWN_REPOSITORY_LOCATION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from ..graphql.graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     ReadonlyGraphQLContextTestMatrix,
     make_graphql_context_test_suite,

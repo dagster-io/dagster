@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional, Type
 
 from pydantic import Extra
 
-from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
-from .config import StringSource
+from schema.charts.dagster.subschema.config import StringSource
+from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class ComputeLogManagerType(str, Enum):

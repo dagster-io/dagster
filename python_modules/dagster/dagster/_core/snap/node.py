@@ -16,10 +16,12 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
+from dagster._core.snap.dep_snapshot import (
+    DependencyStructureSnapshot,
+    build_dep_structure_snapshot_from_graph_def,
+)
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.warnings import suppress_dagster_warnings
-
-from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
 
 
 @whitelist_for_serdes(

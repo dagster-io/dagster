@@ -27,18 +27,20 @@ from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoa
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader, StaleStatusLoader
-
-from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
-from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
-from .partition_sets import GraphenePartitionSet
-from .permissions import GraphenePermission
-from .pipelines.pipeline import GrapheneJob, GraphenePipeline
-from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
-from .resources import GrapheneResourceDetails
-from .schedules import GrapheneSchedule
-from .sensors import GrapheneSensor, GrapheneSensorType
-from .used_solid import GrapheneUsedSolid
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.asset_graph import GrapheneAssetGroup, GrapheneAssetNode
+from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRepositoryNotFoundError
+from dagster_graphql.schema.partition_sets import GraphenePartitionSet
+from dagster_graphql.schema.permissions import GraphenePermission
+from dagster_graphql.schema.pipelines.pipeline import GrapheneJob, GraphenePipeline
+from dagster_graphql.schema.repository_origin import (
+    GrapheneRepositoryMetadata,
+    GrapheneRepositoryOrigin,
+)
+from dagster_graphql.schema.resources import GrapheneResourceDetails
+from dagster_graphql.schema.schedules import GrapheneSchedule
+from dagster_graphql.schema.sensors import GrapheneSensor, GrapheneSensorType
+from dagster_graphql.schema.used_solid import GrapheneUsedSolid
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import ExternalAssetNode

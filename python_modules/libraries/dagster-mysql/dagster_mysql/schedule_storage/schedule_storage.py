@@ -25,7 +25,7 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_
 from dagster._time import get_current_datetime
 from sqlalchemy.engine import Connection
 
-from ..utils import (
+from dagster_mysql.utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_isolation_level,

@@ -17,11 +17,13 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.definitions.utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    resolve_automation_condition,
+    validate_tags_strict,
+)
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster._utils.warnings import disable_dagster_warnings
-
-from .utils import resolve_automation_condition, validate_tags_strict
 
 
 @experimental_param(param="owners")

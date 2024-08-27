@@ -49,7 +49,7 @@ from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.concurrency import ConcurrencyClaimStatus
 
 # re-export
-from ..temp_file import (
+from dagster._utils.temp_file import (
     get_temp_dir as get_temp_dir,
     get_temp_file_handle as get_temp_file_handle,
     get_temp_file_handle_with_data as get_temp_file_handle_with_data,

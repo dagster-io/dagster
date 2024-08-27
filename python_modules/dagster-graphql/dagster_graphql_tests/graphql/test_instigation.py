@@ -7,7 +7,9 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 INSTIGATION_QUERY = """
 query JobQuery($instigationSelector: InstigationSelector! $id: String) {

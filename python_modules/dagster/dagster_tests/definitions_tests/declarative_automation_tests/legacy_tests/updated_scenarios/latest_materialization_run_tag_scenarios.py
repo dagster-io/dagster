@@ -1,8 +1,12 @@
 from dagster import AutoMaterializeAssetPartitionsFilter, AutoMaterializePolicy, AutoMaterializeRule
 
-from ...scenario_utils.asset_daemon_scenario import AssetDaemonScenario
-from ...scenario_utils.base_scenario import run_request
-from ...scenario_utils.scenario_specs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
+    AssetDaemonScenario,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     one_asset_depends_on_two,
     three_assets_in_sequence,
     two_assets_in_sequence,

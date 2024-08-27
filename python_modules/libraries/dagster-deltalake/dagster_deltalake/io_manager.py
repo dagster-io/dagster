@@ -27,7 +27,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import NotRequired
 
-from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
+from dagster_deltalake.config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 
 DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DELTA_DATE_FORMAT = "%Y-%m-%d"

@@ -26,7 +26,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 if TYPE_CHECKING:
     from dagster import AssetKey
 
-from .asset_utils import (
+from dagster_dbt.asset_utils import (
     get_asset_keys_to_resource_props,
     get_manifest_and_translator_from_dbt_assets,
 )

@@ -2,14 +2,17 @@ import sys
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import dagster._check as check
+from dagster._config.config_type import ConfigType, ConfigTypeKind
+from dagster._config.errors import (
+    EvaluationError,
+    PostProcessingError,
+    create_failed_post_processing_error,
+)
+from dagster._config.evaluate_value_result import EvaluateValueResult
+from dagster._config.stack import EvaluationStack
+from dagster._config.traversal_context import TraversalContext, TraversalType
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .config_type import ConfigType, ConfigTypeKind
-from .errors import EvaluationError, PostProcessingError, create_failed_post_processing_error
-from .evaluate_value_result import EvaluateValueResult
-from .stack import EvaluationStack
-from .traversal_context import TraversalContext, TraversalType
 
 
 def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:

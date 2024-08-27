@@ -1,4 +1,4 @@
-from .resources import (
+from dagster_aws.athena.resources import (
     AthenaClient as AthenaClient,
     AthenaClientResource as AthenaClientResource,
     AthenaError as AthenaError,

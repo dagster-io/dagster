@@ -10,8 +10,8 @@ from dagster import (
 from dagster._seven import json
 from pydantic import Field
 
-from .configs import define_dataproc_submit_job_config
-from .resources import TWENTY_MINUTES, DataprocResource
+from dagster_gcp.dataproc.configs import define_dataproc_submit_job_config
+from dagster_gcp.dataproc.resources import TWENTY_MINUTES, DataprocResource
 
 # maintain the old config schema because of the nested job_config schema
 DATAPROC_CONFIG_SCHEMA = {

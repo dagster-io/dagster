@@ -39,7 +39,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.execution.context.init import build_init_resource_context
 
-from ..asset_utils import (
+from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_description_fn,
@@ -48,11 +48,11 @@ from ..asset_utils import (
     get_asset_deps,
     get_deps,
 )
-from ..dagster_dbt_translator import DagsterDbtTranslator
-from ..errors import DagsterDbtCloudJobInvariantViolationError
-from ..utils import ASSET_RESOURCE_TYPES
-from .resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
-from .utils import result_to_events
+from dagster_dbt.cloud.resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
+from dagster_dbt.cloud.utils import result_to_events
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.errors import DagsterDbtCloudJobInvariantViolationError
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 

@@ -4,9 +4,8 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 import yaml
 
 import dagster._check as check
+from dagster._core.instance.config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
-
-from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance, DagsterInstanceOverrides

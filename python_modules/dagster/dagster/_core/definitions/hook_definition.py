@@ -2,11 +2,13 @@ from typing import AbstractSet, Any, Callable, Iterator, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-
-from ..decorator_utils import get_function_params
-from ..errors import DagsterInvalidInvocationError
-from .resource_requirement import HookResourceRequirement, ResourceRequirement
-from .utils import check_valid_name
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.resource_requirement import (
+    HookResourceRequirement,
+    ResourceRequirement,
+)
+from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 class HookDefinition(
@@ -69,10 +71,10 @@ class HookDefinition(
                     foo(bar())
 
         """
-        from ..execution.context.hook import HookContext
-        from .graph_definition import GraphDefinition
-        from .hook_invocation import hook_invocation_result
-        from .job_definition import JobDefinition
+        from dagster._core.definitions.graph_definition import GraphDefinition
+        from dagster._core.definitions.hook_invocation import hook_invocation_result
+        from dagster._core.definitions.job_definition import JobDefinition
+        from dagster._core.execution.context.hook import HookContext
 
         if len(args) > 0 and isinstance(args[0], (JobDefinition, GraphDefinition)):
             # when it decorates a job, we apply this hook to all the op invocations within

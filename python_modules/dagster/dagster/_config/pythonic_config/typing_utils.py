@@ -3,9 +3,8 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, 
 from pydantic import Field
 from typing_extensions import Annotated, Self, dataclass_transform, get_origin
 
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
-
-from .type_check_utils import safe_is_subclass
 
 try:
     # Pydantic 1.x

@@ -27,7 +27,7 @@ from dagster._core.storage.sql import (
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from sqlalchemy.engine import Connection
 
-from ..utils import (
+from dagster_mysql.utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_isolation_level,

@@ -4,13 +4,13 @@ import graphene
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.remote_representation.external import ExternalRepository
 
-from ..implementation.fetch_assets import get_asset_nodes_by_asset_key
-from ..implementation.utils import capture_error
-from .asset_key import GrapheneAssetKey
-from .util import non_null_list
+from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
+from dagster_graphql.implementation.utils import capture_error
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.util import non_null_list
 
 if TYPE_CHECKING:
-    from .roots.assets import GrapheneAssetConnection
+    from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
 
 
 class GrapheneAssetSelection(graphene.ObjectType):
@@ -49,7 +49,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
 
     @capture_error
     def resolve_assetsOrError(self, graphene_info) -> "GrapheneAssetConnection":
-        from .roots.assets import GrapheneAssetConnection
+        from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
 
         return GrapheneAssetConnection(nodes=self._get_assets(graphene_info), cursor=None)
 

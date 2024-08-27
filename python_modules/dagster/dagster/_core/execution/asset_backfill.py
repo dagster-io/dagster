@@ -50,6 +50,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.event_api import AssetRecordsFilter
+from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
@@ -70,10 +71,8 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .submit_asset_runs import submit_asset_run
-
 if TYPE_CHECKING:
-    from .backfill import PartitionBackfill
+    from dagster._core.execution.backfill import PartitionBackfill
 
 
 def get_asset_backfill_run_chunk_size():

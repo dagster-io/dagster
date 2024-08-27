@@ -47,8 +47,7 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-
-from .repo import get_workspace_process_context
+from dagster_graphql_tests.graphql.repo import get_workspace_process_context
 
 PARTITION_PROGRESS_QUERY = """
   query PartitionProgressQuery($backfillId: String!) {

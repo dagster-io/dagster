@@ -95,7 +95,7 @@ from dagster._time import create_datetime, get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from mock import patch
 
-from .conftest import create_workspace_load_target
+from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 
 
 @asset

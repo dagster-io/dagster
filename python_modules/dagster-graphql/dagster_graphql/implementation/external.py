@@ -10,7 +10,7 @@ from dagster._core.remote_representation.external import ExternalExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .utils import UserFacingGraphQLError
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GrapheneRepositoryNotFoundError
@@ -42,8 +42,11 @@ def get_external_job_or_raise(
 def _get_external_job_or_raise(
     graphene_info: "ResolveInfo", selector: JobSubsetSelector, ignore_subset: bool = False
 ) -> ExternalJob:
-    from ..schema.errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
-    from ..schema.pipelines.pipeline import GraphenePipeline
+    from dagster_graphql.schema.errors import (
+        GrapheneInvalidSubsetError,
+        GraphenePipelineNotFoundError,
+    )
+    from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
 
     ctx = graphene_info.context
     if not ctx.has_external_job(selector):
@@ -70,7 +73,7 @@ def _get_external_job_or_raise(
 
 
 def ensure_valid_config(external_job: ExternalJob, run_config: object) -> object:
-    from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
+    from dagster_graphql.schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
     check.inst_param(external_job, "external_job", ExternalJob)
     # do not type check run_config so that validate_config_from_snap throws
@@ -107,7 +110,7 @@ def get_external_execution_plan_or_raise(
 
 
 def fetch_repositories(graphene_info: "ResolveInfo") -> "GrapheneRepositoryConnection":
-    from ..schema.external import GrapheneRepository, GrapheneRepositoryConnection
+    from dagster_graphql.schema.external import GrapheneRepository, GrapheneRepositoryConnection
 
     return GrapheneRepositoryConnection(
         nodes=[
@@ -125,8 +128,8 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> "GrapheneRepositoryConne
 def fetch_repository(
     graphene_info: "ResolveInfo", repository_selector: RepositorySelector
 ) -> Union["GrapheneRepository", "GrapheneRepositoryNotFoundError"]:
-    from ..schema.errors import GrapheneRepositoryNotFoundError
-    from ..schema.external import GrapheneRepository
+    from dagster_graphql.schema.errors import GrapheneRepositoryNotFoundError
+    from dagster_graphql.schema.external import GrapheneRepository
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
@@ -148,7 +151,7 @@ def fetch_repository(
 
 
 def fetch_workspace(workspace_request_context: BaseWorkspaceRequestContext) -> "GrapheneWorkspace":
-    from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
+    from dagster_graphql.schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
         workspace_request_context, "workspace_request_context", BaseWorkspaceRequestContext
@@ -165,7 +168,7 @@ def fetch_workspace(workspace_request_context: BaseWorkspaceRequestContext) -> "
 def fetch_location_statuses(
     workspace_request_context: WorkspaceRequestContext,
 ) -> "GrapheneWorkspaceLocationStatusEntries":
-    from ..schema.external import (
+    from dagster_graphql.schema.external import (
         GrapheneRepositoryLocationLoadStatus,
         GrapheneWorkspaceLocationStatusEntries,
         GrapheneWorkspaceLocationStatusEntry,
@@ -194,7 +197,7 @@ def fetch_location_statuses(
 def fetch_location_entry(
     request_context: WorkspaceRequestContext, name: str
 ) -> Optional["GrapheneWorkspaceLocationEntry"]:
-    from ..schema.external import GrapheneWorkspaceLocationEntry
+    from dagster_graphql.schema.external import GrapheneWorkspaceLocationEntry
 
     location_entry = request_context.get_location_entry(name)
     if location_entry is None:

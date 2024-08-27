@@ -34,7 +34,7 @@ from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.merger import merge_dicts
 
-from .retry_jobs import (
+from dagster_tests.execution_tests.engine_tests.retry_jobs import (
     assert_expected_failure_behavior,
     get_dynamic_job_op_failure,
     get_dynamic_job_resource_init_failure,
@@ -170,7 +170,7 @@ def test_execute_with_tailer_offset():
 
 
 def test_skip_execute():
-    from .test_jobs import define_dynamic_skipping_job
+    from dagster_tests.execution_tests.engine_tests.test_jobs import define_dynamic_skipping_job
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
@@ -184,7 +184,7 @@ def test_skip_execute():
 
 
 def test_dynamic_execute():
-    from .test_jobs import define_dynamic_job
+    from dagster_tests.execution_tests.engine_tests.test_jobs import define_dynamic_job
 
     TestStepHandler.reset()
     with instance_for_test() as instance:
@@ -208,7 +208,7 @@ def test_dynamic_execute():
 
 
 def test_skipping():
-    from .test_jobs import define_skpping_job
+    from dagster_tests.execution_tests.engine_tests.test_jobs import define_skpping_job
 
     TestStepHandler.reset()
     with instance_for_test() as instance:

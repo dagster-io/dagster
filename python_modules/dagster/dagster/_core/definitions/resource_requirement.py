@@ -1,28 +1,26 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Sequence, Type
 
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._record import record
 from dagster._utils.merger import merge_dicts
 
-from ..errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from .utils import DEFAULT_IO_MANAGER_KEY
-
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
-
-    from .resource_definition import ResourceDefinition
+    from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class ResourceRequirement(ABC):
     @property
     def expected_type(self) -> Type:
-        from .resource_definition import ResourceDefinition
+        from dagster._core.definitions.resource_definition import ResourceDefinition
 
         return ResourceDefinition
 
     @property
     def is_io_manager_requirement(self) -> bool:
-        from ..storage.io_manager import IInputManagerDefinition, IOManagerDefinition
+        from dagster._core.storage.io_manager import IInputManagerDefinition, IOManagerDefinition
 
         return (
             self.expected_type == IOManagerDefinition
@@ -105,7 +103,7 @@ class InputManagerRequirement(ResourceKeyRequirement):
 
     @property
     def expected_type(self) -> Type:
-        from ..storage.io_manager import IInputManagerDefinition
+        from dagster._core.storage.io_manager import IInputManagerDefinition
 
         return IInputManagerDefinition
 
@@ -125,7 +123,7 @@ class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
 
     @property
     def expected_type(self) -> Type:
-        from ..storage.io_manager import IOManagerDefinition
+        from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
 
@@ -143,7 +141,7 @@ class SourceAssetIOManagerRequirement(ResourceKeyRequirement):
 
     @property
     def expected_type(self) -> Type:
-        from ..storage.io_manager import IOManagerDefinition
+        from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
 
@@ -162,7 +160,7 @@ class OutputManagerRequirement(ResourceKeyRequirement):
 
     @property
     def expected_type(self) -> Type:
-        from ..storage.io_manager import IOManagerDefinition
+        from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
 

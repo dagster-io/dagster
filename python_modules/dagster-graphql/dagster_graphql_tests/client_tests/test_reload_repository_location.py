@@ -3,11 +3,11 @@ from typing import Any
 import pytest
 from dagster_graphql import DagsterGraphQLClientError, ReloadRepositoryLocationStatus
 
-from ..graphql.graphql_context_test_suite import (
+from dagster_graphql_tests.client_tests.conftest import MockClient, python_client_test_suite
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     make_graphql_context_test_suite,
 )
-from .conftest import MockClient, python_client_test_suite
 
 
 @python_client_test_suite

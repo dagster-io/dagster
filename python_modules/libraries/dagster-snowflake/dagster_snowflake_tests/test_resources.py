@@ -25,7 +25,7 @@ from dagster._time import get_current_timestamp
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 
-from .utils import create_mock_connector
+from dagster_snowflake_tests.utils import create_mock_connector
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

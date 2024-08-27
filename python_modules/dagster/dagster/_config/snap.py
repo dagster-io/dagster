@@ -1,11 +1,10 @@
 from typing import Any, List, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
+from dagster._config.config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
+from dagster._config.field import Field
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
-
-from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
-from .field import Field
 
 
 def get_recursive_type_keys(

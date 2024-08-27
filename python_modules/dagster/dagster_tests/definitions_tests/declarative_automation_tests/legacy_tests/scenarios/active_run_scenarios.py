@@ -10,7 +10,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._time import create_datetime
 
-from ...scenario_utils.base_scenario import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetReconciliationScenario,
     asset_def,
     observable_source_asset_def,

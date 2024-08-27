@@ -2,8 +2,13 @@ import random
 
 from dagster import AssetSelection, RunRequest, SensorResult, define_asset_job, sensor
 
-from .dynamic_asset_partitions import ints_dynamic_asset, ints_dynamic_partitions_def
-from .hourly_and_daily_and_unpartitioned import upstream_daily_partitioned_asset
+from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
+    ints_dynamic_asset,
+    ints_dynamic_partitions_def,
+)
+from dagster_test.toys.partitioned_assets.hourly_and_daily_and_unpartitioned import (
+    upstream_daily_partitioned_asset,
+)
 
 
 @sensor(asset_selection=AssetSelection.assets(ints_dynamic_asset))

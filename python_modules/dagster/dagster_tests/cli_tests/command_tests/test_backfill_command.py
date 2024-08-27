@@ -10,7 +10,10 @@ from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 
-from .test_cli_commands import BackfillCommandTestContext, backfill_command_contexts
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
+    BackfillCommandTestContext,
+    backfill_command_contexts,
+)
 
 
 def run_test_backfill(

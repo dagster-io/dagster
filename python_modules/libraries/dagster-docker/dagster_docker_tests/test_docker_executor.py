@@ -13,8 +13,8 @@ from dagster_test.test_project import (
     get_test_project_recon_job,
 )
 
-from . import IS_BUILDKITE, docker_postgres_instance
-from .test_launch_docker import check_event_log_contains
+from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests.test_launch_docker import check_event_log_contains
 
 
 @pytest.mark.integration

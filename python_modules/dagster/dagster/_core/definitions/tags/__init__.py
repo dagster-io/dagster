@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .tag_set import NamespacedTagSet as NamespacedTagSet
+from dagster._core.definitions.tags.tag_set import NamespacedTagSet as NamespacedTagSet
 
 
 class StorageKindTagSet(NamespacedTagSet):

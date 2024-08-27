@@ -41,21 +41,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteJobOrigin,
-    RemotePartitionSetOrigin,
-    RemoteRepositoryOrigin,
-)
-from dagster._core.snap import ExecutionPlanSnapshot
-from dagster._core.snap.job_snapshot import JobSnapshot
-from dagster._core.utils import toposort
-from dagster._record import record
-from dagster._serdes import create_snapshot_id
-from dagster._utils.cached_method import cached_method
-from dagster._utils.schedules import schedule_execution_time_iterator
-
-from .external_data import (
+from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     EnvVarConsumer,
     ExternalAssetCheck,
@@ -74,9 +60,27 @@ from .external_data import (
     ScheduleSnap,
     SensorSnap,
 )
-from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
-from .job_index import JobIndex
-from .represented import RepresentedJob
+from dagster._core.remote_representation.handle import (
+    InstigatorHandle,
+    JobHandle,
+    PartitionSetHandle,
+    RepositoryHandle,
+)
+from dagster._core.remote_representation.job_index import JobIndex
+from dagster._core.remote_representation.origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemotePartitionSetOrigin,
+    RemoteRepositoryOrigin,
+)
+from dagster._core.remote_representation.represented import RepresentedJob
+from dagster._core.snap import ExecutionPlanSnapshot
+from dagster._core.snap.job_snapshot import JobSnapshot
+from dagster._core.utils import toposort
+from dagster._record import record
+from dagster._serdes import create_snapshot_id
+from dagster._utils.cached_method import cached_method
+from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph

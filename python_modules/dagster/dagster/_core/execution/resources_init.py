@@ -29,6 +29,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.plan.inputs import (
     StepInput,
     UnresolvedCollectStepInput,
@@ -44,8 +45,6 @@ from dagster._core.utils import toposort
 from dagster._utils import EventGenerationManager, ensure_gen
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration, time_execution_scope
-
-from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(

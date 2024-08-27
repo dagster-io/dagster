@@ -1,17 +1,17 @@
 import click
 
-from ..version import __version__
-from .api import api_cli
-from .asset import asset_cli
-from .code_server import code_server_cli
-from .debug import debug_cli
-from .dev import dev_command
-from .instance import instance_cli
-from .job import job_cli
-from .project import project_cli
-from .run import run_cli
-from .schedule import schedule_cli
-from .sensor import sensor_cli
+from dagster._cli.api import api_cli
+from dagster._cli.asset import asset_cli
+from dagster._cli.code_server import code_server_cli
+from dagster._cli.debug import debug_cli
+from dagster._cli.dev import dev_command
+from dagster._cli.instance import instance_cli
+from dagster._cli.job import job_cli
+from dagster._cli.project import project_cli
+from dagster._cli.run import run_cli
+from dagster._cli.schedule import schedule_cli
+from dagster._cli.sensor import sensor_cli
+from dagster.version import __version__
 
 
 def create_dagster_cli():

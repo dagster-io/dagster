@@ -23,10 +23,10 @@ from dagster._core.errors import DagsterExecutionInterruptedError
 from dbt.adapters.base.impl import BaseAdapter, BaseColumn, BaseRelation
 from typing_extensions import Final, Literal
 
-from ..dagster_dbt_translator import DagsterDbtTranslator
-from ..errors import DagsterDbtCliRuntimeError
-from .dbt_cli_event import DbtCliEventMessage
-from .dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
+from dagster_dbt.core.dbt_cli_event import DbtCliEventMessage
+from dagster_dbt.core.dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = 2

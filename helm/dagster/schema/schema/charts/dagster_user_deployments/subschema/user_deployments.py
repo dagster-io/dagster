@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, create_model
 
-from ...utils import kubernetes
+from schema.charts.utils import kubernetes
 
 
 class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):

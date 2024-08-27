@@ -35,8 +35,8 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._record import IHaveNew, record_custom
 
-from .asset_utils import exists_in_selected, get_info_schema_dir, get_output_dir
-from .constants import (
+from dagster_sdf.asset_utils import exists_in_selected, get_info_schema_dir, get_output_dir
+from dagster_sdf.constants import (
     DAGSTER_SDF_CATALOG_NAME,
     DAGSTER_SDF_DIALECT,
     DAGSTER_SDF_PURPOSE,
@@ -47,8 +47,8 @@ from .constants import (
     SDF_INFORMATION_SCHEMA_TABLES_STAGE_COMPILE,
     SDF_INFORMATION_SCHEMA_TABLES_STAGE_PARSE,
 )
-from .dagster_sdf_translator import DagsterSdfTranslator
-from .sdf_event_iterator import SdfDagsterEventType
+from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator
+from dagster_sdf.sdf_event_iterator import SdfDagsterEventType
 
 logger = get_dagster_logger()
 

@@ -28,11 +28,10 @@ from dagster._core.execution.context.compute import (
     OpExecutionContext,
 )
 from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.plan.outputs import StepOutput, StepOutputProperties
+from dagster._core.execution.plan.utils import op_execution_error_boundary
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._utils import iterate_with_context
-
-from .outputs import StepOutput, StepOutputProperties
-from .utils import op_execution_error_boundary
 
 T = TypeVar("T")
 

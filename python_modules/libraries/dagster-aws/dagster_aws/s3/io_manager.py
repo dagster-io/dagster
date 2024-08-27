@@ -19,7 +19,7 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from upath import UPath
 
-from .resources import S3Resource
+from dagster_aws.s3.resources import S3Resource
 
 
 class PickledObjectS3IOManager(UPathIOManager):

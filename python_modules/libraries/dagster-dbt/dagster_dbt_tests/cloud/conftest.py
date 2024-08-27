@@ -4,7 +4,7 @@ import pytest
 from dagster import build_init_resource_context
 from dagster_dbt.cloud.resources import DbtCloudClientResource, dbt_cloud_resource
 
-from .utils import DBT_CLOUD_ACCOUNT_ID, DBT_CLOUD_API_TOKEN
+from dagster_dbt_tests.cloud.utils import DBT_CLOUD_ACCOUNT_ID, DBT_CLOUD_API_TOKEN
 
 
 @pytest.fixture(params=["dbt_cloud_resource", "DbtCloudClientResource"])

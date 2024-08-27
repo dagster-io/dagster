@@ -30,9 +30,8 @@ import dagster
 import dagster._check as check
 from botocore.exceptions import WaiterError
 
+from dagster_aws.emr.types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
-
-from .types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 
 # if we can't create or find our own service role, use the one
 # created by the AWS console and CLI

@@ -21,12 +21,16 @@ from dagster_graphql.test.utils import (
 )
 from typing_extensions import Dict
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from .repo import csv_hello_world_ops_config
-from .utils import step_did_not_run, step_did_succeed, sync_execute_get_run_log_data
+from dagster_graphql_tests.graphql.repo import csv_hello_world_ops_config
+from dagster_graphql_tests.graphql.utils import (
+    step_did_not_run,
+    step_did_succeed,
+    sync_execute_get_run_log_data,
+)
 
 STEP_FAILURE_EVENTS_QUERY = (
     """

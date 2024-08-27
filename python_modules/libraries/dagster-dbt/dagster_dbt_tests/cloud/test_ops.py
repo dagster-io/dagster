@@ -4,7 +4,7 @@ from dagster import Failure, job
 from dagster._check import CheckError
 from dagster_dbt import dbt_cloud_run_op
 
-from .utils import (
+from dagster_dbt_tests.cloud.utils import (
     SAMPLE_API_PREFIX,
     SAMPLE_JOB_ID,
     SAMPLE_RUN_ID,

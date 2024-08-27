@@ -25,7 +25,7 @@ from dagster._core.instance_for_test import environ
 from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
-from .utils import (
+from dagster_airbyte_tests.utils import (
     get_instance_connections_json,
     get_instance_operations_json,
     get_instance_workspaces_json,

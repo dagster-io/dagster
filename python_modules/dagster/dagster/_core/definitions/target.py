@@ -9,12 +9,14 @@ from dagster._core.definitions.asset_selection import (
     is_coercible_to_asset_selection,
 )
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import (
+    UnresolvedAssetJobDefinition,
+    define_asset_job,
+)
 from dagster._utils.warnings import deprecation_warning
-
-from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition, define_asset_job
 
 ExecutableDefinition: TypeAlias = Union[
     JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition

@@ -34,6 +34,8 @@ from dagster._core.code_pointer import (
     get_python_file_from_target,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.job_base import IJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -44,20 +46,16 @@ from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
-from .events import AssetKey
-from .job_base import IJob
-
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         PendingRepositoryDefinition,
+        RepositoryDefinition,
         RepositoryLoadData,
     )
     from dagster._core.definitions.source_asset import SourceAsset
-
-    from .graph_definition import GraphDefinition
-    from .repository_definition import RepositoryDefinition
 
 
 def get_ephemeral_repository_name(job_name: str) -> str:
@@ -588,10 +586,13 @@ def _is_list_of_assets(
 
 
 def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
+        PendingRepositoryDefinition,
+        RepositoryDefinition,
+    )
 
     if not (
         isinstance(
@@ -638,9 +639,12 @@ def def_from_pointer(
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
+        PendingRepositoryDefinition,
+        RepositoryDefinition,
+    )
 
     if isinstance(
         target,
@@ -666,7 +670,7 @@ def def_from_pointer(
 
 
 def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
-    from .job_definition import JobDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
 
     target = def_from_pointer(pointer)
 
@@ -695,17 +699,17 @@ def repository_def_from_target_def(
 def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
 ) -> Optional["RepositoryDefinition"]:
-    from .assets import AssetsDefinition
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
-    from .job_definition import JobDefinition
-    from .repository_definition import (
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import (
         SINGLETON_REPOSITORY_NAME,
         CachingRepositoryData,
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
-    from .source_asset import SourceAsset
+    from dagster._core.definitions.source_asset import SourceAsset
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case

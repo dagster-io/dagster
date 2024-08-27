@@ -1,10 +1,9 @@
 from typing import Optional
 
 import dagster._check as check
+from dagster._core.remote_representation.job_index import JobIndex
+from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._core.snap import JobSnapshot
-
-from .job_index import JobIndex
-from .represented import RepresentedJob
 
 
 class HistoricalJob(RepresentedJob):

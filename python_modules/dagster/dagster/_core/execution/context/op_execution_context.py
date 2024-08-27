@@ -29,13 +29,12 @@ from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.warnings import deprecation_warning
-
-from .system import StepExecutionContext
 
 
 # This metaclass has to exist for OpExecutionContext to have a metaclass
@@ -97,7 +96,7 @@ class AbstractComputeExecutionContext(ABC, metaclass=AbstractComputeMetaclass):
 
 class OpExecutionContextMetaClass(AbstractComputeMetaclass):
     def __instancecheck__(cls, instance) -> bool:
-        from .asset_execution_context import AssetExecutionContext
+        from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 
         # This makes isinstance(context, OpExecutionContext) throw a deprecation warning when
         # context is an AssetExecutionContext. This metaclass can be deleted once AssetExecutionContext
@@ -1280,7 +1279,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @staticmethod
     def get() -> "OpExecutionContext":
-        from .compute import current_execution_context
+        from dagster._core.execution.context.compute import current_execution_context
 
         ctx = current_execution_context.get()
         if ctx is None:

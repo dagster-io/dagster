@@ -26,7 +26,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )

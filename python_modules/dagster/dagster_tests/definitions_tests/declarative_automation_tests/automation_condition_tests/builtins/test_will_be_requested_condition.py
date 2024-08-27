@@ -1,8 +1,13 @@
 from dagster import AssetKey, AutomationCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.scenario_specs import two_assets_in_sequence, two_partitions_def
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    two_assets_in_sequence,
+    two_partitions_def,
+)
 
 
 def test_will_be_requested_unpartitioned() -> None:

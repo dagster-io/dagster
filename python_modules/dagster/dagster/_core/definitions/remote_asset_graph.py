@@ -21,20 +21,23 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.base_asset_graph import (
+    AssetKeyOrCheckKey,
+    BaseAssetGraph,
+    BaseAssetNode,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
-
-from .backfill_policy import BackfillPolicy
-from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph, BaseAssetNode
-from .events import AssetKey
-from .freshness_policy import FreshnessPolicy
-from .partition import PartitionsDefinition
-from .partition_mapping import PartitionMapping
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import (

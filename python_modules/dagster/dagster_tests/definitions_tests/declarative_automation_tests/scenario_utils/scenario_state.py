@@ -61,7 +61,9 @@ from dagster._serdes.utils import create_snapshot_id
 from dagster._time import datetime_from_timestamp, get_current_datetime, parse_time_string
 from typing_extensions import Self
 
-from .base_scenario import run_request
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
 
 FAIL_TAG = "test/fail"
 

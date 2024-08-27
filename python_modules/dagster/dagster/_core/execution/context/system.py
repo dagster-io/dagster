@@ -46,6 +46,12 @@ from dagster._core.definitions.time_window_partitions import (
     has_one_dimension_time_window_partitioning,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.data_version_cache import (
+    DataVersionCache,
+    InputAssetVersionInfo,
+)
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext, get_output_context
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ExecutionStep
@@ -63,19 +69,14 @@ from dagster._core.storage.tags import (
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
-from .data_version_cache import DataVersionCache, InputAssetVersionInfo
-from .input import InputContext
-from .output import OutputContext, get_output_context
-
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.resource_definition import Resources
+    from dagster._core.execution.context.hook import HookContext
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
     from dagster._core.instance import DagsterInstance
-
-    from .hook import HookContext
 
 
 def is_iterable(obj: Any) -> bool:
@@ -697,7 +698,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
     def for_hook(self, hook_def: HookDefinition) -> "HookContext":
-        from .hook import HookContext
+        from dagster._core.execution.context.hook import HookContext
 
         return HookContext(self, hook_def)
 

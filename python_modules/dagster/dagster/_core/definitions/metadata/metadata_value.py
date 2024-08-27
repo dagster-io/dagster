@@ -9,11 +9,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.errors import DagsterInvalidMetadata
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import PackableValue
-
-from .table import (  # re-exported
+from dagster._core.definitions.metadata.table import (
     TableColumn as TableColumn,
     TableColumnConstraints as TableColumnConstraints,
     TableColumnDep as TableColumnDep,
@@ -22,6 +18,9 @@ from .table import (  # re-exported
     TableRecord as TableRecord,
     TableSchema as TableSchema,
 )
+from dagster._core.errors import DagsterInvalidMetadata
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import PackableValue
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
 from dagster._serdes import pack_value

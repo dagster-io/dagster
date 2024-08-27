@@ -13,7 +13,11 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster_airbyte import AirbyteOutput, AirbyteResource, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
-from .utils import get_sample_connection_json, get_sample_job_json, get_sample_job_list_json
+from dagster_airbyte_tests.utils import (
+    get_sample_connection_json,
+    get_sample_job_json,
+    get_sample_job_list_json,
+)
 
 
 @pytest.fixture(name="airbyte_instance_constructor", params=[True, False], scope="module")

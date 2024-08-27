@@ -2,15 +2,14 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.errors import DagsterInvalidInvocationError
-
-from ..decorator_utils import get_function_params
-from .config import is_callable_valid_config_arg
-from .configurable import AnonymousConfigurableDefinition
-from .definition_config_schema import (
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.config import is_callable_valid_config_arg
+from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
+from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
     convert_user_facing_definition_config_schema,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 
 if TYPE_CHECKING:
     import logging
@@ -47,9 +46,8 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         self._description = check.opt_str_param(description, "description")
 
     def __call__(self, *args, **kwargs):
+        from dagster._core.definitions.logger_invocation import logger_invocation_result
         from dagster._core.execution.context.logger import UnboundInitLoggerContext
-
-        from .logger_invocation import logger_invocation_result
 
         if len(args) == 0 and len(kwargs) == 0:
             raise DagsterInvalidInvocationError(

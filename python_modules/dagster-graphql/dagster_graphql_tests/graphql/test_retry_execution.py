@@ -20,12 +20,16 @@ from dagster_graphql.test.utils import (
     infer_job_selector,
 )
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
-from .repo import csv_hello_world_ops_config, get_retry_multi_execution_params, retry_config
-from .utils import (
+from dagster_graphql_tests.graphql.repo import (
+    csv_hello_world_ops_config,
+    get_retry_multi_execution_params,
+    retry_config,
+)
+from dagster_graphql_tests.graphql.utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_fail,
     step_did_fail_in_records,

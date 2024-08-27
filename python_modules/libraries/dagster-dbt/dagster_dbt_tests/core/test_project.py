@@ -6,7 +6,7 @@ from dagster._utils.test import copy_directory
 from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_project import DbtProject
 
-from ..dbt_projects import test_jaffle_shop_path
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 
 @pytest.fixture(scope="session")

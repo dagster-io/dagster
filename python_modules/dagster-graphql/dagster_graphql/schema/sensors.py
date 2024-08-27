@@ -11,35 +11,34 @@ from dagster._core.remote_representation.external import CompoundID, ExternalRep
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-from dagster_graphql.implementation.utils import (
-    assert_permission_for_location,
-    capture_error,
-    require_permission_check,
-)
-
-from ..implementation.fetch_sensors import (
+from dagster_graphql.implementation.fetch_sensors import (
     get_sensor_next_tick,
     reset_sensor,
     set_sensor_cursor,
     start_sensor,
     stop_sensor,
 )
-from .asset_key import GrapheneAssetKey
-from .asset_selections import GrapheneAssetSelection
-from .errors import (
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.implementation.utils import (
+    assert_permission_for_location,
+    capture_error,
+    require_permission_check,
+)
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.asset_selections import GrapheneAssetSelection
+from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
     GrapheneSensorNotFoundError,
     GrapheneUnauthorizedError,
 )
-from .inputs import GrapheneSensorSelector
-from .instigation import (
+from dagster_graphql.schema.inputs import GrapheneSensorSelector
+from dagster_graphql.schema.instigation import (
     GrapheneDryRunInstigationTick,
     GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneTarget(graphene.ObjectType):

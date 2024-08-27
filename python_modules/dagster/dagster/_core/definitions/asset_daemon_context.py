@@ -18,26 +18,30 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster import PartitionKeyRange
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionEvaluation,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partition import PartitionsDefinition, ScheduleType
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._time import get_current_timestamp
-
-from ... import PartitionKeyRange
-from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_daemon_cursor import AssetDaemonCursor
-from .auto_materialize_rule import AutoMaterializeRule
-from .backfill_policy import BackfillPolicy, BackfillPolicyType
-from .base_asset_graph import BaseAssetGraph
-from .declarative_automation.serialized_objects import AutomationConditionEvaluation
-from .partition import PartitionsDefinition, ScheduleType
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -161,7 +165,7 @@ class AssetDaemonContext:
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
         """
-        from .declarative_automation.automation_condition_evaluator import (
+        from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
             AutomationConditionEvaluator,
         )
 

@@ -21,14 +21,15 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.repository_definition.caching_index import CacheingDefinitionIndex
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    RepositoryListDefinition,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-
-from .caching_index import CacheingDefinitionIndex
-from .valid_definitions import RepositoryListDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
@@ -352,7 +353,9 @@ class CachingRepositoryData(RepositoryData):
             which can be helpful for performance when there are many definitions in a repository, or
             when constructing the definitions is costly.
         """
-        from .repository_data_builder import build_caching_repository_data_from_dict
+        from dagster._core.definitions.repository_definition.repository_data_builder import (
+            build_caching_repository_data_from_dict,
+        )
 
         return build_caching_repository_data_from_dict(repository_definitions)
 
@@ -372,7 +375,9 @@ class CachingRepositoryData(RepositoryData):
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
         """
-        from .repository_data_builder import build_caching_repository_data_from_list
+        from dagster._core.definitions.repository_definition.repository_data_builder import (
+            build_caching_repository_data_from_list,
+        )
 
         return build_caching_repository_data_from_list(
             repository_definitions=repository_definitions,

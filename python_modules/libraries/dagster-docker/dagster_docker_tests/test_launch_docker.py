@@ -21,7 +21,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_job,
 )
 
-from . import IS_BUILDKITE, docker_postgres_instance
+from dagster_docker_tests import IS_BUILDKITE, docker_postgres_instance
 
 
 @pytest.mark.integration

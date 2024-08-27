@@ -28,21 +28,25 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey, AssetKeyOrCheckKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partition_mapping import (
+    PartitionMapping,
+    UpstreamPartitionsResult,
+    infer_partition_mapping,
+)
+from dagster._core.definitions.time_window_partitions import (
+    get_time_partition_key,
+    get_time_partitions_def,
+)
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import DependencyGraph, fetch_sources
 from dagster._core.utils import toposort
 from dagster._utils.cached_method import cached_method
-
-from .events import AssetKeyPartitionKey
-from .partition import PartitionsSubset
-from .partition_key_range import PartitionKeyRange
-from .partition_mapping import UpstreamPartitionsResult, infer_partition_mapping
-from .time_window_partitions import get_time_partition_key, get_time_partitions_def
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -245,7 +249,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @cached_property
     def root_materializable_asset_keys(self) -> AbstractSet[AssetKey]:
         """Materializable asset keys that have no materializable parents."""
-        from .asset_selection import KeysAssetSelection
+        from dagster._core.definitions.asset_selection import KeysAssetSelection
 
         return (
             KeysAssetSelection(selected_keys=list(self.materializable_asset_keys))
@@ -649,7 +653,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         Visits parents before children.
         """
-        from .asset_graph_subset import AssetGraphSubset
+        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
         all_assets = set(initial_subset.asset_keys)
         check.invariant(

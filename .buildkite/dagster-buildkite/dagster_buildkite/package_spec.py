@@ -9,11 +9,10 @@ from typing_extensions import TypeAlias
 
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
-
-from .python_version import AvailablePythonVersion
-from .step_builder import BuildkiteQueue
-from .steps.tox import build_tox_step
-from .utils import (
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import BuildkiteQueue
+from dagster_buildkite.steps.tox import build_tox_step
+from dagster_buildkite.utils import (
     BuildkiteLeafStep,
     BuildkiteTopLevelStep,
     GroupStep,

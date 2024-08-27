@@ -50,15 +50,14 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
+from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
+from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.merger import merge_dicts
-
-from .compute import AssetExecutionContext, OpExecutionContext
-from .system import StepExecutionContext, TypeCheckContext
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:

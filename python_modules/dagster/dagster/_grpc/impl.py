@@ -61,15 +61,13 @@ from dagster._core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._grpc.types import ExecutionPlanSnapshotArgs
+from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._serdes.ipc import IPCErrorMessage
 from dagster._time import datetime_from_timestamp
 from dagster._utils import start_termination_thread
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
-
-from .types import ExecuteExternalJobArgs
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData

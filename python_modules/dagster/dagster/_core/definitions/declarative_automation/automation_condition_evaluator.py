@@ -6,16 +6,19 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
+    LegacyRuleEvaluationContext,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.freshness_based_auto_materialize import (
+    get_expected_data_time_for_asset_key,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError
-
-from ..asset_daemon_cursor import AssetDaemonCursor
-from ..base_asset_graph import BaseAssetGraph
-from ..freshness_based_auto_materialize import get_expected_data_time_for_asset_key
-from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer

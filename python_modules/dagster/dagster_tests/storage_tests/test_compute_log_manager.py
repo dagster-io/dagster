@@ -20,7 +20,7 @@ from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ, instance_for_test
 
-from .utils.compute_log_manager import TestComputeLogManager
+from dagster_tests.storage_tests.utils.compute_log_manager import TestComputeLogManager
 
 
 class BrokenComputeLogManager(ComputeLogManager):

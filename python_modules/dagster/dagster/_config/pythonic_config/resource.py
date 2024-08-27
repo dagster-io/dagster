@@ -27,7 +27,20 @@ import dagster._check as check
 from dagster import Field as DagsterField
 from dagster._annotations import deprecated
 from dagster._config.field_utils import config_dictionary_from_values
-from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
+from dagster._config.pythonic_config.attach_other_object_to_context import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+)
+from dagster._config.pythonic_config.config import (
+    Config,
+    MakeConfigCacheable,
+    infer_schema_from_config_class,
+)
+from dagster._config.pythonic_config.conversion_utils import TResValue, _curry_config_schema
+from dagster._config.pythonic_config.typing_utils import (
+    BaseResourceMeta,
+    LateBoundTypesForResourceTypeChecking,
+    TypecheckAllowPartialResourceInitParams,
+)
 from dagster._config.validate import validate_config
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
@@ -48,13 +61,6 @@ from dagster._model.pydantic_compat_layer import model_fields
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.typing_api import is_closed_python_optional_type
-
-from .attach_other_object_to_context import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-)
-from .config import Config, MakeConfigCacheable, infer_schema_from_config_class
-from .conversion_utils import TResValue, _curry_config_schema
-from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 
 T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int
@@ -764,7 +770,7 @@ class SeparatedResourceParams(NamedTuple):
 
 def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> bool:
     """Determines if a field in a structured config class is annotated as a resource type or not."""
-    from .type_check_utils import safe_is_subclass
+    from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
     if metadata and metadata[0] == "resource_dependency":
         return True
@@ -892,8 +898,7 @@ def validate_resource_annotated_function(fn) -> None:
         ConfigurableResource,
         ConfigurableResourceFactory,
     )
-
-    from .type_check_utils import safe_is_subclass
+    from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
     malformed_params = [
         param

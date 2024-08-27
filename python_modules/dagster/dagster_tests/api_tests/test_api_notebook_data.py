@@ -1,7 +1,7 @@
 from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
 from dagster._utils import file_relative_path
 
-from .utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 
 def test_external_notebook_grpc(instance):

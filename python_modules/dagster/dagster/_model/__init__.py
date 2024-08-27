@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Hashable, Optional, TypeVar
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 from typing_extensions import Annotated, Self, TypeAlias
 
-from .pydantic_compat_layer import USING_PYDANTIC_2
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
 
 if USING_PYDANTIC_2:
     from pydantic import InstanceOf as InstanceOf  # type: ignore

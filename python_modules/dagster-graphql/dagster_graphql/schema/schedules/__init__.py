@@ -6,28 +6,31 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.schema.util import ResolveInfo
-
-from ...implementation.fetch_schedules import reset_schedule, start_schedule, stop_schedule
-from ...implementation.utils import (
+from dagster_graphql.implementation.fetch_schedules import (
+    reset_schedule,
+    start_schedule,
+    stop_schedule,
+)
+from dagster_graphql.implementation.utils import (
     assert_permission_for_location,
     capture_error,
     require_permission_check,
 )
-from ..errors import (
+from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneSchedulerNotDefinedError,
     GrapheneUnauthorizedError,
 )
-from ..inputs import GrapheneScheduleSelector
-from ..instigation import GrapheneInstigationState
-from .schedules import (
+from dagster_graphql.schema.inputs import GrapheneScheduleSelector
+from dagster_graphql.schema.instigation import GrapheneInstigationState
+from dagster_graphql.schema.schedules.schedules import (
     GrapheneSchedule,
     GrapheneScheduleOrError,
     GrapheneSchedules,
     GrapheneSchedulesOrError,
 )
-from .ticks import GrapheneInstigationTickStatus
+from dagster_graphql.schema.schedules.ticks import GrapheneInstigationTickStatus
+from dagster_graphql.schema.util import ResolveInfo
 
 
 class GrapheneScheduleStatus(graphene.Enum):
@@ -153,7 +156,7 @@ class GrapheneResetScheduleMutation(graphene.Mutation):
 
 
 def types():
-    from .ticks import (
+    from dagster_graphql.schema.schedules.ticks import (
         GrapheneScheduleTick,
         GrapheneScheduleTickFailureData,
         GrapheneScheduleTickSpecificData,

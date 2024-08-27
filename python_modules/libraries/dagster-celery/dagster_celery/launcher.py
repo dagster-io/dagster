@@ -24,14 +24,13 @@ from typing_extensions import Self, override
 
 from dagster_celery.config import DEFAULT_CONFIG, TASK_EXECUTE_JOB_NAME, TASK_RESUME_JOB_NAME
 from dagster_celery.defaults import task_default_queue
-
-from .make_app import make_app
-from .tags import (
+from dagster_celery.make_app import make_app
+from dagster_celery.tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
     DAGSTER_CELERY_TASK_ID_TAG,
 )
-from .tasks import create_execute_job_task, create_resume_job_task
+from dagster_celery.tasks import create_execute_job_task, create_resume_job_task
 
 if TYPE_CHECKING:
     from celery.result import AsyncResult

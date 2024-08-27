@@ -23,8 +23,8 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .models import k8s_model_from_dict, k8s_snake_case_dict
-from .utils import get_common_labels, sanitize_k8s_label
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
+from dagster_k8s.utils import get_common_labels, sanitize_k8s_label
 
 # To retry step worker, users should raise RetryRequested() so that the dagster system is aware of the
 # retry. As an example, see retry_job in dagster_test.test_project.test_jobs.repo

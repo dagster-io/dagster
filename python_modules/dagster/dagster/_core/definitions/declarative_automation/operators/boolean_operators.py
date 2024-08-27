@@ -1,10 +1,12 @@
 from typing import List, Optional, Sequence
 
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
-
-from ..automation_condition import AutomationCondition, AutomationResult
-from ..automation_context import AutomationContext
 
 
 @whitelist_for_serdes(storage_name="AndAssetCondition")
