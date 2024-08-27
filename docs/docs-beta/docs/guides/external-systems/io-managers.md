@@ -28,7 +28,7 @@ For example, both assets in the code below are constructing a DuckDB connection 
 
 To switch to using I/O managers, we can use the DuckDB / Pandas I/O manager provided by the  `dagster_duckdb_pandas` package.  The I/O manager will be used to read and write data instead of the `DuckDBResource`.
 
-To load an upstream asset using an I/O manager, that asset is specified as an input parameter to the asset function rather than within the `deps` list on the `@asset` decorator.  The `DuckDBPandasIOManager` specifically reads the DuckDB table with the same name as the upstream asset and passes the data into the asset function as a Pandas dataframe. 
+To load an upstream asset using an I/O manager, that asset is specified as an input parameter to the asset function rather than within the `deps` list on the `@asset` decorator.  The `DuckDBPandasIOManager` reads the DuckDB table with the same name as the upstream asset and passes the data into the asset function as a Pandas dataframe. 
 
 To store data using an I/O manager, the data should be returned by the asset function.  The `DuckDBPandasIOManager` specifically takes the returned value from the asset function, which should be a Pandas dataframe, and writes it to the DuckDB file as a table with the same name as the asset.
 
