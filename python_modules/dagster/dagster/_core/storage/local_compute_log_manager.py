@@ -321,7 +321,7 @@ class LocalComputeLogSubscriptionManager:
         )
 
         if not self._observer:
-            self._observer = PollingObserver(self._manager.polling_timeout)
+            self._observer = PollingObserver(timeout=self._manager.polling_timeout)
             self._observer.start()
 
         ensure_dir(directory)
