@@ -12,7 +12,7 @@ Often, you will want to be able to tweak some parameters when materializing thes
 
 - How to add configuration to your assets
 - How to modify the configuration when launching a run
-- When to use asset configuration vs. [resources](/docs/concepts/resources)
+- When to use asset configuration vs. [resources](/concepts/resources)
 
 ---
 
