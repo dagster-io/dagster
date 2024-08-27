@@ -24,12 +24,17 @@ def compute_fn() -> None:
 
 
 def launch_runs_for_task(dag_id: str, task_id: str, dagster_url: str) -> None:
+    expected_op_name = f"{dag_id}__{task_id}"
+
     assets_to_trigger = {}  # key is (repo_location, repo_name, job_name), value is list of asset keys
     # create graphql client
     response = requests.post(f"{dagster_url}/graphql", json={"query": ASSET_NODES_QUERY}, timeout=3)
     for asset_node in response.json()["data"]["assetNodes"]:
         tags = {tag["key"]: tag["value"] for tag in asset_node["tags"]}
-        if tags.get(DAG_ID_TAG) == dag_id and tags.get(TASK_ID_TAG) == task_id:
+        # match assets based on conventional dag_id__task_id naming or based on explicit tags
+        if asset_node["opName"] == expected_op_name or (
+            tags.get(DAG_ID_TAG) == dag_id and tags.get(TASK_ID_TAG) == task_id
+        ):
             repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
             repo_name = asset_node["jobs"][0]["repository"]["name"]
             job_name = asset_node["jobs"][0]["name"]
