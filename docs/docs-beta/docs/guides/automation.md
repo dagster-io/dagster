@@ -1,5 +1,5 @@
 ---
-title: "Automating Pipelines"
+title: "Automate pipelines"
 description: Learn how to automate your data pipelines.
 last_update:
   date: 2024-08-12

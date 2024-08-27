@@ -1,4 +1,4 @@
 ---
-title: Transforming data with dbt
+title: Transform data with dbt
 sidebar_position: 20
 ---

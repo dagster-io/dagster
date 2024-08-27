@@ -1,4 +1,4 @@
 ---
-title: "Building an asset integration"
+title: "Build an asset integration"
 sidebar_position: 70
 ---

@@ -1,5 +1,5 @@
 ---
-title: "Setting up alerts"
+title: "Configure alerts"
 sidebar_position: 30
 sidebar_label: "Alerting"
 ---

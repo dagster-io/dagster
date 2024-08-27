@@ -1,4 +1,4 @@
 ---
-title: "Running non-Python languages"
+title: "Run non-Python languages"
 sidebar_position: 60
 ---

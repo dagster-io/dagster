@@ -1,4 +1,4 @@
 ---
-title: Authenticating to a resource
+title: Authenticate to a resource
 sidebar_position: 60
 ---

@@ -1,3 +1,3 @@
 ---
-title: "Deploying to Docker"
+title: "Deploy to Docker"
 ---
