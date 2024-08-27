@@ -33,7 +33,7 @@ def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
     return spec._replace(tags={**spec.tags, **tags})
 
 
-# because of the user of def.sassets in apply_tags_to_all_specs, we need to handle AssetSpecs here as well
+# because of the use of def.assets in apply_tags_to_all_specs, we need to handle AssetSpecs here as well
 def assets_def_with_af_tags(
     assets_def_or_spec: Union[AssetSpec, AssetsDefinition], tags: Mapping[str, str]
 ) -> AssetsDefinition:
