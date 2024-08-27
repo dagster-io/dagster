@@ -7,6 +7,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.source_asset import SourceAsset
 
 from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
@@ -33,27 +34,15 @@ def apply_tags_to_all_specs(defs: Definitions, tags: Dict[str, str]) -> Definiti
     )
 
 
-def source_asset_with_tags(source_asset: SourceAsset, tags: Mapping[str, str]) -> SourceAsset:
-    return SourceAsset(
-        key=source_asset.key,
-        metadata=source_asset.raw_metadata,
-        io_manager_key=source_asset.io_manager_key,
-        io_manager_def=source_asset.io_manager_def,
-        description=source_asset.description,
-        partitions_def=source_asset.partitions_def,
-        group_name=source_asset.group_name,
-        resource_defs=source_asset.resource_defs,
-        observe_fn=source_asset.observe_fn,
-        auto_observe_interval_minutes=source_asset.auto_observe_interval_minutes,
-        tags={**(source_asset.tags or {}), **tags},
-        _required_resource_keys=source_asset._required_resource_keys,  # noqa
-    )
+def source_asset_with_tags(source_asset: SourceAsset, tags: Mapping[str, str]) -> AssetSpec:
+    spec = next(iter(create_external_asset_from_source_asset(source_asset).specs))
+    return spec_with_tags(spec, tags)
 
 
 def assets_def_with_af_tags(
     assets_def: Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition, SourceAsset],
     tags: Mapping[str, str],
-) -> Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition, SourceAsset]:
+) -> Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition]:
     if isinstance(assets_def, AssetSpec):
         return spec_with_tags(assets_def, tags)
     if isinstance(assets_def, AssetsDefinition):
