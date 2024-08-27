@@ -4551,7 +4551,7 @@ class ZendeskSupportSource(GeneratedAirbyteSource):
         Args:
             name (str): The name of the destination.
             start_date (str): The date from which you'd like to replicate data for Zendesk Support API, in the format YYYY-MM-DDT00:00:00Z. All data generated after this date will be replicated.
-            subdomain (str): This is your Zendesk subdomain that can be found in your account URL. For example, in {my_subdomain}.zendesk.com/, where my_subdomain is the value of your subdomain.
+            subdomain (str): This is your Zendesk subdomain that can be found in your account URL. For example, in {my_subdomain}.zendesk.com, where my_subdomain is the value of your subdomain.
             credentials (Union[ZendeskSupportSource.OAuth20, ZendeskSupportSource.APIToken]): Zendesk service provides two authentication methods. Choose between: `OAuth2.0` or `API token`.
         """
         self.start_date = check.str_param(start_date, "start_date")
@@ -4859,7 +4859,7 @@ class ZendeskTalkSource(GeneratedAirbyteSource):
 
         Args:
             name (str): The name of the destination.
-            subdomain (str): This is your Zendesk subdomain that can be found in your account URL. For example, in {my_subdomain}.zendesk.com/, where my_subdomain is the value of your subdomain.
+            subdomain (str): This is your Zendesk subdomain that can be found in your account URL. For example, in {my_subdomain}.zendesk.com, where my_subdomain is the value of your subdomain.
             credentials (Union[ZendeskTalkSource.APIToken, ZendeskTalkSource.OAuth20]): Zendesk service provides two authentication methods. Choose between: `OAuth2.0` or `API token`.
             start_date (str): The date from which you'd like to replicate data for Zendesk Talk API, in the format YYYY-MM-DDT00:00:00Z. All data generated after this date will be replicated.
         """
