@@ -38,7 +38,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        client: Optional[boto3.client] = None,
+        client: Optional[boto3.client] = None,  # pyright: ignore (reportGeneralTypeIssues)
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
         forward_termination: bool = True,
@@ -92,13 +92,13 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             )
 
             log_configurations = {
-                container["name"]: container.get("logConfiguration")
-                for container in task_definition_response["taskDefinition"]["containerDefinitions"]
+                container["name"]: container.get("logConfiguration")  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                for container in task_definition_response["taskDefinition"]["containerDefinitions"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
             }
 
             all_container_names = {
-                container["name"]
-                for container in task_definition_response["taskDefinition"]["containerDefinitions"]
+                container["name"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                for container in task_definition_response["taskDefinition"]["containerDefinitions"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
             }
 
             container_names_with_overrides = {
@@ -133,13 +133,13 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     }
                 )
 
-            params["overrides"] = (
+            params["overrides"] = (  # pyright: ignore (reportGeneralTypeIssues)
                 overrides  # assign in case overrides was created here as an empty dict
             )
 
             response = self._client.run_task(**params)
 
-            tasks: List[str] = [task["taskArn"] for task in response["tasks"]]
+            tasks: List[str] = [task["taskArn"] for task in response["tasks"]]  # pyright: ignore (reportTypedDictNotRequiredAccess)
 
             try:
                 response = self._wait_for_tasks_completion(tasks=tasks, cluster=cluster)
@@ -151,10 +151,10 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                     for container in task["containers"]:
                         if log_config := log_configurations.get(container["name"]):
                             if log_config["logDriver"] == "awslogs":
-                                log_group = log_config["options"]["awslogs-group"]
+                                log_group = log_config["options"]["awslogs-group"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
 
                                 # stream name is combined from: prefix, container name, task id
-                                log_stream = f"{log_config['options']['awslogs-stream-prefix']}/{container['name']}/{task_id}"
+                                log_stream = f"{log_config['options']['awslogs-stream-prefix']}/{container['name']}/{task_id}"  # pyright: ignore (reportTypedDictNotRequiredAccess)
 
                                 if isinstance(self._message_reader, PipesCloudWatchMessageReader):
                                     self._message_reader.consume_cloudwatch_logs(
@@ -203,7 +203,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             params["cluster"] = cluster
 
         waiter.wait(**params)
-        return self._client.describe_tasks(**params)
+        return self._client.describe_tasks(**params)  # pyright: ignore (reportReturnType)
 
     def _terminate_tasks(
         self, context: OpExecutionContext, tasks: List[str], cluster: Optional[str] = None
@@ -211,11 +211,11 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         for task in tasks:
             try:
                 self._client.stop_task(
-                    cluster=cluster,
+                    cluster=cluster,  # pyright: ignore ()
                     task=task,
                     reason="Dagster process was interrupted",
                 )
-            except botocore.exceptions.ClientError as e:
+            except botocore.exceptions.ClientError as e:  # pyright: ignore (reportAttributeAccessIssue)
                 context.log.warning(
                     f"[pipes] Couldn't stop ECS task {task} in cluster {cluster}:\n{e}"
                 )

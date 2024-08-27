@@ -27,7 +27,7 @@ class PipesS3ContextInjector(PipesContextInjector):
 
     """
 
-    def __init__(self, *, bucket: str, client: boto3.client):
+    def __init__(self, *, bucket: str, client: boto3.client):  # pyright: ignore (reportGeneralTypeIssues)
         super().__init__()
         self.bucket = check.str_param(bucket, "bucket")
         self.client = client
