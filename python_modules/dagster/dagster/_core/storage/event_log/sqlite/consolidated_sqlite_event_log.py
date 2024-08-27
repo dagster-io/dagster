@@ -140,7 +140,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._obs = Observer()
             self._obs.start()
             self._obs.schedule(
-                ConsolidatedSqliteEventLogStorageWatchdog(self), self._base_dir, True
+                ConsolidatedSqliteEventLogStorageWatchdog(self), self._base_dir, recursive=True
             )
 
         self._watchers[run_id][callback] = cursor
