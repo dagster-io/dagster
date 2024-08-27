@@ -481,29 +481,23 @@ class AssetBackfillData(NamedTuple):
         for partitions_by_asset_selector in partitions_by_assets:
             asset_key = partitions_by_asset_selector.asset_key
             partitions = partitions_by_asset_selector.partitions
-            partition_def = asset_graph.get(asset_key).partitions_def
-            if partitions and partition_def:
-                if partitions.partition_range:
-                    # a range of partitions is selected
-                    partition_keys_in_range = partition_def.get_partition_keys_in_range(
+            partitions_def = asset_graph.get(asset_key).partitions_def
+            if partitions and partitions_def:
+                partitions_subset = partitions_def.empty_subset()
+                for partition_range in partitions.ranges:
+                    partitions_subset = partitions_subset.with_partition_key_range(
+                        partitions_def=partitions_def,
                         partition_key_range=PartitionKeyRange(
-                            start=partitions.partition_range.start,
-                            end=partitions.partition_range.end,
+                            start=partition_range.start,
+                            end=partition_range.end,
                         ),
                         dynamic_partitions_store=dynamic_partitions_store,
                     )
-                    partition_subset_in_range = partition_def.subset_with_partition_keys(
-                        partition_keys_in_range
-                    )
-                    partitions_subsets_by_asset_key.update({asset_key: partition_subset_in_range})
-                else:
-                    raise DagsterBackfillFailedError(
-                        "partitions_by_asset_selector does not have a partition range selected"
-                    )
-            elif partition_def:
+                    partitions_subsets_by_asset_key[asset_key] = partitions_subset
+            elif partitions_def:
                 # no partitions selected for partitioned asset, we will select all partitions
-                all_partitions = partition_def.subset_with_all_partitions()
-                partitions_subsets_by_asset_key.update({asset_key: all_partitions})
+                all_partitions = partitions_def.subset_with_all_partitions()
+                partitions_subsets_by_asset_key[asset_key] = all_partitions
             else:
                 # asset is not partitioned
                 non_partitioned_asset_keys.add(asset_key)
