@@ -20,6 +20,15 @@ This guide covers how to create, access, and share catalog views with others.
 </details>
 
 
+## Tailored catalog views
+
+Catalog views allow you to toggle between sets of assets that you care about most. Here are a few examples of how your team might use catalog views:
+
+- **Team view**: A view that filters assets based on ownership to show only the assets owned by your team.
+- **Ingestion view**: A view that filters assets based on the asset kind to give insight into the status of your ELT ingestion.
+- **Gold medallion view**: A view which displays assets that have a "gold" medallion tag, showing only refined, high-quality data that analysts can use with confidence.
+
+
 ## Create catalog views
 
 In any Dagster+ catalog page, you can access the current catalog view, or create a new catalog view with the catalog view button on the top left of the screen. By default, this button is labeled "All assets", and has a globe icon.
@@ -51,12 +60,3 @@ To finish, click "Create view" to finalize your new catalog view.
 To edit, duplicate, or delete a catalog view, navigate to the catalog view menu by clicking the catalog view button on the top left of the screen. From here, you can search for the view you want to modify, duplicate, or delete. Use the three-dot menu on the right side of the view to show the available actions.
 
 When editing a catalog view, any active filters will automatically be included in the set of changes. You can modify the view's name, description, icon, and sharing settings. To save your changes, click "Save changes".
-
-
-## Tailored catalog views
-
-Catalog views allow you to toggle between sets of assets that you care about most. Here are a few examples of how your team might use catalog views:
-
-- **Team view**: A view that filters assets based on ownership to show only the assets owned by your team.
-- **Ingestion view**: A view that filters assets based on the asset kind to give insight into the status of your ELT ingestion.
-- **Gold medallion view**: A view which displays assets that have a "gold" medallion tag, showing only refined, high-quality data that analysts can use with confidence.
