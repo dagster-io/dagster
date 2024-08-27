@@ -10,7 +10,10 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
-from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation.external_data import (
+    DEFAULT_MODE_NAME,
+    job_name_for_external_partition_set_name,
+)
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     RemoteJobOrigin,
@@ -443,6 +446,12 @@ class PartitionArgs(
             ),
         )
 
+    def get_job_name(self) -> str:
+        if self.job_name:
+            return self.job_name
+        else:
+            return job_name_for_external_partition_set_name(self.partition_set_name)
+
 
 @whitelist_for_serdes
 class PartitionNamesArgs(
@@ -479,6 +488,12 @@ class PartitionNamesArgs(
                 selected_asset_keys, "selected_asset_keys", of_type=AssetKey
             ),
         )
+
+    def get_job_name(self) -> str:
+        if self.job_name:
+            return self.job_name
+        else:
+            return job_name_for_external_partition_set_name(self.partition_set_name)
 
 
 @whitelist_for_serdes
