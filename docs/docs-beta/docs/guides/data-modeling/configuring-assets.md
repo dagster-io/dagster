@@ -29,7 +29,7 @@ To follow the steps in this guide, you'll need:
 
 ## Adding configuration to your asset
 
-You must define a schema for the configuration you want to attach to your asset. For example, let's say we want to allow users to change a parallelism parameter for an asset:
+For an asset to be configurable, you must first define a schema that inherits from the Dagster `Config` class. For example, let's say we want to allow users to change a parallelism parameter for an asset:
 
 <CodeExample filePath="guides/data-modeling/configuring-assets/config-schema.py" language="python" title="Adding configuration" />
 
