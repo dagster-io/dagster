@@ -27,9 +27,9 @@ def test_python_multi_asset_factory() -> None:
         name="test_task", asset_specs=[asset_spec], python_callable=compute_fn
     )
 
-    assets = check.is_list(defs.assets, of_type=AssetsDefinition)
-    assert len(assets) == 1
-    assets_def = assets[0]
+    assets_defs = check.is_list(defs.assets, of_type=AssetsDefinition)
+    assert len(assets_defs) == 1
+    assets_def = assets_defs[0]
     assert assets_def.is_executable
     assert len(list(assets_def.specs)) == 1
     assert assets_def.node_def.name == "test_task"
