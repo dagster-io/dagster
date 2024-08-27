@@ -1,6 +1,5 @@
 from dagster_duckdb import DuckDBResource
 
-# from snowflake.connector.pandas_tools import write_pandas
 import dagster as dg
 
 raw_sales_data = dg.AssetSpec("raw_sales_data")
