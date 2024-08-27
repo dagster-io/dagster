@@ -134,7 +134,7 @@ run_operation().then((result) => {
 
 Updating the asset definition with the additional information in the `extras` field allows the asset to work end to end finally.
 
-<CodeExample filePath="guides/automation/pipes-asset.py" language="python" title="Asset using Dagster Pipes." />
+<CodeExample filePath="guides/automation/pipes-asset-with-context.py" language="python" title="Asset using Dagster Pipes." />
 
 # What's next?
 
