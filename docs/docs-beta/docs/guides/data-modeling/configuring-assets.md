@@ -1,6 +1,6 @@
 ---
-title: Configuring assets via the UI
-sidebar_label: Configuring assets via the UI
+title: Configuring assets using the Dagster UI
+sidebar_label: Configuring assets using the Dagster UI
 sidebar_position: 50
 ---
 
@@ -10,9 +10,8 @@ Often, you will want to be able to tweak some parameters when materializing thes
 
 ## What you'll learn
 
-- How to add configuration to your assets
-- How to modify the configuration when launching a run
-- When to use asset configuration vs. [resources](/docs/concepts/resources)
+- How to make your assets configurable
+- How to provide configuration when launching a run
 
 ---
 
@@ -28,13 +27,13 @@ To follow the steps in this guide, you'll need:
 
 ---
 
-## Adding configuration to assets
+## Making assets configurable
 
-For an asset to be configurable, you must first define a schema that inherits from the Dagster `Config` class. For example, let's say we want to allow users to change the lookback time window for an asset:
+For an asset to be configurable, you must first define a schema that inherits from the Dagster `Config` class. For example, let's say we want to allow users to change the lookback time window for the computation that materializes an asset:
 
 <CodeExample filePath="guides/data-modeling/configuring-assets/config-schema.py" language="python" title="Adding configuration" />
 
-## Modifying the configuration when launching a run
+## Providing configuration when launching a run
 
 When launching a run using Dagster's Launchpad, you can provide a run config file as YAML or JSON that overrides the default configuration for your asset:
 
