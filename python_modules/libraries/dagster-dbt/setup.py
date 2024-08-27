@@ -52,6 +52,11 @@ setup(
         "sqlglot[rs]",
         "typer>=0.9.0",
         "packaging",
+        # Require grpcio<1.65.0 to avoid conflicts with grpcio-health-checking==1.64.3 installed by this library.
+        # See in https://github.com/dagster-io/dagster/issues/23854
+        "grpcio<1.65.0",
+        # Add pin to grpcio-health-checking as a safety net.
+        "grpcio-health-checking<1.65.0",
     ],
     extras_require={
         "test": [
