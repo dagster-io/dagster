@@ -18,13 +18,13 @@ def duckdb_path() -> Path:
     return Path(__file__).parent / "jaffle_shop.duckdb"
 
 
-def is_buildkite():
+def is_buildkite() -> bool:
     return "BUILDKITE" in os.environ
 
 
-# @pytest.mark.skipif(
-#     is_buildkite(), reason="Skipping because the buildkite job is not finding the manifest.json"
-# )
+@pytest.mark.skipif(
+    is_buildkite(), reason="Skipping because the buildkite job is not finding the manifest.json"
+)
 def test_loadable():
     dag_defs = build_dag_defs(
         duckdb_path=duckdb_path(),
@@ -36,7 +36,7 @@ def test_loadable():
 @pytest.mark.skipif(
     is_buildkite(), reason="Skipping because the buildkite job is not finding the manifest.json"
 )
-def test_dbt_defs():
+def test_dbt_defs() -> None:
     defs = dbt_defs(
         manifest=dbt_project_path() / "target" / "manifest.json",
         project=DbtProject(dbt_project_path()),
@@ -48,15 +48,16 @@ def test_dbt_defs():
 @pytest.mark.skipif(
     is_buildkite(), reason="Skipping because the buildkite job is not finding the manifest.json"
 )
-def test_dbt_defs_in_task_defs():
+def test_dbt_defs_in_task_defs() -> None:
     defs = dag_defs(
+        "some_dag",
         task_defs(
             "build_dbt_models",
             dbt_defs(
                 manifest=dbt_project_path() / "target" / "manifest.json",
                 project=DbtProject(dbt_project_path()),
             ),
-        )
+        ),
     )
 
     Definitions.validate_loadable(defs)
@@ -67,7 +68,7 @@ def test_dbt_defs_in_task_defs():
 )
 def test_dbt_defs_collision_minimal_repro() -> None:
     @multi_asset(specs=[AssetSpec(key="some_key")])
-    def an_asset(): ...
+    def an_asset() -> None: ...
 
     defs = dag_defs(
         "some_dag",
