@@ -245,3 +245,44 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
                 "nonexistent_partition",
                 instance,
             )
+
+
+def test_external_partition_tags_grpc_backcompat_no_job_name(instance: DagsterInstance):
+    with get_bar_repo_code_location(instance) as code_location:
+        repository_handle = code_location.get_repository("bar_repo").handle
+
+        api_client = code_location.client
+
+        result = deserialize_value(
+            api_client.external_partition_tags(
+                partition_args=PartitionArgs(
+                    repository_origin=repository_handle.get_external_origin(),
+                    partition_set_name="baz_partition_set",
+                    partition_name="c",
+                    instance_ref=instance.get_ref(),
+                )
+            )
+        )
+
+        assert isinstance(result, ExternalPartitionTagsData)
+        assert result.tags
+        assert result.tags["foo"] == "bar"
+
+
+def test_external_partition_names_grpc_backcompat_no_job_name(instance: DagsterInstance):
+    with get_bar_repo_code_location(instance) as code_location:
+        repository_handle = code_location.get_repository("bar_repo").handle
+
+        api_client = code_location.client
+
+        result = deserialize_value(
+            api_client.external_partition_names(
+                partition_names_args=PartitionNamesArgs(
+                    repository_origin=repository_handle.get_external_origin(),
+                    partition_set_name="baz_partition_set",
+                )
+            )
+        )
+
+        assert isinstance(result, ExternalPartitionNamesData)
+        assert result.partition_names == list(string.ascii_lowercase)
