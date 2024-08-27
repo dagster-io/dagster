@@ -599,14 +599,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        """Returns the set of asset check keys associated with the selected assets.
-
-        This property retrieves the asset check keys from the associated assets definition
-        if it exists. If there is no associated assets definition, it returns an empty set.
-
-        Returns:
-            AbstractSet[AssetCheckKey]: A set of asset check keys for the selected assets.
-        """
+        """Get the asset check keys that correspond to the current selection of assets this execution is expected to materialize."""
         return self.assets_def.check_keys if self.has_assets_def else set()
 
     @public
