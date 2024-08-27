@@ -1,5 +1,5 @@
 ---
-title: Configuring runs via the UI
+title: Configuring assets via the UI
 sidebar_label: Configuring assets via the UI
 sidebar_position: 50
 ---
@@ -12,7 +12,7 @@ Often, you will want to be able to tweak some parameters when materializing thes
 
 - How to add configuration to your assets
 - How to modify the configuration when launching a run
-- When to use asset configuration vs. [Resources](/docs/concepts/resources)
+- When to use asset configuration vs. [resources](/docs/concepts/resources)
 
 ---
 
@@ -22,14 +22,15 @@ Often, you will want to be able to tweak some parameters when materializing thes
 To follow the steps in this guide, you'll need:
 
 - A basic understanding of Dagster and assets. See the [Quick Start](/tutorial/quick-start) tutorial for an overview.
-- Passing familiarity with [Pydantic](https://docs.pydantic.dev/latest/)
+- Familiarity with [Pydantic](https://docs.pydantic.dev/latest/)
+- An understanding of [Ops vs Assets](/concepts/ops-jobs/ops-vs-assets)
 </details>
 
 ---
 
-## Adding configuration to your asset
+## Adding configuration to assets
 
-For an asset to be configurable, you must first define a schema that inherits from the Dagster `Config` class. For example, let's say we want to allow users to change a parallelism parameter for an asset:
+For an asset to be configurable, you must first define a schema that inherits from the Dagster `Config` class. For example, let's say we want to allow users to change the lookback time window for an asset:
 
 <CodeExample filePath="guides/data-modeling/configuring-assets/config-schema.py" language="python" title="Adding configuration" />
 
@@ -38,3 +39,5 @@ For an asset to be configurable, you must first define a schema that inherits fr
 When launching a run using Dagster's Launchpad, you can provide a run config file as YAML or JSON that overrides the default configuration for your asset:
 
 <CodeExample filePath="guides/data-modeling/configuring-assets/run_config.yaml" language="yaml" title="Run config provided via UI" />
+
+Run configurations reference an `op` which is the underlying compute associated with an asset. See [the Ops vs Assets](/concepts/ops-jobs/ops-vs-assets) documentation for more information.

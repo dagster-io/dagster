@@ -2,15 +2,15 @@ import dagster as dg
 
 
 class ForecastModelConfig(dg.Config):
-    # parallelism defaults to 1, but can be overridden
-    # by the user. If you do not provide a default, the
-    # user will need to provide a value.
-    parallelism: int = 1
+    # lookback_window_days defaults to 30, but can be
+    # overridden by the user. If you do not provide a
+    # default, the user will need to provide a value.
+    lookback_window_days: int = 30
 
 
 @dg.asset
 def forecast_model(config: ForecastModelConfig):
-    print("Running with parallelism:", config.parallelism)  # noqa: T201
+    print("Running with parallelism:", config.lookback_window_days)  # noqa: T201
     # ...more code here
 
 
