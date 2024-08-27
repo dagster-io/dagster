@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster_duckdb_pandas import DuckDBPandasIOManager
+from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 import dagster as dg
 
@@ -18,5 +18,12 @@ def sales_summary(clean_sales_data: pd.DataFrame) -> pd.DataFrame:
 
 defs = dg.Definitions(
     assets=[raw_sales_data, clean_sales_data, sales_summary],
-    resources={"io_manager": DuckDBPandasIOManager(database="sales.duckdb")},
+    resources={
+        "io_manager": SnowflakePandasIOManager(
+            database=dg.EnvVar("SNOWFLAKE_DATABASE"),
+            account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
+            user=dg.EnvVar("SNOWFLAKE_USER"),
+            password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
+        )
+    },
 )
