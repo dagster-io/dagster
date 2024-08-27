@@ -104,9 +104,13 @@ This function creates:
 - An external asset representing each DAG. This asset is marked as materialized whenever a DAG run completes.
 - A sensor that polls the Airflow instance for operational information. This sensor is responsible for creating materializations when a DAG executes. The sensor must remain on in order to properly update execution status.
 
-Let's run Dagster to see the asset created from our Airflow DAG:
+Let's set up some environment variables, and then point Dagster to see the asset created from our Airflow DAG:
 
 ```bash
+# Set up environment variables to point to the examples/tutorial-example directory on your machine
+export TUTORIAL_EXAMPLE_DIR=...
+export DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
+export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
 dagster dev -f airlift.py
 ```
 
