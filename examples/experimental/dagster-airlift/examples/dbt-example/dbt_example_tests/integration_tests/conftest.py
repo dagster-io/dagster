@@ -9,7 +9,7 @@ from dagster._core.test_utils import environ
 
 @pytest.fixture(name="local_env")
 def local_env_fixture() -> Generator[None, None, None]:
-    makefile_dir = Path(__file__).parent.parent
+    makefile_dir = Path(__file__).parent.parent.parent
     subprocess.run(["make", "setup_local_env"], cwd=makefile_dir, check=True)
     with environ(
         {
