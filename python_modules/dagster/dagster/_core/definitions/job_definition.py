@@ -56,6 +56,7 @@ from dagster._core.storage.io_manager import (
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
@@ -979,6 +980,7 @@ class JobDefinition(IHasInternalInit):
     def get_job_snapshot(self) -> "JobSnapshot":
         return self.get_job_index().job_snapshot
 
+    @cached_method
     def get_job_index(self) -> "JobIndex":
         from dagster._core.remote_representation import JobIndex
         from dagster._core.snap import JobSnapshot
