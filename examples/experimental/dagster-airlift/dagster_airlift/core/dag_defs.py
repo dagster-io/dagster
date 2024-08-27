@@ -1,6 +1,8 @@
 from typing import Dict, Mapping, Union
 
 from dagster import AssetsDefinition, AssetSpec, Definitions
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.source_asset import SourceAsset
 
 from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
@@ -14,10 +16,14 @@ class TaskDefs:
 def apply_tags_to_all_specs(defs: Definitions, tags: Dict[str, str]) -> Definitions:
     return Definitions(
         assets=[
-            assets_def_with_af_tags(assets_def, tags)
+            assets_def_with_af_tags(
+                asset_ish,
+                tags,
+            )
+            # https://linear.app/dagster-labs/issue/FOU-367/investigate-weird-behavior-in-apply-tags-to-all-spec
             # Note: Using get_asset_graph().assets_defs causes resource collisions for reasons unknown
             # for assets_def in defs.get_asset_graph().assets_defs
-            for assets_def in defs.assets
+            for asset_ish in (defs.assets or [])
         ],
         resources=defs.resources,
         sensors=defs.sensors,
@@ -35,13 +41,15 @@ def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
 
 # because of the use of def.assets in apply_tags_to_all_specs, we need to handle AssetSpecs here as well
 def assets_def_with_af_tags(
-    assets_def_or_spec: Union[AssetSpec, AssetsDefinition], tags: Mapping[str, str]
-) -> AssetsDefinition:
-    if isinstance(assets_def_or_spec, AssetSpec):
-        return spec_with_tags(assets_def_or_spec, tags)
+    asset_ish: Union[AssetSpec, AssetsDefinition, CacheableAssetsDefinition, SourceAsset],
+    tags: Mapping[str, str],
+) -> Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition, SourceAsset]:
+    # check.inst_param(assets_def_or_spec, "assets_def_or_spec", (AssetSpec, AssetsDefinition))
+    if isinstance(asset_ish, AssetSpec):
+        return spec_with_tags(asset_ish, tags)
     else:
-        assert isinstance(assets_def_or_spec, AssetsDefinition)
-        return assets_def_or_spec.map_asset_specs(lambda spec: spec_with_tags(spec, tags))
+        assert isinstance(asset_ish, AssetsDefinition)
+        return asset_ish.map_asset_specs(lambda spec: spec_with_tags(spec, tags))
 
 
 def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:

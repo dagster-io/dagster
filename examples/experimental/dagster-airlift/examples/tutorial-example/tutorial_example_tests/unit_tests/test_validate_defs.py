@@ -25,7 +25,7 @@ def is_buildkite() -> bool:
 @pytest.mark.skipif(
     is_buildkite(), reason="Skipping because the buildkite job is not finding the manifest.json"
 )
-def test_loadable():
+def test_loadable() -> None:
     dag_defs = build_dag_defs(
         duckdb_path=duckdb_path(),
         dbt_project_path=dbt_project_path(),
