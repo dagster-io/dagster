@@ -408,10 +408,10 @@ class PartitionArgs(
         "_PartitionArgs",
         [
             ("repository_origin", RemoteRepositoryOrigin),
-            ("job_name", str),
             # This is here for backcompat. it's expected to always be f"{job_name}_partition_set".
             ("partition_set_name", str),
             ("partition_name", str),
+            ("job_name", Optional[str]),
             ("instance_ref", Optional[InstanceRef]),
             # This is introduced in the same release that we're making it possible for an asset job
             # to target assets with different PartitionsDefinitions. Prior user code versions can
@@ -424,9 +424,9 @@ class PartitionArgs(
     def __new__(
         cls,
         repository_origin: RemoteRepositoryOrigin,
-        job_name: str,
         partition_set_name: str,
         partition_name: str,
+        job_name: Optional[str] = None,
         instance_ref: Optional[InstanceRef] = None,
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
     ):
@@ -438,7 +438,7 @@ class PartitionArgs(
                 RemoteRepositoryOrigin,
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
-            job_name=check.str_param(job_name, "job_name"),
+            job_name=check.opt_str_param(job_name, "job_name"),
             partition_name=check.str_param(partition_name, "partition_name"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             selected_asset_keys=check.opt_nullable_set_param(
@@ -459,13 +459,13 @@ class PartitionNamesArgs(
         "_PartitionNamesArgs",
         [
             ("repository_origin", RemoteRepositoryOrigin),
-            ("job_name", str),
             # This is here for backcompat. it's expected to always be f"{job_name}_partition_set".
             ("partition_set_name", str),
             # This is introduced in the same release that we're making it possible for an asset job
             # to target assets with different PartitionsDefinitions. Prior user code versions can
             # (and do) safely ignore this parameter, because, in those versions, the job name on its
             # own is enough to specify which PartitionsDefinition to use.
+            ("job_name", Optional[str]),
             ("selected_asset_keys", Optional[AbstractSet[AssetKey]]),
         ],
     )
@@ -473,8 +473,8 @@ class PartitionNamesArgs(
     def __new__(
         cls,
         repository_origin: RemoteRepositoryOrigin,
-        job_name: str,
         partition_set_name: str,
+        job_name: Optional[str] = None,
         selected_asset_keys: Optional[AbstractSet[AssetKey]] = None,
     ):
         return super(PartitionNamesArgs, cls).__new__(
@@ -482,7 +482,7 @@ class PartitionNamesArgs(
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RemoteRepositoryOrigin
             ),
-            job_name=check.str_param(job_name, "job_name"),
+            job_name=check.opt_str_param(job_name, "job_name"),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             selected_asset_keys=check.opt_nullable_set_param(
                 selected_asset_keys, "selected_asset_keys", of_type=AssetKey
