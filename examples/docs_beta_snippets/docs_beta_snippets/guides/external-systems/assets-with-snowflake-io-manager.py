@@ -17,7 +17,7 @@ def sales_summary(clean_sales_data: pd.DataFrame) -> pd.DataFrame:
 
 
 defs = dg.Definitions(
-    assets=[raw_sales_data, clean_sales_data, sales_summary],
+    assets=[clean_sales_data, sales_summary],
     resources={
         "io_manager": SnowflakePandasIOManager(
             database=dg.EnvVar("SNOWFLAKE_DATABASE"),

@@ -10,7 +10,11 @@ def clean_sales_data(duckdb: DuckDBResource) -> None:
     with duckdb.get_connection() as conn:
         df = conn.execute("SELECT * FROM raw_sales_data").fetch_df()
         clean_df = df.fillna({"amount": 0.0})
-        conn.execute("INSERT into clean_sales_data select * from clean_df")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS clean_sales_data AS SELECT * FROM clean_df"
+        )
+        if not conn.fetchall():
+            conn.execute("INSERT INTO clean_sales_data SELECT * FROM clean_df")
 
 
 @dg.asset(deps=[clean_sales_data])
@@ -18,10 +22,14 @@ def sales_summary(duckdb: DuckDBResource) -> None:
     with duckdb.get_connection() as conn:
         df = conn.execute("SELECT * FROM clean_sales_data").fetch_df()
         summary = df.groupby(["owner"])["amount"].sum().reset_index()
-        conn.execute("INSERT into sales_summary select * from summary")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS sales_summary AS SELECT * from summary"
+        )
+        if not conn.fetchall():
+            conn.execute("INSERT INTO sales_summary SELECT * from summary")
 
 
 defs = dg.Definitions(
-    assets=[raw_sales_data, clean_sales_data, sales_summary],
-    resources={"duckdb": DuckDBResource(database="sales.duckdb")},
+    assets=[clean_sales_data, sales_summary],
+    resources={"duckdb": DuckDBResource(database="sales.duckdb", schema="public")},
 )
