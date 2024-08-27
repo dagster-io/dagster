@@ -15,7 +15,7 @@ def dummy_duck_db_path() -> Path:
 def test_dag_defs_construction_and_node_defs() -> None:
     defs = build_dag_defs(
         dbt_project_path=example_root() / "tutorial_example" / "shared" / "dbt",
-        # not invoked during
+        # not invoked during construction of defs so dummy is ok
         duckdb_path=dummy_duck_db_path(),
     )
     assert isinstance(defs, Definitions)
