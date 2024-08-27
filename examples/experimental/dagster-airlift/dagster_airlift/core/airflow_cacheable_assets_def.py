@@ -396,6 +396,8 @@ def construct_assets_with_task_migration_info_applied(
                 asset.is_executable,
                 f"For an asset to be marked as migrated, it must also be executable in dagster. Found unexecutable assets for task ID {task_id}.",
             )
+            # This is suspect. Should we not be using a full AssetsDefinition copy here.
+            # https://linear.app/dagster-labs/issue/FOU-372/investigate-suspect-code-in-construct-assets-with-task-migration-info
             new_assets_defs.append(
                 AssetsDefinition(
                     keys_by_input_name=asset.keys_by_input_name,
