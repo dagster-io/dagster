@@ -1,7 +1,7 @@
-import yaml
 from pathlib import Path
 
 import pytest
+import yaml
 from dagster_airlift.core import load_migration_state_from_yaml
 from dagster_airlift.migration_state import (
     AirflowMigrationState,
