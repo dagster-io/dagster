@@ -1,6 +1,8 @@
 from typing import Mapping
 
 import click
+from rich import print
+from rich.progress import Progress
 
 import dagster._check as check
 from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
@@ -9,11 +11,13 @@ from dagster._cli.workspace.cli_target import (
     python_origin_target_argument,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
+from dagster._core.execution.context.input import build_input_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin
+from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import recon_job_from_origin, recon_repository_from_origin
 from dagster._utils.interrupts import capture_interrupts
@@ -111,7 +115,88 @@ def asset_list_command(**kwargs):
     asset_keys = asset_selection.resolve(repo_def.asset_graph, allow_missing=True)
 
     for asset_key in sorted(asset_keys):
-        print(asset_key.to_user_string())  # noqa: T201
+        print(asset_key.to_user_string())
+
+
+@asset_cli.command(name="scan", help="Scan asset materialization")
+@python_origin_target_argument
+@click.option("--select", help="Asset selection to target", required=True)
+@click.option("--verbose", help="Print all partitions' status", default=False)
+def asset_materialization_scan_command(**kwargs):
+    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_def = recon_repo.get_definition()
+
+    select = kwargs.get("select")
+    asset = repo_def.assets_defs_by_key.get(AssetKey(select), None)
+    with get_instance_for_cli() as instance:
+        with Progress() as progress_bar:
+            asset_name = asset.key.to_user_string()
+
+            # check if it's a partitioned or non partitioned asset
+            if asset.partitions_def is None:
+                partitions = [None]
+            else:
+                # get the list of partitions
+                all_partitions = set(asset.partitions_def.get_partition_keys())
+                materialized_partitions = set(
+                    instance.get_materialized_partitions(asset_key=asset.key)
+                )
+                # only scan not materialized partitions
+                partitions = list(all_partitions - materialized_partitions)
+
+            task_scanning_asset = progress_bar.add_task(
+                description=asset_name, total=len(partitions)
+            )
+            for partition in partitions:
+                # pretty the progress bar for partitions
+                if partition is not None:
+                    progress_bar.update(
+                        task_scanning_asset, description=f"{asset_name}:{partition}"
+                    )
+
+                with build_input_context(
+                    asset_key=asset.key,
+                    resources=asset.resource_defs,
+                    instance=instance,
+                    partition_key=partition,
+                    op_def=asset.op,
+                    asset_partitions_def=asset.partitions_def,
+                ) as asset_context:
+                    is_materialized = []
+                    for out in asset.op.output_defs:
+                        io_manager = asset_context.resources.__getattribute__(out.io_manager_key)
+
+                        if isinstance(io_manager, UPathIOManager):
+                            if partition is None:
+                                has_output = io_manager.has_output(asset_context)
+                            else:
+                                path = io_manager._with_extension(
+                                    io_manager.get_path_for_partition(
+                                        asset_context,
+                                        io_manager._get_path_without_extension(asset_context),
+                                        asset_context.partition_key,
+                                    )
+                                )
+                                has_output = io_manager.path_exists(path)
+                        else:
+                            obj = io_manager.load_input(asset_context)
+                            has_output = obj is not None
+                        if kwargs.get("verbose", False):
+                            click.echo(
+                                f'{asset_name}#{partition}:{out.name} has {"NOT" if not has_output else ""} been materialized'
+                            )
+                        is_materialized.append(has_output)
+                if all(is_materialized):
+                    instance.report_runless_asset_event(
+                        AssetMaterialization(
+                            asset_key=asset.key,
+                            partition=partition,
+                            description="Runless materialization via SCAN",
+                        )
+                    )
+
+                progress_bar.update(task_scanning_asset, advance=1)
 
 
 @asset_cli.command(name="wipe")
