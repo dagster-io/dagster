@@ -686,7 +686,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_configField(self, _graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
-        if self.is_executable:
+        if not self.is_executable:
             return None
         external_pipeline = self.get_external_job()
         node_def_snap = self.get_node_definition_snap()
