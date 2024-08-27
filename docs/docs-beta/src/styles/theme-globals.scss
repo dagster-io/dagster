@@ -22,9 +22,7 @@
   --ifm-font-family-monospace: var(--theme-font-mono);
   --ifm-code-font-size: 90%;
   --ifm-background-color: var(--theme-accent-red);
-  --ifm-code-font-size: 86%;
   --ifm-navbar-item-padding-horizontal: 0;
-  --ifm-global-spacing: 24px;
   --ifm-tabs-color-active: var(--theme-color-accent-blue);
   --ifm-tabs-color-active-border: var(--theme-color-accent-blue);
   --ifm-tabs-color: var(--theme-color-text-default);
@@ -35,4 +33,5 @@
   --ifm-footer-padding-vertical: 24px;
   --ifm-footer-padding-horizontal: 0px;
   --ifm-footer-link-color: var(--theme-color-text-lighter);
+  --ifm-global-spacing: 24px;
 }

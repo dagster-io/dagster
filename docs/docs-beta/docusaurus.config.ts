@@ -50,6 +50,7 @@ const config: Config = {
       maxHeadingLevel: 4,
     },
     navbar: {
+      hideOnScroll: true,
       logo: {
         alt: 'Dagster Logo',
         src: 'img/dagster-docs-logo.svg',
