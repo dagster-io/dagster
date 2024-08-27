@@ -7,6 +7,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster_airlift.core import dag_defs, task_defs
 from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
@@ -105,4 +106,19 @@ def test_dag_defs_cacheable_assets() -> None:
     assert assets_def_asset_2.specs_by_key[AssetKey("asset_2")].tags == {
         "airlift/dag_id": "dag1",
         "airlift/task_id": "task2",
+    }
+
+
+def test_dag_defs_source_asset() -> None:
+    defs = dag_defs(
+        "dag1",
+        task_defs("task1", Definitions(assets=[SourceAsset("asset_1")])),
+    )
+
+    assets_def_asset_1 = defs.get_asset_graph().assets_def_for_key(AssetKey("asset_1"))
+    assert isinstance(assets_def_asset_1, AssetsDefinition)
+    assert assets_def_asset_1.key == AssetKey("asset_1")
+    assert assets_def_asset_1.specs_by_key[AssetKey("asset_1")].tags == {
+        "airlift/dag_id": "dag1",
+        "airlift/task_id": "task1",
     }
