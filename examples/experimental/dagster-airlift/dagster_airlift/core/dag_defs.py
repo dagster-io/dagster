@@ -1,6 +1,11 @@
-from typing import Dict, Mapping
+from typing import Dict, Mapping, Union
 
-from dagster import AssetsDefinition, AssetSpec, Definitions
+from dagster import (
+    AssetsDefinition,
+    AssetSpec,
+    Definitions,
+    _check as check,
+)
 
 from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
 
@@ -14,8 +19,18 @@ class TaskDefs:
 def apply_tags_to_all_specs(defs: Definitions, tags: Dict[str, str]) -> Definitions:
     return Definitions(
         assets=[
-            assets_def_with_af_tags(assets_def, tags)
-            for assets_def in defs.get_asset_graph().assets_defs
+            # Right now we make assumptions that we only support AssetSpec and AssetsDefinition
+            # in orchesrated_defs.
+            # https://linear.app/dagster-labs/issue/FOU-369/support-cacheableassetsdefinition-and-sourceasset-in-airlift
+            assets_def_with_af_tags(
+                check.inst(
+                    asset,
+                    (AssetSpec, AssetsDefinition),
+                    "Only supports AssetSpec and AssetsDefinition right now",
+                ),
+                tags,
+            )
+            for asset in (defs.assets or [])
         ],
         resources=defs.resources,
         sensors=defs.sensors,
@@ -32,9 +47,13 @@ def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
 
 
 def assets_def_with_af_tags(
-    assets_def: AssetsDefinition, tags: Mapping[str, str]
-) -> AssetsDefinition:
-    return assets_def.map_asset_specs(lambda spec: spec_with_tags(spec, tags))
+    assets_def: Union[AssetsDefinition, AssetSpec], tags: Mapping[str, str]
+) -> Union[AssetsDefinition, AssetSpec]:
+    return (
+        assets_def.map_asset_specs(lambda spec: spec_with_tags(spec, tags))
+        if isinstance(assets_def, AssetsDefinition)
+        else spec_with_tags(assets_def, tags)
+    )
 
 
 def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:

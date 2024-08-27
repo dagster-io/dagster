@@ -14,32 +14,27 @@ export DAGSTER_URL := http://localhost:3333
 help:
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-dbt_setup: ## Initialize dbt project
-	dbt seed
 
-dev_install:
+### TUTORIAL COMMANDS ###
+wipe: ## Wipe out all the files created by the Makefile
+	rm -rf $$AIRFLOW_HOME $$DAGSTER_HOME
+
+
+airflow_install:
 	pip install uv && \
-	uv pip install -e ../../../dagster-airlift
-	uv pip install -e .
+	uv pip install dagster-airlift[in-airflow] && \
+	uv pip install -e $(MAKEFILE_DIR)
 
-# make airflow home and dagster home directories within current directory, set up env vars, and then
-# set up airflow environment.
-setup_local_env:
+airflow_setup:
 	make wipe && \
 	mkdir -p $$AIRFLOW_HOME && \
 	mkdir -p $$DAGSTER_HOME && \
 	chmod +x ../../airflow_setup.sh && \
 	../../airflow_setup.sh $(MAKEFILE_DIR)/tutorial_example/airflow_dags && \
-	make dbt_setup
+	dbt seed
 
-run_airflow:
+airflow_run:
 	airflow standalone
 
-run_dagster_dev:
-	dagster dev -m tutorial_example.dagster_defs -p 3333
-
-wipe: ## Wipe out all the files created by the Makefile
-	rm -rf $$AIRFLOW_HOME $$DAGSTER_HOME
-
-wipe_dagster: ## Wipe out all the files created by the Makefile
-	rm -rf $$DAGSTER_HOME
+dagster_run:
+	dagster dev -m tutorial_example.dagster_defs.definitions -p 3333
