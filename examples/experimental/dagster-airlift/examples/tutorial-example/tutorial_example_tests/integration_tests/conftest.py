@@ -9,8 +9,8 @@ from dagster._core.test_utils import environ
 
 @pytest.fixture(name="local_env")
 def local_env_fixture() -> Generator[None, None, None]:
-    makefile_dir = Path(__file__).parent.parent
-    subprocess.run(["make", "setup_local_env"], cwd=makefile_dir, check=True)
+    makefile_dir = Path(__file__).parent.parent.parent
+    subprocess.run(["make", "airflow_setup"], cwd=makefile_dir, check=True)
     with environ(
         {
             "AIRFLOW_HOME": str(makefile_dir / ".airflow_home"),
@@ -24,7 +24,7 @@ def local_env_fixture() -> Generator[None, None, None]:
 
 @pytest.fixture(name="dags_dir")
 def dags_dir_fixture() -> Path:
-    return Path(__file__).parent.parent / "tutorial_example" / "airflow_dags"
+    return Path(__file__).parent.parent.parent / "tutorial_example" / "airflow_dags"
 
 
 @pytest.fixture(name="airflow_home")

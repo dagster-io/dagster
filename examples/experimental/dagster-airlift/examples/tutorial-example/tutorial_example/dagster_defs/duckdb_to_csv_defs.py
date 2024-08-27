@@ -20,6 +20,7 @@ def export_duckdb_to_csv_defs(
     )
 
     @multi_asset(
+        name=f"export_duckdb_to_csv_{table_name}",
         specs=[
             AssetSpec(
                 key=AssetKey([csv_path.name.replace(".", "_")]),

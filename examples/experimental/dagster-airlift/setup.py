@@ -11,7 +11,7 @@ airflow_dep_list = [
 
 setup(
     name="dagster-airlift",
-    version="0.0.3",
+    version="0.0.6",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
@@ -37,7 +37,7 @@ setup(
         "in-airflow": airflow_dep_list,
         "mwaa": ["boto3"],
         "dbt": ["dagster-dbt"],
-        "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3", "dagster-webserver"],
+        "test": ["pytest", "dagster-dbt", "dbt-duckdb", "boto3", "dagster-webserver", "mock"],
     },
     zip_safe=False,
 )
