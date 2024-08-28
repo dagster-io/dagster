@@ -21,7 +21,7 @@ export default function NotFoundContent({className}) {
             <Translate
               id="theme.NotFound.p1"
               description="The first paragraph of the 404 page">
-              We can't seem to what you're looking for.
+              We can't seem to find what you're looking for.
             </Translate>
           </p>
           <p
