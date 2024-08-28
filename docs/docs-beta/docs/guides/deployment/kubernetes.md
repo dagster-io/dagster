@@ -5,7 +5,7 @@ sidebar_position: 21
 
 Deploying Dagster to a Kubernetes cluster is a popular option for maintaining a production Dagster deployment. Dagster uses Helm, a package manager for Kubernetes applications, to help manage deploying Dagster to a Kubernetes cluster.
 
-Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master/helm) for deploying Dagster that you can customize for your specific needs. For each Dagster coponent used by the Helm chart, Dagster publishes a corresponding image to [DockerHub](https://hub.docker.com/u/dagster).
+Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master/helm) for deploying Dagster that you can customize for your specific needs. For each Dagster component used by the Helm chart, Dagster publishes a corresponding image to [DockerHub](https://hub.docker.com/u/dagster).
 
 ## What you'll learn
 
@@ -30,26 +30,10 @@ dagster project from-example --example deploy_k8s_beta --name assets_dbt_python
 - To have Docker installed. [Docker installation guide](https://docs.docker.com/engine/install/)
 - To have `kubectl` installed. [Kubernetes installation guide](https://kubernetes.io/docs/tasks/tools/)
 - To have a Kubernetes cluster created. If you would like to follow along with this guide on your local machine, you can install Docker Desktop and turn on the included Kubernetes server [Docker Desktop and Kubernetes guide](https://docs.docker.com/desktop/kubernetes/)
-- Access to a Docker image registry, such as Amazon Web Services ECR or DockerHub. If you are following along to the guide on your local machine, you do not need access to a Docker image registry.
+- Access to a Docker image registry, such as Amazon Web Services ECR or DockerHub. If you are following along to the guide on your local machine, you don't need access to a Docker image registry.
 - To have Helm 3 installed. [Helm installation guide](https://helm.sh/docs/intro/install/)
 
 </details>
-
-
-## Step 0a: Understand the Dagster deployment architecture
-Do we need this part? Should it be a pre-req that we link to?
-
-## Step 0b: Example project tour
-If you are deploying your own Dagster project, skip ahead to Step 1. However, if you are using the example project for this guide, this step will walk you through the contents of the project.
-
-The example project should contain the following files
-```bash
-TODO FILE TREE
-```
-
-The Dagster project can be found in `iris_analysis`. The project itself is found in the `iris_analysis/__init__.py` file. This file contains a single asset that downloads a dataset about iris flowers and logs the number of rows.
-
-The example project also contains a `workspace.yaml` file and a `Dockerfile`. These files will be covered in the following steps.
 
 ## Step 1: Get your Dagster project ready to deploy
 You will need to add a `workspace.yaml` file to your Dagster project to be ready to deploy with Kubernetes. If you are using the [example project](/todo), you will already have this file.
@@ -135,7 +119,7 @@ helm show values dagster/dagster > values.yaml
 TODO - where to copy this file to?
 
 ### Step 5.2: Modify the `values.yaml` file for your deployment
-The `values.yaml` file contains configuration options you can set for your deployment. There are comments in the `values.yaml` file explaining these options, and you can learn more about them [here](/todo).
+The `values.yaml` file contains configuration options you can set for your deployment. Different configuration options are explained in inline comments in `values.yaml`, and you can learn more about the different configuration options in [The title of a guide explaining it](/todo).
 
 The minimal configuration options you need to set to deploy your project are the `deployments.name`, `deployments.image`, and `deployments.dagsterApiGrpcArgs` values. `deployments.name` should be a unique name for your deployment, and `deployments.image` should be set to match the Docker image you built and pushed in Step 2. `dagsterApiGrpcArgs` should be set to NEED HELP WITH HOW TO EXPLAIN THIS.
 

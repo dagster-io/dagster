@@ -48,6 +48,9 @@ SCIM
 Snowflake
 Twilio
 PEX
+Helm
+Dockerfile
+Docker
 
 We have
 we have
