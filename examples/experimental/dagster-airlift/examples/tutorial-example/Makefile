@@ -7,7 +7,7 @@ endef
 MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
-export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
+export TUTORIAL_DBT_PROJECT_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DAGSTER_URL := http://localhost:3000
 

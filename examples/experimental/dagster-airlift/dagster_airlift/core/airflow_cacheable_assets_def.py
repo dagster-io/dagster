@@ -17,6 +17,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._serdes.serdes import (
@@ -217,7 +218,7 @@ def get_cached_spec_for_dag(
     metadata = {
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
         "Dag ID": dag_info.dag_id,
-        "Link to DAG": MarkdownMetadataValue(f"[View DAG]({dag_info.url})"),
+        "Link to DAG": UrlMetadataValue(dag_info.url),
     }
     # Attempt to retrieve source code from the DAG.
     metadata["Source Code"] = MarkdownMetadataValue(
@@ -284,7 +285,7 @@ def construct_cacheable_assets_and_infer_dependencies(
             "Task Info (raw)": JsonMetadataValue(task_info.metadata),
             # In this case,
             "Dag ID": task_info.dag_id,
-            "Link to DAG": MarkdownMetadataValue(f"[View DAG]({task_info.dag_url})"),
+            "Link to DAG": UrlMetadataValue(task_info.dag_url),
         }
         migration_state_for_task = _get_migration_state_for_task(
             migration_state_override=migration_state,
@@ -380,7 +381,7 @@ def construct_assets_with_task_migration_info_applied(
             task_id = new_spec.tags[TASK_ID_TAG]
             check.invariant(
                 overall_task_id is None or overall_task_id == task_id,
-                "Expected all assets in an AssetsDefinition to have the same task ID.",
+                f"Expected all assets in an AssetsDefinition to have the same task ID. Found {overall_task_id} and {task_id}.",
             )
             overall_task_id = task_id
             new_specs.append(new_spec)

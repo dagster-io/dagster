@@ -3,7 +3,7 @@ from typing import Optional
 
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
 
-from tutorial_example.shared.export_duckdb_to_csv import export_duckdb_to_csv
+from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
 
 
 def export_duckdb_to_csv_defs(
@@ -30,11 +30,13 @@ def export_duckdb_to_csv_defs(
     )
     def _multi_asset() -> None:
         export_duckdb_to_csv(
-            table_name=table_name,
-            csv_path=csv_path,
-            duckdb_path=duckdb_path,
-            duckdb_schema=duckdb_schema,
-            duckdb_database_name=duckdb_database_name,
+            ExportDuckDbToCsvArgs(
+                table_name=table_name,
+                csv_path=csv_path,
+                duckdb_path=duckdb_path,
+                duckdb_schema=duckdb_schema,
+                duckdb_database_name=duckdb_database_name,
+            )
         )
 
     return Definitions(assets=[_multi_asset])

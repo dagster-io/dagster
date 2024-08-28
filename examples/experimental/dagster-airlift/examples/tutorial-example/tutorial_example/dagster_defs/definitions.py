@@ -15,7 +15,7 @@ airflow_instance = AirflowInstance(
 
 
 def dbt_project_path() -> Path:
-    env_val = os.getenv("DBT_PROJECT_DIR")
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
     assert env_val
     return Path(env_val)
 

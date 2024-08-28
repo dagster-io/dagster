@@ -14,7 +14,7 @@ def local_env_fixture() -> Generator[None, None, None]:
     with environ(
         {
             "AIRFLOW_HOME": str(makefile_dir / ".airflow_home"),
-            "DBT_PROJECT_DIR": str(makefile_dir / "tutorial_example" / "shared" / "dbt"),
+            "TUTORIAL_DBT_PROJECT_DIR": str(makefile_dir / "tutorial_example" / "shared" / "dbt"),
             "DAGSTER_HOME": str(makefile_dir / ".dagster_home"),
         }
     ):
