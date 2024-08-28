@@ -41,7 +41,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         self,
         context_injector: PipesContextInjector,
         message_reader: Optional[PipesMessageReader] = None,
-        client: Optional[boto3.client] = None,
+        client: Optional[boto3.client] = None,  # pyright: ignore (reportGeneralTypeIssues)
         forward_termination: bool = True,
     ):
         self._client = client or boto3.client("glue")
@@ -134,8 +134,8 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 context.log.error(
                     "Couldn't create job %s. Here's why: %s: %s",
                     job_name,
-                    err.response["Error"]["Code"],
-                    err.response["Error"]["Message"],
+                    err.response["Error"]["Code"],  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                    err.response["Error"]["Message"],  # pyright: ignore (reportTypedDictNotRequiredAccess)
                 )
                 raise
 

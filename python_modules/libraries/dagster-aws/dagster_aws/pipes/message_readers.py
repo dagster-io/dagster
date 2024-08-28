@@ -37,7 +37,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         *,
         interval: float = 10,
         bucket: str,
-        client: boto3.client,
+        client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
         log_readers: Optional[Sequence[PipesLogReader]] = None,
     ):
         super().__init__(
@@ -115,7 +115,7 @@ class CloudWatchEvent(TypedDict):
 class PipesCloudWatchMessageReader(PipesMessageReader):
     """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
 
-    def __init__(self, client: Optional[boto3.client] = None):
+    def __init__(self, client: Optional[boto3.client] = None):  # pyright: ignore (reportGeneralTypeIssues)
         """Args:
         client (boto3.client): boto3 CloudWatch client.
         """

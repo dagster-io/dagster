@@ -24,7 +24,7 @@ class SimulatedTaskRun:
 
 
 class LocalECSMockClient:
-    def __init__(self, ecs_client: boto3.client, cloudwatch_client: boto3.client):
+    def __init__(self, ecs_client: boto3.client, cloudwatch_client: boto3.client):  # pyright: ignore (reportGeneralTypeIssues)
         self.ecs_client = ecs_client
         self.cloudwatch_client = cloudwatch_client
 
