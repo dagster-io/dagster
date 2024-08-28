@@ -5,29 +5,29 @@ import dagster_snowflake as dg_snowflake
 import dagster as dg
 
 
-@dg.observable_source_asset(specs=[dg.AssetSpec("hourly_sales")])
+@dg.observable_source_asset
 def hourly_sales(snowflake: dg_snowflake.SnowflakeResource):
+    table_name = "hourly_sales"
     with snowflake.get_connection() as conn:
         freshness_results = dg_snowflake.fetch_last_updated_timestamps(
             snowflake_connection=conn.cursor(),
-            tables=["hourly_sales"],
+            tables=[table_name],
             schema="PUBLIC",
         )
-        for table_name, last_updated in freshness_results.items():
-            yield dg.ObserveResult(
-                asset_key=table_name,
-                metadata={
-                    "dagster/last_updated_timestamp": dg.MetadataValue.timestamp(
-                        last_updated
-                    )
-                },
-            )
+        return dg.ObserveResult(
+            asset_key=table_name,
+            metadata={
+                "dagster/last_updated_timestamp": dg.MetadataValue.timestamp(
+                    freshness_results[table_name]
+                )
+            },
+        )
 
 
 freshness_check_schedule = dg.ScheduleDefinition(
     job=dg.define_asset_job(
         "hourly_sales_observation_job",
-        selection=dg.AssetSelection.assets(hourly_sales),
+        selection=dg.AssetSelection.keys("hourly_sales"),
     ),
     # Runs every minute. Usually, a much less frequent cadence is necessary,
     # but a short cadence makes it easier to play around with this example.
