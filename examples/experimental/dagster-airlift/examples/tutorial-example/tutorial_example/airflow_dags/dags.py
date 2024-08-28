@@ -119,7 +119,7 @@ export_customers = ExportDuckDBToCSV(
 load_raw_customers >> run_dbt_model >> export_customers  # type: ignore
 
 # Set this to True to begin the migration process
-MIGRATING = True
+MIGRATING = False
 
 if MIGRATING:
     mark_as_dagster_migrating(
