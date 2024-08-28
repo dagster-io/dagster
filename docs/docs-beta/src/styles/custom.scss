@@ -242,3 +242,15 @@ a.pyobject {
     color: var(--dagster-color-gray-900);
   }
 }
+
+// NotFound Swizzle
+@keyframes wiggle {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(10deg); }
+  75% { transform: rotate(-10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.wiggle {
+  animation: wiggle 2s linear infinite;
+}
