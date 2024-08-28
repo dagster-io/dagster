@@ -3,7 +3,7 @@ title: Connecting to APIs
 sidebar_position: 20
 ---
 
-When building a data pipeline, you'll likely need to connect to a number of external APIs, each with its own specific configuration and behavior. This guide demonstrates how to standardize your API connections and customize their configuration using Dagster resources.
+When building a data pipeline, you'll likely need to connect to several external APIs, each with its own specific configuration and behavior. This guide demonstrates how to standardize your API connections and customize their configuration using Dagster resources.
 
 
 ## What you'll learn
@@ -54,8 +54,8 @@ The configurable resource can be provided to an asset exactly as before. When th
 When you materialize `sfo_sunrise`, Dagster will provide a `SunResource` initialized with the configuration values to the `sun_resource` parameter.
 
 
-## Step 4: Sourcing configuration values from environment variables
-Resources can also be configured with environment variables, You can either use the `os` module to fetch environment variables, or you can use Dagster's built-in `EnvVar` class. Configuration that is fetched using the `EnvVar` class will be redacted in the Dagster UI.
+## Step 4: Source configuration values from environment variables
+Resources can also be configured with environment variables. You can use Dagster's built-in `EnvVar` class to source configuration values from environment variables at materialization time. 
 
 In this example, there is a new `home_sunrise` asset. Rather than hardcoding the location of your home, you can set it in environment variables, and configure the `SunResource` by reading those values:
 
@@ -66,7 +66,7 @@ When you materialize `home_sunrise`, Dagster will read the values set for the `H
 The initialized `SunResource` will be provided to the `sun_resource` parameter.
 
 :::note
-Environment variables that are fetched using `EnvVar` are read **at materialization time**, so they must be set where the code is executing.
+You can also fetch environment variables using the `os` library. Dagster treats each approach to fetching environment variables differently, such as when they are fetched or how they display in the UI. Refer to the [Environment variables guide](/todo) for more information.
 :::
 
 
