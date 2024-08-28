@@ -61,7 +61,7 @@ Now Dagster has everything it needs to consume our dbt project and build our ass
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions.py" language="python" title="Importing a dbt project into Dagster" />
 
-Note that in this file we create:
+In this file we create:
 - a `DbtProject` object that points to the path of our dbt project
 - a `DbtResource` that references the project object
 - a `@dbt_assets` decorated function that yields Dagster events from the events streamed from the dbt CLI
@@ -77,7 +77,7 @@ Oftentimes, we want Dagster to generate data that will be used by downstream dbt
 
 This asset:
 
-- Pulls customer data from a CSV via pandas
+- Pulls customer data from a CSV with pandas
 - Creates a schema called `raw` if it doesn't already exist
 - Writes a `raw_customers` table to the `raw` schema in our DuckDB database
 
@@ -89,7 +89,7 @@ Now we'll set up our `_source.yml` file that will point dbt to our upstream asse
 
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/_source.yml" language="yaml" title="Adding a _source.yml to our dbt project" />
 
-In this file we need to add the Dagster metadata in the highlighted portion of the code to tell Dagster that this source data is coming from the `raw_customers` asset that we defined earlier. It's important to note that this file is now serving two purposes:
+In this file we need to add the Dagster metadata in the highlighted portion of the code to tell Dagster that this source data is coming from the `raw_customers` asset that we defined earlier. This file now serves two purposes:
 
 1. It's telling dbt where to find the source data for our `customers` model
 2. It's telling Dagster exactly which asset represents this source data
