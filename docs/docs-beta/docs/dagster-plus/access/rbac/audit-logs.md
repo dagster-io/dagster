@@ -49,6 +49,6 @@ The "Filter" button on the top left of the Audit log pane can be used to filter 
 
 ## Programmatic access to audit logs
 
-Audit logs can be accessed over the Dagster Plus GraphQL API to access them programmatically:
+Audit logs can be accessed programmatically over the Dagster+ GraphQL API:
 
 <CodeExample filePath="dagster-plus/access/rbac/audit-logs.graphql" language="graphql" title="Audit log GraphQL query" />
