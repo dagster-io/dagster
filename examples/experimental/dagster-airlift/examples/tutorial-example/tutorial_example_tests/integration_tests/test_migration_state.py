@@ -10,6 +10,9 @@ def test_migration_status(
     airflow_instance,
     mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
 ) -> None:
+    """Iterates through various combinations of marking tasks as migrated and checks that the migration state is updated correctly in
+    both the Airflow DAGs and the Dagster asset definitions.
+    """
     instance = AirflowInstance(
         auth_backend=BasicAuthBackend(
             webserver_url="http://localhost:8080",
