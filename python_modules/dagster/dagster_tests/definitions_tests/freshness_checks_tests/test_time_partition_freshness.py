@@ -35,7 +35,10 @@ from dagster._time import create_datetime, get_timezone
 from dagster._utils.env import environ
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .conftest import add_new_event, assert_check_result
+from dagster_tests.definitions_tests.freshness_checks_tests.conftest import (
+    add_new_event,
+    assert_check_result,
+)
 
 
 def test_params() -> None:

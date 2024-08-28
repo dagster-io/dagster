@@ -25,6 +25,12 @@ Install Vale with:
 brew install vale
 ```
 
+or
+
+```bash
+pip install vale
+```
+
 ---
 
 ## Overview of the docs
@@ -54,19 +60,33 @@ yarn start
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server. Access the website at [http://localhost:3050](http://localhost:3050).
 
+### Linters
+
 To check the documentation for different issues, use the following:
 
 ```bash
-## Lints Markdown content using prettier
+## Lints all content, applies lint autofixes and prettier changes
 yarn lint
 
 ## Lints documentation content using Vale Server
 ## Checks for style guide adherence, grammar, spelling, etc.
-yarn lint:vale
-
-## Autofixes issues caught by prettier
-yarn lint:fix
+yarn vale
+yarn vale /path/to/file      ## check individual file
+yarn vale --no-wrap          ## remove wrapping from output
 ```
+
+### Diagrams
+
+You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
+
+```mermaid
+flowchart LR
+    Start --> Stop
+```
+
+Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
+
+### Code examples
 
 To include code snippets, use the following format:
 

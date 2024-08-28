@@ -45,6 +45,7 @@ from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
     normalize_group_name,
+    validate_tags_strict,
 )
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -52,8 +53,6 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
     DagsterInvariantViolationError,
 )
-
-from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction

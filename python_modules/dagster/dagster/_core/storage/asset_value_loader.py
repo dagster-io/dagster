@@ -17,11 +17,10 @@ from dagster._core.execution.context.output import build_output_context
 from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
+from dagster._core.storage.io_manager import IOManager
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
-
-from .io_manager import IOManager
 
 
 class AssetValueLoader:

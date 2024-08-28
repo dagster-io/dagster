@@ -5,7 +5,7 @@ import graphene
 from dagster._config import ConfigTypeKind, get_recursive_type_keys
 from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 GrapheneConfigTypeUnion = Union[
     "GrapheneEnumConfigType",

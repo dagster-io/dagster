@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
@@ -35,6 +36,7 @@ from dagster._core.definitions.assets import (
     get_partition_mappings_from_deps,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
@@ -43,6 +45,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.utils import NoValueSentinel
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.types.dagster_type import (
@@ -50,10 +53,6 @@ from dagster._core.types.dagster_type import (
     DagsterType,
     Nothing,
 )
-
-from ..asset_check_spec import AssetCheckSpec
-from ..utils import NoValueSentinel
-from .op_decorator import _Op
 
 
 def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:

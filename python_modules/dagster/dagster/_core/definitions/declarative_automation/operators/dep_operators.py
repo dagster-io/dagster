@@ -5,11 +5,13 @@ from typing_extensions import Annotated
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import ImportFrom, copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
-
-from ..automation_condition import AutomationCondition, AutomationResult
-from ..automation_context import AutomationContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection

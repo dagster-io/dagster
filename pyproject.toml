@@ -211,6 +211,9 @@ select = [
   # (isort) detect improperly sorted imports
   "I001",
 
+  # ban relative imports
+  "TID252",
+
   # (performance) perflint rules
   "PERF",
 
@@ -268,6 +271,10 @@ split-on-trailing-comma = false
 # Imports of the form `from foo import bar as baz` show one `import bar as baz`
 # per line. Useful for __init__.py files that just re-export symbols.
 force-wrap-aliases = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 

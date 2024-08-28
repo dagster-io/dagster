@@ -27,21 +27,21 @@ from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
 from dagster._record import record
 from dagster._time import datetime_from_timestamp
 
-from .external import ensure_valid_config, get_external_job_or_raise
+from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
     from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 
-    from ..schema.asset_graph import GrapheneAssetLatestInfo
-    from ..schema.errors import GrapheneRunNotFoundError
-    from ..schema.execution import GrapheneExecutionPlan
-    from ..schema.logs.events import GrapheneRunStepStats
-    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
-    from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
-    from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
-    from ..schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
-    from ..schema.runs_feed import GrapheneRunsFeedConnection
-    from ..schema.util import ResolveInfo
+    from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.execution import GrapheneExecutionPlan
+    from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+    from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
+    from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
+    from dagster_graphql.schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 _DELIMITER = "::"
@@ -50,8 +50,8 @@ _DELIMITER = "::"
 async def gen_run_by_id(
     graphene_info: "ResolveInfo", run_id: str
 ) -> Union["GrapheneRun", "GrapheneRunNotFoundError"]:
-    from ..schema.errors import GrapheneRunNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
     record = await RunRecord.gen(graphene_info.context, run_id)
     if not record:
@@ -61,7 +61,7 @@ async def gen_run_by_id(
 
 
 def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
-    from ..schema.runs import GrapheneRunTagKeys
+    from dagster_graphql.schema.runs import GrapheneRunTagKeys
 
     return GrapheneRunTagKeys(
         keys=[
@@ -78,8 +78,8 @@ def get_run_tags(
     value_prefix: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneRunTags":
-    from ..schema.runs import GrapheneRunTags
-    from ..schema.tags import GraphenePipelineTagAndValues
+    from dagster_graphql.schema.runs import GrapheneRunTags
+    from dagster_graphql.schema.tags import GraphenePipelineTagAndValues
 
     instance = graphene_info.context.instance
     return GrapheneRunTags(
@@ -94,9 +94,9 @@ def get_run_tags(
 
 
 def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
-    from ..schema.errors import GrapheneRunGroupNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneRun
-    from ..schema.runs import GrapheneRunGroup
+    from dagster_graphql.schema.errors import GrapheneRunGroupNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.runs import GrapheneRunGroup
 
     instance = graphene_info.context.instance
     try:
@@ -123,7 +123,7 @@ def get_runs(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> Sequence["GrapheneRun"]:
-    from ..schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
     check.opt_inst_param(filters, "filters", RunsFilter)
     check.opt_str_param(cursor, "cursor")
@@ -182,10 +182,9 @@ def get_assets_latest_info(
     asset_record_loader: "BatchAssetRecordLoader",
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
-
-    from ..schema.asset_graph import GrapheneAssetLatestInfo
-    from ..schema.logs.events import GrapheneMaterializationEvent
-    from ..schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
+    from dagster_graphql.schema.logs.events import GrapheneMaterializationEvent
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
 
@@ -251,7 +250,7 @@ def get_assets_latest_info(
         latest_planned_run_ids_by_asset,
     )
 
-    from .fetch_assets import get_unique_asset_id
+    from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
     return [
         GrapheneAssetLatestInfo(
@@ -319,7 +318,7 @@ def validate_pipeline_config(
     selector: JobSubsetSelector,
     run_config: Union[str, Mapping[str, object]],
 ) -> "GraphenePipelineConfigValidationValid":
-    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
+    from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
@@ -333,7 +332,7 @@ def get_execution_plan(
     selector: JobSubsetSelector,
     run_config: Mapping[str, Any],
 ) -> "GrapheneExecutionPlan":
-    from ..schema.execution import GrapheneExecutionPlan
+    from dagster_graphql.schema.execution import GrapheneExecutionPlan
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
@@ -350,7 +349,7 @@ def get_execution_plan(
 
 
 def get_stats(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunStatsSnapshot":
-    from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
+    from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
 
     stats = graphene_info.context.instance.get_run_stats(run_id)
     stats.id = "stats-{run_id}"  # type: ignore  # (unused code path)
@@ -360,7 +359,7 @@ def get_stats(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunStatsSna
 def get_step_stats(
     graphene_info: "ResolveInfo", run_id: str, step_keys: Optional[Sequence[str]] = None
 ) -> Sequence["GrapheneRunStepStats"]:
-    from ..schema.logs.events import GrapheneRunStepStats
+    from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
     return [GrapheneRunStepStats(stats) for stats in step_stats]
@@ -372,9 +371,9 @@ def get_logs_for_run(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> Union["GrapheneRunNotFoundError", "GrapheneEventConnection"]:
-    from ..schema.errors import GrapheneRunNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneEventConnection
-    from .events import from_event_record
+    from dagster_graphql.implementation.events import from_event_record
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection
 
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)
@@ -469,9 +468,9 @@ def get_runs_feed_entries(
         cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
             that querying should start at the beginning of the table for both runs and backfills.
     """
-    from ..schema.backfill import GraphenePartitionBackfill
-    from ..schema.pipelines.pipeline import GrapheneRun
-    from ..schema.runs_feed import GrapheneRunsFeedConnection
+    from dagster_graphql.schema.backfill import GraphenePartitionBackfill
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
 
     check.opt_str_param(cursor, "cursor")
     check.int_param(limit, "limit")

@@ -3,25 +3,24 @@ from typing import Any, Generic, Mapping, Optional, Type, Union, cast
 
 from typing_extensions import TypeVar
 
-from dagster._core.definitions.definition_config_schema import CoercableToConfigSchema
-from dagster._core.definitions.resource_definition import ResourceFunction
-from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
-from dagster._utils.cached_method import cached_method
-
-from .attach_other_object_to_context import (
+from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
-from .config import Config
-from .conversion_utils import TResValue
-from .resource import (
+from dagster._config.pythonic_config.config import Config
+from dagster._config.pythonic_config.conversion_utils import TResValue
+from dagster._config.pythonic_config.resource import (
     CoercibleToResource,
     ConfigurableResourceFactory,
     NestedResourcesResourceDefinition,
     PartialResource,
     T_Self,
 )
-from .type_check_utils import safe_is_subclass
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+from dagster._core.definitions.definition_config_schema import CoercableToConfigSchema
+from dagster._core.definitions.resource_definition import ResourceFunction
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
+from dagster._utils.cached_method import cached_method
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)

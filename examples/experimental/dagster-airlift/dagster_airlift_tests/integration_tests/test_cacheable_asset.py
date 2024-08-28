@@ -63,8 +63,10 @@ def test_cacheable_asset(airflow_instance: None) -> None:
             dags={
                 "print_dag": DagMigrationState(
                     tasks={
-                        "print_task": TaskMigrationState(migrated=False),
-                        "downstream_print_task": TaskMigrationState(migrated=False),
+                        "print_task": TaskMigrationState(task_id="print_task", migrated=False),
+                        "downstream_print_task": TaskMigrationState(
+                            task_id="downstream_print_task", migrated=False
+                        ),
                     }
                 )
             }
@@ -73,7 +75,7 @@ def test_cacheable_asset(airflow_instance: None) -> None:
     ]:
         cacheable_assets = AirflowCacheableAssetsDefinition(
             airflow_instance=instance,
-            orchestrated_defs=Definitions(
+            defs=Definitions(
                 assets=[
                     first_asset,
                     print_dag__downstream_print_task,

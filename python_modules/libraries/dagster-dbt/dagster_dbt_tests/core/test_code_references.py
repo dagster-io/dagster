@@ -17,7 +17,7 @@ from dagster_dbt import DbtProject
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from ..dbt_projects import test_jaffle_shop_path
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 JAFFLE_SHOP_ROOT_PATH = os.path.normpath(test_jaffle_shop_path)
 

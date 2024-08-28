@@ -3,6 +3,13 @@ from enum import Enum
 from typing import Dict, FrozenSet, NamedTuple, Optional, Sequence, Tuple
 
 from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AssetSubsetWithMetadata,
+    AutomationConditionEvaluation,
+    AutomationConditionEvaluationWithRunIds,
+    AutomationConditionNodeSnapshot,
+    HistoricalAllPartitionsSubsetSentinel,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
@@ -12,14 +19,6 @@ from dagster._serdes.serdes import (
     UnpackedValue,
     WhitelistMap,
     whitelist_for_serdes,
-)
-
-from .declarative_automation.serialized_objects import (
-    AssetSubsetWithMetadata,
-    AutomationConditionEvaluation,
-    AutomationConditionEvaluationWithRunIds,
-    AutomationConditionNodeSnapshot,
-    HistoricalAllPartitionsSubsetSentinel,
 )
 
 

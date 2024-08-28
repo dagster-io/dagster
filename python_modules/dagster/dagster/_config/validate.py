@@ -1,10 +1,8 @@
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
 
 import dagster._check as check
-from dagster._utils import ensure_single_item
-
-from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
-from .errors import (
+from dagster._config.config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
+from dagster._config.errors import (
     EvaluationError,
     create_array_error,
     create_dict_type_mismatch_error,
@@ -24,12 +22,13 @@ from .errors import (
     create_selector_type_error,
     create_selector_unspecified_value_error,
 )
-from .evaluate_value_result import EvaluateValueResult
-from .field import resolve_to_config_type
-from .post_process import post_process_config
-from .snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
-from .stack import EvaluationStack
-from .traversal_context import ValidationContext
+from dagster._config.evaluate_value_result import EvaluateValueResult
+from dagster._config.field import resolve_to_config_type
+from dagster._config.post_process import post_process_config
+from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._config.stack import EvaluationStack
+from dagster._config.traversal_context import ValidationContext
+from dagster._utils import ensure_single_item
 
 VALID_FLOAT_TYPES = tuple([int, float])
 

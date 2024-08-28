@@ -1434,15 +1434,15 @@ def test_connected_assets_disconnected_partitions():
         backfill_start_datetime.timestamp(),
         [
             PartitionsByAssetSelector(
-                foo.key, PartitionsSelector(PartitionRangeSelector("2023-10-01", "2023-10-05"))
+                foo.key, PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")])
             ),
             PartitionsByAssetSelector(
                 foo_child.key,
-                PartitionsSelector(PartitionRangeSelector("2023-10-01", "2023-10-03")),
+                PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
             ),
             PartitionsByAssetSelector(
                 foo_grandchild.key,
-                PartitionsSelector(PartitionRangeSelector("2023-10-10", "2023-10-13")),
+                PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
             ),
         ],
     )
@@ -1729,3 +1729,52 @@ def test_run_request_partition_order():
         "2023-10-02",
         "2023-10-03",
     ]
+
+
+def test_asset_backfill_multiple_partition_ranges():
+    instance = DagsterInstance.ephemeral()
+    partitions_def = DailyPartitionsDefinition("2023-10-01")
+
+    @asset(partitions_def=partitions_def)
+    def foo():
+        pass
+
+    @asset(partitions_def=partitions_def, deps=[foo])
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {"repo": [foo, foo_child]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    target_partitions_subset = (
+        partitions_def.empty_subset()
+        .with_partition_key_range(partitions_def, PartitionKeyRange("2023-11-01", "2023-11-03"))
+        .with_partition_key_range(partitions_def, PartitionKeyRange("2023-11-06", "2023-11-07"))
+    )
+    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=AssetGraphSubset(
+            partitions_subsets_by_asset_key={
+                foo.key: target_partitions_subset,
+                foo_child.key: target_partitions_subset,
+            }
+        ),
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_timestamp=create_datetime(2023, 12, 5, 0, 0, 0).timestamp(),
+    )
+    assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(foo.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo.key, "2023-11-03"),
+        AssetKeyPartitionKey(foo.key, "2023-11-06"),
+        AssetKeyPartitionKey(foo.key, "2023-11-07"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-03"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-06"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-07"),
+    }
+
+    asset_backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+    assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset

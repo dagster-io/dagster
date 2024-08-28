@@ -1,3 +1,3 @@
-from ._cli import main
+from dagster._cli import main
 
 main()

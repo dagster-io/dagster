@@ -23,7 +23,11 @@ from dagster._core.definitions.repository_definition import (
     RepositoryLoadData,
 )
 
-from .test_repository import define_empty_job, define_simple_job, define_with_resources_job
+from dagster_tests.general_tests.test_repository import (
+    define_empty_job,
+    define_simple_job,
+    define_with_resources_job,
+)
 
 
 def define_cacheable_and_uncacheable_assets():

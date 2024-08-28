@@ -5,23 +5,22 @@ from types import ModuleType
 from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-)
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.utils import resolve_automation_condition
-from dagster._core.errors import DagsterInvalidDefinitionError
-
-from .asset_key import (
+from dagster._core.definitions.asset_key import (
     AssetKey,
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from .assets import AssetsDefinition
-from .cacheable_assets import CacheableAssetsDefinition
-from .source_asset import SourceAsset
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.utils import resolve_automation_condition
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def find_objects_in_module_of_types(module: ModuleType, types) -> Iterator:

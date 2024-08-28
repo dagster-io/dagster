@@ -7,7 +7,9 @@ from dagster import (
     asset,
 )
 
-from .dynamic_asset_partitions import multipartition_w_dynamic_partitions_def
+from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
+    multipartition_w_dynamic_partitions_def,
+)
 
 FAILURE_RATE = 0.5
 

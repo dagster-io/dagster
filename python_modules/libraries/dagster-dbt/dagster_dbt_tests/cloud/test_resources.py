@@ -5,7 +5,7 @@ import responses
 from dagster import Failure
 from dagster._check import CheckError
 
-from .utils import (
+from dagster_dbt_tests.cloud.utils import (
     SAMPLE_API_PREFIX,
     SAMPLE_API_V3_PREFIX,
     SAMPLE_JOB_ID,

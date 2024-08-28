@@ -10,9 +10,8 @@ from dagster._core.execution.plan.execute_plan import inner_plan_execution_itera
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.executor.base import Executor
 from dagster._utils.timing import format_duration, time_execution_scope
-
-from .base import Executor
 
 
 def inprocess_execution_iterator(

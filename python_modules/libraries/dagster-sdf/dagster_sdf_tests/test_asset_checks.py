@@ -6,7 +6,7 @@ from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator, DagsterSdfT
 from dagster_sdf.resource import SdfCliResource
 from dagster_sdf.sdf_workspace import SdfWorkspace
 
-from .sdf_workspaces import lineage_asset_checks_path
+from dagster_sdf_tests.sdf_workspaces import lineage_asset_checks_path
 
 
 def test_asset_checks_passing() -> None:

@@ -1,8 +1,12 @@
 import graphene
 
-from .asset_key import GrapheneAssetKey
-from .table import GrapheneTable, GrapheneTableColumnLineageEntry, GrapheneTableSchema
-from .util import non_null_list
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.table import (
+    GrapheneTable,
+    GrapheneTableColumnLineageEntry,
+    GrapheneTableSchema,
+)
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneMetadataItemDefinition(graphene.ObjectType):

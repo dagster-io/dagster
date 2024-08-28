@@ -4,14 +4,13 @@ import dagster._check as check
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.instance import DagsterInstance
 from dagster._utils.warnings import disable_dagster_warnings
 
-from ..instance import DagsterInstance
-from .source_asset import SourceAsset
-
 if TYPE_CHECKING:
-    from ..execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 def observe(

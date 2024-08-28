@@ -11,14 +11,17 @@ Run the `dev_install` make command to install python dependencies.
 make dev_install
 ```
 
-Launch airflow, where we've loaded two dags:
-
-- `load_lakehouse`, which ingests a csv file into a duckdb table called `iris_table`
-- `dbt_dag`, which loads a modified jaffle shop project, and has `iris_table` as a dbt source.
+Launch airflow, where we've loaded the `rebuild_customers_list` DAG.
 
 ```bash
 make run_airflow
 ```
+
+This DAG consists of three seqeuential tasks:
+
+1. `load_raw_customers` loads a CSV file of raw customer data into duckdb.
+2. `run_dbt_model` builds a series of dbt models (from [jaffle shop](https://github.com/dbt-labs/jaffle_shop_duckdb)) combining customer, order, and payment data.
+3. `export_customers` exports a CSV representation of the final customer file from duckdb to disk.
 
 In another shell, run `dagster dev`, where you should see the full dbt-airflow lineage show up.
 

@@ -6,7 +6,11 @@ from dagster import Any
 from dagster._seven import is_module_available
 from kombu import Queue
 
-from .config import TASK_EXECUTE_JOB_NAME, TASK_EXECUTE_PLAN_NAME, TASK_RESUME_JOB_NAME
+from dagster_celery.config import (
+    TASK_EXECUTE_JOB_NAME,
+    TASK_EXECUTE_PLAN_NAME,
+    TASK_RESUME_JOB_NAME,
+)
 
 
 def make_app(app_args=None):

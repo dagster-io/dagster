@@ -10,7 +10,7 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
-from .types import CensusOutput
+from dagster_census.types import CensusOutput
 
 CENSUS_API_BASE = "app.getcensus.com/api"
 CENSUS_VERSION = "v1"

@@ -9,7 +9,7 @@ from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
 
-from .util import non_null_list
+from dagster_graphql.schema.util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
 

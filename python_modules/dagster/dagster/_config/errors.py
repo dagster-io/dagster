@@ -2,15 +2,14 @@ from enum import Enum
 from typing import Mapping, Sequence, Union
 
 import dagster._check as check
+from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field_utils import EnvVar, IntEnvVar
+from dagster._config.snap import ConfigFieldSnap, ConfigTypeSnap, minimal_config_for_type_snap
+from dagster._config.stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
+from dagster._config.traversal_context import ContextData
+from dagster._config.type_printer import print_config_type_key_to_string
 from dagster._record import IHaveNew, record, record_custom
 from dagster._utils.error import SerializableErrorInfo
-
-from .config_type import ConfigTypeKind
-from .snap import ConfigFieldSnap, ConfigTypeSnap, minimal_config_for_type_snap
-from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
-from .traversal_context import ContextData
-from .type_printer import print_config_type_key_to_string
 
 
 class DagsterEvaluationErrorReason(Enum):

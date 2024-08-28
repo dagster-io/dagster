@@ -35,6 +35,9 @@ setup_local_env:
 run_airflow: 
 	airflow standalone
 
+run_complete:
+	dagster dev -m dbt_example.dagster_defs.complete -p 3333
+
 run_peer:
 	dagster dev -m dbt_example.dagster_defs.peer -p 3333
 

@@ -45,7 +45,7 @@ export const RunsRoot = () => {
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
-  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter);
+  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, PAGE_SIZE);
 
   useBlockTraceOnQueryResult(queryResult, 'RunsRootQuery');
 
@@ -203,7 +203,7 @@ export const RunsRoot = () => {
               <>
                 <StickyTableContainer $top={0}>
                   <RunTable
-                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                    runs={pipelineRunsOrError.results}
                     onAddTag={onAddTag}
                     filter={filter}
                     actionBarComponents={actionBar()}

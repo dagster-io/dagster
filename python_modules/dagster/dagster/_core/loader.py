@@ -12,7 +12,7 @@ TKey = TypeVar("TKey")
 
 
 if TYPE_CHECKING:
-    from .instance import DagsterInstance
+    from dagster._core.instance import DagsterInstance
 
 """
 Loadable - asyncio driven batching

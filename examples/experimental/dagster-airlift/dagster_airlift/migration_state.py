@@ -1,35 +1,38 @@
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple, Optional, Sequence
 
 import yaml
 
 
 class TaskMigrationState(NamedTuple):
+    task_id: str
     migrated: bool
 
     @staticmethod
     def from_dict(task_dict: Dict[str, Any]) -> "TaskMigrationState":
-        if "migrated" not in task_dict:
-            raise Exception("Expected a 'migrated' key in the task dictionary")
-        if set(task_dict.keys()) != {"migrated"}:
-            raise Exception("Expected only a 'migrated' key in the task dictionary")
+        if set(task_dict.keys()) != {"id", "migrated"}:
+            raise Exception(
+                f"Expected 'migrated' and 'id' keys in the task dictionary. Found keys: {task_dict.keys()}"
+            )
         if task_dict["migrated"] not in [True, False]:
             raise Exception("Expected 'migrated' key to be a boolean")
-        return TaskMigrationState(migrated=task_dict["migrated"])
+        return TaskMigrationState(task_id=task_dict["id"], migrated=task_dict["migrated"])
 
 
 class DagMigrationState(NamedTuple):
     tasks: Dict[str, TaskMigrationState]
 
     @staticmethod
-    def from_dict(dag_dict: Dict[str, Dict[str, Any]]) -> "DagMigrationState":
+    def from_dict(dag_dict: Dict[str, Sequence[Dict[str, Any]]]) -> "DagMigrationState":
         if "tasks" not in dag_dict:
             raise Exception(
                 f"Expected a 'tasks' key in the dag dictionary. Instead; got: {dag_dict}"
             )
+        task_list = dag_dict["tasks"]
         task_migration_states = {}
-        for task_id, task_dict in dag_dict["tasks"].items():
-            task_migration_states[task_id] = TaskMigrationState.from_dict(task_dict)
+        for task_dict in task_list:
+            task_state = TaskMigrationState.from_dict(task_dict)
+            task_migration_states[task_state.task_id] = task_state
         return DagMigrationState(tasks=task_migration_states)
 
     def is_task_migrated(self, task_id: str) -> bool:
@@ -51,14 +54,16 @@ class AirflowMigrationState(NamedTuple):
     def dag_has_migration_state(self, dag_id: str) -> bool:
         return self.get_migration_dict_for_dag(dag_id) is not None
 
-    def get_migration_dict_for_dag(self, dag_id: str) -> Optional[Dict[str, Dict[str, Any]]]:
+    def get_migration_dict_for_dag(
+        self, dag_id: str
+    ) -> Optional[Dict[str, Sequence[Dict[str, Any]]]]:
         if dag_id not in self.dags:
             return None
         return {
-            "tasks": {
-                task_id: {"migrated": task_state.migrated}
+            "tasks": [
+                {"migrated": task_state.migrated, "id": task_id}
                 for task_id, task_state in self.dags[dag_id].tasks.items()
-            }
+            ]
         }
 
 
@@ -68,8 +73,8 @@ class MigrationStateParsingError(Exception):
 
 def load_migration_state_from_yaml(migration_yaml_path: Path) -> AirflowMigrationState:
     # Expect migration_yaml_path to be a directory, where each file represents a dag, and each
-    # file in the subdir represents a task. The dictionary each task should consist of a single bit:
-    # migrated: true/false.
+    # file in the subdir represents a task. The dictionary for each task should contain two keys;
+    # id: the task id, and migrated: a boolean indicating whether the task has been migrated.
     dag_migration_states = {}
     try:
         for dag_file in migration_yaml_path.iterdir():

@@ -5,7 +5,7 @@ from dagster_sdf.asset_decorator import sdf_assets
 from dagster_sdf.asset_utils import get_asset_key_for_table_id
 from dagster_sdf.sdf_workspace import SdfWorkspace
 
-from .sdf_workspaces import quoted_tables_path
+from dagster_sdf_tests.sdf_workspaces import quoted_tables_path
 
 
 def test_quoted_asset_keys(quoted_tables_target_dir: Path) -> None:

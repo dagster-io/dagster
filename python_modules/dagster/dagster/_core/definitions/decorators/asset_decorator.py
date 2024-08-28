@@ -17,48 +17,49 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import deprecated_param, experimental_param
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_out import AssetOut
+from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
+    DecoratorAssetsDefinitionBuilderArgs,
+    build_named_ins,
+    build_named_outs,
+    create_check_specs_by_output_name,
     validate_and_assign_output_names_to_check_specs,
 )
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.input import GraphIn
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.warnings import disable_dagster_warnings
-
-from ..asset_check_spec import AssetCheckSpec
-from ..asset_in import AssetIn
-from ..asset_out import AssetOut
-from ..asset_spec import AssetExecutionType, AssetSpec
-from ..assets import AssetsDefinition
-from ..backfill_policy import BackfillPolicy, BackfillPolicyType
-from ..decorators.graph_decorator import graph
-from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from ..input import GraphIn
-from ..output import GraphOut
-from ..partition import PartitionsDefinition
-from ..policy import RetryPolicy
-from ..resource_definition import ResourceDefinition
-from ..utils import (
+from dagster._core.definitions.output import GraphOut
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.utils import (
     DEFAULT_IO_MANAGER_KEY,
     DEFAULT_OUTPUT,
     NoValueSentinel,
     resolve_automation_condition,
     validate_tags_strict,
 )
-from .decorator_assets_definition_builder import (
-    DecoratorAssetsDefinitionBuilderArgs,
-    build_named_ins,
-    build_named_outs,
-    create_check_specs_by_output_name,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.types.dagster_type import DagsterType
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 @overload

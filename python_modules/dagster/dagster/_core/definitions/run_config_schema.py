@@ -2,9 +2,8 @@ from typing import Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._config import ConfigType
-
-from .config import ConfigMapping
-from .job_definition import JobDefinition
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.job_definition import JobDefinition
 
 
 class RunConfigSchema(NamedTuple):

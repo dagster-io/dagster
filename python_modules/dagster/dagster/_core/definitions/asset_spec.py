@@ -4,19 +4,21 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.utils import validate_asset_owner
+from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.utils import (
+    resolve_automation_condition,
+    validate_asset_owner,
+    validate_tags_strict,
+)
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
-
-from .auto_materialize_policy import AutoMaterializePolicy
-from .events import AssetKey, CoercibleToAssetKey
-from .freshness_policy import FreshnessPolicy
-from .partition_mapping import PartitionMapping
-from .utils import resolve_automation_condition, validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep

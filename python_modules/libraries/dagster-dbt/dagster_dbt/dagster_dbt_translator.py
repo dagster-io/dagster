@@ -12,7 +12,7 @@ from dagster import (
 from dagster._annotations import experimental, public
 from dagster._core.definitions.utils import is_valid_definition_tag_key
 
-from .asset_utils import (
+from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_description_fn,

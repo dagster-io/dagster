@@ -15,11 +15,11 @@ from dagster._core.storage.asset_check_execution_record import (
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceRequestContext
 
-from ..schema.asset_checks import GrapheneAssetCheckExecution
-from .fetch_assets import repository_iter
+from dagster_graphql.implementation.fetch_assets import repository_iter
+from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 
 if TYPE_CHECKING:
-    from ..schema.util import ResolveInfo
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def asset_checks_iter(

@@ -18,9 +18,24 @@ from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.decorators import repository
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.partitioned_schedule import (
+    UnresolvedPartitionedAssetScheduleDefinition,
+)
+from dagster._core.definitions.repository_definition import (
+    SINGLETON_REPOSITORY_NAME,
+    PendingRepositoryDefinition,
+    RepositoryDefinition,
+)
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import dedupe_object_refs
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
@@ -30,20 +45,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._record import IHaveNew, record_custom
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
-
-from .assets import AssetsDefinition, SourceAsset
-from .cacheable_assets import CacheableAssetsDefinition
-from .decorators import repository
-from .job_definition import JobDefinition, default_job_io_manager
-from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
-from .repository_definition import (
-    SINGLETON_REPOSITORY_NAME,
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
-)
-from .schedule_definition import ScheduleDefinition
-from .sensor_definition import SensorDefinition
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader

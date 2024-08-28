@@ -3,11 +3,10 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
-
-from ..config import ConfigMapping
-from ..graph_definition import GraphDefinition
-from ..input import GraphIn, InputDefinition
-from ..output import GraphOut, OutputDefinition
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.input import GraphIn, InputDefinition
+from dagster._core.definitions.output import GraphOut, OutputDefinition
 
 
 class _Graph:

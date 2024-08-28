@@ -9,10 +9,10 @@ from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
-from .event_log import PostgresEventLogStorage
-from .run_storage import PostgresRunStorage
-from .schedule_storage import PostgresScheduleStorage
-from .utils import pg_url_from_config
+from dagster_postgres.event_log import PostgresEventLogStorage
+from dagster_postgres.run_storage import PostgresRunStorage
+from dagster_postgres.schedule_storage import PostgresScheduleStorage
+from dagster_postgres.utils import pg_url_from_config
 
 
 class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):

@@ -11,13 +11,19 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    one_asset_depends_on_two,
+    two_partitions_def,
+)
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_state import (
     ScenarioSpec,
 )
-
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.base_scenario import run_request
-from ...scenario_utils.scenario_specs import one_asset_depends_on_two, two_partitions_def
 
 
 def get_hardcoded_condition():

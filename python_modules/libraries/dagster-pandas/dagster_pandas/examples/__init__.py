@@ -7,7 +7,12 @@ from dagster import (
     repository,
 )
 
-from .pandas_hello_world.ops import always_fails_op, papermill_pandas_hello_world, sum_op, sum_sq_op
+from dagster_pandas.examples.pandas_hello_world.ops import (
+    always_fails_op,
+    papermill_pandas_hello_world,
+    sum_op,
+    sum_sq_op,
+)
 
 
 @graph

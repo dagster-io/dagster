@@ -18,7 +18,7 @@ from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, d
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
 
-from .dlt_test_sources.duckdb_with_transformer import (
+from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import (
     pipeline,
     pipeline as dlt_source,
 )

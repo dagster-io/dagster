@@ -28,7 +28,7 @@ from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy.engine import Connection
 
-from .utils.event_log_storage import TestEventLogStorage
+from dagster_tests.storage_tests.utils.event_log_storage import TestEventLogStorage
 
 
 class TestInMemoryEventLogStorage(TestEventLogStorage):

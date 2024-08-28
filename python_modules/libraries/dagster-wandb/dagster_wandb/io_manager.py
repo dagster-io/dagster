@@ -24,20 +24,20 @@ from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from wandb import Artifact
 from wandb.data_types import WBValue
 
-from .resources import WANDB_CLOUD_HOST
-from .utils.errors import (
+from dagster_wandb.resources import WANDB_CLOUD_HOST
+from dagster_wandb.utils.errors import (
     WandbArtifactsIOManagerError,
     raise_on_empty_configuration,
     raise_on_unknown_partition_keys,
     raise_on_unknown_read_configuration_keys,
     raise_on_unknown_write_configuration_keys,
 )
-from .utils.pickling import (
+from dagster_wandb.utils.pickling import (
     ACCEPTED_SERIALIZATION_MODULES,
     pickle_artifact_content,
     unpickle_artifact_content,
 )
-from .version import __version__
+from dagster_wandb.version import __version__
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict

@@ -14,8 +14,10 @@ from dagster import (
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 
-from .partition_mappings_galore_perf_scenario import partition_mappings_galore_perf_scenario
-from .perf_scenario import PerfScenario, RandomAssets
+from auto_materialize_perf_tests.partition_mappings_galore_perf_scenario import (
+    partition_mappings_galore_perf_scenario,
+)
+from auto_materialize_perf_tests.perf_scenario import PerfScenario, RandomAssets
 
 warnings.simplefilter("ignore", category=ExperimentalWarning)
 

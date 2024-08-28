@@ -61,6 +61,35 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
 )
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
+from dagster._core.storage.event_log.base import (
+    AssetCheckSummaryRecord,
+    AssetEntry,
+    AssetRecord,
+    AssetRecordsFilter,
+    EventLogConnection,
+    EventLogCursor,
+    EventLogRecord,
+    EventLogStorage,
+    EventRecordsFilter,
+    PlannedMaterializationInfo,
+)
+from dagster._core.storage.event_log.migration import (
+    ASSET_DATA_MIGRATIONS,
+    ASSET_KEY_INDEX_COLS,
+    EVENT_LOG_DATA_MIGRATIONS,
+)
+from dagster._core.storage.event_log.schema import (
+    AssetCheckExecutionsTable,
+    AssetEventTagsTable,
+    AssetKeyTable,
+    ConcurrencyLimitsTable,
+    ConcurrencySlotsTable,
+    DynamicPartitionsTable,
+    PendingStepsTable,
+    SecondaryIndexMigrationTable,
+    SqlEventLogStorageTable,
+)
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import (
     db_case,
@@ -82,32 +111,6 @@ from dagster._utils.concurrency import (
     get_max_concurrency_limit_value,
 )
 from dagster._utils.warnings import deprecation_warning
-
-from ..dagster_run import DagsterRunStatsSnapshot
-from .base import (
-    AssetCheckSummaryRecord,
-    AssetEntry,
-    AssetRecord,
-    AssetRecordsFilter,
-    EventLogConnection,
-    EventLogCursor,
-    EventLogRecord,
-    EventLogStorage,
-    EventRecordsFilter,
-    PlannedMaterializationInfo,
-)
-from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
-from .schema import (
-    AssetCheckExecutionsTable,
-    AssetEventTagsTable,
-    AssetKeyTable,
-    ConcurrencyLimitsTable,
-    ConcurrencySlotsTable,
-    DynamicPartitionsTable,
-    PendingStepsTable,
-    SecondaryIndexMigrationTable,
-    SqlEventLogStorageTable,
-)
 
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue

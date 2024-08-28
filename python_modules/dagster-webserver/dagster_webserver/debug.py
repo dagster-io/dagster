@@ -11,12 +11,12 @@ from dagster._core.workspace.context import (
 )
 from dagster._serdes.serdes import deserialize_value
 
-from .cli import (
+from dagster_webserver.cli import (
     DEFAULT_WEBSERVER_HOST,
     DEFAULT_WEBSERVER_PORT,
     host_dagster_ui_with_workspace_process_context,
 )
-from .version import __version__
+from dagster_webserver.version import __version__
 
 
 class WebserverDebugWorkspaceProcessContext(IWorkspaceProcessContext):

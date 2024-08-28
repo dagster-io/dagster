@@ -24,6 +24,13 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.repository_definition.repository_data import (
+    CachingRepositoryData,
+    RepositoryData,
+)
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    RepositoryListDefinition as RepositoryListDefinition,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -33,9 +40,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
-
-from .repository_data import CachingRepositoryData, RepositoryData
-from .valid_definitions import RepositoryListDefinition as RepositoryListDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
@@ -256,7 +260,7 @@ class RepositoryDefinition:
 
     @public
     @property
-    def asset_checks_defs_by_key(self) -> Mapping[AssetKey, "AssetChecksDefinition"]:
+    def asset_checks_defs_by_key(self) -> Mapping[AssetCheckKey, "AssetChecksDefinition"]:
         """Mapping[AssetCheckKey, AssetChecksDefinition]: The assets checks defined in the repository."""
         return self._repository_data.get_asset_checks_defs_by_key()
 

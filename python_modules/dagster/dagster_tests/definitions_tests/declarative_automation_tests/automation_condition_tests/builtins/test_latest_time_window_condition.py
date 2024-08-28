@@ -4,8 +4,10 @@ from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.scenario_specs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     daily_partitions_def,
     one_asset,
     time_partitions_start_datetime,

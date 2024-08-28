@@ -10,7 +10,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._time import add_absolute_time, create_datetime, get_current_datetime, get_timezone
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_scheduler_run import (
+from dagster_tests.scheduler_tests.test_scheduler_run import (
     evaluate_schedules,
     get_schedule_executors,
     validate_run_started,

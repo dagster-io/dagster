@@ -1,14 +1,29 @@
-import os
-from pathlib import Path
-
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
-from dagster_airlift.core.def_factory import defs_from_factories
-from dagster_airlift.dbt import DbtProjectDefs
+from dagster._core.definitions.definitions_class import Definitions
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    build_defs_from_airflow_instance,
+    dag_defs,
+    task_defs,
+)
+from dagster_airlift.dbt import dbt_defs
 from dagster_dbt import DbtProject
 
-from dbt_example.dagster_defs.csv_to_duckdb_defs import CSVToDuckdbDefs
+from dbt_example.dagster_defs.lakehouse import (
+    defs_from_lakehouse,
+    lakehouse_existence_check_defs,
+    specs_from_lakehouse,
+)
+from dbt_example.shared.load_iris import CSV_PATH, DB_PATH, IRIS_COLUMNS
 
-from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME, dbt_project_path
+from .constants import (
+    AIRFLOW_BASE_URL,
+    AIRFLOW_INSTANCE_NAME,
+    PASSWORD,
+    USERNAME,
+    dbt_manifest_path,
+    dbt_project_path,
+)
 
 airflow_instance = AirflowInstance(
     auth_backend=BasicAuthBackend(
@@ -20,26 +35,32 @@ airflow_instance = AirflowInstance(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=defs_from_factories(
-        CSVToDuckdbDefs(
-            name="load_lakehouse__load_iris",
-            table_name="iris_lakehouse_table",
-            csv_path=Path("iris.csv"),
-            duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-            column_names=[
-                "sepal_length_cm",
-                "sepal_width_cm",
-                "petal_length_cm",
-                "petal_width_cm",
-                "species",
-            ],
-            duckdb_schema="iris_dataset",
-            duckdb_database_name="jaffle_shop",
+    defs=Definitions.merge(
+        dag_defs(
+            "load_lakehouse",
+            task_defs(
+                "load_iris",
+                defs_from_lakehouse(
+                    specs=specs_from_lakehouse(csv_path=CSV_PATH),
+                    csv_path=CSV_PATH,
+                    duckdb_path=DB_PATH,
+                    columns=IRIS_COLUMNS,
+                ),
+            ),
         ),
-        DbtProjectDefs(
-            name="dbt_dag__build_dbt_models",
-            dbt_manifest=dbt_project_path() / "target" / "manifest.json",
-            project=DbtProject(project_dir=dbt_project_path()),
+        dag_defs(
+            "dbt_dag",
+            task_defs(
+                "build_dbt_models",
+                dbt_defs(
+                    manifest=dbt_manifest_path(),
+                    project=DbtProject(dbt_project_path()),
+                ),
+            ),
+        ),
+        lakehouse_existence_check_defs(
+            csv_path=CSV_PATH,
+            duckdb_path=DB_PATH,
         ),
     ),
 )

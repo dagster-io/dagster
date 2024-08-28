@@ -33,11 +33,13 @@ from dagster_pipes import (
     encode_env_var,
 )
 
-from dagster_k8s.client import DEFAULT_WAIT_BETWEEN_ATTEMPTS
+from dagster_k8s.client import (
+    DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+    DagsterKubernetesClient,
+    WaitForPodState,
+)
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from dagster_k8s.utils import get_common_labels
-
-from .client import DagsterKubernetesClient, WaitForPodState
-from .models import k8s_model_from_dict, k8s_snake_case_dict
 
 
 def get_pod_name(run_id: str, op_name: str):

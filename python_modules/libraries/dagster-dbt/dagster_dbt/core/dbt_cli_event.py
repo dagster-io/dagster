@@ -38,13 +38,13 @@ from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 
-from ..asset_utils import (
+from dagster_dbt.asset_utils import (
     dagster_name_fn,
     default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,
 )
-from ..dagster_dbt_translator import DagsterDbtTranslator, validate_translator
-from ..dbt_manifest import DbtManifestParam, validate_manifest
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
+from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
 if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:

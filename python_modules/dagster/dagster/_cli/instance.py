@@ -3,10 +3,9 @@ import os
 import click
 
 import dagster._check as check
+from dagster._cli.utils import get_instance_for_cli
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.migration.bigint_migration import run_bigint_migration
-
-from .utils import get_instance_for_cli
 
 
 @click.group(name="instance")

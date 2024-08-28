@@ -8,8 +8,18 @@ from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, experimental_param, public
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_key import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+    key_prefix_from_coercible,
+)
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
@@ -19,17 +29,6 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
-
-from .asset_check_spec import AssetCheckKey
-from .asset_key import (
-    AssetKey,
-    CoercibleToAssetKey,
-    CoercibleToAssetKeyPrefix,
-    key_prefix_from_coercible,
-)
-from .assets import AssetsDefinition
-from .base_asset_graph import BaseAssetGraph
-from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[
     str,

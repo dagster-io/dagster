@@ -24,11 +24,9 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._utils.merger import merge_dicts
 
-from dagster_k8s.launcher import K8sRunLauncher
-
-from .client import DagsterKubernetesClient
-from .container_context import K8sContainerContext
-from .job import (
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_k8s.job import (
     USER_DEFINED_K8S_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
     UserDefinedDagsterK8sConfig,
@@ -36,6 +34,7 @@ from .job import (
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
+from dagster_k8s.launcher import K8sRunLauncher
 
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),

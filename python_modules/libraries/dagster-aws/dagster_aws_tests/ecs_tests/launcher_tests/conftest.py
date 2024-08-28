@@ -15,7 +15,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils.warnings import disable_dagster_warnings
 
-from . import repo
+from dagster_aws_tests.ecs_tests.launcher_tests import repo
 
 Secret = namedtuple("Secret", ["name", "arn"])
 

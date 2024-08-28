@@ -3,8 +3,8 @@ from typing import Optional
 from dagster import Definitions
 
 from dagster_airlift.core.sensor import build_airflow_polling_sensor
+from dagster_airlift.migration_state import AirflowMigrationState
 
-from ..migration_state import AirflowMigrationState
 from .airflow_cacheable_assets_def import DEFAULT_POLL_INTERVAL, AirflowCacheableAssetsDefinition
 from .airflow_instance import AirflowInstance
 
@@ -12,7 +12,7 @@ from .airflow_instance import AirflowInstance
 def build_defs_from_airflow_instance(
     airflow_instance: AirflowInstance,
     cache_polling_interval: int = DEFAULT_POLL_INTERVAL,
-    orchestrated_defs: Optional[Definitions] = None,
+    defs: Optional[Definitions] = None,
     # This parameter will go away once we can derive the migration state from airflow itself, using our built in utilities.
     # Alternatively, we can keep it around to let people override the migration state if they want.
     migration_state_override: Optional[AirflowMigrationState] = None,
@@ -31,7 +31,7 @@ def build_defs_from_airflow_instance(
     Args:
         airflow_instance (AirflowInstance): The airflow instance to peer with.
         cache_polling_interval (int, optional): The interval at which to poll for updated assets from airflow. Defaults to 60 seconds.
-        orchestrated_defs (Optional[Definitions], optional): The orchestrated definitions to peer. If None are provided, only dags will be represented.
+        defs (Optional[Definitions], optional): Additional definitions to pass to the overall created Definitions object. Assets provided here can be mapped to specific tasks and dags within the provided airflow instance. Defaults to None.
         migration_state_override (Optional[AirflowMigrationState], optional): The migration state to use for the provided orchestrated defs. Defaults to None.
 
     Returns:
@@ -40,16 +40,19 @@ def build_defs_from_airflow_instance(
     """
     assets_defs = AirflowCacheableAssetsDefinition(
         airflow_instance=airflow_instance,
-        orchestrated_defs=orchestrated_defs,
+        defs=defs,
         poll_interval=cache_polling_interval,
         migration_state_override=migration_state_override,
     )
     # Now, we construct the sensor that will poll airflow for dag runs.
-    airflow_sensor = build_airflow_polling_sensor(
-        airflow_instance=airflow_instance,
-    )
+    airflow_sensor = build_airflow_polling_sensor(airflow_instance=airflow_instance)
     return Definitions(
         assets=[assets_defs],
-        sensors=[airflow_sensor],
-        resources=orchestrated_defs.resources if orchestrated_defs else None,
+        asset_checks=defs.asset_checks if defs else None,
+        sensors=[airflow_sensor, *defs.sensors] if defs and defs.sensors else [airflow_sensor],
+        schedules=defs.schedules if defs else None,
+        jobs=defs.jobs if defs else None,
+        executor=defs.executor if defs else None,
+        loggers=defs.loggers if defs else None,
+        resources=defs.resources if defs else None,
     )

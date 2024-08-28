@@ -11,19 +11,18 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.config_schema import ensure_workspace_config
 from dagster._utils.yaml_utils import load_yaml_from_path
 
-from .config_schema import ensure_workspace_config
-
 if TYPE_CHECKING:
-    from .context import WorkspaceProcessContext
+    from dagster._core.workspace.context import WorkspaceProcessContext
 
 
 def load_workspace_process_context_from_yaml_paths(
     instance: DagsterInstance, yaml_paths: Sequence[str], version: str = ""
 ) -> "WorkspaceProcessContext":
-    from .context import WorkspaceProcessContext
-    from .load_target import WorkspaceFileTarget
+    from dagster._core.workspace.context import WorkspaceProcessContext
+    from dagster._core.workspace.load_target import WorkspaceFileTarget
 
     return WorkspaceProcessContext(instance, WorkspaceFileTarget(paths=yaml_paths), version=version)
 

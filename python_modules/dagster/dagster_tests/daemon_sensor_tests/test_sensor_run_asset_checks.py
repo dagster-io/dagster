@@ -16,7 +16,7 @@ from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatu
 from dagster._core.test_utils import create_test_daemon_workspace_context, load_external_repo
 from dagster._core.workspace.load_target import ModuleTarget
 
-from .test_sensor_run import evaluate_sensors, validate_tick
+from dagster_tests.daemon_sensor_tests.test_sensor_run import evaluate_sensors, validate_tick
 
 
 @asset(partitions_def=DailyPartitionsDefinition(start_date="2024-01-01"))

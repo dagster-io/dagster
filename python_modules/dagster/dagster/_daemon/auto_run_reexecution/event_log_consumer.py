@@ -7,9 +7,10 @@ from dagster import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
-
-from ..daemon import IntervalDaemon
-from .auto_run_reexecution import consume_new_runs_for_automatic_reexecution
+from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
+    consume_new_runs_for_automatic_reexecution,
+)
+from dagster._daemon.daemon import IntervalDaemon
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry

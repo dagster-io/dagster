@@ -2,7 +2,7 @@ import dagster._check as check
 import graphene
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 
-from ..errors import GraphenePythonError
+from dagster_graphql.schema.errors import GraphenePythonError
 
 
 class GraphenePipelineRunStatsSnapshot(graphene.Interface):

@@ -3316,7 +3316,8 @@ export type PartitionsByAssetSelector = {
 export type PartitionsOrError = Partitions | PythonError;
 
 export type PartitionsSelector = {
-  range: PartitionRangeSelector;
+  range?: InputMaybe<PartitionRangeSelector>;
+  ranges?: InputMaybe<Array<PartitionRangeSelector>>;
 };
 
 export type PathMetadataEntry = MetadataEntry & {
@@ -11207,6 +11208,7 @@ export const buildPartitionsSelector = (
         : relationshipsToOmit.has('PartitionRangeSelector')
         ? ({} as PartitionRangeSelector)
         : buildPartitionRangeSelector({}, relationshipsToOmit),
+    ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
 

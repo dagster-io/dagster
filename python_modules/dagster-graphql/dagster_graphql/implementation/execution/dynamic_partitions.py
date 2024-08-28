@@ -3,13 +3,15 @@ from typing import TYPE_CHECKING, Sequence
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.implementation.utils import (
+    UserFacingGraphQLError,
+    assert_permission_for_location,
+)
 from dagster_graphql.schema.errors import GrapheneDuplicateDynamicPartitionError
 
-from ..utils import UserFacingGraphQLError, assert_permission_for_location
-
 if TYPE_CHECKING:
-    from ...schema.inputs import GrapheneRepositorySelector
-    from ...schema.partition_sets import (
+    from dagster_graphql.schema.inputs import GrapheneRepositorySelector
+    from dagster_graphql.schema.partition_sets import (
         GrapheneAddDynamicPartitionSuccess,
         GrapheneDeleteDynamicPartitionsSuccess,
     )
@@ -61,8 +63,7 @@ def add_dynamic_partition(
     partition_key: str,
 ) -> "GrapheneAddDynamicPartitionSuccess":
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
-
-    from ...schema.partition_sets import GrapheneAddDynamicPartitionSuccess
+    from dagster_graphql.schema.partition_sets import GrapheneAddDynamicPartitionSuccess
 
     unpacked_repository_selector = RepositorySelector.from_graphql_input(repository_selector)
 
@@ -102,8 +103,7 @@ def delete_dynamic_partitions(
     partition_keys: Sequence[str],
 ) -> "GrapheneDeleteDynamicPartitionsSuccess":
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
-
-    from ...schema.partition_sets import GrapheneDeleteDynamicPartitionsSuccess
+    from dagster_graphql.schema.partition_sets import GrapheneDeleteDynamicPartitionsSuccess
 
     unpacked_repository_selector = RepositorySelector.from_graphql_input(repository_selector)
 

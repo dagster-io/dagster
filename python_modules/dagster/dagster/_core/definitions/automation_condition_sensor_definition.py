@@ -3,24 +3,22 @@ from typing import Any, Mapping, Optional, cast
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
 from dagster._core.definitions.run_request import SensorResult
-from dagster._time import get_current_datetime
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-
-from .asset_selection import AssetSelection
-from .sensor_definition import (
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
     SensorType,
 )
-from .utils import check_valid_name, normalize_tags
+from dagster._core.definitions.utils import check_valid_name, normalize_tags
+from dagster._time import get_current_datetime
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 def evaluate_automation_conditions(context: SensorEvaluationContext):

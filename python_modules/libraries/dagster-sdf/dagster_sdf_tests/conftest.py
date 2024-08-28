@@ -5,7 +5,7 @@ import pytest
 from dagster_sdf.constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT
 from dagster_sdf.resource import SdfCliResource
 
-from .sdf_workspaces import (
+from dagster_sdf_tests.sdf_workspaces import (
     lineage_asset_checks_path,
     lineage_upstream_path,
     moms_flower_shop_path,

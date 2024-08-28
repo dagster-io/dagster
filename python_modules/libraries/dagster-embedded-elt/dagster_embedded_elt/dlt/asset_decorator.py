@@ -11,8 +11,12 @@ from dagster._annotations import deprecated_param
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
-from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
-from .translator import DagsterDltTranslator
+from dagster_embedded_elt.dlt.constants import (
+    META_KEY_PIPELINE,
+    META_KEY_SOURCE,
+    META_KEY_TRANSLATOR,
+)
+from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
 def build_dlt_asset_specs(

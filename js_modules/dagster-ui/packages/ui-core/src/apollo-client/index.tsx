@@ -11,7 +11,6 @@ import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export * from '@apollo/client';
 
-// Extend the options type to include "blocking"
 interface ExtendedQueryOptions<TData = any, TVariables extends OperationVariables = any>
   extends QueryHookOptions<TData, TVariables> {
   blocking?: boolean;
@@ -27,7 +26,6 @@ export function useQuery<TData = any, TVariables extends OperationVariables = an
   options?: ExtendedQueryOptions<TData, TVariables>,
 ) {
   const {blocking = true, ...restOptions} = options || {};
-  // You can handle the "blocking" logic here if needed
   const queryResult = useQueryApollo<TData, TVariables>(query, restOptions);
   useBlockTraceOnQueryResult(queryResult, 'graphql', {
     skip: !blocking,
@@ -40,7 +38,6 @@ export function useLazyQuery<TData = any, TVariables extends OperationVariables 
   options?: ExtendedLazyQueryOptions<TData, TVariables>,
 ) {
   const {blocking = true, ...restOptions} = options || {};
-  // You can handle the "blocking" logic here if needed
   const result = useLazyQueryApollo<TData, TVariables>(query, restOptions);
   useBlockTraceOnQueryResult(result[1], 'graphql', {
     skip: !blocking,

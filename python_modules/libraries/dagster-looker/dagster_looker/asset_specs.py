@@ -4,12 +4,12 @@ from typing import Optional, Sequence
 from dagster import AssetSpec
 from dagster._annotations import experimental
 
-from .asset_utils import (
+from dagster_looker.asset_utils import (
     build_looker_dashboard_specs,
     build_looker_explore_specs,
     build_looker_view_specs,
 )
-from .dagster_looker_translator import DagsterLookerTranslator
+from dagster_looker.dagster_looker_translator import DagsterLookerTranslator
 
 
 @experimental

@@ -10,7 +10,7 @@ from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from ..api_tests.utils import get_bar_repo_handle
+from dagster_tests.api_tests.utils import get_bar_repo_handle
 
 
 @pytest.fixture()

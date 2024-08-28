@@ -16,7 +16,7 @@ from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from pydantic import Field
 from snowflake.connector.errors import ProgrammingError
 
-from .resources import SnowflakeResource
+from dagster_snowflake.resources import SnowflakeResource
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

@@ -28,6 +28,7 @@ import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
 import {StickyTableContainer} from '../../ui/StickyTableContainer';
 
 const BACKFILL_RUNS_HOUR_WINDOW_KEY = 'dagster.backfill-run-timeline-hour-window';
+const PAGE_SIZE = 25;
 
 export const BackfillRunsTab = ({backfill}: {backfill: BackfillDetailsBackfillFragment}) => {
   const [view, setView] = useQueryPersistedState<'timeline' | 'list'>({
@@ -113,7 +114,7 @@ const ExecutionRunTable = ({
   filter: RunsFilter;
   actionBarComponents: React.ReactNode;
 }) => {
-  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter);
+  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, PAGE_SIZE);
   const pipelineRunsOrError = queryResult.data?.pipelineRunsOrError;
 
   const refreshState = useQueryRefreshAtInterval(queryResult, 15000);

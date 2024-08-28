@@ -8,6 +8,17 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    RawSensorEvaluationFunctionReturn,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SensorType,
+    SkipReason,
+    get_context_param_name,
+    get_sensor_context_from_args_or_kwargs,
+    validate_and_get_resource_dict,
+)
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -20,18 +31,6 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 from dagster._time import get_current_datetime
-
-from .sensor_definition import (
-    DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SensorType,
-    SkipReason,
-    get_context_param_name,
-    get_sensor_context_from_args_or_kwargs,
-    validate_and_get_resource_dict,
-)
 
 
 @whitelist_for_serdes

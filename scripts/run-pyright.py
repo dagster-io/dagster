@@ -260,17 +260,16 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
     env_path_map: Dict[str, List[str]] = {}
     for path in paths:
         if os.path.isdir(path) or os.path.splitext(path)[1] in [".py", ".pyi"]:
-            try:
-                env = next(
-                    (
-                        env_path_spec["env"]
-                        for env_path_spec in env_path_specs
-                        if match_path(path, env_path_spec)
-                    )
-                )
-            except StopIteration:
-                raise Exception(f"Could not find environment that matched path: {path}.")
-            env_path_map.setdefault(env, []).append(path)
+            env = next(
+                (
+                    env_path_spec["env"]
+                    for env_path_spec in env_path_specs
+                    if match_path(path, env_path_spec)
+                ),
+                None,
+            )
+            if env:
+                env_path_map.setdefault(env, []).append(path)
     return env_path_map
 
 

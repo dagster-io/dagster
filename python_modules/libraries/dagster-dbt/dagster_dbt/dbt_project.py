@@ -8,7 +8,7 @@ from dagster._annotations import public
 from dagster._record import IHaveNew, record_custom
 from dagster._utils import run_with_concurrent_update_guard
 
-from .errors import (
+from dagster_dbt.errors import (
     DagsterDbtManifestNotFoundError,
     DagsterDbtProjectNotFoundError,
     DagsterDbtProjectYmlFileNotFoundError,
@@ -110,7 +110,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
     def _prepare_packages(self, project: "DbtProject") -> None:
-        from .core.resource import DbtCliResource
+        from dagster_dbt.core.resource import DbtCliResource
 
         (
             DbtCliResource(project_dir=project)
@@ -119,7 +119,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
     def _prepare_manifest(self, project: "DbtProject") -> None:
-        from .core.resource import DbtCliResource
+        from dagster_dbt.core.resource import DbtCliResource
 
         (
             DbtCliResource(project_dir=project)

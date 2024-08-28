@@ -13,6 +13,13 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.runs.schema import (
+    InstanceInfo,
+    RunsTable,
+    RunStorageSqlMetadata,
+    RunTagsTable,
+)
+from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.sql import (
     AlembicVersion,
     check_alembic_revision,
@@ -25,9 +32,6 @@ from dagster._core.storage.sql import (
 from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
-
-from ..schema import InstanceInfo, RunsTable, RunStorageSqlMetadata, RunTagsTable
-from ..sql_run_storage import SqlRunStorage
 
 if TYPE_CHECKING:
     from dagster._core.storage.sqlite_storage import SqliteStorageConfig

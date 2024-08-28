@@ -44,7 +44,7 @@
     "file-loader": "^6.2.0",
     "prettier": "^3.0.3",
     "typescript": "5.4.5",
-    "webpack": "^5.88.1",
+    "webpack": "^5.94.0",
     "webpack-bundle-analyzer": "^4.7.0",
     "webpack-stats-plugin": "^1.1.3"
   },

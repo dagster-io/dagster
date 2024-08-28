@@ -13,13 +13,12 @@ from dagster._core.execution.plan.instance_concurrency_context import InstanceCo
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.executor.base import Executor
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._time import get_current_datetime
 from dagster._utils.error import serializable_error_info_from_exc_info
-
-from ..base import Executor
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep

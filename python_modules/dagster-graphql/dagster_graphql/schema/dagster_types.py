@@ -7,15 +7,18 @@ from dagster._core.types.dagster_type import DagsterTypeKind
 from typing_extensions import TypeAlias
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-
-from .config_types import GrapheneConfigType, GrapheneConfigTypeUnion, to_config_type
-from .errors import (
+from dagster_graphql.schema.config_types import (
+    GrapheneConfigType,
+    GrapheneConfigTypeUnion,
+    to_config_type,
+)
+from dagster_graphql.schema.errors import (
     GrapheneDagsterTypeNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
 )
-from .util import non_null_list
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.util import non_null_list
 
 if TYPE_CHECKING:
     from dagster._core.snap.dagster_types import DagsterTypeSnap

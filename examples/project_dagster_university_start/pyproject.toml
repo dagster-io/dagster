@@ -15,4 +15,8 @@ extend-ignore = [
   "F401",    
   # (Import block is un-sorted or un-formatted): It's more important that we introduce the imports in the order they're used rather than alphabetically.
   "I001",
+
+  # (relative imports): relative imports are acceptable in examples & docs
+  "TID252"
+
 ]

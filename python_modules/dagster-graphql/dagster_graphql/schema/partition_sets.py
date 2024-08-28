@@ -29,22 +29,21 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.utils import capture_error
-
-from .asset_key import GrapheneAssetKey
-from .backfill import GraphenePartitionBackfill
-from .errors import (
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.backfill import GraphenePartitionBackfill
+from dagster_graphql.schema.errors import (
     GrapheneDuplicateDynamicPartitionError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
     GrapheneUnauthorizedError,
 )
-from .inputs import GrapheneRunsFilter
-from .pipelines.pipeline import GrapheneRun
-from .pipelines.status import GrapheneRunStatus
-from .repository_origin import GrapheneRepositoryOrigin
-from .tags import GraphenePipelineTag
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.inputs import GrapheneRunsFilter
+from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.repository_origin import GrapheneRepositoryOrigin
+from dagster_graphql.schema.tags import GraphenePipelineTag
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):

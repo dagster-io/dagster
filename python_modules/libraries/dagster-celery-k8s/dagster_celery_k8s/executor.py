@@ -42,8 +42,8 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
-from .launcher import CeleryK8sRunLauncher
+from dagster_celery_k8s.config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
+from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 
 
 @executor(

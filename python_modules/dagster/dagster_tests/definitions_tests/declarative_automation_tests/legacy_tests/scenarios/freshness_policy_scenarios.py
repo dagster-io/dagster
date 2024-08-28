@@ -5,7 +5,7 @@ from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 
-from ...scenario_utils.base_scenario import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     AssetEvaluationSpec,
     AssetReconciliationScenario,
     asset_def,

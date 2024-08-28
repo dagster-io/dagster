@@ -18,7 +18,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._time import parse_time_string
 
-from .perf_scenario import ActivityHistory, PerfScenario
+from auto_materialize_perf_tests.perf_scenario import ActivityHistory, PerfScenario
 
 
 def asset_def(

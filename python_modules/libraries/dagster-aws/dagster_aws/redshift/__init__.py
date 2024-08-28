@@ -1,4 +1,4 @@
-from .resources import (
+from dagster_aws.redshift.resources import (
     FakeRedshiftClient as FakeRedshiftClient,
     FakeRedshiftClientResource as FakeRedshiftClientResource,
     FakeRedshiftResource as FakeRedshiftResource,

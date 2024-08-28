@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from ...utils.kubernetes import ExternalImage
+from schema.charts.utils.kubernetes import ExternalImage
 
 
 class RabbitMQConfiguration(BaseModel):

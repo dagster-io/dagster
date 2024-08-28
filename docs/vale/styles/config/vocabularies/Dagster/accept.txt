@@ -1,17 +1,20 @@
 [Cc]onfig
 \bDagster\b
+DAG
 DataFrame
 Declarative Automation
 dagster-.*
 gRPC
 [Mm]aterializations
 [Mm]emoization
+REST API
 [Ss]ubprocess
 Serverless
 
 Airbyte
 AirFlow
 BigQuery
+Crontab
 Databricks
 Datadog
 dbt
@@ -32,3 +35,8 @@ Postgres
 S3
 Snowflake
 Twilio
+
+We have
+we have
+lookback
+Pydantic

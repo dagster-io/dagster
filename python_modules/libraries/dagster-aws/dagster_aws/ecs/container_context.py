@@ -16,10 +16,10 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import parse_env_var
 
-from ..secretsmanager import get_tagged_secrets
+from dagster_aws.secretsmanager import get_tagged_secrets
 
 if TYPE_CHECKING:
-    from . import EcsRunLauncher
+    from dagster_aws.ecs import EcsRunLauncher
 
 # Config shared between EcsRunLauncher and EcsContainerContext
 SHARED_ECS_SCHEMA = {

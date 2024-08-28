@@ -9,10 +9,9 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
+from dagster._core.execution.plan.handle import UnresolvedStepHandle
+from dagster._core.execution.plan.objects import TypeCheckData
 from dagster._serdes import whitelist_for_serdes
-
-from .handle import UnresolvedStepHandle
-from .objects import TypeCheckData
 
 
 @whitelist_for_serdes

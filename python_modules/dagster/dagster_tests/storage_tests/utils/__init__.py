@@ -5,7 +5,7 @@ import pytest
 # We need to explicitly inform pytest that these asserts are part of the test cases, and not just
 # arbitrary library calls.
 pytest.register_assert_rewrite("dagster_tests.storage_tests.utils.event_log_storage")
-from . import event_log_storage as event_log_storage  # ruff: isort:skip
+from dagster_tests.storage_tests.utils import event_log_storage as event_log_storage  # ruff: isort:skip
 
 pytest.register_assert_rewrite("dagster_tests.storage_tests.utils.run_storage")
-from . import run_storage as run_storage  # ruff: isort:skip
+from dagster_tests.storage_tests.utils import run_storage as run_storage  # ruff: isort:skip

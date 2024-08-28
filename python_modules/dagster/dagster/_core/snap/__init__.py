@@ -36,16 +36,17 @@ from dagster._config import (
     snap_from_config_type as snap_from_config_type,
     snap_from_field as snap_from_field,
 )
-
-from .config_types import build_config_schema_snapshot as build_config_schema_snapshot
-from .dagster_types import (
+from dagster._core.snap.config_types import (
+    build_config_schema_snapshot as build_config_schema_snapshot,
+)
+from dagster._core.snap.dagster_types import (
     build_dagster_type_namespace_snapshot as build_dagster_type_namespace_snapshot,
 )
-from .dep_snapshot import (
+from dagster._core.snap.dep_snapshot import (
     DependencyStructureIndex as DependencyStructureIndex,
     NodeInvocationSnap as NodeInvocationSnap,
 )
-from .execution_plan_snapshot import (
+from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot as ExecutionPlanSnapshot,
     ExecutionStepInputSnap as ExecutionStepInputSnap,
     ExecutionStepOutputSnap as ExecutionStepOutputSnap,
@@ -53,16 +54,16 @@ from .execution_plan_snapshot import (
     create_execution_plan_snapshot_id as create_execution_plan_snapshot_id,
     snapshot_from_execution_plan as snapshot_from_execution_plan,
 )
-from .job_snapshot import (
+from dagster._core.snap.job_snapshot import (
     JobSnapshot as JobSnapshot,
     create_job_snapshot_id as create_job_snapshot_id,
 )
-from .mode import (
+from dagster._core.snap.mode import (
     LoggerDefSnap as LoggerDefSnap,
     ModeDefSnap as ModeDefSnap,
     ResourceDefSnap as ResourceDefSnap,
 )
-from .node import (
+from dagster._core.snap.node import (
     GraphDefSnap as GraphDefSnap,
     OpDefSnap as OpDefSnap,
     build_graph_def_snap as build_graph_def_snap,

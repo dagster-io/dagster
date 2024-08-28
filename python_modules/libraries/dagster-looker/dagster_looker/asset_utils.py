@@ -5,7 +5,7 @@ import lkml
 import yaml
 from dagster import AssetSpec
 
-from .dagster_looker_translator import DagsterLookerTranslator
+from dagster_looker.dagster_looker_translator import DagsterLookerTranslator
 
 
 def build_looker_dashboard_specs(

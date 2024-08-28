@@ -5,6 +5,7 @@ import {useCallback, useMemo, useRef} from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 
 import {useSetStateUpdateCallback} from './useSetStateUpdateCallback';
+import {COMMON_COLLATOR} from '../app/Util';
 
 export type QueryPersistedDataType =
   | {[key: string]: any}
@@ -107,9 +108,12 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
         }
       }
 
-      currentQueryString = next;
-
-      history.replace(`${location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`);
+      // Check if the query has changed. If so, perform a replace. Otherwise, do nothing
+      // to ensure that we don't end up in a `replace` loop.
+      if (!areQueriesEqual(currentQueryString, next)) {
+        currentQueryString = next;
+        history.replace(`${location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`);
+      }
     },
     [history, encode, location.pathname, options],
   );
@@ -118,6 +122,20 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
     valueRef.current = qsDecoded;
   }
   return [valueRef.current, useSetStateUpdateCallback(valueRef.current, onChangeRef)];
+}
+
+// Stringify two query objects to check whether they have the same value. Explicitly sort the
+// keys, since key order is otherwise undefined.
+function areQueriesEqual(queryA: {[key: string]: any}, queryB: {[key: string]: any}) {
+  const stringA = qs.stringify(queryA, {
+    arrayFormat: 'brackets',
+    sort: (a, b) => COMMON_COLLATOR.compare(a, b),
+  });
+  const stringB = qs.stringify(queryB, {
+    arrayFormat: 'brackets',
+    sort: (a, b) => COMMON_COLLATOR.compare(a, b),
+  });
+  return stringA === stringB;
 }
 
 function inferTypeOfQueryParam<T>(q: any): T {

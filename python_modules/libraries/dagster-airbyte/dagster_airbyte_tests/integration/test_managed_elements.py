@@ -19,7 +19,7 @@ from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
 
-from .example_stacks import example_airbyte_stack
+from dagster_airbyte_tests.integration.example_stacks import example_airbyte_stack
 
 TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
 

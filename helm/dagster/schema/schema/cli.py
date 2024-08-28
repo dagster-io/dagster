@@ -3,8 +3,8 @@ import subprocess
 
 import click
 
-from .charts.dagster.values import DagsterHelmValues
-from .charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
+from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 
 
 def git_repo_root():

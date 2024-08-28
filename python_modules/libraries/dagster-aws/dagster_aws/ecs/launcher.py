@@ -34,16 +34,20 @@ from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
 from typing_extensions import Self
 
-from ..secretsmanager import get_secrets_from_arns
-from .container_context import SHARED_ECS_SCHEMA, SHARED_TASK_DEFINITION_FIELDS, EcsContainerContext
-from .tasks import (
+from dagster_aws.ecs.container_context import (
+    SHARED_ECS_SCHEMA,
+    SHARED_TASK_DEFINITION_FIELDS,
+    EcsContainerContext,
+)
+from dagster_aws.ecs.tasks import (
     DagsterEcsTaskDefinitionConfig,
     get_current_ecs_task,
     get_current_ecs_task_metadata,
     get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
 )
-from .utils import get_task_definition_family, get_task_logs, task_definitions_match
+from dagster_aws.ecs.utils import get_task_definition_family, get_task_logs, task_definitions_match
+from dagster_aws.secretsmanager import get_secrets_from_arns
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 

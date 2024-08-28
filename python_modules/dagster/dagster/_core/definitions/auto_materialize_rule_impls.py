@@ -22,6 +22,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
+from dagster._core.definitions.base_asset_graph import sort_key_for_asset_partition
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
@@ -39,14 +40,13 @@ from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
-from .base_asset_graph import sort_key_for_asset_partition
-
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationResult,
     )
-
-    from .declarative_automation.automation_context import AutomationContext
+    from dagster._core.definitions.declarative_automation.automation_context import (
+        AutomationContext,
+    )
 
 
 @deprecated(breaking_version="1.9")
@@ -63,7 +63,9 @@ class MaterializeOnRequiredForFreshnessRule(
         return "required to meet this or downstream asset's freshness policy"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
             context.legacy_context.root_context
@@ -178,7 +180,9 @@ class MaterializeOnCronRule(
             }
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         missed_ticks = self.missed_cron_ticks(context)
         new_asset_partitions = self.get_new_candidate_asset_partitions(context, missed_ticks)
@@ -342,7 +346,9 @@ class MaterializeOnParentUpdatedRule(
         """Evaluates the set of asset partitions of this asset whose parents have been updated,
         or will update on this tick.
         """
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_updated_parents: Mapping[
             AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
@@ -473,7 +479,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         """Evaluates the set of asset partitions for this asset which are missing and were not
         previously discarded.
         """
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         if (
             context.legacy_context.asset_key
@@ -554,7 +562,9 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
         return "waiting on upstream data to be up to date"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -608,7 +618,9 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
         self,
         context: "AutomationContext",
     ) -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -685,7 +697,9 @@ class SkipOnNotAllParentsUpdatedRule(
         self,
         context: "AutomationContext",
     ) -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -910,7 +924,9 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             )
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         passed_time_window = self.passed_time_window(context)
         has_new_passed_time_window = passed_time_window.end.timestamp() > (
@@ -990,7 +1006,9 @@ class SkipOnRequiredButNonexistentParentsRule(
         return "required parent partitions do not exist"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         asset_partitions_by_evaluation_data = defaultdict(set)
 
@@ -1042,7 +1060,9 @@ class SkipOnBackfillInProgressRule(
             return "targeted by an in-progress backfill"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         backfilling_subset = (
             # this backfilling subset is aware of the current partitions definitions, and so will
@@ -1078,7 +1098,9 @@ class DiscardOnMaxMaterializationsExceededRule(
         return f"exceeds {self.limit} materialization(s) per minute"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         # the set of asset partitions which exceed the limit
         rate_limited_asset_partitions = set(
@@ -1111,7 +1133,9 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
         return "in-progress run for asset"
 
     def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
-        from .declarative_automation.automation_condition import AutomationResult
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationResult,
+        )
 
         if context.legacy_context.partitions_def is not None:
             raise DagsterInvariantViolationError(

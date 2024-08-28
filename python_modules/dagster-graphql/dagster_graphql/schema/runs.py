@@ -9,15 +9,15 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import load_run_config_yaml
 from graphene.types.generic import GenericScalar
 
-from ..implementation.fetch_runs import get_run_ids, get_runs, get_runs_count
-from ..implementation.utils import UserFacingGraphQLError
-from .errors import (
+from dagster_graphql.implementation.fetch_runs import get_run_ids, get_runs, get_runs_count
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.errors import (
     GrapheneInvalidPipelineRunsFilterError,
     GraphenePythonError,
     GrapheneRunGroupNotFoundError,
 )
-from .tags import GraphenePipelineTagAndValues
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.tags import GraphenePipelineTagAndValues
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneStepEventStatus(graphene.Enum):
@@ -53,7 +53,7 @@ class GrapheneRunGroup(graphene.ObjectType):
         name = "RunGroup"
 
     def __init__(self, root_run_id, runs):
-        from .pipelines.pipeline import GrapheneRun
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         check.str_param(root_run_id, "root_run_id")
         check.list_param(runs, "runs", GrapheneRun)
@@ -73,7 +73,7 @@ launch_pipeline_run_result_types = (GrapheneLaunchRunSuccess,)
 
 class GrapheneLaunchRunResult(graphene.Union):
     class Meta:
-        from .backfill import pipeline_execution_error_types
+        from dagster_graphql.schema.backfill import pipeline_execution_error_types
 
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
@@ -82,7 +82,7 @@ class GrapheneLaunchRunResult(graphene.Union):
 
 class GrapheneLaunchRunReexecutionResult(graphene.Union):
     class Meta:
-        from .backfill import pipeline_execution_error_types
+        from dagster_graphql.schema.backfill import pipeline_execution_error_types
 
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 

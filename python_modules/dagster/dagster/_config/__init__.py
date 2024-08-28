@@ -1,8 +1,8 @@
-from .config_schema import (
+from dagster._config.config_schema import (
     ConfigSchema as ConfigSchema,
     UserConfigSchema as UserConfigSchema,
 )
-from .config_type import (
+from dagster._config.config_type import (
     ALL_CONFIG_BUILTINS as ALL_CONFIG_BUILTINS,
     Array as Array,
     Bool as Bool,
@@ -26,7 +26,7 @@ from .config_type import (
 )
 
 # Separate section necessary to prevent circular import
-from .errors import (
+from dagster._config.errors import (
     DagsterEvaluationErrorReason as DagsterEvaluationErrorReason,
     EvaluationError as EvaluationError,
     FieldNotDefinedErrorData as FieldNotDefinedErrorData,
@@ -37,12 +37,12 @@ from .errors import (
     RuntimeMismatchErrorData as RuntimeMismatchErrorData,
     SelectorTypeErrorData as SelectorTypeErrorData,
 )
-from .evaluate_value_result import EvaluateValueResult as EvaluateValueResult
-from .field import (
+from dagster._config.evaluate_value_result import EvaluateValueResult as EvaluateValueResult
+from dagster._config.field import (
     Field as Field,
     resolve_to_config_type as resolve_to_config_type,
 )
-from .field_utils import (
+from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED as FIELD_NO_DEFAULT_PROVIDED,
     Map as Map,
     Permissive as Permissive,
@@ -51,14 +51,14 @@ from .field_utils import (
     compute_fields_hash as compute_fields_hash,
     convert_potential_field as convert_potential_field,
 )
-from .post_process import (
+from dagster._config.post_process import (
     post_process_config as post_process_config,
     resolve_defaults as resolve_defaults,
 )
-from .primitive_mapping import (
+from dagster._config.primitive_mapping import (
     is_supported_config_python_builtin as is_supported_config_python_builtin,
 )
-from .snap import (
+from dagster._config.snap import (
     ConfigEnumValueSnap as ConfigEnumValueSnap,
     ConfigFieldSnap as ConfigFieldSnap,
     ConfigSchemaSnapshot as ConfigSchemaSnapshot,
@@ -67,7 +67,7 @@ from .snap import (
     snap_from_config_type as snap_from_config_type,
     snap_from_field as snap_from_field,
 )
-from .source import (
+from dagster._config.source import (
     BoolSource as BoolSource,
     BoolSourceType as BoolSourceType,
     IntSource as IntSource,
@@ -75,14 +75,14 @@ from .source import (
     StringSource as StringSource,
     StringSourceType as StringSourceType,
 )
-from .stack import (
+from dagster._config.stack import (
     EvaluationStackListItemEntry as EvaluationStackListItemEntry,
     EvaluationStackMapKeyEntry as EvaluationStackMapKeyEntry,
     EvaluationStackMapValueEntry as EvaluationStackMapValueEntry,
     EvaluationStackPathEntry as EvaluationStackPathEntry,
 )
-from .type_printer import print_config_type_to_string as print_config_type_to_string
-from .validate import (
+from dagster._config.type_printer import print_config_type_to_string as print_config_type_to_string
+from dagster._config.validate import (
     process_config as process_config,
     validate_config as validate_config,
     validate_config_from_snap as validate_config_from_snap,

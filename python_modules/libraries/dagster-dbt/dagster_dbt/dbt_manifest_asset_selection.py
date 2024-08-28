@@ -8,10 +8,10 @@ from dagster import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
-from .asset_utils import get_asset_check_key_for_test, is_non_asset_node
-from .dagster_dbt_translator import DagsterDbtTranslator
-from .dbt_manifest import DbtManifestParam, validate_manifest
-from .utils import (
+from dagster_dbt.asset_utils import get_asset_check_key_for_test, is_non_asset_node
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
+from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
     select_unique_ids_from_manifest,

@@ -8,9 +8,13 @@ from dagster._core.remote_representation.external_data import (
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.base_scenario import run_request
-from ...scenario_utils.scenario_specs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     daily_partitions_def,
     day_partition_key,
     one_asset,

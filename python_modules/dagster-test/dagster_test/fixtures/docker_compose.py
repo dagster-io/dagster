@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from .utils import BUILDKITE
+from dagster_test.fixtures.utils import BUILDKITE
 
 
 @contextmanager

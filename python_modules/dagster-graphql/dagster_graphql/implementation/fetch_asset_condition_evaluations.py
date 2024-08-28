@@ -17,7 +17,7 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
 from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 
 if TYPE_CHECKING:
-    from ..schema.util import ResolveInfo
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def _get_migration_error(

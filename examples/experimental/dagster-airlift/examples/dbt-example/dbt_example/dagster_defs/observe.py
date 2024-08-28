@@ -1,10 +1,27 @@
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
-from dagster_airlift.core.def_factory import defs_from_factories
-from dagster_airlift.dbt import DbtProjectDefs
+from datetime import timedelta
 
-from dbt_example.dagster_defs.csv_to_duckdb_defs import CSVToDuckdbDefs
+from dagster import build_last_update_freshness_checks, build_sensor_for_freshness_checks
+from dagster._core.definitions.definitions_class import Definitions
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    build_defs_from_airflow_instance,
+    dag_defs,
+    task_defs,
+)
+from dagster_dbt.asset_specs import build_dbt_asset_specs
 
-from .constants import AIRFLOW_BASE_URL, AIRFLOW_INSTANCE_NAME, PASSWORD, USERNAME, dbt_project_path
+from dbt_example.dagster_defs.lakehouse import lakehouse_existence_check_defs, specs_from_lakehouse
+from dbt_example.shared.load_iris import CSV_PATH, DB_PATH
+
+from .constants import (
+    AIRFLOW_BASE_URL,
+    AIRFLOW_INSTANCE_NAME,
+    DBT_DAG_ASSET_KEY,
+    PASSWORD,
+    USERNAME,
+    dbt_manifest_path,
+)
 
 airflow_instance = AirflowInstance(
     auth_backend=BasicAuthBackend(
@@ -14,17 +31,40 @@ airflow_instance = AirflowInstance(
 )
 
 
+def freshness_defs() -> Definitions:
+    dbt_freshness_checks = build_last_update_freshness_checks(
+        assets=[DBT_DAG_ASSET_KEY],
+        lower_bound_delta=timedelta(hours=1),
+        deadline_cron="0 9 * * *",
+    )
+    return Definitions(
+        asset_checks=dbt_freshness_checks,
+        sensors=[
+            build_sensor_for_freshness_checks(
+                freshness_checks=dbt_freshness_checks,
+            )
+        ],
+    )
+
+
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    orchestrated_defs=defs_from_factories(
-        CSVToDuckdbDefs(
-            name="load_lakehouse__load_iris",
-            table_name="iris_lakehouse_table",
-            duckdb_schema="iris_dataset",
+    defs=Definitions.merge(
+        dag_defs(
+            "load_lakehouse",
+            task_defs("load_iris", Definitions(assets=specs_from_lakehouse(csv_path=CSV_PATH))),
         ),
-        DbtProjectDefs(
-            name="dbt_dag__build_dbt_models",
-            dbt_manifest=dbt_project_path() / "target" / "manifest.json",
+        dag_defs(
+            "dbt_dag",
+            task_defs(
+                "build_dbt_models",
+                Definitions(assets=build_dbt_asset_specs(manifest=dbt_manifest_path())),
+            ),
         ),
+        lakehouse_existence_check_defs(
+            csv_path=CSV_PATH,
+            duckdb_path=DB_PATH,
+        ),
+        freshness_defs(),
     ),
 )

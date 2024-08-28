@@ -10,8 +10,8 @@ import dagster._check as check
 import kubernetes
 from dagster._utils import safe_tempfile_path
 
-from .cluster import ClusterConfig
-from .integration_utils import check_output, which_, within_docker
+from dagster_k8s_test_infra.cluster import ClusterConfig
+from dagster_k8s_test_infra.integration_utils import check_output, which_, within_docker
 
 CLUSTER_INFO_DUMP_DIR = "kind-info-dump"
 

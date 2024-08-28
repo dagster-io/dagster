@@ -2,9 +2,8 @@ import click
 from tqdm import tqdm
 
 from dagster import __version__ as dagster_version
+from dagster._cli.utils import get_instance_for_cli
 from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
-
-from .utils import get_instance_for_cli
 
 
 @click.group(name="run")

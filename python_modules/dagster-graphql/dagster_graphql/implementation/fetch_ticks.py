@@ -6,8 +6,8 @@ from dagster._core.scheduler.instigation import InstigatorType, TickStatus
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
-    from ..schema.util import ResolveInfo
-    from .loader import RepositoryScopedBatchLoader
+    from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def get_instigation_ticks(
@@ -24,7 +24,7 @@ def get_instigation_ticks(
     before: Optional[float],
     after: Optional[float],
 ):
-    from ..schema.instigation import GrapheneInstigationTick
+    from dagster_graphql.schema.instigation import GrapheneInstigationTick
 
     if before is None:
         if dayOffset:

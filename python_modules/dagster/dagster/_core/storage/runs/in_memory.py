@@ -7,11 +7,10 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.pool import NullPool
 
 from dagster._core.debug import DebugRunPayload
+from dagster._core.storage.runs.schema import InstanceInfo, RunStorageSqlMetadata
+from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.storage.sqlite import create_in_memory_conn_string
-
-from .schema import InstanceInfo, RunStorageSqlMetadata
-from .sql_run_storage import SqlRunStorage
 
 
 class InMemoryRunStorage(SqlRunStorage):

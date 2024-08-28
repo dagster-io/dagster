@@ -28,7 +28,7 @@ from deltalake.schema import (
 )
 from deltalake.table import FilterLiteralType, _filters_to_expression
 
-from .io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
+from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
 T = TypeVar("T")
 ArrowTypes = Union[pa.Table, pa.RecordBatchReader]

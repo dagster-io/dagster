@@ -1,6 +1,6 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .constraints import (
+from dagster_pandas.constraints import (
     ColumnWithMetadataException,
     ConstraintWithMetadata,
     ConstraintWithMetadataException,
@@ -17,13 +17,13 @@ from .constraints import (
     non_null_validation,
     nonnull,
 )
-from .data_frame import (
+from dagster_pandas.data_frame import (
     DataFrame,
     create_dagster_pandas_dataframe_type,
     create_structured_dataframe_type,
 )
-from .validation import PandasColumn
-from .version import __version__
+from dagster_pandas.validation import PandasColumn
+from dagster_pandas.version import __version__
 
 DagsterLibraryRegistry.register("dagster-pandas", __version__)
 

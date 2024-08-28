@@ -46,6 +46,11 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
+from dagster._core.definitions.repository_definition.repository_data import CachingRepositoryData
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    VALID_REPOSITORY_DATA_DICT_KEYS,
+    RepositoryListDefinition,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
@@ -54,9 +59,6 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import deprecation_warning
-
-from .repository_data import CachingRepositoryData
-from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey

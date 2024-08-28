@@ -58,17 +58,20 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
 
 if TYPE_CHECKING:
-    from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision
-    from ..schema.errors import GrapheneAssetNotFoundError
-    from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
-    from ..schema.pipelines.pipeline import (
+    from dagster_graphql.schema.asset_graph import (
+        GrapheneAssetNode,
+        GrapheneAssetNodeDefinitionCollision,
+    )
+    from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
+    from dagster_graphql.schema.freshness_policy import GrapheneAssetFreshnessInfo
+    from dagster_graphql.schema.pipelines.pipeline import (
         GrapheneAsset,
         GrapheneDefaultPartitionStatuses,
         GrapheneMultiPartitionStatuses,
         GrapheneTimePartitionStatuses,
     )
-    from ..schema.roots.assets import GrapheneAssetConnection
-    from ..schema.util import ResolveInfo
+    from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
@@ -91,8 +94,8 @@ def get_assets(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneAssetConnection":
-    from ..schema.pipelines.pipeline import GrapheneAsset
-    from ..schema.roots.assets import GrapheneAssetConnection
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
+    from dagster_graphql.schema.roots.assets import GrapheneAssetConnection
 
     instance = graphene_info.context.instance
 
@@ -173,8 +176,8 @@ def get_additional_required_keys(
 def get_asset_node_definition_collisions(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> List["GrapheneAssetNodeDefinitionCollision"]:
-    from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
-    from ..schema.external import GrapheneRepository
+    from dagster_graphql.schema.asset_graph import GrapheneAssetNodeDefinitionCollision
+    from dagster_graphql.schema.external import GrapheneRepository
 
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
@@ -213,8 +216,8 @@ def get_asset_nodes_by_asset_key(
     """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
-    from ..schema.asset_graph import GrapheneAssetNode
-    from .asset_checks_loader import AssetChecksLoader
+    from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
+    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
@@ -280,7 +283,7 @@ def get_asset_nodes(graphene_info: "ResolveInfo", asset_keys: Optional[Set[Asset
 def get_asset_node(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> Union["GrapheneAssetNode", "GrapheneAssetNotFoundError"]:
-    from ..schema.errors import GrapheneAssetNotFoundError
+    from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
     node = get_asset_nodes_by_asset_key(graphene_info, asset_keys={asset_key}).get(asset_key, None)
@@ -292,8 +295,8 @@ def get_asset_node(
 def get_asset(
     graphene_info: "ResolveInfo", asset_key: AssetKey
 ) -> Union["GrapheneAsset", "GrapheneAssetNotFoundError"]:
-    from ..schema.errors import GrapheneAssetNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneAsset
+    from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
 
     check.inst_param(asset_key, "asset_key", AssetKey)
     instance = graphene_info.context.instance
@@ -387,7 +390,7 @@ def get_asset_observations(
 
 
 def get_assets_for_run_id(graphene_info: "ResolveInfo", run_id: str) -> Sequence["GrapheneAsset"]:
-    from ..schema.pipelines.pipeline import GrapheneAsset
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneAsset
 
     check.str_param(run_id, "run_id")
 
@@ -508,7 +511,7 @@ def build_partition_statuses(
     "GrapheneDefaultPartitionStatuses",
     "GrapheneMultiPartitionStatuses",
 ]:
-    from ..schema.pipelines.pipeline import (
+    from dagster_graphql.schema.pipelines.pipeline import (
         GrapheneDefaultPartitionStatuses,
         GrapheneTimePartitionRangeStatus,
         GrapheneTimePartitionStatuses,
@@ -598,7 +601,7 @@ def get_2d_run_length_encoded_partitions(
     in_progress_partitions_subset: PartitionsSubset,
     partitions_def: MultiPartitionsDefinition,
 ) -> "GrapheneMultiPartitionStatuses":
-    from ..schema.pipelines.pipeline import (
+    from dagster_graphql.schema.pipelines.pipeline import (
         GrapheneMultiPartitionRangeStatuses,
         GrapheneMultiPartitionStatuses,
     )
@@ -722,7 +725,7 @@ def get_freshness_info(
     asset_key: AssetKey,
     data_time_resolver: CachingDataTimeResolver,
 ) -> "GrapheneAssetFreshnessInfo":
-    from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
+    from dagster_graphql.schema.freshness_policy import GrapheneAssetFreshnessInfo
 
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
     result = data_time_resolver.get_minutes_overdue(asset_key, evaluation_time=current_time)

@@ -41,7 +41,7 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtT
 from dbt.version import __version__ as dbt_version
 from packaging import version
 
-from ..dbt_projects import (
+from dagster_dbt_tests.dbt_projects import (
     test_dbt_alias_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,

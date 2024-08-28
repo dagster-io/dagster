@@ -304,7 +304,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
         items={partitions}
         inputProps={inputProps}
         inputValueRenderer={(partition) => partition}
-        itemPredicate={(query, partition) => query.length === 0 || partition.includes(query)}
+        itemPredicate={(query, partition) => {
+          const sanitized = query.trim().toLocaleLowerCase();
+          return sanitized.length === 0 || partition.toLocaleLowerCase().includes(sanitized);
+        }}
         itemRenderer={(partition, props) => (
           <MenuItem
             active={props.modifiers.active}

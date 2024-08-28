@@ -3,8 +3,7 @@ from typing import Any, Callable, Optional, Type, Union, cast, overload
 import dagster._check as check
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
-
-from ..config import ConfigMapping, ConfigMappingFn
+from dagster._core.definitions.config import ConfigMapping, ConfigMappingFn
 
 
 class _ConfigMapping:

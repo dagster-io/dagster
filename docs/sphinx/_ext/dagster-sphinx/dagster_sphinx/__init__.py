@@ -13,14 +13,6 @@ from dagster._annotations import (
     is_public,
 )
 from dagster._record import get_original_class, is_record
-from sphinx.application import Sphinx
-from sphinx.environment import BuildEnvironment
-from sphinx.ext.autodoc import (
-    ClassDocumenter,
-    ObjectMember,
-    Options as AutodocOptions,
-)
-from sphinx.util import logging
 from typing_extensions import Literal, TypeAlias
 
 from dagster_sphinx.configurable import ConfigurableDocumenter
@@ -33,6 +25,14 @@ from dagster_sphinx.docstring_flags import (
     visit_flag,
     visit_inline_flag,
 )
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+from sphinx.ext.autodoc import (
+    ClassDocumenter,
+    ObjectMember,
+    Options as AutodocOptions,
+)
+from sphinx.util import logging
 
 from .docstring_flags import inject_object_flag, inject_param_flag
 

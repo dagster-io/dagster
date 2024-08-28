@@ -21,6 +21,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
+
 from sphinx.ext.autodoc import DataDocumenter
 
 
