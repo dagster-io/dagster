@@ -5,7 +5,7 @@ displayed_sidebar: "dagsterPlus"
 
 # Get started with Dagster+
 
-Dagster+ is a managed orchestration platform built on top of Dagster's open-source engine.
+Dagster+ is a managed orchestration platform built on top of Dagster's open source engine.
 
 We run:
  - Dagster's web UI at https://dagster.plus
@@ -15,7 +15,7 @@ We run:
 
 You run:
  - Agents that listen to our API servers for new work
- - The compute resource for  your data assets 
+ - The compute resource for  your data assets
 
 TODO: Architecture diagram?
 
@@ -40,7 +40,7 @@ We have guides for running your agents on:
  - [AWS ECS](/guides/deployment/ecs)
  - [Docker](/guide/deployment/docker)
 
-And if operating additional infrastructure isn't your thing, we also offer [Dagster+ Serverless](/concepts/dagster-plus/deployment/serverless/): a fully-managed Dagster+ offering where we'll run your agent aand compute too.
+And if operating additional infrastructure isn't your thing, we also offer [Dagster+ Serverless](/concepts/dagster-plus/deployment/serverless/): a fully managed Dagster+ offering where we'll run your agent and compute too.
 
 ### Managing code locations
 
@@ -56,7 +56,7 @@ For more on code locations, see [Managing code locations with definitions](/guid
 
 ### Launching runs
 
-Your definitions might include [automations](/guides/automation) that launch runs or materialize assets. Or your developers might launch runs directly via the web UI.
+Your definitions might include [automations](/guides/automation) that launch runs or materialize assets. Or your developers might launch runs directly with the web UI.
 
 When a run needs to be launched, we enqueue instructions for your agents to launch a new run.
 
