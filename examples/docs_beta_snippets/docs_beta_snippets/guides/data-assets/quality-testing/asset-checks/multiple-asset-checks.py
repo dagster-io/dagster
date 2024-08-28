@@ -23,8 +23,6 @@ def orders_check() -> Iterable[dg.AssetCheckResult]:
     yield dg.AssetCheckResult(
         check_name="orders_id_has_no_nulls",
         passed=bool(num_null_order_ids == 0),
-        severity=dg.AssetCheckSeverity.ERROR,
-        description="The order_id column has no null values.",
         asset_key="orders",
     )
 
@@ -32,8 +30,6 @@ def orders_check() -> Iterable[dg.AssetCheckResult]:
     yield dg.AssetCheckResult(
         check_name="items_id_has_no_nulls",
         passed=bool(num_null_item_ids == 0),
-        severity=dg.AssetCheckSeverity.ERROR,
-        description="The item_id column has no null values.",
         asset_key="orders",
     )
 
