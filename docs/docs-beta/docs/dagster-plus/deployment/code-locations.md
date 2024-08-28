@@ -236,4 +236,4 @@ The monorepo should have CI/CD configured to deploy your changes and add or upda
 ## Next steps
 
 - After adding a code location, you may want to setup access controls
-- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/dagster-plus/deployment/hybrid/agents/kubernetes) or [changing the IAM role for ECS](/dagster-plus/deployment/hybrid/agents/amazon-ecs).
+- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/dagster-plus/deployment/hybrid/agents/kubernetes) or [changing the IAM role for ECS](/todo).
