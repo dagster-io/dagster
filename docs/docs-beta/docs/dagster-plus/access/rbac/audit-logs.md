@@ -24,7 +24,7 @@ Each entry in the audit log indicates when an action was taken, the user who per
 
 ## Filter the audit log
 
-The "Filter" button on the top left of the Audit log pane can be used to filter the list of logs. You can filter to a combination of user, event type, affected deployment, or time frame.
+The **Filter** button near the top left of the page can be used to filter the list of logs. You can filter to a combination of user, event type, affected deployment, or time frame.
 
 ## Audit log entry types
 
