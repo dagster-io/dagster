@@ -123,7 +123,7 @@ Let's set up some environment variables, and then point Dagster to see the asset
 ```bash
 # Set up environment variables to point to the examples/tutorial-example directory on your machine
 export TUTORIAL_EXAMPLE_DIR=$(pwd)
-export DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
+export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
 export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
 dagster dev -f peer.py
 ```
@@ -226,7 +226,7 @@ from dagster_dbt import DbtProject
 
 
 def dbt_project_path() -> Path:
-    env_val = os.getenv("DBT_PROJECT_DIR")
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
     assert env_val
     return Path(env_val)
 
@@ -270,7 +270,7 @@ defs = build_defs_from_airflow_instance(
 ```bash
 # Set up environment variables to point to the examples/tutorial-example directory on your machine
 export TUTORIAL_EXAMPLE_DIR=$(pwd)
-export DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
+export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
 export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
 dagster dev -f observe.py
 ```
@@ -334,7 +334,7 @@ if MIGRATING:
 
 Set `MIGRATING` to `True` or eliminate the `if` statement.
 
-The DAG will now display its migration state in the Airflow UI.
+The DAG will now display its migration state in the Airflow UI. (There is some latency as Airflow evaluates the Python file periodically.)
 
 <p align="center">
 
@@ -412,7 +412,7 @@ from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load
 
 
 def dbt_project_path() -> Path:
-    env_val = os.getenv("DBT_PROJECT_DIR")
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
     assert env_val
     return Path(env_val)
 
