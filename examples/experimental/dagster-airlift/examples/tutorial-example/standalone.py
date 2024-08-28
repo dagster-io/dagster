@@ -72,7 +72,7 @@ def build_customers_list_defs() -> Definitions:
 
     rebuild_customers_list_schedule = ScheduleDefinition(
         name="rebuild_customers_list_schedule",
-        target=AssetSelection.assets(*rebuild_customers_list_defs.assets),
+        target=AssetSelection.assets(*rebuild_customers_list_defs.assets),  # type: ignore
         cron_schedule="0 0 * * *",
     )
 
