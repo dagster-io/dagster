@@ -1,6 +1,8 @@
 import dagster as dg
 from dagster_dbt import dbt_assets, DbtCliResource, DbtProject
+from pathlib import Path
 
+dbt_project_directory = Path(__file__).absolute().parent / "jaffle_shop"
 dbt_project = DbtProject(project_dir="jaffle_shop")
 dbt_resource = DbtCliResource(project_dir=dbt_project)
 dbt_project.prepare_if_dev()
