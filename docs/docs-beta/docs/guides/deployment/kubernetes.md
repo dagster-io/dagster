@@ -35,7 +35,7 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-## Step 1: Get your Dagster project ready to deploy
+## Step 1: Prepare your Dagster project
 You will need to add a `workspace.yaml` file to your Dagster project to be ready to deploy with Kubernetes. If you are using the [example project](/todo), you will already have this file.
 
 The `workspace.yaml` file tells Dagster where to find the `Definitions` object in your project. This file should be at the LOCATION of your project.

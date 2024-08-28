@@ -14,6 +14,6 @@
 
       dagsterApiGrpcArgs:
         - "--python-file"
-        - "/iris_analysis/__init__.py"
+        - "/iris_analysis/definitions.py"
 
 ... # Following configuration omitted for brevity

@@ -1,4 +1,4 @@
 load_from:
   - python_file:
-      relative_path: iris_analysis/__init__.py
+      relative_path: iris_analysis/definitions.py
       location_name: iris_analysis
