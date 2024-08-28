@@ -51,11 +51,16 @@ def mark_tasks_migrated_fixture(
     dags_dir: Path,
     reserialize_dags: Callable[[], None],
 ) -> Callable[[AbstractSet[str]], contextlib.AbstractContextManager[None]]:
+    """Returns a context manager that marks the specified tasks as migrated in the migration state file
+    for the duration of the context manager's scope."""
+
     migration_state_file = dags_dir / "migration_state" / "rebuild_customers_list.yaml"
     all_tasks = {"load_raw_customers", "build_dbt_models", "export_customers"}
 
     @contextlib.contextmanager
     def mark_tasks_migrated(migrated_tasks: AbstractSet[str]) -> Iterator[None]:
+        """Updates the contents of the migration state file to mark the specified tasks as migrated."""
+
         with open(migration_state_file, "r") as f:
             contents = f.read()
 
