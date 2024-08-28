@@ -6,7 +6,10 @@ sidebar_position: 4
 
 # Audit logs
 
-The Dagster+ audit log enables enterprise organizations to track and attribute changes to their Dagster deployment.
+The Dagster+ audit log enables Dagster+ Pro organizations to track and attribute changes to their Dagster deployment.
+
+For large organizations, tracking down when and by whom changes were made can be crucial for maintaining security and compliance. The audit log is also valuable
+ for tracking operational history, including sensor and schedule updates.
 
 This guide walks through how to access the audit log and details the interactions which are tracked in the audit log.
 
@@ -23,6 +26,12 @@ To access the audit logs:
 1. Click your user icon at the top right corner of the page.
 2. Click **Organization settings**.
 3. Click the **Audit log** tab.
+
+:::warning
+
+Add screenshot
+
+:::
 
 Each entry in the audit log indicates when an action was taken, the user who performed the action, the action taken, and the deployment which the action affected. To view additional details for an action, click the **Show** button.
 
@@ -53,6 +62,7 @@ The **Filter** button near the top left of the page can be used to filter the li
 
 ## Programmatic access to audit logs
 
-Audit logs can be accessed programmatically over the Dagster+ GraphQL API:
+Audit logs can be accessed programmatically over the Dagster+ GraphQL API. You can access a visual GraphiQL interface
+by navigating to `https://<org>.dagster.cloud/<deployment>/graphql` in your browser. You can also query the API directly using the Python client.
 
 <CodeExample filePath="dagster-plus/access/rbac/audit-logs.graphql" language="graphql" title="Audit log GraphQL query" />
