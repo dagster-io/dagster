@@ -57,13 +57,6 @@ If were to try to build this example as is, it would immediately fail due to a n
 
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/my_first_dbt_model.sql" language="sql" title="Fix my_first_dbt_model.sql failing test" />
 
-
-Now we're able to successfully compile our project and build our models with Dagster. First, let's compile:
-
-```bash
-dbt compile
-```
-
 Now Dagster has everything it needs to consume our dbt project and build our asset graph. Let's create a `definitions.py` file beside our dbt project:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions.py" language="python" title="Importing a dbt project into Dagster" />
