@@ -6,11 +6,11 @@ sidebar_label: "Built-in variables"
 ---
 
 
-[Dagster+](/dagster-plus) provides a set of built-in, automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.
+[Dagster+](/todo) provides a set of built-in, automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.
 
 ### All deployment variables
 
-The following variables are available in every deployment of your Dagster+ instance, including full (e.g., `prod`) and branch deployments.
+The following variables are available in every deployment of your Dagster+ instance.
 
 | Key | Value |
 |---|---|
@@ -18,16 +18,16 @@ The following variables are available in every deployment of your Dagster+ insta
 | `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` | `1` if the deployment is a branch deployment. |
 
 
-### Branch Deployment variables
+### Branch deployment variables
 
-The following environment variables are available only in a [branch deployment](/dagster-plus/managing-deployments/branch-deployments).
+The following environment variables are available only in a [branch deployment](/todo).
 
 For every commit made to a branch, the following environment variables are available:
 
 | Key | Value |
 |---|---|
 | DAGSTER_CLOUD_GIT_SHA | The SHA of the commit. <br/><br/> **Example:** `5c5fa4643968a1b8043b58c159fb0600af8a35b2`. |
-| DAGSTER_CLOUD_GIT_TIMESTAMP | The Unix timestamp the commit occurred. <br/><br/> **Example:** `1724871941` |
+| DAGSTER_CLOUD_GIT_TIMESTAMP | The Unix timestamp when the commit occurred. <br/><br/> **Example:** `1724871941` |
 | DAGSTER_CLOUD_GIT_AUTHOR_EMAIL | The email of the git user who authored the commit. |
 | DAGSTER_CLOUD_GIT_AUTHOR_NAME | The name of the git user who authored the commit. |
 | DAGSTER_CLOUD_GIT_MESSAGE | The message associated with the commit. |
