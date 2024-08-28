@@ -51,7 +51,7 @@ The evaluation function of an asset sensor can be customized to include custom l
 stateDiagram-v2
     direction LR
 
-    classDef userDefined fill: lightblue
+    classDef userDefined fill:lightblue,color:black
 
     [*] --> AssetMaterialized
     AssetMaterialized --> [*]
