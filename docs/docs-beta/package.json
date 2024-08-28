@@ -58,7 +58,7 @@
     "sass": "^1.77.8",
     "typescript": "~5.5.4",
     "typescript-eslint": "^8.0.1",
-    "webpack": "^5.93.0"
+    "webpack": "^5.94.0"
   },
   "browserslist": {
     "production": [
