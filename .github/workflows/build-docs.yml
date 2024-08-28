@@ -7,12 +7,14 @@ on:
       - docs-prod # prod
     paths:
       - docs/**
+      - "!docs/docs-beta/**" # Exclude docs-beta
       - examples/docs_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
   pull_request:
     paths:
       - docs/**
+      - "!docs/docs-beta/**" # Exclude docs-beta
       - examples/docs_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
