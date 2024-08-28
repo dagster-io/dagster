@@ -155,6 +155,8 @@ def main(
     # image build!
     cmd = ["uv", "pip", "install"] + (["--system"] if system else []) + install_targets
 
+    cmd += ["--config-settings", "editable-mode=compat"]
+
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')
 
