@@ -20,7 +20,7 @@ This guide walks through how to access the audit log and details the interaction
 
 Audit logs are available in the Organization settings pane, which can be accessed by clicking on your user icon on the top right side of the screen and selecting Organization settings in the dropdown menu. Once on the Organization settings pane, select Audit log on the top bar.
 
-Each entry in the audit log indicates when an action was taken, the user who performed the action, the action taken, and the deployment which the action affected. You may click the "Show" button to view additional details for any audit log action.
+Each entry in the audit log indicates when an action was taken, the user who performed the action, the action taken, and the deployment which the action affected. To view additional details for an action, click the **Show** button.
 
 ## Filter the audit log
 
