@@ -29,8 +29,8 @@ airflow_setup:
 	make wipe && \
 	mkdir -p $$AIRFLOW_HOME && \
 	mkdir -p $$DAGSTER_HOME && \
-	chmod +x ../../airflow_setup.sh && \
-	../../airflow_setup.sh $(MAKEFILE_DIR)/tutorial_example/airflow_dags && \
+	chmod +x ../../scripts/airflow_setup.sh && \
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/tutorial_example/airflow_dags && \
 	dbt seed --project-dir $(TUTORIAL_DBT_PROJECT_DIR)
 
 airflow_run:
@@ -39,3 +39,12 @@ airflow_run:
 
 dagster_run:
 	dagster dev -m tutorial_example.dagster_defs.definitions -p 3000
+
+
+update_readme_snippets:
+	python ../../scripts/update_readme_snippets.py \
+		$(MAKEFILE_DIR)/README.md \
+		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/peer.py \
+		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/observe.py \
+		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/migrate.py \
+		$(MAKEFILE_DIR)/tutorial_example/dagster_defs/stages/standalone.py

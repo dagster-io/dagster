@@ -15,7 +15,7 @@ def setup_fixture() -> Generator[str, None, None]:
         # run chmod +x create_airflow_cfg.sh and then run create_airflow_cfg.sh tmpdir
         temp_env = {**os.environ.copy(), "AIRFLOW_HOME": tmpdir}
         # go up one directory from current
-        path_to_script = Path(__file__).parent.parent.parent / "airflow_setup.sh"
+        path_to_script = Path(__file__).parent.parent.parent / "scripts" / "airflow_setup.sh"
         path_to_dags = Path(__file__).parent / "incorrectly_marked_dag" / "dags"
         subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
         subprocess.run([path_to_script, path_to_dags], check=True, env=temp_env)
