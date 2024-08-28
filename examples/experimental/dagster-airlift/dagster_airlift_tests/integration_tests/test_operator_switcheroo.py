@@ -7,14 +7,30 @@ from dagster import AssetKey, DagsterInstance, DagsterRunStatus
 from dagster._time import get_current_timestamp
 
 
+# Two different test targets
+# The first uses convention-based binding of assets to tasks, e.g.
+# op named the_dag__some_task
+# The second uses `dag_defs` and `task_defs` to attach tags to assets, which
+# in turn are used to bind assets to tasks.
+@pytest.fixture(
+    name="test_dir",
+    params=[
+        "airflow_op_switcheroo_convention",
+        "airflow_op_switcheroo_tags",
+    ],
+)
+def test_dir_fixture(request: pytest.FixtureRequest) -> Path:
+    return Path(__file__).parent / request.param
+
+
 @pytest.fixture(name="dags_dir")
-def setup_dags_dir() -> Path:
-    return Path(__file__).parent / "airflow_op_switcheroo" / "dags"
+def setup_dags_dir(test_dir: Path) -> Path:
+    return test_dir / "dags"
 
 
 @pytest.fixture(name="dagster_defs_path")
-def setup_dagster_defs_path() -> str:
-    return str(Path(__file__).parent / "airflow_op_switcheroo" / "dagster_defs.py")
+def setup_dagster_defs_path(test_dir: Path) -> str:
+    return str(test_dir / "dagster_defs.py")
 
 
 def test_migrated_operator(airflow_instance: None, dagster_dev: None) -> None:
@@ -50,5 +66,6 @@ def test_migrated_operator(airflow_instance: None, dagster_dev: None) -> None:
         run
         for run in runs
         if set(list(run.asset_selection)) == {AssetKey(["the_dag__some_task"])}  # type: ignore
+        or set(list(run.asset_selection)) == {AssetKey(["my_asset_for_some_task"])}  # type: ignore
     ][0]
     assert some_task_run.status == DagsterRunStatus.SUCCESS
