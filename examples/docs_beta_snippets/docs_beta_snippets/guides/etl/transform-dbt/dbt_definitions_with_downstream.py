@@ -2,8 +2,8 @@ import dagster as dg
 # highlight-start
 from dagster_dbt import dbt_assets, DbtCliResource, DbtProject, get_asset_key_for_model
 import plotly.express as px
-from pathlib import Path
 # highlight-end
+from pathlib import Path
 import pandas as pd
 import duckdb
 import os
@@ -22,7 +22,8 @@ def raw_customers(context: dg.AssetExecutionContext) -> None:
     # Log some metadata about the table we just wrote. It will show up in the UI.
     context.add_output_metadata({"num_rows": data.shape[0]})
 
-dbt_project = DbtProject(project_dir="jaffle_shop")
+dbt_project_directory = Path(__file__).absolute().parent / "jaffle_shop"
+dbt_project = DbtProject(project_dir=dbt_project_directory)
 dbt_resource = DbtCliResource(project_dir=dbt_project)
 dbt_project.prepare_if_dev()
 
