@@ -3,11 +3,17 @@ title: "Deploy to Kubernetes"
 sidebar_position: 21
 ---
 
-TODO - INTRODUCTION
+Deploying Dagster to a Kubernetes cluster is a popular option for maintaining a production Dagster deployment. Dagster uses Helm, a package manager for Kubernetes applications, to help manage deploying Dagster to a Kubernetes cluster.
+
+Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master/helm) for deploying Dagster that you can customize for your specific needs. For each Dagster coponent used by the Helm chart, Dagster publishes a corresponding image to [DockerHub](https://hub.docker.com/u/dagster).
 
 ## What you'll learn
 
-- How to use Kubernetes and Helm to deploy Dagster
+- How to get your Dagster project ready to deploy to your Kubernetes cluster
+- How to build a Docker image containing your Dagster project to deploy to your cluster
+- How to access and customize the Dagster-provided Helm charts
+- How to apply the configuration in the Helm charts to your Kubernetes cluster to deploy your Dagster project
+- How to connect to your deployed Dagster project
 
 <details>
   <summary>Prerequisites</summary>
@@ -17,11 +23,14 @@ To follow the steps in this guide, you'll need:
 - Familiarity with [Docker](https://docs.docker.com/)
 - Familiarity with [Kubernetes](https://kubernetes.io/docs/home/)
 - Familiarity with [Helm](https://helm.sh/docs/)
-- A Dagster project to deploy. You can also use the [example project](/todo). Would be great to have a command they can use to clone the project
+- A Dagster project to deploy. You can also use the [example project](/todo). You can download the example project using the command:
+```bash
+dagster project from-example --example deploy_k8s_beta --name assets_dbt_python
+```
 - To have Docker installed. [Docker installation guide](https://docs.docker.com/engine/install/)
 - To have `kubectl` installed. [Kubernetes installation guide](https://kubernetes.io/docs/tasks/tools/)
 - To have a Kubernetes cluster created. If you would like to follow along with this guide on your local machine, you can install Docker Desktop and turn on the included Kubernetes server [Docker Desktop and Kubernetes guide](https://docs.docker.com/desktop/kubernetes/)
-- Access to a Docker image registry, such as Amazon Web Services ECR or DockerHub
+- Access to a Docker image registry, such as Amazon Web Services ECR or DockerHub. If you are following along to the guide on your local machine, you do not need access to a Docker image registry.
 - To have Helm 3 installed. [Helm installation guide](https://helm.sh/docs/intro/install/)
 
 </details>
