@@ -2,4 +2,3 @@ node_modules
 .docusaurus
 build/
 docs/
-../examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/jaffle_shop/README.md
