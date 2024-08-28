@@ -99,7 +99,7 @@
     "rollup-plugin-styles": "^4.0.0",
     "storybook": "^8.2.7",
     "typescript": "5.4.5",
-    "webpack": "^5.88.1"
+    "webpack": "^5.94.0"
   },
   "browserslist": {
     "production": [
