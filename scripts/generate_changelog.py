@@ -74,7 +74,6 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
         if is_header:
             raw_category_match = CHANGELOG_HEADER_PATTERN.match(line)
             raw_category = raw_category_match.group(1) if raw_category_match else None
-            print("RAW CATEGORY", raw_category)
             changelog_category = CATEGORIES.get(raw_category, changelog_category)
             found = True
 
@@ -96,8 +95,6 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
     grouped_commits: Mapping[str, List[ParsedCommit]] = defaultdict(list)
     for commit in documented:
         grouped_commits[commit.changelog_category].append(commit)
-        print("COMMIT", commit.raw_changelog_entry)
-        print(commit.changelog_category)
 
     documented_text = ""
     for category in CATEGORIES.values():
