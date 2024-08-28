@@ -15,8 +15,7 @@ module.exports = {
       rules: {
         [`${projectName}/missing-graphql-variables-type`]: 'error',
         [`${projectName}/no-oss-imports`]: 'error',
-        // TODO (salazarm): Enable the rule fully after we publish this package and cloud migrates over
-        // [`${projectName}/no-apollo-client`]: 'error',
+        [`${projectName}/no-apollo-client`]: 'error',
       },
     },
   },

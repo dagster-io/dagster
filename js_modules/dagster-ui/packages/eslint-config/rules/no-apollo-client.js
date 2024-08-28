@@ -6,7 +6,7 @@ const path = require('path');
 module.exports = {
   meta: {
     type: 'suggestion',
-    fixable: 'code', // This marks the rule as auto-fixable
+    fixable: 'code',
     messages: {
       useWrappedApolloClient:
         'Please use our wrapped apollo-client module which includes performance instrumentation.',
