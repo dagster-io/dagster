@@ -268,11 +268,6 @@ const sidebars: SidebarsConfig = {
       collapsible: false,
       items: [
         {
-          type: 'doc',
-          label: 'Deployment types',
-          id: 'dagster-plus/deployment-types',
-        },
-        {
           type: 'category',
           label: 'Insights',
           link: {
@@ -339,10 +334,6 @@ const sidebars: SidebarsConfig = {
               id: 'dagster-plus/deployment/alerts/slack',
             },
           ],
-        },
-        {
-          type: 'doc',
-          id: 'dagster-plus/multi-tenancy',
         },
         {
           type: 'category',
