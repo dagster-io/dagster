@@ -10,7 +10,7 @@ Separate code locations allow you to deploy different projects that still roll u
 This guide will cover three options for adding a new code location:
 - Adding a code location manually
 - Adding a code location in a new Git repository
-- Adding a new code location to a Git monorepo
+- Adding a new code location to an existing Git monorepo
 
 <details>
 <summary>Prerequisites</summary>
@@ -21,11 +21,11 @@ This guide will cover three options for adding a new code location:
 
 </details>
 
-Adding a code location follows two general steps:
-- Putting your Dagster code in a place that's accessible by your agent. For Dagster+ Serverless you can skip this step. For Dagster+ Hybrid this usually means building a Docker image with your code and pushing it to a registry.
+Adding a code location follows two steps:
+- For Dagster+ Hybrid, ensuring the Dagster code is in a place accessible by your agent, usually by building a Docker image with your code that is pushed to a registry. For Dagster+ Serverless you can skip this step.
 - Notifying Dagster+ of the new or updated code location. This will be done by using the Dagster+ Python client.
 
-Often these two steps are handled by CICD connected to your Git repository.
+Often these two steps are handled by CI/CD connected to your Git repository.
 
 
 ## Add a new code location manually
@@ -38,14 +38,17 @@ pip install dagster-cloud
 
 Next you will want need to authenticate this Python client:
 
-1. Navigate to your Dagster+ organization. Click on your user icon in the upper right corner, then select "Organization settings". Select "Tokens" and press "Create user token". Copy the token.
+1. In the Dagster+ UI, click on your user icon in the upper right corner.
+2. Click **Organization settings**, then the **Tokens** tab.
+3. Click the **Create user token** button. 
+4. Copy the token.
 
 2. Set the following environment variables:
 
-```bash
-export  DAGSTER_CLOUD_ORGANIZATION="organization-name" # if your URL is https://acme.dagster.plus your organization name is "acme"
-export  DAGSTER_CLOUD_API_TOKEN="your-token"
-```
+   ```bash
+   export  DAGSTER_CLOUD_ORGANIZATION="organization-name" # if your URL is https://acme.dagster.plus your organization name is "acme"
+   export  DAGSTER_CLOUD_API_TOKEN="your-token"
+   ```
 
 3. Add the code location. The following example assumes you are running the command from the top-level working directory of your Dagster project with a project named "quickstart" structured as a Python module named "quickstart".
 
@@ -62,7 +65,7 @@ $tree
         /resources
 ```
 
-If you are using Dagster+ Serverless, you'll want to run:
+If you are using Dagster+ Serverless, run the following command to add a code location:
 
 ```bash
 dagster-cloud serverless deploy-python-executable --deployment prod --location-name quickstart --module-name quickstart
@@ -117,7 +120,7 @@ locations:
       package_name: quickstart
 ```
 
-3. A CICD workflow file that contains the steps for adding your code location. Here is an example workflow file for a Dagster+ Hybrid organization:
+3. A CI/CD workflow file that contains the steps for adding your code location. Here is an example workflow file for a Dagster+ Hybrid organization:
 
 ```yaml
 variables:
@@ -162,7 +165,9 @@ deploy:
 
 ## Adding a new code location to a Git monorepo
 
-Many organizations use a Git monorepo to contain multiple Dagster projects. Here is an example of DagsterLab's own [internal data engineering Git repository](https://github.com/dagster-io/dagster-open-platform). To add a new location to a monorepo, you will create a new directory containing:
+Many organizations use a Git monorepo to contain multiple Dagster projects. Here is an example of DagsterLab's own [internal data engineering Git repository](https://github.com/dagster-io/dagster-open-platform).
+
+To add a new code location to a monorepo, create a new directory that contains:
 - Your Dagster project
 - For Dagster+ Hybrid, you will typically add a Dockerfile:
 
