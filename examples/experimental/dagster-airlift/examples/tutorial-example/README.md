@@ -58,11 +58,7 @@ Next, create a new Python file to hold your Dagster code. Create a `Definitions`
 
 ```python
 # peer.py
-from dagster_airlift.core import (
-    AirflowInstance,
-    BasicAuthBackend,
-    build_defs_from_airflow_instance,
-)
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=AirflowInstance(
@@ -75,6 +71,7 @@ defs = build_defs_from_airflow_instance(
         name="airflow_instance_one",
     )
 )
+
 ```
 
 This function creates:
@@ -173,7 +170,6 @@ Then, we will construct our assets:
 
 ```python
 # observe.py
-
 import os
 from pathlib import Path
 
@@ -191,7 +187,7 @@ from dagster_dbt import DbtProject
 
 def dbt_project_path() -> Path:
     env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
     return Path(env_val)
 
 
@@ -212,7 +208,7 @@ def rebuild_customer_list_defs() -> Definitions:
         ),
         task_defs(
             "export_customers",
-            # encode dependency on customers model
+            # encode dependency on customers table
             Definitions(assets=[AssetSpec(key="customers_csv", deps=["customers"])]),
         ),
     )
@@ -229,6 +225,7 @@ defs = build_defs_from_airflow_instance(
     ),
     defs=rebuild_customer_list_defs(),
 )
+
 ```
 
 ```bash
@@ -377,7 +374,7 @@ from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load
 
 def dbt_project_path() -> Path:
     env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
     return Path(env_val)
 
 
@@ -436,7 +433,7 @@ defs = build_defs_from_airflow_instance(
             # load rich set of assets from dbt project
             dbt_defs(
                 manifest=dbt_project_path() / "target" / "manifest.json",
-                project=DbtProject(dbt_project_path().absolute()),
+                project=DbtProject(str(dbt_project_path().absolute())),
             ),
         ),
         task_defs(
@@ -447,12 +444,15 @@ defs = build_defs_from_airflow_instance(
                     # TODO use env var?
                     csv_path=airflow_dags_path() / "customers.csv",
                     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                    duckdb_schema="raw_data",
                     duckdb_database_name="jaffle_shop",
                 )
             ),
         ),
     ),
 )
+
+
 
 ```
 
@@ -486,7 +486,7 @@ from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load
 
 def dbt_project_path() -> Path:
     env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
     return Path(env_val)
 
 
@@ -545,7 +545,7 @@ def build_customers_list_defs() -> Definitions:
 
     rebuild_customers_list_schedule = ScheduleDefinition(
         name="rebuild_customers_list_schedule",
-        target=AssetSelection.assets(*rebuild_customers_list_defs.assets),
+        target=AssetSelection.assets(*rebuild_customers_list_defs.assets),  # type: ignore
         cron_schedule="0 0 * * *",
     )
 
