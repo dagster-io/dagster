@@ -13,14 +13,14 @@ last_update:
 
 To follow the steps in this guide, you'll need:
 
-- a basic understanding of dbt, duckdb, and Dagster concepts such as assets and resources
-- the dbt and duckdb CLIs installed
+- a basic understanding of dbt, DuckDB, and Dagster concepts such as assets and resources
+- the dbt and DuckDB CLIs installed
 - Dagster, `dagster-dbt`, and `dbt-duckdb` packages installed
 </details>
 
 ---
 
-## Setting up a simple dbt project
+## Setting up a basic dbt project
 
 Let's start with scaffolding a basic dbt project:
 
@@ -28,7 +28,7 @@ Let's start with scaffolding a basic dbt project:
 dbt init jaffle_shop
 ```
 
-Make sure to select **duckdb** as your database when prompted. This will create a dbt project with the following structure:
+Make sure to select **DuckDB** as your database when prompted. This will create a dbt project with the following structure:
 
 ```
 ├── README.md
@@ -51,7 +51,7 @@ If were to try to build this example as is, it would immediately fail due to a n
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/my_first_dbt_model.sql" language="sql" title="Fix my_first_dbt_model.sql failing test" />
 
 
-Now we are able to successfully compile our project and build our models with Dagster. First, let's compile:
+Now we're able to successfully compile our project and build our models with Dagster. First, let's compile:
 
 ```bash
 dbt compile
@@ -63,7 +63,7 @@ Now Dagster has everything it needs to consume our dbt project and build our ass
 
 Note that in this file we create:
 - a `DbtProject` object that points to the path of our dbt project
-- a `DbtResource` that references the above project object
+- a `DbtResource` that references the project object
 - a `@dbt_assets` decorated function that yields Dagster events from the events streamed from the dbt CLI
 - a `Definitions` object that contains our assets and resources
 
@@ -79,7 +79,7 @@ This asset:
 
 - Pulls customer data from a CSV via pandas
 - Creates a schema called `raw` if it doesn't already exist
-- Writes a `raw_customers` table to the `raw` schema in our duckdb database
+- Writes a `raw_customers` table to the `raw` schema in our DuckDB database
 
 Let's add a dbt model that will source that asset and define the dependency for Dagster, first we'll create our dbt model:
 
@@ -96,7 +96,7 @@ In this file we need to add the Dagster metadata in the highlighted portion of t
 
 ## Adding downstream dependencies
 
-Similarly to the above, we often have assets that depend on the output of our dbt models. Let's create an asset that depends on the result of our new `customers` model, this asset will create a histogram of the first names of the customers:
+Similarly, we often have assets that depend on the output of our dbt models. Let's create an asset that depends on the result of our new `customers` model, this asset will create a histogram of the first names of the customers:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_downstream.py" language="python" title="Adding an downstream asset to definitions.py" />
 
@@ -114,6 +114,6 @@ We can easily schedule our dbt models using the Dagster dbt integration's `build
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_schedule.py" language="python" title="Scheduling our dbt models" />
 
-## Next Steps
+## Next steps
 
-TODO: add links to partition guide.
+<!-- TODO: add links to partition guide. -->
