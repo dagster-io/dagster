@@ -1,5 +1,5 @@
 ---
-title: "Install the Dagster+ agent on Kubernetes"
+title: "Running the Dagster+ agent on Kubernetes"
 displayed_sidebar: "dagsterPlus"
 sidebar_position: 30
 sidebar_label: "Kubernetes"
