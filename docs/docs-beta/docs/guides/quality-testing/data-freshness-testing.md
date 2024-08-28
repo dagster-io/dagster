@@ -34,9 +34,13 @@ The example below defines a freshness check and adds a schedule to run the check
 
 ### Use anomaly detection to test data freshness (Dagster+ Pro)
 
-Instead of applying policies on an asset-by-asset basis, Dagster+ Pro users can take advantage of a time series anomaly detection model to determine if data is arriving later than expected. Note: If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.
+Instead of applying policies on an asset-by-asset basis, Dagster+ Pro users can take advantage of a time series anomaly detection model to determine if data is arriving later than expected.
 
 <CodeExample filePath="guides/data-assets/quality-testing/freshness-checks/anomaly-detection.py" language="python" title="Use anomaly detection to detect overdue assets" />
+
+:::note
+If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.
+:::
 
 ## Next steps
 
