@@ -10,17 +10,19 @@ sidebar_position: 10
 
 ## Testing assets with a single asset check
 
+<CodeExample filePath="guides/data-assets/quality-testing/asset-checks/single-asset-check.py" language="python" title="Asset with a single asset check" />
 
-## Testing assets with a multiple asset checks
+## Testing assets with multiple asset checks
 
+<CodeExample filePath="guides/data-assets/quality-testing/asset-checks/multiple-asset-checks.py" language="python" title="Asset with multiple asset checks" />
 
 ## Blocking downstream assets
 
+<CodeExample filePath="guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py" language="python" title="Block downstream assets when asset check fails" />
 
 ## Executing asset checks on a schedule
 
-
-## Trigger asset checks with a sensor
+<CodeExample filePath="guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule.py" language="python" title="Schedule asset checks separately from their asset" />
 
 
 ## Next steps
