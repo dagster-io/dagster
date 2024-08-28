@@ -1,11 +1,11 @@
 ---
-title: "Running the Dagster+ agent on Kubernetes"
+title: "Running Dagster+ agents on Kubernetes"
 displayed_sidebar: "dagsterPlus"
 sidebar_position: 30
 sidebar_label: "Kubernetes"
 ---
 
-# Kubernetes agents
+# Running Dagster+ agents on Kubernetes
 
 This page provides instructions for running the [Dagster+ agent](dagster-plus/getting-started/whats-dagster-plus#Agents) on a [Kubernetes](https://kubernetes.io) cluster.
 
