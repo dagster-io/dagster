@@ -20,11 +20,11 @@ def _assert_dagster_migration_states_are(
         where: A function that takes an AssetSpec and returns True if the spec should be checked, False otherwise.
     """
     import tutorial_example
-    from tutorial_example.dagster_defs import definitions
-    from tutorial_example.dagster_defs.definitions import defs
+    from tutorial_example.dagster_defs.stages import migrate
+    from tutorial_example.dagster_defs.stages.migrate import defs
 
     importlib.reload(tutorial_example)
-    importlib.reload(definitions)
+    importlib.reload(migrate)
 
     assert defs
     specs = defs.get_all_asset_specs()

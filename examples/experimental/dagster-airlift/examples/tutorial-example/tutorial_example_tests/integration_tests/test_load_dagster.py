@@ -1,12 +1,4 @@
-from dagster import AssetKey, Definitions
-
-
-def test_migrate_loads(airflow_instance) -> None:
-    from tutorial_example.dagster_defs.stages.migrate import defs
-
-    assert defs
-
-    Definitions.validate_loadable(defs)
+from dagster import Definitions
 
 
 def test_peer_loads(airflow_instance) -> None:
@@ -16,9 +8,8 @@ def test_peer_loads(airflow_instance) -> None:
 
     Definitions.validate_loadable(defs)
 
-    assert len(defs.assets) == 1
-    dag_asset = defs.assets[0]
-    assert dag_asset.key == AssetKey(["airflow_instance", "dag", "rebuild_customers_list"])
+    # representation of dag
+    assert len(defs.get_repository_def().assets_defs_by_key) == 1
 
 
 def test_observe_loads(airflow_instance) -> None:
@@ -28,9 +19,19 @@ def test_observe_loads(airflow_instance) -> None:
 
     Definitions.validate_loadable(defs)
 
-    assert len(defs.assets) == 4
-    dag_asset = defs.assets[0]
-    assert dag_asset.key == AssetKey(["airflow_instance", "dag", "rebuild_customers_list"])
+    # representation of dag + 9 assets
+    assert len(defs.get_repository_def().assets_defs_by_key) == 10
+
+
+def test_migrate_loads(airflow_instance) -> None:
+    from tutorial_example.dagster_defs.stages.migrate import defs
+
+    assert defs
+
+    Definitions.validate_loadable(defs)
+
+    # representation of dag + 9 assets
+    assert len(defs.get_repository_def().assets_defs_by_key) == 10
 
 
 def test_standalone_loads(airflow_instance) -> None:
@@ -39,3 +40,6 @@ def test_standalone_loads(airflow_instance) -> None:
     assert defs
 
     Definitions.validate_loadable(defs)
+
+    # 1 fewer, since no representation of the overall DAG
+    assert len(defs.get_repository_def().assets_defs_by_key) == 9
