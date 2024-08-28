@@ -371,7 +371,7 @@ tasks:
     migrated: False
 ```
 
-Next you must reload the definitions in Dagster via the UI or by restarting `dagster dev`.
+Important: You must reload the definitions in Dagster via the UI or by restarting `dagster dev`.
 
 You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run.
 

@@ -86,7 +86,7 @@ defs = build_defs_from_airflow_instance(
             "export_customers",
             export_duckdb_to_csv_defs(
                 ExportDuckDbToCsvArgs(
-                    table_name="customers_csv",
+                    table_name="customers",
                     # TODO use env var?
                     csv_path=airflow_dags_path() / "customers.csv",
                     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
