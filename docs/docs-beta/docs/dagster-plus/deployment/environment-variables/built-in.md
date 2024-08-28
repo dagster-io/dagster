@@ -26,12 +26,12 @@ For every commit made to a branch, the following environment variables are avail
 
 | Key | Value |
 |---|---|
-| DAGSTER_CLOUD_GIT_SHA | The SHA of the commit. <br/><br/> **Example:** `5c5fa4643968a1b8043b58c159fb0600af8a35b2`. |
-| DAGSTER_CLOUD_GIT_TIMESTAMP | The Unix timestamp when the commit occurred. <br/><br/> **Example:** `1724871941` |
-| DAGSTER_CLOUD_GIT_AUTHOR_EMAIL | The email of the git user who authored the commit. |
-| DAGSTER_CLOUD_GIT_AUTHOR_NAME | The name of the git user who authored the commit. |
-| DAGSTER_CLOUD_GIT_MESSAGE | The message associated with the commit. |
-| DAGSTER_CLOUD_GIT_BRANCH | The name of the branch associated with the commit. |
-| DAGSTER_CLOUD_GIT_REPO | The name of the repository associated with the commit. |
-| DAGSTER_CLOUD_PULL_REQUEST_ID | The ID of the pull request associated with the commit. |
-| DAGSTER_CLOUD_PULL_REQUEST_STATUS | The status of the pull request at the time of the commit. <br/><br/> **Possible values:** `OPEN`, `CLOSED`, and `MERGED`. |
+| `DAGSTER_CLOUD_GIT_SHA` | The SHA of the commit. <br/><br/> **Example:** `5c5fa4643968a1b8043b58c159fb0600af8a35b2`. |
+| `DAGSTER_CLOUD_GIT_TIMESTAMP` | The Unix timestamp when the commit occurred. <br/><br/> **Example:** `1724871941` |
+| `DAGSTER_CLOUD_GIT_AUTHOR_EMAIL` | The email of the git user who authored the commit. |
+| `DAGSTER_CLOUD_GIT_AUTHOR_NAME` | The name of the git user who authored the commit. |
+| `DAGSTER_CLOUD_GIT_MESSAGE` | The message associated with the commit. |
+| `DAGSTER_CLOUD_GIT_BRANCH` | The name of the branch associated with the commit. |
+| `DAGSTER_CLOUD_GIT_REPO` | The name of the repository associated with the commit. |
+| `DAGSTER_CLOUD_PULL_REQUEST_ID` | The ID of the pull request associated with the commit. |
+| `DAGSTER_CLOUD_PULL_REQUEST_STATUS` | The status of the pull request at the time of the commit. <br/><br/> **Possible values:** `OPEN`, `CLOSED`, and `MERGED`. |
