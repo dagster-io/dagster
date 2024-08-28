@@ -20,18 +20,18 @@ Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Docker](https://docs.docker.com/)
-- Familiarity with [Kubernetes](https://kubernetes.io/docs/home/)
-- Familiarity with [Helm](https://helm.sh/docs/)
-- A Dagster project to deploy. You can also use the [example project](/todo). You can download the example project using the command:
-```bash
-dagster project from-example --example deploy_k8s_beta --name assets_dbt_python
-```
-- To have Docker installed. [Docker installation guide](https://docs.docker.com/engine/install/)
-- To have `kubectl` installed. [Kubernetes installation guide](https://kubernetes.io/docs/tasks/tools/)
-- To have a Kubernetes cluster created. If you would like to follow along with this guide on your local machine, you can install Docker Desktop and turn on the included Kubernetes server [Docker Desktop and Kubernetes guide](https://docs.docker.com/desktop/kubernetes/)
-- Access to a Docker image registry, such as Amazon Web Services ECR or DockerHub. If you are following along to the guide on your local machine, you don't need access to a Docker image registry.
-- To have Helm 3 installed. [Helm installation guide](https://helm.sh/docs/intro/install/)
+- **Familiarity with [Docker](https://docs.docker.com/)**, and:
+  - **To have Docker installed**. [Docker installation guide](https://docs.docker.com/engine/install/)
+  - **Access to a Docker image registry**, such as Amazon Web Services ECR or DockerHub. If you're following along on your local machine, this isn't required.
+- **Familiarity with [Kubernetes](https://kubernetes.io/docs/home/)**, and:
+  - **To have `kubectl` installed**. [Kubernetes installation guide](https://kubernetes.io/docs/tasks/tools/)
+  - **An existing Kubernetes cluster**. To follow along on your local machine, [install Docker Desktop](https://docs.docker.com/desktop/kubernetes/) and turn on the included Kubernetes server.
+- **Familiarity with [Helm](https://helm.sh/docs/)**, and:
+  - **To have Helm 3 installed**. [Helm installation guide](https://helm.sh/docs/intro/install/)
+- A Dagster project to deploy. You can also use the [example project](/todo):
+  ```bash
+  dagster project from-example --example deploy_k8s_beta --name deploy_k8s_beta
+  ```
 
 </details>
 
@@ -47,11 +47,13 @@ You can also point to a Python module in the `workspace.yaml` file. To learn mor
 
 ## Step 2: Write and build a Docker image containing your Dagster project
 ### Step 2.1: Write a Dockerfile
-You will need to build a Docker image that contains your Dagster project and all of its dependencies. The Dockerfile should copy your Dagster project and the `workspace.yaml` file created in Step 1 into the image and install `dagster`, `dagster-postgres`, and `dagster-k8s`, along with any other libraries your project depends on. Finally, ensure that port 80 is exposed. This will be used to set up port-forwarding later.
+Next, you'll build a Docker image that contains your Dagster project and all of its dependencies. The Dockerfile should:
+1. Copy your Dagster project, including the `workspace.yaml` file created in Step 1, into the image.
+2. Install `dagster`, `dagster-postgres`, and `dagster-k8s`, along with any other libraries your project depends on. The example project has a dependency on `pandas` so it's included in the `pip install` in the following example Dockerfile.
+3. Expose port 80, which we'll use to set up port-forwarding later.
 
 <CodeExample filePath="guides/deployment/kubernetes/Dockerfile" language="docker" title="Example Dockerfile" />
 
-The example project has a dependency on `pandas` so it's included in the `pip install` command.
 
 ### Step 2.2: Build and push a Docker image
 
@@ -91,7 +93,7 @@ kubectl config use-context dagster
 
 ## Step 4: Add the Dagster Helm chart repository
 
-Dagster publishes [Helm charts](https://artifacthub.io/packages/helm/dagster/dagster) for deploying Dagster. New Helm charts are published for each version of Dagster. You should use the Helm chart version that matches the version of Dagster you have installed.
+Dagster publishes [Helm charts](https://artifacthub.io/packages/helm/dagster/dagster) for deploying Dagster, with a new chart for each Dagster version.
 
 To install the Dagster Helm charts, run the following command:
 
@@ -109,9 +111,9 @@ helm repo update
 
 You will need to modify some values in Dagster's Helm chart to deploy your Dagster project.
 
-### Step 5.1: Copy the default Helm chart values into a `values.yaml`
+### Step 5.1: Copy default Helm chart values into values.yaml
 
-Run the following command to copy the values installed from the published Helm charts so that you can modify them:
+Run the following command to copy the values installed from the published Helm charts:
 
 ```bash
 helm show values dagster/dagster > values.yaml
@@ -121,7 +123,10 @@ TODO - where to copy this file to?
 ### Step 5.2: Modify the `values.yaml` file for your deployment
 The `values.yaml` file contains configuration options you can set for your deployment. Different configuration options are explained in inline comments in `values.yaml`, and you can learn more about the different configuration options in [The title of a guide explaining it](/todo).
 
-The minimal configuration options you need to set to deploy your project are the `deployments.name`, `deployments.image`, and `deployments.dagsterApiGrpcArgs` values. `deployments.name` should be a unique name for your deployment, and `deployments.image` should be set to match the Docker image you built and pushed in Step 2. `dagsterApiGrpcArgs` should be set to NEED HELP WITH HOW TO EXPLAIN THIS.
+To deploy your project, you'll need to set the following options:
+- `deployments.name`, which should be a unique name for your deployment
+- `deployments.image.name` and `deployments.image.tag`, which should be set to match the Docker image from Step 2
+- `deployments.dagsterApiGrpcArgs`, which should be set to NEED HELP WITH HOW TO EXPLAIN THIS.
 
 If you are following this guide on your local machine, you will also need to set `pullPolicy: IfNotPresent`. This will use the local version of the image built in Step 2. However, in production use cases when your Docker images are pushed to image registries, this value should remain `pullPolicy: Always`.
 
@@ -140,7 +145,7 @@ helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml
 I think it would be nice to explain the various components of this command and what to set them to, but i dont know what the command is really doing
 
 :::note
-If you are running an older version of Dagster, pass the --version flag to `helm upgrade` with the version of Dagster you are running. For example, if you are running `dagster==1.7.4` you'll run the command `helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml --version 1.7.4`
+If you are running an older version of Dagster, pass the `--version` flag to `helm upgrade` with the version of Dagster you are running. For example, if you are running `dagster==1.7.4` you'll run the command `helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml --version 1.7.4`
 :::
 
 The `helm upgrade` command will launch several pods in your Kubernetes cluster. You can check the status of the pod with the command:
@@ -155,7 +160,7 @@ It may take a few minutes before all pods are in a `RUNNING` state. If the `helm
 $ kubectl get pods
 NAME                                                              READY   STATUS      AGE
 dagster-daemon-5787ccc868-nsvsg                                   1/1     Running     3m41s
-dagster-dagit-7c5b5c7f5c-rqrf8                                    1/1     Running     3m41s
+dagster-webserver-7c5b5c7f5c-rqrf8                                1/1     Running     3m41s
 dagster-dagster-user-deployments-iris-analysis-564cbcf9f-fbqlw    1/1     Running     3m41s
 dagster-postgresql-0                                              1/1     Running     3m41s
 ```
@@ -169,10 +174,10 @@ If one of the pods is in an error state, you can view the logs using the command
 kubectl logs <pod-name>
 ```
 
-For example, if the pod `dagster-dagster-user-deployments-iris-analysis-564cbcf9f-fbqlw` is in a `CrashLoopBackOff` state, the logs can be viewed with the command
+For example, if the pod `dagster-webserver-7c5b5c7f5c-rqrf8` is in a `CrashLoopBackOff` state, the logs can be viewed with the command
 
 ```
-kubectl logs dagster-dagster-user-deployments-iris-analysis-564cbcf9f-fbqlw
+kubectl logs dagster-webserver-7c5b5c7f5c-rqrf8
 ```
 
 </details>
@@ -182,7 +187,7 @@ TODO - maybe explain what each of these pods are?
 ## Step 7: Connect to your Dagster deployment and materialize your assets
 
 ### Step 7.1: Start port-forwarding to the webserver pod
-Run the following command to set up port forwarding to the webserver pod"
+Run the following command to set up port forwarding to the webserver pod:
 
 ```bash
 DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
@@ -200,7 +205,7 @@ TODO SCREENSHOT
 
 
 ### Step 7.3: Materialize an asset
-From the Dagster UI you can materialize an asset by clicking the "Materialize" button. Dagster will start a Kubernetes job to materialize the asset. You can introspect on the Kubernetes cluster to see this job:
+In the Dagster UI, navigate to the Asset catalog and click the **Materialize** button to materialize an asset. Dagster will start a Kubernetes job to materialize the asset. You can introspect on the Kubernetes cluster to see this job:
 
 
 ```bash
