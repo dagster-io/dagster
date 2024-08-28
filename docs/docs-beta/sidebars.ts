@@ -385,11 +385,6 @@ const sidebars: SidebarsConfig = {
           items: [
             {
               type: 'doc',
-              label: 'Architecture',
-              id: 'dagster-plus/deployment/hybrid/architecture',
-            },
-            {
-              type: 'doc',
               label: 'Tokens',
               id: 'dagster-plus/deployment/hybrid/tokens',
             },
