@@ -20,7 +20,7 @@ from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load
 
 def dbt_project_path() -> Path:
     env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
-    assert env_val
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
     return Path(env_val)
 
 
@@ -86,7 +86,7 @@ defs = build_defs_from_airflow_instance(
             "export_customers",
             export_duckdb_to_csv_defs(
                 ExportDuckDbToCsvArgs(
-                    table_name="customers_csv",
+                    table_name="customers",
                     # TODO use env var?
                     csv_path=airflow_dags_path() / "customers.csv",
                     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",

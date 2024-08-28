@@ -12,8 +12,8 @@ from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load
 
 
 def dbt_project_path() -> Path:
-    env_val = os.getenv("DBT_PROJECT_DIR")
-    assert env_val
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
     return Path(env_val)
 
 
