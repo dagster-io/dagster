@@ -1,6 +1,18 @@
 # Changelog
 
-## 1.8.3 (core) / 0.24.3 (libraries)
+## 1.8.4 (core) / 0.24.4 (libraries)
+
+### Bugfixes
+
+- Fixed an issue where viewing run logs with the latest 5.0 release of the watchdog package raised an exception.
+- Fixed a bug that caused an "Asset must be part of at least one job" error when clicking on an external asset in the asset graph UI
+
+### Dagster Plus
+
+- The default io_manager on Serverless now supports the `allow_missing_partitions` configuration option.
+- Fixed a bug that caused an error when loading the launchpad for a partition, when using in Dagster+ with an agent with version below 1.8.2
+
+## 1.8.3 (core) / 0.24.3 (libraries) (YANKED - This version of Dagster resulted in errors when trying to launch runs that target individual asset partitions)
 
 ### New
 
