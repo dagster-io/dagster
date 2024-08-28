@@ -36,6 +36,7 @@ def dbt_defs(
         ),
     )
     def _dbt_asset(context: AssetExecutionContext, dbt: DbtCliResource):
+        context.log.info(f"project_dir {dbt.project_dir}")
         yield from dbt.cli(["build"], context=context).stream()
 
     return Definitions(
