@@ -9,8 +9,8 @@ from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.migration_state import load_migration_state_from_yaml
-from tutorial_example.shared.export_duckdb_to_csv import export_duckdb_to_csv
-from tutorial_example.shared.load_csv_to_duckdb import load_csv_to_duckdb
+from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
+from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
 
 
 class LoadCSVToDuckDB(BaseOperator):
@@ -35,12 +35,14 @@ class LoadCSVToDuckDB(BaseOperator):
 
     def execute(self, context) -> None:
         load_csv_to_duckdb(
-            table_name=self._table_name,
-            csv_path=self._csv_path,
-            duckdb_path=self._duckdb_path,
-            names=self._column_names,
-            duckdb_schema=self._duckdb_schema,
-            duckdb_database_name=self._duckdb_database_name,
+            LoadCsvToDuckDbArgs(
+                table_name=self._table_name,
+                csv_path=self._csv_path,
+                duckdb_path=self._duckdb_path,
+                names=self._column_names,
+                duckdb_schema=self._duckdb_schema,
+                duckdb_database_name=self._duckdb_database_name,
+            )
         )
 
 
@@ -64,11 +66,13 @@ class ExportDuckDBToCSV(BaseOperator):
 
     def execute(self, context) -> None:
         export_duckdb_to_csv(
-            table_name=self._table_name,
-            csv_path=self._csv_path,
-            duckdb_path=self._duckdb_path,
-            duckdb_schema=self._duckdb_schema,
-            duckdb_database_name=self._duckdb_database_name,
+            ExportDuckDbToCsvArgs(
+                table_name=self._table_name,
+                csv_path=self._csv_path,
+                duckdb_path=self._duckdb_path,
+                duckdb_schema=self._duckdb_schema,
+                duckdb_database_name=self._duckdb_database_name,
+            )
         )
 
 
@@ -79,7 +83,7 @@ default_args = {
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
 }
-DBT_DIR = os.getenv("DBT_PROJECT_DIR")
+DBT_DIR = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
 # Create the DAG with the specified schedule interval
 dag = DAG("rebuild_customers_list", default_args=default_args, schedule_interval=None)
 
@@ -114,7 +118,11 @@ export_customers = ExportDuckDBToCSV(
 
 load_raw_customers >> run_dbt_model >> export_customers  # type: ignore
 
-mark_as_dagster_migrating(
-    global_vars=globals(),
-    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
-)
+# Set this to True to begin the migration process
+MIGRATING = True
+
+if MIGRATING:
+    mark_as_dagster_migrating(
+        global_vars=globals(),
+        migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+    )
