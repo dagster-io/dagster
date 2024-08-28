@@ -100,7 +100,7 @@ def main(
         "helm/dagster/schema[test]",
         ".buildkite/dagster-buildkite",
         "examples/experimental/dagster-blueprints",
-        "examples/experimental/dagster-airlift",
+        "examples/experimental/dagster-airlift[core,in-airflow,mwaa,dbt,test]",
     ]
 
     if sys.version_info <= (3, 12):

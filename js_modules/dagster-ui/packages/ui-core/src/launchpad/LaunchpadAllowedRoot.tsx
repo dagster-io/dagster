@@ -14,7 +14,6 @@ import {gql, useQuery} from '../apollo-client';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
@@ -68,7 +67,6 @@ export const LaunchpadAllowedRoot = (props: Props) => {
       variables: {repositoryName, repositoryLocationName, pipelineName},
     },
   );
-  useBlockTraceOnQueryResult(result, 'LaunchpadRootQuery');
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;

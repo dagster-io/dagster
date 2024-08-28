@@ -35,7 +35,6 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -188,7 +187,6 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
 
   const queryResult = assetSelection ? queryResultAssets : queryResultNoAssets;
   const {data, refetch, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'ConfigPartitionsQuery');
 
   const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
     repoAddress,

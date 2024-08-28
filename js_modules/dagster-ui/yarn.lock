@@ -3596,7 +3596,29 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@dagster-io/eslint-config@npm:1.0.15, @dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
+"@dagster-io/eslint-config@npm:1.0.15":
+  version: 1.0.15
+  resolution: "@dagster-io/eslint-config@npm:1.0.15"
+  dependencies:
+    "@typescript-eslint/eslint-plugin": "npm:^7.7.1"
+    "@typescript-eslint/parser": "npm:^7.7.1"
+    eslint-config-prettier: "npm:^9.1.0"
+    eslint-plugin-dagster-rules: "link:./rules"
+    eslint-plugin-import: "npm:^2.29.1"
+    eslint-plugin-jest: "npm:^27.9.0"
+    eslint-plugin-jsx-a11y: "npm:^6.8.0"
+    eslint-plugin-prettier: "npm:^5.1.3"
+    eslint-plugin-react: "npm:^7.34.1"
+    eslint-plugin-react-hooks: "npm:^4.6.0"
+    eslint-plugin-unused-imports: "npm:^3.1.0"
+  peerDependencies:
+    eslint: ^8.57.0
+    prettier: ^3.0.3
+  checksum: 10/ed220390ae550ddbabfa2fe3baaa1ed631b7c5c680eeb6dfd609e90ec1caa592c34f54ffa255aa888334ac03bb7f063fa38d8d27068bebcdc1c8d4c8a54472d3
+  languageName: node
+  linkType: hard
+
+"@dagster-io/eslint-config@workspace:*, @dagster-io/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@dagster-io/eslint-config@workspace:packages/eslint-config"
   dependencies:
@@ -12516,6 +12538,12 @@ __metadata:
   checksum: 10/a9a7ed93eb858092e3cdc797357d4ead2b3ea06959b0eada31ab13862d46a59eb064b9cb82302214232e547980ce33618c2992f6821138a4934e65710ed9cc29
   languageName: node
   linkType: hard
+
+"eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40npm%3A1.0.15":
+  version: 0.0.0-use.local
+  resolution: "eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40npm%3A1.0.15"
+  languageName: node
+  linkType: soft
 
 "eslint-plugin-dagster-rules@link:./rules::locator=%40dagster-io%2Feslint-config%40workspace%3Apackages%2Feslint-config":
   version: 0.0.0-use.local

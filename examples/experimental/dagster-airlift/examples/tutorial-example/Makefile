@@ -7,7 +7,7 @@ endef
 MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
 export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
 export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
-export DBT_PROJECT_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
+export TUTORIAL_DBT_PROJECT_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DBT_PROFILES_DIR := $(MAKEFILE_DIR)/tutorial_example/shared/dbt
 export DAGSTER_URL := http://localhost:3000
 
@@ -31,10 +31,11 @@ airflow_setup:
 	mkdir -p $$DAGSTER_HOME && \
 	chmod +x ../../airflow_setup.sh && \
 	../../airflow_setup.sh $(MAKEFILE_DIR)/tutorial_example/airflow_dags && \
-	dbt seed
+	dbt seed --project-dir $(TUTORIAL_DBT_PROJECT_DIR)
 
 airflow_run:
 	airflow standalone
+
 
 dagster_run:
 	dagster dev -m tutorial_example.dagster_defs.definitions -p 3000

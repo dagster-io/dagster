@@ -46,7 +46,6 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface Props {
@@ -439,7 +438,6 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
     },
   );
 
-  useBlockTraceOnQueryResult(result, 'AssetViewDefinitionQuery');
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {

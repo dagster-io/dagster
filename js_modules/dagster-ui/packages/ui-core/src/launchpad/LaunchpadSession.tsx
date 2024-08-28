@@ -70,7 +70,7 @@ import {
   PipelineSelector,
   RepositorySelector,
 } from '../graphql/types';
-import {useBlockTraceOnQueryResult, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {DagsterTag} from '../runs/RunTag';
 import {useCopyAction} from '../runs/RunTags';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
@@ -221,7 +221,6 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
     variables: {selector: pipelineSelector, mode: currentSession?.mode},
   });
-  useBlockTraceOnQueryResult(configResult, 'PipelineExecutionConfigSchemaQuery');
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
 

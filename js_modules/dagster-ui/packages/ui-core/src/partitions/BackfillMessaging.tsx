@@ -126,6 +126,7 @@ export function isBackfillDaemonHealthy(instance: DaemonNotRunningAlertInstanceF
 export function useIsBackfillDaemonHealthy() {
   const queryData = useQuery<DaemonNotRunningAlertQuery, DaemonNotRunningAlertQueryVariables>(
     DAEMON_NOT_RUNNING_ALERT_QUERY,
+    {blocking: false},
   );
   return queryData.data ? isBackfillDaemonHealthy(queryData.data.instance) : true;
 }

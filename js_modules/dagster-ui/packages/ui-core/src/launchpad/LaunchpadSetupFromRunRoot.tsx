@@ -14,7 +14,7 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useBlockTraceOnQueryResult, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -113,7 +113,6 @@ const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
       },
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'ConfigForRunQuery');
   const {data, loading} = queryResult;
 
   const runOrError = data?.runOrError;

@@ -24,8 +24,8 @@ def my_cool_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
 You can test that all code loads into Python correctly with:
 
 ```
-pip install -e .
-pytest
+pip install tox-uv
+tox
 ```
 
 You may include additional test files in `docs_beta_snippets_tests`

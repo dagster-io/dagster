@@ -23,7 +23,7 @@ The [dagster-aws](/\_apidocs/libraries/dagster-aws) integration library provides
 
     Refer to the [Dagster installation guide](/getting-started/install) for more info.
 
-  - **An existing boto3 client that can authenticate to AWS.** If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
+  - **AWS authentication credentials configured.** If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 
 - **In AWS**:
 
@@ -80,7 +80,6 @@ In the Dagster asset/op code, use the `PipesGlueClient` resource to launch the j
 ```python file=/guides/dagster/dagster_pipes/glue/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
 import os
 
-# dagster_glue_pipes.py
 import boto3
 from dagster_aws.pipes import PipesGlueClient
 
