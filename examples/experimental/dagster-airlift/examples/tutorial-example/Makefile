@@ -36,5 +36,6 @@ airflow_setup:
 airflow_run:
 	airflow standalone
 
+
 dagster_run:
 	dagster dev -m tutorial_example.dagster_defs.definitions -p 3000
