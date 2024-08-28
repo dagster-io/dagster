@@ -1,9 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {
   InstanceConfigHasInfoQuery,
   InstanceConfigHasInfoQueryVariables,
 } from './types/useCanSeeConfig.types';
+import {gql, useQuery} from '../apollo-client';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const useCanSeeConfig = () => {

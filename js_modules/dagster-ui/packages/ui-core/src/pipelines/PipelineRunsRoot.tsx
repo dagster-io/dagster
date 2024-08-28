@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -19,6 +18,7 @@ import {
   PipelineRunsRootQueryVariables,
 } from './types/PipelineRunsRoot.types';
 import {useJobTitle} from './useJobTitle';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,

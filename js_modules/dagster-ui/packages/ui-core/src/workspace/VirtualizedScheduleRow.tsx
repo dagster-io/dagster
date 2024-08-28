@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -23,6 +22,7 @@ import {
   SingleScheduleQueryVariables,
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus} from '../graphql/types';

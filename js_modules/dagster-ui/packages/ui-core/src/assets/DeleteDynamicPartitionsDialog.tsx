@@ -1,4 +1,3 @@
-import {RefetchQueriesFunction, gql, useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {
   Body2,
@@ -16,6 +15,7 @@ import {
   DeleteDynamicPartitionsMutationVariables,
 } from './types/DeleteDynamicPartitionsDialog.types';
 import {usePartitionHealthData} from './usePartitionHealthData';
+import {RefetchQueriesFunction, gql, useMutation} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';

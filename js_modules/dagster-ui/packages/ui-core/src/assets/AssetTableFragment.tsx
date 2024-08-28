@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {

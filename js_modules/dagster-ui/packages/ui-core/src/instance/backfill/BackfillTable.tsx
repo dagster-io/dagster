@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Table} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
@@ -6,6 +5,7 @@ import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillActionsMenu';
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
 import {BackfillRow} from './BackfillRow';
 import {BackfillTableFragment} from './types/BackfillTable.types';
+import {gql} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 
 export const BackfillTable = ({

@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -10,6 +9,7 @@ import {
 import {useContext, useMemo} from 'react';
 
 import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/JobsPageContent.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,

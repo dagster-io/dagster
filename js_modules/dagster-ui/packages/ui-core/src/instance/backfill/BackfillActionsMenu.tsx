@@ -1,4 +1,3 @@
-import {gql, useMutation} from '@apollo/client';
 import {Button, Group, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useHistory} from 'react-router-dom';
@@ -15,6 +14,7 @@ import {
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
 import {BackfillActionsBackfillFragment} from './types/BackfillActionsMenu.types';
 import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
+import {gql, useMutation} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {showSharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';

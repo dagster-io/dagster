@@ -1,9 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {
   InstanceRunQueueConfigQuery,
   InstanceRunQueueConfigQueryVariables,
 } from './types/useRunQueueConfig.types';
+import {gql, useQuery} from '../apollo-client';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const useRunQueueConfig = () => {

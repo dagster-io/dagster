@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Caption, Colors} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
@@ -9,6 +8,7 @@ import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 

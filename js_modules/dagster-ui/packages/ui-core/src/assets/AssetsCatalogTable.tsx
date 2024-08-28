@@ -1,4 +1,3 @@
-import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
@@ -20,6 +19,7 @@ import {
 } from './types/AssetsCatalogTable.types';
 import {AssetViewType, useAssetView} from './useAssetView';
 import {useBasicAssetSearchInput} from './useBasicAssetSearchInput';
+import {gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

@@ -1,7 +1,7 @@
-import {gql, useQuery} from '@apollo/client';
 import styled from 'styled-components';
 
 import {VersionNumberQuery, VersionNumberQueryVariables} from './types/VersionNumber.types';
+import {gql, useQuery} from '../apollo-client';
 
 export const VersionNumber = () => {
   const {data} = useQuery<VersionNumberQuery, VersionNumberQueryVariables>(VERSION_NUMBER_QUERY);

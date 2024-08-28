@@ -1,10 +1,10 @@
-import {gql, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {gql, useQuery} from '../apollo-client';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 

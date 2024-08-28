@@ -1,4 +1,3 @@
-import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
@@ -19,6 +18,7 @@ import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
+import {RefetchQueriesFunction} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';

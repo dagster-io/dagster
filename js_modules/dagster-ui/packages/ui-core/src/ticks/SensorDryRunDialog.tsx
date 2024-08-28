@@ -1,4 +1,3 @@
-import {gql, useMutation} from '@apollo/client';
 import {
   Box,
   Button,
@@ -25,6 +24,7 @@ import {
   SensorDryRunMutation,
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
+import {gql, useMutation} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

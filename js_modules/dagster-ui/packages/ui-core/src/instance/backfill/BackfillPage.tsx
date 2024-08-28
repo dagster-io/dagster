@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -27,6 +26,7 @@ import {
   BackfillStatusesByAssetQuery,
   BackfillStatusesByAssetQueryVariables,
 } from './types/BackfillPage.types';
+import {gql, useQuery} from '../../apollo-client';
 import {CloudOSSContext} from '../../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';

@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
@@ -7,6 +6,7 @@ import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
+import {gql, useQuery} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,

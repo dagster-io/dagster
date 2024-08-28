@@ -1,4 +1,3 @@
-import {ApolloError} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -26,6 +25,7 @@ import {
 } from './RunsFilterInput';
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
 import {usePaginatedRunsTableRuns} from './usePaginatedRunsTableRuns';
+import {ApolloError} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,

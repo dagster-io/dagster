@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -11,6 +10,7 @@ import {
   TimeSinceWithOverdueColor,
 } from './AssetMaterializationUpstreamData';
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
+import {gql, useQuery} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';

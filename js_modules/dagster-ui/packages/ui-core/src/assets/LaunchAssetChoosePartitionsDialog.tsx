@@ -1,4 +1,3 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Radio} from '@blueprintjs/core';
 import {
@@ -44,6 +43,7 @@ import {
 } from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
+import {gql, useApolloClient, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';

@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
@@ -16,6 +15,7 @@ import {useEffect, useReducer, useRef} from 'react';
 import {NavigationBlock} from './NavigationBlock';
 import {DELETE_MUTATION} from './RunUtils';
 import {DeleteMutation, DeleteMutationVariables} from './types/RunUtils.types';
+import {useMutation} from '../apollo-client';
 
 export interface Props {
   isOpen: boolean;

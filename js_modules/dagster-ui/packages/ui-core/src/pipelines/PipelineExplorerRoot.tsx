@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -16,6 +15,7 @@ import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
 } from './types/PipelineExplorerRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';

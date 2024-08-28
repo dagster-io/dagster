@@ -1,9 +1,9 @@
-import {QueryResult} from '@apollo/client';
 import {Box, Tabs} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {InstancePageContext} from './InstancePageContext';
 import {useCanSeeConfig} from './useCanSeeConfig';
+import {QueryResult} from '../apollo-client';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
 import {WorkspaceStatus} from '../nav/WorkspaceStatus';

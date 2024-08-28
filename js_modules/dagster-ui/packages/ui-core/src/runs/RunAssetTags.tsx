@@ -1,8 +1,7 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {AssetKeyTagCollection} from './AssetTagCollections';
 import {RunAssetsQuery, RunAssetsQueryVariables} from './types/RunAssetTags.types';
 import {RunFragment} from './types/RunFragments.types';
+import {gql, useQuery} from '../apollo-client';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 

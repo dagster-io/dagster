@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {
@@ -6,6 +5,7 @@ import {
   PermissionsQuery,
   PermissionsQueryVariables,
 } from './types/Permissions.types';
+import {gql, useQuery} from '../apollo-client';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in

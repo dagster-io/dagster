@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -17,6 +16,7 @@ import {
   SingleConcurrencyKeyQuery,
   SingleConcurrencyKeyQueryVariables,
 } from './types/VirtualizedInstanceConcurrencyTable.types';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';

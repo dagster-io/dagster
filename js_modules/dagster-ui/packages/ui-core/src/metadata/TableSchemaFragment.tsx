@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const TABLE_SCHEMA_FRAGMENT = gql`
   fragment TableSchemaFragment on TableSchema {

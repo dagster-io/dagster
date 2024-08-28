@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {print} from 'graphql';
 import memoize from 'lodash/memoize';
 import {useCallback, useContext} from 'react';
@@ -6,6 +5,7 @@ import {v4 as uuidv4} from 'uuid';
 
 import {AppContext} from './AppContext';
 import {PYTHON_ERROR_FRAGMENT} from './PythonErrorFragment';
+import {gql} from '../apollo-client';
 
 export enum TelemetryAction {
   LAUNCH_RUN = 'LAUNCH_RUN',

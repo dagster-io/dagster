@@ -1,7 +1,8 @@
-import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
+
+import {gql} from '../apollo-client';
 
 interface ITypeWithTooltipProps {
   type: {

@@ -1,4 +1,3 @@
-import {gql, useApolloClient} from '@apollo/client';
 import {useCallback} from 'react';
 
 import {isHiddenAssetGroupJob} from './Utils';
@@ -6,6 +5,7 @@ import {
   AssetForNavigationQuery,
   AssetForNavigationQueryVariables,
 } from './types/useFindAssetLocation.types';
+import {gql, useApolloClient} from '../apollo-client';
 import {AssetKey} from '../assets/types';
 import {AssetKeyInput} from '../graphql/types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';

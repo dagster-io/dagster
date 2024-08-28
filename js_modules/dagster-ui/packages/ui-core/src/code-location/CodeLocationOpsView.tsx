@@ -1,7 +1,7 @@
-import {useQuery} from '@apollo/client';
 import {Box, NonIdealState, SpinnerWithText} from '@dagster-io/ui-components';
 import {useParams} from 'react-router-dom';
 
+import {useQuery} from '../apollo-client';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {OPS_ROOT_QUERY, OpsRootWithData} from '../ops/OpsRoot';
 import {OpsRootQuery, OpsRootQueryVariables} from '../ops/types/OpsRoot.types';

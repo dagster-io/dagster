@@ -1,7 +1,7 @@
-import {RefetchQueriesFunction, gql, useMutation} from '@apollo/client';
 import {useLayoutEffect, useRef, useState} from 'react';
 
 import {AssetWipeMutation, AssetWipeMutationVariables} from './types/useWipeAssets.types';
+import {RefetchQueriesFunction, gql, useMutation} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PartitionsByAssetSelector} from '../graphql/types';

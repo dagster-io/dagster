@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -28,6 +27,7 @@ import {
   ScheduleDryRunMutation,
   ScheduleDryRunMutationVariables,
 } from './types/EvaluateScheduleDialog.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {TimeContext} from '../app/time/TimeContext';

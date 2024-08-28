@@ -1,7 +1,8 @@
-import {DocumentNode, OperationVariables} from '@apollo/client';
 import {MockedResponse} from '@apollo/client/testing';
 import deepmerge from 'deepmerge';
 import {GraphQLError} from 'graphql';
+
+import {DocumentNode, OperationVariables} from '../apollo-client';
 
 export function buildQueryMock<
   TQuery extends {__typename: 'Query'},
