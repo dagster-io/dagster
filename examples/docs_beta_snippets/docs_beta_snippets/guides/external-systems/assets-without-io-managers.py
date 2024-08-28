@@ -1,8 +1,22 @@
+import pandas as pd
 from dagster_duckdb import DuckDBResource
 
 import dagster as dg
 
 raw_sales_data = dg.AssetSpec("raw_sales_data")
+
+
+@dg.asset
+def raw_sales_data(duckdb: DuckDBResource) -> None:
+    raw_df = pd.read_csv(
+        "https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/assets/raw_sales_data.csv"
+    )
+    with duckdb.get_connection() as conn:
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS raw_sales_data AS SELECT * FROM raw_df"
+        )
+        if not conn.fetchall():
+            conn.execute("INSERT INTO raw_sales_data SELECT * FROM raw_df")
 
 
 @dg.asset(deps=[raw_sales_data])
@@ -30,6 +44,6 @@ def sales_summary(duckdb: DuckDBResource) -> None:
 
 
 defs = dg.Definitions(
-    assets=[clean_sales_data, sales_summary],
+    assets=[raw_sales_data, clean_sales_data, sales_summary],
     resources={"duckdb": DuckDBResource(database="sales.duckdb", schema="public")},
 )

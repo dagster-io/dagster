@@ -34,14 +34,13 @@ To store data using an I/O manager, return the data in the asset function. The d
 
 Refer to the individual I/O manager documentation for details on valid types and how they store data.
 
-<CodeExample filePath="guides/external-systems/assets-with-io-managers.py" language="python" title="Asset with I/O managers" />
+<CodeExample filePath="guides/external-systems/assets-with-io-managers.py" language="python" title="Assets with I/O managers" />
 
 
 ## Swapping data stores
 
 With I/O managers, swapping data stores consists of changing the implementation of the I/O manager resource. The asset definitions, which only contain transformational logic, won't need to change.
 
-<CodeExample filePath="guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="Asset with Snowflake I/O manager" />
+<CodeExample filePath="guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="Assets with Snowflake I/O manager" />
 
 Dagster offers built-in [library implementations for I/O managers](/todo) for popular data stores and in-memory formats.
-
