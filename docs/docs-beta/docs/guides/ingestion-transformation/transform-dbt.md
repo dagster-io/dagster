@@ -116,4 +116,4 @@ We can easily schedule our dbt models using the Dagster dbt integration's `build
 
 ## Next steps
 
-<!-- TODO: add links to partition guide. -->
+[comment]: <> (TODO: Add link to dbt partitioning guide)
