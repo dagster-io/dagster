@@ -15,7 +15,7 @@ To follow the steps in this guide, you'll need:
 
 - a basic understanding of dbt, DuckDB, and Dagster concepts such as assets and resources
 - the dbt and DuckDB CLIs installed
-- Dagster, `dagster-dbt`, and `dbt-duckdb` packages installed
+- Dagster, DuckDB, `plotly`, `dagster-dbt`, and `dbt-duckdb` Python packages installed
 </details>
 
 ---
