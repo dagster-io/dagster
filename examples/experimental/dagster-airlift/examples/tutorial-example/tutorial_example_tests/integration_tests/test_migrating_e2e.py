@@ -4,10 +4,10 @@ import time
 from pathlib import Path
 from typing import AbstractSet, Callable, Iterable, Optional
 
-from dagster._core.storage.dagster_run import DagsterRunStatus
 import pytest
 from dagster import DagsterInstance
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend
 from dagster_airlift.core.utils import MIGRATED_TAG, TASK_ID_TAG
 
