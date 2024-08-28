@@ -379,6 +379,10 @@
                 ]
               },
               {
+                "title": "Dagster Pipes + AWS ECS",
+                "path": "/concepts/dagster-pipes/aws-ecs"
+              },
+              {
                 "title": "Dagster Pipes + AWS Glue",
                 "path": "/concepts/dagster-pipes/aws-glue"
               },

@@ -1,7 +1,6 @@
 # start_asset_marker
 import os
 
-# dagster_glue_pipes.py
 import boto3
 from dagster_aws.pipes import PipesGlueClient
 

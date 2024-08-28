@@ -5,7 +5,7 @@ import boto3
 import botocore
 import dagster._check as check
 from dagster import PipesClient
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -52,6 +52,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @public
     def run(
         self,
         *,
@@ -66,7 +67,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             run_task_params (dict): Parameters for the ``run_task`` boto3 ECS client call.
                 Must contain ``taskDefinition`` key.
                 See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/client/run_task.html#run-task>`_
-            extras (Optional[Dict[str, Any]]): Additional information to pass to the pipes session.
+            extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:
             PipesClientCompletedInvocation: Wrapper containing results reported by the external
