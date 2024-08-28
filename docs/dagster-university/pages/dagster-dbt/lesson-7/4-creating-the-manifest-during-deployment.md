@@ -18,12 +18,12 @@ To get our deployment working, we need to add a step to our GitHub Actions workf
 2. Open the `deploy.yml` file.
 3. Locate the `Checkout for Python Executable Deploy` step, which should be on or near line 38.
 4. After this step, add the following:
-    
+
     ```yaml
     - name: Prepare DBT project for deployment
       if: steps.prerun.outputs.result == 'pex-deploy'
       run: |
-        pip install pip --upgrade
+        python -m pip install pip --upgrade
         cd project-repo
         pip install . --upgrade --upgrade-strategy eager
         dagster-dbt project prepare-and-package --file dagster_university/project.py
@@ -33,7 +33,7 @@ To get our deployment working, we need to add a step to our GitHub Actions workf
 The code above:
 
 1. Creates a step named `Prepare DBT project for deployement`
-2. Upgrades `pip`, the package installer for Python 
+2. Upgrades `pip`, the package installer for Python
 3. Navigates inside the `project-repo` folder
 4. Upgrades the project dependencies
 5. Prepares the manifest file by running the `dagster-dbt project prepare-and-package` command, specifying the file in which the `DbtProject` object is located.
@@ -58,9 +58,9 @@ At this point, your dbt project will be successfully deployed onto Dagster+ and 
 
 ## Experiencing issues?
 
-There are two ways to deploy Dagster+ Serverless. In our case, we only made changes to deploy dbt with the default option, called Fast Deploys with PEX (Python Executable). 
+There are two ways to deploy Dagster+ Serverless. In our case, we only made changes to deploy dbt with the default option, called Fast Deploys with PEX (Python Executable).
 
-**If you receive an error message to turn off Fast Deploys**, GitHub Actions will skip the steps that build the dbt project. We recommend staying with Fast Deploys, if possible. 
+**If you receive an error message to turn off Fast Deploys**, GitHub Actions will skip the steps that build the dbt project. We recommend staying with Fast Deploys, if possible.
 
 **If your project works locally**, the issue is likely a mismatch between where Dagster looks for the manifest locally and in production. This can be resolved by tinkering with where the manifest is being written.
 
