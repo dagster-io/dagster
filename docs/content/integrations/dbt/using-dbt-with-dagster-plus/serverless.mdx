@@ -195,7 +195,7 @@ The last step is to update the [CI/CD files](/dagster-plus/references/ci-cd-file
    - name: Prepare DBT project for deployment
      if: steps.prerun.outputs.result == 'pex-deploy'
      run: |
-       pip install pip --upgrade
+       python -m pip install pip --upgrade
        cd project-repo
        pip install . --upgrade --upgrade-strategy eager                                            ## Install the Python dependencies from the setup.py file, ex: dbt-core and dbt-duckdb
        dagster-dbt project prepare-and-package --file <DAGSTER_PROJECT_FOLDER>/project.py          ## Replace with the project.py location in the Dagster project folder
