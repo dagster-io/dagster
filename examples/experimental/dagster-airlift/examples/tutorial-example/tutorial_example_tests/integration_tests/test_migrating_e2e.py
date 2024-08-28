@@ -1,10 +1,17 @@
 import contextlib
 import importlib
-from typing import AbstractSet, Callable, Optional
+import time
+from pathlib import Path
+from typing import AbstractSet, Callable, Iterable, Optional
 
+from dagster._core.storage.dagster_run import DagsterRunStatus
+import pytest
+from dagster import DagsterInstance
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend
 from dagster_airlift.core.utils import MIGRATED_TAG, TASK_ID_TAG
+
+from .utils import start_run_and_wait_for_completion
 
 
 def _assert_dagster_migration_states_are(
@@ -105,3 +112,42 @@ def test_migration_status(
         assert dag.migration_state.is_task_migrated("export_customers")
 
         _assert_dagster_migration_states_are(True)
+
+
+@pytest.fixture(name="dagster_defs_path")
+def setup_dagster_defs_path(
+    makefile_dir: Path,
+    airflow_instance: None,
+    mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
+) -> Iterable[str]:
+    # Mark only the build_dbt_models task as migrated
+    with mark_tasks_migrated({"build_dbt_models"}):
+        yield str(makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "migrate.py")
+
+
+def test_migrate_runs_properly_in_dagster(airflow_instance: None, dagster_dev: None) -> None:
+    instance = DagsterInstance.get()
+
+    from tutorial_example.dagster_defs.stages.migrate import defs
+
+    all_keys = [spec.key for spec in defs.get_all_asset_specs()]
+    assert len(all_keys) == 10
+
+    mat_events = instance.get_latest_materialization_events(asset_keys=all_keys)
+    for key, event in mat_events.items():
+        assert event is None, f"Materialization event for {key} is not None"
+
+    start_run_and_wait_for_completion("rebuild_customers_list")
+
+    time.sleep(10)
+
+    mat_events = instance.get_latest_materialization_events(asset_keys=all_keys)
+    for key, event in mat_events.items():
+        assert event is not None, f"Materialization event for {key} is None"
+
+    # Ensure migrated tasks are run in Dagster
+    runs = instance.get_runs()
+    assert len(runs) == 1
+    # Ensure just the dbt assets ran (7 assets)
+    assert runs[0].asset_selection and len(runs[0].asset_selection) == 7
+    assert runs[0].status == DagsterRunStatus.SUCCESS
