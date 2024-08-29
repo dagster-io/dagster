@@ -22,8 +22,10 @@ To follow the steps in this guide, you'll need a Dagster+ account on the Pro pla
 ## Step 1: Emit numeric metadata on your assets at runtime
 
 You'll need one or more assets that emit the same metadata key at run time. Insights metrics
-are most valuable when you have multiple assets that emit the same kind of metadata. Follow [the metadata
-guide](/guides/data-modeling/metadata#attaching-metadata-to-an-asset-at-runtime) to add numeric metadata
+are most valuable when you have multiple assets that emit the same kind of metadata, such as
+such as the number of rows processed or the size of a file uploaded to object storage.
+
+Follow [the metadata guide](/guides/data-modeling/metadata#attaching-metadata-to-an-asset-at-runtime) to add numeric metadata
 to your asset materializations.
 
 ## Step 2: Enable viewing your metadata in Dagster+ Insights
@@ -54,8 +56,7 @@ it isn't showing up in the list of metrics that can be displayed, try again in a
 You can also change a metric's icon, display name, and description by clicking the **pencil icon** next to the metric
 in the **Edit** dialog.
 
-If the metric you're tracking is directly associated with a cost (such as the number of rows processed by an ETL tool,
-or file size uploaded to object storage), you can input the cost per unit in the **Estimate costs** tab. Insights will
+If the metric you're tracking is directly associated with a cost, you can input the cost per unit in the **Estimate costs** tab. Insights will
 use this to show an estimated cost alongside any aggregations of that metric.
 
 ![Cost editor dialog](/img/placeholder.svg)
