@@ -2144,7 +2144,7 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_key: AssetKey,
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Optional[Mapping[str, "AssetPartitionStatus"]]:
+    ) -> Optional[Mapping[str, Optional["AssetPartitionStatus"]]]:
         """Get the current status of provided partition_keys for the provided asset.
 
         Args:
