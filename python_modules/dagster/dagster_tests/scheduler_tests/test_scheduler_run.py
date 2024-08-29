@@ -896,11 +896,18 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         # Now try with an error workspace - the job state should not be deleted
         # since its associated with an errored out location
         with freeze_time(freeze_datetime):
-            workspace_context._location_entry_dict[  # noqa: SLF001
+            new_location_entry = workspace_context._workspace_snapshot.code_location_entries[  # noqa
                 "test_location"
-            ] = workspace_context._location_entry_dict["test_location"]._replace(  # noqa: SLF001
+            ]._replace(
                 code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
+            )
+
+            workspace_context._workspace_snapshot = (  # noqa
+                workspace_context._workspace_snapshot.with_code_location(  # noqa
+                    "test_location",
+                    new_location_entry,
+                )
             )
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())

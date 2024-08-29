@@ -14,7 +14,11 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
+    WorkspaceSnapshot,
+)
 
 
 @pytest.fixture
@@ -56,10 +60,12 @@ def _make_workspace_context(
 ) -> WorkspaceRequestContext:
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
-        workspace_snapshot={
-            scenario_name: _make_location_entry(scenario_name, definitions_file, instance)
-            for scenario_name, definitions_file in scenario_to_definitions.items()
-        },
+        workspace_snapshot=WorkspaceSnapshot(
+            code_location_entries={
+                scenario_name: _make_location_entry(scenario_name, definitions_file, instance)
+                for scenario_name, definitions_file in scenario_to_definitions.items()
+            }
+        ),
         process_context=mock.MagicMock(),
         version=None,
         source=None,
