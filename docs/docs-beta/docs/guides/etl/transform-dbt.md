@@ -81,7 +81,7 @@ This asset:
 - Pulls customer data from a CSV with pandas
 - Creates a schema called `raw` if it doesn't already exist
 - Writes a `raw_customers` table to the `raw` schema in our DuckDB database
-
+Next, you'll add a dbt model that will source that asset and define the dependency for Dagster. Create the dbt model first:
 Let's add a dbt model that will source that asset and define the dependency for Dagster, first we'll create our dbt model:
 
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/customers.sql" language="sql" title="customers.sql" />
