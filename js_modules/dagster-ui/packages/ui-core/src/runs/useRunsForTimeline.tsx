@@ -139,7 +139,7 @@ export const useRunsForTimeline = ({
       }>
     > = new WeakMap();
 
-    const result = await fetchPaginatedBucketData({
+    return await fetchPaginatedBucketData({
       buckets: buckets
         .filter((bucket) => !completedRunsCache.isCompleteRange(bucket[0], bucket[1]))
         .map((bucket) => {
@@ -227,8 +227,6 @@ export const useRunsForTimeline = ({
         };
       },
     });
-
-    return result;
   }, [batchLimit, buckets, client, completedRunsCache, runsFilter]);
 
   // If the user paginates backwards quickly then there will be multiple outstanding fetches
