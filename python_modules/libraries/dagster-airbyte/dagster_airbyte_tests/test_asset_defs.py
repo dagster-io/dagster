@@ -1,4 +1,3 @@
-import hashlib
 import pytest
 import responses
 from dagster import (
