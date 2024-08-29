@@ -44,7 +44,6 @@ Resources can be configured using environment variables to connect to environmen
 
 When launching a run, the database path will be read from the `IRIS_DUCKDB_PATH` environment variable.
 
-
 ## Define a Snowflake resource and use it in an asset definition
 
 Using a Snowflake resource is similar to using a DuckDB resource shown in the preceding example. Here is a complete example showing how to connect to a Snowflake database and create two tables:
