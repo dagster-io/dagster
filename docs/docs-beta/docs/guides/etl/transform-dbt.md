@@ -71,7 +71,7 @@ In this file you created:
 You also used `dbt_project.prepare_if_dev()` to compile the dbt project to ensure Dagster has what it needs to build the asset graph.
 
 ## Adding upstream dependencies
-
+Oftentimes, you'll want Dagster to generate data that will be used by downstream dbt models. Next, you'll add an upstream asset to `definitions.py` that your dbt project will use as a source:
 Oftentimes, we want Dagster to generate data that will be used by downstream dbt models. Let's add an upstream asset to our `definitions.py` that our dbt project will use as a source:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_upstream.py" language="python" title="Adding an upstream asset to definitions.py" />
