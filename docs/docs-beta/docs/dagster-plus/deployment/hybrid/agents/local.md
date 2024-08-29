@@ -7,7 +7,7 @@ sidebar_label: "Local"
 
 # Running a Dagster+ agent locally
 
-This page provides instructions for running the [Dagster+ agent](dagster-plus/getting-started/whats-dagster-plus#Agents) locally. Local agents aren't well-suited for production deployments and are typically only used for development or experimentation.
+This page provides instructions for running the [Dagster+ agent](dagster-plus/getting-started/whats-dagster-plus#Agents) locally. Local agents are a good way to experiment with Dagster+ locally before deploying a more scalable hybrid agent (like [Kubernetes](dagster-plus/hybrid/agents/kubernetes) or [Amazon ECS](dagster-plus/hybrid/agents/amazon-ecs-new-vpc).
 
 ## Installation
 
