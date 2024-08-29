@@ -2720,6 +2720,41 @@
                 }
             ]
         },
+        "RunRetries": {
+            "title": "RunRetries",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "maxRetries": {
+                    "title": "Maxretries",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "retryOnAssetOrOpFailure": {
+                    "title": "Retryonassetoropfailure",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "enabled"
+            ]
+        },
         "Sensors": {
             "title": "Sensors",
             "type": "object",
@@ -2888,8 +2923,7 @@
                     "type": "object"
                 },
                 "runRetries": {
-                    "title": "Runretries",
-                    "type": "object"
+                    "$ref": "#/definitions/RunRetries"
                 },
                 "sensors": {
                     "$ref": "#/definitions/Sensors"
