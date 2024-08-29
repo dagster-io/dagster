@@ -110,7 +110,7 @@ deps=get_asset_key_for_model([dbt_models], "customers")
 This line finds our `customers` dbt model, gets its corresponding asset key, and directly sets it as a dependency of our new `customer_histogram` asset.
 
 ## Scheduling dbt models
-
+You can schedule your dbt models by using the Dagster dbt integration's `build_schedule_from_dbt_selection` function:
 We can easily schedule our dbt models using the Dagster dbt integration's `build_schedule_from_dbt_selection` function:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_schedule.py" language="python" title="Scheduling our dbt models" />
