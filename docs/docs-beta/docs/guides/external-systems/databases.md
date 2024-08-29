@@ -4,7 +4,7 @@ description: How to configure resources to connect to databases
 sidebar_position: 10
 ---
 
-In Dagster, *resources* are used to connect to databases. A resource definition associates a resource name with database connection information. The resource name is then used in an asset definition to get a connection to the database.
+In Dagster, *resources* are used to connect to databases by acting as a wrapper around database clients. The resource is registered along with connection details in the `Definitions` object, and can then be referenced from your asset definitions.
 
 ## What you'll learn
 
