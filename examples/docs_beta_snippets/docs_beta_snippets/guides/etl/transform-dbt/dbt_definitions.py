@@ -11,6 +11,3 @@ def dbt_models(context: dg.AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 defs = dg.Definitions(assets=[dbt_models], resources={"dbt": dbt_resource})
-
-if __name__ == "__main__":
-    dg.materialize(assets=[dbt_models], resources={"dbt": dbt_resource})

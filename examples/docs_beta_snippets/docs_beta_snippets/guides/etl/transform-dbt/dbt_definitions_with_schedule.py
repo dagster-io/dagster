@@ -75,6 +75,3 @@ defs = dg.Definitions(
     schedules=[dbt_schedule],
     # highlight-end
 )
-
-if __name__ == "__main__":
-    dg.materialize(assets=[raw_customers, dbt_models, customer_histogram], resources={"dbt": dbt_resource})
