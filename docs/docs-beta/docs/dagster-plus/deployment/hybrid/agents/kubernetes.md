@@ -87,3 +87,15 @@ helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --set isolatedAgents=true
 ```
+
+## Troubleshooting Tips
+
+You can see basic health information about your agent in the Dagster+ UI:
+
+TODO: Screenshot
+
+### View logs
+
+```shell
+kubectl --namespace dagster-cloud logs -l deployment=agent
+```
