@@ -130,11 +130,14 @@ export const useRunsForTimeline = ({
     // Accumulate the data to commit to the cache.
     // Intentionally don't commit until everything is done in order to avoid
     // committing incomplete data (and then assuming its full data later) in case the tab is closed early.
-    const dataToCommitToCache: Array<{
-      updatedBefore: number;
-      updatedAfter: number;
-      runs: RunTimelineFragment[];
-    }> = [];
+    const dataToCommitToCacheByBucket: WeakMap<
+      [number, number],
+      Array<{
+        updatedBefore: number;
+        updatedAfter: number;
+        runs: RunTimelineFragment[];
+      }>
+    > = new WeakMap();
 
     const result = await fetchPaginatedBucketData({
       buckets: buckets
@@ -197,10 +200,23 @@ export const useRunsForTimeline = ({
           };
         }
         const runs: RunTimelineFragment[] = data.completed.results;
-        dataToCommitToCache.push({updatedAfter, updatedBefore, runs});
 
         const hasMoreData = runs.length === batchLimit;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+
+        const accumulatedData = dataToCommitToCacheByBucket.get(bucket) ?? [];
+        if (hasMoreData) {
+          // If there are runs lets accumulate this data to commit to the cache later
+          // once all of the runs for this bucket have been fetched.
+          dataToCommitToCacheByBucket.set(bucket, accumulatedData);
+          accumulatedData.push({updatedAfter, updatedBefore, runs});
+        } else {
+          // If there is no more data lets commit all of the accumulated data to the cache
+          completedRunsCache.addData(updatedAfter, updatedBefore, runs);
+          accumulatedData.forEach(({updatedAfter, updatedBefore, runs}) => {
+            completedRunsCache.addData(updatedAfter, updatedBefore, runs);
+          });
+        }
 
         return {
           data: [],
@@ -209,10 +225,6 @@ export const useRunsForTimeline = ({
           error: undefined,
         };
       },
-    });
-
-    dataToCommitToCache.forEach(({updatedAfter, updatedBefore, runs}) => {
-      completedRunsCache.addData(updatedAfter, updatedBefore, runs);
     });
 
     return result;
