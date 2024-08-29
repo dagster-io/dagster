@@ -11,6 +11,7 @@ def orders():
     orders_df.to_csv("orders.csv")
 
 
+# highlight-start
 def make_orders_checks(
     check_blobs: Sequence[Mapping[str, str]],
 ) -> dg.AssetChecksDefinition:
@@ -46,6 +47,8 @@ check_blobs = [
         "column": "item_id",
     },
 ]
+# highlight-end
+
 
 defs = dg.Definitions(
     assets=[orders],

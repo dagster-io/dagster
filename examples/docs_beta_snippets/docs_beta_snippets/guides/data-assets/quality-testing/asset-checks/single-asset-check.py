@@ -9,6 +9,7 @@ def orders():
     orders_df.to_csv("orders.csv")
 
 
+# highlight-start
 @dg.asset_check(asset=orders)
 def orders_id_has_no_nulls():
     orders_df = pd.read_csv("orders.csv")
@@ -16,6 +17,7 @@ def orders_id_has_no_nulls():
     return dg.AssetCheckResult(
         passed=bool(num_null_order_ids == 0),
     )
+# highlight-end
 
 
 defs = dg.Definitions(

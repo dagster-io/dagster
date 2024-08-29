@@ -9,6 +9,7 @@ def orders():
     orders_df.to_csv("orders.csv")
 
 
+# highlight-next-line
 @dg.asset_check(asset=orders, blocking=True)
 def orders_id_has_no_nulls():
     orders_df = pd.read_csv("orders.csv")

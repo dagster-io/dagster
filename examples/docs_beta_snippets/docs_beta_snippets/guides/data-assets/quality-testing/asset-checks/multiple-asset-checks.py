@@ -11,6 +11,7 @@ def orders():
     orders_df.to_csv("orders.csv")
 
 
+# highlight-start
 @dg.multi_asset_check(
     specs=[
         dg.AssetCheckSpec(name="orders_id_has_no_nulls", asset="orders"),
@@ -20,6 +21,7 @@ def orders():
 def orders_check() -> Iterable[dg.AssetCheckResult]:
     orders_df = pd.read_csv("orders.csv")
 
+    # asset check for null order_id column values
     num_null_order_ids = orders_df["order_id"].isna().sum()
     yield dg.AssetCheckResult(
         check_name="orders_id_has_no_nulls",
@@ -27,12 +29,14 @@ def orders_check() -> Iterable[dg.AssetCheckResult]:
         asset_key="orders",
     )
 
+    # asset check for null item_id column values
     num_null_item_ids = orders_df["item_id"].isna().sum()
     yield dg.AssetCheckResult(
         check_name="items_id_has_no_nulls",
         passed=bool(num_null_item_ids == 0),
         asset_key="orders",
     )
+# highlight-end
 
 
 defs = dg.Definitions(
