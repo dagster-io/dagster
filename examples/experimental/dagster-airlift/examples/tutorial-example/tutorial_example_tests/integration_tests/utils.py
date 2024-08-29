@@ -1,6 +1,14 @@
 import time
+from typing import Dict, List, Union, cast
 
 import requests
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
+from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+    AssetCheckExecutionRecordStatus,
+)
 from dagster._time import get_current_timestamp
 
 
@@ -30,3 +38,47 @@ def start_run_and_wait_for_completion(dag_id: str) -> None:
         if terminal_status is None
         else f"terminal status was {terminal_status}"
     )
+
+
+def poll_for_materialization(
+    instance: DagsterInstance,
+    target: Union[AssetKey, List[AssetKey]],
+    timeout: int = 30,
+    poll_interval: int = 3,
+) -> Dict[AssetKey, EventLogEntry]:
+    """Polls the instance for materialization events for the given target(s) until all targets have been materialized or the timeout is reached."""
+    target_list = [target] if isinstance(target, AssetKey) else target
+
+    mat_events = instance.get_latest_materialization_events(asset_keys=target_list)
+
+    total_time_elapsed = 0
+    while not all(event is not None for event in mat_events.values()):
+        time.sleep(poll_interval)
+        total_time_elapsed += poll_interval
+        if total_time_elapsed >= timeout:
+            raise TimeoutError("Timed out waiting for materialization events")
+
+        mat_events = instance.get_latest_materialization_events(asset_keys=target_list)
+
+    return cast(Dict[AssetKey, EventLogEntry], mat_events)
+
+
+def poll_for_asset_check(
+    instance: DagsterInstance, target: AssetCheckKey, timeout: int = 30, poll_interval: int = 3
+) -> AssetCheckExecutionRecord:
+    """Polls the instance for asset check evaluation records for the given target until the target check has run or the timeout is reached."""
+    evaluation = instance.get_latest_asset_check_evaluation_record(asset_check_key=target)
+
+    total_time_elapsed = 0
+    while evaluation is None or evaluation.status not in (
+        AssetCheckExecutionRecordStatus.SUCCEEDED,
+        AssetCheckExecutionRecordStatus.FAILED,
+    ):
+        time.sleep(poll_interval)
+        total_time_elapsed += poll_interval
+        if total_time_elapsed >= timeout:
+            raise TimeoutError("Timed out waiting for asset check evaluation")
+
+        evaluation = instance.get_latest_asset_check_evaluation_record(asset_check_key=target)
+
+    return evaluation
