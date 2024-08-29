@@ -13,7 +13,7 @@ airflow_dep_list = [
 
 setup(
     name="dagster-airlift",
-    version="0.0.9",
+    version="0.0.10",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
