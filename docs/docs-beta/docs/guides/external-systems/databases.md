@@ -31,14 +31,6 @@ Here is an example of a DuckDB resource definition that's used to create two tab
 
 <CodeExample filePath="guides/external-systems/resource-duckdb-example.py" language="python" title="DuckDB Resource Example" />
 
-To run the preceding example, first [install `dagster-duckdb`](https://dagster.io/integrations/dagster-duckdb) and then run:
-
-```shell
-$ dagster dev --python-file resource-duckdb-example.py
-```
-
-Materializing the assets from the Dagster UI will create the new DuckDB database at `/tmp/iris_dataset.duckdb`.
-
 ## Define a resource that depends on an environment variable
 
 Resources can be configured using environment variables to connect to environment-specific databases. For example, a resource can connect to a test database in a development environment and a live database in the production environment. You can change the resource definition in the previous example to use an `EnvVar` as shown here:
