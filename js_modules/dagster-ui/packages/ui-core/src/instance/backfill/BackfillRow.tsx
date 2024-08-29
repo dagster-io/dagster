@@ -12,7 +12,6 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
@@ -67,7 +66,6 @@ export const BackfillRowLoader = (props: {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(cancelableRuns[1], 'SingleBackfillQuery');
 
   const [statusQueryFn, statusQueryResult] = cancelableRuns;
 

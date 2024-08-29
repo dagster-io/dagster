@@ -50,7 +50,6 @@ import {
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {RunStatus} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
@@ -192,8 +191,6 @@ export const PartitionPerOpStatus = React.memo(
       variables: {pipelineSelector},
       fetchPolicy: 'no-cache',
     });
-
-    useBlockTraceOnQueryResult(pipeline, 'PartitionStepStatusPipelineQuery');
 
     const solidHandles =
       pipeline.data?.pipelineSnapshotOrError.__typename === 'PipelineSnapshot' &&

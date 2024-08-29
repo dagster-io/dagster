@@ -21,9 +21,12 @@ def local_env_fixture(makefile_dir: Path) -> Generator[None, None, None]:
     subprocess.run(["make", "airflow_setup"], cwd=makefile_dir, check=True)
     with environ(
         {
+            "MAKEFILE_DIR": str(makefile_dir),
             "AIRFLOW_HOME": str(makefile_dir / ".airflow_home"),
             "TUTORIAL_DBT_PROJECT_DIR": str(makefile_dir / "tutorial_example" / "shared" / "dbt"),
+            "DBT_PROFILES_DIR": str(makefile_dir / "tutorial_example" / "shared" / "dbt"),
             "DAGSTER_HOME": str(makefile_dir / ".dagster_home"),
+            "DAGSTER_URL": "http://localhost:3333",
         }
     ):
         yield

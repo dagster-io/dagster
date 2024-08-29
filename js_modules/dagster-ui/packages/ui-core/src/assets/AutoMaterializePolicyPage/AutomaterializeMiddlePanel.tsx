@@ -17,7 +17,6 @@ import {useQuery} from '../../apollo-client';
 import {ErrorWrapper} from '../../app/PythonErrorInfo';
 import {SensorType} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -64,7 +63,6 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
   );
 
   const {data, loading, error} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'GetEvaluationsQuery<Single>', {skip});
 
   const skipSpecificPartitionQuery = !isLegacy || !selectedEvaluationId || !selectedPartition;
 
@@ -77,10 +75,6 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
       evaluationId: selectedEvaluationId!,
       partition: selectedPartition!,
     },
-    skip: skipSpecificPartitionQuery,
-  });
-
-  useBlockTraceOnQueryResult(queryResult2, 'GetEvaluationsSpecificPartitionQuery', {
     skip: skipSpecificPartitionQuery,
   });
 

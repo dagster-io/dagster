@@ -7,7 +7,6 @@ import {
   TypeListContainerQueryVariables,
 } from './types/TypeListContainer.types';
 import {gql, useQuery} from '../apollo-client';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {
@@ -44,7 +43,6 @@ export const TypeListContainer = ({explorerPath, repoAddress}: ITypeListContaine
       skip: !pipelineSelector,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'TypeListContainerQuery', {skip: !pipelineSelector});
 
   if (!pipelineSelector) {
     return (

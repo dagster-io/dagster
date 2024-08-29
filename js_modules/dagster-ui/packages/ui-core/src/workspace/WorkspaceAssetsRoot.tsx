@@ -17,7 +17,6 @@ import {useTrackPageView} from '../app/analytics';
 import {useAssetSearch} from '../assets/useAssetSearch';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -39,7 +38,6 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceAssetsQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

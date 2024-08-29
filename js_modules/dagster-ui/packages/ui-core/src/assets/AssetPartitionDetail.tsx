@@ -37,7 +37,6 @@ import {Timestamp} from '../app/time/Timestamp';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
 import {ChangeReason, RunStatus, StaleStatus} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -49,13 +48,11 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     ASSET_PARTITION_DETAIL_QUERY,
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
-  useBlockTraceOnQueryResult(result, 'AssetPartitionDetailQuery');
 
   const stale = useQuery<AssetPartitionStaleQuery, AssetPartitionStaleQueryVariables>(
     ASSET_PARTITION_STALE_QUERY,
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
-  useBlockTraceOnQueryResult(stale, 'AssetPartitionStaleQuery');
 
   const {materializations, observations, hasLineage, latestRunForPartition} = useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {

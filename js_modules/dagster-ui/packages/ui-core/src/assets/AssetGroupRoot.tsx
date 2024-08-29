@@ -18,7 +18,6 @@ import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {
   ExplorerPath,
   explorerPathFromString,
@@ -161,7 +160,6 @@ export const AssetGroupTags = ({
     ASSET_GROUP_METADATA_QUERY,
     {variables: {selector: groupSelector}},
   );
-  useBlockTraceOnQueryResult(queryResult, 'AssetGroupMetadataQuery');
   const {data} = queryResult;
 
   const sensorTag = () => {

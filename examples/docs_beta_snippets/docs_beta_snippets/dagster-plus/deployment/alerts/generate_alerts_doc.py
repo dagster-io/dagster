@@ -1,10 +1,10 @@
 # This script is used to generate content in `alerts.md`. It creates and formats the cross-product
 # of all alert types and notification services. After adding a new alert type or service, just run
 # `python generate_alerts_doc.py` and the corresponding markdown file will be updated.
+from pathlib import Path
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import yaml
-from path import Path
 
 
 class NotificationService(NamedTuple):
@@ -27,7 +27,7 @@ class AlertType(NamedTuple):
 
 BASE_PATH = "dagster-plus/deployment/alerts"
 DOCS_PATH = Path(__file__).parent.parent.parent.parent.parent.parent.parent / "docs"
-OUTPUT_PATH = DOCS_PATH / "docs-beta" / "docs" / BASE_PATH + ".md"
+OUTPUT_PATH = DOCS_PATH / "docs-beta" / "docs" / (BASE_PATH + ".md")
 
 NOTIFICATION_SERVICES = sorted(
     [

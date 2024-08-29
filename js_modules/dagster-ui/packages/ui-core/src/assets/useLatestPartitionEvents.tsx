@@ -10,7 +10,6 @@ import {gql, useQuery} from '../apollo-client';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {usePredicateChangeSignal} from '../hooks/usePredicateChangeSignal';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export function useLatestPartitionEvents(
   assetKey: AssetKey,
@@ -25,7 +24,6 @@ export function useLatestPartitionEvents(
   >(ASSET_OVERVIEW_METADATA_EVENTS_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
-  useBlockTraceOnQueryResult(queryResult, 'AssetOverviewMetadataEventsQuery');
 
   const {data, refetch} = queryResult;
 

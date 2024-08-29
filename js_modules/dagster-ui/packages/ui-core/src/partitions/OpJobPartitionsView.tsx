@@ -30,7 +30,6 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {RunStatus} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -69,7 +68,6 @@ export const OpJobPartitionsView = React.memo(
       ? currentQueryResult
       : cachedResult ?? currentQueryResult;
     const {data, loading} = queryResult;
-    useBlockTraceOnQueryResult(queryResult, 'PartitionsStatusQuery');
 
     if (!data) {
       if (loading) {

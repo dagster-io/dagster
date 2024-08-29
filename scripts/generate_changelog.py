@@ -2,11 +2,11 @@ import os
 import re
 import sys
 from collections import defaultdict
+from pathlib import Path
 from typing import Iterator, List, Mapping, NamedTuple, Optional, Sequence
 
 import click
 import git
-from path import Path
 
 GITHUB_URL = "https://github.com/dagster-io/dagster"
 OSS_REPO = git.Repo(Path(__file__).parent.parent)
