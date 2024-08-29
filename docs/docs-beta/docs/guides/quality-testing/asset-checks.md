@@ -24,11 +24,12 @@ In this example, the asset check will run after the asset has been materialized,
 
 In most cases, checking the data quality of an asset will require multiple checks.
 
-The example below defines two asset checks using the `multi_asset_check` decorator:
-- one that fails if the `order_id` column of the asset contains a null value.
-- another one that fails if the `item_id` column of the asset contains a null value.
+The example below defines two asset checks using the `@multi_asset_check` decorator:
 
-In this example, both asset check will run in a single operation after the asset has been materialized.
+- One check that fails if the `order_id` column of the asset contains a null value
+- Another check that fails if the `item_id` column of the asset contains a null value
+
+In this example, both asset checks will run in a single operation after the asset has been materialized.
 
 <CodeExample filePath="guides/data-assets/quality-testing/asset-checks/multiple-asset-checks.py" language="python" title="Asset with multiple asset checks" />
 
@@ -40,17 +41,17 @@ Defining multiple checks can also be done using a factory pattern. The example b
 
 ## Blocking downstream assets
 
-By default, materialization of downstream assets will continue, even if a parent's asset check fails. To block the materialization of downstream assets, set the `blocking` argument to `True` in the `asset_check` decorator.
+By default, materialization of downstream assets will continue even if a parent's asset check fails. To block the materialization of downstream assets, set the `blocking` argument to `True` in the `@asset_check` decorator.
 
-In the example bellow, when the `orders_id_has_no_nulls` check fails, the `augmented_orders` asset isn't materialized.
+In the example bellow, when the `orders_id_has_no_nulls` check fails, the `augmented_orders` asset won't be materialized.
 
 <CodeExample filePath="guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py" language="python" title="Block downstream assets when asset check fails" />
 
 ## Scheduling and monitoring asset checks
 
-In some cases, running asset checks separately from the job materializing the assets can be useful. For example, some may want to run all their data quality checks once a day and send an alert if these fail. This can be achieved using schedules and sensors.
+In some cases, running asset checks separately from the job materializing the assets can be useful. For example, running all data quality checks once a day and sending an alert if they fail. This can be achieved using schedules and sensors.
 
-In the example below, two jobs are defined, one for the asset and another one for the asset check.
+In the example below, two jobs are defined: one for the asset and another for the asset check.
 
 Using these jobs, schedules are defined to materialize the asset and execute the asset check independently. A sensor is defined to send an email alert when the asset check job fails.
 
