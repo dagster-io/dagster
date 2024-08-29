@@ -30,7 +30,7 @@ To follow the steps in this guide, you'll need:
 
 ## Differences between isolated and non-isolated runs
 
-- [**Isolated runs**](#isolated-runs-default) execute in their own container. They're the default and are intended for production and compute-heavy use cases..
+- [**Isolated runs**](#isolated-runs-default) execute in their own container. They're the default and are intended for production and compute-heavy use cases.
 - [**Non-isolated runs**](#non-isolated-runs) trade off isolation for speed. They must be launched manually and are intended for fast iteration during development.
 
 ## Isolated runs (default)
