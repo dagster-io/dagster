@@ -12,6 +12,7 @@ Dagster orchestrates dbt alongside other technologies, so you can schedule dbt w
 
 - How to import a basic dbt project into Dagster
 - How to set upstream and downstream dependencies on non-dbt assets
+- How to schedule your dbt assets
 
 ---
 
@@ -29,35 +30,26 @@ To follow the steps in this guide, you'll need:
 
 ## Setting up a basic dbt project
 
-Start by scaffolding a basic dbt project:
+Start by downloading our basic dbt project:
 
 ```bash
-dbt init jaffle_shop
+git clone https://github.com/dagster-io/basic-dbt-project
 ```
 
-Make sure to select **DuckDB** as your database when prompted. This will create a dbt project with the following structure:
+This a minimal dbt project with just a couple models and a DuckDB backend. Your project structure should look like this:
 
 ```
 ├── README.md
-├── analyses
 ├── dbt_project.yml
-├── logs
-├── macros
+├── profiles.yml
 ├── models
 │   └── example
 │       ├── my_first_dbt_model.sql
 │       ├── my_second_dbt_model.sql
 │       └── schema.yml
-├── seeds
-├── snapshots
-└── tests
 ```
 
-If you try to build this example as is, it would immediately fail due to a non-null test not passing in `my_first_dbt_model.sql`. To fix this, you'll uncomment the last line in the model to filter out the null record:
-
-<CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/my_first_dbt_model.sql" language="sql" title="Fix my_first_dbt_model.sql failing test" />
-
-Now Dagster has everything it needs to consume our dbt project and build our asset graph. Let's create a `definitions.py` file beside our dbt project:
+Now we can point Dagster to our dbt project and build our asset graph. Let's create a `definitions.py` file beside our dbt project:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions.py" language="python" title="Importing a dbt project into Dagster" />
 
@@ -84,16 +76,15 @@ This asset:
 Next, you'll add a dbt model that will source that asset and define the dependency for Dagster. Create the dbt model first:
 Let's add a dbt model that will source that asset and define the dependency for Dagster, first we'll create our dbt model:
 
-<CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/customers.sql" language="sql" title="customers.sql" />
+<CodeExample filePath="guides/etl/transform-dbt/basic-dbt-project/models/example/customers.sql" language="sql" title="customers.sql" />
 Now you'll set up your `_source.yml` file that points dbt to the upstream asset:
 Now we'll set up our `_source.yml` file that will point dbt to our upstream asset:
 
-<CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/_source.yml" language="yaml" title="Adding a _source.yml to our dbt project" />
+<CodeExample filePath="guides/etl/transform-dbt/basic-dbt-project/models/example/_source.yml" language="yaml" title="Adding a _source.yml to our dbt project" />
 By adding the Dagster metadata, you're telling Dagster that the source data comes from the `raw_customers` asset you defined earlier. This file now serves two purposes:
 In this file we need to add the Dagster metadata in the highlighted portion of the code to tell Dagster that this source data is coming from the `raw_customers` asset that we defined earlier. This file now serves two purposes:
 1. It tells dbt where to find the source data for the `customers` model
 2. It tells Dagster exactly which asset represents this source data
-2. It's telling Dagster exactly which asset represents this source data
 
 ## Adding downstream dependencies
 You may also have assets that depend on the output of dbt models. Next, create an asset that depends on the result of the new `customers` model. This asset will create a histogram of the first names of the customers:
