@@ -42,3 +42,5 @@ we have
 lookback
 Pydantic
 DSL
+vCPU
+vCPUs
