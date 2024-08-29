@@ -10,7 +10,7 @@ In Dagster, *resources* are used to connect to databases by acting as a wrapper 
 
 - How to connect to a local DuckDB database using a resource and query it in an asset definition.
 - How to connect to different databases in different environments, such as development and production.
-- How to connect to a Snowflake database using a resource definition.
+- How to connect to a Snowflake database using the `SnowflakeResource`
 
 <details>
   <summary>Prerequisites</summary>
