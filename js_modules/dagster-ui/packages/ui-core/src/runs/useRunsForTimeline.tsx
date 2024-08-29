@@ -205,10 +205,11 @@ export const useRunsForTimeline = ({
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
 
         const accumulatedData = dataToCommitToCacheByBucket.get(bucket) ?? [];
+        dataToCommitToCacheByBucket.set(bucket, accumulatedData);
+
         if (hasMoreData) {
           // If there are runs lets accumulate this data to commit to the cache later
           // once all of the runs for this bucket have been fetched.
-          dataToCommitToCacheByBucket.set(bucket, accumulatedData);
           accumulatedData.push({updatedAfter, updatedBefore, runs});
         } else {
           // If there is no more data lets commit all of the accumulated data to the cache
