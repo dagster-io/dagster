@@ -40,13 +40,13 @@ In the example bellow, when the `orders_id_has_no_nulls` check fails, the `augme
 
 <CodeExample filePath="guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py" language="python" title="Block downstream assets when asset check fails" />
 
-## Executing asset checks on a schedule
+## Scheduling and monitoring asset checks
 
-In some case, it may be useful to run the asset checks on a schedule, separately from the job materializing the assets.
+In some cases, running asset checks separately from the job materializing the assets can be useful. For example, some may want to run all their data quality checks once a day and send an alert if these fail. This can be achieved using schedules and sensors.
 
-In the example below, two jobs are defined, one for the asset and another one for the asset check. Using these jobs, schedules are defined to materialize the asset and execute the asset check independently.
+In the example below, two jobs are defined, one for the asset and another one for the asset check. Using these jobs, schedules are defined to materialize the asset and execute the asset check independently. A sensor is defined to send an email alert when the asset check job fails.
 
-<CodeExample filePath="guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule.py" language="python" title="Schedule asset checks separately from their asset" />
+<CodeExample filePath="guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor.py" language="python" title="Schedule and monitor asset checks separately from their asset" />
 
 ## Next steps
 
