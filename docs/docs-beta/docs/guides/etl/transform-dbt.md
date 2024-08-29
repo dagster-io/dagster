@@ -85,7 +85,7 @@ This asset:
 Let's add a dbt model that will source that asset and define the dependency for Dagster, first we'll create our dbt model:
 
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/customers.sql" language="sql" title="customers.sql" />
-
+Now you'll set up your `_source.yml` file that points dbt to the upstream asset:
 Now we'll set up our `_source.yml` file that will point dbt to our upstream asset:
 
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/_source.yml" language="yaml" title="Adding a _source.yml to our dbt project" />
