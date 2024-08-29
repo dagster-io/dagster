@@ -244,13 +244,38 @@ a.pyobject {
 }
 
 // NotFound Swizzle
+.not-found-title {
+  font-weight: 600;
+  font-size: 12rem;
+  color: var(--theme-color-text-blue);
+  text-shadow: 0.5rem 0.5rem var(--theme-color-accent-blue);
+}
+
 @keyframes wiggle {
   0% { transform: rotate(0deg); }
-  25% { transform: rotate(10deg); }
-  75% { transform: rotate(-10deg); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-3deg); }
   100% { transform: rotate(0deg); }
 }
 
-.wiggle {
-  animation: wiggle 2s linear infinite;
+.hover-wiggle {
+  &:hover {
+    animation: wiggle 2s linear infinite;
+  }
+}
+
+.not-found-links {
+  display: flex;
+  flex-direction: row;
+  border: 1px solid rgba(200, 200, 200, 0.3);
+  padding: 1rem;
+
+  a {
+    text-align: center;
+    font-weight: var(--ifm-font-weight-normal);
+
+    &:hover {
+      color: var(--theme-color-accent-blue);
+    }
+  }
 }
