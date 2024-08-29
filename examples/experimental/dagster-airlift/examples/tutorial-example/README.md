@@ -534,7 +534,7 @@ def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> D
 
 
 def rebuild_customers_list_defs() -> Definitions:
-    asset_defs = Definitions.merge(
+    merged_defs = Definitions.merge(
         load_csv_to_duckdb_defs(
             AssetSpec(key=["raw_data", "raw_customers"]),
             LoadCsvToDuckDbArgs(
@@ -563,12 +563,12 @@ def rebuild_customers_list_defs() -> Definitions:
 
     rebuild_customers_list_schedule = ScheduleDefinition(
         name="rebuild_customers_list_schedule",
-        target=AssetSelection.assets(*asset_defs.assets),  # type: ignore
+        target=AssetSelection.assets(merged_defs.get_asset_graph().all_asset_keys),  # type: ignore
         cron_schedule="0 0 * * *",
     )
 
     return Definitions.merge(
-        asset_defs,
+        merged_defs,
         Definitions(schedules=[rebuild_customers_list_schedule]),
     )
 
