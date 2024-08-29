@@ -563,7 +563,7 @@ def rebuild_customers_list_defs() -> Definitions:
 
     rebuild_customers_list_schedule = ScheduleDefinition(
         name="rebuild_customers_list_schedule",
-        target=AssetSelection.assets(*list(merged_defs.get_asset_graph().all_asset_keys)),
+        target=AssetSelection.assets(*merged_defs.get_asset_graph().all_asset_keys),
         cron_schedule="0 0 * * *",
     )
 
