@@ -29,7 +29,7 @@ To follow the steps in this guide, you'll need:
 
 ## Setting up a basic dbt project
 
-Let's start with scaffolding a basic dbt project:
+Start by scaffolding a basic dbt project:
 
 ```bash
 dbt init jaffle_shop
