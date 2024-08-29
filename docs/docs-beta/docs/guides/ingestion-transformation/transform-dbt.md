@@ -106,7 +106,7 @@ The important line to note is where we set the dependency of our asset to our cu
 ```python
 deps=get_asset_key_for_model([dbt_models], "customers")
 ```
-
+This line finds the `customers` dbt model, gets its corresponding asset key, and directly sets it as a dependency of the new `customer_histogram` asset.
 This line finds our `customers` dbt model, gets its corresponding asset key, and directly sets it as a dependency of our new `customer_histogram` asset.
 
 ## Scheduling dbt models
