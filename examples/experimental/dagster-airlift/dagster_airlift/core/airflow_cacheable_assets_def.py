@@ -249,7 +249,11 @@ def build_airflow_asset_from_specs(
         op_tags=tags,
     )
     def _asset(context):
-        raise Exception("This should never be called.")
+        raise Exception(
+            "Attempted to materialize a non-executable Airflow asset."
+            " This may happen when the Dagster migration state does not match the Airflow migration state."
+            " You may need to reload your Dagster code location."
+        )
 
     return _asset
 

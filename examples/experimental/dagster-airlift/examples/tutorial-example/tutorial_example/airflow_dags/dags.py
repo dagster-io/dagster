@@ -70,7 +70,6 @@ class ExportDuckDBToCSV(BaseOperator):
                 table_name=self._table_name,
                 csv_path=self._csv_path,
                 duckdb_path=self._duckdb_path,
-                duckdb_schema=self._duckdb_schema,
                 duckdb_database_name=self._duckdb_database_name,
             )
         )
