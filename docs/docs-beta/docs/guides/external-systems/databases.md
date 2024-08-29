@@ -36,7 +36,6 @@ $ dagster dev --python-file resource-duckdb-example.py
 
 Materializing the assets from the Dagster UI will create the new DuckDB database at `/tmp/iris_dataset.duckdb`.
 
-
 ## Define a resource that depends on an environment variable
 
 A resource that reads some connection details from environment variables can connect to different databases in different environments. For example, a resource can connect to a test database in a development environment and a live database in the production environment. You can change the resource definition in the previous example to use an `EnvVar` as shown here:
