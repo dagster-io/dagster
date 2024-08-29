@@ -44,3 +44,6 @@ lookback
 Pydantic
 DSL
 [Rr]epo
+plaintext
+vCPU
+vCPUs

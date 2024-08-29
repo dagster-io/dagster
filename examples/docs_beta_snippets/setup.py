@@ -14,6 +14,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
-    install_requires=["dagster-cloud", "dagster-aws"],
-    extras_require={"test": ["pytest", "mock", "path", "dagster_snowflake"]},
+    # package not expected to be installed alone, dependencies for use managed in tox.ini
+    install_requires=[],
 )
