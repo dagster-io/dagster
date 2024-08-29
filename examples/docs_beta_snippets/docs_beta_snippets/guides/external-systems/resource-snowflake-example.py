@@ -40,8 +40,6 @@ defs = dg.Definitions(
     assets=[iris_dataset, iris_setosa],
     resources={
         # highlight-start
-        # This defines a Snowflake resource that reads 
-        # connection paramters from environment variables
         "iris_db": SnowflakeResource(
             # Set the SNOWFLAKE_PASSWORD environment variables before running this code
             password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
