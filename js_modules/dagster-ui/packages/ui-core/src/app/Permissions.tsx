@@ -134,7 +134,7 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 
 export const PermissionsProvider = (props: {children: React.ReactNode}) => {
   const queryResult = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
-    fetchPolicy: 'cache-first', // Not expected to change after initial load.'
+    fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
 
   const {data, loading} = queryResult;
