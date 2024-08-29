@@ -96,7 +96,7 @@ In this file we need to add the Dagster metadata in the highlighted portion of t
 2. It's telling Dagster exactly which asset represents this source data
 
 ## Adding downstream dependencies
-
+You may also have assets that depend on the output of dbt models. Next, create an asset that depends on the result of the new `customers` model. This asset will create a histogram of the first names of the customers:
 Similarly, we often have assets that depend on the output of our dbt models. Let's create an asset that depends on the result of our new `customers` model, this asset will create a histogram of the first names of the customers:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_downstream.py" language="python" title="Adding an downstream asset to definitions.py" />
