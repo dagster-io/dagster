@@ -1,5 +1,4 @@
 import contextlib
-import time
 from pathlib import Path
 from typing import AbstractSet, Callable, Iterable
 
@@ -9,7 +8,7 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
-from .utils import start_run_and_wait_for_completion
+from .utils import poll_for_asset_check, poll_for_materialization, start_run_and_wait_for_completion
 
 
 @pytest.fixture(name="dagster_defs_path")
@@ -41,11 +40,10 @@ def test_migrate_runs_properly_in_dagster_with_check(
 
     start_run_and_wait_for_completion("rebuild_customers_list")
 
-    time.sleep(10)
+    poll_for_materialization(instance, target=all_keys)
 
-    mat_events = instance.get_latest_materialization_events(asset_keys=all_keys)
-    for key, event in mat_events.items():
-        assert event is not None, f"Materialization event for {key} is None"
+    check_key = AssetCheckKey(asset_key=AssetKey(["customers_csv"]), name="validate_exported_csv")
+    check_result = poll_for_asset_check(instance, target=check_key)
 
     # Ensure migrated tasks are run in Dagster and check runs even though the task is not migrated
     runs = instance.get_runs()
@@ -58,9 +56,4 @@ def test_migrate_runs_properly_in_dagster_with_check(
     check_run = runs[0]
     assert check_run.status == DagsterRunStatus.SUCCESS
 
-    assert (
-        instance.get_latest_asset_check_evaluation_record(
-            AssetCheckKey(asset_key=AssetKey(["customers_csv"]), name="validate_exported_csv")
-        ).status  # type: ignore
-        == AssetCheckExecutionRecordStatus.SUCCEEDED
-    )
+    assert check_result.status == AssetCheckExecutionRecordStatus.SUCCEEDED
