@@ -1,16 +1,18 @@
 ---
-title: "Local agents"
+title: "Running a Dagster+ agent locally"
 displayed_sidebar: "dagsterPlus"
 sidebar_position: 40
 sidebar_label: "Local"
 ---
 
-You can set up a local agent to execute pipelines launched in Dagster+. This ensures that your user code is always executed on infrastructure you own. When a pipeline is executed, the local agent will create subprocesses to execute user code. However, it's important to keep in mind that  the local agent's ability to run user code is limited by the capacity of the machine on which it's running.
+You can set up a local agent to execute pipelines launched in Dagster+. Local agents are a good way to experiment with Dagster+ locally before deploying a more scalable hybrid agent like [Kubernetes](dagster-plus/hybrid/agents/kubernetes) or [Amazon ECS](dagster-plus/hybrid/agents/amazon-ecs-new-vpc).
 
-Running a local agent can be a good choice if:
-- The expected load of your pipelines is relatively light (guaranteed to fit on a single node).
-- Your pipelines aren't computationally intensive and don't use much memory.
-- You can restart the agent when you update your code.
+:::warning
+Local agents aren't well suited for most production use cases. This is because local agents:
+- Don't have the same CI / CD update strategies as the other agents.
+- Need a separate process running on the sever hosting the agent to pull in changes to your Dagster project.
+- Need to be restarted to deploy changes.
+:::
 
 :::note
 If you're running the local agent in production, make sure you've set up a supervisor to automatically restart the agent process if it crashes. You'll also want a system in place to alert you if the VM or container dies, or to automatically restart it.
@@ -50,6 +52,8 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
     - `deployment` - Enter the deployment name associated with this instance of the agent. In the preceding example, we specified `prod` as the deployment.
 
 4. Save the file.
+
+You can find more configuration options for `dagster.yaml` in the [`dagster.yaml` reference](/todo).
 
 ## Step 3: Run the agent
 

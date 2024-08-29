@@ -6,6 +6,10 @@ sidebar_position: 50
 
 After using a Dagster+ Serverless deployment, you may decide that you want to switch to a Hybrid deployment. A Hybrid deployment lets you use your own infrastructure to execute your code. You can switch from Serverless to Hybrid without loosing any of your execution history or metadata.
 
+:::warning
+Transitioning from Serverless to Hybrid requires some downtime when your Dagster+ deployment won't have an agent to execute user code.
+:::
+
 <details>
   <summary>Prerequisites</summary>
 
