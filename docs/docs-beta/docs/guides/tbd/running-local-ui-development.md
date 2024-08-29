@@ -11,6 +11,8 @@ In this guide, we'll walk you through how to run Dagster on your local machine u
 
 Before starting local development, you need to tell Dagster how to find the Python code containing your assets and jobs.
 
+For a refresher on how to set up a Dagster project, follow our [Recommended Dagster Project Structure](/todo) guide.
+
 <Tabs>
   <TabItem value="module" label="From a module">
     Dagster can load Python modules as code locations.
@@ -35,7 +37,9 @@ Before starting local development, you need to tell Dagster how to find the Pyth
     dagster dev -f defs.py
     ```
 
-    *Note:* We don't recommend using the `-f` argument for production deployments, to avoid a whole class of Python import errors.
+    ::: note
+    We don't recommend using the `-f` argument for production deployments, to avoid a whole class of Python import errors.
+    :::
 
   </TabItem>
 </Tabs>
@@ -49,6 +53,12 @@ Using temporary directory /Users/rhendricks/tmpqs_fk8_5 for storage.
 This indicates that any runs or materialized assets created during your session won't be persisted once the session ends.
 
 To designate a more permanent home for your runs and assets, you can set the `DAGSTER_HOME` environment variable to a folder on your filesystem. Dagster will then use the specified folder for storage on all subsequent runs of `dagster dev`.
+
+```shell
+mkdir -p ~/.dagster_home
+export DAGSTER_HOME=~/.dagster_home
+dagster dev
+```
 
 ## Configuring your instance
 
