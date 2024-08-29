@@ -53,7 +53,7 @@ Make sure to select **DuckDB** as your database when prompted. This will create 
 └── tests
 ```
 
-If were to try to build this example as is, it would immediately fail due to a non-null test not passing in `my_first_dbt_model.sql`. To fix this, we'll need to uncomment the last line in the model to filter out the null record:
+If you try to build this example as is, it would immediately fail due to a non-null test not passing in `my_first_dbt_model.sql`. To fix this, you'll uncomment the last line in the model to filter out the null record:
 
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/my_first_dbt_model.sql" language="sql" title="Fix my_first_dbt_model.sql failing test" />
 
