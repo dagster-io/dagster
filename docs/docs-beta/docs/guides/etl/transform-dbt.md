@@ -100,7 +100,7 @@ In this file we need to add the Dagster metadata in the highlighted portion of t
 Similarly, we often have assets that depend on the output of our dbt models. Let's create an asset that depends on the result of our new `customers` model, this asset will create a histogram of the first names of the customers:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_downstream.py" language="python" title="Adding an downstream asset to definitions.py" />
-
+Take note of the following line, which is where you set the asset dependency to the customers model using the `get_asset_key_for_model` function:
 The important line to note is where we set the dependency of our asset to our customers model using the `get_asset_key_for_model` function:
 
 ```python
