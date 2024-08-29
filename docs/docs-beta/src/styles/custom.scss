@@ -314,6 +314,39 @@ a.pyobject {
     font-weight: var(--ifm-font-weight-normal);
   }
 }
+table {
+  thead {
+    tr {
+      th {
+        font-size: 13px;
+        text-align: left;
+        line-height: 1.1;
+        font-weight: 700;
+        border: 1px solid var(--theme-color-keyline);
+        border-bottom: 2px solid var(--theme-color-keyline);
+      }
+    }
+  }
+  tbody {
+    tr {
+      td {
+        vertical-align: top;
+        font-size: 13px;
+        line-height: 1.2;
+        border: 1px solid var(--theme-color-keyline);
+      }
+      code {
+        background-color: var(--ifm-code-background) !important;
+        border: 0.1rem solid rgba(0, 0, 0, 0.1) !important;
+        padding: 0.1rem;
+      }
+    }
+  }
+}
+
+.tabs {
+  border-bottom: 1px solid var(--theme-color-keyline);
+}
 
 @media (max-width: 950px) {
   .navbar__items .navbar__brand {
