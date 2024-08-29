@@ -522,7 +522,6 @@ defs = Definitions.merge(
 
 Once we have introduced representations of the assets produced by our Airflow tasks, we can directly attach asset checks to these assets. These checks will run once the corresponding task completes, regardless of whether the task is executed in Airflow or Dagster.
 
-
 <details>
 <summary>
 Asset checks on an observed or migrated DAG
@@ -667,7 +666,6 @@ defs = Definitions.merge(
 
 
 ```
-
 
 </details>
 
