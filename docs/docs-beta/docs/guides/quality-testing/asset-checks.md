@@ -24,7 +24,7 @@ In this example, the asset check will run after the asset has been materialized,
 
 In most cases, checking the data quality of an asset will require multiple checks.
 
-The example below defines two asset checks on an asset using the `multi_asset_check` decorator.
+The example below defines two asset checks using the `multi_asset_check` decorator:
 - one that fails if the `order_id` column of the asset contains a null value.
 - another one that fails if the `item_id` column of the asset contains a null value.
 
