@@ -35,7 +35,7 @@ sed -i "" "s|version=\"$CURRENT_VERSION\"|version=\"$NEW_VERSION\"|" "$SETUP_PY_
 
 # Run the specified commands
 echo "Running commands..."
-if ! ./build_and_publish.sh; then
+if ! ./scripts/build_and_publish.sh; then
     echo "Commands failed. Reverting to original version..."
     mv "${SETUP_PY_FILE}.bak" "$SETUP_PY_FILE"
     exit 1
