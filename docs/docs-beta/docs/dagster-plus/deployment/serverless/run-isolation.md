@@ -7,7 +7,29 @@ sidebar_position: 40
 
 # Serverless run isolation
 
-Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated. Non-isolated runs are for iterating quickly, trade off isolation for speed and must be launched manually. Isolated runs are for production and compute heavy Assets/Jobs.
+Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated.
+
+- [**Isolated runs**](#isolated-runs-default) execute in their own container. They're the default and are intended for production and compute-heavy use cases..
+- [**Non-isolated runs**](#non-isolated-runs) trade off isolation for speed. They must be launched manually and are intended for fast iteration during development.
+
+## What you'll learn
+
+- The differences between isolated runs and non-isolated runs
+- How to enable non-isolated runs
+- How to adjust your deployment settings to run multiple non-isolated runs concurrently
+
+---
+
+<details>
+  <summary>Prerequisites</summary>
+
+To follow the steps in this guide, you'll need:
+
+- An active Dagster+ Serverless deployment
+- An understanding of [Dagster+ deployment settings](/dagster-plus/deployment/settings)
+</details>
+
+---
 
 ## Isolated runs (default)
 
