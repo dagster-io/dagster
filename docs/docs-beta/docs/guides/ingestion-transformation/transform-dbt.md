@@ -89,7 +89,7 @@ Let's add a dbt model that will source that asset and define the dependency for 
 Now we'll set up our `_source.yml` file that will point dbt to our upstream asset:
 
 <CodeExample filePath="guides/etl/transform-dbt/jaffle_shop/models/example/_source.yml" language="yaml" title="Adding a _source.yml to our dbt project" />
-
+By adding the Dagster metadata, you're telling Dagster that the source data comes from the `raw_customers` asset you defined earlier. This file now serves two purposes:
 In this file we need to add the Dagster metadata in the highlighted portion of the code to tell Dagster that this source data is coming from the `raw_customers` asset that we defined earlier. This file now serves two purposes:
 1. It tells dbt where to find the source data for the `customers` model
 2. It tells Dagster exactly which asset represents this source data
