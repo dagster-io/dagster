@@ -107,7 +107,7 @@ _Note: When the code location loads, Dagster will query the Airflow REST API in 
 
 <details>
 <summary>
-*Peering to multiple instances*
+Peering to multiple instances
 </summary>
 
 Airlift supports peering to multiple Airflow instances, as you can invoke `create_airflow_instance_defs` multiple times and combine them with `Definitions.merge`:
@@ -467,7 +467,66 @@ dagster dev -f migrate.py
 
 Once you have peered your Airflow DAGs in Dagster, regardless of migration progress, you can begin to add asset checks to your Dagster code. Asset checks can be used to validate the quality of your data assets, and can provide additional observability and value on top of your Airflow DAG even before migration starts.
 
-For example, we can add an asset check to ensure that the final `customers` CSV output exists and has a non-zero number of rows:
+For example, given a peered version of our DAG, we can add an asset check to ensure that the final `customers` CSV output exists and has a non-zero number of rows:
+
+```python
+# peer_with_check.py
+import os
+from pathlib import Path
+
+from dagster import AssetCheckResult, AssetCheckSeverity, AssetKey, Definitions, asset_check
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+
+
+# Attach a check to the DAG representation asset, which will be executed by Dagster
+# any time the DAG is run in Airflow
+@asset_check(asset=AssetKey(["airflow_instance", "dag", "rebuild_customers_list"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("
+"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
+
+
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            # other backends available (e.g. MwaaSessionAuthBackend)
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://localhost:8080",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
+        )
+    ),
+    Definitions(asset_checks=[validate_exported_csv]),
+)
+
+```
+
+Once we have introduced representations of the assets produced by our Airflow tasks, we can directly attach asset checks to these assets. These checks will run once the corresponding task completes, regardless of whether the task is executed in Airflow or Dagster.
+
+
+<details>
+<summary>
+Asset checks on an observed or migrated DAG
+</summary>
 
 ```python
 # migrate_with_check.py
@@ -606,65 +665,6 @@ defs = Definitions.merge(
 )
 
 
-
-```
-
-Even a peered DAG without any asset representation can benefit from asset checks, which can be set up to run once the DAG completes. Below is an example of a DAG with no associated assets, where the asset check we defined in the previous example will run once the DAG completes:
-
-
-<details>
-<summary>
-*Asset checks on a peered DAG*
-</summary>
-
-```python
-# peer_with_check.py
-import os
-from pathlib import Path
-
-from dagster import AssetCheckResult, AssetCheckSeverity, AssetKey, Definitions, asset_check
-from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
-
-
-# Attach a check to the DAG representation asset, which will be executed by Dagster
-# any time the DAG is run in Airflow
-@asset_check(asset=AssetKey(["airflow_instance", "dag", "rebuild_customers_list"]))
-def validate_exported_csv() -> AssetCheckResult:
-    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
-
-    if not csv_path.exists():
-        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
-
-    rows = len(csv_path.read_text().split("
-"))
-    if rows < 2:
-        return AssetCheckResult(
-            passed=False,
-            description=f"Export CSV {csv_path} is empty",
-            severity=AssetCheckSeverity.WARN,
-        )
-
-    return AssetCheckResult(
-        passed=True,
-        description=f"Export CSV {csv_path} exists",
-        metadata={"rows": rows},
-    )
-
-
-defs = Definitions.merge(
-    build_defs_from_airflow_instance(
-        airflow_instance=AirflowInstance(
-            # other backends available (e.g. MwaaSessionAuthBackend)
-            auth_backend=BasicAuthBackend(
-                webserver_url="http://localhost:8080",
-                username="admin",
-                password="admin",
-            ),
-            name="airflow_instance_one",
-        )
-    ),
-    Definitions(asset_checks=[validate_exported_csv]),
-)
 
 ```
 
