@@ -49,11 +49,17 @@ helm --namespace dagster-cloud install agent --install dagster-cloud/dagster-clo
 
 You can use Helm to do rolling upgrades of your Dagster+ agent
 
+```yaml
+# values.yaml
+dagsterCloudAgent:
+    image:
+        tag: latest
+```
+
 ```shell
-helm repo update
 helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
-    --set dagsterCloudAgent.image.tag=latest
+    --values ./values.yaml
 ```
 
 ## Common configurations
@@ -64,28 +70,45 @@ You can customize your Dagster+ agent using [Helm values](https://artifacthub.io
 
 [Branch deployments](dagster-plus/deployment/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
+```yaml
+# values.yaml
+dagsterCloud:
+    branchDeployment: true
+```
+
 ```shell
 helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
-    --set dagsterCloud.branchDeployments=true
+    --values ./values.yaml
 ```
 
 ### High availability configurations
 
 You can configure your Dagster+ agent to run with multiple replicas. Work will be load balanced across all replicas.
 
+```yaml
+# values.yaml
+dagsterCloudAgent:
+    replicas: 2
+```
+
 ```shell
 helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
-    --set dagsterCloudAgent.replicas=2
+    --values ./values.yaml
 ```
 
 Work load balanced across agents isn't not sticky; there's no guarantee the agent that launched a run will be the same one to receive instructions to terminate it. This is fine if both replicas run on the same Kubernetes cluster because either agent can terminate the run. But if your agents are physically isolated (for example, they run on two different Kubernetes clusters), you should configure:
 
+```yaml
+# values.yaml
+isolatedAgents: true
+```
+
 ```shell
 helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
-    --set isolatedAgents=true
+    --values ./values.yaml
 ```
 
 ## Troubleshooting Tips
