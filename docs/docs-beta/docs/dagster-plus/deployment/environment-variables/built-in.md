@@ -26,8 +26,8 @@ For every commit made to a branch, the following environment variables are avail
 
 | Key | Value |
 |---|---|
-| `DAGSTER_CLOUD_GIT_SHA` | The SHA of the commit. <br/><br/> **Example:** `5c5fa4643968a1b8043b58c159fb0600af8a35b2`. |
-| `DAGSTER_CLOUD_GIT_TIMESTAMP` | The Unix timestamp when the commit occurred. <br/><br/> **Example:** `1724871941` |
+| `DAGSTER_CLOUD_GIT_SHA` | The SHA of the commit. |
+| `DAGSTER_CLOUD_GIT_TIMESTAMP` | The Unix timestamp in seconds when the commit occurred. <br/><br/> **Example:** `1724871941` |
 | `DAGSTER_CLOUD_GIT_AUTHOR_EMAIL` | The email of the git user who authored the commit. |
 | `DAGSTER_CLOUD_GIT_AUTHOR_NAME` | The name of the git user who authored the commit. |
 | `DAGSTER_CLOUD_GIT_MESSAGE` | The message associated with the commit. |
