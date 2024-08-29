@@ -61,13 +61,14 @@ Now Dagster has everything it needs to consume our dbt project and build our ass
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions.py" language="python" title="Importing a dbt project into Dagster" />
 
-In this file we create:
-- a `DbtProject` object that points to the path of our dbt project
+In this file you created:
+
+- a `DbtProject` object that points to the path of your dbt project
 - a `DbtResource` that references the project object
 - a `@dbt_assets` decorated function that yields Dagster events from the events streamed from the dbt CLI
-- a `Definitions` object that contains our assets and resources
+- a `Definitions` object that contains your assets and resources
 
-We also use `dbt_project.prepare_if_dev()` to compile our dbt project to ensure Dagster has what it needs to build the asset graph.
+You also used `dbt_project.prepare_if_dev()` to compile the dbt project to ensure Dagster has what it needs to build the asset graph.
 
 ## Adding upstream dependencies
 
