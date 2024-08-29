@@ -18,7 +18,10 @@ In Dagster, *resources* are used to connect to databases by acting as a wrapper 
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [Asset definitions](/concepts/assets)
+
+If you want to run the examples in this guide, you'll need:
 - Connection information for a Snowflake database
+- To `pip install` the `dagster-duckdb` and `dagster-snowflake` packages
 
 </details>
 
