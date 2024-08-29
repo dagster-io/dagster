@@ -1,5 +1,5 @@
 ---
-title: "Set environment variables with the Dagster+ UI"
+title: "Setting environment variables with the Dagster+ UI"
 displayed_sidebar: "dagsterPlus"
 sidebar_position: 1
 sidebar_label: "Set with Dagster+ UI"
@@ -7,13 +7,14 @@ sidebar_label: "Set with Dagster+ UI"
 
 Environment variable are key-value pairs that are set outside of your source code. Using environment variables lets you dynamically change the behavior of your application without modifying source code and securely set up secrets.
 
-Dagster supports several approaches for [accessing environment variable in your code](/todo). You can also set environment variables in several ways. This guide will cover how to set environment variables in the Dagster+ UI.
+Dagster supports several approaches for [accessing environment variable in your code](/todo). You can also set environment variables in several ways, but this guide will focus on the Dagster+ UI.
 
 ## What you'll learn
 
 - How to add, edit, and delete environment variables in the Dagster+ UI
-- How to modify the value of environment variables based on the deployment environment
+- How to view the values of environment variables in the Dagster+ UI
 - How to export environment variables for local use
+- How to modify the value of environment variables based on the deployment environment
 
 <details>
   <summary>Prerequisites</summary>
@@ -25,8 +26,8 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
+## Adding environment variables \{#add}
 
-## Add an environment variable
 Before you begin, use the deployment switcher to select the right deployment.
 
 1. Click the **+ Add environment variable** button.
@@ -40,54 +41,58 @@ Before you begin, use the deployment switcher to select the right deployment.
     - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
 
 
-SCREENSHOT
+    ![TODO](/img/placeholder.svg)
 
 3. Click **Save**
 
-## Edit an environment variable
-Before you begin, use the deployment switcher to select the right deployment.
+## Editing environment variables \{#edit}
+
 On the **Environment variables** page, edit an environment variable by clicking the **Edit** button in the **Actions** column.
 
+## Deleting environment variables \{#delete}
 
-## Delete an environment variable
-Before you begin, use the deployment switcher to select the right deployment.
 On the **Environment variables** page, delete an environment variable by clicking the **Trash icon** in the **Actions** column.
 
+## Viewing environment variable values \{#view}
 
-## View an environment variable's value
-Before you begin, use the deployment switcher to select the right deployment.
 On the **Environment variables** page, view an environment variable by clicking the **eye icon** in the **Value** column. To hide the value, click the **eye icon** again.
 
 :::note
 Viewing an environment variable only reveals the value to you. It doesn't show the value in plaintext to all users. If you navigate away from the environment variables page or reload the page, the value will be hidden again.
 :::
 
+## Exporting environment variables locally \{#export}
 
-## Export environment variables locally
-Before you begin, use the deployment switcher to select the right deployment.
-
-To download the file:
-1. In the **Environment variables** page, click the **arrow menu** to the right of the **+ Add environment variable** button.
+1. On the **Environment variables** page, click the **arrow menu** to the right of the **+ Add environment variable** button.
 2. Click **Download local environment variables**.
 3. A file named `env.txt` will be downloaded.
 
 To use the downloaded environment variables for local Dagster development:
+
 1. Rename the downloaded `env.txt` file to `.env`.
 2. Move the file to the directory where you run `dagster dev` or `dagster-webserver`.
-3. Run `dagster dev` or `dagster-webserver`.
-4. Confirm that the environment variables have been loaded by locating a log message that begins with `Loaded environment variables from .env file`.
+3. Run `dagster dev`.
 
+If the environment variables were loaded successfully, you'll see a log message that begins with `Loaded environment variables from .env file`.
 
-## Set different values for environment variables in different deployment environments 
-You can create multiple instances of the same environment variable key with different values. This allows you to provide different values to different deployment environments. For example, you may want to use different Snowflake credentials for your production deployment than in branch deployments.
+## Setting environment-dependent variable values \{#environment-dependent-values}
 
-When you [add an environment variable](#add-an-environment-variable) you can select the deployment scope and code location scope for the environment variable. You can create multiple environment variables with different values and different scopes to customize the values in different deployment environments.
+You can create multiple instances of the same environment variable key with different values, allowing you to provide different values to different deployment environments. For example, you may want to use different Snowflake credentials for your production deployment than in branch deployments.
 
-For example, if you wanted to provide different Snowflake password for your production deployment than in branch deployments, you would make two environment variables with the same key. For the production environment variable, you set the value for the production password and ensure the **Full deployment** box is checked and the **Branch deployments** box isn't checked. For the branch deployment environment variable, you set the value for the branch deployment password and ensure the **Branch deployments** box is checked and the **FullDeployment** box isn't checked.
+When you [add an environment variable](#add), you can select the deployment scope and code location scope for the environment variable. You can create multiple environment variables with different values and different scopes to customize the values in different deployment environments.
+
+For example, if you wanted to provide different Snowflake passwords for your production and branch deployments, you would make two environment variables with the same key:
+
+- For the **production** environment variable:
+   - Set the value as the production password, and
+   - Check only the **Full deployment** box
+- For the **branch deployment** environment variable:
+   - Set the value as the branch deployment password, and
+   - Check only the **Branch deployments** box
 
 SCREENSHOT
 
 ## Next steps
 
 - Learn how to [access environment variables in Dagster code](/todo)
-- See the [built-in environment variables](https://docs.dagster.io/dagster-plus/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) provided by Dagster
+- Learn about the [built-in environment variables](https://docs.dagster.io/dagster-plus/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) provided by Dagster+
