@@ -12,7 +12,6 @@ Your Dagster project must meet a few requirements to run in Dagster+.
 To follow the steps in this guide, you'll need:
 
 - A basic understanding of Python project structure and Docker
-- Familiarity with [deploying open source Dagster](/guides/deployment)
 </details>
 
 ## General requirements
