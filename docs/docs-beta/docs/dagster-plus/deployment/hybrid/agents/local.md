@@ -48,6 +48,13 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
 
 You can find more configuration options for `dagster.yaml` in the [`dagster.yaml` reference](/todo).
 
+### Alternative methods for setting the agent token
+
+If you don't want to specify your agent token with an environment variable in the `dagster.yaml`, you can pass it to the `dagster-cloud agent run` command:
+```bash
+dagster-cloud agent run ~/dagster_home/ --agent-token <AGENT_TOKEN>
+```
+
 ## Step 3: Run the agent
 
 To start the agent, run the following command and pass the path to the `dagster.yaml` file you created in Step 2:
@@ -58,6 +65,7 @@ dagster-cloud agent run ~/dagster_home/
 To view the agent in Dagster+, click the Dagster icon in the top left to navigate to the **Deployment -> Agents** page. You should see the agent running in the **Agent statuses** section:
 
 SCREENSHOT
+
 
 ## Next steps
 
