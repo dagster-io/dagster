@@ -31,7 +31,7 @@ Catalog views allow you to toggle between sets of assets that you care about mos
 
 ## Create catalog views
 
-In any Dagster+ catalog page, you can access the current catalog view, or create a new catalog view with the catalog view button on the top left of the screen. By default, this button is labeled "All assets", and has a globe icon.
+In any Dagster+ catalog page, you can access the current catalog view, or create a new catalog view with the catalog view button on the top left of the screen. By default, this button is labeled **All assets** and has a globe icon.
 
 To create a new catalog view, you have two options:
 1. Create a new catalog view from scratch, from the catalog view menu.
