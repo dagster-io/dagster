@@ -161,7 +161,7 @@ def _build_airbyte_assets_from_metadata(
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
 
     @multi_asset(
-        name=f"airbyte_sync_{connection_id[:5]}",
+        name=f"airbyte_sync_{connection_id.replace('-', '_')}",
         deps=list((assets_defn_meta.keys_by_input_name or {}).values()),
         outs={
             k: AssetOut(
@@ -301,7 +301,7 @@ def build_airbyte_assets(
         internal_deps[table] = set(upstream_deps) if upstream_deps else set()
 
     @multi_asset(
-        name=f"airbyte_sync_{connection_id[:5]}",
+        name=f"airbyte_sync_{connection_id.replace('-', '_')}",
         deps=upstream_deps,
         outs=outputs,
         internal_asset_deps=internal_deps,

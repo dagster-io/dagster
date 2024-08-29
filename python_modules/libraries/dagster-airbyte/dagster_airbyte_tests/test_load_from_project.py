@@ -152,7 +152,7 @@ def test_load_from_project(
 
     materializations = [
         event.event_specific_data.materialization
-        for event in res.events_for_node("airbyte_sync_87b7f")
+        for event in res.events_for_node("airbyte_sync_87b7fe85_a22c_420e_8d74_b30e7ede77df")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == len(tables)
