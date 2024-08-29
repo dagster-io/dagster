@@ -37,7 +37,7 @@ Before you begin, use the deployment switcher to select the right deployment.
     - **Deployment Scope** - select the deployment(s) where the variable should be accessible:
         - **Full deployment** - The variable will be available to selected code locations in the full deployment.
         - **Branch deployments** - The variable will be available to selected code locations in Branch Deployments.
-        - **Local** - If selected, the variable will be included when [exporting environment variables to a local `.env` file](#export-environment-variables-locally).
+        - **Local** - If selected, the variable will be included when [exporting environment variables to a local `.env` file](#export).
     - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
 
 
