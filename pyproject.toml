@@ -277,6 +277,7 @@ force-wrap-aliases = true
 ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
+"examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
