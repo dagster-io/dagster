@@ -1,4 +1,68 @@
 ---
 title: Connecting to databases
+description: How to configure resources to connect to databases
 sidebar_position: 10
 ---
+
+Resources in Dagster are used to connect to databases. A resource definition associates a resource name with database connection information. The resource name is then used in an asset definition to get a connection to the database.
+
+## What you'll learn
+
+- How to connect to a local DuckDB database using a resource and query it in an asset definition.
+- How to connect to different databases in different environments, such as development and production.
+- How to connect to a Snowflake database using a resource definition.
+
+<details>
+  <summary>Prerequisites</summary>
+
+To follow the steps in this guide, you'll need:
+
+- Familiarity with [Asset definitions](/concepts/assets)
+- Credentials to a live database
+
+</details>
+
+## Define a DuckDB resource and use it in an asset definition
+
+Here is an example of a DuckDB resource definition that's used to create two tables in the DuckDB database.
+
+<CodeExample filePath="guides/external-systems/resource-duckdb-example.py" language="python" title="DuckDB Resource Example" />
+
+To run the preceding example, first [install `dagster-duckdb`](https://dagster.io/integrations/dagster-duckdb) and then run:
+
+```shell
+$ dagster dev --python-file resource-duckdb-example.py
+```
+
+Materializing the assets from the Dagster UI will create the new DuckDB database at `/tmp/iris_dataset.duckdb`.
+
+
+## Define a resource that depends on an environment variable
+
+A resource that reads some connection details from environment variables can connect to different databases in different environments. For example, a resource can connect to a test database in a development environment and a live database in the production environment. You can change the resource definition in the previous example to use an `EnvVar` as shown here:
+
+<CodeExample filePath="guides/external-systems/resource-duckdb-envvar-example.py" language="python" title="DuckDB Resource using EnvVar Example" />
+
+When launching a run, the database path will be read from the `IRIS_DUCKDB_PATH` environment variable.
+
+
+## Define a Snowflake resource and use it in an asset definition
+
+Using a Snowflake resource is similar to using a DuckDB resource shown in the preceding example. Here is a complete example showing how to connect to a Snowflake database and create two tables:
+
+<CodeExample filePath="guides/external-systems/resource-snowflake-example.py" language="python" title="Snowflake Resource Example" />
+
+To run this code you will need to first [install `dagster-snowflake`](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake). You will also need to set the `SNOWFLAKE_PASSWORKD` environment variable.
+
+## Other database resource types
+
+See [Dagster Integrations](https://dagster.io/integrations) for resource types that connect to other databases. Some other popular resource types are:
+
+* [`BigQueryResource`](https://dagster.io/integrations/dagster-gcp-bigquery)
+* [`RedshiftClientResource`](https://dagster.io/integrations/dagster-aws-redshift)
+
+## Next steps
+
+- Explore how to use resources for [Connecting to APIs](/guides/external-systems/apis)
+- Go deeper into [Understanding Resources](/concepts/resources)
+
