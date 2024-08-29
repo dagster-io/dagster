@@ -124,7 +124,7 @@ const OverdueLineagePopoverContent = ({
 }) => {
   const result = useQuery<OverduePopoverQuery, OverduePopoverQueryVariables>(
     OVERDUE_POPOVER_QUERY,
-    {variables: {assetKey: {path: assetKey.path}, timestamp}},
+    {variables: {assetKey: {path: assetKey.path}, timestamp}, blocking: false},
   );
 
   const data =

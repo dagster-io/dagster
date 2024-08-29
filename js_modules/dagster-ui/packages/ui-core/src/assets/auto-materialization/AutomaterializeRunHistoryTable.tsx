@@ -2,7 +2,6 @@ import {Box, ButtonGroup, CursorHistoryControls} from '@dagster-io/ui-components
 import styled from 'styled-components';
 
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {RunTable} from '../../runs/RunTable';
 import {
   RunsRootQuery,
@@ -44,7 +43,6 @@ export const AutomaterializeRunHistoryTable = ({
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
-  useBlockTraceOnQueryResult(queryResult, 'RunsRootQuery');
 
   useQueryRefreshAtInterval(queryResult, 15 * 1000);
 

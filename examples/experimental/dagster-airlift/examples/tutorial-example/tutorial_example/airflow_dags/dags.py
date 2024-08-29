@@ -85,7 +85,12 @@ default_args = {
 }
 DBT_DIR = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
 # Create the DAG with the specified schedule interval
-dag = DAG("rebuild_customers_list", default_args=default_args, schedule_interval=None)
+dag = DAG(
+    "rebuild_customers_list",
+    default_args=default_args,
+    schedule_interval=None,
+    is_paused_upon_creation=False,
+)
 
 
 load_raw_customers = LoadCSVToDuckDB(

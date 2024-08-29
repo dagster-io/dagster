@@ -9,7 +9,7 @@ def test_peer_loads(airflow_instance) -> None:
     Definitions.validate_loadable(defs)
 
     # representation of dag
-    assert len(defs.get_repository_def().assets_defs_by_key) == 1
+    assert len(defs.get_all_asset_specs()) == 1
 
 
 def test_observe_loads(airflow_instance) -> None:
@@ -20,7 +20,7 @@ def test_observe_loads(airflow_instance) -> None:
     Definitions.validate_loadable(defs)
 
     # representation of dag + 9 assets
-    assert len(defs.get_repository_def().assets_defs_by_key) == 10
+    assert len(defs.get_all_asset_specs()) == 10
 
 
 def test_migrate_loads(airflow_instance) -> None:
@@ -31,7 +31,7 @@ def test_migrate_loads(airflow_instance) -> None:
     Definitions.validate_loadable(defs)
 
     # representation of dag + 9 assets
-    assert len(defs.get_repository_def().assets_defs_by_key) == 10
+    assert len(defs.get_all_asset_specs()) == 10
 
 
 def test_standalone_loads(airflow_instance) -> None:
@@ -42,4 +42,4 @@ def test_standalone_loads(airflow_instance) -> None:
     Definitions.validate_loadable(defs)
 
     # 1 fewer, since no representation of the overall DAG
-    assert len(defs.get_repository_def().assets_defs_by_key) == 9
+    assert len(defs.get_all_asset_specs()) == 9

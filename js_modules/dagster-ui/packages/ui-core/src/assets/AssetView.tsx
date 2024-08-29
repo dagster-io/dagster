@@ -46,7 +46,6 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface Props {
@@ -165,7 +164,10 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   };
 
   const renderPartitionsTab = () => {
-    if (!definition?.isMaterializable) {
+    // We don't render <AssetLoadingDefinitionState /> here like the other tabs because
+    // AssetPartitions makes graphql requests and we want to avoid a request waterfall.
+    // Instead AssetPartitions will render the AssetLoadingDefinitionState itself.
+    if (!isLoading && !definition?.isMaterializable) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
@@ -439,7 +441,6 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
     },
   );
 
-  useBlockTraceOnQueryResult(result, 'AssetViewDefinitionQuery');
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {

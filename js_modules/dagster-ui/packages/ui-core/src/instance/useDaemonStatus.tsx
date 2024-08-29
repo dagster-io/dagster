@@ -15,6 +15,7 @@ export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
     {
       notifyOnNetworkStatusChange: true,
       skip,
+      blocking: false,
     },
   );
 

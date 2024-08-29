@@ -24,7 +24,6 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunTable} from '../runs/RunTable';
 import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
@@ -59,8 +58,6 @@ export const ScheduleRoot = (props: Props) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  useBlockTraceOnQueryResult(queryResult, 'ScheduleRootQuery');
-
   const selectionQueryResult = useQuery<
     ScheduleAssetSelectionQuery,
     ScheduleAssetSelectionQueryVariables
@@ -68,7 +65,6 @@ export const ScheduleRoot = (props: Props) => {
     variables: {scheduleSelector},
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(selectionQueryResult, 'ScheduleAssetSelectionQuery');
 
   const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);

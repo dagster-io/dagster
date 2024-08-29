@@ -6,14 +6,11 @@ import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
     variables: {runId},
   });
-
-  useBlockTraceOnQueryResult(stats, 'RunStatsQuery');
 
   if (stats.loading || !stats.data) {
     return (

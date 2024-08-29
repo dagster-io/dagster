@@ -29,6 +29,7 @@ export const AssetDefinedInMultipleReposNotice = ({
     AssetDefinitionCollisionQueryVariables
   >(ASSET_DEFINITION_COLLISION_QUERY, {
     variables: {assetKeys: [{path: assetKey.path}]},
+    blocking: false,
   });
   const {data} = queryResult;
 

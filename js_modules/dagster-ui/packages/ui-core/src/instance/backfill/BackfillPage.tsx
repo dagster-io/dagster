@@ -40,7 +40,6 @@ import {
   DaemonNotRunningAlert,
   useIsBackfillDaemonHealthy,
 } from '../../partitions/BackfillMessaging';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {testId} from '../../testing/testId';
 
 dayjs.extend(duration);
@@ -63,7 +62,6 @@ export const BackfillPage = () => {
     BACKFILL_DETAILS_QUERY,
     {variables: {backfillId}},
   );
-  useBlockTraceOnQueryResult(queryResult, 'BackfillStatusesByAssetQuery');
 
   const {data, error} = queryResult;
 
