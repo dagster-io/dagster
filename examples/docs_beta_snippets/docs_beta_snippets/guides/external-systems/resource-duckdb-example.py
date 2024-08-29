@@ -1,7 +1,7 @@
-import dagster as dg
+import pandas as pd
 from dagster_duckdb import DuckDBResource
 
-import pandas as pd
+import dagster as dg
 
 
 # highlight-start
@@ -9,7 +9,7 @@ import pandas as pd
 # Note the parameter name `iris_db` must match the resource defined later
 @dg.asset
 def iris_dataset(iris_db: DuckDBResource) -> None:
-# highlight-end
+    # highlight-end
     iris_df = pd.read_csv(
         "https://docs.dagster.io/assets/iris.csv",
         names=[

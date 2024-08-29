@@ -1,7 +1,7 @@
-import dagster as dg
+import pandas as pd
 from dagster_duckdb import DuckDBResource
 
-import pandas as pd
+import dagster as dg
 
 
 # An asset that uses a DuckDb resource called iris_db
@@ -37,7 +37,7 @@ defs = dg.Definitions(
     assets=[iris_dataset, iris_setosa],
     resources={
         # highlight-start
-        # This defines a DuckDB resource that reads the 
+        # This defines a DuckDB resource that reads the
         # from the environment
         "iris_db": DuckDBResource(
             database=dg.EnvVar("IRIS_DUCKDB_PATH"),

@@ -1,8 +1,8 @@
-import dagster as dg
-from dagster_snowflake import SnowflakeResource
-
 import pandas as pd
+from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
+
+import dagster as dg
 
 
 # An asset that uses a Snowflake resource called iris_db
@@ -22,6 +22,7 @@ def iris_dataset(iris_db: SnowflakeResource) -> None:
 
     with iris_db.get_connection() as conn:
         write_pandas(conn, iris_df, table_name="iris_dataset")
+
 
 # An asset that uses a Snowflake resource called iris_db
 # and creates a new table from an existing table
