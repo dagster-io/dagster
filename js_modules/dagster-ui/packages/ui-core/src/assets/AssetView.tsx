@@ -164,10 +164,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   };
 
   const renderPartitionsTab = () => {
-    if (isLoading) {
-      return <AssetLoadingDefinitionState />;
-    }
-    if (!definition?.isMaterializable) {
+    if (!isLoading && !definition?.isMaterializable) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
