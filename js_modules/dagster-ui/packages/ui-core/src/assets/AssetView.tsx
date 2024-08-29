@@ -79,8 +79,6 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   const defaultTab = 'overview';
   const selectedTab = params.view || defaultTab;
 
-  console.log({selectedTab});
-
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
   // tab, or just the current node for other tabs. NOTE: Changing the query does not re-fetch data,
   // it just re-filters.
