@@ -62,10 +62,11 @@ jobs:
       - name: Get changed docs files for PR comment
         if: ${{ github.event.pull_request }}
         run: |
+          cd docs/docs-beta/docs
           echo "Head ref is $GITHUB_HEAD_SHA"
           git fetch origin $GITHUB_HEAD_SHA
           # Compare the commit the branch is based on to its head to list changed files
-          CHANGED_MD_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" docs/docs-beta/docs/**/{*.md,*.mdx})
+          CHANGED_MD_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" -- '*.md' '*.mdx')
           CHANGES_ENTRY=$(echo "$CHANGED_MD_FILES" | sed 's/\.mdx*$//' | sed 's/^docs\/docs-beta\/docs/- {{deploymentUrl}}/')
           CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
           echo "$CHANGES_ENTRY"
