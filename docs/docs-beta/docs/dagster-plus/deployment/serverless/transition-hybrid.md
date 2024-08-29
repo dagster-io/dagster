@@ -27,9 +27,7 @@ PRODUCT NOTE - this arrow drop down is pretty small and easy to confuse with the
 ## Step 2: Create a Hybrid agent
 Next, you'll need to create a Hybrid agent to execute your code. There are several options for Hybrid agents. Follow the instructions for the agent of your choice to set up a Hybrid agent.
 
-- **Amazon Web Services agents**. AWS agents launch user code as Amazon Elastic Container Service (ECS) tasks.
-    - [Amazon ECS agent in a new VPC](/dagster-plus/deployment/hybrid/agents/amazon-ecs-new-vpc)
-    - [Amazon ECS agent in an existing VPC](/dagster-plus/deployment/hybrid/agents/amazon-ecs-existing-vpc)
+- **Amazon Web Services agents(/todo)**. AWS agents launch user code as Amazon Elastic Container Service (ECS) tasks.
 - **[Docker agent](/dagster-plus/deployment/hybrid/agents/docker)**. Docker agents launch user code in Docker containers on your machine.
 - **[Kubernetes agent](/dagster-plus/deployment/hybrid/agents/kubernetes)**. Kubernetes agents launch user code on a Kubernetes cluster.
 - **[Local agent](/dagster-plus/deployment/hybrid/agents/local)**. Local agents launch user code in operating system subprocesses on your machine.

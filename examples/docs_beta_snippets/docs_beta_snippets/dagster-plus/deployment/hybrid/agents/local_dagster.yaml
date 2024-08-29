@@ -3,7 +3,8 @@ instance_class:
   class: DagsterCloudAgentInstance
 
 dagster_cloud_api:
-  agent_token: <YOUR_AGENT_TOKEN>
+  agent_token:
+    env: DAGSTER_AGENT_TOKEN
   deployment: prod
 
 user_code_launcher:
