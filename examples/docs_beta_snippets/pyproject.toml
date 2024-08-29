@@ -33,6 +33,3 @@ extend-ignore = [
 # Ensures ruff classifies imports from `dagster` as first-party. Keeps snippet imports relatively
 # compressed.
 known-first-party = ["dagster"]
-
-[tool.ruff.lint.per-file-ignores]
-"docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
