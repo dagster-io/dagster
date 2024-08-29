@@ -26,7 +26,7 @@ are most valuable when you have multiple assets that emit the same kind of metad
 guide](/guides/data-modeling/metadata#attaching-metadata-to-an-asset-at-runtime) to add numeric metadata
 to your asset materializations.
 
-## Step 2: Enable viewing numeric metadata in Dagster+ Insights
+## Step 2: Enable viewing your metadata in Dagster+ Insights
 
 Once your assets are emitting numeric metadata values, you'll be able to enable viewing them in the Insights UI.
 
@@ -40,7 +40,7 @@ width={2640}
 height={1516}
 */}
 
-In the dialog that appears, use the eye indicator to show or hide metrics in Insights. Selected metrics will be immediately available to view in Insights in the sidebar and on individual asset pages.
+In the dialog that appears, use the eye indicator to show or hide metrics in Insights. Selected metrics will be visible in both the Insights sidebar and on individual asset pages.
 
 :::note
 
