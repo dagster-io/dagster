@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Body2,
   Box,
@@ -31,6 +30,7 @@ import {
   BackfillSelectorQuery,
   BackfillSelectorQueryVariables,
 } from './types/BackfillSelector.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';

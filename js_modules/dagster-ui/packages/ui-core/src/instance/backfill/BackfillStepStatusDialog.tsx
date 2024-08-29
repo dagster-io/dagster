@@ -1,8 +1,8 @@
-import {gql} from '@apollo/client';
 import {Button, Dialog, DialogFooter} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
 import {BackfillStepStatusDialogBackfillFragment} from './types/BackfillStepStatusDialog.types';
+import {gql} from '../../apollo-client';
 import {PartitionPerOpStatus} from '../../partitions/PartitionStepStatus';
 import {usePartitionStepQuery} from '../../partitions/usePartitionStepQuery';
 import {DagsterTag} from '../../runs/RunTag';

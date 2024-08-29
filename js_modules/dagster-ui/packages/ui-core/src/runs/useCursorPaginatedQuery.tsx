@@ -1,8 +1,8 @@
-import {useQuery} from '@apollo/client';
 import {CursorPaginationProps} from '@dagster-io/ui-components';
 import {DocumentNode} from 'graphql';
 import {useState} from 'react';
 
+import {useQuery} from '../apollo-client';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 interface CursorPaginationQueryVariables {

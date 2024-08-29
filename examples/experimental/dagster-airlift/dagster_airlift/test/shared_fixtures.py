@@ -4,7 +4,7 @@ import subprocess
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Generator
+from typing import Any, Callable, Generator
 
 import pytest
 import requests
@@ -40,11 +40,21 @@ def setup_fixture(airflow_home: Path, dags_dir: Path) -> Generator[Path, None, N
         # Provide link to local dagster installation.
         "DAGSTER_URL": "http://localhost:3333",
     }
-    path_to_script = Path(__file__).parent.parent.parent / "airflow_setup.sh"
+    path_to_script = Path(__file__).parent.parent.parent / "scripts" / "airflow_setup.sh"
     subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
     subprocess.run([path_to_script, dags_dir], check=True, env=temp_env)
     with environ(temp_env):
         yield airflow_home
+
+
+@pytest.fixture(name="reserialize_dags")
+def reserialize_fixture(airflow_instance: None) -> Callable[[], None]:
+    """Forces airflow to reserialize dags, to ensure that the latest changes are picked up."""
+
+    def _reserialize_dags() -> None:
+        subprocess.check_output(["airflow", "dags", "reserialize"])
+
+    return _reserialize_dags
 
 
 @pytest.fixture(name="airflow_instance")

@@ -1,6 +1,5 @@
 import 'chartjs-adapter-date-fns';
 
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -32,6 +31,7 @@ import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
 import {countPartitionsAddedOrDeleted, isStuckStartedTick, truncate} from './util';
+import {gql, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

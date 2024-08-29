@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import qs from 'qs';
 import {useCallback, useContext, useEffect, useRef} from 'react';
 
@@ -12,6 +11,7 @@ import {
   SearchSecondaryQueryVariables,
 } from './types/useGlobalSearch.types';
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
+import {gql} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

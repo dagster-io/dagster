@@ -1,4 +1,3 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import {
   Box,
   Button,
@@ -36,6 +35,7 @@ import {
   LaunchAssetLoaderResourceQuery,
   LaunchAssetLoaderResourceQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';

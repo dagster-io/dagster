@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Body2,
   Box,
@@ -28,6 +27,7 @@ import {
 } from './types/useReportEventsModal.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {keyCountInSelections, usePartitionHealthData} from './usePartitionHealthData';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {usePermissionsForLocation} from '../app/Permissions';

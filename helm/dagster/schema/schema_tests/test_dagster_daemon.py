@@ -399,6 +399,48 @@ def test_run_retries_max_retries(
 
     assert instance["run_retries"]["enabled"] is True
     assert instance["run_retries"]["max_retries"] == 4
+    assert "retry_on_asset_or_op_failure" not in instance["run_retries"]
+
+
+@pytest.mark.parametrize("retry_on_op_or_asset_failure", [True, False])
+def test_run_retries_retry_on_asset_op_op_failure(
+    instance_template: HelmTemplate, retry_on_op_or_asset_failure: bool
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            runRetries={
+                "enabled": True,
+                "maxRetries": 4,
+                "retryOnAssetOrOpFailure": retry_on_op_or_asset_failure,
+            }
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_retries"]["enabled"] is True
+    assert instance["run_retries"]["max_retries"] == 4
+    assert instance["run_retries"]["retry_on_asset_or_op_failure"] is retry_on_op_or_asset_failure
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            runRetries={"enabled": True, "maxRetries": 4, "retryOnAssetOrOpFailure": True}
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_retries"]["enabled"] is True
+    assert instance["run_retries"]["max_retries"] == 4
+    assert instance["run_retries"]["retry_on_asset_or_op_failure"] is True
 
 
 def test_daemon_labels(template: HelmTemplate):

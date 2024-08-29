@@ -1,6 +1,5 @@
 import 'codemirror/addon/search/searchcursor';
 
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Code,
@@ -18,6 +17,7 @@ import {createGlobalStyle} from 'styled-components';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery, InstanceConfigQueryVariables} from './types/InstanceConfig.types';
+import {gql, useQuery} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,

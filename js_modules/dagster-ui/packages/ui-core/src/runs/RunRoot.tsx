@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {useParams} from 'react-router-dom';
@@ -14,6 +13,7 @@ import {RunTimingTags} from './RunTimingTags';
 import {assetKeysForRun} from './RunUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';

@@ -1,4 +1,3 @@
-import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -13,6 +12,7 @@ import {
   WorkspaceGraphsQuery,
   WorkspaceGraphsQueryVariables,
 } from './types/WorkspaceGraphsQuery.types';
+import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';

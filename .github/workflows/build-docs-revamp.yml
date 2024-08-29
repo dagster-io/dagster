@@ -23,7 +23,6 @@ jobs:
     runs-on: ubuntu-latest
     # Deploy to Vercel Previews on pull request, push to master branch
     steps:
-
       - name: Get branch preview subdomain
         env:
           HEAD_REF: ${{ github.head_ref }}
@@ -52,7 +51,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 18  
+          node-version: 18
 
       - name: Lint Docs
         run: |
@@ -63,11 +62,12 @@ jobs:
       - name: Get changed docs files for PR comment
         if: ${{ github.event.pull_request }}
         run: |
+          cd docs/docs-beta/docs
           echo "Head ref is $GITHUB_HEAD_SHA"
           git fetch origin $GITHUB_HEAD_SHA
           # Compare the commit the branch is based on to its head to list changed files
-          CHANGED_MD_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" -- '*.md')
-          CHANGES_ENTRY=$(echo "$CHANGED_MD_FILES" | sed 's/\.md$//' | sed 's/^docs-beta\/docs/- {{deploymentUrl}}/')
+          CHANGED_MD_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" -- '*.md' '*.mdx')
+          CHANGES_ENTRY=$(echo "$CHANGED_MD_FILES" | sed 's/\.mdx*$//' | sed 's/^docs\/docs-beta\/docs/- {{deploymentUrl}}/')
           CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
           echo "$CHANGES_ENTRY"
           # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
@@ -84,13 +84,12 @@ jobs:
           github.event_name == 'pull_request' || 
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
         with:
-          github-comment: true
+          github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
-          alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.dagster.dagster-docs.io
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25

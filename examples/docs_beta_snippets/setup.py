@@ -15,5 +15,5 @@ setup(
     ],
     packages=find_packages(exclude=["test"]),
     install_requires=["dagster-cloud", "dagster-aws"],
-    extras_require={"test": ["pytest", "mock"]},
+    extras_require={"test": ["pytest", "mock", "path", "dagster_snowflake"]},
 )

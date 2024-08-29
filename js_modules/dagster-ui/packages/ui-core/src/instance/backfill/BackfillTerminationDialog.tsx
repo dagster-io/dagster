@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
@@ -9,6 +8,7 @@ import {
   CancelBackfillMutation,
   CancelBackfillMutationVariables,
 } from './types/BackfillTerminationDialog.types';
+import {gql, useMutation, useQuery} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {BulkActionStatus} from '../../graphql/types';
 import {TerminationDialog} from '../../runs/TerminationDialog';

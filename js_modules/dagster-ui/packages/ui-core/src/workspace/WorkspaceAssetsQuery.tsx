@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {ASSET_TABLE_DEFINITION_FRAGMENT} from '../assets/AssetTableFragment';
 

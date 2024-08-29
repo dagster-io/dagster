@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
@@ -11,6 +10,7 @@ import {
   OverviewSchedulesQueryVariables,
 } from './types/OverviewSchedules.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';

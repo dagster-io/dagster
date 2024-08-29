@@ -120,6 +120,8 @@ Clients
 
 .. autoclass:: dagster_aws.pipes.PipesGlueClient
 
+.. autoclass:: dagster_aws.pipes.PipesECSClient
+
 Legacy
 --------
 

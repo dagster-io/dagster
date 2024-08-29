@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -21,6 +20,7 @@ import {
   JobMetadataQueryVariables,
   RunMetadataFragment,
 } from './types/JobMetadata.types';
+import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';

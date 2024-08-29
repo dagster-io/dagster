@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
@@ -12,6 +11,7 @@ import {DagsterTag} from './RunTag';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {RunFragment} from './types/RunFragments.types';
+import {useMutation} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';

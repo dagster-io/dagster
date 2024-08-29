@@ -37,6 +37,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         "boto3",
+        "boto3-stubs-lite[ecs,glue]",
         f"dagster{pin}",
         "packaging",
         "requests",

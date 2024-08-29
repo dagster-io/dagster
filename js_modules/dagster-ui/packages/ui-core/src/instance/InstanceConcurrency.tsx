@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -48,6 +47,7 @@ import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {
   FIFTEEN_SECONDS,

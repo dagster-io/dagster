@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   BaseTag,
   Box,
@@ -29,6 +28,7 @@ import {
   AssetConditionEvaluationRecordFragment,
   GetEvaluationsSpecificPartitionQuery,
 } from './types/GetEvaluationsQuery.types';
+import {gql, useQuery} from '../../apollo-client';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {DimensionPartitionKeys} from '../../graphql/types';

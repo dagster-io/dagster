@@ -1,4 +1,3 @@
-import {QueryResult, gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -26,6 +25,7 @@ import {
 } from './types/OpJobPartitionsView.types';
 import {PartitionRuns} from './useMatrixData';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
+import {QueryResult, gql, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';

@@ -20,16 +20,16 @@ dev_install:
 	uv pip install -e ../../../dagster-airlift[core,in-airflow] && \
 	uv pip install -e .
 
-# make airflow home and dagster home directories within current directory, set up env vars, and then 
+# make airflow home and dagster home directories within current directory, set up env vars, and then
 # set up airflow environment.
 setup_local_env:
 	make wipe && \
 	mkdir -p $$AIRFLOW_HOME && \
 	mkdir -p $$DAGSTER_HOME && \
-	chmod +x ../../airflow_setup.sh && \
-	../../airflow_setup.sh $(MAKEFILE_DIR)/simple_migration/airflow_dags
+	chmod +x ../../scripts/airflow_setup.sh && \
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/simple_migration/airflow_dags
 
-run_airflow: 
+run_airflow:
 	airflow standalone
 
 run_peer:

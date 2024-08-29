@@ -1,4 +1,3 @@
-import {useLazyQuery} from '@apollo/client';
 import {Box, Checkbox, Colors, Spinner, Subtitle2, Table} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
@@ -12,6 +11,7 @@ import {
   AssetDaemonTicksQuery,
   AssetDaemonTicksQueryVariables,
 } from './types/AssetDaemonTicksQuery.types';
+import {useLazyQuery} from '../../apollo-client';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';

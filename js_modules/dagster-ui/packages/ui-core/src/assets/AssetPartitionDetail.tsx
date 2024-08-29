@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -33,6 +32,7 @@ import {
 } from './types/AssetPartitionDetail.types';
 import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
+import {gql, useQuery} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';

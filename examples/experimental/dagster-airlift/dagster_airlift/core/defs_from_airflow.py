@@ -3,8 +3,8 @@ from typing import Optional
 from dagster import Definitions
 
 from dagster_airlift.core.sensor import build_airflow_polling_sensor
+from dagster_airlift.migration_state import AirflowMigrationState
 
-from ..migration_state import AirflowMigrationState
 from .airflow_cacheable_assets_def import DEFAULT_POLL_INTERVAL, AirflowCacheableAssetsDefinition
 from .airflow_instance import AirflowInstance
 
@@ -45,9 +45,7 @@ def build_defs_from_airflow_instance(
         migration_state_override=migration_state_override,
     )
     # Now, we construct the sensor that will poll airflow for dag runs.
-    airflow_sensor = build_airflow_polling_sensor(
-        airflow_instance=airflow_instance,
-    )
+    airflow_sensor = build_airflow_polling_sensor(airflow_instance=airflow_instance)
     return Definitions(
         assets=[assets_defs],
         asset_checks=defs.asset_checks if defs else None,
@@ -56,4 +54,5 @@ def build_defs_from_airflow_instance(
         jobs=defs.jobs if defs else None,
         executor=defs.executor if defs else None,
         loggers=defs.loggers if defs else None,
+        resources=defs.resources if defs else None,
     )

@@ -1,14 +1,14 @@
+import {cache} from 'idb-lru-cache';
+import memoize from 'lodash/memoize';
+import React, {createContext, useCallback, useContext} from 'react';
+
 import {
   ApolloClient,
   ApolloError,
   DocumentNode,
   OperationVariables,
   useApolloClient,
-} from '@apollo/client';
-import {cache} from 'idb-lru-cache';
-import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext} from 'react';
-
+} from '../apollo-client';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 type CacheData<TQuery> = {

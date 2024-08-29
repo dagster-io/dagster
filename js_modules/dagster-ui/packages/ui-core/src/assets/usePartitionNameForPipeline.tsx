@@ -1,10 +1,10 @@
-import {gql, useQuery} from '@apollo/client';
 import {useMemo} from 'react';
 
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,
 } from './types/usePartitionNameForPipeline.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RepoAddress} from '../workspace/types';

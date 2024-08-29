@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-
+import {gql} from '../apollo-client';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 
 export const SENSOR_STATE_QUERY = gql`

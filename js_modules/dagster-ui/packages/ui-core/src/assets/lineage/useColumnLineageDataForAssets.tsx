@@ -1,10 +1,10 @@
-import {gql, useApolloClient} from '@apollo/client';
 import React, {useMemo, useRef, useState} from 'react';
 
 import {
   AssetColumnLineageQuery,
   AssetColumnLineageQueryVariables,
 } from './types/useColumnLineageDataForAssets.types';
+import {gql, useApolloClient} from '../../apollo-client';
 import {toGraphId} from '../../asset-graph/Utils';
 import {AssetKeyInput} from '../../graphql/types';
 import {isCanonicalColumnLineageEntry} from '../../metadata/TableSchema';

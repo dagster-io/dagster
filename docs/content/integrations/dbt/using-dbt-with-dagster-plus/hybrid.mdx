@@ -50,7 +50,7 @@ Our example updates the CI/CD files of a project from a GitHub repository, but t
    ```yaml
    - name: Prepare DBT project for deployment
      run: |
-       pip install pip --upgrade
+       python -m pip install pip --upgrade
        pip install . --upgrade --upgrade-strategy eager                                            ## Install the Python dependencies from the setup.py file, ex: dbt-core and dbt-duckdb
        dagster-dbt project prepare-and-package --file <DAGSTER_PROJECT_FOLDER>/project.py          ## Replace with the project.py location in the Dagster project folder
      shell: bash

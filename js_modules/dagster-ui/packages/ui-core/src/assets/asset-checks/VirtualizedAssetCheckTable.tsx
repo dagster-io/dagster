@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Body2, Box, Caption} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
@@ -10,6 +9,7 @@ import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
+import {gql} from '../../apollo-client';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {testId} from '../../testing/testId';

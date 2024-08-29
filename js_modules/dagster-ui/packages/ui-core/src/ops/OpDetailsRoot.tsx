@@ -1,8 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
 import styled from 'styled-components';
 
 import {OP_CARD_SOLID_DEFINITION_FRAGMENT, OpCard} from './OpCard';
 import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/OpDetailsRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {
   SIDEBAR_OP_DEFINITION_FRAGMENT,

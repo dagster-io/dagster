@@ -1,4 +1,3 @@
-import {ApolloClient, useApolloClient} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 
@@ -16,6 +15,7 @@ import {
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
+import {ApolloClient, useApolloClient} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';

@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -10,6 +9,7 @@ import {
   SingleNonSdaAssetQueryVariables,
 } from './types/VirtualizedAssetRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useQuery} from '../apollo-client';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';

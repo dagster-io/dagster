@@ -1,10 +1,10 @@
-import {gql, useQuery} from '@apollo/client';
 import {NonIdealState, Spinner} from '@dagster-io/ui-components';
 
 import {
   PartitionRunListQuery,
   PartitionRunListQueryVariables,
 } from './types/PartitionRunList.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunTable} from '../runs/RunTable';

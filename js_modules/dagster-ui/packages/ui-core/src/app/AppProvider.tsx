@@ -1,11 +1,3 @@
-import {
-  ApolloClient,
-  ApolloLink,
-  ApolloProvider,
-  HttpLink,
-  InMemoryCache,
-  split,
-} from '@apollo/client';
 import {RetryLink} from '@apollo/client/link/retry';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
@@ -30,6 +22,14 @@ import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {TimeProvider} from './time/TimeContext';
+import {
+  ApolloClient,
+  ApolloLink,
+  ApolloProvider,
+  HttpLink,
+  InMemoryCache,
+  split,
+} from '../apollo-client';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';

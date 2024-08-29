@@ -1,4 +1,3 @@
-import {QueryResult, gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,6 +7,7 @@ import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu'
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
+import {QueryResult, gql, useLazyQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {RunStatus} from '../../graphql/types';

@@ -1,4 +1,3 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
@@ -7,6 +6,7 @@ import {
   PartitionStepLoaderQueryVariables,
 } from './types/usePartitionStepQuery.types';
 import {PARTITION_MATRIX_STEP_RUN_FRAGMENT, PartitionRuns} from './useMatrixData';
+import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';

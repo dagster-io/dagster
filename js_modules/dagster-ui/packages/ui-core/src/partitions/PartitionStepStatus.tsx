@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -38,6 +37,7 @@ import {
   StatusSquareColor,
   useMatrixData,
 } from './useMatrixData';
+import {gql, useQuery} from '../apollo-client';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';

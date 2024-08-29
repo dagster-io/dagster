@@ -1,3 +1,7 @@
+## 1.0.16 (August 28, 2024)
+
+- Added no-apollo-client rule.
+
 ## 1.0.15 (April 23, 2024)
 
 - Dependency upgrades

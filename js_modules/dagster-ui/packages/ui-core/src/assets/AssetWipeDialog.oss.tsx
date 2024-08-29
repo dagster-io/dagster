@@ -1,4 +1,3 @@
-import {RefetchQueriesFunction} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
@@ -16,6 +15,7 @@ import {memo, useMemo} from 'react';
 import {VirtualizedSimpleAssetKeyList} from './VirtualizedSimpleAssetKeyList';
 import {asAssetPartitionRangeInput} from './asInput';
 import {useWipeAssets} from './useWipeAssets';
+import {RefetchQueriesFunction} from '../apollo-client';
 import {AssetKeyInput} from '../graphql/types';
 import {NavigationBlock} from '../runs/NavigationBlock';
 import {numberFormatter} from '../ui/formatters';

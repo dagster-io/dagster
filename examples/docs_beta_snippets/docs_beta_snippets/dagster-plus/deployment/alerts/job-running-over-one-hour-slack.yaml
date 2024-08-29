@@ -1,0 +1,15 @@
+# alert_policies.yaml
+
+alert_policies:
+  alert_targets:
+  - long_running_job_threshold_target:
+      threshold_seconds: 3600
+  description: Sends a Slack message when a run is taking too long to complete.
+  event_types:
+  - JOB_LONG_RUNNING
+  name: job-running-over-one-hour-slack
+  notification_service:
+    slack_channel_name: notifications
+    slack_workspace_name: hooli
+  tags:
+    important: 'true'
