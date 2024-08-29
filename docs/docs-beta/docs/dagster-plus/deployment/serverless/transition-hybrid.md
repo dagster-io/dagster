@@ -40,3 +40,7 @@ Next, you'll need to create a Hybrid agent to execute your code. There are sever
 Once you have set up your Hybrid agent, navigate to the **Deployment -> Agents** page. You should see your new agent with the `RUNNING` status.
 
 SCREENSHOT
+
+## Next steps
+
+- See all of the configuration options for [dagster.yaml](/todo).
