@@ -277,7 +277,6 @@ force-wrap-aliases = true
 ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
-"examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
@@ -288,6 +287,9 @@ ban-relative-imports = "all"
 # rules incompatible with google-style docstrings. See:
 # https://google.github.io/styleguide/pyguide.html#383-functions-and-methods
 convention = "google"
+
+[tool.ruff.format]
+exclude = ["examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
