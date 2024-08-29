@@ -7,7 +7,7 @@ sidebar_position: 40
 
 # Serverless run isolation
 
-Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated. Isolated runs have slower startup time and are safer, while non-isolated sacrifice isolation for faster startup time and are more convenient for development.
+Dagster+ Serverless offers two settings for run isolation: isolated and non-isolated. Isolated runs have slower startup time and are isolated in their own container. Non-isolated sacrifice isolation for faster startup time and are more convenient for development.
 
 ## What you'll learn
 
