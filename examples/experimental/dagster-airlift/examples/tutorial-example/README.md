@@ -2,11 +2,11 @@
 
 This tutorial will walk through the process of peering, observing, and migrating assets from an Airflow DAG to Dagster.
 
-For now, you have to check out dagster's monorepo to get this code, but we will change that soon - thanks for your patience.
+First, clone the tutorial example repo locally, and enter the repo directory.
 
 ```bash
-gh repo clone dagster-io/dagster
-pushd dagster/examples/experimental/dagster-airlift/examples/tutorial-example
+gh repo clone dagster-io/airlift-tutorial
+cd airlift-tutorial
 ```
 
 First we strongly recommend that you setup a fresh virtual environment and that you use `uv`.
@@ -91,7 +91,7 @@ dagster dev -f peer.py
 
 <p align="center">
 
-![Peered asset in Dagster UI](./../../images/peer.svg)
+![Peered asset in Dagster UI](./images/peer.svg)
 
 </p>
 
@@ -99,7 +99,7 @@ If we kick off a run of the `rebuild_customers_list` DAG in Airflow, we should s
 
 <p align="center">
 
-![Materialized peer asset in Dagster UI](./../../images/peer_materialize.svg)
+![Materialized peer asset in Dagster UI](./images/peer_materialize.svg)
 
 </p>
 
@@ -250,7 +250,7 @@ Once your assets are set up, you should be able to reload your Dagster definitio
 
 <p align="center">
 
-![Observed asset graph in Dagster](./../../images/observe.svg)
+![Observed asset graph in Dagster](./images/observe.svg)
 
 </p>
 
@@ -307,7 +307,7 @@ The DAG will now display its migration state in the Airflow UI. (There is some l
 
 <p align="center">
 
-![Migration state rendering in Airflow UI](./../../images/state_in_airflow.png)
+![Migration state rendering in Airflow UI](./images/state_in_airflow.png)
 
 </p>
 
@@ -346,7 +346,7 @@ You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_
 
 <p align="center">
 
-![dbt build executing in Dagster](./../../images/migrated_dag.png)
+![dbt build executing in Dagster](./images/migrated_dag.png)
 
 </p>
 

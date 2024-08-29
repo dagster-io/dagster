@@ -1,18 +1,9 @@
 #!/bin/bash
 
-# Define the path to the setup.py file
-SETUP_PY_FILE="setup.py"
-
-# Check if setup.py exists
-if [ ! -f "$SETUP_PY_FILE" ]; then
-    echo "Error: $SETUP_PY_FILE not found!"
-    exit 1
-fi
-
-# Extract the current version from 'version="x.y.z",'
-CURRENT_VERSION=$(sed -n 's/.*version="\([0-9]*\.[0-9]*\.[0-9]*\)",.*/\1/p' "$SETUP_PY_FILE")
-if [ -z "$CURRENT_VERSION" ]; then
-    echo "Error: Version string not found in $SETUP_PY_FILE!"
+# Get the current version using the extract_pypi_version.sh script
+CURRENT_VERSION=$(./scripts/extract_pypi_version.sh)
+if [ $? -ne 0 ]; then
+    echo "Error getting current version"
     exit 1
 fi
 
@@ -25,6 +16,9 @@ IFS='.' read -r X Y Z <<< "$CURRENT_VERSION"
 NEW_Z=$((Z + 1))
 NEW_VERSION="$X.$Y.$NEW_Z"
 echo "New version: $NEW_VERSION"
+
+# Define the path to the setup.py file
+SETUP_PY_FILE="setup.py"
 
 # Create a backup of the original file
 cp "$SETUP_PY_FILE" "${SETUP_PY_FILE}.bak"

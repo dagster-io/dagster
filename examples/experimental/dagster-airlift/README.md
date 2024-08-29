@@ -34,6 +34,6 @@ Airlift depends on the the availability of Airflow’s REST API. Airflow’s RES
 - **Cloud Composer:** No limitations as far as we know.
 - **Astronomer:** No limitations as far as we know.
 
-# Get Started
+# Tutorial
 
-We've included sample code and a tutorial on how to incrementally migrate an Airflow DAG to Dagster using Airlift in the [examples/tutorial-example](./examples/tutorial-example/) directory - this is a good place to start.
+We've provided a tutorial to help get you started with airlift tooling and process, which can be found [here](https://github.com/dagster-io/airlift-tutorial).
