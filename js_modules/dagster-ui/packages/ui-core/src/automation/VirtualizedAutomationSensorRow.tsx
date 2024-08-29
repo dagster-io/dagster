@@ -8,7 +8,6 @@ import {useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
 import {SensorSwitch} from '../sensors/SensorSwitch';
 import {
@@ -51,8 +50,6 @@ export const VirtualizedAutomationSensorRow = forwardRef(
       },
     });
 
-    useBlockTraceOnQueryResult(sensorQueryResult, 'SingleSensorQuery');
-
     const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
       SensorAssetSelectionQuery,
       SensorAssetSelectionQueryVariables
@@ -65,8 +62,6 @@ export const VirtualizedAutomationSensorRow = forwardRef(
         },
       },
     });
-
-    useBlockTraceOnQueryResult(sensorAssetSelectionQueryResult, 'SensorAssetSelectionQuery');
 
     useDelayedRowQuery(
       useCallback(() => {

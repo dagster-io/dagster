@@ -3,7 +3,6 @@ import {Link} from 'react-router-dom';
 
 import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 import {gql, useQuery} from '../apollo-client';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
@@ -41,7 +40,6 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   });
 
   const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'SnapshotQuery');
 
   const tag = () => {
     if (loading) {

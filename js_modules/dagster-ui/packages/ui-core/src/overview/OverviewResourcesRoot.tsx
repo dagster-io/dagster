@@ -16,7 +16,6 @@ import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RESOURCE_ENTRY_FRAGMENT} from '../resources/WorkspaceResourcesRoot';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesRoot.types';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
@@ -51,7 +50,6 @@ export const OverviewResourcesRoot = () => {
     },
   );
   const {data, loading: queryLoading} = queryResultOverview;
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewResourcesQuery');
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.

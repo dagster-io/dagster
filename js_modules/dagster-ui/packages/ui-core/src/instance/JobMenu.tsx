@@ -7,7 +7,6 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {useMaterializationAction} from '../assets/LaunchAssetExecutionButton';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 import {ReexecutionStrategy} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
 import {RunTimeFragment} from '../runs/types/RunUtils.types';
 import {useJobReexecution} from '../runs/useJobReExecution';
@@ -48,7 +47,6 @@ export const JobMenu = (props: Props) => {
   >(RUN_RE_EXECUTION_QUERY);
 
   const {data} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'RunReExecutionQuery');
 
   const fetchIfPossible = useCallback(() => {
     if (lastRun?.id) {

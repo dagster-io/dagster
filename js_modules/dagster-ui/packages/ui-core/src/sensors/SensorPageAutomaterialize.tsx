@@ -19,7 +19,6 @@ import {InstigationTickStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../instigation/util';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -72,7 +71,6 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
     ASSET_SENSOR_TICKS_QUERY,
   );
-  useBlockTraceOnQueryResult(queryResult, 'AssetSensorTicksQuery');
 
   const refresh = useCallback(
     async () => await fetch({variables: getVariables()}),

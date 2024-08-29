@@ -6,7 +6,6 @@ import {
   PermissionsQueryVariables,
 } from './types/Permissions.types';
 import {gql, useQuery} from '../apollo-client';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -139,7 +138,6 @@ export const PermissionsProvider = (props: {children: React.ReactNode}) => {
   });
 
   const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'PermissionsQuery');
 
   const value = React.useMemo(() => {
     const unscopedPermissionsRaw = data?.unscopedPermissions || [];

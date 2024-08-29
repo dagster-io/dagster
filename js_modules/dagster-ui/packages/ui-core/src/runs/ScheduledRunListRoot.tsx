@@ -26,7 +26,6 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {
   REPOSITORY_FOR_NEXT_TICKS_FRAGMENT,
@@ -44,7 +43,6 @@ export const ScheduledRunListRoot = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'ScheduledRunsListQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 

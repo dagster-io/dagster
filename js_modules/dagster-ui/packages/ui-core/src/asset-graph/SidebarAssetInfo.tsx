@@ -34,7 +34,6 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchemaAssetContext} from '../metadata/TableSchema';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
@@ -55,7 +54,6 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const queryResult = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
-  useBlockTraceOnQueryResult(queryResult, 'SidebarAssetQuery');
   const {data} = queryResult;
 
   const {lastMaterialization} = liveData || {};
