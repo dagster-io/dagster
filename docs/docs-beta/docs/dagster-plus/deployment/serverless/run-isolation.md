@@ -41,7 +41,10 @@ These runs may take up to 3 minutes to start while these resources are provision
 
 When launching runs manually, select `Isolate run environment` in the Launchpad to launch an isolated runs.
 
-_Note: if non-isolated runs are disabled (see the section below), the toggle won't appear and all runs will be isolated._
+:::note
+
+If non-isolated runs are disabled (see the section below), the toggle won't appear and all runs will be isolated.
+:::
 
 ## Non-isolated runs
 
