@@ -225,12 +225,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_config = container_context.get_k8s_job_config(
             job_image=repository_origin.container_image, run_launcher=self
         )
-        job_image = job_config.job_image
-        if job_image:  # expected to be set
-            self._instance.add_run_tags(
-                run.run_id,
-                {DOCKER_IMAGE_TAG: job_image},
-            )
 
         labels = {
             "dagster/job": job_origin.job_name,
@@ -255,6 +249,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     "value": job_origin.job_name,
                 },
             ],
+        )
+
+        # Set docker/image tag here, as it can also be provided by `user_defined_k8s_config`.
+        self._instance.add_run_tags(
+            run.run_id,
+            {DOCKER_IMAGE_TAG: job.spec.template.spec.containers[0].image},
         )
 
         namespace = check.not_none(container_context.namespace)
