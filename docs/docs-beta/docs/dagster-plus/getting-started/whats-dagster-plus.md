@@ -24,16 +24,10 @@ TODO: Architecture diagram?
 
 The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work.
 
-To run an agent, first configure Dagster+ with an agent token:
+To run an agent, first grab a Dagster+ agent token. Next, launch an agent:
 
 ```
-dagster-plus configure
-```
-
-Next, launch an agent:
-
-```
-dagster-plus agent run
+dagster-cloud agent run --agent-token=<your token>
 ```
 
 We have guides for running your agents on:
