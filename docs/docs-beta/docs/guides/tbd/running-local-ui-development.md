@@ -32,12 +32,12 @@ For a refresher on how to set up a Dagster project, follow our [Recommended Dags
   <TabItem value="file" label="From a file">
     Dagster can load a file directly as a code location.
     <CodeExample filePath="guides/tbd/definitions.py" language="python" title="definitions.py" />
-    Given the above file, we can use the `-f` argument to supply the name of the file to start a Dagster instance loaded with our definitions:
+    Given the preceding file, we can use the `-f` argument to supply the name of the file to start a Dagster instance loaded with our definitions:
     ```shell
     dagster dev -f defs.py
     ```
 
-    ::: note
+    :::note
     We don't recommend using the `-f` argument for production deployments, to avoid a whole class of Python import errors.
     :::
 
@@ -65,7 +65,7 @@ dagster dev
 To configure your Dagster instance, you can create a `dagster.yaml` file in your `$DAGSTER_HOME` folder.
 
 For example, to have your local instance limit the number of concurrent runs, you could configure the following `dagster.yaml`:
-    <CodeExample filePath="guides/tbd/dagster.yaml" language="yaml" title="$DAGSTER_HOME/dagster.yaml" />
+    <CodeExample filePath="guides/tbd/dagster.yaml" language="yaml" title="~/.dagster_home/dagster.yaml" />
 
 
 For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/todo).
