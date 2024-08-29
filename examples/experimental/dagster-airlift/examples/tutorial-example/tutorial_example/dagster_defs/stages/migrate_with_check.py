@@ -33,7 +33,7 @@ def dbt_project_path() -> Path:
 
 
 def airflow_dags_path() -> Path:
-    return Path(__file__).parent / "tutorial_example" / "airflow_dags"
+    return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
 def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
@@ -107,7 +107,6 @@ def rebuild_customer_list_defs() -> Definitions:
                     table_name="customers",
                     csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-                    duckdb_schema="raw_data",
                     duckdb_database_name="jaffle_shop",
                 ),
             ),

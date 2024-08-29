@@ -33,6 +33,7 @@ def update_readme_snippets(readme_filepath_raw: str, *snippet_files_raw: str):
         snippet_contents = snippet_file.read_text()
         if MAIN in snippet_contents:
             snippet_contents = snippet_contents[: snippet_contents.index(MAIN)]
+        snippet_contents = snippet_contents.replace("\\n", "\\\\n")
 
         file_name = snippet_file.name
         regex_match_snippet = _get_regex_match_snippet(file_name)
