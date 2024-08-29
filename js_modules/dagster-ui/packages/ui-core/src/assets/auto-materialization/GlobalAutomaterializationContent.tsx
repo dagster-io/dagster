@@ -19,7 +19,6 @@ import {InstigationTickStatus} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {useAutomaterializeDaemonStatus} from '../useAutomaterializeDaemonStatus';
 
 const MINUTE = 60 * 1000;
@@ -60,8 +59,6 @@ export const GlobalAutomaterializationContent = () => {
     async () => await fetch({variables: getVariables()}),
     [fetch, getVariables],
   );
-
-  useBlockTraceOnQueryResult(queryResult, 'AssetDaemonTicksQuery');
 
   useRefreshAtInterval({
     refresh,

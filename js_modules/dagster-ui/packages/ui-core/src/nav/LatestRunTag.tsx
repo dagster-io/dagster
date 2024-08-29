@@ -6,7 +6,6 @@ import {LatestRunTagQuery, LatestRunTagQueryVariables} from './types/LatestRunTa
 import {gql, useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunStatus} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
 import {timingStringForStatus} from '../runs/RunTimingDetails';
@@ -41,7 +40,6 @@ export const LatestRunTag = ({
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(lastRunQuery, 'LatestRunTagQuery');
 
   useQueryRefreshAtInterval(lastRunQuery, FIFTEEN_SECONDS);
 

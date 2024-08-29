@@ -24,7 +24,6 @@ import {gql, useQuery} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 import {DagsterTag} from '../../runs/RunTag';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
@@ -121,7 +120,6 @@ const PartitionAndRunList = ({runIds, partitionKeys}: Props) => {
   >(RUN_STATUS_AND_PARTITION_KEY, {
     variables: {filter: {runIds}},
   });
-  useBlockTraceOnQueryResult(queryResult, 'RunStatusAndPartitionKeyQuery');
   const {data, loading} = queryResult;
 
   const runs = data?.runsOrError;

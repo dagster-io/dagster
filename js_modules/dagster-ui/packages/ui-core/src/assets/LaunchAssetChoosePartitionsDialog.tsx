@@ -710,7 +710,7 @@ const Warnings = ({
 }) => {
   const warningsResult = useQuery<LaunchAssetWarningsQuery, LaunchAssetWarningsQueryVariables>(
     LAUNCH_ASSET_WARNINGS_QUERY,
-    {variables: {upstreamAssetKeys}},
+    {variables: {upstreamAssetKeys}, blocking: false},
   );
 
   const instance = warningsResult.data?.instance;

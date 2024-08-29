@@ -34,7 +34,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
@@ -46,8 +45,6 @@ export const RunsRoot = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, PAGE_SIZE);
-
-  useBlockTraceOnQueryResult(queryResult, 'RunsRootQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 

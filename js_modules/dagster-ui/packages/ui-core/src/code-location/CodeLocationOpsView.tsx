@@ -5,7 +5,6 @@ import {useQuery} from '../apollo-client';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {OPS_ROOT_QUERY, OpsRootWithData} from '../ops/OpsRoot';
 import {OpsRootQuery, OpsRootQueryVariables} from '../ops/types/OpsRoot.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -22,7 +21,6 @@ export const CodeLocationOpsView = ({repoAddress}: Props) => {
     variables: {repositorySelector},
   });
 
-  useBlockTraceOnQueryResult(queryResult, 'OpsRootQuery');
   const {data, loading} = queryResult;
 
   const repoString = repoAddressAsHumanString(repoAddress);

@@ -28,7 +28,6 @@ import {
 } from '../graph/KindTags';
 import {AssetKeyInput, DefinitionTag} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -292,7 +291,6 @@ export function useLiveDataOrLatestMaterializationDebounced(
     },
   );
   const {data: nonSDAData} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'SingleNonSdaAssetQuery', {skip});
 
   React.useEffect(() => {
     if (type === 'folder') {

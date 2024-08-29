@@ -22,7 +22,7 @@ import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
-import {useBlockTraceOnQueryResult, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -294,7 +294,6 @@ export const useRunsForTimeline = ({
     }
   }, [startSec, _end, client, showTicks]);
 
-  useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
   useBlockTraceUntilTrue('CompletedRunTimelineQuery', !completedRunsQueryData.loading);
 
   const {data: futureTicksData} = futureTicksQueryData;
