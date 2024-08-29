@@ -38,7 +38,7 @@ Materializing the assets from the Dagster UI will create the new DuckDB database
 
 ## Define a resource that depends on an environment variable
 
-A resource that reads some connection details from environment variables can connect to different databases in different environments. For example, a resource can connect to a test database in a development environment and a live database in the production environment. You can change the resource definition in the previous example to use an `EnvVar` as shown here:
+Resources can be configured using environment variables to connect to environment-specific databases. For example, a resource can connect to a test database in a development environment and a live database in the production environment. You can change the resource definition in the previous example to use an `EnvVar` as shown here:
 
 <CodeExample filePath="guides/external-systems/resource-duckdb-envvar-example.py" language="python" title="DuckDB Resource using EnvVar Example" />
 
