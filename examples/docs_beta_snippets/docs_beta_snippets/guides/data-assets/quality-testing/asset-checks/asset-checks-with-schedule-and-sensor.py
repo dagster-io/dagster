@@ -20,26 +20,39 @@ def orders_id_has_no_nulls():
     )
 
 
+# highlight-start
 # Only includes orders
 asset_job = dg.define_asset_job(
     "asset_job",
     selection=dg.AssetSelection.assets(orders).without_checks(),
 )
+# highlight-end
 
+# highlight-start
 # Only includes orders_id_has_no_nulls
 check_job = dg.define_asset_job(
     "check_job", selection=dg.AssetSelection.checks_for_assets(orders)
 )
+# highlight-end
 
+
+# highlight-start
+# Job schedules
 asset_schedule = dg.ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 check_schedule = dg.ScheduleDefinition(job=check_job, cron_schedule="0 6 * * *")
+# highlight-end
 
+
+# highlight-start
+# Send email on failure
 check_sensor = dg.make_email_on_run_failure_sensor(
     email_from="no-reply@example.com",
     email_password=os.getenv("ALERT_EMAIL_PASSWORD"),
     email_to=["xxx@example.com"],
     monitored_jobs=[check_job],
 )
+# highlight-end
+
 
 defs = dg.Definitions(
     assets=[orders],
