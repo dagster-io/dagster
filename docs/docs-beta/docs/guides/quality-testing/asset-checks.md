@@ -32,6 +32,12 @@ In this example, both asset check will run in a single operation after the asset
 
 <CodeExample filePath="guides/data-assets/quality-testing/asset-checks/multiple-asset-checks.py" language="python" title="Asset with multiple asset checks" />
 
+## Defining asset checks using a factory pattern
+
+Defining multiple checks can also be done using a factory pattern. The example below defines the same two asset checks as in the previous example, but this time using a factory pattern and the `@asset_check` decorator.
+
+<CodeExample filePath="guides/data-assets/quality-testing/asset-checks/asset-checks-factory.py" language="python" title="Defining asset checks using a factory pattern" />
+
 ## Blocking downstream assets
 
 By default, materialization of downstream assets will continue, even if a parent's asset check fails. To block the materialization of downstream assets, set the `blocking` argument to `True` in the `asset_check` decorator.
@@ -44,7 +50,9 @@ In the example bellow, when the `orders_id_has_no_nulls` check fails, the `augme
 
 In some cases, running asset checks separately from the job materializing the assets can be useful. For example, some may want to run all their data quality checks once a day and send an alert if these fail. This can be achieved using schedules and sensors.
 
-In the example below, two jobs are defined, one for the asset and another one for the asset check. Using these jobs, schedules are defined to materialize the asset and execute the asset check independently. A sensor is defined to send an email alert when the asset check job fails.
+In the example below, two jobs are defined, one for the asset and another one for the asset check.
+
+Using these jobs, schedules are defined to materialize the asset and execute the asset check independently. A sensor is defined to send an email alert when the asset check job fails.
 
 <CodeExample filePath="guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor.py" language="python" title="Schedule and monitor asset checks separately from their asset" />
 
