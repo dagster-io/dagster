@@ -1,6 +1,5 @@
 import contextlib
 import importlib
-import time
 from pathlib import Path
 from typing import AbstractSet, Callable, Iterable, Optional
 
@@ -11,7 +10,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend
 from dagster_airlift.core.utils import MIGRATED_TAG, TASK_ID_TAG
 
-from .utils import start_run_and_wait_for_completion
+from .utils import poll_for_materialization, start_run_and_wait_for_completion
 
 
 def _assert_dagster_migration_states_are(
@@ -139,11 +138,7 @@ def test_migrate_runs_properly_in_dagster(airflow_instance: None, dagster_dev: N
 
     start_run_and_wait_for_completion("rebuild_customers_list")
 
-    time.sleep(10)
-
-    mat_events = instance.get_latest_materialization_events(asset_keys=all_keys)
-    for key, event in mat_events.items():
-        assert event is not None, f"Materialization event for {key} is None"
+    poll_for_materialization(instance, target=all_keys)
 
     # Ensure migrated tasks are run in Dagster
     runs = instance.get_runs()

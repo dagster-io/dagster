@@ -22,6 +22,7 @@ def local_env_fixture(makefile_dir: Path) -> Generator[None, None, None]:
     with environ(
         {
             "MAKEFILE_DIR": str(makefile_dir),
+            "TUTORIAL_EXAMPLE_DIR": str(makefile_dir),
             "AIRFLOW_HOME": str(makefile_dir / ".airflow_home"),
             "TUTORIAL_DBT_PROJECT_DIR": str(makefile_dir / "tutorial_example" / "shared" / "dbt"),
             "DBT_PROFILES_DIR": str(makefile_dir / "tutorial_example" / "shared" / "dbt"),
@@ -39,7 +40,9 @@ def dags_dir_fixture(makefile_dir: Path) -> Iterator[Path]:
     # So we can manipulate the migration state without affecting the original files
     with tempfile.TemporaryDirectory() as tmpdir:
         shutil.copytree(
-            makefile_dir / "tutorial_example" / "airflow_dags", tmpdir, dirs_exist_ok=True
+            makefile_dir / "tutorial_example" / "airflow_dags",
+            tmpdir,
+            dirs_exist_ok=True,
         )
         yield Path(tmpdir)
 

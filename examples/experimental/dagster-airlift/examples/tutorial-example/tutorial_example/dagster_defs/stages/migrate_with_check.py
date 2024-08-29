@@ -1,7 +1,16 @@
 import os
 from pathlib import Path
 
-from dagster import AssetSpec, Definitions, materialize, multi_asset
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    asset_check,
+    materialize,
+    multi_asset,
+)
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -41,6 +50,28 @@ def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> D
         export_duckdb_to_csv(args)
 
     return Definitions(assets=[_multi_asset])
+
+
+@asset_check(asset=AssetKey(["customers_csv"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("\n"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
 
 
 def rebuild_customer_list_defs() -> Definitions:
@@ -84,16 +115,19 @@ def rebuild_customer_list_defs() -> Definitions:
     )
 
 
-defs = build_defs_from_airflow_instance(
-    airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
-            webserver_url="http://localhost:8080",
-            username="admin",
-            password="admin",
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://localhost:8080",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
         ),
-        name="airflow_instance_one",
+        defs=rebuild_customer_list_defs(),
     ),
-    defs=rebuild_customer_list_defs(),
+    Definitions(asset_checks=[validate_exported_csv]),
 )
 
 
