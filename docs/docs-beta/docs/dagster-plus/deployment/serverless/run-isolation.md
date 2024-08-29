@@ -57,7 +57,7 @@ non_isolated_runs:
 
 Non-isolated runs provide a faster start time by using a standing, shared container for each code location.
 
-They have fewer compute resources: 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes for a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
+They have fewer compute resources: 0.25 vCPUs and 1GB of RAM. These resources are shared with other processes running within a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
 
 While launching runs from the Launchpad, un-check `Isolate run environment`. When materializing an asset, shift-click `Materialize all` to open the Launchpad and un-check the `Isolate run environment` checkbox.
 
