@@ -10,7 +10,10 @@ from .utils import poll_for_asset_check, poll_for_materialization, start_run_and
 
 
 @pytest.fixture(name="dagster_defs_path")
-def setup_dagster_defs_path(makefile_dir: Path) -> str:
+def setup_dagster_defs_path(
+    makefile_dir: Path,
+    local_env,
+) -> str:
     return str(makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "peer_with_check.py")
 
 
