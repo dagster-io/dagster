@@ -52,3 +52,4 @@ In the example below, two jobs are defined, one for the asset and another one fo
 
 - Learn more about assets in [Understanding Assets](/concepts/assets)
 - Learn more about asset checks in [Understanding Asset Checks](/concepts/assets/asset-checks)
+- Learn about how to use Great Expectations with Dagster in [our blog post](https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations)
