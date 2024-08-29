@@ -34,7 +34,7 @@ In this example, both asset check will run in a single operation after the asset
 
 ## Blocking downstream assets
 
-If an asset check fails, it may be useful to block the materialization of downstream assets to prevent the problem from spreading. To enable this behavior, set the `blocking` argument to `True` in the `asset_check` decorator.
+By default, materialization of downstream assets will continue, even if a parent's asset check fails. To block the materialization of downstream assets, set the `blocking` argument to `True` in the `asset_check` decorator.
 
 In the example bellow, when the `orders_id_has_no_nulls` check fails, the `augmented_orders` asset isn't materialized.
 
