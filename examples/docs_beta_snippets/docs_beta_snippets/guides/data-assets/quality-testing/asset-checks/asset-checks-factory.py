@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Iterable, Mapping, Sequence
 
 import pandas as pd
 
@@ -11,19 +11,24 @@ def orders():
     orders_df.to_csv("orders.csv")
 
 
-def make_check(check_blob: Mapping[str, str]) -> dg.AssetChecksDefinition:
-    @dg.asset_check(
-        name=check_blob["name"],
-        asset=check_blob["asset"],
+def make_orders_checks(check_blobs: Sequence[Mapping[str, str]]) -> dg.AssetChecksDefinition:
+    @dg.multi_asset_check(
+        specs=[
+            dg.AssetCheckSpec(name=check_blob["name"], asset=check_blob["asset"]) for check_blob in check_blobs
+        ]
     )
-    def _check(context):
+    def orders_check() -> Iterable[dg.AssetCheckResult]:
         orders_df = pd.read_csv("orders.csv")
-        num_null_ids = orders_df[check_blob["column"]].isna().sum()
-        return dg.AssetCheckResult(
-            passed=bool(num_null_ids == 0),
-        )
 
-    return _check
+        for check_blob in check_blobs:
+            num_null_order_ids = orders_df[check_blob["column"]].isna().sum()
+            yield dg.AssetCheckResult(
+                check_name=check_blob["name"],
+                passed=bool(num_null_order_ids == 0),
+                asset_key=check_blob["asset"],
+            )
+
+    return orders_check
 
 
 check_blobs = [
@@ -34,12 +39,12 @@ check_blobs = [
     },
     {
         "name": "items_id_has_no_nulls",
-        "asset": "items",
+        "asset": "orders",
         "column": "item_id",
     },
 ]
 
 defs = dg.Definitions(
     assets=[orders],
-    asset_checks=[make_check(check_blob) for check_blob in check_blobs],
+    asset_checks=[make_orders_checks(check_blobs)],
 )

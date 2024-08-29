@@ -34,7 +34,7 @@ In this example, both asset check will run in a single operation after the asset
 
 ## Defining asset checks using a factory pattern
 
-Defining multiple checks can also be done using a factory pattern. The example below defines the same two asset checks as in the previous example, but this time using a factory pattern and the `@asset_check` decorator.
+Defining multiple checks can also be done using a factory pattern. The example below defines the same two asset checks as in the previous example, but this time using a factory pattern and the `@multi_asset_check` decorator.
 
 <CodeExample filePath="guides/data-assets/quality-testing/asset-checks/asset-checks-factory.py" language="python" title="Defining asset checks using a factory pattern" />
 
