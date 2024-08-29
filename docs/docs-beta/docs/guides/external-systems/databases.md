@@ -46,7 +46,7 @@ When launching a run, the database path will be read from the `IRIS_DUCKDB_PATH`
 
 ## Define a Snowflake resource and use it in an asset definition
 
-Using a Snowflake resource is similar to using a DuckDB resource shown in the preceding example. Here is a complete example showing how to connect to a Snowflake database and create two tables:
+Using the Snowflake resource is similar to using the DuckDB resource. Here is a complete example showing how to connect to a Snowflake database and create two tables:
 
 <CodeExample filePath="guides/external-systems/resource-snowflake-example.py" language="python" title="Snowflake Resource Example" />
 
