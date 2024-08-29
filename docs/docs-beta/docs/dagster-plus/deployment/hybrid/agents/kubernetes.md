@@ -72,10 +72,18 @@ helm --namespace dagster-cloud upgrade agent \
 
 ### High availability configurations
 
-You can configure your Dagster+ agent to run with multiple replicas. Each will manage its own code servers and work will be load balanced across all replicas.
+You can configure your Dagster+ agent to run with multiple replicas. Work will be load balanced across all replicas.
 
 ```shell
 helm --namespace dagster-cloud upgrade agent \
     dagster-cloud/dagster-cloud-agent \
     --set dagsterCloudAgent.replicas=2
+```
+
+Work load balanced across agents isn't not sticky; there's no guarantee the agent that launched a run will be the same one to receive instructions to terminate it. This is fine if both replicas run on the same Kubernetes cluster because either agent can terminate the run. But if your agents are physically isolated (for example, they run on two different Kubernetes clusters), you should configure:
+
+```shell
+helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --set isolatedAgents=true
 ```
