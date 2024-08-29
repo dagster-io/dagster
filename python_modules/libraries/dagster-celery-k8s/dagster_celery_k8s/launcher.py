@@ -190,12 +190,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             job_image = job_image_from_executor_config
 
         job_config = self.get_k8s_job_config(job_image, exc_config)
-
-        self._instance.add_run_tags(
-            run.run_id,
-            {DOCKER_IMAGE_TAG: job_config.job_image},
-        )
-
         user_defined_k8s_config = get_user_defined_k8s_config(run.tags)
 
         from dagster._cli.api import ExecuteRunArgs
@@ -225,6 +219,12 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             user_defined_k8s_config=user_defined_k8s_config,
             labels=labels,
             env_vars=[{"name": "DAGSTER_RUN_JOB_NAME", "value": job_origin.job_name}],
+        )
+
+        # Set docker/image tag here, as it can also be provided by `user_defined_k8s_config`.
+        self._instance.add_run_tags(
+            run.run_id,
+            {DOCKER_IMAGE_TAG: job.spec.template.spec.containers[0].image},
         )
 
         job_namespace = exc_config.get("job_namespace", self.job_namespace)
