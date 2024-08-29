@@ -64,4 +64,11 @@
 
   //hr
   --ifm-hr-background-color: var(--theme-color-background-lighter);
+
+  //invert footer icon colors
+  .footer__items--right {
+    img {
+      filter: invert(1);
+    }
+  }
 }
