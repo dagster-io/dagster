@@ -18,7 +18,7 @@ In Dagster, *resources* are used to connect to databases by acting as a wrapper 
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [Asset definitions](/concepts/assets)
-- Credentials to a live database
+- Connection information for a Snowflake database
 
 </details>
 
