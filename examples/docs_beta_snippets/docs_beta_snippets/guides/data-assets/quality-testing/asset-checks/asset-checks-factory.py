@@ -11,10 +11,13 @@ def orders():
     orders_df.to_csv("orders.csv")
 
 
-def make_orders_checks(check_blobs: Sequence[Mapping[str, str]]) -> dg.AssetChecksDefinition:
+def make_orders_checks(
+    check_blobs: Sequence[Mapping[str, str]],
+) -> dg.AssetChecksDefinition:
     @dg.multi_asset_check(
         specs=[
-            dg.AssetCheckSpec(name=check_blob["name"], asset=check_blob["asset"]) for check_blob in check_blobs
+            dg.AssetCheckSpec(name=check_blob["name"], asset=check_blob["asset"])
+            for check_blob in check_blobs
         ]
     )
     def orders_check() -> Iterable[dg.AssetCheckResult]:
