@@ -45,7 +45,7 @@ To create a new catalog view, you have two options:
 4. To make the view shareable, toggle the **Public view** switch.
 5. Click **Create view** to create the view.
 
-### Create a new catalog view from your current set of filters
+### Create a new catalog view from your current filters
 
 When viewing the global asset lineage or asset list, you can create a new catalog view from your current set of filters. First, select one or more asset filters. Then, on the top right of the screen, click the "Create new catalog view" button. This will open the catalog view creation dialog with your current filters pre-populated.
 
