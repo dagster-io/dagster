@@ -32,7 +32,8 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
 
 def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
+        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"),
+        deps=[args.table_name],
     )
 
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
@@ -62,7 +63,7 @@ def build_customers_list_defs() -> Definitions:
             ExportDuckDbToCsvArgs(
                 table_name="customers",
                 # TODO use env var?
-                csv_path=airflow_dags_path() / "customers.csv",
+                csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                 duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                 duckdb_database_name="jaffle_shop",
             )
