@@ -48,7 +48,7 @@ class IWorkspace(ABC):
         """Return the CodeLocation for the given location name, or raise an error if there is an error loading it."""
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         """Return an entry for each location in the workspace."""
 
     @abstractmethod
@@ -62,7 +62,7 @@ class IWorkspace(ABC):
 
         code_locations = (
             location_entry.code_location
-            for location_entry in self.get_workspace_snapshot().values()
+            for location_entry in self.get_code_location_entries().values()
             if location_entry.code_location
         )
         repos = (

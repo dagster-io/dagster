@@ -28,7 +28,7 @@ class BaseDaemonWorkspace(IWorkspace):
     def __enter__(self):
         return self
 
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         if self._location_entries is None:
             self._location_entries = self._load_workspace()
         return dict(self._location_entries)
@@ -45,7 +45,7 @@ class BaseDaemonWorkspace(IWorkspace):
         pass
 
     def get_workspace_copy_for_iteration(self):
-        return DaemonIterationWorkspace(self.get_workspace_snapshot())
+        return DaemonIterationWorkspace(self.get_code_location_entries())
 
     def get_code_location(self, location_name: str) -> CodeLocation:
         if self._location_entries is None:

@@ -33,7 +33,7 @@ class TestShutdownRepositoryLocationReadOnly(ReadonlyGraphQLContextTestMatrix):
 
 class TestShutdownRepositoryLocation(BaseTestSuite):
     def test_shutdown_repository_location(self, graphql_client, graphql_context):
-        origin = next(iter(graphql_context.get_workspace_snapshot().values())).origin
+        origin = next(iter(graphql_context.get_code_location_entries().values())).origin
         origin.create_client().heartbeat()
 
         result = graphql_client.shutdown_repository_location("test")

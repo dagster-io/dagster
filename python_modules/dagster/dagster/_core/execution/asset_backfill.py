@@ -629,7 +629,7 @@ def create_asset_backfill_data_from_asset_partitions(
 def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) -> Sequence[str]:
     location_entries_by_name = {
         location_entry.origin.location_name: location_entry
-        for location_entry in context.get_workspace_snapshot().values()
+        for location_entry in context.get_code_location_entries().values()
     }
     unloadable_location_names = []
 
