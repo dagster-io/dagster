@@ -1,3 +1,3 @@
 ---
-title: "TBD"
+title: TBD
 ---
