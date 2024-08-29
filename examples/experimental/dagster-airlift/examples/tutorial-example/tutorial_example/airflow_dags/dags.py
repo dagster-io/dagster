@@ -118,7 +118,7 @@ export_customers = ExportDuckDBToCSV(
     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
     duckdb_database_name="jaffle_shop",
     table_name="customers",
-    csv_path=Path(__file__).parent / "customers.csv",
+    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
 )
 
 load_raw_customers >> run_dbt_model >> export_customers  # type: ignore

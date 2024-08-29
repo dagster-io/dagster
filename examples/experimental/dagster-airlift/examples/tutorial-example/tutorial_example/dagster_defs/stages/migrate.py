@@ -1,8 +1,7 @@
 import os
 from pathlib import Path
 
-from dagster import AssetSpec, Definitions, multi_asset
-from dagster._core.definitions.materialize import materialize
+from dagster import AssetSpec, Definitions, materialize, multi_asset
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -40,7 +39,8 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
 
 def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
+        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"),
+        deps=[args.table_name],
     )
 
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
@@ -87,8 +87,7 @@ defs = build_defs_from_airflow_instance(
             export_duckdb_to_csv_defs(
                 ExportDuckDbToCsvArgs(
                     table_name="customers",
-                    # TODO use env var?
-                    csv_path=airflow_dags_path() / "customers.csv",
+                    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                     duckdb_schema="raw_data",
                     duckdb_database_name="jaffle_shop",

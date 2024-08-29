@@ -1,12 +1,16 @@
 import os
 from pathlib import Path
 
-from dagster import AssetSpec, Definitions, multi_asset
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.materialize import materialize
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    asset_check,
+    materialize,
+    multi_asset,
+)
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -44,7 +48,8 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
 
 def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
+        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"),
+        deps=[args.table_name],
     )
 
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
@@ -56,7 +61,7 @@ def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
 
 @asset_check(asset=AssetKey(["customers_csv"]))
 def validate_exported_csv() -> AssetCheckResult:
-    csv_path = airflow_dags_path() / "customers.csv"
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
 
     if not csv_path.exists():
         return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
@@ -70,7 +75,9 @@ def validate_exported_csv() -> AssetCheckResult:
         )
 
     return AssetCheckResult(
-        passed=True, description=f"Export CSV {csv_path} exists", metadata={"rows": rows}
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
     )
 
 
@@ -112,8 +119,7 @@ defs = Definitions.merge(
                 export_duckdb_to_csv_defs(
                     ExportDuckDbToCsvArgs(
                         table_name="customers",
-                        # TODO use env var?
-                        csv_path=airflow_dags_path() / "customers.csv",
+                        csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                         duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                         duckdb_schema="raw_data",
                         duckdb_database_name="jaffle_shop",

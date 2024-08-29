@@ -355,8 +355,7 @@ For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` opera
 import os
 from pathlib import Path
 
-from dagster import AssetSpec, Definitions, multi_asset
-from dagster._core.definitions.materialize import materialize
+from dagster import AssetSpec, Definitions, materialize, multi_asset
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -394,7 +393,8 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
 
 def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
+        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"),
+        deps=[args.table_name],
     )
 
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
@@ -441,8 +441,7 @@ defs = build_defs_from_airflow_instance(
             export_duckdb_to_csv_defs(
                 ExportDuckDbToCsvArgs(
                     table_name="customers",
-                    # TODO use env var?
-                    csv_path=airflow_dags_path() / "customers.csv",
+                    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                     duckdb_schema="raw_data",
                     duckdb_database_name="jaffle_shop",
@@ -466,7 +465,7 @@ dagster dev -f migrate.py
 
 ## Adding asset checks
 
-Once you have a representation of your Airflow assets in Dagster, regardless of whether you have begun to migrate individual tasks, you can begin to add asset checks to your Dagster code. Asset checks can be used to validate the quality of your data assets, and can provide additional observability and value on top of your Airflow DAG even before migration starts.
+Once you have peered your Airflow DAGs in Dagster, regardless of migration progress, you can begin to add asset checks to your Dagster code. Asset checks can be used to validate the quality of your data assets, and can provide additional observability and value on top of your Airflow DAG even before migration starts.
 
 For example, we can add an asset check to ensure that the final `customers` CSV output exists and has a non-zero number of rows:
 
@@ -475,12 +474,16 @@ For example, we can add an asset check to ensure that the final `customers` CSV 
 import os
 from pathlib import Path
 
-from dagster import AssetSpec, Definitions, multi_asset
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.materialize import materialize
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    asset_check,
+    materialize,
+    multi_asset,
+)
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -518,7 +521,8 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
 
 def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
+        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"),
+        deps=[args.table_name],
     )
 
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
@@ -530,7 +534,7 @@ def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
 
 @asset_check(asset=AssetKey(["customers_csv"]))
 def validate_exported_csv() -> AssetCheckResult:
-    csv_path = airflow_dags_path() / "customers.csv"
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
 
     if not csv_path.exists():
         return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
@@ -545,7 +549,9 @@ def validate_exported_csv() -> AssetCheckResult:
         )
 
     return AssetCheckResult(
-        passed=True, description=f"Export CSV {csv_path} exists", metadata={"rows": rows}
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
     )
 
 
@@ -587,8 +593,7 @@ defs = Definitions.merge(
                 export_duckdb_to_csv_defs(
                     ExportDuckDbToCsvArgs(
                         table_name="customers",
-                        # TODO use env var?
-                        csv_path=airflow_dags_path() / "customers.csv",
+                        csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                         duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                         duckdb_schema="raw_data",
                         duckdb_database_name="jaffle_shop",
@@ -603,6 +608,68 @@ defs = Definitions.merge(
 
 
 ```
+
+Even a peered DAG without any asset representation can benefit from asset checks, which can be set up to run once the DAG completes. Below is an example of a DAG with no associated assets, where the asset check we defined in the previous example will run once the DAG completes:
+
+
+<details>
+<summary>
+*Asset checks on a peered DAG*
+</summary>
+
+```python
+# peer_with_check.py
+import os
+from pathlib import Path
+
+from dagster import AssetCheckResult, AssetCheckSeverity, AssetKey, Definitions, asset_check
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+
+
+# Attach a check to the DAG representation asset, which will be executed by Dagster
+# any time the DAG is run in Airflow
+@asset_check(asset=AssetKey(["airflow_instance", "dag", "rebuild_customers_list"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("
+"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
+
+
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            # other backends available (e.g. MwaaSessionAuthBackend)
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://localhost:8080",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
+        )
+    ),
+    Definitions(asset_checks=[validate_exported_csv]),
+)
+
+```
+
+
+</details>
 
 ## Decomissioning an Airflow DAG
 
@@ -646,7 +713,8 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
 
 def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
+        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"),
+        deps=[args.table_name],
     )
 
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
@@ -676,7 +744,7 @@ def build_customers_list_defs() -> Definitions:
             ExportDuckDbToCsvArgs(
                 table_name="customers",
                 # TODO use env var?
-                csv_path=airflow_dags_path() / "customers.csv",
+                csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                 duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                 duckdb_database_name="jaffle_shop",
             )
