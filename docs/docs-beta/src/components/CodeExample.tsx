@@ -20,7 +20,7 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
         });
         const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
         const strippedContent =
-          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : module.default;
+          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : lines.join('\n');
         setContent(strippedContent);
         setError(null);
       })
