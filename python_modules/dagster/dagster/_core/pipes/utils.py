@@ -8,7 +8,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import Iterator, Optional, Sequence, TextIO
+from typing import Iterator, Optional, Sequence, TextIO, cast
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -278,18 +278,30 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
     def read_messages(
         self,
         handler: "PipesMessageHandler",
+        extra_params: Optional[PipesParams] = None,
     ) -> Iterator[PipesParams]:
         """Set up a thread to read streaming messages by periodically reading message chunks from a
         target location.
 
         Args:
             handler (PipesMessageHandler): object to process incoming messages
+            extra_params (Optional[PipesParams]): additional parameters to merge into the params.
+                Useful for manually calling ``PipesSession.handle_messages`` with parameters only known
+                after the external process has been launched.
 
         Yields:
             PipesParams: A dict of parameters that specifies where a pipes process should write
             pipes protocol message chunks.
         """
+        extra_params = extra_params or {}
+
         with self.get_params() as params:
+            if extra_params is not None:
+                params = {**params}  # noqa: PLW2901  # params is a Mapping
+                params.update(extra_params)
+
+            params = cast(PipesParams, params)
+
             is_session_closed = Event()
             messages_thread = None
             logs_thread = None
@@ -316,16 +328,6 @@ class PipesBlobStoreMessageReader(PipesMessageReader):
 
     def on_opened(self, opened_payload: PipesOpenedData) -> None:
         self.opened_payload = opened_payload
-
-    @abstractmethod
-    @contextmanager
-    def get_params(self) -> Iterator[PipesParams]:
-        """Yield a set of parameters to be passed to a message writer in a pipes process.
-
-        Yields:
-            PipesParams: A dict of parameters that specifies where a pipes process should write
-            pipes protocol message chunks.
-        """
 
     @abstractmethod
     def download_messages_chunk(self, index: int, params: PipesParams) -> Optional[str]: ...
@@ -598,14 +600,29 @@ def open_pipes_session(
     try:
         with context_injector.inject_context(
             context_data
-        ) as ci_params, message_handler.handle_messages() as mr_params:
-            yield PipesSession(
-                context_data=context_data,
-                message_handler=message_handler,
-                context_injector_params=ci_params,
-                message_reader_params=mr_params,
-                context=context,
-            )
+        ) as ci_params, message_reader.get_params() as mr_params:
+            if message_reader.read_location_known:
+                # we can start reading messages right away
+                with message_handler.handle_messages():
+                    yield PipesSession(
+                        context_data=context_data,
+                        message_handler=message_handler,
+                        context_injector_params=ci_params,
+                        message_reader_params=mr_params,
+                        context=context,
+                    )
+            else:
+                # we can't start reading messages right now
+                # it has to be done manually in the Pipes body with the addition of extra params
+                # only known after the external process has been launched
+                yield PipesSession(
+                    context_data=context_data,
+                    message_handler=message_handler,
+                    context_injector_params=ci_params,
+                    message_reader_params=mr_params,
+                    context=context,
+                )
+
     finally:
         if not message_handler.received_opened_message:
             context.log.warn(

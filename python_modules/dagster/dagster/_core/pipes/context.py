@@ -78,8 +78,8 @@ class PipesMessageHandler:
         self._opened_payload: Optional[PipesOpenedData] = None
 
     @contextmanager
-    def handle_messages(self) -> Iterator[PipesParams]:
-        with self._message_reader.read_messages(self) as params:
+    def handle_messages(self, extra_params: Optional[PipesParams] = None) -> Iterator[PipesParams]:
+        with self._message_reader.read_messages(self, extra_params=extra_params) as params:
             yield params
 
     def get_reported_results(self) -> Sequence[PipesExecutionResult]:
@@ -272,8 +272,14 @@ class PipesSession:
     context_data: PipesContextData
     message_handler: PipesMessageHandler
     context_injector_params: PipesParams
-    message_reader_params: PipesParams
     context: OpExecutionContext
+    message_reader_params: PipesParams
+
+    @contextmanager
+    def read_messages(self, extra_params: Optional[PipesParams] = None):
+        """Context manager for reading messages from an external process."""
+        with self.message_handler.handle_messages(extra_params=extra_params) as params:
+            yield params
 
     @public
     def get_bootstrap_env_vars(self) -> Mapping[str, str]:

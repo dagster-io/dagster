@@ -218,13 +218,16 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             else:
                 context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
 
-            if isinstance(self._message_reader, PipesCloudWatchMessageReader):
-                # TODO: consume messages in real-time via a background thread
-                # so we don't have to wait for the job run to complete
-                # before receiving any logs
-                self._message_reader.consume_cloudwatch_logs(
-                    f"{log_group}/output", run_id, start_time=int(start_timestamp)
-                )
+            extra_params = {
+                "log_group": f"{log_group}/output",
+                "log_stream": run_id,
+                "start_time": int(start_timestamp),
+            }
+
+            # maybe we should somehow hide this logic inside `open_pipes_session`
+            if not self._message_reader.read_location_known:
+                with session.read_messages(extra_params=extra_params):
+                    pass
 
         return PipesClientCompletedInvocation(session)
 

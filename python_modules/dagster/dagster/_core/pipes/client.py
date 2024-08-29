@@ -146,21 +146,30 @@ class PipesContextInjector(ABC):
 class PipesMessageReader(ABC):
     @abstractmethod
     @contextmanager
-    def read_messages(self, handler: "PipesMessageHandler") -> Iterator[PipesParams]:
+    def read_messages(
+        self,
+        handler: "PipesMessageHandler",
+        extra_params: Optional[PipesParams] = None,
+    ) -> Iterator[PipesParams]:
         """A `@contextmanager` that reads messages reported by an external process.
 
         This method should start a thread to continuously read messages from some location
-        accessible to the external process. It should yield parameters that the external process
-        can use to direct its message output.
+        accessible to the external process.
 
         Args:
             handler (PipesMessageHandler): The message handler to use to process messages read from
                 the external process.
-
-        Yields:
-            PipesParams: A dict of parameters that can be used by the external process to determine
-            where to write messages.
+            extra_params (Optional[PipesParams]): additional parameters to merge into the params passed to
+                ``PipesSession.handle_messages``. Useful when manually calling it with parameters only known
+                after the external process has been launched.
         """
+
+    @property
+    def read_location_known(self) -> bool:
+        """Whether the MessageReader knows the location where messages are being written to before the external
+        process has been launched.
+        """
+        return True
 
     def on_opened(self, opened_payload: PipesOpenedData) -> None:
         """Hook called when the external process has successfully launched and returned an opened
@@ -177,6 +186,16 @@ class PipesMessageReader(ABC):
 
         Example: "Attempted to read messages using a magic portal. Expected PipesMagicPortalMessageWriter
         to be explicitly passed to open_dagster_pipes in the external process."
+        """
+
+    @abstractmethod
+    @contextmanager
+    def get_writer_params(self) -> Iterator[PipesParams]:
+        """It should yield parameters that the external process can use to direct its message output.
+
+        Yields:
+            PipesParams: A dict of parameters that can be used by the external process to determine
+            where to write messages.
         """
 
 

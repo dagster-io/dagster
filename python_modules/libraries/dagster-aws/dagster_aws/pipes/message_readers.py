@@ -48,7 +48,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
         self.client = client
 
     @contextmanager
-    def get_params(self) -> Iterator[PipesParams]:
+    def get_writer_params(self) -> Iterator[PipesParams]:
         key_prefix = "".join(random.choices(string.ascii_letters, k=30))
         yield {"bucket": self.bucket, "key_prefix": key_prefix}
 
@@ -115,21 +115,37 @@ class CloudWatchEvent(TypedDict):
 class PipesCloudWatchMessageReader(PipesMessageReader):
     """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
 
-    def __init__(self, client: Optional[boto3.client] = None):  # pyright: ignore (reportGeneralTypeIssues)
+    def __init__(
+        self,
+        client=None,
+    ):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
         """
         self.client = client or boto3.client("logs")
 
+    @property
+    def read_location_known(self) -> bool:
+        return False
+
+    @contextmanager
+    def get_writer_params(self) -> Iterator[PipesParams]:
+        yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDERR}
+
     @contextmanager
     def read_messages(
         self,
         handler: PipesMessageHandler,
+        extra_params: Optional[PipesParams] = None,
     ) -> Iterator[PipesParams]:
         self._handler = handler
+
+        assert extra_params is not None, "extra_params must be provided."
+
         try:
-            # use buffered stdio to shift the pipes messages to the tail of logs
-            yield {PipesDefaultMessageWriter.BUFFERED_STDIO_KEY: PipesDefaultMessageWriter.STDERR}
+            self.consume_cloudwatch_logs(**extra_params)
+            yield {}  # TODO: seems like this doesn't have to be yielding anything anymore, we can also remove @contextmanager
+
         finally:
             self._handler = None
 
