@@ -45,7 +45,7 @@ Using the Snowflake resource is similar to using the DuckDB resource. Here is a 
 
 <CodeExample filePath="guides/external-systems/resource-snowflake-example.py" language="python" title="Snowflake Resource Example" />
 
-To run this code you will need to first [install `dagster-snowflake`](https://docs.dagster.io/_apidocs/libraries/dagster-snowflake). You will also need to set the `SNOWFLAKE_PASSWORKD` environment variable.
+**Note:** before running this example, you will need to set the `SNOWFLAKE_PASSWORKD` environment variable.
 
 ## Other database resource types
 
