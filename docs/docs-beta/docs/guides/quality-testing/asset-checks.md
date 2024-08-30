@@ -41,7 +41,7 @@ Defining multiple checks can also be done using a factory pattern. The example b
 
 ## Blocking downstream assets
 
-By default, materialization of downstream assets will continue even if a parent's asset check fails. To block the materialization of downstream assets, set the `blocking` argument to `True` in the `@asset_check` decorator.
+By default, if a parent's asset check fails during a run, the run will continue and downstream assets will be materialized. To prevent this behavior, set the `blocking` argument to `True` in the `@asset_check` decorator. This will cause the run to fail and prevent further materializations.
 
 In the example bellow, when the `orders_id_has_no_nulls` check fails, the `augmented_orders` asset won't be materialized.
 
