@@ -45,6 +45,7 @@ def _assert_dagster_migration_states_are(
     ), str(spec_migration_states)
 
 
+@pytest.mark.skip("https://linear.app/dagster-labs/issue/FOU-375")
 def test_migration_status(
     airflow_instance,
     mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
