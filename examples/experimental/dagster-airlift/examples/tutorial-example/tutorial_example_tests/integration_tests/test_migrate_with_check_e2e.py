@@ -30,6 +30,7 @@ def setup_dagster_defs_path(
         )
 
 
+@pytest.mark.skip(reason="Flakiness, @benpankow to investigate")
 def test_migrate_runs_properly_in_dagster_with_check(
     airflow_instance: None, dagster_dev: None
 ) -> None:

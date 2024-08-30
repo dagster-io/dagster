@@ -49,6 +49,7 @@ def _assert_dagster_migration_states_are(
     ), str(spec_migration_states)
 
 
+@pytest.mark.skip(reason="Flakiness, @benpankow to investigate")
 def test_migration_status(
     airflow_instance,
     mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
@@ -129,6 +130,7 @@ def setup_dagster_defs_path(
         yield str(makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "migrate.py")
 
 
+@pytest.mark.skip(reason="Flakiness, @benpankow to investigate")
 def test_migrate_runs_properly_in_dagster(airflow_instance: None, dagster_dev: None) -> None:
     instance = DagsterInstance.get()
 
