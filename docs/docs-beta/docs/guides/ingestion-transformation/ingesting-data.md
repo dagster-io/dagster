@@ -42,7 +42,7 @@ Dagster integrates with a variety of data ingestion tools, enabling you to sync 
 Dagster currently integrates with the following data ingestion tools:
 
 - [Airbyte](/todo)
-- [DLT](/todo)
+- [dlt](/todo)
 - [Fivetran](/todo)
 - [Sling](/todo)
 
