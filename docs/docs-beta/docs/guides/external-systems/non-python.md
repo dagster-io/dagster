@@ -51,13 +51,13 @@ Both environment variables are base64 encoded, zip compressed JSON objects. Each
 
 With the utility functions to decode the Dagster Pipes environment variables, we can send additional parameters into the JavaScript process and output additional information into the asset materializations.
 
-Update the `tensorflow/main.js` script to retrieve the model configuration from the Dagster context, and report an asset materialization back Dagster with model metadata. 
+Update the `tensorflow/main.js` script to retrieve the model configuration from the Dagster context, and report an asset materialization back Dagster with model metadata.
 
 <CodeExample filePath="guides/non-python/pipes-full-featured-javascript.js" language="javascript" title="Adding a new JavaScript entrypoint for Dagster Pipes." />
 
 ## Update your Dagster asset
 
-Finally, update your Dagster asset to pass in the model information that is used by your script.
+Finally, update your Dagster asset to pass in the model information that's used by your script.
 
 <CodeExample filePath="guides/non-python/pipes-asset-with-context.py" language="python" title="Asset using Dagster Pipes." />
 
