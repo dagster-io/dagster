@@ -179,7 +179,7 @@ In most cases, one code location should be sufficient. A helpful pattern uses mu
 
 To include multiple code locations in a single project, you'll need to add a configuration file to your project:
 
-- **If using Dagster+**, add a dagster_cloud.yaml file to the root of your project.
+- **If using Dagster+**, add a `dagster_cloud.yaml` file to the root of your project.
 - **If developing locally or deploying to your infrastructure**, add a workspace.yaml file to the root of your project.
 
 ## External projects
