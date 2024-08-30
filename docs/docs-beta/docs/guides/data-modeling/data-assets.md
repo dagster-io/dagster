@@ -9,7 +9,7 @@ Dagster supports several ways of creating assets, but this guide will focus on u
 
 ## What you'll learn
 
-- The supported types of asset decorators
+- The asset decorators Dagster supports
 - How to define a single asset
 - How to operations that create multiple assets
 - How to define multiple operations that create a single asset
@@ -23,7 +23,7 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-## Choosing the right decorator
+## Asset decorators
 
 Dagster has four types of asset decorators:
 
