@@ -3,14 +3,15 @@ import dagster as dg
 
 @dg.graph_asset
 def complex_asset():
-    @op
+    @dg.op
     def step_one(): ...
 
-    @op
+    @dg.op
     def step_two(): ...
 
     step_one()
     step_two()
     return
+
 
 defs = dg.Definitions(assets=[complex_asset])

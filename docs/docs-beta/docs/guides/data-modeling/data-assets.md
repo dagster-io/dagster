@@ -5,7 +5,7 @@ sidebar_position: 10
 
 Data assets are at the core of Dagster. By modeling your data as assets, you unlock: Declarative Automation, lineage, and a searchable data catalog. This guide will help you understand how to model your data as assets.
 
-There are three ways to create data assets:
+There are four ways to create data assets:
 
 * Using the `@asset` decorator to declare a single asset.
 * Using the `@multi_asset` decorator to output multiple assets from a single operation.

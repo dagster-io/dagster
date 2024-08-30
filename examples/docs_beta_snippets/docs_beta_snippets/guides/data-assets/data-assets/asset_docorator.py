@@ -19,7 +19,7 @@ def store_data(files: List[str]):
 
 
 @dg.asset(
-  owners=["bighead@hooli.com", "team:roof", "team:corpdev"],
+    owners=["bighead@hooli.com", "team:roof", "team:corpdev"],
 )
 def my_dataset():
     store_data(transform_data(load_data))
