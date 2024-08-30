@@ -12,7 +12,7 @@ There are four ways to create data assets:
 * Using the `@graph_asset` decorator to output a single asset from multiple operations without making each operation itself an asset.
 * Using the `@graph_multi_asset` decorator to output multiple assets from multiple operations
 
-This guide walks you the first three methods. The fourth combines the approaches of the 2nd and 3rd so it is omitted.
+This guide walks you the first three methods. The fourth combines the approaches of the 2nd and 3rd so it's omitted.
 
 ***
 
