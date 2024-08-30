@@ -7,11 +7,9 @@ import dagster as dg
 def wrapper_asset(
     context: dg.AssetExecutionContext, pipes_subprocess_client: dg.PipesSubprocessClient
 ) -> None:
+    external_python_code_path = "/usr/bin/external_code.py"
     return pipes_subprocess_client.run(
-        command=[
-            shutil.which("python"),
-            dg.file_relative_path(__file__, "external_code.py"),
-        ],
+        command=[shutil.which("python"), external_python_code_path],
         context=context,
     ).get_results()
 
