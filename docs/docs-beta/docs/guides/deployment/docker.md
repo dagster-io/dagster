@@ -177,5 +177,5 @@ networks:
 To start the deployment, run:
 
 ```shell
-docker-compose up
+docker compose up
 ```
