@@ -17,6 +17,8 @@ def orders_id_has_no_nulls():
     return dg.AssetCheckResult(
         passed=bool(num_null_order_ids == 0),
     )
+
+
 # highlight-end
 
 
