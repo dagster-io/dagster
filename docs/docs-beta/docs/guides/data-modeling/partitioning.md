@@ -49,11 +49,16 @@ In this example:
 
 ### Define partitions with predefined categories
 
-Static partitioning is useful when you have predefined categories for your data. For instance, you might want to process data separately for different regions or product lines:
+Sometimes you have a set of predefined categories for your data. For instance, you might want to process data separately for different regions.
 
 <CodeExample filePath="guides/data-modeling/partitioning/static_partitioning.py" language="python" title="Static partitioning" />
 
-This example demonstrates how to create static partitions for different regions. The `regional_sales` asset uses these partitions to process sales data for each region independently.
+In this example:
+
+- We defined `region_partitions` using `StaticPartitionsDefinition` with a list of regions.
+- The `regional_sales_data` and `daily_sales_summary` are defined with the same partitioning scheme.
+
+<!-- TODO: Link to Backfill page to explain how to backfill reginonal sales data-->
 
 ### Define partitions with dynamic categories
 

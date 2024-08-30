@@ -11,11 +11,9 @@ daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
 # Define the partitioned asset
 @dg.asset(partitions_def=daily_partitions)
 def daily_sales_data(context: dg.AssetExecutionContext) -> None:
-    partition_date_str = context.partition_key
-
-    # Simulate fetching daily sales data
     date = context.partition_key
-    df = pd.DataFrame({"date": [date], "sales": [1000]})  # Placeholder data
+    # Simulate fetching daily sales data
+    df = pd.DataFrame({"date": [date], "sales": [1000]})
 
     os.makedirs("daily_sales", exist_ok=True)
     filename = f"daily_sales/sales_{date}.csv"
