@@ -147,6 +147,7 @@ daff==1.3.46
 -e python_modules/dagster-pipes
 -e python_modules/libraries/dagster-polars
 -e python_modules/libraries/dagster-postgres
+-e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus
 -e python_modules/libraries/dagster-pyspark
 -e python_modules/libraries/dagster-sdf
