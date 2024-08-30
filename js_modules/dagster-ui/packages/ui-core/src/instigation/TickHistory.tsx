@@ -59,9 +59,9 @@ type InstigationTick = HistoryTickFragment;
 const PAGE_SIZE = 25;
 
 enum TickStatusDisplay {
-  ALL,
-  FAILED,
-  SUCCESS,
+  ALL = 'all',
+  FAILED = 'failed',
+  SUCCESS = 'success',
 }
 
 const STATUS_DISPLAY_MAP = {
