@@ -58,7 +58,7 @@ In this example:
 - We defined `region_partitions` using `StaticPartitionsDefinition` with a list of regions.
 - The `regional_sales_data` and `daily_sales_summary` are defined with the same partitioning scheme.
 
-<!-- TODO: Link to Backfill page to explain how to backfill reginonal sales data-->
+TODO: Link to Backfill page to explain how to backfill reginonal sales data
 
 ### Define two-dimensional partitions
 
@@ -86,6 +86,8 @@ In this example:
 
 ## Define dependencies between partitioned assets
 
+Now that you've seen how to model partitioned assets in different ways, this section shows how to define dependencies between various partitioned assets.
+
 ### Connect Time-based Partitions
 
 Partitioned assets in Dagster can have dependencies on other partitioned assets. This allows you to create complex data pipelines where the output of one partitioned asset feeds into another. Here's how it works:
@@ -93,37 +95,13 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets.
 - A downstream asset can depend on one or more partitions of an upstream asset
 - The partitioning schemes don't need to be identical, but they should be compatible
 
-Let's look at an example to illustrate this concept:
-
-<CodeExample filePath="guides/data-modeling/partitioning/partitioned_dependencies.py" language="python" title="Partitioned asset dependencies" />
-
-In this example:
-
-1. We have a `daily_sales` asset partitioned by day
-2. The `monthly_report` asset depends on the `daily_sales` asset
-3. Each partition of `monthly_report` (a month) depends on multiple partitions of `daily_sales` (the days in that month)
-
-This setup allows you to process daily data and then aggregate it into monthly reports, all while maintaining the benefits of partitioning.
+TODO
 
 ### Connect Time-based and Static Partitions
 
-Combining time-based and static partitions allows you to analyze data across both temporal and categorical dimensions. This is particularly useful for scenarios like regional time series analysis. Here's an example:
+Combining time-based and static partitions allows you to analyze data across both temporal and categorical dimensions. This is particularly useful for scenarios like regional time series analysis.
 
-<CodeExample filePath="guides/data-modeling/partitioning/time_static_partitioning.py" language="python" title="Time-based and static partitioning" />
-
-In this example:
-
-1. We define a `daily_regional_sales` asset partitioned by both date and region.
-2. The `monthly_regional_report` asset depends on `daily_regional_sales`.
-3. Each partition of `monthly_regional_report` (a combination of month and region) depends on multiple partitions of `daily_regional_sales` (the days in that month for the specific region).
-
-This setup enables you to:
-
-- Process daily sales data for each region independently
-- Generate monthly reports for each region based on the daily data
-- Analyze trends and patterns across both time and geographical dimensions
-
-By connecting time-based and static partitions, you create a flexible system that can handle complex analytical requirements while maintaining the benefits of partitioned data processing.
+TODO
 
 ### Connect Time-based and Dynamic Partitions
 
