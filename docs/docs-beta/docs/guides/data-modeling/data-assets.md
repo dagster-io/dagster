@@ -36,7 +36,7 @@ Dagster has four types of asset decorators:
 
 ## Defining operations that create a single asset \{#single-asset}
 
-The simplest way to define a data asset in Dagster is by using the `@asset` decorator. This decorator marks a Python function as an asset, with the function's output being the data produced by the asset.
+The simplest way to define a data asset in Dagster is by using the `@asset` decorator. This decorator marks a Python function as an asset. 
 
 <CodeExample filePath="guides/data-assets/data-assets/asset_docorator.py" language="python" title="Using @dg.asset decorator" />
 
