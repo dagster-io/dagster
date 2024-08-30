@@ -1,7 +1,7 @@
 ---
-title: Partitioning Assets
+title: Partitioning assets
 description: Learn how to partition your data in Dagster.
-sidebar_label: Partitioning Assets
+sidebar_label: Partitioning assets
 sidebar_position: 30
 ---
 
@@ -31,8 +31,8 @@ There are several ways to partition your data in Dagster:
 
 - [Time-based partitioning](#define-time-partitioned-assets), for processing data in specific time intervals
 - [Static partitioning](#define-partitions-with-predefined-categories), for dividing data based on predefined categories
-- [Dynamic partitioning](#define-partitions-with-dynamic-categories), for creating partitions based on runtime information
 - [Two-dimensional partitioning](#define-two-dimensional-partitions), for partitioning data along two different axes simultaneously
+- [Dynamic partitioning](#define-partitions-with-dynamic-categories), for creating partitions based on runtime information
 
 ### Define time-partitioned assets
 
@@ -60,6 +60,19 @@ In this example:
 
 <!-- TODO: Link to Backfill page to explain how to backfill reginonal sales data-->
 
+### Define two-dimensional partitions
+
+Two-dimensional partitioning allows you to partition your data along two different axes simultaneously. This is useful when you need to process data that can be categorized in multiple ways. Here's an example of how to implement two-dimensional partitioning in Dagster:
+
+<CodeExample filePath="guides/data-modeling/partitioning/two_dimensional_partitioning.py" language="python" title="Two-dimensional partitioning" />
+
+In this example:
+
+- We defined `two_dimensional_partitions` using `MultiPartitionsDefinition` with two dimensions: `date` and `region`.
+  - The partition key would look like this: `2024-08-01|us`.
+- The `daily_regional_sales_data` and `daily_regional_sales_summary` assets are defined with the same two-dimensional partitioning scheme.
+- The `daily_regional_sales_schedule` runs daily at 1:00 AM, processing the previous day's data for all regions. It uses `MultiPartitionKey` to specify partition keys for both date and region dimensions, resulting in 3 runs per day (one for each region).
+
 ### Define partitions with dynamic categories
 
 Dynamic partitioning allows you to create partitions based on runtime information. This is useful when the partitions aren't known in advance:
@@ -67,22 +80,6 @@ Dynamic partitioning allows you to create partitions based on runtime informatio
 <CodeExample filePath="guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" />
 
 In this example, we create dynamic partitions based on customer IDs. The `customer_data` asset processes data for each customer separately, with the partitions determined at runtime.
-
-### Define two-dimensional partitions
-
-Two-dimensional partitioning allows you to partition your data along two different axes simultaneously. This is useful when you need to process data that can be categorized in multiple ways. Here's an example of how to implement two-dimensional partitioning in Dagster:
-
-<CodeExample filePath="guides/data-modeling/partitioning/two_dimensional_partitioning.py" language="python" title="Two-dimensional partitioning" />
-
-In this example, we define a two-dimensional partition for processing sales data by both region and product category. The `sales_data` asset is configured to use these partitions, allowing you to materialize data for specific combinations of regions and product categories.
-
-This approach is particularly useful when you need to analyze or process data across multiple dimensions, such as:
-
-- Analyzing sales performance by both region and product category
-- Processing user engagement data by both user segment and feature
-- Generating reports for different departments across various time periods
-
-By using two-dimensional partitioning, you can easily select and process specific subsets of your data, improving both the flexibility and efficiency of your data pipeline.
 
 ## Define dependencies between partitioned assets
 
