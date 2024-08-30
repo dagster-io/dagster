@@ -65,7 +65,7 @@ flowchart LR
 
 For cases where you need to perform multiple operations to produce a single asset, you can use the `@graph_asset` decorator. This approach encapsulates a series of operations and exposes them as a single asset, allowing you to model complex pipelines while only exposing the final output.
 
-<CodeExample filePath="guides/data-assets/data-assets/graph_asset_decorator.py" language="python" title="Using @graph_asset decorator" />
+<CodeExample filePath="guides/data-assets/data-assets/graph_asset_decorator.py" language="python" title="Using @dg.graph_asset decorator" />
 
 In this example, `complex_asset` is an asset that's the result of two operations: `step_one` and `step_two`. These steps are combined into a single asset, abstracting away the intermediate representations.
 
