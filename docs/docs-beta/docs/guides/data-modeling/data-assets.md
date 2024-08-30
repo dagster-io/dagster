@@ -72,8 +72,8 @@ The benefits of this approach are:
 
 ## Related resources
 
-<!-- TODO: add links to relevant API documentation here.
+{/\*  TODO: add links to relevant API documentation here.
 Link to @asset api
 Link to @multi\_asset api.
 Link to @graph\_asset api.
-Link to @grpah\_multi\_asset api. -->
+Link to @grpah\_multi\_asset api. \*/}
