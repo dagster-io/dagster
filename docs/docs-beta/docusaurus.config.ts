@@ -33,7 +33,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['diff', 'json', 'bash'],
+      additionalLanguages: ['diff', 'json', 'bash', 'docker'],
     },
     zoom: {
       selector: '.markdown > img, .tabs-container img ',
