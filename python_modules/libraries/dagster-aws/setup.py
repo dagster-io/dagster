@@ -37,7 +37,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         "boto3",
-        "dagster==1.8.3",
+        "dagster==1.8.4",
         "packaging",
         "requests",
     ],

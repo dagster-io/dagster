@@ -38,7 +38,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.8.3",
+        "dagster==1.8.4",
         "requests",
     ],
     zip_safe=False,
@@ -52,7 +52,7 @@ setup(
             "requests-mock",
         ],
         "managed": [
-            "dagster-managed-elements==0.24.3",
+            "dagster-managed-elements==0.24.4",
         ],
     },
 )

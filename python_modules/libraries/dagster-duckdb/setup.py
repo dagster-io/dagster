@@ -35,7 +35,7 @@ setup(
     python_requires=">=3.8,<3.13",
     install_requires=[
         "duckdb",
-        "dagster==1.8.3",
+        "dagster==1.8.4",
     ],
     extras_require={
         "pandas": [

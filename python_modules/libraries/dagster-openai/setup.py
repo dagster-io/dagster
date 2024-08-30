@@ -32,7 +32,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_openai_tests*"]),
     install_requires=[
-        "dagster==1.8.3",
+        "dagster==1.8.4",
         "openai",
     ],
     zip_safe=False,
