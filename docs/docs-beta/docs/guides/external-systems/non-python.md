@@ -9,7 +9,7 @@ Dagster is written in Python, but that doesn't mean it's limited to running Pyth
 <summary>Prerequisites</summary>
 
 - Familiarity with [Assets](/concepts/assets)
-- A basic understanding of JavaScript
+- A basic understanding of JavaScript and Node.js
 </details>
 
 # Define a JavaScript-based asset
@@ -38,17 +38,17 @@ Both environment variables are base64, zip compressed JSON objects with a "path"
 
 # Create a JavaScript interface for Dagster to invoke
 
-With the utility functions to decode the Dagster Pipes environment variables, a JavaScript function is needed to translate the Dagster Pipes context into a function evocation.
+With the utility functions to decode the Dagster Pipes environment variables, we can send additional parameters into the JavaScript process and output additional information into the asset materializations. The `run_operation` function creates an interface between Dagster Pipes and the JavaScript file to do just that.
 
 <CodeExample filePath="guides/automation/pipes-full-featured-javascript.js" language="javascript" title="Adding a new JavaScript entrypoint for Dagster Pipes." />
 
-`run_operation` creates an API between Dagster and the Node.js file:
-- Input: The `operation_name` to invoke and a `config` for the operation.
-- Output: Reports an asset materialization with metadata about the model.
+`run_operation` looks for the `operation_name` and `config` in the Dagster Pipes context. The `operation_name` is the function to run, while `config` is the parameter to said function.
+
+`run_operation` expects the function it runs will return a model. From the model, `run_operation` accesses the loss function and adds it to the `extras` in the explicit asset materialization it writes to the messages.
 
 # Call the JavaScript interface using Dagster Pipes
 
-Updating the asset definition with the additional information in the `extras` field allows the asset to work end to end.
+Lastly, we can update the `@asset` definition to pass in these additional parameters.
 
 <CodeExample filePath="guides/automation/pipes-asset-with-context.py" language="python" title="Asset using Dagster Pipes." />
 
