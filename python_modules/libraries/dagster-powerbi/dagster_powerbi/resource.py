@@ -6,7 +6,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
-from .translator import (
+from dagster_powerbi.translator import (
     DagsterPowerBITranslator,
     PowerBIContentData,
     PowerBIContentType,
