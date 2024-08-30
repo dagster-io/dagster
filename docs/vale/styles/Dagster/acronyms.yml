@@ -17,7 +17,9 @@ exceptions:
   - CSV
   - DEBUG
   - DOM
+  - dlt
   - DPI
+  - ECS
   - ETL
   - FAQ
   - GCC
@@ -48,6 +50,7 @@ exceptions:
   - REPL
   - REST
   - RSA
+  - SCIM
   - SCM
   - SCSS
   - SDA
