@@ -88,7 +88,7 @@ In this example:
 
 Now that you've seen how to model partitioned assets in different ways, this section shows how to define dependencies between various partitioned assets.
 
-### Connect Time-based Partitions
+### Dependencies between time-based partitions
 
 Partitioned assets in Dagster can have dependencies on other partitioned assets. This allows you to create complex data pipelines where the output of one partitioned asset feeds into another. Here's how it works:
 
@@ -97,17 +97,17 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets.
 
 TODO
 
-### Connect Time-based and Static Partitions
+### Dependencies between time-based and static partitions
 
 Combining time-based and static partitions allows you to analyze data across both temporal and categorical dimensions. This is particularly useful for scenarios like regional time series analysis.
 
 TODO
 
-### Connect Time-based and Dynamic Partitions
+### Dependencies between time-based and dynamic partitions
 
 TODO
 
-### Connect Time-based partitions to un-partitioned assets
+### Dependencies between time-based partitions and un-partitioned assets
 
 TODO
 
@@ -117,4 +117,4 @@ TODO
 
 ## Next steps
 
-- Go deeper into [Understanding Partitioning](/concepts/understanding-partitioning)
+- Go deeper into [Understanding Partitioning](#)
