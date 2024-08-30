@@ -38,6 +38,7 @@ paths = [
     "../../python_modules/libraries/dagster-github",
     "../../python_modules/libraries/dagster-k8s",
     "../../python_modules/libraries/dagster-looker",
+    "../../python_modules/libraries/dagster-powerbi",
     "../../python_modules/libraries/dagster-managed-elements",
     "../../python_modules/libraries/dagster-mlflow",
     "../../python_modules/libraries/dagster-msteams",
