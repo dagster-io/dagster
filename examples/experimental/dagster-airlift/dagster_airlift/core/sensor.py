@@ -17,6 +17,7 @@ from dagster import (
     _check as check,
     sensor,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -35,7 +36,8 @@ def build_airflow_polling_sensor(
         name="airflow_dag_status_sensor",
         minimum_interval_seconds=1,
         default_status=DefaultSensorStatus.RUNNING,
-        target="*",
+        # Tracking bug around this here: https://linear.app/dagster-labs/issue/FOU-376/make-airflow-polling-sensor-work-with-asset-selection=
+        asset_selection=AssetSelection.assets(),
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
