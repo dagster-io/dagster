@@ -52,7 +52,7 @@ hr {
 
 .breadcrumbs {
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   color: var(--theme-color-text-light);
 
