@@ -4,6 +4,7 @@ import requests
 from dagster import (
     AssetsDefinition,
     ConfigurableResource,
+    Definitions,
     _check as check,
     external_assets_from_specs,
 )
@@ -127,7 +128,7 @@ class PowerBIWorkspace(ConfigurableResource):
 
     def build_assets(
         self,
-        dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
+        dagster_powerbi_translator: Type[DagsterPowerBITranslator],
     ) -> Sequence[CacheableAssetsDefinition]:
         """Returns a set of CacheableAssetsDefinition which will load Power BI content from
         the workspace and translates it into AssetSpecs, using the provided translator.
@@ -141,6 +142,23 @@ class PowerBIWorkspace(ConfigurableResource):
                 will load the Power BI content.
         """
         return [PowerBICacheableAssetsDefinition(self, dagster_powerbi_translator)]
+
+    def build_defs(
+        self, dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator
+    ) -> Definitions:
+        """Returns a Definitions object which will load Power BI content from
+        the workspace and translate it into assets, using the provided translator.
+
+        Args:
+            dagster_powerbi_translator (Type[DagsterPowerBITranslator]): The translator to use
+                to convert Power BI content into AssetSpecs. Defaults to DagsterPowerBITranslator.
+
+        Returns:
+            Definitions: A Definitions object which will build and return the Power BI content.
+        """
+        return Definitions(
+            assets=self.build_assets(dagster_powerbi_translator=dagster_powerbi_translator)
+        )
 
 
 class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):

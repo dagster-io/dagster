@@ -13,7 +13,7 @@ resource = PowerBIWorkspace(
     api_token=fake_token,
     workspace_id="a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
 )
-pbi_assets = resource.build_assets()
+pbi_defs = resource.build_defs()
 
 
 @asset
@@ -23,7 +23,8 @@ def my_materializable_asset():
 
 pending_repo_from_cached_asset_metadata = cast(
     PendingRepositoryDefinition,
-    Definitions(
-        assets=[*pbi_assets, my_materializable_asset], jobs=[define_asset_job("all_asset_job")]
+    Definitions.merge(
+        Definitions(assets=[my_materializable_asset], jobs=[define_asset_job("all_asset_job")]),
+        pbi_defs,
     ).get_inner_repository(),
 )

@@ -30,9 +30,7 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
         api_token=fake_token,
         workspace_id=workspace_id,
     )
-    cacheable_asset = resource.build_assets()[0]
-    data = cacheable_asset.compute_cacheable_data()
-    all_assets = cacheable_asset.build_definitions(data)
+    all_assets = resource.build_defs().get_asset_graph().assets_defs
 
     # 1 dashboard, 1 report, 1 semantic model, 2 data sources
     assert len(all_assets) == 5
@@ -67,7 +65,7 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
-        from dags.pending_repo import pending_repo_from_cached_asset_metadata
+        from dagster_powerbi_tests.pending_repo import pending_repo_from_cached_asset_metadata
 
         # first, we resolve the repository to generate our cached metadata
         repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
