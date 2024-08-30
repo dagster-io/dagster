@@ -50,6 +50,7 @@
   --ifm-background-color: var(--theme-color-background-default);
   --ifm-link-color: var(--theme-color-link-default);
   --ifm-toc-border-color: var(--theme-color-keyline);
+  --docusaurus-highlighted-code-line-bg: var(--theme-color-background-gray);
 
   //Top Navbar
   --ifm-navbar-height: 60px;
@@ -63,4 +64,11 @@
 
   //hr
   --ifm-hr-background-color: var(--theme-color-background-lighter);
+
+  //invert footer icon colors
+  .footer__items--right {
+    img {
+      filter: invert(1);
+    }
+  }
 }

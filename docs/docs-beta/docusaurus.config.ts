@@ -50,6 +50,7 @@ const config: Config = {
       maxHeadingLevel: 4,
     },
     navbar: {
+      hideOnScroll: true,
       logo: {
         alt: 'Dagster Logo',
         src: 'img/dagster-docs-logo.svg',
@@ -100,43 +101,29 @@ const config: Config = {
     footer: {
       logo: {
         alt: 'Dagster Logo',
-        src: 'img/logo.svg',
+        src: 'img/dagster_labs-primary-horizontal.svg',
+        srcDark: 'img/dagster_labs-reversed-horizontal.svg',
         href: '/',
       },
       links: [
         {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Docs',
-              to: '/',
-            },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
-            {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/dagster',
-            },
-            {
-              label: 'Twitter',
-              href: 'https://twitter.com/dagster',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/dagster-io/dagster',
-            },
-          ],
+          html: `
+          <div class='footer__items'>
+            <a href='https://www.dagster.io/terms'>Terms of Service</a>
+            <a href='https://www.dagster.io/privacy/'>Privacy Policy</a>
+            <a href='https://www.dagster.io/security/'>Security</a>
+          </div>
+
+          <div class='footer__items--right'>
+            <a href='https://twitter.com/dagster' title="X" target="_blank" rel="noreferrer noopener"><img src="/icons/twitter.svg"/></a>
+            <a href='https://www.dagster.io/slack/' title="Community Slack" target="_blank" rel="noreferrer noopener"><img src="/icons/slack.svg"/></a>
+            <a href='https://github.com/dagster-io/dagster' title="GitHub" target="_blank" rel="noreferrer noopener"><img src="/icons/github.svg"/></a>
+            <a href='https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q/videos' title="Youtube" target="_blank" rel="noreferrer noopener"><img src="/icons/youtube.svg"/></a>
+          </div>
+          `,
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs`,
     },
   } satisfies Preset.ThemeConfig,
 
