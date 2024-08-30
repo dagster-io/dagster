@@ -1,6 +1,7 @@
 import datetime
 import json
 from abc import ABC
+from functools import cached_property
 from typing import Any, Dict, List
 
 import requests
@@ -10,6 +11,7 @@ from dagster._record import record
 from dagster._time import get_current_datetime
 
 from ..migration_state import DagMigrationState
+from .utils import convert_to_valid_dagster_name
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 
@@ -181,10 +183,15 @@ class DagInfo:
     def url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
 
+    @cached_property
+    def dagster_safe_dag_id(self) -> str:
+        """Name based on the dag_id that is safe to use in dagster."""
+        return convert_to_valid_dagster_name(self.dag_id)
+
     @property
     def dag_asset_key(self) -> AssetKey:
         # Conventional asset key representing a successful run of an airfow dag.
-        return AssetKey(["airflow_instance", "dag", self.dag_id])
+        return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
 
     @property
     def migration_state(self) -> DagMigrationState:
