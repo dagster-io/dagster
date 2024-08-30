@@ -10,14 +10,6 @@ Refer to the project scaffolding tutorial to learn how to create a new Dagster p
 
 There are many ways to structure your Dagster project, it can be difficult to know where to start. In this guide, we will walk through our recommendations for how to start with organizing your code. While these are just our recommendations, feel free to deviate from them as your needs evolve.
 
-When structuring complex projects, it is important to consider:
-
-1. The location to add new features is intuitive
-2. Relevant code should be easy to find regardless of familiarity with related business logic
-3. The project can be refactored and organized over time without premature optimizations
-
-As your experience with Dagster grows, certain aspects of this guide might no longer apply to your use cases, and you may want to change the structure to adapt to your business needs.
-
 ## What you'll learn
 
 - How to restructure your project as your code base grows
@@ -53,55 +45,11 @@ This is a great structure as you are first getting started, however, as you begi
 
 There are several paradigms in which you can structure your project. Choosing one of these structures is often personal preference, and influenced by how you and your team members operate. This guide will outline three possible project structures:
 
-1. [Structured by Dagster object](#structured-by-dagster-object)
-2. [Structured by technology](#structured-by-technology)
-3. [Structured by concept](#structured-by-concept)
+1. [Option 1: Structured by technology](#option-1-structured-by-technology)
+2. [Option 2: Structured by concept](#option-2-structured-by-concept)
 
-### Structured by Dagster object
 
-Extending the structure of the default project scaffolding, you can convert your Python files into modules, for example, `assets.py` and become `assets/` with an `__init__.py` file located inside. Then, you can create a multitude of individual asset files in that directory. The same can be done for other Dagster objects, like: jobs, partitions, resources, and sensors.
-
-The structure of the [fully featured project example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured) shown below demonstrates how files can be created for specific use cases within modules for each Dagster object type:
-
-```
-.
-├── dbt_project/
-└── project_fully_featured/
-    ├── assets/
-    │   ├── __init__.py
-    │   ├── activity_analytics/
-    │   │   ├── __init__.py
-    │   │   └── activity_forecast.py
-    │   ├── core/
-    │   │   ├── __init__.py
-    │   │   ├── id_range_for_time.py
-    │   │   └── items.py
-    │   └── recommender/
-    │       ├── __init__.py
-    │       ├── comment_stories.py
-    │       ├── recommender_model.py
-    │       ├── user_story_matrix.py
-    │       └── user_top_recommended_stories.py
-    ├── resources/
-    │   ├── __init__.py
-    │   ├── common_bucket_s3_pickle_io_manager.py
-    │   ├── duckdb_parquet_io_manager.py
-    │   ├── hn_resource.py
-    │   ├── parquet_io_manager.py
-    │   ├── partition_bounds.py
-    │   └── snowflake_io_manager.py
-    ├── sensors/
-    │   ├── __init__.py
-    │   ├── hn_tables_updated_sensor.py
-    │   └── slack_on_failure_sensor.py
-    ├── utils/
-    ├── __init__.py
-    ├── definitions.py
-    ├── jobs.py
-    └── partitions.py
-```
-
-### Structured by technology
+### Option 1: Structured by technology
 
 Data engineer often have a strong understanding of the underlying technologies that are used in their data pipelines. For that reason, it's often beneficial to structure projects by the technology that are being used. This enables engineers to easily navigate the code base and locate files pertaining to the specific technology.
 
@@ -127,7 +75,7 @@ Within the technology modules, sub-modules can be created to further organize yo
     └── definitions.py
 ```
 
-### Structured by concept
+### Option 2: Structured by concept
 
 It's also possible to introduce a layer of categorization by the overarching data processing concept. For example, whether the job is performing some kind of transformation, ingestion of data, or processing operation.
 
@@ -154,7 +102,7 @@ This provides additional context to the engineers who may not have as strong of 
     └── definitions.py
 ```
 
-## Merge definitions objects
+## Merging definitions objects
 
 It's possible to define multiple `Definitions` objects, often with one for each sub-module in your project. These definitions can then be merged at the root of your project using the `Definitions.merge` method.
 
@@ -171,7 +119,7 @@ defs = Definitions.merge(
 )
 ```
 
-## Multiple code locations
+## Configuring multiple code locations
 
 This guide has outlined how to structure a project within a single code location, however, Dagster also allows you to structure a project spanning multiple location.
 
