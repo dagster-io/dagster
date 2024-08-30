@@ -3,136 +3,52 @@ title: "Running non-Python languages"
 sidebar_position: 60
 ---
 
-Dagster is written in Python, but that doesn't mean it's limited to running Python to materialize assets. This guide covers how to run some JavaScript with Dagster using Pipes.
+Dagster is written in Python, but that doesn't mean it's limited to running Python to materialize assets. With Pipes, you can run code in other languages and send information back to Dagster. This guide covers how to run JavaScript with Dagster using Pipes, however, the same principle will apply to other languages.
 
-# Define your JavaScript function
+<details>
+<summary>Prerequisites</summary>
 
-Here's a contrived example of some JavaScript code to run using Dagster Pipes. `train_model` load some dataset and train a sequential model using tensorflow.
+- Familiarity with [Assets](/concepts/assets)
+- A basic understanding of JavaScript
+</details>
 
-```javascript
-import * as tf from '@tensorflow/tfjs';
+# Define a JavaScript-based asset
 
-async function train_model(config) {
-  const { path_to_data, data_config, path_to_model } = config;
-  const dataset = await tf.data.csv(path_to_data, data_config).map(({ xs, ys }) => {
-    return {
-      xs: tf.tensor2d(Object.values(xs), [Object.values(xs).length, 1]),
-      ys: tf.tensor2d(Object.values(ys), [Object.values(ys).length, 1])
-    };
-  })
-  .batch(100);
+We will demonstrate running JavaScript code using Dagster Pipes. In this example, the `train_model` function loads a CSV and trains a sequential model using the Tensorflow library.
 
-  const model = tf.sequential()
-  model.add(tf.layers.dense({units: 1, inputShape: [1]}));
-  model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+<CodeExample filePath="guides/automation/pipes-contrived-javascript.py" language="javascript" title="A simple Tensorflow function." />
 
-  await model.fitDataset(dataset, {epochs: 250})
-  await model.save(path_to_model);
-  model.summary();
-  return model;
-}
-```
-
-# Define your asset in Dagster
+With an `@asset` definition in Dagster, you can now invoke your JavaScript function from Dagster.
 
 <CodeExample filePath="guides/automation/pipes-asset.py" language="python" title="Asset using Dagster Pipes." />
 
-Dagster Pipes follows a similar design to Unix pipes, hence the name. The `PipesSubprocessClient` is responsible for running external processes and setting up input/output files. The asset defined here is materialized using the `PipesSubprocessClient` running a Node.js file containing the `train_model` function.
+If the command passed to Dagster Pipes (`node tensorflow/main.js`) exits successfully, then an asset materialization result will be created implicitly for the asset defined here. Additionally, the stdout/stderr will be collected into the asset logs. Dagster Pipes supports passing parameters into Pipes and allowing Pipes processes to more explicitly define the asset materialization event.
 
-# Add JavaScript utility functions to access pipes
+# Add JavaScript utility functions to interface with Dagster Pipes
+
+Dagster Pipes follows a similar design to Unix pipes, hence the name. The `PipesSubprocessClient` is responsible for running external processes and setting up input/output files. The asset defined here is materialized using the `PipesSubprocessClient` running a Node.js file containing the `train_model` function.
 
 The `PipesSubprocessClient` calls the child process with two environment variables defined, each containing a path to a file. One for input and one for output.
 - DAGSTER_PIPES_CONTEXT: Input context
 - DAGSTER_PIPES_MESSAGES: Output context
 
+<CodeExample filePath="guides/automation/pipes-javascript-utility.py" language="javascript" title="Utility functions to interface with Dagster Pipes." />
+
 Both environment variables are base64, zip compressed JSON objects with a "path" key. These functions decode these environment variables and access the files to hook up our JavaScript function to Dagster.
 
-```javascript
-import * as util from 'util';
-import { promises as fs } from "fs";
-import { inflate } from 'zlib';
-
-const inflateAsync = util.promisify(inflate);
-
-async function _decodeParam(value) {
-  if (!value) {
-    return null;
-  }
-  // Decode from base64 and unzip
-  const decoded = Buffer.from(value, "base64");
-  const decompressed = await inflateAsync(decoded);
-  // Deserialize to JSON
-  return JSON.parse(decompressed.toString("utf-8"));
-}
-
-async function getPipesContext() {
-  // get the env var value for where the pipes context is stored
-  const encodedPipesContextParam = process.env.DAGSTER_PIPES_CONTEXT;
-  // decove the value to get the input file path
-  const decodedPipesContextParam = await _decodeParam(encodedPipesContextParam);
-  if (!decodedPipesContextParam) {
-    return null;
-  }
-  return await fs.readFile(decodedPipesContextParam.path, "utf-8")
-    .then((data) => JSON.parse(data));
-}
-
-async function setPipesMessages(message) {
-  // get the env var value for where the pipes message is stored
-  const encodedPipesMessagesParam = process.env.DAGSTER_PIPES_MESSAGES;
-  // decode the value to get the output file path
-  const decodedPipesMessagesParam = await _decodeParam(encodedPipesMessagesParam);
-  if (!decodedPipesMessagesParam) {
-    return null;
-  }
-  const path = decodedPipesMessagesParam.path;
-  await fs.appendFile(path, JSON.stringify(message) + "\n");
-}
-```
-
-# Create an API for Dagster to invoke
+# Create a JavaScript interface for Dagster to invoke
 
 With the utility functions to decode the Dagster Pipes environment variables, a JavaScript function is needed to translate the Dagster Pipes context into a function evocation.
 
-```javascript
-const ALL_OPERATIONS = {
-  train_model
-}
-
-async function run_operation() {
-  const { asset_keys, extras: { operation_name, config } } = await getPipesContext()
-  if (!(operation_name in ALL_OPERATIONS)) {
-    setPipesMessages({ error: `Operation ${operation_name} not found` });
-    return;
-  }
-  const operation = ALL_OPERATIONS[operation_name];
-  const model = await operation(config);
-  await setPipesMessages({
-    method: "report_asset_materialization",
-    params: {
-      asset_key: asset_keys[0],
-      data_version: null,
-      metadata: {
-        metrics: model.metrics ? { raw_value: model.metrics, type: "text" } : undefined,
-        loss: { raw_value: model.loss, type: "text" },
-      },
-    },
-  });
-  return 0;
-}
-
-run_operation().then((result) => {
-  process.exit(result);
-});
-```
+<CodeExample filePath="guides/automation/pipes-full-featured-javascript.js" language="javascript" title="Adding a new JavaScript entrypoint for Dagster Pipes." />
 
 `run_operation` creates an API between Dagster and the Node.js file:
 - Input: The `operation_name` to invoke and a `config` for the operation.
 - Output: Reports an asset materialization with metadata about the model.
 
-# Call the API using Dagster pipes
+# Call the JavaScript interface using Dagster Pipes
 
-Updating the asset definition with the additional information in the `extras` field allows the asset to work end to end finally.
+Updating the asset definition with the additional information in the `extras` field allows the asset to work end to end.
 
 <CodeExample filePath="guides/automation/pipes-asset-with-context.py" language="python" title="Asset using Dagster Pipes." />
 
