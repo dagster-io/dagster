@@ -254,11 +254,11 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: 'doc',
-          id: 'dagster-plus/getting-started/whats-dagster-plus',
+          id: 'dagster-plus/whats-dagster-plus',
         },
         {
           type: 'doc',
-          id: 'dagster-plus/getting-started/code-requirements',
+          id: 'dagster-plus/getting-started',
         },
       ],
     },
