@@ -18,7 +18,7 @@ In this guide, we'll walk you through how to invoke non-Dagster code through Pip
 
 ## Setting up an asset that invokes your external code
 
-To set up invoking code outside of Dagster, you first need to set up an asset wrapper for that external code invocation.  We can invoke the code using a Dagster Pipes client resource.
+To set up invoking code outside of Dagster, you first need to set up an asset.  We can invoke the external code within the asset function by using a Dagster Pipes client resource.
 
 It is not a requirement that this external code know anything about Dagster.  It can even be a process running a different language on a remote machine - the only requirement is that it can be triggered from Python.
 
