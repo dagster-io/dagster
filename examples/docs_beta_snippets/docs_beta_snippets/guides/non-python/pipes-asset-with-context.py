@@ -12,7 +12,7 @@ def my_asset(
     return pipes_subprocess_client.run(
         command=["node", "tensorflow/main.js"],
         # highlight-start
-        context=context.op_execution_context,
+        context=context,
         extras={
             "operation_name": "train_model",
             "config": {

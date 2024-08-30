@@ -11,7 +11,7 @@ def tensorflow_model(
     """Runs Javascript to generate an asset."""
     return pipes_subprocess_client.run(
         command=["node", "tensorflow/main.js"],
-        context=context.op_execution_context,
+        context=context,
         extras={},
     ).get_materialize_result()
 
