@@ -75,11 +75,14 @@ In this example:
 
 ### Define partitions with dynamic categories
 
-Dynamic partitioning allows you to create partitions based on runtime information. This is useful when the partitions aren't known in advance:
+Sometimes you don't know the partitions in advance. For example, you might want to process regions that are added in your system. In such cases, you can use dynamic partitioning to create partitions based on runtime information.
 
 <CodeExample filePath="guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" />
 
-In this example, we create dynamic partitions based on customer IDs. The `customer_data` asset processes data for each customer separately, with the partitions determined at runtime.
+In this example:
+
+- We defined `region_partitions` using `DynamicPartitionsDefinition` without knowing the values in advance.
+- The `all_regions_sensor` is a sensor that will dynamically add all regions to the partition set. Once it kicks off runs, it will dynamically kick off runs for all regions (in this example, 6 times; one for each region).
 
 ## Define dependencies between partitioned assets
 
