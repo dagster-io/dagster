@@ -29,7 +29,9 @@ def load_etl_tables_from_yaml(yaml_path: str) -> Sequence[dg.AssetsDefinition]:
 
 
 defs = dg.Definitions(
-    assets=load_etl_tables_from_yaml("table_definitions.yaml"),
+    assets=load_etl_tables_from_yaml(
+        dg.file_relative_path(__file__, "table_definitions.yaml")
+    ),
     resources={
         "snowflake": SnowflakeResource(
             user=dg.EnvVar("SNOWFLAKE_USER"),
