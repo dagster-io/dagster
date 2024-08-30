@@ -51,7 +51,7 @@ When you need to generate multiple assets from a single operation, you can use t
 
 In this example, `my_multi_asset` produces two assets: `asset_one` and `asset_two`. Each is derived from the same function, which makes it easier to handle related data transformations together:
 
-<CodeExample filePath="guides/data-assets/data-assets/multi_asset_decorator.py" language="python" title="Using multi_asset decorator" />
+<CodeExample filePath="guides/data-assets/data-assets/multi_asset_decorator.py" language="python" title="Using @dg.multi_asset decorator" />
 
 This example could be expressed as:
 
