@@ -64,7 +64,6 @@ You also used `dbt_project.prepare_if_dev()` to compile the dbt project to ensur
 
 ## Adding upstream dependencies
 Oftentimes, you'll want Dagster to generate data that will be used by downstream dbt models. Next, you'll add an upstream asset to `definitions.py` that your dbt project will use as a source:
-Oftentimes, we want Dagster to generate data that will be used by downstream dbt models. Let's add an upstream asset to our `definitions.py` that our dbt project will use as a source:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_upstream.py" language="python" title="Adding an upstream asset to definitions.py" />
 
@@ -74,35 +73,28 @@ This asset:
 - Creates a schema called `raw` if it doesn't already exist
 - Writes a `raw_customers` table to the `raw` schema in our DuckDB database
 Next, you'll add a dbt model that will source that asset and define the dependency for Dagster. Create the dbt model first:
-Let's add a dbt model that will source that asset and define the dependency for Dagster, first we'll create our dbt model:
 
 <CodeExample filePath="guides/etl/transform-dbt/basic-dbt-project/models/example/customers.sql" language="sql" title="customers.sql" />
 Now you'll set up your `_source.yml` file that points dbt to the upstream asset:
-Now we'll set up our `_source.yml` file that will point dbt to our upstream asset:
 
 <CodeExample filePath="guides/etl/transform-dbt/basic-dbt-project/models/example/_source.yml" language="yaml" title="Adding a _source.yml to our dbt project" />
-By adding the Dagster metadata, you're telling Dagster that the source data comes from the `raw_customers` asset you defined earlier. This file now serves two purposes:
 In this file we need to add the Dagster metadata in the highlighted portion of the code to tell Dagster that this source data is coming from the `raw_customers` asset that we defined earlier. This file now serves two purposes:
 1. It tells dbt where to find the source data for the `customers` model
 2. It tells Dagster exactly which asset represents this source data
 
 ## Adding downstream dependencies
 You may also have assets that depend on the output of dbt models. Next, create an asset that depends on the result of the new `customers` model. This asset will create a histogram of the first names of the customers:
-Similarly, we often have assets that depend on the output of our dbt models. Let's create an asset that depends on the result of our new `customers` model, this asset will create a histogram of the first names of the customers:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_downstream.py" language="python" title="Adding an downstream asset to definitions.py" />
 Take note of the following line, which is where you set the asset dependency to the customers model using the `get_asset_key_for_model` function:
-The important line to note is where we set the dependency of our asset to our customers model using the `get_asset_key_for_model` function:
 
 ```python
 deps=get_asset_key_for_model([dbt_models], "customers")
 ```
-This line finds the `customers` dbt model, gets its corresponding asset key, and directly sets it as a dependency of the new `customer_histogram` asset.
 This line finds our `customers` dbt model, gets its corresponding asset key, and directly sets it as a dependency of our new `customer_histogram` asset.
 
 ## Scheduling dbt models
 You can schedule your dbt models by using the Dagster dbt integration's `build_schedule_from_dbt_selection` function:
-We can easily schedule our dbt models using the Dagster dbt integration's `build_schedule_from_dbt_selection` function:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions_with_schedule.py" language="python" title="Scheduling our dbt models" />
 

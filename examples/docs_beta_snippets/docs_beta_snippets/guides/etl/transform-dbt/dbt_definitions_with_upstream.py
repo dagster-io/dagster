@@ -1,5 +1,9 @@
 import dagster as dg
-from dagster_dbt import dbt_assets, DbtCliResource, DbtProject
+from dagster_dbt import (
+    dbt_assets,
+    DbtCliResource,
+    DbtProject
+)
 from pathlib import Path
 # highlight-start
 import pandas as pd

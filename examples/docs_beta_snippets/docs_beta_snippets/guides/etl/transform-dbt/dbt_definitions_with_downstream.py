@@ -1,6 +1,11 @@
 import dagster as dg
 # highlight-start
-from dagster_dbt import dbt_assets, DbtCliResource, DbtProject, get_asset_key_for_model
+from dagster_dbt import (
+    dbt_assets,
+    DbtCliResource,
+    DbtProject,
+    get_asset_key_for_model
+)
 import plotly.express as px
 # highlight-end
 from pathlib import Path
