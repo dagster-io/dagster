@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 airflow_dep_list = [
@@ -11,11 +13,13 @@ airflow_dep_list = [
 
 setup(
     name="dagster-airlift",
-    version="0.0.3",
+    version="0.0.11",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Tooling to assist with migrating from Airflow to Dagster.",
+    long_description=Path("README.md").read_text(),
+    long_description_content_type="text/markdown",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "dagster-airlift"

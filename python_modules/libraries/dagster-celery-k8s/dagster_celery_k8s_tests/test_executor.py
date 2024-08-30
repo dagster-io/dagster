@@ -152,5 +152,6 @@ def test_per_step_k8s_config(kubeconfig_file):
     created_containers = expected_mock.call_args.kwargs["body"].spec.template.spec.containers
     assert len(created_containers) == 1
     container = created_containers[0]
+    assert container.image == "some-job-image:tag"
     assert container.resources.limits == {"cpu": "222m", "memory": "222Mi"}
     assert container.resources.requests == {"cpu": "111m", "memory": "111Mi"}

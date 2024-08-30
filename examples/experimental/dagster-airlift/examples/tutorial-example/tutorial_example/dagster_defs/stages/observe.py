@@ -24,7 +24,11 @@ def rebuild_customer_list_defs() -> Definitions:
         "rebuild_customers_list",
         task_defs(
             "load_raw_customers",
-            Definitions(assets=[AssetSpec(key=["raw_data", "raw_customers"])]),
+            Definitions(
+                assets=[
+                    AssetSpec(key=["raw_data", "raw_customers"]),
+                ]
+            ),
         ),
         task_defs(
             "build_dbt_models",
@@ -37,7 +41,11 @@ def rebuild_customer_list_defs() -> Definitions:
         task_defs(
             "export_customers",
             # encode dependency on customers table
-            Definitions(assets=[AssetSpec(key="customers_csv", deps=["customers"])]),
+            Definitions(
+                assets=[
+                    AssetSpec(key="customers_csv", deps=["customers"]),
+                ]
+            ),
         ),
     )
 

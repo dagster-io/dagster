@@ -12,16 +12,17 @@ GITHUB_URL = "https://github.com/dagster-io/dagster"
 OSS_REPO = git.Repo(Path(__file__).parent.parent)
 INTERNAL_REPO = git.Repo(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"])
 
-CHANGELOG_HEADER_PATTERN = re.compile(r"## CHANGELOG.*\[\s*(.*?)\s*\]")
+CHANGELOG_HEADER = "## Changelog"
+CHANGELOG_HEADER_PATTERN = re.compile(rf"{CHANGELOG_HEADER}.*\[\s*(.*?)\s*\]")
 IGNORE_TOKEN = "NOCHANGELOG"
 
 CATEGORIES = {
-    "NEW": "New",
-    "BUG": "Bugfixes",
-    "DOCS": "Documentation",
-    "BREAKING": "Breaking Changes",
-    "DEPRECATE": "Deprecations",
-    "PLUS": "Dagster Plus",
+    "New": "New",
+    "Bug": "Bugfixes",
+    "Docs": "Documentation",
+    "Breaking": "Breaking Changes",
+    "Deprecate": "Deprecations",
+    "Plus": "Dagster Plus",
     None: "Invalid",
 }
 
@@ -64,15 +65,16 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     # non-empty line
     found = False
     changelog_category = "Invalid"
-    raw_changelog_entry = None
-    for line in str(commit.message).split():
-        if found and line:
-            raw_changelog_entry = line
-            break
-        # give a buffer to allow us to match formats such as "## Changelog"
-        match = CHANGELOG_HEADER_PATTERN.match(line)
-        if match:
-            changelog_category = CATEGORIES.get(match.group(1), changelog_category)
+    raw_changelog_entry = ""
+    for line in str(commit.message).split("\n"):
+        if found and line.strip():
+            raw_changelog_entry += " " + line.strip()
+            continue
+        is_header = line.startswith(CHANGELOG_HEADER)
+        if is_header:
+            raw_category_match = CHANGELOG_HEADER_PATTERN.match(line)
+            raw_category = raw_category_match.group(1) if raw_category_match else None
+            changelog_category = CATEGORIES.get(raw_category, changelog_category)
             found = True
 
     return ParsedCommit(
@@ -89,21 +91,14 @@ def _normalize(name: str) -> str:
     return name.replace(" ", "").lower()
 
 
-def _is_external_commit(commit: git.Commit) -> bool:
-    # not super accurate at the moment, we'll probably need to actually ping the Github API
-    return bool(commit.co_authors) and any(
-        _normalize(str(a.name)) != _normalize(str(commit.author.name)) for a in commit.co_authors
-    )
-
-
 def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
     grouped_commits: Mapping[str, List[ParsedCommit]] = defaultdict(list)
     for commit in documented:
-        grouped_commits[commit.author].append(commit)
+        grouped_commits[commit.changelog_category].append(commit)
 
     documented_text = ""
     for category in CATEGORIES.values():
-        documented_text += f"### {category}\n\n"
+        documented_text += f"### {category}\n"
         for commit in grouped_commits.get(category, []):
             documented_text += f"\n* {commit.issue_link} {commit.raw_changelog_entry}"
     return documented_text

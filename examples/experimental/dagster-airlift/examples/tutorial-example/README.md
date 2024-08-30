@@ -1,12 +1,32 @@
 ## Example: Migrating an Airflow DAG to Dagster
 
+This example demonstrates how to migrate an Airflow DAG to Dagster using the `dagster-airlift` package. It contains code examples of how to peer, observe, and migrate assets from an Airflow DAG to Dagster.
+The below guide will walk through each of these steps in detail.
+
+## Example Structure
+
+```plaintext
+tutorial_example
+├── shared: Contains shared Python & SQL code used Airflow and migrated Dagster code
+│
+├── dagster_defs: Contains Dagster definitions
+│   ├── stages: Contains reference implementations of each stage of the migration process
+│   ├── definitions.py: Empty starter file for following along with the tutorial
+│
+├── airflow_dags: Contains the Airflow DAG and associated files
+│   ├── migration_state: Contains migration state files for each DAG, see migration step below
+│   ├── dags.py: The Airflow DAG definition
+```
+
+## Guide
+
 This tutorial will walk through the process of peering, observing, and migrating assets from an Airflow DAG to Dagster.
 
-For now, you have to check out dagster's monorepo to get this code, but we will change that soon - thanks for your patience.
+First, clone the tutorial example repo locally, and enter the repo directory.
 
 ```bash
-gh repo clone dagster-io/dagster
-pushd dagster/examples/experimental/dagster-airlift/examples/tutorial-example
+gh repo clone dagster-io/airlift-tutorial
+cd airlift-tutorial
 ```
 
 First we strongly recommend that you setup a fresh virtual environment and that you use `uv`.
@@ -54,7 +74,7 @@ source .venv/bin/activate
 uv pip install 'dagster-airlift[core]' dagster-webserver dagster
 ```
 
-Next, create a new Python file to hold your Dagster code. Create a `Definitions` object using `build_defs_from_airflow_instance`:
+Next, create a `Definitions` object using `build_defs_from_airflow_instance`. You can use the empty [`tutorial_example/dagster_defs/definitions.py`](./tutorial_example/dagster_defs/definitions.py) file as a starting point:
 
 ```python
 # peer.py
@@ -86,12 +106,12 @@ Let's set up some environment variables, and then point Dagster to see the asset
 export TUTORIAL_EXAMPLE_DIR=$(pwd)
 export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
 export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
-dagster dev -f peer.py
+dagster dev -f tutorial_example/dagster_defs/definitions.py
 ```
 
 <p align="center">
 
-![Peered asset in Dagster UI](./../../images/peer.svg)
+![Peered asset in Dagster UI](./images/peer.svg)
 
 </p>
 
@@ -99,7 +119,7 @@ If we kick off a run of the `rebuild_customers_list` DAG in Airflow, we should s
 
 <p align="center">
 
-![Materialized peer asset in Dagster UI](./../../images/peer_materialize.svg)
+![Materialized peer asset in Dagster UI](./images/peer_materialize.svg)
 
 </p>
 
@@ -107,7 +127,7 @@ _Note: When the code location loads, Dagster will query the Airflow REST API in 
 
 <details>
 <summary>
-*Peering to multiple instances*
+Peering to multiple instances
 </summary>
 
 Airlift supports peering to multiple Airflow instances, as you can invoke `create_airflow_instance_defs` multiple times and combine them with `Definitions.merge`:
@@ -163,7 +183,7 @@ We can use the Dagster-supplied factory `dbt_defs` to generate these definitions
 First, you need to install the extra that has the dbt factory:
 
 ```bash
-uv pip install dagster-airlift[dbt]
+uv pip install 'dagster-airlift[dbt]'
 ```
 
 Then, we will construct our assets:
@@ -196,7 +216,11 @@ def rebuild_customer_list_defs() -> Definitions:
         "rebuild_customers_list",
         task_defs(
             "load_raw_customers",
-            Definitions(assets=[AssetSpec(key=["raw_data", "raw_customers"])]),
+            Definitions(
+                assets=[
+                    AssetSpec(key=["raw_data", "raw_customers"]),
+                ]
+            ),
         ),
         task_defs(
             "build_dbt_models",
@@ -209,7 +233,11 @@ def rebuild_customer_list_defs() -> Definitions:
         task_defs(
             "export_customers",
             # encode dependency on customers table
-            Definitions(assets=[AssetSpec(key="customers_csv", deps=["customers"])]),
+            Definitions(
+                assets=[
+                    AssetSpec(key="customers_csv", deps=["customers"]),
+                ]
+            ),
         ),
     )
 
@@ -228,21 +256,13 @@ defs = build_defs_from_airflow_instance(
 
 ```
 
-```bash
-# Set up environment variables to point to the examples/tutorial-example directory on your machine
-export TUTORIAL_EXAMPLE_DIR=$(pwd)
-export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
-export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
-dagster dev -f observe.py
-```
-
 ### Viewing observed assets
 
 Once your assets are set up, you should be able to reload your Dagster definitions and see a full representation of the dbt project and other data assets in your code.
 
 <p align="center">
 
-![Observed asset graph in Dagster](./../../images/observe.svg)
+![Observed asset graph in Dagster](./images/observe.svg)
 
 </p>
 
@@ -299,7 +319,7 @@ The DAG will now display its migration state in the Airflow UI. (There is some l
 
 <p align="center">
 
-![Migration state rendering in Airflow UI](./../../images/state_in_airflow.png)
+![Migration state rendering in Airflow UI](./images/state_in_airflow.png)
 
 </p>
 
@@ -332,31 +352,30 @@ tasks:
     migrated: False
 ```
 
-Important: You must reload the definitions in Dagster via the UI or by restarting `dagster dev`.
+**Important**: It may take up to 30 seconds for the migration status in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster via the UI or by restarting `dagster dev`.
 
-You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run.
+You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run:
 
 <p align="center">
 
-![dbt build executing in Dagster](./../../images/migrated_dag.png)
+![dbt build executing in Dagster](./images/migrated_dag.png)
 
 </p>
 
-You'll note that you migrated a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI. However execution has moved to Dagster.
+You'll note that we migrated a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI, but execution of `build_dbt_models` has moved to Dagster.
 
 #### Migrating the remaining custom operators
 
-For all other operator types, we recommend creating a new factory function whose arguments match the inputs to your Airflow operator. Then, you can use this factory to build definitions for each Airflow task.
+For all other operator types, we will need to build our own asset definitions. We recommend creating a factory function whose arguments match the inputs to your Airflow operator. Then, you can use this factory to build definitions for each Airflow task.
 
-For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a function `load_csv_to_duckdb_defs` factory to build corresponding software-defined assets. Similarly for `export_customers` we'll define a function `export_duckdb_to_csv_defs` to build SDAs.
+For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a function `load_csv_to_duckdb_defs` factory to build corresponding software-defined assets. Similarly for `export_customers` we'll define a function `export_duckdb_to_csv_defs` to build SDAs:
 
 ```python
 # migrate.py
 import os
 from pathlib import Path
 
-from dagster import AssetSpec, Definitions, multi_asset
-from dagster._core.definitions.materialize import materialize
+from dagster import AssetSpec, Definitions, materialize, multi_asset
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -379,12 +398,10 @@ def dbt_project_path() -> Path:
 
 
 def airflow_dags_path() -> Path:
-    return Path(__file__).parent / "tutorial_example" / "airflow_dags"
+    return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
-def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
-    spec = AssetSpec(key=[args.duckdb_schema, args.table_name])
-
+def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
     @multi_asset(name=f"load_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         load_csv_to_duckdb(args)
@@ -392,11 +409,7 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
     return Definitions(assets=[_multi_asset])
 
 
-def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
-    spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
-    )
-
+def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> Definitions:
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         export_duckdb_to_csv(args)
@@ -404,20 +417,13 @@ def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     return Definitions(assets=[_multi_asset])
 
 
-defs = build_defs_from_airflow_instance(
-    airflow_instance=AirflowInstance(
-        auth_backend=BasicAuthBackend(
-            webserver_url="http://localhost:8080",
-            username="admin",
-            password="admin",
-        ),
-        name="airflow_instance_one",
-    ),
-    defs=dag_defs(
+def rebuild_customer_list_defs() -> Definitions:
+    return dag_defs(
         "rebuild_customers_list",
         task_defs(
             "load_raw_customers",
             load_csv_to_duckdb_defs(
+                AssetSpec(key=["raw_data", "raw_customers"]),
                 LoadCsvToDuckDbArgs(
                     table_name="raw_customers",
                     csv_path=airflow_dags_path() / "raw_customers.csv",
@@ -425,7 +431,7 @@ defs = build_defs_from_airflow_instance(
                     names=["id", "first_name", "last_name"],
                     duckdb_schema="raw_data",
                     duckdb_database_name="jaffle_shop",
-                )
+                ),
             ),
         ),
         task_defs(
@@ -439,29 +445,46 @@ defs = build_defs_from_airflow_instance(
         task_defs(
             "export_customers",
             export_duckdb_to_csv_defs(
+                AssetSpec(key="customers_csv", deps=["customers"]),
                 ExportDuckDbToCsvArgs(
                     table_name="customers",
-                    # TODO use env var?
-                    csv_path=airflow_dags_path() / "customers.csv",
+                    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                     duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
-                    duckdb_schema="raw_data",
                     duckdb_database_name="jaffle_shop",
-                )
+                ),
             ),
         ),
+    )
+
+
+defs = build_defs_from_airflow_instance(
+    airflow_instance=AirflowInstance(
+        auth_backend=BasicAuthBackend(
+            webserver_url="http://localhost:8080",
+            username="admin",
+            password="admin",
+        ),
+        name="airflow_instance_one",
     ),
+    defs=rebuild_customer_list_defs(),
 )
 
 
 
 ```
 
-```bash
-# Set up environment variables to point to the examples/tutorial-example directory on your machine
-export TUTORIAL_EXAMPLE_DIR=$(pwd)
-export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/dbt"
-export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
-dagster dev -f migrate.py
+We can then toggle the migration status of the remaining tasks in the `migration_state` file:
+
+```yaml
+# tutorial_example/airflow_dags/migration_state/rebuild_customers_list.yaml
+tasks:
+  - id: load_raw_customers
+    migrated: True
+  - id: build_dbt_models
+    # change this to move execution to Dagster
+    migrated: True
+  - id: export_customers
+    migrated: True
 ```
 
 ## Decomissioning an Airflow DAG
@@ -491,12 +514,10 @@ def dbt_project_path() -> Path:
 
 
 def airflow_dags_path() -> Path:
-    return Path(__file__).parent / "tutorial_example" / "airflow_dags"
+    return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
-def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
-    spec = AssetSpec(key=[args.duckdb_schema, args.table_name])
-
+def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
     @multi_asset(name=f"load_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         load_csv_to_duckdb(args)
@@ -504,11 +525,7 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
     return Definitions(assets=[_multi_asset])
 
 
-def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
-    spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
-    )
-
+def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> Definitions:
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         export_duckdb_to_csv(args)
@@ -516,9 +533,10 @@ def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     return Definitions(assets=[_multi_asset])
 
 
-def build_customers_list_defs() -> Definitions:
-    rebuild_customers_list_defs = Definitions.merge(
+def rebuild_customers_list_defs() -> Definitions:
+    merged_defs = Definitions.merge(
         load_csv_to_duckdb_defs(
+            AssetSpec(key=["raw_data", "raw_customers"]),
             LoadCsvToDuckDbArgs(
                 table_name="raw_customers",
                 csv_path=airflow_dags_path() / "raw_customers.csv",
@@ -526,35 +544,237 @@ def build_customers_list_defs() -> Definitions:
                 names=["id", "first_name", "last_name"],
                 duckdb_schema="raw_data",
                 duckdb_database_name="jaffle_shop",
-            )
+            ),
         ),
         dbt_defs(
             manifest=dbt_project_path() / "target" / "manifest.json",
             project=DbtProject(dbt_project_path().absolute()),
         ),
         export_duckdb_to_csv_defs(
+            AssetSpec(key="customers_csv", deps=["customers"]),
             ExportDuckDbToCsvArgs(
                 table_name="customers",
-                # TODO use env var?
-                csv_path=airflow_dags_path() / "customers.csv",
+                csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                 duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                 duckdb_database_name="jaffle_shop",
-            )
+            ),
         ),
     )
 
     rebuild_customers_list_schedule = ScheduleDefinition(
         name="rebuild_customers_list_schedule",
-        target=AssetSelection.assets(*rebuild_customers_list_defs.assets),  # type: ignore
+        target=AssetSelection.assets(*merged_defs.get_asset_graph().all_asset_keys),
         cron_schedule="0 0 * * *",
     )
 
     return Definitions.merge(
-        rebuild_customers_list_defs,
+        merged_defs,
         Definitions(schedules=[rebuild_customers_list_schedule]),
     )
 
 
-defs = build_customers_list_defs()
+defs = rebuild_customers_list_defs()
 
 ```
+
+## Addendum: Adding asset checks
+
+Once you have peered your Airflow DAGs in Dagster, regardless of migration progress, you can begin to add asset checks to your Dagster code. Asset checks can be used to validate the quality of your data assets, and can provide additional observability and value on top of your Airflow DAG even before migration starts.
+
+For example, given a peered version of our DAG, we can add an asset check to ensure that the final `customers` CSV output exists and has a non-zero number of rows:
+
+```python
+# peer_with_check.py
+import os
+from pathlib import Path
+
+from dagster import AssetCheckResult, AssetCheckSeverity, AssetKey, Definitions, asset_check
+from dagster_airlift.core import AirflowInstance, BasicAuthBackend, build_defs_from_airflow_instance
+
+
+# Attach a check to the DAG representation asset, which will be executed by Dagster
+# any time the DAG is run in Airflow
+@asset_check(asset=AssetKey(["airflow_instance", "dag", "rebuild_customers_list"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("\n"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
+
+
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            # other backends available (e.g. MwaaSessionAuthBackend)
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://localhost:8080",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
+        )
+    ),
+    Definitions(asset_checks=[validate_exported_csv]),
+)
+
+```
+
+Once we have introduced representations of the assets produced by our Airflow tasks, we can directly attach asset checks to these assets. These checks will run once the corresponding task completes, regardless of whether the task is executed in Airflow or Dagster.
+
+<details>
+<summary>
+Asset checks on an observed or migrated DAG
+</summary>
+
+```python
+# migrate_with_check.py
+import os
+from pathlib import Path
+
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetKey,
+    AssetSpec,
+    Definitions,
+    asset_check,
+    materialize,
+    multi_asset,
+)
+from dagster_airlift.core import (
+    AirflowInstance,
+    BasicAuthBackend,
+    build_defs_from_airflow_instance,
+    dag_defs,
+    task_defs,
+)
+from dagster_airlift.dbt import dbt_defs
+from dagster_dbt import DbtProject
+
+# Code also invoked from Airflow
+from tutorial_example.shared.export_duckdb_to_csv import ExportDuckDbToCsvArgs, export_duckdb_to_csv
+from tutorial_example.shared.load_csv_to_duckdb import LoadCsvToDuckDbArgs, load_csv_to_duckdb
+
+
+def dbt_project_path() -> Path:
+    env_val = os.getenv("TUTORIAL_DBT_PROJECT_DIR")
+    assert env_val, "TUTORIAL_DBT_PROJECT_DIR must be set"
+    return Path(env_val)
+
+
+def airflow_dags_path() -> Path:
+    return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
+
+
+def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
+    @multi_asset(name=f"load_{args.table_name}", specs=[spec])
+    def _multi_asset() -> None:
+        load_csv_to_duckdb(args)
+
+    return Definitions(assets=[_multi_asset])
+
+
+def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> Definitions:
+    @multi_asset(name=f"export_{args.table_name}", specs=[spec])
+    def _multi_asset() -> None:
+        export_duckdb_to_csv(args)
+
+    return Definitions(assets=[_multi_asset])
+
+
+@asset_check(asset=AssetKey(["customers_csv"]))
+def validate_exported_csv() -> AssetCheckResult:
+    csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
+
+    if not csv_path.exists():
+        return AssetCheckResult(passed=False, description=f"Export CSV {csv_path} does not exist")
+
+    rows = len(csv_path.read_text().split("\n"))
+    if rows < 2:
+        return AssetCheckResult(
+            passed=False,
+            description=f"Export CSV {csv_path} is empty",
+            severity=AssetCheckSeverity.WARN,
+        )
+
+    return AssetCheckResult(
+        passed=True,
+        description=f"Export CSV {csv_path} exists",
+        metadata={"rows": rows},
+    )
+
+
+def rebuild_customer_list_defs() -> Definitions:
+    return dag_defs(
+        "rebuild_customers_list",
+        task_defs(
+            "load_raw_customers",
+            load_csv_to_duckdb_defs(
+                AssetSpec(key=["raw_data", "raw_customers"]),
+                LoadCsvToDuckDbArgs(
+                    table_name="raw_customers",
+                    csv_path=airflow_dags_path() / "raw_customers.csv",
+                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                    names=["id", "first_name", "last_name"],
+                    duckdb_schema="raw_data",
+                    duckdb_database_name="jaffle_shop",
+                ),
+            ),
+        ),
+        task_defs(
+            "build_dbt_models",
+            # load rich set of assets from dbt project
+            dbt_defs(
+                manifest=dbt_project_path() / "target" / "manifest.json",
+                project=DbtProject(str(dbt_project_path().absolute())),
+            ),
+        ),
+        task_defs(
+            "export_customers",
+            export_duckdb_to_csv_defs(
+                AssetSpec(key="customers_csv", deps=["customers"]),
+                ExportDuckDbToCsvArgs(
+                    table_name="customers",
+                    csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
+                    duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
+                    duckdb_database_name="jaffle_shop",
+                ),
+            ),
+        ),
+    )
+
+
+defs = Definitions.merge(
+    build_defs_from_airflow_instance(
+        airflow_instance=AirflowInstance(
+            auth_backend=BasicAuthBackend(
+                webserver_url="http://localhost:8080",
+                username="admin",
+                password="admin",
+            ),
+            name="airflow_instance_one",
+        ),
+        defs=rebuild_customer_list_defs(),
+    ),
+    Definitions(asset_checks=[validate_exported_csv]),
+)
+
+
+
+```
+
+</details>

@@ -1,14 +1,16 @@
-import time
 from pathlib import Path
 
 import pytest
 from dagster import DagsterInstance
 
-from .utils import start_run_and_wait_for_completion
+from .utils import poll_for_materialization, start_run_and_wait_for_completion
 
 
 @pytest.fixture(name="dagster_defs_path")
-def setup_dagster_defs_path(makefile_dir: Path) -> str:
+def setup_dagster_defs_path(
+    makefile_dir: Path,
+    local_env,
+) -> str:
     return str(makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "observe.py")
 
 
@@ -26,8 +28,4 @@ def test_observe_reflects_dag_completion_status(airflow_instance: None, dagster_
 
     start_run_and_wait_for_completion("rebuild_customers_list")
 
-    time.sleep(10)
-
-    mat_events = instance.get_latest_materialization_events(asset_keys=all_keys)
-    for key, event in mat_events.items():
-        assert event is not None, f"Materialization event for {key} is None"
+    poll_for_materialization(instance, target=all_keys)

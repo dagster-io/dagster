@@ -31,12 +31,12 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
     [
         # cron condition returns a unique value hash if parents change, if schedule changes, if the
         # partitions def changes, or if an asset is materialized
-        ("fef5f314d057e979611619c76650738c", SC.on_cron("0 * * * *"), one_parent, False),
-        ("f49a6cd10a479600a20ed6a41cf69627", SC.on_cron("0 * * * *"), one_parent, True),
-        ("e76a776ed851d4bef5aed673dd8ba69e", SC.on_cron("0 0 * * *"), one_parent, False),
-        ("8f92e3b53d480c17b522a87c19478044", SC.on_cron("0 * * * *"), one_parent_daily, False),
-        ("dba479aa2c6203e2dca54cdda01bad15", SC.on_cron("0 * * * *"), two_parents, False),
-        ("154fdbc5930cea107a128e3a0df5dc97", SC.on_cron("0 * * * *"), two_parents_daily, False),
+        ("0696dcb07b82fd8f4934c828bbc8365f", SC.on_cron("0 * * * *"), one_parent, False),
+        ("7fb8a01606b51f6306e85769533fd5b9", SC.on_cron("0 * * * *"), one_parent, True),
+        ("38ba78431e6c22552840e7177918a880", SC.on_cron("0 0 * * *"), one_parent, False),
+        ("98e74cd660564cb881d889ec9ae75ce0", SC.on_cron("0 * * * *"), one_parent_daily, False),
+        ("c0e6323656d8208666e8c74d9af93a64", SC.on_cron("0 * * * *"), two_parents, False),
+        ("3545889e64a11959400cb116ba2320ec", SC.on_cron("0 * * * *"), two_parents_daily, False),
         # same as above
         ("8d1dc13e39337b2cc43c711930893a36", SC.eager(), one_parent, False),
         ("a111331589fc2766a34bacab88639ff5", SC.eager(), one_parent, True),

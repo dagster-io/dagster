@@ -15,12 +15,12 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
     // Adjust the import path to start from the docs directory
     import(`!!raw-loader!/../../examples/docs_beta_snippets/docs_beta_snippets/${filePath}`)
       .then((module) => {
-        const lines = module.default.split('\n').map(line => {
-          return line.replaceAll(/#.*?noqa.*?$/g, "").trim();
+        const lines = module.default.split('\n').map((line) => {
+          return line.replaceAll(/#.*?noqa.*?$/g, '');
         });
         const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
         const strippedContent =
-          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : module.default;
+          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : lines.join('\n');
         setContent(strippedContent);
         setError(null);
       })

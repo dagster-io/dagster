@@ -1,5 +1,5 @@
 # Makefile
 
 adhoc_pypi:
-	@chmod +x increment_pypi_version.sh
-	@./increment_pypi_version.sh
+	@chmod +x scripts/increment_pypi_version.sh
+	@./scripts/increment_pypi_version.sh

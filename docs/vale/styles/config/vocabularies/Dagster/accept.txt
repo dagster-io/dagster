@@ -18,6 +18,7 @@ BigQuery
 Crontab
 Databricks
 Datadog
+Dockerfile
 dbt
 DuckDB
 GitHub
@@ -42,5 +43,8 @@ we have
 lookback
 Pydantic
 DSL
+[Rr]epo
+plaintext
 vCPU
 vCPUs
+SAML

@@ -17,12 +17,10 @@ def dbt_project_path() -> Path:
 
 
 def airflow_dags_path() -> Path:
-    return Path(__file__).parent / "tutorial_example" / "airflow_dags"
+    return Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "tutorial_example" / "airflow_dags"
 
 
-def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
-    spec = AssetSpec(key=[args.duckdb_schema, args.table_name])
-
+def load_csv_to_duckdb_defs(spec: AssetSpec, args: LoadCsvToDuckDbArgs) -> Definitions:
     @multi_asset(name=f"load_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         load_csv_to_duckdb(args)
@@ -30,11 +28,7 @@ def load_csv_to_duckdb_defs(args: LoadCsvToDuckDbArgs) -> Definitions:
     return Definitions(assets=[_multi_asset])
 
 
-def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
-    spec = AssetSpec(
-        key=str(args.csv_path).rsplit("/", 2)[-1].replace(".", "_"), deps=[args.table_name]
-    )
-
+def export_duckdb_to_csv_defs(spec: AssetSpec, args: ExportDuckDbToCsvArgs) -> Definitions:
     @multi_asset(name=f"export_{args.table_name}", specs=[spec])
     def _multi_asset() -> None:
         export_duckdb_to_csv(args)
@@ -42,9 +36,10 @@ def export_duckdb_to_csv_defs(args: ExportDuckDbToCsvArgs) -> Definitions:
     return Definitions(assets=[_multi_asset])
 
 
-def build_customers_list_defs() -> Definitions:
-    rebuild_customers_list_defs = Definitions.merge(
+def rebuild_customers_list_defs() -> Definitions:
+    merged_defs = Definitions.merge(
         load_csv_to_duckdb_defs(
+            AssetSpec(key=["raw_data", "raw_customers"]),
             LoadCsvToDuckDbArgs(
                 table_name="raw_customers",
                 csv_path=airflow_dags_path() / "raw_customers.csv",
@@ -52,33 +47,33 @@ def build_customers_list_defs() -> Definitions:
                 names=["id", "first_name", "last_name"],
                 duckdb_schema="raw_data",
                 duckdb_database_name="jaffle_shop",
-            )
+            ),
         ),
         dbt_defs(
             manifest=dbt_project_path() / "target" / "manifest.json",
             project=DbtProject(dbt_project_path().absolute()),
         ),
         export_duckdb_to_csv_defs(
+            AssetSpec(key="customers_csv", deps=["customers"]),
             ExportDuckDbToCsvArgs(
                 table_name="customers",
-                # TODO use env var?
-                csv_path=airflow_dags_path() / "customers.csv",
+                csv_path=Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv",
                 duckdb_path=Path(os.environ["AIRFLOW_HOME"]) / "jaffle_shop.duckdb",
                 duckdb_database_name="jaffle_shop",
-            )
+            ),
         ),
     )
 
     rebuild_customers_list_schedule = ScheduleDefinition(
         name="rebuild_customers_list_schedule",
-        target=AssetSelection.assets(*rebuild_customers_list_defs.assets),  # type: ignore
+        target=AssetSelection.assets(*merged_defs.get_asset_graph().all_asset_keys),
         cron_schedule="0 0 * * *",
     )
 
     return Definitions.merge(
-        rebuild_customers_list_defs,
+        merged_defs,
         Definitions(schedules=[rebuild_customers_list_schedule]),
     )
 
 
-defs = build_customers_list_defs()
+defs = rebuild_customers_list_defs()
