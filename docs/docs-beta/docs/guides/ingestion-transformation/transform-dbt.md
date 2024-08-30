@@ -49,7 +49,7 @@ This a minimal dbt project with just a couple models and a DuckDB backend. Your 
 │       └── schema.yml
 ```
 
-Now we can point Dagster to our dbt project and build our asset graph. Let's create a `definitions.py` file beside our dbt project:
+Now we can point Dagster to our dbt project and build our asset graph. Let's create a `definitions.py` file in the same directory as our dbt project:
 
 <CodeExample filePath="guides/etl/transform-dbt/dbt_definitions.py" language="python" title="Importing a dbt project into Dagster" />
 
