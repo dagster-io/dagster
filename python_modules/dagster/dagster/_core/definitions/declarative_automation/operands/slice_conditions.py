@@ -1,21 +1,21 @@
 import datetime
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
-from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
 
-class SliceAutomationCondition(AutomationCondition):
+class SliceAutomationCondition(AutomationCondition[T_EntityKey]):
     """Base class for simple conditions which compute a simple slice of the asset graph."""
 
     @property
@@ -23,9 +23,11 @@ class SliceAutomationCondition(AutomationCondition):
         return False
 
     @abstractmethod
-    def compute_slice(self, context: AutomationContext) -> EntitySlice: ...
+    def compute_slice(
+        self, context: AutomationContext[T_EntityKey]
+    ) -> EntitySlice[T_EntityKey]: ...
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         # don't compute anything if there are no candidates
         if context.candidate_slice.is_empty:
             true_slice = context.get_empty_slice()
@@ -36,8 +38,8 @@ class SliceAutomationCondition(AutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class MissingAutomationCondition(SliceAutomationCondition):
+@dataclass(frozen=True)
+class MissingAutomationCondition(SliceAutomationCondition[AssetKey]):
     label: Optional[str] = None
 
     @property
@@ -55,8 +57,8 @@ class MissingAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class InProgressAutomationCondition(SliceAutomationCondition):
+@dataclass(frozen=True)
+class InProgressAutomationCondition(SliceAutomationCondition[AssetKey]):
     label: Optional[str] = None
 
     @property
@@ -72,8 +74,8 @@ class InProgressAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class FailedAutomationCondition(SliceAutomationCondition):
+@dataclass(frozen=True)
+class FailedAutomationCondition(SliceAutomationCondition[AssetKey]):
     label: Optional[str] = None
 
     @property
@@ -89,8 +91,8 @@ class FailedAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class WillBeRequestedCondition(SliceAutomationCondition):
+@dataclass(frozen=True)
+class WillBeRequestedCondition(SliceAutomationCondition[AssetKey]):
     label: Optional[str] = None
 
     @property
@@ -125,8 +127,8 @@ class WillBeRequestedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class NewlyRequestedCondition(SliceAutomationCondition):
+@dataclass(frozen=True)
+class NewlyRequestedCondition(SliceAutomationCondition[AssetKey]):
     label: Optional[str] = None
 
     @property
@@ -142,8 +144,8 @@ class NewlyRequestedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class NewlyUpdatedCondition(SliceAutomationCondition):
+@dataclass(frozen=True)
+class NewlyUpdatedCondition(SliceAutomationCondition[AssetKey]):
     label: Optional[str] = None
 
     @property
@@ -165,7 +167,7 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@record
+@dataclass(frozen=True)
 class CronTickPassedCondition(SliceAutomationCondition):
     cron_schedule: str
     cron_timezone: str
@@ -187,7 +189,7 @@ class CronTickPassedCondition(SliceAutomationCondition):
         )
         return next(previous_ticks)
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
+    def compute_slice(self, context: AutomationContext) -> EntitySlice:
         previous_cron_tick = self._get_previous_cron_tick(context.evaluation_time)
         if (
             # no previous evaluation
@@ -201,8 +203,8 @@ class CronTickPassedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class InLatestTimeWindowCondition(SliceAutomationCondition):
+@dataclass(frozen=True)
+class InLatestTimeWindowCondition(SliceAutomationCondition[AssetKey]):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
     label: Optional[str] = None
 

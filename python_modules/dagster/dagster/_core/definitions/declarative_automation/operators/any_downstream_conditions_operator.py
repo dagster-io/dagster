@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import AbstractSet, Mapping, Optional, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
@@ -6,12 +7,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
-@record
-class DownstreamConditionWrapperCondition(AutomationCondition):
+@dataclass(frozen=True)
+class DownstreamConditionWrapperCondition(AutomationCondition[AssetKey]):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
     True.
@@ -33,7 +33,7 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
     def requires_cursor(self) -> bool:
         return False
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         child_result = self.operand.evaluate(
             context.for_child_condition(
                 child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
@@ -45,8 +45,8 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
 
 
 @whitelist_for_serdes
-@record
-class AnyDownstreamConditionsCondition(AutomationCondition):
+@dataclass(frozen=True)
+class AnyDownstreamConditionsCondition(AutomationCondition[AssetKey]):
     label: Optional[str] = None
 
     @property
@@ -62,7 +62,7 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
         return False
 
     def _get_ignored_conditions(
-        self, context: AutomationContext
+        self, context: AutomationContext[AssetKey]
     ) -> AbstractSet[AutomationCondition]:
         """To avoid infinite recursion, we do not expand conditions which are already part of the
         evaluation hierarchy.
@@ -82,7 +82,7 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             if not condition.has_rule_condition
         }
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         ignored_conditions = self._get_ignored_conditions(context)
         downstream_conditions = self._get_validated_downstream_conditions(
             context.asset_graph.get_downstream_automation_conditions(asset_key=context.key)
