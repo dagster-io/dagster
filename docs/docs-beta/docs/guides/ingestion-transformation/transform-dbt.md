@@ -8,8 +8,6 @@ last_update:
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline. Dagster's asset-oriented approach allows Dagster to understand dbt at the level of individual dbt models.
 
-This guide TODO
-
 ## What you'll learn
 
 - How to import a basic dbt project into Dagster
