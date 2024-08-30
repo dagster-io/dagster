@@ -1,26 +1,17 @@
 ---
-title: How to Partition Your Data
+title: Partitioning Assets
 description: Learn how to partition your data in Dagster.
-sidebar_label: Partitioning pipelines
+sidebar_label: Partitioning Assets
 sidebar_position: 30
 ---
 
-In Dagster, partitioning is a powerful technique for managing large datasets and improving pipeline performance. This guide will help you understand how to implement data partitioning in your Dagster projects.
+In Dagster, partitioning is a powerful technique for managing large datasets, improving pipeline performance, and enabling incremental processing. This guide will help you understand how to implement data partitioning in your Dagster projects.
 
-There are several ways to partition your data in Dagster:
+By the end of this guide, you'll have a comprehensive understanding of:
 
-- Time-based partitioning, for processing data in specific time intervals
-- Static partitioning, for dividing data based on predefined categories
-- Dynamic partitioning, for creating partitions based on runtime information
-
-This guide walks through these methods and demonstrates how to use them effectively in your data pipelines.
-
-## What you'll learn
-
-- How to define partitions for your Dagster assets and jobs
-- Techniques for implementing time-based and static partitions
-- How to use partition keys to selectively run parts of your pipeline
-- Best practices for working with partitioned data in Dagster
+- Defining partitions for Dagster assets and jobs
+- Establishing dependencies between partitioned assets
+- Leveraging Dagster partitions with external systems like dbt
 
 <details>
   <summary>Prerequisites</summary>
@@ -34,15 +25,29 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-## Partition based on time intervals
+## Define partitioned assets
 
-Time-based partitioning is a common approach for processing data that naturally divides into time intervals, such as daily logs or monthly reports. Here's how to implement time-based partitioning in Dagster:
+There are several ways to partition your data in Dagster:
+
+- [Time-based partitioning](#define-time-partitioned-assets), for processing data in specific time intervals
+- [Static partitioning](#define-partitions-with-predefined-categories), for dividing data based on predefined categories
+- [Dynamic partitioning](#define-partitions-with-dynamic-categories), for creating partitions based on runtime information
+- [Two-dimensional partitioning](#define-two-dimensional-partitions), for partitioning data along two different axes simultaneously
+
+### Define time-partitioned assets
+
+A common use case for partitioning is to process data that divides into time intervals, such as daily logs or monthly reports. Here's how to implement time-based partitioning in Dagster:
 
 <CodeExample filePath="guides/data-modeling/partitioning/time_based_partitioning.py" language="python" title="Time-based partitioning" />
 
-In this example, we define a daily partition for processing log data. The `daily_logs` asset is configured to use these partitions, allowing you to materialize data for specific dates or date ranges.
+In this example:
 
-## Partition based on static categories
+- We defined `daily_partitions` using `DailyPartitionsDefinition` with a start date of "2024-01-01". This will create a range of partitions from "2024-01-01" to the day before the current time.
+- The `daily_sales_data` asset is defined with this partitioning scheme.
+- The `daily_sales_summary` asset depends on `daily_sales_data` and also uses the same partitioning scheme.
+- The schedule `daily_sales_schedule` runs the job daily at 1:00 AM which partitions the data for the previous day.
+
+### Define partitions with predefined categories
 
 Static partitioning is useful when you have predefined categories for your data. For instance, you might want to process data separately for different regions or product lines:
 
@@ -50,7 +55,7 @@ Static partitioning is useful when you have predefined categories for your data.
 
 This example demonstrates how to create static partitions for different regions. The `regional_sales` asset uses these partitions to process sales data for each region independently.
 
-## Partition based on dynamic categories
+### Define partitions with dynamic categories
 
 Dynamic partitioning allows you to create partitions based on runtime information. This is useful when the partitions aren't known in advance:
 
@@ -58,7 +63,7 @@ Dynamic partitioning allows you to create partitions based on runtime informatio
 
 In this example, we create dynamic partitions based on customer IDs. The `customer_data` asset processes data for each customer separately, with the partitions determined at runtime.
 
-## Define two-dimensional partitioning
+### Define two-dimensional partitions
 
 Two-dimensional partitioning allows you to partition your data along two different axes simultaneously. This is useful when you need to process data that can be categorized in multiple ways. Here's an example of how to implement two-dimensional partitioning in Dagster:
 
@@ -74,7 +79,9 @@ This approach is particularly useful when you need to analyze or process data ac
 
 By using two-dimensional partitioning, you can easily select and process specific subsets of your data, improving both the flexibility and efficiency of your data pipeline.
 
-## Define Dependencies Between Partitioned Assets
+## Define dependencies between partitioned assets
+
+### Connect Time-based Partitions
 
 Partitioned assets in Dagster can have dependencies on other partitioned assets. This allows you to create complex data pipelines where the output of one partitioned asset feeds into another. Here's how it works:
 
@@ -92,8 +99,6 @@ In this example:
 3. Each partition of `monthly_report` (a month) depends on multiple partitions of `daily_sales` (the days in that month)
 
 This setup allows you to process daily data and then aggregate it into monthly reports, all while maintaining the benefits of partitioning.
-
-### Connect Time-based Partitions: Connecting Daily and Monthly Assets
 
 ### Connect Time-based and Static Partitions
 
@@ -117,30 +122,15 @@ By connecting time-based and static partitions, you create a flexible system tha
 
 ### Connect Time-based and Dynamic Partitions
 
-User Cohort Analysis Over Time
+TODO
 
-### Connect Static Partitions
+### Connect Time-based partitions to un-partitioned assets
 
-<!-- ### Interconnecting Dynamic Partitions: Customer Segment and Behavior Analysis
+TODO
 
-Dynamic partitions can be interconnected to create complex, flexible data processing pipelines. This is particularly useful when dealing with data that has multiple, interrelated dynamic aspects. Let's look at an example that combines customer segmentation with behavior analysis:
+## Integrating Dagster Partitions with External Systems: Incremental Models and dbt
 
-<CodeExample filePath="guides/data-modeling/partitioning/dynamic_partitioned_dependencies.py" language="python" title="Interconnected dynamic partitions" />
-
-In this example:
-
-1. We define two dynamically partitioned assets: `customer_segments` and `customer_behavior`.
-2. The `customer_segments` asset creates partitions based on customer attributes that may change over time.
-3. The `customer_behavior` asset depends on `customer_segments` and analyzes behavior patterns within each segment.
-4. The partitioning for both assets is determined at runtime, allowing for flexible and adaptive data processing.
-
-This setup allows for sophisticated analysis where:
-
-- Customer segments can be dynamically created or updated based on changing data.
-- Behavior analysis can be performed specifically for each dynamically determined segment.
-- The pipeline can adapt to new segments or changing customer attributes without requiring code changes.
-
-By interconnecting dynamic partitions in this way, you can create data pipelines that are both powerful and flexible, capable of handling complex, evolving datasets and business requirements. -->
+TODO
 
 ## Next steps
 

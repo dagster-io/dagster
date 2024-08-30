@@ -1,45 +1,72 @@
-import dagster as dg
-from datetime import datetime, timedelta
+import os
 
-import urllib3
+import pandas as pd
+
+import dagster as dg
 
 # Create the PartitionDefinition
 daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
 
+
 # Define the partitioned asset
 @dg.asset(partitions_def=daily_partitions)
-def my_daily_partitioned_asset(context: dg.AssetExecutionContext) -> None:
+def daily_sales_data(context: dg.AssetExecutionContext) -> None:
     partition_date_str = context.partition_key
 
-    url = f"https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date={partition_date_str}"
-    target_location = f"nasa/{partition_date_str}.csv"
+    # Simulate fetching daily sales data
+    date = context.partition_key
+    df = pd.DataFrame({"date": [date], "sales": [1000]})  # Placeholder data
 
-    urllib3.request.request.urlretrieve(url, target_location)
+    os.makedirs("daily_sales", exist_ok=True)
+    filename = f"daily_sales/sales_{date}.csv"
+    df.to_csv(filename, index=False)
+
+    context.log.info(f"Daily sales data written to {filename}")
+
+
+@dg.asset(
+    partitions_def=daily_partitions,
+    deps=[daily_sales_data],
+)
+def daily_sales_summary(context):
+    partition_date_str = context.partition_key
+    # Read the CSV file for the given partition date
+    filename = f"daily_sales/sales_{partition_date_str}.csv"
+    df = pd.read_csv(filename)
+
+    # Summarize daily sales
+    summary = {
+        "date": partition_date_str,
+        "total_sales": df["sales"].sum(),
+    }
+
+    context.log.info(f"Daily sales summary for {partition_date_str}: {summary}")
+
+
+# Create a partitioned asset job
+daily_sales_job = dg.define_asset_job(
+    name="daily_sales_job",
+    selection=[daily_sales_data, daily_sales_summary],
+    partitions_def=daily_partitions,
+)
+
 
 # Create a schedule to run the job daily
 @dg.schedule(
-    job=materialize_logs,
+    job=daily_sales_job,
     cron_schedule="0 1 * * *",  # Run at 1:00 AM every day
 )
-def daily_log_schedule(context):
+def daily_sales_schedule(context):
     date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return dg.RunRequest(
         run_key=date,
         partition_key=date,
     )
 
+
 # Define the Definitions object
 defs = dg.Definitions(
-    assets=[daily_logs],
-    jobs=[materialize_logs],
-    schedules=[daily_log_schedule],
+    assets=[daily_sales_data, daily_sales_summary],
+    jobs=[daily_sales_job],
+    schedules=[daily_sales_schedule],
 )
-
-if __name__ == "__main__":
-    # Execute the job for a specific date
-    result = materialize_logs.execute_in_process(
-        partition_key="2023-05-15",
-        run_config={},
-    )
-    print(result.success)
-    print(result.return_value)
