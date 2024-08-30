@@ -34,7 +34,7 @@ To complete the steps in this guide, you'll need:
 4. In the window that displays, enter a name in the **Team name** field.
 5. Click **Create team**.
 
-After the team is created, you can [add users and assign user roles to deployments](#managing-team-members-and-roles).
+After the team is created, you can [add team members](#adding-team-members) and [assign user roles to deployments](#managing-team-roles).
 
 ## Adding team members
 
