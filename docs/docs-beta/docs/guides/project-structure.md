@@ -8,9 +8,9 @@ title: "How to structure your Dagster project"
 Refer to the project scaffolding tutorial to learn how to create a new Dagster project.
 :::
 
-When it comes to organizing your project, there are many possibilities in how files and directories can be structured. Factors that can influence this includes the number of teams working on your data platform, and whether you want to structure files by Dagster object type, by technology, or by the overarching data concept.
+There are many ways to structure your Dagster project, it can be difficult to know where to start. In this guide, we will walk through our recommendations for how to start with organizing your code. While these are just our recommendations, feel free to deviate from them as your needs evolve.
 
-When structuring complex projects, some important considerations are as follows:
+When structuring complex projects, it is important to consider:
 
 1. The location to add new features is intuitive
 2. Relevant code should be easy to find regardless of familiarity with related business logic
