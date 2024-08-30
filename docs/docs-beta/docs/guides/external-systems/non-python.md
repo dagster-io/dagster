@@ -16,11 +16,11 @@ Dagster is written in Python, but that doesn't mean it's limited to running Pyth
 
 We will demonstrate running JavaScript code using Dagster Pipes. In this example, the `train_model` function loads a CSV and trains a sequential model using the Tensorflow library.
 
-<CodeExample filePath="guides/automation/pipes-contrived-javascript.py" language="javascript" title="A simple Tensorflow function." />
+<CodeExample filePath="guides/non-python/pipes-contrived-javascript.js" language="javascript" title="A simple Tensorflow function." />
 
 With an `@asset` definition in Dagster, you can now invoke your JavaScript function from Dagster.
 
-<CodeExample filePath="guides/automation/pipes-asset.py" language="python" title="Asset using Dagster Pipes." />
+<CodeExample filePath="guides/non-python/pipes-asset.py" language="python" title="Asset using Dagster Pipes." />
 
 If the command passed to Dagster Pipes (`node tensorflow/main.js`) exits successfully, then an asset materialization result will be created implicitly for the asset defined here. Additionally, the stdout/stderr will be collected into the asset logs. Dagster Pipes supports passing parameters into Pipes and allowing Pipes processes to more explicitly define the asset materialization event.
 
@@ -29,10 +29,11 @@ If the command passed to Dagster Pipes (`node tensorflow/main.js`) exits success
 Dagster Pipes follows a similar design to Unix pipes, hence the name. The `PipesSubprocessClient` is responsible for running external processes and setting up input/output files. The asset defined here is materialized using the `PipesSubprocessClient` running a Node.js file containing the `train_model` function.
 
 The `PipesSubprocessClient` calls the child process with two environment variables defined, each containing a path to a file. One for input and one for output.
-- DAGSTER_PIPES_CONTEXT: Input context
-- DAGSTER_PIPES_MESSAGES: Output context
 
-<CodeExample filePath="guides/automation/pipes-javascript-utility.py" language="javascript" title="Utility functions to interface with Dagster Pipes." />
+- `DAGSTER_PIPES_CONTEXT`: Input context
+- `DAGSTER_PIPES_MESSAGES`: Output context
+
+<CodeExample filePath="guides/non-python/pipes-javascript-utility.js" language="javascript" title="Utility functions to interface with Dagster Pipes." />
 
 Both environment variables are base64, zip compressed JSON objects with a "path" key. These functions decode these environment variables and access the files to hook up our JavaScript function to Dagster.
 
@@ -40,7 +41,7 @@ Both environment variables are base64, zip compressed JSON objects with a "path"
 
 With the utility functions to decode the Dagster Pipes environment variables, we can send additional parameters into the JavaScript process and output additional information into the asset materializations. The `run_operation` function creates an interface between Dagster Pipes and the JavaScript file to do just that.
 
-<CodeExample filePath="guides/automation/pipes-full-featured-javascript.js" language="javascript" title="Adding a new JavaScript entrypoint for Dagster Pipes." />
+<CodeExample filePath="guides/non-python/pipes-full-featured-javascript.js" language="javascript" title="Adding a new JavaScript entrypoint for Dagster Pipes." />
 
 `run_operation` looks for the `operation_name` and `config` in the Dagster Pipes context. The `operation_name` is the function to run, while `config` is the parameter to said function.
 
@@ -50,7 +51,7 @@ With the utility functions to decode the Dagster Pipes environment variables, we
 
 Lastly, we can update the `@asset` definition to pass in these additional parameters.
 
-<CodeExample filePath="guides/automation/pipes-asset-with-context.py" language="python" title="Asset using Dagster Pipes." />
+<CodeExample filePath="guides/non-python/pipes-asset-with-context.py" language="python" title="Asset using Dagster Pipes." />
 
 # What's next?
 

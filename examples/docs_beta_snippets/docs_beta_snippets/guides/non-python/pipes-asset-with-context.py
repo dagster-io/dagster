@@ -17,9 +17,9 @@ def my_asset(
             "operation_name": "train_model",
             "config": {
                 "path_to_data": "file://../tensorflow/data/data.csv",
-                "data_config": { "hasHeaders": True },
-                "path_to_model": "file://../tensorflow/model"
-            }
+                "data_config": {"hasHeaders": True},
+                "path_to_model": "file://../tensorflow/model",
+            },
         },
     ).get_materialize_result()
 
