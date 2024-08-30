@@ -2,11 +2,8 @@ import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpTags} from './OpTags';
-import {DefinitionTag, buildDefinitionTag} from '../graphql/types';
-import {
-  linkToAssetTableWithComputeKindFilter,
-  linkToAssetTableWithStorageKindFilter,
-} from '../search/useGlobalSearch';
+import {DefinitionTag} from '../graphql/types';
+import {linkToAssetTableWithComputeKindFilter} from '../search/useGlobalSearch';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
@@ -17,8 +14,6 @@ export const STORAGE_KIND_TAG = 'dagster/storage_kind';
 export const isCanonicalComputeKindTag = (tag: DefinitionTag) =>
   tag.key === COMPUTE_KIND_TAG || tag.key === LEGACY_COMPUTE_KIND_TAG;
 export const isCanonicalStorageKindTag = (tag: DefinitionTag) => tag.key === STORAGE_KIND_TAG;
-export const buildStorageKindTag = (storageKind: string): DefinitionTag =>
-  buildDefinitionTag({key: 'dagster/storage_kind', value: storageKind});
 
 export const AssetComputeKindTag = ({
   definition,
@@ -120,13 +115,7 @@ export const AssetStorageKindTag = ({
         tags={[
           {
             label: storageKind,
-            onClick: currentPageFilter
-              ? () => currentPageFilter.setState(new Set([buildStorageKindTag(storageKind)]))
-              : shouldLink
-              ? () => {
-                  window.location.href = linkToAssetTableWithStorageKindFilter(storageKind);
-                }
-              : () => {},
+            onClick: () => {},
           },
         ]}
       />
