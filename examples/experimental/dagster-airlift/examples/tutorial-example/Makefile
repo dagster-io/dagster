@@ -30,8 +30,8 @@ airflow_setup:
 	make wipe && \
 	mkdir -p $$AIRFLOW_HOME && \
 	mkdir -p $$DAGSTER_HOME && \
-	chmod +x ../../scripts/airflow_setup.sh && \
-	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/tutorial_example/airflow_dags && \
+	chmod +x $(MAKEFILE_DIR)/scripts/airflow_setup.sh && \
+	$(MAKEFILE_DIR)/scripts/airflow_setup.sh $(MAKEFILE_DIR)/tutorial_example/airflow_dags && \
 	dbt seed --project-dir $(TUTORIAL_DBT_PROJECT_DIR)
 
 airflow_run:
