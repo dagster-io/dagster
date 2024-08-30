@@ -17,7 +17,7 @@ exceptions:
   - CSV
   - DEBUG
   - DOM
-  - DLT
+  - dlt
   - DPI
   - ECS
   - ETL
