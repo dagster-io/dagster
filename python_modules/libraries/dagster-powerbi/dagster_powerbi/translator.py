@@ -1,12 +1,14 @@
 import re
 import urllib.parse
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Mapping, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
+
+POWERBI_PREFIX = "powerbi/"
 
 
 def _get_last_filepath_component(path: str) -> str:
@@ -42,6 +44,16 @@ class PowerBIContentData:
     content_type: PowerBIContentType
     properties: Dict[str, Any]
 
+    def to_cached_data(self) -> Dict[str, Any]:
+        return {"content_type": self.content_type.value, "properties": self.properties}
+
+    @classmethod
+    def from_cached_data(cls, data: Mapping[Any, Any]) -> "PowerBIContentData":
+        return cls(
+            content_type=PowerBIContentType(data["content_type"]),
+            properties=data["properties"],
+        )
+
 
 @record
 class PowerBIWorkspaceData:
@@ -50,10 +62,39 @@ class PowerBIWorkspaceData:
     Provided as context for the translator so that it can resolve dependencies between content.
     """
 
+    workspace_id: str
     dashboards_by_id: Dict[str, PowerBIContentData]
     reports_by_id: Dict[str, PowerBIContentData]
     semantic_models_by_id: Dict[str, PowerBIContentData]
     data_sources_by_id: Dict[str, PowerBIContentData]
+
+    @classmethod
+    def from_content_data(
+        cls, workspace_id: str, content_data: Sequence[PowerBIContentData]
+    ) -> "PowerBIWorkspaceData":
+        return cls(
+            workspace_id=workspace_id,
+            dashboards_by_id={
+                dashboard.properties["id"]: dashboard
+                for dashboard in content_data
+                if dashboard.content_type == PowerBIContentType.DASHBOARD
+            },
+            reports_by_id={
+                report.properties["id"]: report
+                for report in content_data
+                if report.content_type == PowerBIContentType.REPORT
+            },
+            semantic_models_by_id={
+                dataset.properties["id"]: dataset
+                for dataset in content_data
+                if dataset.content_type == PowerBIContentType.SEMANTIC_MODEL
+            },
+            data_sources_by_id={
+                data_source.properties["datasourceId"]: data_source
+                for data_source in content_data
+                if data_source.content_type == PowerBIContentType.DATA_SOURCE
+            },
+        )
 
 
 class DagsterPowerBITranslator:
