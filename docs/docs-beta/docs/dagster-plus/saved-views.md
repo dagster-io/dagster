@@ -62,6 +62,7 @@ When viewing the global asset lineage or asset list, you can create a new catalo
 
 ## Edit, duplicate, or delete catalog views
 
-To edit, duplicate, or delete a catalog view, navigate to the catalog view menu by clicking the catalog view button on the top left of the screen. From here, you can search for the view you want to modify, duplicate, or delete. Use the three-dot menu on the right side of the view to show the available actions.
-
-When editing a catalog view, any active filters will automatically be included in the set of changes. You can modify the view's name, description, icon, and sharing settings. To save your changes, click "Save changes".
+1. Click the catalog view button to open the catalog view menu.
+2. Search for the view you want to edit, duplicate, or delete.
+3. Click the **three dot menu** to the right of the view to display available options.
+4. If modifying the view, note that any active filters will automatically be included in the set of changes. You can also change the view's name, description, icon, and sharing settings. 5. When finished, click **Save changes**.
