@@ -53,9 +53,9 @@ This is a great structure as you are first getting started, however, as you begi
 
 There are several paradigms in which you can structure your project. Choosing one of these structures is often personal preference, and influenced by how you and your team members operate. This guide will outline three possible project structures:
 
-1. [Structured by Dagster object](#structured-by-object-type)
+1. [Structured by Dagster object](#structured-by-dagster-object)
 2. [Structured by technology](#structured-by-technology)
-3. [Structured by concept](#structured-by-oncept)
+3. [Structured by concept](#structured-by-concept)
 
 ### Structured by Dagster object
 
