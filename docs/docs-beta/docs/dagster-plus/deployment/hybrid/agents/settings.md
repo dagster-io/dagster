@@ -6,7 +6,7 @@ sidebar_label: "Settings"
 ---
 
 # Dagster+ Agent configuration reference
-You can configure your Dagster+ agent the same way you configure any [Dagster Instance](https://docs.dagster.io/deployment/dagster-instance) - with a `dagster.yaml` file. This reference describes all available configuration options. For the most common configurations, see our [Dagster+ Agent guides](dagster-plus/deployment/hybrid
+You can configure your Dagster+ agent the same way you configure any [Dagster Instance](https://docs.dagster.io/deployment/dagster-instance) - with a `dagster.yaml` file. This reference describes all available configuration options. For the most common configurations, see our [Dagster+ Agent guides](dagster-plus/deployment/hybrid).
 |Config Path|Type|Required|Default|Description|
 |--|--|--|--|--|
 dagster_cloud_api.agent_token|StringSourceType|True||Dagster+ agent api token.
