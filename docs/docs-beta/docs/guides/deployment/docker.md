@@ -68,7 +68,6 @@ WORKDIR /opt/dagster/app
 COPY directory/with/your/code/ /opt/dagster/app
 
 # Run dagster code server on port 4000
-
 EXPOSE 4000
 
 # CMD allows this to be overridden from run launchers or executors to execute runs and steps
@@ -85,34 +84,34 @@ version: "3.7"
 services:
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
   # and event log storage.
-  docker_example_postgresql:
+  docker_postgresql:
     image: postgres:11
-    container_name: docker_example_postgresql
+    container_name: docker_postgresql
     environment:
       POSTGRES_USER: "postgres_user"
       POSTGRES_PASSWORD: "postgres_password"
       POSTGRES_DB: "postgres_db"
     networks:
-      - docker_example_network
+      - docker_network
 
   # This service runs the code server that loads your user code.
-  docker_example_code_location_1:
+  docker_code_location_1:
     build:
       context: .
       dockerfile: ./Dockerfile_code_location_1
-    container_name: docker_example_code_location_1
-    image: docker_example_user_code_image
+    container_name: docker_code_location_1
+    image: docker_user_code_image
     restart: always
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_DB: "postgres_db"
-      DAGSTER_CURRENT_IMAGE: "docker_example_user_code_image"
+      DAGSTER_CURRENT_IMAGE: "docker_user_code_image"
     networks:
-      - docker_example_network
+      - docker_network
 
   # This service runs dagster-webserver.
-  docker_example_webserver:
+  docker_webserver:
     build:
       context: .
       dockerfile: ./Dockerfile_dagster
@@ -124,7 +123,7 @@ services:
       - "3000"
       - -w
       - workspace.yaml
-    container_name: docker_example_webserver
+    container_name: docker_webserver
     expose:
       - "3000"
     ports:
@@ -137,21 +136,21 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage
     networks:
-      - docker_example_network
+      - docker_network
     depends_on:
-      - docker_example_postgresql
-      - docker_example_code_location_1
+      - docker_postgresql
+      - docker_code_location_1
 
   # This service runs the dagster-daemon process, which is responsible for taking runs
   # off of the queue and launching them, as well as creating runs from schedules or sensors.
-  docker_example_daemon:
+  docker_daemon:
     build:
       context: .
       dockerfile: ./Dockerfile_dagster
     entrypoint:
       - dagster-daemon
       - run
-    container_name: docker_example_daemon
+    container_name: docker_daemon
     restart: on-failure
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
@@ -161,15 +160,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage
     networks:
-      - docker_example_network
+      - docker_network
     depends_on:
-      - docker_example_postgresql
-      - docker_example_code_location_1
+      - docker_postgresql
+      - docker_code_location_1
 
 networks:
-  docker_example_network:
+  docker_network:
     driver: bridge
-    name: docker_example_network
+    name: docker_network
 ```
 
 ## Start your deployment
