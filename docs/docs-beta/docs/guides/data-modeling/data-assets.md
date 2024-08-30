@@ -10,8 +10,9 @@ There are three ways to create data assets:
 * Using the `@asset` decorator to declare a single asset.
 * Using the `@multi_asset` decorator to output multiple assets from a single operation.
 * Using the `@graph_asset` decorator to output a single asset from multiple operations without making each operation itself an asset.
+* Using the `@graph_multi_asset` decorator to output multiple assets from multiple operations
 
-This guide walks through all three methods.
+This guide walks you the first three methods. The fourth combines the approaches of the 2nd and 3rd so it is omitted.
 
 ***
 
@@ -40,23 +41,17 @@ When you need to generate multiple assets from a single operation, you can use t
 
 <CodeExample filePath="guides/data-assets/data-assets/multi_asset_docorator.py" language="python" title="Using @dg.multi_asset decorator" />
 
-```python
-@multi_asset(
-    outs={
-        "asset_one": AssetOut(),
-        "asset_two": AssetOut()
-    }
-)
-def my_multi_asset():
-    return {"asset_one": "value1", "asset_two": "value2"}
-```
-
 In this example, `my_multi_asset` produces two assets: `asset_one` and `asset_two`. Each is derived from the same function, which makes it easier to handle related data transformations together.
 
 Multi-assets may be useful in the following scenarios:
 
-* It's efficient in scenarios where a single call to an API results in multiple tables being updated (e.g. Airbyte, Fivetran, dbt).
-* The same in-memory object is used to compute multiple assets
+* A single call to an API results in multiple tables being updated.
+* The same in-memory object is used to compute multiple assets.
+
+The downsides of this approach are:
+
+* By default, all assets defined in a multi-asset must be materialized together, although this can be mitigated by setting the can\_subset parameter to True.
+* Assets are tightly coupled so one asset failing can cause other assets to fail.
 
 ## Define a single asset from multiple operations using the `@graph_asset` decorator
 
@@ -64,23 +59,21 @@ For cases where you need to perform multiple operations to produce a single asse
 
 <CodeExample filePath="guides/data-assets/data-assets/graph_asset_docorator.py" language="python" title="Using @dg.graph_asset decorator" />
 
-In this example, `complex_asset` is an asset that is the result of two operations: `step_one` and `step_two`. These steps are combined into a single asset, abstracting away the intermediate representations.
+In this example, `complex_asset` is an asset that's the result of two operations: `step_one` and `step_two`. These steps are combined into a single asset, abstracting away the intermediate representations.
 
 The benefits of this approach are:
 
 * It enables you to model complex data processing pipelines while exposing only the final output as an asset.
 * It keeps the asset lineage graph clean, with all internal complexity hidden within the graph.
-* (TODO: Is this accurate?) Individual ops can be retried using retry policies automatically or from the Dagster UI.
-
-The downsides of this approach are:
-
-* (TODO: Is this accurate?) Since the individual ops are not assets there is no historical record of their evaluations
+* Individual ops can be reused across different assets or graphs, promoting code reuse.
+* Individual ops can be retried automatically by setting a RetryPolicy or manually from the Dagster UI.
 
 ***
 
 ## Related resources
 
-TODO: add links to relevant API documentation here.
+<!-- TODO: add links to relevant API documentation here.
 Link to @asset api
 Link to @multi\_asset api.
 Link to @graph\_asset api.
+Link to @grpah\_multi\_asset api. -->

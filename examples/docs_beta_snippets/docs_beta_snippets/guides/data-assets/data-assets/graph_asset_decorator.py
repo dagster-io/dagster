@@ -12,3 +12,5 @@ def complex_asset():
     step_one()
     step_two()
     return
+
+defs = dg.Definitions(assets=[complex_asset])

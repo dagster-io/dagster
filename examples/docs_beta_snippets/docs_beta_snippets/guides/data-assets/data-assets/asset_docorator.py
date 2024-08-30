@@ -18,6 +18,11 @@ def store_data(files: List[str]):
     ...
 
 
-@dg.asset
+@dg.asset(
+  owners=["bighead@hooli.com", "team:roof", "team:corpdev"],
+)
 def my_dataset():
     store_data(transform_data(load_data))
+
+
+defs = dg.Definitions(assets=[my_dataset])
