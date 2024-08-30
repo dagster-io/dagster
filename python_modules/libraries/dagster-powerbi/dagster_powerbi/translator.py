@@ -1,23 +1,10 @@
 from enum import Enum
-from typing import Any, Dict, Generic
+from typing import Any, Dict
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
-from typing_extensions import TypeVar
-
-T = TypeVar("T")
-U = TypeVar("U")
-
-
-# scaffold out what a generic translator class might look like
-class DagsterTranslator(Generic[T, U]):
-    def __init__(self, context: U):
-        self._context = context
-
-    def get_asset_spec(self, data: T) -> AssetSpec:
-        raise NotImplementedError
 
 
 class PowerBIContentType(Enum):
@@ -52,10 +39,13 @@ class PowerBIWorkspaceData:
     data_sources_by_id: Dict[str, PowerBIContentData]
 
 
-class DagsterPowerBITranslator(DagsterTranslator[PowerBIContentData, PowerBIWorkspaceData]):
+class DagsterPowerBITranslator:
     """Translator class which converts raw response data from the PowerBI API into AssetSpecs.
     Subclass this class to implement custom logic for each type of PowerBI content.
     """
+
+    def __init__(self, context: PowerBIWorkspaceData):
+        self._context = context
 
     @property
     def workspace_data(self) -> PowerBIWorkspaceData:
