@@ -11,6 +11,8 @@ gRPC
 REST API
 [Ss]ubprocess
 Serverless
+CLI[s]
+uncomment
 
 Airbyte
 AirFlow
