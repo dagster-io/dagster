@@ -12,6 +12,8 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/data-modeling/asset-factories/python-asset-factory.py",
     f"{snippets_folder}/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py",
     f"{snippets_folder}/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py",
+    f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py",
+    f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_setup.py",
 }
 
 
