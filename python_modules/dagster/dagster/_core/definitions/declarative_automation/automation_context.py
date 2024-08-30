@@ -1,11 +1,11 @@
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Mapping, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, EntitySlice
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -28,6 +28,8 @@ if TYPE_CHECKING:
 
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
+U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey)
+
 
 def _has_legacy_condition(condition: AutomationCondition):
     """Detects if the given condition has any legacy rules."""
@@ -38,10 +40,10 @@ def _has_legacy_condition(condition: AutomationCondition):
 
 
 @dataclass(frozen=True)
-class AutomationContext:
+class AutomationContext(Generic[T_EntityKey]):
     condition: AutomationCondition
     condition_unique_id: str
-    candidate_slice: EntitySlice[AssetKey]
+    candidate_slice: EntitySlice[T_EntityKey]
 
     create_time: datetime.datetime
 
@@ -83,10 +85,10 @@ class AutomationContext:
 
     def for_child_condition(
         self,
-        child_condition: AutomationCondition,
+        child_condition: AutomationCondition[U_EntityKey],
         child_index: int,
-        candidate_slice: EntitySlice[AssetKey],
-    ) -> "AutomationContext":
+        candidate_slice: EntitySlice[U_EntityKey],
+    ) -> "AutomationContext[U_EntityKey]":
         condition_unqiue_id = child_condition.get_unique_id(
             parent_unique_id=self.condition_unique_id, index=child_index
         )
@@ -117,7 +119,7 @@ class AutomationContext:
         return self.asset_graph_view.asset_graph
 
     @property
-    def key(self) -> AssetKey:
+    def key(self) -> T_EntityKey:
         """The asset key over which this condition is being evaluated."""
         return self.candidate_slice.key
 
@@ -157,7 +159,7 @@ class AutomationContext:
         return self._node_cursor.get_structured_cursor(as_type=str) if self._node_cursor else None
 
     @property
-    def previous_true_slice(self) -> Optional[EntitySlice[AssetKey]]:
+    def previous_true_slice(self) -> Optional[EntitySlice[T_EntityKey]]:
         """Returns the true slice for this node from the previous evaluation, if this node was
         evaluated on the previous tick.
         """
@@ -211,7 +213,7 @@ class AutomationContext:
         )
 
     @property
-    def previous_candidate_slice(self) -> Optional[EntitySlice[AssetKey]]:
+    def previous_candidate_slice(self) -> Optional[EntitySlice[T_EntityKey]]:
         """Returns the candidate slice for the previous evaluation. If this node has never been
         evaluated, returns None.
         """
@@ -225,7 +227,7 @@ class AutomationContext:
                 else None
             )
 
-    def get_empty_slice(self) -> EntitySlice[AssetKey]:
+    def get_empty_slice(self) -> EntitySlice[T_EntityKey]:
         """Returns an empty AssetSlice of the currently-evaluated asset."""
         return self.asset_graph_view.get_empty_slice(key=self.key)
 

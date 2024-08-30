@@ -1,19 +1,20 @@
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
+from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-@record
-class SinceCondition(AutomationCondition):
-    trigger_condition: AutomationCondition
-    reset_condition: AutomationCondition
+@dataclass(frozen=True)
+class SinceCondition(AutomationCondition[T_EntityKey]):
+    trigger_condition: AutomationCondition[T_EntityKey]
+    reset_condition: AutomationCondition[T_EntityKey]
     label: Optional[str] = None
 
     @property
@@ -27,10 +28,10 @@ class SinceCondition(AutomationCondition):
         return "SINCE"
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
+    def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.trigger_condition, self.reset_condition]
 
-    def evaluate(self, context: AutomationContext) -> AutomationResult:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         # must evaluate child condition over the entire slice to avoid missing state transitions
         child_candidate_slice = context.asset_graph_view.get_full_slice(key=context.key)
 
