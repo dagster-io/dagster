@@ -14,6 +14,7 @@ import pandas as pd
 import duckdb
 import os
 
+duckdb_database_path = "basic-dbt-project/dev.duckdb"
 
 @dg.asset(compute_kind="python")
 def raw_customers(context: dg.AssetExecutionContext) -> None:
