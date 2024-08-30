@@ -9,6 +9,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
 )
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._time import get_current_timestamp
 
 
@@ -43,7 +44,7 @@ def start_run_and_wait_for_completion(dag_id: str) -> None:
 def poll_for_materialization(
     instance: DagsterInstance,
     target: Union[AssetKey, List[AssetKey]],
-    timeout: int = 30,
+    timeout: int = 60,
     poll_interval: int = 3,
 ) -> Dict[AssetKey, EventLogEntry]:
     """Polls the instance for materialization events for the given target(s) until all targets have been materialized or the timeout is reached."""
@@ -64,7 +65,7 @@ def poll_for_materialization(
 
 
 def poll_for_asset_check(
-    instance: DagsterInstance, target: AssetCheckKey, timeout: int = 30, poll_interval: int = 3
+    instance: DagsterInstance, target: AssetCheckKey, timeout: int = 60, poll_interval: int = 3
 ) -> AssetCheckExecutionRecord:
     """Polls the instance for asset check evaluation records for the given target until the target check has run or the timeout is reached."""
     evaluation = instance.get_latest_asset_check_evaluation_record(asset_check_key=target)
@@ -82,3 +83,20 @@ def poll_for_asset_check(
         evaluation = instance.get_latest_asset_check_evaluation_record(asset_check_key=target)
 
     return evaluation
+
+
+def wait_for_all_runs_to_complete(
+    instance: DagsterInstance, timeout: int = 60, poll_interval: int = 3
+) -> None:
+    runs = instance.get_runs()
+
+    total_time_elapsed = 0
+    while not all(
+        run.status in (DagsterRunStatus.SUCCESS, DagsterRunStatus.FAILURE) for run in runs
+    ):
+        time.sleep(poll_interval)
+        total_time_elapsed += poll_interval
+        if total_time_elapsed >= timeout:
+            raise TimeoutError("Timed out waiting for runs to complete")
+
+        runs = instance.get_runs()
