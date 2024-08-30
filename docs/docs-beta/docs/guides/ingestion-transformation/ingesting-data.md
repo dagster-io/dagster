@@ -48,7 +48,7 @@ Dagster currently integrates with the following data ingestion tools:
 
 ## Writing custom data ingestion pipelines
 
-Writing code in a language like Python to ingest data into a platform is also a common approach. This is especially useful when you have unique data ingestion requirements that aren'yarn lint addressed by existing tools, or when you prefer to keep your platform streamlined without adding new tools.
+Writing code in a language like Python to ingest data into a platform is also a common approach. This is especially useful when you have unique data ingestion requirements that aren't addressed by existing tools, or when you prefer to keep your platform streamlined without adding new tools.
 
 For example, imagine there's a CSV file of counties on the internet and you want to load it into your Snowflake data warehouse as a table. To do this, you might directly define an asset that represents that table in your warehouse. The asset's materialization function fetches data from the internet and loads it into that table:
 
