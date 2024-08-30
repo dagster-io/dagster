@@ -2,13 +2,11 @@ import dagster as dg
 
 
 @dg.op
-def step_one():
-    ...
+def step_one(): ...
 
 
 @dg.op
-def step_two():
-    ...
+def step_two(): ...
 
 
 @dg.graph_asset
