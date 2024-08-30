@@ -78,7 +78,7 @@ To complete the steps in this guide, you'll need:
 
 Next, you'll save and upload the application's SAML metadata to Dagster+. This will enable single sign-on.
 
-1. In your Google Workspace, open the Dagster+ application you added in [Step 2](#step-2-configure-sso-in-google-workspace).
+1. In your Google Workspace, open the Dagster+ application you added in [Step 2](#configure-sso).
 2. Click **Download metadata**:
 
    ![SAML Metadata](/img/placeholder.svg)
