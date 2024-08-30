@@ -1,6 +1,7 @@
 from dagster._core.definitions.utils import check_valid_name
 from dagster_airlift.core.airflow_instance import DagInfo
 
+
 def test_dag_info_asset_key() -> None:
     # Airflow allows "exclusively alphanumeric characters, dashes, dots and underscores (all ASCII)"
     dag_info_hyphen = DagInfo(webserver_url="", dag_id="my-test-dag-id", metadata={})

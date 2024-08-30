@@ -1,18 +1,17 @@
 import datetime
 import json
 from abc import ABC
+from functools import cached_property
 from typing import Any, Dict, List
 
-from functools import cached_property
 import requests
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
-from .utils import convert_to_valid_dagster_name
-
 from ..migration_state import DagMigrationState
+from .utils import convert_to_valid_dagster_name
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 
