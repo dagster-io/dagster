@@ -37,7 +37,7 @@ class MwaaSessionAuthBackend(AirflowAuthBackend):
         self._session_info: Optional[Tuple[str, str]] = None
 
     @staticmethod
-    def for_local(region: str, env_name: str, profile_name: Optional[str] = None):
+    def from_profile(region: str, env_name: str, profile_name: Optional[str] = None):
         boto_session = boto3.Session(profile_name=profile_name, region_name=region)
         mwaa = boto_session.client("mwaa")
         return MwaaSessionAuthBackend(mwaa_client=mwaa, env_name=env_name)
