@@ -2,10 +2,9 @@ import dagster as dg
 
 
 @dg.asset(
-    # add other useful metadata
     compute_kind="javascript",
 )
-def my_asset(
+def tensorflow_model(
     context: dg.AssetExecutionContext,
     pipes_subprocess_client: dg.PipesSubprocessClient,
 ):
@@ -18,6 +17,6 @@ def my_asset(
 
 
 defs = dg.Definitions(
-    assets=[my_asset],
+    assets=[tensorflow_model],
     resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
 )

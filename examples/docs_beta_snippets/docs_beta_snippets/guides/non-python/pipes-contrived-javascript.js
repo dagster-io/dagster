@@ -1,4 +1,3 @@
-// "tensorflow/main.js"
 import * as tf from '@tensorflow/tfjs';
 
 const CONFIG = { /* ... */ };

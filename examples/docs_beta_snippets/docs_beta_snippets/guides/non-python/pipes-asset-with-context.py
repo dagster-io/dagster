@@ -2,7 +2,6 @@ import dagster as dg
 
 
 @dg.asset(
-    # add other useful metadata
     compute_kind="javascript",
 )
 def my_asset(
@@ -12,6 +11,7 @@ def my_asset(
     """Runs Javascript to generate an asset."""
     return pipes_subprocess_client.run(
         command=["node", "tensorflow/main.js"],
+        # highlight-start
         context=context.op_execution_context,
         extras={
             "operation_name": "train_model",
@@ -21,6 +21,7 @@ def my_asset(
                 "path_to_model": "file://../tensorflow/model",
             },
         },
+        # highlight-end
     ).get_materialize_result()
 
 

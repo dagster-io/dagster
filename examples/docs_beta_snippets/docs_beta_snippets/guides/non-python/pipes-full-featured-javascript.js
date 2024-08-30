@@ -1,15 +1,30 @@
-const ALL_OPERATIONS = {
-  train_model
-}
+import * as tf from '@tensorflow/tfjs';
 
-async function run_operation() {
-  const { asset_keys, extras: { operation_name, config } } = await getPipesContext()
-  if (!(operation_name in ALL_OPERATIONS)) {
-    setPipesMessages({ error: `Operation ${operation_name} not found` });
-    return;
-  }
-  const operation = ALL_OPERATIONS[operation_name];
-  const model = await operation(config);
+async function train_model() {
+  // highlight-start
+  // Get configuration from Dagster instead of `CONFIG` object
+  const { asset_keys, extras: { path_to_data, data_config, path_to_model } } = await getPipesContext()
+
+  setPipesMessages({ info: `Materializing ${asset_keys}` });
+  // highlight-end
+
+  const dataset = await tf.data.csv(path_to_data, data_config).map(({ xs, ys }) => {
+    return {
+      xs: tf.tensor2d(Object.values(xs), [Object.values(xs).length, 1]),
+      ys: tf.tensor2d(Object.values(ys), [Object.values(ys).length, 1])
+    };
+  })
+  .batch(100);
+
+  const model = tf.sequential()
+  model.add(tf.layers.dense({units: 1, inputShape: [1]}));
+  model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+
+  await model.fitDataset(dataset, {epochs: 250})
+  await model.save(path_to_model);
+  model.summary();
+
+  // highlight-start
   await setPipesMessages({
     method: "report_asset_materialization",
     params: {
@@ -21,9 +36,5 @@ async function run_operation() {
       },
     },
   });
-  return 0;
+  // highlight-end
 }
-
-run_operation().then((result) => {
-  process.exit(result);
-});
