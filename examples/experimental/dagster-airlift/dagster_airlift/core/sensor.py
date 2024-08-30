@@ -35,7 +35,7 @@ def build_airflow_polling_sensor(
         name="airflow_dag_status_sensor",
         minimum_interval_seconds=1,
         default_status=DefaultSensorStatus.RUNNING,
-        target="*",
+        asset_selection="*",
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
