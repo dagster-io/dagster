@@ -36,9 +36,7 @@ def orders_check() -> Iterable[dg.AssetCheckResult]:
         passed=bool(num_null_item_ids == 0),
         asset_key="orders",
     )
-
-
-# highlight-end
+    # highlight-end
 
 
 defs = dg.Definitions(
