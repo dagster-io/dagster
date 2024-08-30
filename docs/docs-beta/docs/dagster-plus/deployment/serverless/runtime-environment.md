@@ -23,10 +23,10 @@ In your `.github/workflows/deploy.yml` file, update the `PYTHON_VERSION` environ
 
 </TabItem>
 <TabItem value="GitLab" label="GitLab">
-1. Open your `.gitlab-ci.yml` file. If your `.gitlab-ci.yml` looks similar to:
+1. Open your `.gitlab-ci.yml` file. If your `.gitlab-ci.yml` contains an `include` with a link to a Dagster provided CI/CD template:
     <CodeExample filePath="dagster-plus/deployment/serverless/runtime-environment/gitlab_template.yaml" language="yaml" />
 
-2. Follow the link and replace the contents of your `.gitlab-ci.yml` with the YAML document at the link address.
+    Follow the link and replace the contents of your `.gitlab-ci.yml` with the YAML document at the link address. Otherwise, continue to the next step.
 
 3. Update the `PYTHON_VERSION` environment variable with your desired Python version
 
@@ -49,7 +49,7 @@ When possible, you should add dependencies by including the corresponding Python
 When adding dependencies with the `setup.py` file isn't possible, you can build a custom base image:
 
 :::note
-Setting a custom base image is not supported for GitLab CI/CD workflows
+Setting a custom base image is not supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
 :::
 
 1. Include `dagster-cloud[serverless]` as a dependency in your Docker image by adding the following line to your `Dockerfile`:
@@ -105,15 +105,15 @@ You can disable PEX in your GitHub or GitLab workflow, or by using the `dagster-
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
-In your `.github/workflows/deploy.yml` file, comment out the `ENABLE_FAST_DEPLOYS` environment variable:
+In your `.github/workflows/deploy.yml` file, update the `ENABLE_FAST_DEPLOYS` environment variable to `false`:
 <CodeExample filePath="dagster-plus/deployment/serverless/runtime-environment/github_disable_pex.yaml" language="yaml" title="Disable PEX deploys in deploy.yml" />
 
 </TabItem>
 <TabItem value="GitLab" label="GitLab">
-1. Open your `.gitlab-ci.yml` file. If your `.gitlab-ci.yml` looks similar to:
+1. Open your `.gitlab-ci.yml` file. If your `.gitlab-ci.yml` contains an `include` with a link to a Dagster provided CI/CD template:
     <CodeExample filePath="dagster-plus/deployment/serverless/runtime-environment/gitlab_template.yaml" language="yaml" />
 
-2. Follow the link and replace the contents of your `.gitlab-ci.yml` with the YAML document at the link address.
+    Follow the link and replace the contents of your `.gitlab-ci.yml` with the YAML document at the link address. Otherwise, continue to the next step.
 
 3. Update the `DISABLE_FAST_DEPLOYS` variable to `true`
 
@@ -143,7 +143,7 @@ In the root of your repo, you can provide two optional shell scripts: `dagster_c
 This method is the most flexible, but requires setting up a pipeline outside of Dagster to build a custom base image.
 
 :::note
-Setting a custom base image isn't supported for GitLab CI/CD workflows
+Setting a custom base image isn't supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
 :::
 
 1. Build you base image
