@@ -494,7 +494,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records if not record.dagster_run.is_cancelable]
+        return [GrapheneRun(record) for record in records if record.dagster_run.is_cancelable]
 
     def resolve_runs(self, graphene_info: ResolveInfo) -> "Sequence[GrapheneRun]":
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
