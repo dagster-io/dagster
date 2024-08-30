@@ -6,7 +6,8 @@ description: "Visiblity into historical usage, cost, and metadata."
 # Dagster+ Insights
 
 Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics such as Dagster+ run duration, credit usage, and failures.
-Visualizations are built right into the Dagster UI, allowing you to explore metrics from Dagster as well as downstream systems (like Google BigQuery) all in one place.
+
+Visualizations are built right into the Dagster UI, allowing you to explore metrics from Dagster and downstream systems (like Google BigQuery) all in one place.
 
 ### With Insights, you can
 
@@ -26,21 +27,15 @@ To use Insights, you'll need a Dagster+ account.
 To access Insights, click **Insights** in the top navigation bar in the UI:
 
 ![Viewing the Insights tab in the Dagster+ UI](/img/placeholder.svg)
-{/* <Image
-alt="Viewing the Insights tab in the Dagster UI"
-src="/images/dagster-cloud/insights/insights-tab.png"
-width={2640}
-height={1516}
-*/}
 
 The left navigation panel on this page contains a list of available metrics. For each metric, the daily, weekly, or monthly aggregated values are displayed in the graph.
 
 Use the tabs above the charts to view metrics for **Assets**, **Asset groups**, **Jobs**, and **Deployments**.
 
-These metrics are updated on a daily basis. Refer to the [built-in metrics](#built-in-metrics) section for more information about what Dagster provides out of the box.
+These metrics are updated on a daily basis. Refer to the [Built-in metrics](#built-in-metrics) section for more information about what Dagster provides out of the box.
 
 
-## Working with Insights metrics
+## Working with Insights metrics \{#insights-metrics}
 
 ### Data retention
 
@@ -51,106 +46,26 @@ How long historical Insights data is retained depends on your Dagster+ plan:
 
 ### Built-in metrics
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "25%",
-        }}
-      >
-        Metric
-      </th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Dagster credits</td>
-      <td>
-        The Dagster credit cost associated with computing this object. Dagster
-        credits are charged for every step that is run, and for every asset that
-        is materialized. For more information,{" "}
-        <a href="https://dagster.io/pricing#faq" target="_blank">
-          refer to the pricing FAQ
-        </a>
-        .
-      </td>
-    </tr>
-    <tr>
-      <td>Compute duration</td>
-      <td>
-        The time spent computing steps. For jobs that run steps in parallel, the
-        compute duration may be longer than the wall clock time it takes for the
-        run to complete.
-      </td>
-    </tr>
-    <tr>
-      <td>Materializations</td>
-      <td>
-        The number of asset materializations associated with computing this
-        object.
-      </td>
-    </tr>
-    <tr>
-      <td>Observations</td>
-      <td>
-        The number of{" "}
-        <a href="/concepts/assets/asset-observations">asset observations</a>{" "}
-        associated with computing this object.
-      </td>
-    </tr>
-    <tr>
-      <td>Step failures</td>
-      <td>
-        The number of times steps failed when computing this object.{" "}
-        <strong>Note</strong>: Steps that retry and succeed are not included in
-        this metric.
-      </td>
-    </tr>
-    <tr>
-      <td>Step retries</td>
-      <td>
-        The number of times steps were retried when computing this object.
-      </td>
-    </tr>
-    <tr>
-      <td>Asset check warnings</td>
-      <td>
-        The number of <a href="/concepts/assets/asset-checks">asset checks</a>{" "}
-        that produced warnings.
-      </td>
-    </tr>
-    <tr>
-      <td>Asset check errors</td>
-      <td>
-        The number of <a href="/concepts/assets/asset-checks">asset checks</a>{" "}
-        that produced errors.
-      </td>
-    </tr>
-    <tr>
-      <td>Retry compute</td>
-      <td>
-        The time spent computing steps, including time spent retrying failed
-        steps. For jobs that run steps in parallel, the compute duration may be
-        longer than the wall clock time it takes for the run to complete.
-      </td>
-    </tr>
-  </tbody>
-</table>
+| Metric                | Description                                                                                                                                                                             |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Dagster credits       | The Dagster credit cost associated with computing this object. Dagster credits are charged for every step that's run, and for every asset that's materialized. For more information, [refer to the pricing FAQ](https://dagster.io/pricing#faq). |
+| Compute duration      | The time spent computing steps. For jobs that run steps in parallel, the compute duration may be longer than the wall clock time it takes for the run to complete.                      |
+| Materializations      | The number of asset materializations associated with computing this object.                                                                                                            |
+| Observations          | The number of [asset observations](/todo) associated with computing this object.                                                                         |
+| Step failures         | The number of times steps failed when computing this object. **Note**: Steps that retry and succeed aren't included in this metric.                                                   |
+| Step retries          | The number of times steps were retried when computing this object.                                                                                                                     |
+| Asset check warnings  | The number of [asset checks](/todo) that produced warnings.                                                                                                    |
+| Asset check errors    | The number of [asset checks](/todo) that produced errors.                                                                                                      |
+| Retry compute         | The time spent computing steps, including time spent retrying failed steps. For jobs that run steps in parallel, the compute duration may be longer than the wall clock time it takes for the run to complete. |
 
-### Integrate other metrics
+
+### Integrate other metrics \{#integrate-metrics}
 
 Users on the Pro plan can integration other metrics into Insights, such as asset materialization metadata or Snowflake credits. Insights supports the following additional metrics:
 
 - **Asset materialization metadata.** Refer to the [Using asset metadata with Dagster+ Insights guide](/dagster-plus/insights/asset-metadata) for more info.
-- **Google BigQuery usage** generated by either [queries made to BigQuery resources](/dagster-plus/insights/integrating-bigquery) or [using dbt to materialize tables](/dagster-plus/insights/integrating-bigquery-and-dbt)
-- **Snowflake usage** generated by either [queries made to Snowflake resources](/dagster-plus/insights/integrating-snowflake) or [using dbt to materialize tables](/dagster-plus/insights/integrating-snowflake-and-dbt)
+- [**Google BigQuery usage**](/dagster-plus/insights/bigquery) generated by either queries made to BigQuery resources or using dbt to materialize tables
+- [**Snowflake usage**](/dagster-plus/insights/snowflake) generated by either queries made to Snowflake resources or using dbt to materialize tables
 
 ### Export metrics
 
