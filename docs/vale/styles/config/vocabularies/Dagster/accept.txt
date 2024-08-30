@@ -19,6 +19,7 @@ Databricks
 Datadog
 dbt
 DuckDB
+Fivetran
 GitHub
 Gitlab
 Microsoft Teams
