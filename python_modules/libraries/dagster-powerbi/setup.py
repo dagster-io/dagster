@@ -1,14 +1,15 @@
+from pathlib import Path
+from typing import Dict
+
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    return "1!0+dev"
-    # Uncomment when ready to publish
-    # version: Dict[str, str] = {}
-    # with open(Path(__file__).parent / "dagster_powerbi/version.py", encoding="utf8") as fp:
-    #     exec(fp.read(), version)
+    version: Dict[str, str] = {}
+    with open(Path(__file__).parent / "dagster_powerbi/version.py", encoding="utf8") as fp:
+        exec(fp.read(), version)
 
-    # return version["__version__"]
+    return version["__version__"]
 
 
 ver = get_version()
