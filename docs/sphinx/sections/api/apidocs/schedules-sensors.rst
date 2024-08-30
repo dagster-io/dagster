@@ -17,7 +17,7 @@ Run requests
 Schedules
 ---------
 
-`Schedules </concepts/automationschedules>`__ are Dagster's way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of `assets </concepts/assets/software-defined-assets>`__ or `ops </concepts/ops-jobs-graphs/ops>`__.
+`Schedules </concepts/automation/schedules>`__ are Dagster's way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of `assets </concepts/assets/software-defined-assets>`__ or `ops </concepts/ops-jobs-graphs/ops>`__.
 
 .. autodecorator:: schedule
 
