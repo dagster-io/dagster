@@ -183,7 +183,7 @@ We can use the Dagster-supplied factory `dbt_defs` to generate these definitions
 First, you need to install the extra that has the dbt factory:
 
 ```bash
-uv pip install dagster-airlift[dbt]
+uv pip install 'dagster-airlift[dbt]'
 ```
 
 Then, we will construct our assets:
@@ -352,7 +352,7 @@ tasks:
     migrated: False
 ```
 
-Important: It may take up to 30 seconds for the migration status in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster via the UI or by restarting `dagster dev`.
+**Important**: It may take up to 30 seconds for the migration status in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster via the UI or by restarting `dagster dev`.
 
 You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run:
 
