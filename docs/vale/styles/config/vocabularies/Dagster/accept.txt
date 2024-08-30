@@ -14,6 +14,7 @@ Serverless
 
 Airbyte
 AirFlow
+AWS
 BigQuery
 Crontab
 Databricks
@@ -22,9 +23,13 @@ Dockerfile
 dbt
 dlt
 DuckDB
+ECR
+ECS
 Fivetran
+GCR
 GitHub
-Gitlab
+GitLab
+IAM
 Microsoft Teams
 MLflow
 MongoDB
@@ -37,6 +42,7 @@ Pandera
 PingOne
 Postgres
 S3
+SCIM
 Snowflake
 Twilio
 
