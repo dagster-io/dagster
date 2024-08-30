@@ -11,7 +11,7 @@ Dagster supports several ways of creating assets, but this guide will focus on u
 
 - The asset decorators Dagster supports
 - How to define a single asset
-- How to operations that create multiple assets
+- How to define operations that create multiple assets
 - How to define multiple operations that create a single asset
 
 <details>
