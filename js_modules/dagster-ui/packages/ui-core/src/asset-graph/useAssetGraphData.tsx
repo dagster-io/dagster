@@ -15,7 +15,6 @@ import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
-import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 
 export interface AssetGraphFetchScope {
@@ -48,7 +47,6 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     ),
     version: 1,
   });
-  useBlockTraceUntilTrue('ASSET_GRAPH_QUERY', !fetchResult.loading);
 
   const nodes = fetchResult.data?.assetNodes;
   const queryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
@@ -87,7 +85,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     ),
     version: 1,
   });
-  useBlockTraceUntilTrue('ASSET_GRAPH_QUERY', !fetchResult.loading);
 
   const nodes = fetchResult.data?.assetNodes;
 

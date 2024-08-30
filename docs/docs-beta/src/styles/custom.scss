@@ -31,6 +31,10 @@ hr {
 .navbar {
   box-shadow: none;
   border-bottom: 1px solid var(--theme-color-keyline);
+
+  .navbar__items {
+    max-height: 100%;
+  }
 }
 .navbar__inner {
   max-width: 100% !important;
@@ -52,7 +56,7 @@ hr {
 
 .breadcrumbs {
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   color: var(--theme-color-text-light);
 
@@ -84,6 +88,12 @@ hr {
 .theme-doc-markdown {
   margin: 0 auto;
   margin-top: 1rem;
+
+  img {
+    border: 1px solid var(--theme-color-keyline);
+    border-radius: 8px;
+    overflow: hidden;
+  }
 }
 
 /* Custom code for PyObject */
@@ -118,6 +128,40 @@ a.pyobject {
       color: var(--theme-color-accent-blue);
     }
   }
+}
+
+.DocSearch-Button {
+  border-radius: 8px !important;
+  background: var(--theme-color-background-default) !important;
+  border: 1px solid var(--theme-color-border-default) !important;
+  margin-left: 12px !important;
+
+  .DocSearch-Button .DocSearch-Search-Icon {
+    width: 18px !important;
+  }
+
+  &:hover,
+  &:focus {
+    background: var(--theme-color-background-light) !important;
+    box-shadow: none !important;
+    border: 1px solid var(--theme-color-text-lighter) !important;
+  }
+}
+.DocSearch-Hit-source {
+  color: var(--theme-color-text-light) !important;
+}
+
+.DocSearch-MagnifierLabel {
+  color: var(--theme-color-text-default) !important;
+  width: 20px;
+}
+
+.DocSearch-Hits mark {
+  color: var(--theme-color-accent-blue) !important;
+}
+
+.DocSearch-Cancel {
+  color: var(--theme-color-text-light) !important;
 }
 
 .footer {
@@ -258,10 +302,6 @@ a.pyobject {
   }
 }
 
-.card {
-  border: 1px solid rgba(200, 200, 200, 0.3);
-}
-
 .markdown .table-of-contents {
   li {
     list-style: none;
@@ -318,11 +358,6 @@ a.pyobject {
   }
 }
 
-@media (max-width: 950px) {
-  .navbar__items .navbar__brand {
-    margin: 0 auto;
-  }
-}
 table {
   thead {
     tr {
@@ -365,13 +400,6 @@ table {
   text-shadow: 0.5rem 0.5rem var(--theme-color-accent-blue);
 }
 
-@keyframes wiggle {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(3deg); }
-  75% { transform: rotate(-3deg); }
-  100% { transform: rotate(0deg); }
-}
-
 .hover-wiggle {
   &:hover {
     animation: wiggle 2s linear infinite;
@@ -382,7 +410,7 @@ table {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  border: 1px solid rgba(200, 200, 200, 0.3);
+  border: 1px solid var(--theme-color-keyline);
   padding: 1rem;
 
   a {
@@ -446,6 +474,11 @@ table {
   .navbar__items .navbar__brand {
     margin: 0 auto;
   }
+
+  .navbar__items .navbar__brand {
+    margin: 0 auto;
+  }
+
   .footer__link-item {
     display: flex;
     justify-content: space-between;
@@ -454,5 +487,20 @@ table {
   }
   .footer__bottom {
     text-align: center;
+  }
+}
+
+@keyframes wiggle {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(3deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0deg);
   }
 }

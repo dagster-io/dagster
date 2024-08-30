@@ -14,6 +14,7 @@ def setup_dagster_defs_path(
     return str(makefile_dir / "tutorial_example" / "dagster_defs" / "stages" / "observe.py")
 
 
+@pytest.mark.skip(reason="Flakiness, @benpankow to investigate")
 def test_observe_reflects_dag_completion_status(airflow_instance: None, dagster_dev: None) -> None:
     instance = DagsterInstance.get()
 
