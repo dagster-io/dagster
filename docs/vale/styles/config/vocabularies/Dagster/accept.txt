@@ -18,7 +18,7 @@ Crontab
 Databricks
 Datadog
 dbt
-DLT
+dlt
 DuckDB
 Fivetran
 GitHub
