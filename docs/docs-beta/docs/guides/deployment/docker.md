@@ -14,8 +14,8 @@ This guide provides instructions for deploying Dagster using Docker Compose. Thi
 <details>
   <summary>Prerequisites</summary>
 - Familiarity with Docker and Docker Compose
-- Familiarity with dagster.yaml instance configuration
-- Familiarity with workspace.yaml code location configuration
+- Familiarity with `dagster.yaml` instance configuration
+- Familiarity with `workspace.yaml` code location configuration
 </details>
 
 
