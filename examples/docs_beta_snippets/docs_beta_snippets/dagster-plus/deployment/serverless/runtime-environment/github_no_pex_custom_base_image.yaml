@@ -1,0 +1,11 @@
+- name: Build and deploy to Dagster Cloud serverless
+    uses: dagster-io/dagster-cloud-action/actions/serverless_branch_deploy@v0.1
+    with:
+      dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+      location: ${{ toJson(matrix.location) }}
+      # highlight-start
+      base_image: "my_base_image:latest"
+      # highlight-end
+      # Uncomment to pass through Github Action secrets as a JSON string of key-value pairs
+      # env_vars: ${{ toJson(secrets) }}
+      organization_id: ${{ secrets.ORGANIZATION_ID }}
