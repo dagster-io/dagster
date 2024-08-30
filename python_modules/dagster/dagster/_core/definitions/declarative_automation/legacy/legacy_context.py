@@ -151,7 +151,7 @@ class LegacyRuleEvaluationContext:
         self,
         child_condition: "AutomationCondition",
         child_unique_id: str,
-        candidate_slice: EntitySlice[AssetKey],
+        candidate_slice: EntitySlice,
     ) -> "LegacyRuleEvaluationContext":
         return dataclasses.replace(
             self,
