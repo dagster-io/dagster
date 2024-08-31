@@ -471,8 +471,12 @@ class TestEventLogStorage:
     def test_log_storage_run_not_found(self, storage):
         assert storage.get_logs_for_run(make_new_run_id()) == []
 
-    def can_wipe(self):
-        # Whether the storage is allowed to wipe the event log
+    def can_wipe_event_log(self):
+        # Whether the storage is allowed to wipe the entire event log
+        return True
+
+    def can_wipe_assets(self):
+        # Whether the storage is allowed to wipe an individual asset
         return True
 
     def can_watch(self):
@@ -522,7 +526,7 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(test_run_id)) == 1
         assert storage.get_stats_for_run(test_run_id)
 
-        if self.can_wipe():
+        if self.can_wipe_event_log():
             storage.wipe()
             assert len(storage.get_logs_for_run(test_run_id)) == 0
 
@@ -556,7 +560,7 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(run_id)) == 1
             assert storage.get_stats_for_run(run_id).steps_succeeded == 1
 
-        if self.can_wipe():
+        if self.can_wipe_event_log():
             storage.wipe()
             for run_id in runs:
                 assert len(storage.get_logs_for_run(run_id)) == 0
@@ -958,7 +962,7 @@ class TestEventLogStorage:
 
         assert _event_types(out_events) == _event_types(events)
 
-        if self.can_wipe():
+        if self.can_wipe_event_log():
             storage.wipe()
 
             assert storage.get_logs_for_run(result.run_id) == []
@@ -2289,7 +2293,7 @@ class TestEventLogStorage:
             assert len(events_by_key) == 4
 
             # wipe 2 of the assets, make sure we respect that
-            if self.can_wipe():
+            if self.can_wipe_assets():
                 storage.wipe_asset(AssetKey("a"))
                 storage.wipe_asset(AssetKey("b"))
                 events_by_key = _fetch_events(storage)
@@ -2396,7 +2400,7 @@ class TestEventLogStorage:
                 assert storage.has_asset_key(AssetKey("asset_1"))
 
                 log_count = len(storage.get_logs_for_run(one_run_id))
-                if self.can_wipe():
+                if self.can_wipe_assets():
                     for asset_key in asset_keys:
                         storage.wipe_asset(asset_key)
 
@@ -2590,87 +2594,82 @@ class TestEventLogStorage:
             yield AssetMaterialization(c, partition="c")
             yield Output(None)
 
-        with instance_for_test() as created_instance:
-            if not storage.has_instance:
-                storage.register_instance(created_instance)
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        run_id_3 = make_new_run_id()
+        run_id_4 = make_new_run_id()
 
-            run_id_1 = make_new_run_id()
-            run_id_2 = make_new_run_id()
-            run_id_3 = make_new_run_id()
-            run_id_4 = make_new_run_id()
+        cursor_run1 = _store_materialization_events(
+            storage, materialize, instance, run_id_1
+        )
+        assert storage.get_materialized_partitions(a) == set()
+        assert storage.get_materialized_partitions(b) == set()
+        assert storage.get_materialized_partitions(c) == {"a", "b"}
 
-            with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
-                cursor_run1 = _store_materialization_events(
-                    storage, materialize, created_instance, run_id_1
-                )
-                assert storage.get_materialized_partitions(a) == set()
-                assert storage.get_materialized_partitions(b) == set()
-                assert storage.get_materialized_partitions(c) == {"a", "b"}
+        cursor_run2 = _store_materialization_events(
+            storage, materialize_two, instance, run_id_2
+        )
+        _store_materialization_events(
+            storage, materialize_three, instance, run_id_3
+        )
 
-                cursor_run2 = _store_materialization_events(
-                    storage, materialize_two, created_instance, run_id_2
-                )
-                _store_materialization_events(
-                    storage, materialize_three, created_instance, run_id_3
-                )
+        # test that the cursoring logic works
+        assert storage.get_materialized_partitions(a) == set()
+        assert storage.get_materialized_partitions(b) == set()
+        assert storage.get_materialized_partitions(c) == {"a", "b", "c"}
+        assert storage.get_materialized_partitions(d) == {"x"}
+        assert storage.get_materialized_partitions(a, before_cursor=cursor_run1) == set()
+        assert storage.get_materialized_partitions(b, before_cursor=cursor_run1) == set()
+        assert storage.get_materialized_partitions(c, before_cursor=cursor_run1) == {
+            "a",
+            "b",
+        }
+        assert storage.get_materialized_partitions(d, before_cursor=cursor_run1) == set()
+        assert storage.get_materialized_partitions(a, after_cursor=cursor_run1) == set()
+        assert storage.get_materialized_partitions(b, after_cursor=cursor_run1) == set()
+        assert storage.get_materialized_partitions(c, after_cursor=cursor_run1) == {
+            "a",
+            "c",
+        }
+        assert storage.get_materialized_partitions(d, after_cursor=cursor_run1) == {"x"}
+        assert (
+            storage.get_materialized_partitions(
+                a, before_cursor=cursor_run2, after_cursor=cursor_run1
+            )
+            == set()
+        )
+        assert (
+            storage.get_materialized_partitions(
+                b, before_cursor=cursor_run2, after_cursor=cursor_run1
+            )
+            == set()
+        )
+        assert storage.get_materialized_partitions(
+            c, before_cursor=cursor_run2, after_cursor=cursor_run1
+        ) == {"a"}
+        assert storage.get_materialized_partitions(
+            d, before_cursor=cursor_run2, after_cursor=cursor_run1
+        ) == {"x"}
+        assert storage.get_materialized_partitions(a, after_cursor=9999999999) == set()
+        assert storage.get_materialized_partitions(b, after_cursor=9999999999) == set()
+        assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
+        assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
 
-                # test that the cursoring logic works
-                assert storage.get_materialized_partitions(a) == set()
-                assert storage.get_materialized_partitions(b) == set()
-                assert storage.get_materialized_partitions(c) == {"a", "b", "c"}
-                assert storage.get_materialized_partitions(d) == {"x"}
-                assert storage.get_materialized_partitions(a, before_cursor=cursor_run1) == set()
-                assert storage.get_materialized_partitions(b, before_cursor=cursor_run1) == set()
-                assert storage.get_materialized_partitions(c, before_cursor=cursor_run1) == {
-                    "a",
-                    "b",
-                }
-                assert storage.get_materialized_partitions(d, before_cursor=cursor_run1) == set()
-                assert storage.get_materialized_partitions(a, after_cursor=cursor_run1) == set()
-                assert storage.get_materialized_partitions(b, after_cursor=cursor_run1) == set()
-                assert storage.get_materialized_partitions(c, after_cursor=cursor_run1) == {
-                    "a",
-                    "c",
-                }
-                assert storage.get_materialized_partitions(d, after_cursor=cursor_run1) == {"x"}
-                assert (
-                    storage.get_materialized_partitions(
-                        a, before_cursor=cursor_run2, after_cursor=cursor_run1
-                    )
-                    == set()
-                )
-                assert (
-                    storage.get_materialized_partitions(
-                        b, before_cursor=cursor_run2, after_cursor=cursor_run1
-                    )
-                    == set()
-                )
-                assert storage.get_materialized_partitions(
-                    c, before_cursor=cursor_run2, after_cursor=cursor_run1
-                ) == {"a"}
-                assert storage.get_materialized_partitions(
-                    d, before_cursor=cursor_run2, after_cursor=cursor_run1
-                ) == {"x"}
-                assert storage.get_materialized_partitions(a, after_cursor=9999999999) == set()
-                assert storage.get_materialized_partitions(b, after_cursor=9999999999) == set()
-                assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
-                assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
+        # wipe asset, make sure we respect that
+        if self.can_wipe_assets():
+            storage.wipe_asset(c)
+            assert storage.get_materialized_partitions(c) == set()
 
-                # wipe asset, make sure we respect that
-                if self.can_wipe():
-                    storage.wipe_asset(c)
-                    assert storage.get_materialized_partitions(c) == set()
+            _store_materialization_events(
+                storage, materialize_two, instance, run_id_4
+            )
 
-                    _store_materialization_events(
-                        storage, materialize_two, created_instance, run_id_4
-                    )
+            assert storage.get_materialized_partitions(c) == {"a"}
+            assert storage.get_materialized_partitions(d) == {"x"}
 
-                    assert storage.get_materialized_partitions(c) == {"a"}
-                    assert storage.get_materialized_partitions(d) == {"x"}
-
-                    # make sure adding an after_cursor doesn't mess with the wiped events
-                    assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
-                    assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
+            # make sure adding an after_cursor doesn't mess with the wiped events
+            assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
+            assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
@@ -2735,7 +2734,7 @@ class TestEventLogStorage:
             latest_storage_ids["p3"] = _store_partition_event(a, "p3")
             _assert_storage_matches(latest_storage_ids)
 
-            if self.can_wipe():
+            if self.can_wipe_assets():
                 storage.wipe_asset(a)
                 latest_storage_ids = {}
                 _assert_storage_matches(latest_storage_ids)
@@ -2881,7 +2880,7 @@ class TestEventLogStorage:
                 "p3": {"dagster/a": "1", "dagster/b": "1"},
             }
 
-            if self.can_wipe():
+            if self.can_wipe_assets():
                 storage.wipe_asset(a)
                 assert (
                     storage.get_latest_tags_by_partition(
@@ -3021,7 +3020,7 @@ class TestEventLogStorage:
                 "p3": {DATA_VERSION_TAG: "1"},
             }
 
-            if self.can_wipe():
+            if self.can_wipe_assets():
                 storage.wipe_asset(a)
                 assert (
                     storage.get_latest_tags_by_partition(
@@ -3191,7 +3190,7 @@ class TestEventLogStorage:
             )
 
             # wipe asset, make sure we respect that
-            if self.can_wipe():
+            if self.can_wipe_assets():
                 storage.wipe_asset(a)
                 _assert_matches_not_including_event_id(
                     storage.get_latest_asset_partition_materialization_attempts_without_materializations(
@@ -3860,7 +3859,7 @@ class TestEventLogStorage:
 
                 assert [key] == storage.all_asset_keys()
 
-                if self.can_wipe():
+                if self.can_wipe_assets():
                     storage.wipe_asset(key)
 
                     assert len(storage.all_asset_keys()) == 0
@@ -4014,7 +4013,7 @@ class TestEventLogStorage:
                 else:
                     assert not asset_entry.last_planned_materialization_storage_id
 
-                if self.can_wipe():
+                if self.can_wipe_assets():
                     storage.wipe_asset(my_asset_key)
 
                     # confirm that last_run_id is None when asset is wiped
@@ -4090,7 +4089,7 @@ class TestEventLogStorage:
                 asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
                 assert asset_entry.last_run_id == result.run_id
 
-                if self.can_wipe():
+                if self.can_wipe_assets():
                     storage.wipe_asset(asset_key)
                     assert len(storage.get_asset_records([asset_key])) == 0
 
@@ -4171,7 +4170,7 @@ class TestEventLogStorage:
                 asset_record = records[0]
                 assert result.run_id == asset_record.asset_entry.last_run_id
 
-                if self.can_wipe():
+                if self.can_wipe_assets():
                     storage.wipe_asset(asset_key)
 
                     # confirm that last_run_id is None when asset is wiped
@@ -4710,7 +4709,7 @@ class TestEventLogStorage:
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
                 {"dagster/partition/country": "US", "dagster/partition/date": "2022-10-13"},
             ]
-            if self.can_wipe():
+            if self.can_wipe_assets():
                 storage.wipe_asset(key)
                 asset_event_tags = storage.get_event_tags_for_asset(
                     asset_key=key,
@@ -4833,7 +4832,7 @@ class TestEventLogStorage:
                 )
                 assert _get_cached_status_for_asset(storage, asset_key) == cache_value
 
-            if self.can_wipe():
+            if self.can_wipe_assets():
                 cache_value = AssetStatusCacheValue(
                     latest_storage_id=1,
                     partitions_def_id=None,
@@ -4928,12 +4927,8 @@ class TestEventLogStorage:
         assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")
 
     def test_concurrency(self, storage: EventLogStorage):
-        assert storage
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
-
-        if self.can_wipe():
-            storage.wipe()
 
         run_id_one = make_new_run_id()
         run_id_two = make_new_run_id()
@@ -5006,9 +5001,6 @@ class TestEventLogStorage:
             claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority)
             return claim_status.slot_status
 
-        if self.can_wipe():
-            storage.wipe()
-
         storage.set_concurrency_slots("foo", 5)
         storage.set_concurrency_slots("bar", 1)
 
@@ -5058,9 +5050,6 @@ class TestEventLogStorage:
     def test_concurrency_allocate_from_pending(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
-
-        if self.can_wipe():
-            storage.wipe()
 
         run_id = make_new_run_id()
 
@@ -5132,9 +5121,6 @@ class TestEventLogStorage:
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
-        if self.can_wipe():
-            storage.wipe()
-
         run_id = make_new_run_id()
 
         def claim(key, run_id, step_key, priority=0):
@@ -5164,9 +5150,6 @@ class TestEventLogStorage:
     def test_slot_upsize(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
-
-        if self.can_wipe():
-            storage.wipe()
 
         run_id = make_new_run_id()
 
@@ -5214,15 +5197,6 @@ class TestEventLogStorage:
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
 
-        if not self.can_wipe():
-            # this test requires wiping
-            pytest.skip(
-                "storage does not support reading run ids for the purpose of freeing concurrency"
-                " slots"
-            )
-
-        storage.wipe()
-
         one = make_new_run_id()
         two = make_new_run_id()
 
@@ -5241,9 +5215,6 @@ class TestEventLogStorage:
     def test_threaded_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
-
-        if self.can_wipe():
-            storage.wipe()
 
         TOTAL_TIMEOUT_TIME = 30
 
@@ -5280,9 +5251,6 @@ class TestEventLogStorage:
         assert storage
         if not storage.supports_global_concurrency_limits:
             pytest.skip("storage does not support global op concurrency")
-
-        if self.can_wipe():
-            storage.wipe()
 
         run_id = make_new_run_id()
 
@@ -5324,9 +5292,6 @@ class TestEventLogStorage:
         if not self.can_set_concurrency_defaults():
             pytest.skip("storage does not support setting global op concurrency defaults")
 
-        if self.can_wipe():
-            storage.wipe()
-
         self.set_default_op_concurrency(instance, storage, 1)
 
         # initially there are no concurrency limited keys
@@ -5343,9 +5308,6 @@ class TestEventLogStorage:
         self,
         storage: EventLogStorage,
     ):
-        if self.can_wipe():
-            storage.wipe()
-
         run_id_1, run_id_2, run_id_3 = [make_new_run_id() for _ in range(3)]
         check_key_1 = AssetCheckKey(AssetKey(["my_asset"]), "my_check")
         check_key_2 = AssetCheckKey(AssetKey(["my_asset"]), "my_check_2")
@@ -5487,9 +5449,6 @@ class TestEventLogStorage:
         assert latest_checks[check_key_2].run_id == run_id_3
 
     def test_duplicate_asset_check_planned_events(self, storage: EventLogStorage):
-        if self.can_wipe():
-            storage.wipe()
-
         run_id = make_new_run_id()
         for _ in range(2):
             storage.store_event(
@@ -5602,9 +5561,6 @@ class TestEventLogStorage:
         storage: EventLogStorage,
         instance: DagsterInstance,
     ) -> None:
-        if self.can_wipe():
-            storage.wipe()
-
         run_id_0, run_id_1 = [make_new_run_id() for _ in range(2)]
         with create_and_delete_test_runs(instance, [run_id_0, run_id_1]):
             check_key_1 = AssetCheckKey(AssetKey(["my_asset"]), "my_check")
@@ -5854,10 +5810,6 @@ class TestEventLogStorage:
                 raise BlowUp()
 
         assert len(storage.get_logs_for_run(test_run_id)) == 1
-
-        if self.can_wipe():
-            storage.wipe()
-            assert len(storage.get_logs_for_run(test_run_id)) == 0
 
     def test_asset_tags_to_insert(self, test_run_id: str, storage: EventLogStorage):
         key = AssetKey("test_asset")
