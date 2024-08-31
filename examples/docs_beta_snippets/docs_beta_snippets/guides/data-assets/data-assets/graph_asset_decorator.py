@@ -1,7 +1,14 @@
 import dagster as dg
 
 
-@dg.op
+@dg.op(
+    retry_policy=dg.RetryPolicy(
+        max_retries=3,
+        delay=0.2,  # 200ms
+        backoff=dg.Backoff.EXPONENTIAL,
+        jitter=dg.Jitter.PLUS_MINUS,
+    )
+)
 def step_one():
     return 42
 
