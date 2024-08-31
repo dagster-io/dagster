@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import pandas as pd
@@ -15,13 +16,23 @@ two_dimensional_partitions = dg.MultiPartitionsDefinition(
 # Define the partitioned asset
 @dg.asset(partitions_def=two_dimensional_partitions)
 def daily_regional_sales_data(context: dg.AssetExecutionContext) -> None:
-    multi_partition_key: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
+    # partition_key looks like "2024-01-01|us"
+    keys_by_dimension: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
+
+    date = keys_by_dimension["date"]
+    region = keys_by_dimension["region"]
 
     # Simulate fetching daily sales data
-    df = pd.DataFrame({"date|region": [multi_partition_key], "sales": [1000]})
+    df = pd.DataFrame(
+        {
+            "date": [date] * 10,
+            "region": [region] * 10,
+            "sales": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+        }
+    )
 
     os.makedirs("daily_regional_sales", exist_ok=True)
-    filename = f"daily_regional_sales/sales_{multi_partition_key}.csv"
+    filename = f"daily_regional_sales/sales_{context.partition_key}.csv"
     df.to_csv(filename, index=False)
 
     context.log.info(f"Daily sales data written to {filename}")
@@ -32,18 +43,23 @@ def daily_regional_sales_data(context: dg.AssetExecutionContext) -> None:
     deps=[daily_regional_sales_data],
 )
 def daily_regional_sales_summary(context):
-    multi_partition_key: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
-    # Read the CSV file for the given partition date
-    filename = f"daily_regional_sales/sales_{multi_partition_key}.csv"
+    # partition_key looks like "2024-01-01|us"
+    keys_by_dimension: dg.MultiPartitionKey = context.partition_key.keys_by_dimension
+
+    date = keys_by_dimension["date"]
+    region = keys_by_dimension["region"]
+
+    filename = f"daily_regional_sales/sales_{context.partition_key}.csv"
     df = pd.read_csv(filename)
 
     # Summarize daily sales
     summary = {
-        "date|region": multi_partition_key,
+        "date": date,
+        "region": region,
         "total_sales": df["sales"].sum(),
     }
 
-    context.log.info(f"Daily sales summary for {multi_partition_key}: {summary}")
+    context.log.info(f"Daily sales summary for {context.partition_key}: {summary}")
 
 
 # Create a partitioned asset job
@@ -60,7 +76,11 @@ daily_regional_sales_job = dg.define_asset_job(
     cron_schedule="0 1 * * *",  # Run at 1:00 AM every day
 )
 def daily_regional_sales_schedule(context):
-    date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    """Process previous day's sales data for all regions."""
+    previous_day = context.scheduled_execution_time.date() - datetime.timedelta(days=1)
+    date = previous_day.strftime("%Y-%m-%d")
+
+    # Create a run request for each region (3 runs in total every day)
     return [
         dg.RunRequest(
             run_key=f"{date}|{region}",

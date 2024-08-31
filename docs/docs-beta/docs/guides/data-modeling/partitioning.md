@@ -47,7 +47,7 @@ In this example:
 - We defined `daily_partitions` using `DailyPartitionsDefinition` with a start date of "2024-01-01". This will create a range of partitions from "2024-01-01" to the day before the current time.
 - The `daily_sales_data` asset is defined with this partitioning scheme.
 - The `daily_sales_summary` asset depends on `daily_sales_data` and also uses the same partitioning scheme.
-- The schedule `daily_sales_schedule` runs the job daily at 1:00 AM which partitions the data for the previous day.
+- The schedule `daily_sales_schedule` runs the job daily at 1:00 AM UTC and processes the previous day's data.
 
 ### Define partitions with predefined categories
 
@@ -88,7 +88,7 @@ In this example:
 
 ## Define dependencies between partitioned assets
 
-Now that you've seen how to model partitioned assets in different ways, this section shows how to define dependencies between various partitioned assets.
+Now that you've seen how to model partitioned assets in different ways, this section shows how to define dependencies between various partitioned assets, and between partitioned assets and un-partitioned assets.
 
 ### Dependencies between time-based partitions
 

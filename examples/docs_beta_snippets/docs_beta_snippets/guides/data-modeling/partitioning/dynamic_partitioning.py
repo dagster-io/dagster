@@ -11,9 +11,15 @@ region_partitions = dg.DynamicPartitionsDefinition(name="regions")
 # Define the partitioned asset
 @dg.asset(partitions_def=region_partitions)
 def regional_sales_data(context: dg.AssetExecutionContext) -> None:
-    # Simulate fetching daily sales data
     region = context.partition_key
-    df = pd.DataFrame({"region": [region], "sales": [1000]})  # Placeholder data
+
+    # Simulate fetching daily sales data
+    df = pd.DataFrame(
+        {
+            "region": [region] * 10,
+            "sales": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+        }
+    )
 
     os.makedirs("regional_sales", exist_ok=True)
     filename = f"regional_sales/sales_{region}.csv"

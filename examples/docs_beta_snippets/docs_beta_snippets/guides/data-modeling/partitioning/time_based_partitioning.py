@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import pandas as pd
@@ -13,7 +14,12 @@ daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
 def daily_sales_data(context: dg.AssetExecutionContext) -> None:
     date = context.partition_key
     # Simulate fetching daily sales data
-    df = pd.DataFrame({"date": [date], "sales": [1000]})
+    df = pd.DataFrame(
+        {
+            "date": [date] * 10,
+            "sales": [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+        }
+    )
 
     os.makedirs("daily_sales", exist_ok=True)
     filename = f"daily_sales/sales_{date}.csv"
@@ -55,7 +61,10 @@ daily_sales_job = dg.define_asset_job(
     cron_schedule="0 1 * * *",  # Run at 1:00 AM every day
 )
 def daily_sales_schedule(context):
-    date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    """Process previous day's sales data."""
+    # Calculate the previous day's date
+    previous_day = context.scheduled_execution_time.date() - datetime.timedelta(days=1)
+    date = previous_day.strftime("%Y-%m-%d")
     return dg.RunRequest(
         run_key=date,
         partition_key=date,
