@@ -1186,8 +1186,10 @@ class TestEventLogStorage:
         assert int(log.timestamp) == int(stats.start_time)
         assert int(log.timestamp) == int(curr_time)
 
-    def test_asset_materialization(self, storage, test_run_id, instance):
+    def test_asset_materialization(self, storage, instance):
         asset_key = AssetKey(["path", "to", "asset_one"])
+
+        test_run_id = make_new_run_id()
 
         @op
         def materialize_one(_):
@@ -1205,10 +1207,7 @@ class TestEventLogStorage:
         def _ops():
             materialize_one()
 
-        events_one, _ = _synthesize_events(_ops, instance=instance, run_id=test_run_id)
-
-        for event in events_one:
-            storage.store_event(event)
+        _synthesize_events(_ops, instance=instance, run_id=test_run_id)
 
         assert asset_key in set(storage.all_asset_keys())
 
@@ -1266,10 +1265,12 @@ class TestEventLogStorage:
             result = storage.fetch_materializations(foo.key, limit=100)
             assert len(result.records) == 2
 
-    def test_asset_materialization_fetch(self, storage, test_run_id, instance):
+    def test_asset_materialization_fetch(self, storage, instance):
         asset_key = AssetKey(["path", "to", "asset_one"])
 
         other_asset_key = AssetKey(["path", "to", "asset_two"])
+
+        test_run_id = make_new_run_id()
 
         @op
         def materialize(_):
@@ -1286,10 +1287,7 @@ class TestEventLogStorage:
         def _ops():
             materialize()
 
-        events, _ = _synthesize_events(_ops, instance=instance, run_id=test_run_id)
-
-        for event in events:
-            storage.store_event(event)
+        _synthesize_events(_ops, instance=instance, run_id=test_run_id)
 
         assert asset_key in set(storage.all_asset_keys())
 
@@ -1391,8 +1389,10 @@ class TestEventLogStorage:
         )
         assert _get_counts(result) == [5, 3, 1]
 
-    def test_asset_observation_fetch(self, storage, test_run_id, instance):
+    def test_asset_observation_fetch(self, storage, instance):
         asset_key = AssetKey(["path", "to", "asset_one"])
+
+        test_run_id = make_new_run_id()
 
         @op
         def observe(_):
@@ -1406,10 +1406,7 @@ class TestEventLogStorage:
         def _ops():
             observe()
 
-        events, _ = _synthesize_events(_ops, instance=instance, run_id=test_run_id)
-
-        for event in events:
-            storage.store_event(event)
+        _synthesize_events(_ops, instance=instance, run_id=test_run_id)
 
         assert asset_key in set(storage.all_asset_keys())
 
@@ -2294,29 +2291,21 @@ class TestEventLogStorage:
             assert events_by_key.get(AssetKey("a")) is None
 
     def test_asset_keys(self, storage, instance):
-        events_one, result1 = _synthesize_events(lambda: one_asset_op(), instance=instance)
-        events_two, result2 = _synthesize_events(lambda: two_asset_ops(), instance=instance)
+        _synthesize_events(lambda: one_asset_op(), instance=instance)
+        _synthesize_events(lambda: two_asset_ops(), instance=instance)
 
-        with create_and_delete_test_runs(instance, [result1.run_id, result2.run_id]):
-            for event in events_one + events_two:
-                storage.store_event(event)
-
-            asset_keys = storage.all_asset_keys()
-            assert len(asset_keys) == 3
-            assert set([asset_key.to_string() for asset_key in asset_keys]) == set(
-                ['["asset_1"]', '["asset_2"]', '["path", "to", "asset_3"]']
-            )
+        asset_keys = storage.all_asset_keys()
+        assert len(asset_keys) == 3
+        assert set([asset_key.to_string() for asset_key in asset_keys]) == set(
+            ['["asset_1"]', '["asset_2"]', '["path", "to", "asset_3"]']
+        )
 
     def test_has_asset_key(self, storage, instance):
-        events_one, result_1 = _synthesize_events(lambda: one_asset_op(), instance=instance)
-        events_two, result_2 = _synthesize_events(lambda: two_asset_ops(), instance=instance)
+        _synthesize_events(lambda: one_asset_op(), instance=instance)
+        _synthesize_events(lambda: two_asset_ops(), instance=instance)
 
-        with create_and_delete_test_runs(instance, [result_1.run_id, result_2.run_id]):
-            for event in events_one + events_two:
-                storage.store_event(event)
-
-            assert storage.has_asset_key(AssetKey(["path", "to", "asset_3"]))
-            assert not storage.has_asset_key(AssetKey(["path", "to", "bogus", "asset"]))
+        assert storage.has_asset_key(AssetKey(["path", "to", "asset_3"]))
+        assert not storage.has_asset_key(AssetKey(["path", "to", "bogus", "asset"]))
 
     def test_asset_normalization(self, storage, test_run_id):
         with instance_for_test() as instance:
@@ -2343,84 +2332,64 @@ class TestEventLogStorage:
     def test_asset_wipe(self, storage, instance):
         one_run_id = make_new_run_id()
         two_run_id = make_new_run_id()
-        events_one, _ = _synthesize_events(
-            lambda: one_asset_op(), run_id=one_run_id, instance=instance
+        _synthesize_events(lambda: one_asset_op(), run_id=one_run_id, instance=instance)
+        _synthesize_events(lambda: two_asset_ops(), run_id=two_run_id, instance=instance)
+
+        asset_keys = storage.all_asset_keys()
+        assert len(asset_keys) == 3
+        assert storage.has_asset_key(AssetKey("asset_1"))
+
+        log_count = len(storage.get_logs_for_run(one_run_id))
+        for asset_key in asset_keys:
+            storage.wipe_asset(asset_key)
+
+        asset_keys = storage.all_asset_keys()
+        assert len(asset_keys) == 0
+        assert not storage.has_asset_key(AssetKey("asset_1"))
+        assert log_count == len(storage.get_logs_for_run(one_run_id))
+
+        one_run_id = make_new_run_id()
+        _synthesize_events(
+            lambda: one_asset_op(),
+            run_id=one_run_id,
+            instance=instance,
         )
-        events_two, _ = _synthesize_events(
-            lambda: two_asset_ops(), run_id=two_run_id, instance=instance
-        )
-
-        with create_and_delete_test_runs(instance, [one_run_id, two_run_id]):
-            for event in events_one + events_two:
-                storage.store_event(event)
-
-            asset_keys = storage.all_asset_keys()
-            assert len(asset_keys) == 3
-            assert storage.has_asset_key(AssetKey("asset_1"))
-
-            log_count = len(storage.get_logs_for_run(one_run_id))
-            for asset_key in asset_keys:
-                storage.wipe_asset(asset_key)
-
-            asset_keys = storage.all_asset_keys()
-            assert len(asset_keys) == 0
-            assert not storage.has_asset_key(AssetKey("asset_1"))
-            assert log_count == len(storage.get_logs_for_run(one_run_id))
-
-            one_run_id = make_new_run_id()
-            events_one, _ = _synthesize_events(
-                lambda: one_asset_op(),
-                run_id=one_run_id,
-                instance=instance,
-            )
-            with create_and_delete_test_runs(instance, [one_run_id]):
-                for event in events_one:
-                    storage.store_event(event)
-
-                asset_keys = storage.all_asset_keys()
-                assert len(asset_keys) == 1
-                assert storage.has_asset_key(AssetKey("asset_1"))
+        asset_keys = storage.all_asset_keys()
+        assert len(asset_keys) == 1
+        assert storage.has_asset_key(AssetKey("asset_1"))
 
     def test_asset_secondary_index(self, storage, instance):
-        events_one, result = _synthesize_events(lambda: one_asset_op(), instance=instance)
+        _synthesize_events(lambda: one_asset_op(), instance=instance)
 
-        with create_and_delete_test_runs(instance, [result.run_id]):
-            for event in events_one:
-                storage.store_event(event)
+        asset_keys = storage.all_asset_keys()
+        assert len(asset_keys) == 1
+        migrate_asset_key_data(storage)
 
-            asset_keys = storage.all_asset_keys()
-            assert len(asset_keys) == 1
-            migrate_asset_key_data(storage)
+        two_first_run_id = make_new_run_id()
+        two_second_run_id = make_new_run_id()
+        _synthesize_events(
+            lambda: two_asset_ops(),
+            run_id=two_first_run_id,
+            instance=instance,
+        )
+        _synthesize_events(
+            lambda: two_asset_ops(),
+            run_id=two_second_run_id,
+            instance=instance,
+        )
 
-            two_first_run_id = make_new_run_id()
-            two_second_run_id = make_new_run_id()
-            events_two, _ = _synthesize_events(
-                lambda: two_asset_ops(),
-                run_id=two_first_run_id,
-                instance=instance,
-            )
-            events_two_two, _ = _synthesize_events(
-                lambda: two_asset_ops(),
-                run_id=two_second_run_id,
-                instance=instance,
-            )
+        asset_keys = storage.all_asset_keys()
+        assert len(asset_keys) == 3
 
-            with create_and_delete_test_runs(instance, [two_first_run_id, two_second_run_id]):
-                for event in events_two + events_two_two:
-                    storage.store_event(event)
+        storage.delete_events(two_first_run_id)
+        asset_keys = storage.all_asset_keys()
+        assert len(asset_keys) == 3
 
-                asset_keys = storage.all_asset_keys()
-                assert len(asset_keys) == 3
-
-                storage.delete_events(two_first_run_id)
-                asset_keys = storage.all_asset_keys()
-                assert len(asset_keys) == 3
-
-                storage.delete_events(two_second_run_id)
-                asset_keys = storage.all_asset_keys()
-                # we now no longer keep the asset catalog keys in sync with the presence of
-                # asset events in the event log
-                # assert len(asset_keys) == 1
+        storage.delete_events(two_second_run_id)
+        asset_keys = storage.all_asset_keys()
+        # we now no longer keep the asset catalog keys in sync with the presence of
+        # asset events in the event log
+        # assert len(asset_keys) == 1
 
     def test_asset_partition_query(self, storage, instance):
         @op(config_schema={"partition": Field(str, is_required=False)})
@@ -2437,35 +2406,34 @@ class TestEventLogStorage:
 
         partitions = ["a", "a", "b", "c"]
         run_ids = [make_new_run_id() for _ in partitions]
-        with create_and_delete_test_runs(instance, run_ids):
-            for partition, run_id in zip([f"partition_{x}" for x in partitions], run_ids):
-                run_events, _ = _synthesize_events(
-                    lambda: op_partitioned(),
-                    instance=instance,
-                    run_config=get_partitioned_config(partition),
-                    run_id=run_id,
-                )
-                for event in run_events:
-                    storage.store_event(event)
-
-            records = storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset_key"),
-                )
+        for partition, run_id in zip([f"partition_{x}" for x in partitions], run_ids):
+            _synthesize_events(
+                lambda: op_partitioned(),
+                instance=instance,
+                run_config=get_partitioned_config(partition),
+                run_id=run_id,
             )
-            assert len(records) == 4
 
-            records = storage.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=AssetKey("asset_key"),
-                    asset_partitions=["partition_a", "partition_b"],
-                )
+        records = storage.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=AssetKey("asset_key"),
             )
-            assert len(records) == 3
+        )
+        assert len(records) == 4
 
-    def test_get_asset_keys(self, storage, test_run_id, instance):
+        records = storage.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=AssetKey("asset_key"),
+                asset_partitions=["partition_a", "partition_b"],
+            )
+        )
+        assert len(records) == 3
+
+    def test_get_asset_keys(self, storage, instance):
+        test_run_id = make_new_run_id()
+
         @op
         def gen_op():
             yield AssetMaterialization(asset_key=AssetKey(["a"]))
@@ -2476,9 +2444,7 @@ class TestEventLogStorage:
             yield AssetMaterialization(asset_key=AssetKey(["b", "z"]))
             yield Output(1)
 
-        events, _ = _synthesize_events(lambda: gen_op(), instance=instance, run_id=test_run_id)
-        for event in events:
-            storage.store_event(event)
+        _synthesize_events(lambda: gen_op(), instance=instance, run_id=test_run_id)
 
         asset_keys = storage.get_asset_keys()
         assert len(asset_keys) == 6
@@ -3482,91 +3448,84 @@ class TestEventLogStorage:
             .to_serializable_subset()
         )
 
-        with create_and_delete_test_runs(instance, [gen_events_run_id, subset_event_run_id]):
-            events_one, _ = _synthesize_events(
-                lambda: gen_op(), instance=instance, run_id=gen_events_run_id
-            )
-            for event in events_one:
-                storage.store_event(event)
+        _synthesize_events(lambda: gen_op(), instance=instance, run_id=gen_events_run_id)
 
-            storage.store_event(
-                EventLogEntry(
-                    error_info=None,
-                    level="debug",
-                    user_message="",
-                    run_id=subset_event_run_id,
-                    timestamp=time.time(),
-                    dagster_event=DagsterEvent(
-                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                        "nonce",
-                        event_specific_data=AssetMaterializationPlannedData(
-                            a, partition="2023-01-05"
-                        ),
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=subset_event_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetMaterializationPlannedData(a, partition="2023-01-05"),
+                ),
+            )
+        )
+
+        single_partition_event_id = storage.get_latest_planned_materialization_info(
+            asset_key=a
+        ).storage_id
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=subset_event_run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetMaterializationPlannedData(
+                        a, partitions_subset=partitions_subset
                     ),
-                )
+                ),
+            )
+        )
+
+        partition_subset_event_id = storage.get_latest_planned_materialization_info(
+            asset_key=a
+        ).storage_id
+
+        assert storage.get_materialized_partitions(a) == {"2023-01-05"}
+        planned_but_no_materialization_partitions = (
+            storage.get_latest_asset_partition_materialization_attempts_without_materializations(a)
+        )
+        if self.has_asset_partitions_table():
+            # When an asset partitions table is present we can fetch planned but not
+            # materialized partitions when planned events target a partitions subset
+            assert len(planned_but_no_materialization_partitions) == 2
+            assert planned_but_no_materialization_partitions.keys() == {
+                "2023-01-05",
+                "2023-01-06",
+            }
+            assert planned_but_no_materialization_partitions["2023-01-05"] == (
+                subset_event_run_id,
+                partition_subset_event_id,
+            )
+            assert planned_but_no_materialization_partitions["2023-01-06"] == (
+                subset_event_run_id,
+                partition_subset_event_id,
             )
 
-            single_partition_event_id = storage.get_latest_planned_materialization_info(
-                asset_key=a
-            ).storage_id
-
-            storage.store_event(
-                EventLogEntry(
-                    error_info=None,
-                    level="debug",
-                    user_message="",
-                    run_id=subset_event_run_id,
-                    timestamp=time.time(),
-                    dagster_event=DagsterEvent(
-                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                        "nonce",
-                        event_specific_data=AssetMaterializationPlannedData(
-                            a, partitions_subset=partitions_subset
-                        ),
-                    ),
-                )
+        else:
+            # When an asset partitions table is not present we can only fetch planned but
+            # not materialized partitions when planned events target a single partition
+            assert planned_but_no_materialization_partitions.keys() == {"2023-01-05"}
+            assert planned_but_no_materialization_partitions["2023-01-05"] == (
+                subset_event_run_id,
+                single_partition_event_id,
             )
 
-            partition_subset_event_id = storage.get_latest_planned_materialization_info(
-                asset_key=a
-            ).storage_id
-
-            assert storage.get_materialized_partitions(a) == {"2023-01-05"}
-            planned_but_no_materialization_partitions = storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                a
+            # When asset partitions table is not present get_latest_storage_id_by_partition
+            # only returns storage IDs for single-partition events
+            latest_storage_id_by_partition = storage.get_latest_storage_id_by_partition(
+                a, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
             )
-            if self.has_asset_partitions_table():
-                # When an asset partitions table is present we can fetch planned but not
-                # materialized partitions when planned events target a partitions subset
-                assert len(planned_but_no_materialization_partitions) == 2
-                assert planned_but_no_materialization_partitions.keys() == {
-                    "2023-01-05",
-                    "2023-01-06",
-                }
-                assert planned_but_no_materialization_partitions["2023-01-05"] == (
-                    subset_event_run_id,
-                    partition_subset_event_id,
-                )
-                assert planned_but_no_materialization_partitions["2023-01-06"] == (
-                    subset_event_run_id,
-                    partition_subset_event_id,
-                )
-
-            else:
-                # When an asset partitions table is not present we can only fetch planned but
-                # not materialized partitions when planned events target a single partition
-                assert planned_but_no_materialization_partitions.keys() == {"2023-01-05"}
-                assert planned_but_no_materialization_partitions["2023-01-05"] == (
-                    subset_event_run_id,
-                    single_partition_event_id,
-                )
-
-                # When asset partitions table is not present get_latest_storage_id_by_partition
-                # only returns storage IDs for single-partition events
-                latest_storage_id_by_partition = storage.get_latest_storage_id_by_partition(
-                    a, DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-                )
-                assert latest_storage_id_by_partition == {"2023-01-05": single_partition_event_id}
+            assert latest_storage_id_by_partition == {"2023-01-05": single_partition_event_id}
 
     def test_get_latest_asset_partition_materialization_attempts_without_materializations_event_ids(
         self, storage, instance
@@ -3769,22 +3728,19 @@ class TestEventLogStorage:
 
         run_id_1 = make_new_run_id()
         run_id_2 = make_new_run_id()
-        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
-            events, _ = _synthesize_events(lambda: my_op(), instance=instance, run_id=run_id_1)
-            for event in events:
-                storage.store_event(event)
+        _synthesize_events(lambda: my_op(), instance=instance, run_id=run_id_1)
 
-            assert [key] == storage.all_asset_keys()
+        assert [key] == storage.all_asset_keys()
 
-            storage.wipe_asset(key)
+        storage.wipe_asset(key)
 
-            assert len(storage.all_asset_keys()) == 0
+        assert len(storage.all_asset_keys()) == 0
 
-            events, _ = _synthesize_events(lambda: my_op(), instance=instance, run_id=run_id_2)
-            for event in events:
-                storage.store_event(event)
+        events, _ = _synthesize_events(lambda: my_op(), instance=instance, run_id=run_id_2)
+        for event in events:
+            storage.store_event(event)
 
-            assert [key] == storage.all_asset_keys()
+        assert [key] == storage.all_asset_keys()
 
     def test_filter_on_storage_ids(
         self,
@@ -3975,37 +3931,28 @@ class TestEventLogStorage:
         run_id_1 = make_new_run_id()
         run_id_2 = make_new_run_id()
         run_id_3 = make_new_run_id()
-        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
-            events, result = _synthesize_events(
-                lambda: observe_asset(), instance=instance, run_id=run_id_1
-            )
-            for event in events:
-                storage.store_event(event)
-            asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
-            assert asset_entry.last_run_id is None
+        _synthesize_events(lambda: observe_asset(), instance=instance, run_id=run_id_1)
+        asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
+        assert asset_entry.last_run_id is None
 
-            events, result = _synthesize_events(
-                lambda: materialize_asset(),
-                instance=instance,
-                run_id=run_id_2,
-            )
-            for event in events:
-                storage.store_event(event)
-            asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
-            assert asset_entry.last_run_id == result.run_id
+        _synthesize_events(
+            lambda: materialize_asset(),
+            instance=instance,
+            run_id=run_id_2,
+        )
+        asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
+        assert asset_entry.last_run_id == run_id_2
 
-            storage.wipe_asset(asset_key)
-            assert len(storage.get_asset_records([asset_key])) == 0
+        storage.wipe_asset(asset_key)
+        assert len(storage.get_asset_records([asset_key])) == 0
 
-            events, result = _synthesize_events(
-                lambda: observe_asset(),
-                instance=instance,
-                run_id=run_id_3,
-            )
-            for event in events:
-                storage.store_event(event)
-            asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
-            assert asset_entry.last_run_id is None
+        _synthesize_events(
+            lambda: observe_asset(),
+            instance=instance,
+            run_id=run_id_3,
+        )
+        asset_entry = storage.get_asset_records([asset_key])[0].asset_entry
+        assert asset_entry.last_run_id is None
 
     def test_asset_record_last_observation(
         self,
@@ -4051,35 +3998,34 @@ class TestEventLogStorage:
 
         run_id_1 = make_new_run_id()
         run_id_2 = make_new_run_id()
-        with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
-            asset_key = AssetKey("never_materializes_asset")
-            never_materializes_job = Definitions(
-                assets=[never_materializes_asset],
-            ).get_implicit_global_asset_job_def()
+        asset_key = AssetKey("never_materializes_asset")
+        never_materializes_job = Definitions(
+            assets=[never_materializes_asset],
+        ).get_implicit_global_asset_job_def()
 
-            result = _execute_job_and_store_events(
-                instance, storage, never_materializes_job, run_id=run_id_1
-            )
-            records = storage.get_asset_records([asset_key])
+        result = _execute_job_and_store_events(
+            instance, storage, never_materializes_job, run_id=run_id_1
+        )
+        records = storage.get_asset_records([asset_key])
 
-            assert len(records) == 1
-            asset_record = records[0]
-            assert result.run_id == asset_record.asset_entry.last_run_id
+        assert len(records) == 1
+        asset_record = records[0]
+        assert result.run_id == asset_record.asset_entry.last_run_id
 
-            storage.wipe_asset(asset_key)
+        storage.wipe_asset(asset_key)
 
-            # confirm that last_run_id is None when asset is wiped
-            assert len(storage.get_asset_records([asset_key])) == 0
+        # confirm that last_run_id is None when asset is wiped
+        assert len(storage.get_asset_records([asset_key])) == 0
 
-            result = _execute_job_and_store_events(
-                instance,
-                storage,
-                never_materializes_job,
-                run_id=run_id_2,
-            )
-            records = storage.get_asset_records([asset_key])
-            assert len(records) == 1
-            assert result.run_id == records[0].asset_entry.last_run_id
+        result = _execute_job_and_store_events(
+            instance,
+            storage,
+            never_materializes_job,
+            run_id=run_id_2,
+        )
+        records = storage.get_asset_records([asset_key])
+        assert len(records) == 1
+        assert result.run_id == records[0].asset_entry.last_run_id
 
     def test_get_logs_for_all_runs_by_log_id_of_type(self, storage: EventLogStorage):
         if not storage.supports_event_consumer_queries():
@@ -4654,10 +4600,7 @@ class TestEventLogStorage:
 
         run_id_1 = make_new_run_id()
 
-        with create_and_delete_test_runs(instance, [run_id_1]):
-            events_one, _ = _synthesize_events(lambda: my_op(), instance=instance, run_id=run_id_1)
-            for event in events_one:
-                storage.store_event(event)
+        _synthesize_events(lambda: my_op(), instance=instance, run_id=run_id_1)
 
         assert instance.get_materialized_partitions(key) == {
             MultiPartitionKey({"country": "US", "date": "2022-10-13"}),
