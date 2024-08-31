@@ -21,9 +21,6 @@ In Dagster, partitioning is a powerful technique for managing large datasets, im
 To follow the steps in this guide, you'll need:
 
 - A basic understanding of Dagster and assets. See the [Quick Start](/tutorial/quick-start) tutorial for an overview.
-- Basic understanding of data processing pipelines
-- Python 3.7 or later installed
-- Dagster library installed (`pip install dagster`)
 
 </details>
 
@@ -38,7 +35,7 @@ There are several ways to partition your data in Dagster:
 
 ### Define time-partitioned assets
 
-A common use case for partitioning is to process data that divides into time intervals, such as daily logs or monthly reports. Here's how to implement time-based partitioning in Dagster:
+A common use case for partitioning is to process data that can be divided into time intervals, such as daily logs or monthly reports. Here's how to implement time-based partitioning in Dagster:
 
 <CodeExample filePath="guides/data-modeling/partitioning/time_based_partitioning.py" language="python" title="Time-based partitioning" />
 
@@ -71,7 +68,7 @@ Two-dimensional partitioning allows you to partition your data along two differe
 In this example:
 
 - We defined `two_dimensional_partitions` using `MultiPartitionsDefinition` with two dimensions: `date` and `region`.
-  - The partition key would look like this: `2024-08-01|us`.
+- The partition key would be: `2024-08-01|us`.
 - The `daily_regional_sales_data` and `daily_regional_sales_summary` assets are defined with the same two-dimensional partitioning scheme.
 - The `daily_regional_sales_schedule` runs daily at 1:00 AM, processing the previous day's data for all regions. It uses `MultiPartitionKey` to specify partition keys for both date and region dimensions, resulting in 3 runs per day (one for each region).
 
