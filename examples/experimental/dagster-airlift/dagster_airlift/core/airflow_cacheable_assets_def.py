@@ -33,7 +33,7 @@ from dagster._serdes.serdes import (
 
 from dagster_airlift.migration_state import AirflowMigrationState
 
-from .airflow_instance import AirflowInstance, DagInfo, TaskInfo
+from .airflow_instance import DagInfo, IAirflowInstance, TaskInfo
 from .utils import (
     DAG_ID_TAG,
     MIGRATED_TAG,
@@ -127,7 +127,7 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     def __init__(
         self,
-        airflow_instance: AirflowInstance,
+        airflow_instance: IAirflowInstance,
         poll_interval: int,
         defs: Optional[Definitions] = None,
         migration_state_override: Optional[AirflowMigrationState] = None,
@@ -205,7 +205,7 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 
 def get_cached_spec_for_dag(
-    airflow_instance: AirflowInstance,
+    airflow_instance: IAirflowInstance,
     task_asset_keys_in_dag: Set[AssetKey],
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
     dag_info: DagInfo,
@@ -268,7 +268,7 @@ class _CacheableData:
 def construct_cacheable_assets_and_infer_dependencies(
     definitions: Optional[Definitions],
     migration_state: Optional[AirflowMigrationState],
-    airflow_instance: AirflowInstance,
+    airflow_instance: IAirflowInstance,
     dag_infos: Dict[str, DagInfo],
 ) -> _CacheableData:
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
@@ -425,7 +425,7 @@ def construct_assets_with_task_migration_info_applied(
 
 # We expect that every asset which is passed to this function has all relevant specs mapped to a task.
 def get_task_info_for_asset(
-    airflow_instance: AirflowInstance, asset: Union[AssetsDefinition, AssetSpec]
+    airflow_instance: IAirflowInstance, asset: Union[AssetsDefinition, AssetSpec]
 ) -> Optional[TaskInfo]:
     task_id = get_task_id_from_asset(asset)
     dag_id = get_dag_id_from_asset(asset)

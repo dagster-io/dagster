@@ -25,12 +25,12 @@ from dagster._core.utils import toposort_flatten
 from dagster._record import record
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 
-from .airflow_instance import AirflowInstance, TaskInstance
+from .airflow_instance import IAirflowInstance, TaskInstance
 from .utils import MIGRATED_TAG, get_dag_id_from_asset, get_task_id_from_asset
 
 
 def build_airflow_polling_sensor(
-    airflow_instance: AirflowInstance,
+    airflow_instance: IAirflowInstance,
 ) -> SensorDefinition:
     @sensor(
         name="airflow_dag_status_sensor",

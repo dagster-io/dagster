@@ -6,11 +6,11 @@ from dagster_airlift.core.sensor import build_airflow_polling_sensor
 from dagster_airlift.migration_state import AirflowMigrationState
 
 from .airflow_cacheable_assets_def import DEFAULT_POLL_INTERVAL, AirflowCacheableAssetsDefinition
-from .airflow_instance import AirflowInstance
+from .airflow_instance import IAirflowInstance
 
 
 def build_defs_from_airflow_instance(
-    airflow_instance: AirflowInstance,
+    airflow_instance: IAirflowInstance,
     cache_polling_interval: int = DEFAULT_POLL_INTERVAL,
     defs: Optional[Definitions] = None,
     # This parameter will go away once we can derive the migration state from airflow itself, using our built in utilities.

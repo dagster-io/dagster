@@ -1,6 +1,6 @@
 import datetime
 import json
-from abc import ABC
+from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import Any, Dict, List
 
@@ -24,7 +24,30 @@ class AirflowAuthBackend(ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
 
-class AirflowInstance:
+class IAirflowInstance(ABC):
+    @abstractmethod
+    def get_dag_runs(
+        self, dag_id: str, start_date: datetime.datetime, end_date: datetime.datetime
+    ) -> List["DagRun"]: ...
+
+    @abstractmethod
+    def get_task_instance(self, dag_id: str, task_id: str, run_id: str) -> "TaskInstance": ...
+
+    @property
+    @abstractmethod
+    def normalized_name(self) -> str: ...
+
+    @abstractmethod
+    def list_dags(self) -> List["DagInfo"]: ...
+
+    @abstractmethod
+    def get_dag_source_code(self, file_token: str) -> str: ...
+
+    @abstractmethod
+    def get_task_info(self, dag_id: str, task_id: str) -> "TaskInfo": ...
+
+
+class AirflowInstance(IAirflowInstance):
     def __init__(self, auth_backend: AirflowAuthBackend, name: str) -> None:
         self.auth_backend = auth_backend
         self.name = name
