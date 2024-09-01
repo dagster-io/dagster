@@ -114,3 +114,36 @@ def test_coerce_specs() -> None:
     assets_def = repo.assets_defs_by_key[AssetKey("a")]
     # Asset metadata properties have been glommed onto the asset
     assert next(iter(assets_def.specs)).metadata["Dag ID"] == "dag"
+
+
+def test_invalid_dagster_named_tasks_and_dags() -> None:
+    """Test that invalid dagster names are converted to valid names."""
+
+    def list_dags(self):
+        return [
+            DagInfo(
+                webserver_url="http://localhost:8080",
+                dag_id="dag-with-hyphens",
+                metadata={"file_token": "blah"},
+            ),
+        ]
+
+    spec = AssetSpec(
+        key="a", tags={"airlift/dag_id": "dag-with-hyphens", "airlift/task_id": "task-with-hyphens"}
+    )
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_test_instance(list_dags_override=list_dags),
+        defs=Definitions(
+            assets=[spec],
+        ),
+    )
+
+    repo = defs.get_repository_def()
+    assert len(repo.assets_defs_by_key) == 2
+    assert AssetKey("a") in repo.assets_defs_by_key
+    assets_def = repo.assets_defs_by_key[AssetKey("a")]
+    assert assets_def.node_def.name == "dag_with_hyphens__task_with_hyphens"
+
+    assert AssetKey(["airflow_instance", "dag", "dag_with_hyphens"]) in repo.assets_defs_by_key
+    dag_def = repo.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag_with_hyphens"])]
+    assert dag_def.node_def.name == "airflow_instance__dag__dag_with_hyphens"

@@ -13,8 +13,8 @@ TASK_ID_TAG = "airlift/task_id"
 
 
 def convert_to_valid_dagster_name(name: str) -> str:
-    """Converts a name to a valid dagster name by replacing invalid characters with underscores."""
-    return "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
+    """Converts a name to a valid dagster name by replacing invalid characters with underscores. / is converted to a double underscore."""
+    return "".join(c if VALID_NAME_REGEX.match(c) else "__" if c == "/" else "_" for c in name)
 
 
 def get_task_id_from_asset(asset: Union[AssetsDefinition, AssetSpec]) -> Optional[str]:
