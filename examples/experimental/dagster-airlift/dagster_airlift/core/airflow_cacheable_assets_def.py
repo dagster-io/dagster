@@ -31,6 +31,7 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 
+from dagster_airlift.core.utils import convert_to_valid_dagster_name
 from dagster_airlift.migration_state import AirflowMigrationState
 
 from .airflow_instance import AirflowInstance, DagInfo, TaskInfo
@@ -194,7 +195,7 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
                     specs=[dag_spec.to_asset_spec({})],
-                    name=key.to_user_string().replace("/", "__"),
+                    name=convert_to_valid_dagster_name(key.to_user_string()),
                     tags={DAG_ID_TAG: dag_id},
                 )
             )
@@ -416,7 +417,7 @@ def construct_assets_with_task_migration_info_applied(
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
                     specs=new_specs,
-                    name=f"{overall_dag_id}__{overall_task_id}",
+                    name=convert_to_valid_dagster_name(f"{overall_dag_id}__{overall_task_id}"),
                     tags=asset.node_def.tags if isinstance(asset, AssetsDefinition) else {},
                 )
             )
