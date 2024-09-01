@@ -276,15 +276,14 @@ def construct_cacheable_assets_and_infer_dependencies(
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
     cacheable_specs_per_asset_key: Dict[AssetKey, CacheableAssetSpec] = {}
     all_asset_keys_per_dag_id: Dict[str, Set[AssetKey]] = defaultdict(set)
-    if not definitions or not definitions.assets:
+    if not definitions:
         return _CacheableData()
-    for asset in definitions.assets:
-        asset = check.inst(  # noqa: PLW2901
-            asset,
-            (AssetsDefinition, AssetSpec),
-            "Expected orchestrated defs to all be AssetsDefinitions or AssetSpecs.",
-        )
-        task_info = get_task_info_for_asset(airflow_instance, asset)
+
+    assets_defs = definitions.get_asset_graph().assets_defs
+    if not assets_defs:
+        return _CacheableData()
+    for assets_def in assets_defs:
+        task_info = get_task_info_for_asset(airflow_instance, assets_def)
         if task_info is None:
             continue
         task_level_metadata = {
@@ -301,8 +300,7 @@ def construct_cacheable_assets_and_infer_dependencies(
         task_level_metadata[
             "Computed in Task ID" if migration_state_for_task is False else "Triggered by Task ID"
         ] = task_info.task_id
-        specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
-        for spec in specs:
+        for spec in assets_def.specs:
             spec_deps = []
             for dep in spec.deps:
                 spec_deps.append(CacheableAssetDep.from_asset_dep(dep))
