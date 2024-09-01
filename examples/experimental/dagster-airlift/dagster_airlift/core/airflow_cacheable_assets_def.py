@@ -332,26 +332,22 @@ def construct_assets_with_task_migration_info_applied(
     definitions: Optional[Definitions],
     cacheable_specs: CacheableSpecs,
 ) -> List[AssetsDefinition]:
-    if not definitions or not definitions.assets:
+    if not definitions:
         return []
 
+    assets_defs = definitions.get_asset_graph().assets_defs
     new_assets_defs = []
-    for asset in definitions.assets:
-        asset = check.inst(  # noqa: PLW2901
-            asset,
-            (AssetSpec, AssetsDefinition),
-            "Expected orchestrated defs to all be AssetsDefinitions or AssetSpecs.",
-        )
-        dag_id = get_dag_id_from_asset(asset)
+
+    for assets_def in assets_defs:
+        dag_id = get_dag_id_from_asset(assets_def)
         if dag_id is None:
-            new_assets_defs.append(asset)
+            new_assets_defs.append(assets_def)
             continue
         overall_migration_status = None
         overall_task_id = None
         overall_dag_id = None
         new_specs = []
-        specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
-        for spec in specs:
+        for spec in assets_def.specs:
             check.invariant(
                 cacheable_specs.task_asset_specs.get(spec.key) is not None,
                 f"Could not find cacheable spec for asset key {spec.key.to_user_string()}",
@@ -394,23 +390,18 @@ def construct_assets_with_task_migration_info_applied(
 
         # We don't coerce to a bool here since bool("False") is True.
         if overall_migration_status == "True":
-            asset = check.inst(  # noqa: PLW2901
-                asset,
-                AssetsDefinition,
-                f"For an asset to be migrated, it must be an AssetsDefinition. Found an AssetSpec for task ID {task_id}.",
-            )
             check.invariant(
-                asset.is_executable,
+                assets_def.is_executable,
                 f"For an asset to be marked as migrated, it must also be executable in dagster. Found unexecutable assets for task ID {task_id}.",
             )
             # This is suspect. Should we not be using a full AssetsDefinition copy here.
             # https://linear.app/dagster-labs/issue/FOU-372/investigate-suspect-code-in-construct-assets-with-task-migration-info
             new_assets_defs.append(
                 AssetsDefinition(
-                    keys_by_input_name=asset.keys_by_input_name,
-                    keys_by_output_name=asset.keys_by_output_name,
-                    node_def=asset.node_def,
-                    partitions_def=asset.partitions_def,
+                    keys_by_input_name=assets_def.keys_by_input_name,
+                    keys_by_output_name=assets_def.keys_by_output_name,
+                    node_def=assets_def.node_def,
+                    partitions_def=assets_def.partitions_def,
                     specs=new_specs,
                 )
             )
@@ -424,7 +415,7 @@ def construct_assets_with_task_migration_info_applied(
                     name=convert_to_valid_dagster_name(
                         f"{overall_dag_id}__{overall_task_id}_{unique_identifier}"
                     ),
-                    tags=asset.node_def.tags if isinstance(asset, AssetsDefinition) else {},
+                    tags=assets_def.node_def.tags if assets_def.is_executable else {},
                 )
             )
     return new_assets_defs

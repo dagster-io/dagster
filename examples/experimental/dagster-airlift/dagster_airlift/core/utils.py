@@ -31,6 +31,9 @@ def _get_prop_from_asset(
     prop_from_asset_tags = prop_from_tags(asset, prop_tag)
     if isinstance(asset, AssetSpec):
         return prop_from_asset_tags
+    if not asset.is_executable:
+        return prop_from_asset_tags
+
     prop_from_op_tags = None
     if asset.node_def.tags and prop_tag in asset.node_def.tags:
         prop_from_op_tags = asset.node_def.tags[prop_tag]
@@ -57,9 +60,6 @@ def _get_prop_from_asset(
 
 def prop_from_tags(asset: Union[AssetsDefinition, AssetSpec], prop_tag: str) -> Optional[str]:
     specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
-    asset_name = (
-        asset.node_def.name if isinstance(asset, AssetsDefinition) else asset.key.to_user_string()
-    )
     if any(prop_tag in spec.tags for spec in specs):
         prop = None
         for spec in specs:
@@ -67,7 +67,14 @@ def prop_from_tags(asset: Union[AssetsDefinition, AssetSpec], prop_tag: str) -> 
                 prop = spec.tags[prop_tag]
             else:
                 if spec.tags.get(prop_tag) is None:
-                    check.failed(f"Missing {prop_tag} tag in spec {spec.key} for {asset_name}")
+                    asset_name = (
+                        asset.node_def.name
+                        if isinstance(asset, AssetsDefinition) and asset.is_executable
+                        else asset.key.to_user_string()
+                    )
+                    check.failed(
+                        f"Missing {prop_tag} tag in spec {spec.key} for asset {asset_name}."
+                    )
                 check.invariant(
                     prop == spec.tags[prop_tag],
                     f"Task ID mismatch within same AssetsDefinition: {prop} != {spec.tags[prop_tag]}",
