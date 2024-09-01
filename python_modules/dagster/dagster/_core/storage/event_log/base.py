@@ -631,3 +631,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @property
     def handles_run_events_in_store_event(self) -> bool:
         return False
+
+    def default_run_scoped_event_tailer_offset(self) -> int:
+        return 0
