@@ -17,29 +17,27 @@ def convert_to_valid_dagster_name(name: str) -> str:
     return "".join(c if VALID_NAME_REGEX.match(c) else "__" if c == "/" else "_" for c in name)
 
 
-def get_task_id_from_asset(asset: Union[AssetsDefinition, AssetSpec]) -> Optional[str]:
-    return _get_prop_from_asset(asset, TASK_ID_TAG, 1)
+def get_task_id_from_asset(assets_def: AssetsDefinition) -> Optional[str]:
+    return _get_prop_from_asset(assets_def, TASK_ID_TAG, 1)
 
 
-def get_dag_id_from_asset(asset: Union[AssetsDefinition, AssetSpec]) -> Optional[str]:
-    return _get_prop_from_asset(asset, DAG_ID_TAG, 0)
+def get_dag_id_from_asset(assets_def: AssetsDefinition) -> Optional[str]:
+    return _get_prop_from_asset(assets_def, DAG_ID_TAG, 0)
 
 
 def _get_prop_from_asset(
-    asset: Union[AssetSpec, AssetsDefinition], prop_tag: str, position: int
+    assets_def: AssetsDefinition, prop_tag: str, position: int
 ) -> Optional[str]:
-    prop_from_asset_tags = prop_from_tags(asset, prop_tag)
-    if isinstance(asset, AssetSpec):
-        return prop_from_asset_tags
-    if not asset.is_executable:
+    prop_from_asset_tags = prop_from_tags(assets_def, prop_tag)
+    if not assets_def.is_executable:
         return prop_from_asset_tags
 
     prop_from_op_tags = None
-    if asset.node_def.tags and prop_tag in asset.node_def.tags:
-        prop_from_op_tags = asset.node_def.tags[prop_tag]
+    if assets_def.node_def.tags and prop_tag in assets_def.node_def.tags:
+        prop_from_op_tags = assets_def.node_def.tags[prop_tag]
     prop_from_name = None
-    if len(asset.node_def.name.split("__")) == 2:
-        prop_from_name = asset.node_def.name.split("__")[position]
+    if len(assets_def.node_def.name.split("__")) == 2:
+        prop_from_name = assets_def.node_def.name.split("__")[position]
     if prop_from_asset_tags and prop_from_op_tags:
         check.invariant(
             prop_from_asset_tags == prop_from_op_tags,

@@ -1,6 +1,6 @@
 import hashlib
 from collections import defaultdict
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set
 
 from dagster import (
     AssetDep,
@@ -421,10 +421,10 @@ def construct_assets_with_task_migration_info_applied(
 
 # We expect that every asset which is passed to this function has all relevant specs mapped to a task.
 def get_task_info_for_asset(
-    airflow_instance: AirflowInstance, asset: Union[AssetsDefinition, AssetSpec]
+    airflow_instance: AirflowInstance, assets_def: AssetsDefinition
 ) -> Optional[TaskInfo]:
-    task_id = get_task_id_from_asset(asset)
-    dag_id = get_dag_id_from_asset(asset)
+    task_id = get_task_id_from_asset(assets_def)
+    dag_id = get_dag_id_from_asset(assets_def)
     if task_id is None or dag_id is None:
         return None
     return airflow_instance.get_task_info(dag_id, task_id)
