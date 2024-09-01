@@ -13,6 +13,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
+from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -414,10 +415,15 @@ def construct_assets_with_task_migration_info_applied(
                 )
             )
         else:
+            unique_identifier = unique_id_from_asset_and_check_keys(
+                [spec.key for spec in new_specs]
+            )
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
                     specs=new_specs,
-                    name=convert_to_valid_dagster_name(f"{overall_dag_id}__{overall_task_id}"),
+                    name=convert_to_valid_dagster_name(
+                        f"{overall_dag_id}__{overall_task_id}_{unique_identifier}"
+                    ),
                     tags=asset.node_def.tags if isinstance(asset, AssetsDefinition) else {},
                 )
             )

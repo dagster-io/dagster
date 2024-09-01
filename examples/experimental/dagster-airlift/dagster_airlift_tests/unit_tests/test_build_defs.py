@@ -10,7 +10,8 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
 from dagster_airlift.core.airflow_instance import DagInfo
 
 from .conftest import make_test_instance
@@ -128,8 +129,9 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
             ),
         ]
 
+    a = AssetKey("a")
     spec = AssetSpec(
-        key="a", tags={"airlift/dag_id": "dag-with-hyphens", "airlift/task_id": "task-with-hyphens"}
+        key=a, tags={"airlift/dag_id": "dag-with-hyphens", "airlift/task_id": "task-with-hyphens"}
     )
     defs = build_defs_from_airflow_instance(
         airflow_instance=make_test_instance(list_dags_override=list_dags),
@@ -140,10 +142,55 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
 
     repo = defs.get_repository_def()
     assert len(repo.assets_defs_by_key) == 2
-    assert AssetKey("a") in repo.assets_defs_by_key
-    assets_def = repo.assets_defs_by_key[AssetKey("a")]
-    assert assets_def.node_def.name == "dag_with_hyphens__task_with_hyphens"
+    assert a in repo.assets_defs_by_key
+    assets_def = repo.assets_defs_by_key[a]
+    unique_id = unique_id_from_asset_and_check_keys([a])
+    assert assets_def.node_def.name == f"dag_with_hyphens__task_with_hyphens_{unique_id}"
 
     assert AssetKey(["airflow_instance", "dag", "dag_with_hyphens"]) in repo.assets_defs_by_key
     dag_def = repo.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag_with_hyphens"])]
     assert dag_def.node_def.name == "airflow_instance__dag__dag_with_hyphens"
+
+
+def test_unique_node_names_from_specs() -> None:
+    """When multiple new nodes are created from a single task, ensure that asset dependencies line up.
+    Non-unique name issues manifest as input-output connection issues deep in the stack, so by loading
+    the cacheable assets, we can check to make sure that inputs/outputs are properly hooked up.
+    """
+
+    def list_dags(self):
+        return [
+            DagInfo(
+                webserver_url="http://localhost:8080",
+                dag_id="somedag",
+                metadata={"file_token": "blah"},
+            ),
+        ]
+
+    abc = AssetKey(["a", "b", "c"])
+    defg = AssetKey(["d", "e", "f", "g"])
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_test_instance(list_dags_override=list_dags),
+        defs=dag_defs(
+            "somedag",
+            task_defs(
+                "sometask",
+                defs=Definitions(
+                    assets=[AssetSpec(key=abc), AssetSpec(key=defg)],
+                ),
+            ),
+        ),
+    )
+
+    repo = defs.get_repository_def()
+    repo.load_all_definitions()
+    expected_dag_key = AssetKey(["airflow_instance", "dag", "somedag"])
+    assert set(repo.assets_defs_by_key.keys()) == {abc, defg, expected_dag_key}
+    abc_def = repo.assets_defs_by_key[abc]
+    assert (
+        abc_def.node_def.name == f"somedag__sometask_{unique_id_from_asset_and_check_keys([abc])}"
+    )
+    defg_def = repo.assets_defs_by_key[defg]
+    assert (
+        defg_def.node_def.name == f"somedag__sometask_{unique_id_from_asset_and_check_keys([defg])}"
+    )
