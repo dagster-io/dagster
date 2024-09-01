@@ -196,7 +196,7 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
                     specs=[dag_spec.to_asset_spec({})],
-                    name=convert_to_valid_dagster_name(key.to_user_string()),
+                    name=key.to_python_identifier(),
                     tags={DAG_ID_TAG: dag_id},
                 )
             )
