@@ -172,6 +172,10 @@ class AirflowInstance:
                 airflow_date, "%Y-%m-%dT%H:%M:%S.%f+00:00"
             ).timestamp()
 
+    @staticmethod
+    def airflow_date_from_datetime(datetime: datetime.datetime) -> str:
+        return datetime.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
 
 @record
 class DagInfo:
@@ -192,6 +196,10 @@ class DagInfo:
     def dag_asset_key(self) -> AssetKey:
         # Conventional asset key representing a successful run of an airfow dag.
         return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
+
+    @property
+    def file_token(self) -> str:
+        return self.metadata["file_token"]
 
     @property
     def migration_state(self) -> DagMigrationState:
