@@ -111,9 +111,12 @@ def build_task_asset(
     task_id: str,
     dag_id: str,
 ) -> AssetsDefinition:
-    asset_specs = [AssetSpec(key=key, deps=deps) for key, deps in deps_graph.items()]
+    asset_specs = [
+        AssetSpec(key=key, deps=deps, tags={"airlift/task_id": task_id, "airlift/dag_id": dag_id})
+        for key, deps in deps_graph.items()
+    ]
 
-    @multi_asset(specs=asset_specs, op_tags={"airlift/task_id": task_id, "airlift/dag_id": dag_id})
+    @multi_asset(specs=asset_specs)
     def asset_fn():
         pass
 
@@ -123,7 +126,7 @@ def build_task_asset(
 def build_dag_asset(
     dag_id: str,
 ) -> AssetsDefinition:
-    @asset(op_tags={"airlift/dag_id": dag_id}, key=dag_id)
+    @asset(tags={"airlift/dag_id": dag_id}, key=dag_id)
     def asset_fn():
         pass
 

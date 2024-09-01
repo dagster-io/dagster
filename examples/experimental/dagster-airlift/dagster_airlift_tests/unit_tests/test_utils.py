@@ -87,67 +87,6 @@ def test_retrieve_by_asset_tag() -> None:
         get_task_id_from_asset(multi_spec_task_mismatch)
 
 
-def test_retrieve_by_op_tag() -> None:
-    """Test that we can retrieve the dag and task id from the op tags."""
-
-    @asset(op_tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"})
-    def the_asset():
-        pass
-
-    assert get_dag_id_from_asset(the_asset) == "print_dag"
-    assert get_task_id_from_asset(the_asset) == "print_task"
-
-
-def test_retrieve_by_name() -> None:
-    """Test that we can retrieve the dag and task id from the name."""
-
-    @asset
-    def print_dag__print_task():
-        pass
-
-    assert get_dag_id_from_asset(print_dag__print_task) == "print_dag"
-    assert get_task_id_from_asset(print_dag__print_task) == "print_task"
-
-
-def test_op_asset_tag_mismatch() -> None:
-    @asset(
-        tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
-        op_tags={"airlift/dag_id": "other_dag", "airlift/task_id": "other_task"},
-    )
-    def mismatched():
-        pass
-
-    with pytest.raises(CheckError):
-        get_dag_id_from_asset(mismatched)
-
-    with pytest.raises(CheckError):
-        get_task_id_from_asset(mismatched)
-
-
-def test_op_asset_name_mismatch() -> None:
-    @asset(tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"})
-    def other_dag__other_task():
-        pass
-
-    with pytest.raises(CheckError):
-        get_dag_id_from_asset(other_dag__other_task)
-
-    with pytest.raises(CheckError):
-        get_task_id_from_asset(other_dag__other_task)
-
-
-def test_op_tag_name_mismatch() -> None:
-    @asset(op_tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"})
-    def other_dag__other_task():
-        pass
-
-    with pytest.raises(CheckError):
-        get_dag_id_from_asset(other_dag__other_task)
-
-    with pytest.raises(CheckError):
-        get_task_id_from_asset(other_dag__other_task)
-
-
 def test_specs_to_tasks() -> None:
     """Tests basic conversion of specs to tasks."""
     specs = ["1", AssetSpec(key=AssetKey(["2"]))]
