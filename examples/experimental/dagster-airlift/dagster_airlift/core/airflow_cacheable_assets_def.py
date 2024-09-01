@@ -11,6 +11,7 @@ from dagster import (
     JsonMetadataValue,
     MarkdownMetadataValue,
     _check as check,
+    external_asset_from_spec,
     multi_asset,
 )
 from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
@@ -344,7 +345,12 @@ def construct_assets_with_task_migration_info_applied(
         )
         dag_id = get_dag_id_from_asset(asset)
         if dag_id is None:
-            new_assets_defs.append(asset)
+            # The cacheable assets abstraction can only handle returning a list of assetsdefinitions, not specs. So if specs are passed in,
+            # we need to coerce them.
+            if isinstance(asset, AssetSpec):
+                new_assets_defs.append(external_asset_from_spec(asset))
+            else:
+                new_assets_defs.append(asset)
             continue
         overall_migration_status = None
         overall_task_id = None
@@ -421,9 +427,7 @@ def construct_assets_with_task_migration_info_applied(
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
                     specs=new_specs,
-                    name=convert_to_valid_dagster_name(
-                        f"{overall_dag_id}__{overall_task_id}_{unique_identifier}"
-                    ),
+                    name=convert_to_valid_dagster_name(f"airflow_task_mapped_{unique_identifier}"),
                     tags=asset.node_def.tags if isinstance(asset, AssetsDefinition) else {},
                 )
             )

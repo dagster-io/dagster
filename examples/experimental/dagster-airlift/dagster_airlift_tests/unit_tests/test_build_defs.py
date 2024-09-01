@@ -1,5 +1,6 @@
 from dagster import (
     AssetKey,
+    AssetsDefinition,
     AssetSpec,
     Definitions,
     asset,
@@ -47,6 +48,9 @@ def a():
     pass
 
 
+b_spec = AssetSpec(key="b")
+
+
 @asset_check(asset=a)
 def a_check():
     pass
@@ -64,10 +68,18 @@ def the_job():
 
 def test_defs_passthrough() -> None:
     """Test that passed-through definitions are present in the final definitions."""
+
+    def list_dags(self):
+        return [
+            DagInfo(
+                webserver_url="http://localhost:8080", dag_id="dag", metadata={"file_token": "blah"}
+            ),
+        ]
+
     defs = build_defs_from_airflow_instance(
-        airflow_instance=make_test_instance(),
+        airflow_instance=make_test_instance(list_dags_override=list_dags),
         defs=Definitions(
-            assets=[a],
+            assets=[a, b_spec],
             asset_checks=[a_check],
             jobs=[the_job],
             sensors=[some_sensor],
@@ -92,6 +104,14 @@ def test_defs_passthrough() -> None:
     assert defs.jobs
     assert len(list(defs.jobs)) == 1
     assert next(iter(defs.jobs)) == the_job
+    repo = defs.get_repository_def()
+    # Ensure that asset specs get properly coerced into asset defs
+    assert set(repo.assets_defs_by_key.keys()) == {
+        a.key,
+        b_spec.key,
+        AssetKey(["airflow_instance", "dag", "dag"]),
+    }
+    assert isinstance(repo.assets_defs_by_key[b_spec.key], AssetsDefinition)
 
 
 def test_coerce_specs() -> None:
@@ -145,7 +165,7 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
     assert a in repo.assets_defs_by_key
     assets_def = repo.assets_defs_by_key[a]
     unique_id = unique_id_from_asset_and_check_keys([a])
-    assert assets_def.node_def.name == f"dag_with_hyphens__task_with_hyphens_{unique_id}"
+    assert assets_def.node_def.name == f"airflow_task_mapped_{unique_id}"
 
     assert AssetKey(["airflow_instance", "dag", "dag_with_hyphens"]) in repo.assets_defs_by_key
     dag_def = repo.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag_with_hyphens"])]
@@ -188,9 +208,10 @@ def test_unique_node_names_from_specs() -> None:
     assert set(repo.assets_defs_by_key.keys()) == {abc, defg, expected_dag_key}
     abc_def = repo.assets_defs_by_key[abc]
     assert (
-        abc_def.node_def.name == f"somedag__sometask_{unique_id_from_asset_and_check_keys([abc])}"
+        abc_def.node_def.name == f"airflow_task_mapped_{unique_id_from_asset_and_check_keys([abc])}"
     )
     defg_def = repo.assets_defs_by_key[defg]
     assert (
-        defg_def.node_def.name == f"somedag__sometask_{unique_id_from_asset_and_check_keys([defg])}"
+        defg_def.node_def.name
+        == f"airflow_task_mapped_{unique_id_from_asset_and_check_keys([defg])}"
     )
