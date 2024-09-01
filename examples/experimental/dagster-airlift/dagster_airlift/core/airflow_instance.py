@@ -290,5 +290,13 @@ class DagRun:
         return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
 
     @property
+    def start_datetime(self) -> datetime.datetime:
+        return datetime.datetime.strptime(self.metadata["start_date"], "%Y-%m-%dT%H:%M:%S+00:00")
+
+    @property
     def end_date(self) -> float:
         return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
+
+    @property
+    def end_datetime(self) -> datetime.datetime:
+        return datetime.datetime.strptime(self.metadata["end_date"], "%Y-%m-%dT%H:%M:%S+00:00")

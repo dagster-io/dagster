@@ -13,9 +13,7 @@ from dagster import (
 )
 from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
-from dagster_airlift.core.airflow_instance import DagInfo
-
-from .conftest import make_test_instance
+from dagster_airlift.test import make_instance
 
 
 @executor
@@ -68,16 +66,8 @@ def the_job():
 
 def test_defs_passthrough() -> None:
     """Test that passed-through definitions are present in the final definitions."""
-
-    def list_dags(self):
-        return [
-            DagInfo(
-                webserver_url="http://localhost:8080", dag_id="dag", metadata={"file_token": "blah"}
-            ),
-        ]
-
     defs = build_defs_from_airflow_instance(
-        airflow_instance=make_test_instance(list_dags_override=list_dags),
+        airflow_instance=make_instance({"dag": ["task"]}),
         defs=Definitions(
             assets=[a, b_spec],
             asset_checks=[a_check],
@@ -115,16 +105,12 @@ def test_defs_passthrough() -> None:
 
 
 def test_coerce_specs() -> None:
-    def list_dags(self):
-        return [
-            DagInfo(
-                webserver_url="http://localhost:8080", dag_id="dag", metadata={"file_token": "blah"}
-            ),
-        ]
+    """Test that asset specs are properly coerced into asset keys."""
+    # Initialize an airflow instance with a dag "dag", which contains a task "task". There are no task instances or runs.
 
     spec = AssetSpec(key="a", tags={"airlift/dag_id": "dag", "airlift/task_id": "task"})
     defs = build_defs_from_airflow_instance(
-        airflow_instance=make_test_instance(list_dags_override=list_dags),
+        airflow_instance=make_instance({"dag": ["task"]}),
         defs=Definitions(
             assets=[spec],
         ),
@@ -139,22 +125,12 @@ def test_coerce_specs() -> None:
 
 def test_invalid_dagster_named_tasks_and_dags() -> None:
     """Test that invalid dagster names are converted to valid names."""
-
-    def list_dags(self):
-        return [
-            DagInfo(
-                webserver_url="http://localhost:8080",
-                dag_id="dag-with-hyphens",
-                metadata={"file_token": "blah"},
-            ),
-        ]
-
     a = AssetKey("a")
     spec = AssetSpec(
         key=a, tags={"airlift/dag_id": "dag-with-hyphens", "airlift/task_id": "task-with-hyphens"}
     )
     defs = build_defs_from_airflow_instance(
-        airflow_instance=make_test_instance(list_dags_override=list_dags),
+        airflow_instance=make_instance({"dag-with-hyphens": ["task-with-hyphens"]}),
         defs=Definitions(
             assets=[spec],
         ),
@@ -177,20 +153,10 @@ def test_unique_node_names_from_specs() -> None:
     Non-unique name issues manifest as input-output connection issues deep in the stack, so by loading
     the cacheable assets, we can check to make sure that inputs/outputs are properly hooked up.
     """
-
-    def list_dags(self):
-        return [
-            DagInfo(
-                webserver_url="http://localhost:8080",
-                dag_id="somedag",
-                metadata={"file_token": "blah"},
-            ),
-        ]
-
     abc = AssetKey(["a", "b", "c"])
     defg = AssetKey(["d", "e", "f", "g"])
     defs = build_defs_from_airflow_instance(
-        airflow_instance=make_test_instance(list_dags_override=list_dags),
+        airflow_instance=make_instance({"somedag": ["sometask"]}),
         defs=dag_defs(
             "somedag",
             task_defs(

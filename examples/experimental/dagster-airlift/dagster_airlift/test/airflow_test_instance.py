@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 import requests
@@ -46,6 +46,9 @@ class AirflowInstanceFake(AirflowInstance):
             auth_backend=DummyAuthBackend(),
             name="test_instance",
         )
+
+    def list_dags(self) -> List[DagInfo]:
+        return list(self._dag_infos_by_dag_id.values())
 
     def get_dag_runs(self, dag_id: str, start_date: datetime, end_date: datetime) -> List[DagRun]:
         if dag_id not in self._dag_runs_by_dag_id:
@@ -108,13 +111,19 @@ def make_task_info(dag_id: str, task_id: str) -> TaskInfo:
     )
 
 
-def make_task_instance(dag_id: str, task_id: str, run_id: str) -> TaskInstance:
+def make_task_instance(
+    dag_id: str, task_id: str, run_id: str, start_date: datetime, end_date: datetime
+) -> TaskInstance:
     return TaskInstance(
         webserver_url="http://dummy.domain",
         dag_id=dag_id,
         task_id=task_id,
         run_id=run_id,
-        metadata={},
+        metadata={
+            "state": "success",
+            "start_date": AirflowInstance.airflow_date_from_datetime(start_date),
+            "end_date": AirflowInstance.airflow_date_from_datetime(end_date),
+        },
     )
 
 
@@ -127,5 +136,50 @@ def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datet
             "state": "success",
             "start_date": AirflowInstance.airflow_date_from_datetime(start_date),
             "end_date": AirflowInstance.airflow_date_from_datetime(end_date),
+            "run_type": "manual",
+            "note": "dummy note",
+            "conf": {},
         },
+    )
+
+
+def make_instance(
+    dag_and_task_structure: Dict[str, List[str]],
+    dag_runs: List[DagRun] = [],
+) -> AirflowInstanceFake:
+    """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
+
+    Args:
+        dag_and_task_structure: A dictionary mapping dag_id to a list of task_ids.
+        dag_runs: A list of DagRun objects to include in the instance. A TaskInstance object will be
+            created for each task_id in the dag, for each DagRun in dag_runs pertaining to a particular dag.
+    """
+    dag_infos = []
+    task_infos = []
+    for dag_id, task_ids in dag_and_task_structure.items():
+        dag_info = make_dag_info(dag_id=dag_id, file_token=dag_id)
+        dag_infos.append(dag_info)
+        task_infos.extend([make_task_info(dag_id=dag_id, task_id=task_id) for task_id in task_ids])
+    task_instances = []
+    for dag_run in dag_runs:
+        task_instances.extend(
+            [
+                make_task_instance(
+                    dag_id=dag_run.dag_id,
+                    task_id=task_id,
+                    run_id=dag_run.run_id,
+                    start_date=dag_run.start_datetime,
+                    end_date=dag_run.end_datetime
+                    - timedelta(
+                        seconds=1
+                    ),  # Ensure that the task ends before the full "dag" completes.
+                )
+                for task_id in dag_and_task_structure[dag_run.dag_id]
+            ]
+        )
+    return AirflowInstanceFake(
+        dag_infos=dag_infos,
+        task_infos=task_infos,
+        task_instances=task_instances,
+        dag_runs=dag_runs,
     )
