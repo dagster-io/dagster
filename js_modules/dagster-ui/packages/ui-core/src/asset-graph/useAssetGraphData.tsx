@@ -16,6 +16,7 @@ import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
@@ -301,6 +302,3 @@ export const ASSET_GRAPH_QUERY = gql`
 
   ${ASSET_NODE_FRAGMENT}
 `;
-function doesFilterArrayMatchValueArray(storageKindTags: any, arg1: any[]) {
-  throw new Error('Function not implemented.');
-}

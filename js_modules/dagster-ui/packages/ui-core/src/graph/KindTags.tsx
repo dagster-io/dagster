@@ -3,6 +3,7 @@ import * as React from 'react';
 
 import {OpTags} from './OpTags';
 import {DefinitionTag} from '../graphql/types';
+import {linkToAssetTableWithKindFilter} from '../search/useGlobalSearch';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
@@ -36,9 +37,6 @@ export const AssetComputeKindTag = ({
 }) => {
   if (!definition.computeKind) {
     return null;
-  }
-  function linkToAssetTableWithKindFilter(arg0: string): string {
-    throw new Error('Function not implemented.');
   }
 
   return (
