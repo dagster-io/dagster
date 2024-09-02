@@ -525,7 +525,6 @@ sentry-sdk==2.13.0
 setproctitle==1.3.3
 setuptools==70.3.0
 shellingham==1.5.4
--e examples/experimental/dagster-airlift/examples/simple-migration
 simplejson==3.19.3
 six==1.16.0
 skein==0.8.2
