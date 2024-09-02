@@ -9,7 +9,7 @@ import {
   SearchScheduleFragment,
   SearchSensorFragment,
 } from './types/useGlobalSearch.types';
-import {DefinitionTag} from '../graphql/types';
+import { DefinitionTag } from '../graphql/types';
 
 export enum SearchResultType {
   AssetGroup,
