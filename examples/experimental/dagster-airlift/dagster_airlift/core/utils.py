@@ -29,7 +29,7 @@ def _get_prop_from_asset(
     asset: Union[AssetSpec, AssetsDefinition], prop_tag: str, position: int
 ) -> Optional[str]:
     prop_from_asset_tags = prop_from_tags(asset, prop_tag)
-    if isinstance(asset, AssetSpec):
+    if isinstance(asset, AssetSpec) or not asset.is_executable:
         return prop_from_asset_tags
     prop_from_op_tags = None
     if asset.node_def.tags and prop_tag in asset.node_def.tags:
@@ -58,7 +58,9 @@ def _get_prop_from_asset(
 def prop_from_tags(asset: Union[AssetsDefinition, AssetSpec], prop_tag: str) -> Optional[str]:
     specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
     asset_name = (
-        asset.node_def.name if isinstance(asset, AssetsDefinition) else asset.key.to_user_string()
+        asset.node_def.name
+        if isinstance(asset, AssetsDefinition) and asset.is_executable
+        else asset.key.to_user_string()
     )
     if any(prop_tag in spec.tags for spec in specs):
         prop = None
