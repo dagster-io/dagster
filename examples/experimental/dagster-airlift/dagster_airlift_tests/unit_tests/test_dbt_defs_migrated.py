@@ -5,13 +5,14 @@ from typing import Generator
 
 import pytest
 from dagster import AssetSpec, Definitions
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.test_utils import environ
 from dagster_airlift.core.dag_defs import dag_defs, task_defs
 from dagster_airlift.core.defs_from_airflow import build_defs_from_airflow_instance
 from dagster_airlift.dbt import dbt_defs
 from dagster_airlift.test import make_instance
 from dagster_dbt.dbt_project import DbtProject
+
+from dagster_airlift_tests.unit_tests.conftest import assert_dependency_structure_in_assets
 
 
 @pytest.fixture(name="dbt_project_path")
@@ -89,11 +90,4 @@ def test_dbt_defs(dbt_project_path: Path, dbt_project_setup: None) -> None:
         "airflow_instance/dag/dag_one": ["customers", "orders"],
         "airflow_instance/dag/dag_two": ["downstream"],
     }
-    for key, deps_list in expected_deps.items():
-        qual_key = AssetKey.from_user_string(key)
-        assert qual_key in repo_def.assets_defs_by_key
-        assets_def = repo_def.assets_defs_by_key[qual_key]
-        spec = next(spec for spec in assets_def.specs if spec.key == qual_key)
-        assert {dep.asset_key for dep in spec.deps} == {
-            AssetKey.from_user_string(dep) for dep in deps_list
-        }
+    assert_dependency_structure_in_assets(repo_def, expected_deps)

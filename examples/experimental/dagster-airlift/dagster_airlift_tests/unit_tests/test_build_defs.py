@@ -15,7 +15,11 @@ from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
 from dagster_airlift.test import make_instance
 
-from dagster_airlift_tests.unit_tests.conftest import build_defs_from_airflow_asset_graph
+from dagster_airlift_tests.unit_tests.conftest import (
+    assert_dependency_structure_in_assets,
+    build_definitions_airflow_asset_graph,
+    fully_loaded_repo_from_airflow_asset_graph,
+)
 
 
 @executor
@@ -188,7 +192,7 @@ def test_unique_node_names_from_specs() -> None:
 def test_transitive_asset_deps() -> None:
     """Test that cross-dag transitive asset dependencies rae correctly generated."""
     # Asset graph is a -> b -> c where a and c are in different dags, and b isn't in any dag.
-    repo_def = build_defs_from_airflow_asset_graph(
+    repo_def = fully_loaded_repo_from_airflow_asset_graph(
         assets_per_task={
             "dag1": {"task": [("a", [])]},
             "dag2": {"task": [("c", ["b"])]},
@@ -230,3 +234,73 @@ def test_transitive_asset_deps() -> None:
     assert next(iter(c_asset.specs)).tags["airlift/dag_id"] == "dag2"
     assert "airlift/task_id" in next(iter(c_asset.specs)).tags
     assert next(iter(c_asset.specs)).tags["airlift/task_id"] == "task"
+
+
+def test_peered_dags() -> None:
+    """Test peered dags show up, and that linkage is preserved downstream of dags."""
+    defs = build_definitions_airflow_asset_graph(
+        assets_per_task={
+            "dag1": {"task": []},
+            "dag2": {"task": []},
+            "dag3": {"task": []},
+        },
+        additional_defs=Definitions(
+            assets=[
+                AssetSpec(key="a", deps=[AssetKey.from_user_string("airflow_instance/dag/dag1")])
+            ]
+        ),
+    )
+    assert defs.assets
+    # Assets are not loaded until repository is loaded
+    assert len(list(defs.assets)) == 1
+    repo_def = defs.get_repository_def()
+    repo_def.load_all_definitions()
+    assert len(repo_def.assets_defs_by_key) == 4
+    assert_dependency_structure_in_assets(
+        repo_def=repo_def,
+        expected_deps={
+            "airflow_instance/dag/dag1": [],
+            "airflow_instance/dag/dag2": [],
+            "airflow_instance/dag/dag3": [],
+            "a": ["airflow_instance/dag/dag1"],
+        },
+    )
+
+
+def test_observed_assets() -> None:
+    """Test that observed assets are properly linked to dags."""
+    # Asset graph structure:
+    #   a
+    #  / \
+    # b   c
+    #  \ /
+    #   d
+    #  / \
+    # e   f
+    defs = build_definitions_airflow_asset_graph(
+        assets_per_task={
+            "dag": {
+                "task1": [("a", []), ("b", ["a"]), ("c", ["a"])],
+                "task2": [("d", ["b", "c"]), ("e", ["d"]), ("f", ["d"])],
+            },
+        },
+    )
+    assert defs.assets
+    assert len(list(defs.assets)) == 1
+    repo_def = defs.get_repository_def()
+    repo_def.load_all_definitions()
+    repo_def.load_all_definitions()
+    assert len(repo_def.assets_defs_by_key) == 7
+    assert_dependency_structure_in_assets(
+        repo_def=repo_def,
+        expected_deps={
+            "a": [],
+            "b": ["a"],
+            "c": ["a"],
+            "d": ["b", "c"],
+            "e": ["d"],
+            "f": ["d"],
+            # Only leaf assets should be immediately upstream of the dag
+            "airflow_instance/dag/dag": ["e", "f"],
+        },
+    )
