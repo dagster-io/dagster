@@ -25,7 +25,7 @@ import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
-  computeKindTagsFilter?: StaticSetFilter<string>;
+  kindFilter?: StaticSetFilter<string>;
 }
 
 export const AssetNode = React.memo(({definition, selected}: Props) => {
