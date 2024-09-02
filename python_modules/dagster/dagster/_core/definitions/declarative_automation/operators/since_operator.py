@@ -1,18 +1,17 @@
-from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
-class SinceCondition(AutomationCondition[T_EntityKey]):
+class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     trigger_condition: AutomationCondition[T_EntityKey]
     reset_condition: AutomationCondition[T_EntityKey]
     label: Optional[str] = None

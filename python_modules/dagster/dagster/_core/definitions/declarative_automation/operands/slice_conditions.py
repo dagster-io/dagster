@@ -1,13 +1,12 @@
 import datetime
 from abc import abstractmethod
-from dataclasses import dataclass
 from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
 from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
@@ -15,7 +14,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
 
-class SliceAutomationCondition(AutomationCondition[T_EntityKey]):
+class SliceAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """Base class for simple conditions which compute a simple slice of the asset graph."""
 
     @property
@@ -38,10 +37,7 @@ class SliceAutomationCondition(AutomationCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class MissingAutomationCondition(SliceAutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
     @property
     def description(self) -> str:
         return "Missing"
@@ -57,10 +53,7 @@ class MissingAutomationCondition(SliceAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class InProgressAutomationCondition(SliceAutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
     @property
     def description(self) -> str:
         return "Part of an in-progress run"
@@ -74,10 +67,7 @@ class InProgressAutomationCondition(SliceAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class FailedAutomationCondition(SliceAutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
     @property
     def description(self) -> str:
         return "Latest run failed"
@@ -91,10 +81,7 @@ class FailedAutomationCondition(SliceAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class WillBeRequestedCondition(SliceAutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
     @property
     def description(self) -> str:
         return "Will be requested this tick"
@@ -127,10 +114,7 @@ class WillBeRequestedCondition(SliceAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class NewlyRequestedCondition(SliceAutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
     @property
     def description(self) -> str:
         return "Was requested on the previous tick"
@@ -144,10 +128,7 @@ class NewlyRequestedCondition(SliceAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class NewlyUpdatedCondition(SliceAutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
     @property
     def description(self) -> str:
         return "Updated since previous tick"
@@ -167,11 +148,9 @@ class NewlyUpdatedCondition(SliceAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class CronTickPassedCondition(SliceAutomationCondition):
     cron_schedule: str
     cron_timezone: str
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -203,10 +182,8 @@ class CronTickPassedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
 class InLatestTimeWindowCondition(SliceAutomationCondition[AssetKey]):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
-    label: Optional[str] = None
 
     @staticmethod
     def from_lookback_delta(

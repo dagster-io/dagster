@@ -1,6 +1,5 @@
 import datetime
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, replace
 from functools import cached_property
 from typing import TYPE_CHECKING, Generic, Mapping, Optional, Sequence
 
@@ -22,6 +21,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._model import DagsterModel
 from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
@@ -55,7 +55,6 @@ if TYPE_CHECKING:
     )
 
 
-@dataclass(frozen=True)
 class AutomationCondition(ABC, Generic[T_EntityKey]):
     """An AutomationCondition represents a condition of an asset that impacts whether it should be
     automatically executed. For example, you can have a condition which becomes true whenever the
@@ -92,6 +91,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     """
 
+    label: Optional[str] = None
+
     @property
     def requires_cursor(self) -> bool:
         return True
@@ -104,11 +105,6 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     def description(self) -> str:
         """Human-readable description of when this condition is true."""
         return ""
-
-    @property
-    def label(self) -> Optional[str]:
-        """User-provided label subjectively describing the purpose of this condition in the broader evaluation tree."""
-        return None
 
     @property
     def name(self) -> str:
@@ -209,11 +205,6 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return NotAutomationCondition(operand=self)
-
-    @public
-    def with_label(self, label: Optional[str]) -> Self:
-        """Returns a copy of this AutomationCondition with a human-readable label."""
-        return replace(self, label=label)
 
     def since(
         self, reset_condition: "AutomationCondition[T_EntityKey]"
@@ -437,7 +428,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @experimental
     @staticmethod
-    def eager() -> "AutomationCondition[AssetKey]":
+    def eager() -> "AndAutomationCondition[AssetKey]":
         """Returns an AutomationCondition which will cause missing asset partitions to be
         materialized, and will materialize asset partitions whenever their parents are updated.
 
@@ -461,7 +452,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @experimental
     @staticmethod
-    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition[AssetKey]":
+    def on_cron(
+        cron_schedule: str, cron_timezone: str = "UTC"
+    ) -> "AndAutomationCondition[AssetKey]":
         """Returns an AutomationCondition which will cause asset partitions to be materialized
         on a given cron schedule, after all of their dependencies have been updated since the latest
         tick of that cron schedule.
@@ -487,6 +480,20 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return AnyDownstreamConditionsCondition()
+
+
+class BuiltinAutomationCondition(AutomationCondition[T_EntityKey], DagsterModel):
+    """Base class for AutomationConditions provided by the core dagster framework."""
+
+    label: Optional[str] = None
+
+    @public
+    def with_label(self, label: Optional[str]) -> Self:
+        """Returns a copy of this AutomationCondition with a human-readable label."""
+        return self.model_copy(update={"label": label})
+
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 
 class AutomationResult(Generic[T_EntityKey]):

@@ -1,10 +1,10 @@
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
@@ -16,12 +16,10 @@ if TYPE_CHECKING:
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
-class RuleCondition(AutomationCondition):
+class RuleCondition(BuiltinAutomationCondition[AssetKey]):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 
     rule: AutoMaterializeRule
-    label: Optional[str] = None
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:
         # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating
@@ -33,7 +31,7 @@ class RuleCondition(AutomationCondition):
     def description(self) -> str:
         return self.rule.description
 
-    def evaluate(self, context: "AutomationContext") -> AutomationResult:
+    def evaluate(self, context: "AutomationContext[AssetKey]") -> AutomationResult[AssetKey]:
         context.log.debug(f"Evaluating rule: {self.rule.to_snapshot()}")
         # Allow for access to legacy context in legacy rule evaluation
         evaluation_result = self.rule.evaluate_for_asset(context)
