@@ -10,7 +10,7 @@ import textwrap
 import time
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator, Literal
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal
 
 import boto3
 import pytest
@@ -27,6 +27,8 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._core.pipes.utils import PipesEnvContextInjector
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
+
 from dagster_aws.pipes import (
     PipesCloudWatchMessageReader,
     PipesECSClient,
@@ -36,9 +38,6 @@ from dagster_aws.pipes import (
     PipesS3ContextInjector,
     PipesS3MessageReader,
 )
-from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
-from mypy_boto3_ecs import ECSClient
-
 from dagster_aws_tests.pipes_tests.fake_ecs import LocalECSMockClient
 from dagster_aws_tests.pipes_tests.fake_glue import LocalGlueMockClient
 from dagster_aws_tests.pipes_tests.fake_lambda import (
@@ -46,6 +45,9 @@ from dagster_aws_tests.pipes_tests.fake_lambda import (
     FakeLambdaClient,
     LambdaFunctions,
 )
+
+if TYPE_CHECKING:
+    from mypy_boto3_ecs import ECSClient
 
 _PYTHON_EXECUTABLE = shutil.which("python") or "python"
 
@@ -630,7 +632,7 @@ def test_glue_pipes_interruption_forwarding(long_glue_job, glue_asset, pipes_glu
 
 
 @pytest.fixture
-def ecs_client(moto_server, external_s3_glue_script, s3_client) -> ECSClient:
+def ecs_client(moto_server, external_s3_glue_script, s3_client) -> "ECSClient":
     return boto3.client("ecs", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
 
 

@@ -25,7 +25,6 @@ apache-airflow-providers-sqlite==3.8.2
 apeye==1.4.1
 apeye-core==1.1.5
 apispec==6.6.1
-appnope==0.1.4
 argcomplete==3.5.0
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
@@ -58,10 +57,10 @@ bitmath==1.3.3.1
 bleach==6.1.0
 blinker==1.8.2
 bokeh==3.5.2
-boto3==1.35.16
-boto3-stubs-lite==1.35.16
-botocore==1.35.16
-botocore-stubs==1.35.16
+boto3==1.35.17
+boto3-stubs-lite==1.35.17
+botocore==1.35.17
+botocore-stubs==1.35.17
 buildkite-test-collector==0.1.9
 cachecontrol==0.14.0
 cached-property==1.5.2
@@ -256,6 +255,7 @@ graphql-core==3.2.4
 graphql-relay==3.2.0
 graphviz==0.20.3
 great-expectations==0.17.11
+greenlet==3.1.0
 grpcio==1.66.1
 grpcio-health-checking==1.62.3
 grpcio-status==1.62.3
@@ -321,7 +321,7 @@ langchain-community==0.2.9
 langchain-core==0.2.39
 langchain-openai==0.1.14
 langchain-text-splitters==0.2.4
-langsmith==0.1.117
+langsmith==0.1.118
 lazy-object-proxy==1.10.0
 leather==0.4.0
 limits==3.13.0
@@ -375,6 +375,18 @@ noteable-origami==1.1.5
 notebook==7.2.2
 notebook-shim==0.2.4
 numpy==1.26.4
+nvidia-cublas-cu12==12.1.3.1
+nvidia-cuda-cupti-cu12==12.1.105
+nvidia-cuda-nvrtc-cu12==12.1.105
+nvidia-cuda-runtime-cu12==12.1.105
+nvidia-cudnn-cu12==9.1.0.70
+nvidia-cufft-cu12==11.0.2.54
+nvidia-curand-cu12==10.3.2.106
+nvidia-cusolver-cu12==11.4.5.107
+nvidia-cusparse-cu12==12.1.0.106
+nvidia-nccl-cu12==2.20.5
+nvidia-nvjitlink-cu12==12.6.68
+nvidia-nvtx-cu12==12.1.105
 oauth2client==4.1.3
 oauthlib==3.2.2
 objgraph==3.6.1
@@ -483,7 +495,7 @@ querystring-parser==1.2.4
 rapidfuzz==3.9.7
 readme-renderer==44.0
 referencing==0.35.1
-regex==2024.7.24
+regex==2024.9.11
 requests==2.32.3
 requests-file==2.1.0
 requests-mock==1.12.1
@@ -500,7 +512,7 @@ rsa==4.9
 ruamel-yaml==0.17.17
 ruff==0.6.4
 s3transfer==0.10.2
-scikit-learn==1.5.1
+scikit-learn==1.5.2
 scipy==1.14.1
 scrapbook==0.5.0
 sdf-cli==0.3.23
@@ -519,11 +531,11 @@ skein==0.8.2
 skl2onnx==1.17.0
 slack-sdk==3.32.0
 sling==1.2.18
-sling-mac-arm64==1.2.18
+sling-linux-amd64==1.2.18
 smmap==5.0.1
 sniffio==1.3.1
 snowballstemmer==2.2.0
-snowflake-connector-python==3.12.1
+snowflake-connector-python==3.12.2
 snowflake-sqlalchemy==1.6.1
 sortedcontainers==2.4.0
 soupsieve==2.6
@@ -575,6 +587,7 @@ tqdm==4.66.5
 traitlets==5.14.3
 trio==0.26.2
 trio-websocket==0.11.1
+triton==3.0.0
 -e examples/experimental/dagster-airlift/examples/tutorial-example
 -e examples/tutorial_notebook_assets
 twilio==9.3.0
@@ -621,7 +634,7 @@ uvicorn==0.30.6
 uvloop==0.20.0
 vine==5.1.0
 virtualenv==20.25.0
-wandb==0.17.9
+wandb==0.18.0
 watchdog==5.0.2
 watchfiles==0.24.0
 wcwidth==0.2.13
