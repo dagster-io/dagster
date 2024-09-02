@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Set, Type
 
 from airflow import DAG
 from airflow.models import BaseOperator
@@ -38,11 +38,13 @@ def mark_as_dagster_migrating(
         logger = logging.getLogger("dagster_airlift")
     logger.debug(f"Searching for dags migrating to dagster{suffix}...")
     migrating_dags: List[DAG] = []
+    all_dag_ids: Set[str] = set()
     # Do a pass to collect dags and ensure that migration information is set correctly.
     for obj in global_vars.values():
         if not isinstance(obj, DAG):
             continue
         dag: DAG = obj
+        all_dag_ids.add(dag.dag_id)
         if not migration_state.dag_has_migration_state(dag.dag_id):
             logger.debug(f"Dag with id `{dag.dag_id}` has no migration state. Skipping...")
             continue
@@ -58,6 +60,17 @@ def mark_as_dagster_migrating(
                     f"Task with id `{task_id}` in dag `{dag.dag_id}` is not an instance of BaseOperator. This likely means a MappedOperator was attempted, which is not yet supported by airlift."
                 )
         migrating_dags.append(dag)
+
+    for dag_id in migration_state.dags.keys():
+        if dag_id not in all_dag_ids:
+            raise Exception(
+                f"Dag with id `{dag_id}` not found in globals dictionary, but was marked using `migration_state` argument. Found dags: {all_dag_ids}"
+            )
+
+    if len(all_dag_ids) == 0:
+        raise Exception(
+            "No dags found in globals dictionary. Ensure that your dags are available from global context, and that the call to mark_as_dagster_migrating is the last line in your dag file."
+        )
 
     for dag in migrating_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as migrating.")

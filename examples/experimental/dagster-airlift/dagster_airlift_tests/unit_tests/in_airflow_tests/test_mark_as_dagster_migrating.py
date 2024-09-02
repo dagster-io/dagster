@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from airflow.operators.python import PythonOperator
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.in_airflow.base_proxy_operator import BaseProxyToDagsterOperator
@@ -45,3 +46,41 @@ def test_mark_as_dagster_migrating() -> None:
     assert json.loads(next(iter(globals_fake["task_isnt_migrated"].tags))) == {
         "DAGSTER_MIGRATION_STATUS": {"tasks": [{"id": "task", "migrated": False}]}
     }
+
+
+def test_mark_as_dagster_migrating_no_dags() -> None:
+    """Ensure that we error when no dags are found in the current context."""
+    with pytest.raises(Exception, match="No dags found in globals dictionary."):
+        mark_as_dagster_migrating(
+            global_vars={}, migration_state=AirflowMigrationState.from_dict({})
+        )
+
+
+def test_mark_as_dagster_migrating_dags_dont_exist() -> None:
+    """Ensure that we error when a dag is referenced that does not exist."""
+    globals_fake = build_dags_dict_given_structure({"dag": {"task": []}})
+    with pytest.raises(
+        Exception, match="Dag with id `doesnt_exist` not found in globals dictionary"
+    ):
+        mark_as_dagster_migrating(
+            global_vars=globals_fake,
+            migration_state=AirflowMigrationState.from_dict(
+                {
+                    "doesnt_exist": {"tasks": [{"id": "task", "migrated": True}]},
+                }
+            ),
+        )
+
+
+def test_mark_as_dagster_migrating_task_doesnt_exist() -> None:
+    """Ensure that we error when a task is referenced that does not exist."""
+    globals_fake = build_dags_dict_given_structure({"dag": {"task": []}})
+    with pytest.raises(Exception, match="Task with id `doesnt_exist` not found in dag `dag`"):
+        mark_as_dagster_migrating(
+            global_vars=globals_fake,
+            migration_state=AirflowMigrationState.from_dict(
+                {
+                    "dag": {"tasks": [{"id": "doesnt_exist", "migrated": True}]},
+                }
+            ),
+        )
