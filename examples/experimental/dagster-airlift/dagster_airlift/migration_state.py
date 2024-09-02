@@ -66,6 +66,13 @@ class AirflowMigrationState(NamedTuple):
             ]
         }
 
+    @staticmethod
+    def from_dict(migration_dict: Dict[str, Any]) -> "AirflowMigrationState":
+        dags = {}
+        for dag_id, dag_dict in migration_dict.items():
+            dags[dag_id] = DagMigrationState.from_dict(dag_dict)
+        return AirflowMigrationState(dags=dags)
+
 
 class MigrationStateParsingError(Exception):
     pass
