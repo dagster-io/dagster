@@ -14,6 +14,7 @@ export type RepoAssetTableFragment = {
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
+  kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {
     __typename: 'PartitionDefinition';
@@ -69,6 +70,7 @@ export type WorkspaceAssetsQuery = {
           computeKind: string | null;
           hasMaterializePermission: boolean;
           description: string | null;
+          kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           partitionDefinition: {
             __typename: 'PartitionDefinition';
