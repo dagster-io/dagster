@@ -284,6 +284,11 @@ class DecoratorAssetsDefinitionBuilder:
         if args.asset_out_map and args.specs:
             raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")
 
+        if args.compute_kind and args.specs and any(spec.kinds for spec in args.specs):
+            raise DagsterInvalidDefinitionError(
+                "Can not specify compute_kind on both the @multi_asset and kinds on AssetSpecs."
+            )
+
         if args.specs:
             check.invariant(
                 args.decorator_name == "@multi_asset", "Only hit this code path in multi_asset."
