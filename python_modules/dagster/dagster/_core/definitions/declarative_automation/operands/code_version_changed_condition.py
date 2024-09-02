@@ -1,20 +1,14 @@
-from dataclasses import dataclass
-from typing import Optional
-
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
-class CodeVersionChangedCondition(AutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
+class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Asset code version changed since previous tick"
