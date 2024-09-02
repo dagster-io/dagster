@@ -1,17 +1,16 @@
-from dataclasses import dataclass
-from typing import AbstractSet, Mapping, Optional, Sequence
+from typing import AbstractSet, Mapping, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
-@dataclass(frozen=True)
-class DownstreamConditionWrapperCondition(AutomationCondition[AssetKey]):
+class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
     True.
@@ -19,7 +18,6 @@ class DownstreamConditionWrapperCondition(AutomationCondition[AssetKey]):
 
     downstream_keys: Sequence[AssetKey]
     operand: AutomationCondition
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -45,10 +43,7 @@ class DownstreamConditionWrapperCondition(AutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
-class AnyDownstreamConditionsCondition(AutomationCondition[AssetKey]):
-    label: Optional[str] = None
-
+class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Any downstream conditions"

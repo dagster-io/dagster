@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
@@ -6,6 +5,7 @@ from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.entity_subset import EntitySubset
@@ -13,10 +13,8 @@ from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-@dataclass(frozen=True)
-class NewlyTrueCondition(AutomationCondition[T_EntityKey]):
+class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition[T_EntityKey]
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:

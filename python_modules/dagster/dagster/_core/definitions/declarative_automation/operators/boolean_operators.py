@@ -1,23 +1,21 @@
-from dataclasses import dataclass
-from typing import List, Optional, Sequence
+from typing import List, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
+    BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes(storage_name="AndAssetCondition")
-@dataclass(frozen=True, eq=False)
-class AndAutomationCondition(AutomationCondition[T_EntityKey]):
+class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that all of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition[T_EntityKey]]
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -61,12 +59,10 @@ class AndAutomationCondition(AutomationCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")
-@dataclass(frozen=True)
-class OrAutomationCondition(AutomationCondition[T_EntityKey]):
+class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that any of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition[T_EntityKey]]
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -99,12 +95,10 @@ class OrAutomationCondition(AutomationCondition[T_EntityKey]):
 
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
-@dataclass(frozen=True)
-class NotAutomationCondition(AutomationCondition[T_EntityKey]):
+class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     """This class represents the condition that none of its children evaluate to true."""
 
     operand: AutomationCondition[T_EntityKey]
-    label: Optional[str] = None
 
     @property
     def description(self) -> str:
