@@ -1,5 +1,5 @@
-from tutorial_example.airflow_dags.custom_proxy import CustomProxyToDagsterOperator
-from tutorial_example.airflow_dags.plus_proxy_operator import DagsterCloudProxyOperator
+from tutorial_example.custom_operator_examples.custom_proxy import CustomProxyToDagsterOperator
+from tutorial_example.custom_operator_examples.plus_proxy_operator import DagsterCloudProxyOperator
 
 
 def test_dagster_cloud_proxy_operator() -> None:
