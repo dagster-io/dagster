@@ -1,6 +1,5 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
-import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -15,11 +14,6 @@ type CountByOwner = {
 
 type CountByComputeKind = {
   computeKind: string;
-  assetCount: number;
-};
-
-type CountByStorageKind = {
-  storageKind: string;
   assetCount: number;
 };
 
@@ -44,7 +38,6 @@ type AssetCountsResult = {
   countPerTag: CountPerTag[];
   countPerAssetGroup: CountPerGroupName[];
   countPerCodeLocation: CountPerCodeLocation[];
-  countsByStorageKind: CountByStorageKind[];
 };
 
 export type GroupMetadata = {
@@ -82,7 +75,6 @@ class CaseInsensitiveCounters {
 export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): AssetCountsResult {
   const assetCountByOwner = new CaseInsensitiveCounters();
   const assetCountByComputeKind = new CaseInsensitiveCounters();
-  const assetCountByStorageKind = new CaseInsensitiveCounters();
   const assetCountByGroup = new CaseInsensitiveCounters();
   const assetCountByCodeLocation = new CaseInsensitiveCounters();
   const assetCountByTag = new CaseInsensitiveCounters();
@@ -102,12 +94,8 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
       }
 
       assetDefinition.tags.forEach((tag) => {
-        if (isCanonicalStorageKindTag(tag)) {
-          assetCountByStorageKind.increment(tag.value);
-        } else {
-          const stringifiedTag = JSON.stringify(tag);
-          assetCountByTag.increment(stringifiedTag);
-        }
+        const stringifiedTag = JSON.stringify(tag);
+        assetCountByTag.increment(stringifiedTag);
       });
 
       const groupName = assetDefinition.groupName;
@@ -143,15 +131,6 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
     }))
     .sort(({computeKind: computeKindA}, {computeKind: computeKindB}) =>
       COMMON_COLLATOR.compare(computeKindA, computeKindB),
-    );
-  const countsByStorageKind = assetCountByStorageKind
-    .entries()
-    .map(([storageKind, count]) => ({
-      storageKind,
-      assetCount: count,
-    }))
-    .sort(({storageKind: storageKindA}, {storageKind: storageKindB}) =>
-      COMMON_COLLATOR.compare(storageKindA, storageKindB),
     );
 
   const countPerTag = assetCountByTag
@@ -211,6 +190,5 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
     countPerTag,
     countPerAssetGroup,
     countPerCodeLocation,
-    countsByStorageKind,
   };
 }

@@ -19,7 +19,7 @@ import {
   isAssetFilterSearchResultType,
 } from './types';
 import {assertUnreachable} from '../app/Util';
-import {isCanonicalComputeKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
+import {isCanonicalComputeKindTag} from '../graph/KindTags';
 import {KNOWN_TAGS, TagIcon} from '../graph/OpTags';
 
 const iconForType = (type: SearchResultType | AssetFilterSearchResultType): IconName => {
@@ -53,8 +53,6 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'compute_kind';
     case AssetFilterSearchResultType.Tag:
       return 'tag';
-    case AssetFilterSearchResultType.StorageKind:
-      return 'storage_kind';
     case SearchResultType.Page:
       return 'source';
     case AssetFilterSearchResultType.Column:
@@ -76,8 +74,6 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Owner';
     case AssetFilterSearchResultType.AssetGroup:
       return 'Group';
-    case AssetFilterSearchResultType.StorageKind:
-      return 'Storage kind';
     case AssetFilterSearchResultType.Column:
       return 'Column';
     default:
@@ -140,13 +136,6 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
       const computeKindSearchIcon = <TagIcon label={computeKindTag.value} />;
 
       icons.push(computeKindSearchIcon);
-    }
-
-    const storageKindTag = item.tags?.find(isCanonicalStorageKindTag);
-    if (storageKindTag && KNOWN_TAGS[storageKindTag.value]) {
-      const storageKindSearchIcon = <TagIcon label={storageKindTag.value} />;
-
-      icons.push(storageKindSearchIcon);
     }
   }
 
