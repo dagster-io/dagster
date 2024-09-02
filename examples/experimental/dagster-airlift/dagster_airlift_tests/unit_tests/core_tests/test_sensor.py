@@ -4,7 +4,10 @@ from dagster import AssetCheckKey, AssetKey, AssetSpec, Definitions, asset_check
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.test_utils import freeze_time
 
-from .conftest import assert_expected_key_order, build_and_invoke_sensor
+from dagster_airlift_tests.unit_tests.conftest import (
+    assert_expected_key_order,
+    build_and_invoke_sensor,
+)
 
 
 def test_dag_and_task_metadata() -> None:
