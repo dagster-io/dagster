@@ -22,7 +22,6 @@ import {RefetchQueriesFunction} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
-import {DefinitionTag} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -41,7 +40,6 @@ interface Props {
   searchPath: string;
   isFiltered: boolean;
   computeKindFilter?: StaticSetFilter<string>;
-  storageKindFilter?: StaticSetFilter<DefinitionTag>;
 }
 
 export const AssetTable = ({
@@ -55,7 +53,6 @@ export const AssetTable = ({
   isFiltered,
   view,
   computeKindFilter,
-  storageKindFilter,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -141,7 +138,6 @@ export const AssetTable = ({
         showRepoColumn
         view={view}
         computeKindFilter={computeKindFilter}
-        storageKindFilter={storageKindFilter}
       />
     );
   };
