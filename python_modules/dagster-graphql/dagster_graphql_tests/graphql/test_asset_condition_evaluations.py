@@ -684,7 +684,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert rootNode["expandedLabel"] == [
             "(in_latest_time_window)",
             "AND",
-            "(((newly_missing) OR (any_deps_updated)) SINCE ((newly_requested) OR (newly_updated)))",
+            "(((newly_missing) OR (any_deps_updated)) SINCE (handled))",
             "AND",
             "(NOT (any_deps_missing))",
             "AND",
