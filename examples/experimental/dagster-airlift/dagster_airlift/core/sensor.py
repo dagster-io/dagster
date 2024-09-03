@@ -36,7 +36,9 @@ def build_airflow_polling_sensor(
         name="airflow_dag_status_sensor",
         minimum_interval_seconds=1,
         default_status=DefaultSensorStatus.RUNNING,
-        # Tracking bug around this here: https://linear.app/dagster-labs/issue/FOU-376/make-airflow-polling-sensor-work-with-asset-selection=
+        # We use an empty asset_selection because: (1) we want airlift to support older dagster
+        # versions, so we don't use the 1.8+ `target` param; (2) the sensor will only ever execute
+        # asset checks, so we don't want the sensor to target any assets.
         asset_selection=AssetSelection.assets(),
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:

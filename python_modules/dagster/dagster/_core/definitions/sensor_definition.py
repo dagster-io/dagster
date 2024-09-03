@@ -1394,7 +1394,7 @@ def _run_requests_with_base_asset_jobs(
     asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
     result = []
     for run_request in run_requests:
-        if run_request.asset_selection:
+        if run_request.asset_selection is not None:
             asset_keys = run_request.asset_selection
 
             unexpected_asset_keys = (
