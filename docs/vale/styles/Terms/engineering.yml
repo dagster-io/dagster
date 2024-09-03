@@ -18,6 +18,7 @@ swap:
   "[Gg]raphql": "GraphQL"
   javascript: "JavaScript"
   "[Nn]ode[.]?[Jj][Ss]": "Node.js"
+  python: "Python"
   pythonic: "Pythonic"
   sql: "SQL"
   "[Tt]ypescript": "TypeScript"

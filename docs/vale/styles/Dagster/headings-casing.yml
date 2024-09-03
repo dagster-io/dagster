@@ -31,6 +31,7 @@ exceptions:
   - Hybrid
   - IP
   - Insights
+  - Kubernetes
   - MLflow
   - Microsoft Teams
   - MongoDB
@@ -44,6 +45,7 @@ exceptions:
   - Postgres
   - Role-based Access Control
   - S3
+  - SAML
   - SCIM
   - SSO
   - Slack
