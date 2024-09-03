@@ -71,7 +71,6 @@ module.exports = createRule({
         if (!importDeclaration) {
           return;
         }
-        // This is a Query type with a generated QueryVariables type. Make sure we're using it
         context.report({
           messageId: 'missing-graphql-variables-type',
           node,
