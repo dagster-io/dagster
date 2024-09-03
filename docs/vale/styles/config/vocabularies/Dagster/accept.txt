@@ -71,6 +71,7 @@ gRPC
 lookback
 namespace
 plaintext
+pluggable
 stderr
 stdout
 toolchain

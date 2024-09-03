@@ -11,11 +11,13 @@ match: $sentence
 exceptions:
   - "Amazon (ECS|Redshift)"
   - "Google (BigQuery|Cloud Platform|Workspace)"
+  - APIs
   - Airbyte - AirFlow
   - Azure Active Directory
   - BigQuery
   - Branch Deployments
   - CI
+  - CI/CD
   - CLI
   - Change Tracking
   - Dagster+
@@ -24,6 +26,7 @@ exceptions:
   - DuckDB
   - ETL
   - GitHub
+  - GitLab
   - Gitlab
   - Hybrid
   - IP
@@ -48,7 +51,5 @@ exceptions:
   - Twilio
   - UI
   - dbt
-  - GitLab
-  - CI/CD
 indicators:
   - ":"
