@@ -8,7 +8,6 @@ module.exports = createRule({
   create(context) {
     return {
       [AST_NODE_TYPES.ImportDeclaration](node) {
-        console.log(context.getFilename());
         if (context.getFilename().endsWith('/ui-core/src/app/Route.tsx')) {
           return;
         }
