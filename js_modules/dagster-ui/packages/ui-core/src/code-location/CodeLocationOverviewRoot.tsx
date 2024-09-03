@@ -97,7 +97,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           ) : null}
         </tbody>
       </Table>
-      <CodeLocationServerSection />
+      <CodeLocationServerSection locationName={repoAddress.location} />
       {libraryVersions?.length ? (
         <>
           <CodeLocationOverviewSectionHeader label="Libraries" />
