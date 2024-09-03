@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Any, NamedTuple, Optional, Sequence
+from typing import Dict, List, NamedTuple, Optional, Sequence
 
 import tomli
 
@@ -62,7 +62,7 @@ def validate_dagster_block_for_module_name_or_modules(dagster_block):
     return True
 
 
-def is_valid_modules_list(modules) -> bool:
+def is_valid_modules_list(modules: List[Dict[str, str]]) -> bool:
     # Could be skipped theorectically, but double check maybe useful, if this functions finds it's way elsewhere
     if not isinstance(modules, list):
         raise ValueError("Modules should be a list.")
@@ -99,32 +99,32 @@ def get_origins_from_toml(
             return []
 
         dagster_block = data.get("tool", {}).get("dagster", {})
-        origins = []
 
         if "module_name" in dagster_block or "modules" in dagster_block:
             assert validate_dagster_block_for_module_name_or_modules(dagster_block) is True
 
         if "module_name" in dagster_block:
-            origins += ModuleTarget(
+            return ModuleTarget(
                 module_name=dagster_block.get("module_name"),
                 attribute=None,
                 working_directory=os.getcwd(),
                 location_name=dagster_block.get("code_location_name"),
             ).create_origins()
-
-        if "modules" in dagster_block and is_valid_modules_list(
+        elif "modules" in dagster_block and is_valid_modules_list(
             dagster_block.get("modules")
         ):
+            origins = []
             for module in dagster_block.get("modules"):
                 if module.get("type") == "module":
-                    origins += ModuleTarget(
+                    origins.extend(ModuleTarget(
                         module_name=module.get("name"),
                         attribute=None,
                         working_directory=os.getcwd(),
                         location_name=dagster_block.get("code_location_name"),
-                    ).create_origins()
-
-        return origins
+                    ).create_origins())
+            return origins
+        else:
+            return []
 
 
 class PyProjectFileTarget(
