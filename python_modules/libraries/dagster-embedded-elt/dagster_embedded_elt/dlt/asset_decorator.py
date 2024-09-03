@@ -41,7 +41,7 @@ def build_dlt_asset_specs(
     return [
         AssetSpec(
             key=dagster_dlt_translator.get_asset_key(dlt_source_resource),
-            auto_materialize_policy=dagster_dlt_translator.get_auto_materialize_policy(
+            automation_condition=dagster_dlt_translator.get_automation_condition(
                 dlt_source_resource
             ),
             deps=dagster_dlt_translator.get_deps_asset_keys(dlt_source_resource),
