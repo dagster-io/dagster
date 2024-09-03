@@ -3,20 +3,15 @@ from typing import List
 import dagster as dg
 
 
-def load_data() -> str:
-    # Load data from S3, the web, etc.
+@dg.asset
+def sugary_cereals() -> None:
+    ... 
+
+
+@dg.asset(deps=[sugary_cereals], group_name="sales")
+def shopping_list() -> None:
     ...
-
-
-def transform_data(data: str) -> List[str]:
-    # Transform the data some way
-    ...
-
-
-def store_data(files: List[str]):
-    # Store the data somewhere
-    ...
-
+    
 
 @dg.asset(
     owners=["bighead@hooli.com", "team:roof", "team:corpdev"],
