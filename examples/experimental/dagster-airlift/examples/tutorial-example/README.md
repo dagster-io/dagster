@@ -371,6 +371,36 @@ mark_as_dagster_migrating(
 )
 ```
 
+#### Dagster Plus Authorization
+
+You can use a customer proxy operator to establish a connection to a dagster plus deployment. The below example proxies to Dagster Plus using organization name, deployment name, and user token set as
+Airflow Variables. To set a dagster plus user token, follow this guide: https://docs.dagster.io/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens.
+
+```python
+# tutorial_example/airflow_dags/plus_proxy_operator.py
+import requests
+from airflow.utils.context import Context
+from dagster_airlift.in_airflow import BaseProxyToDagsterOperator
+
+
+class DagsterCloudProxyOperator(BaseProxyToDagsterOperator):
+    def get_variable(self, context: Context, var_name: str) -> str:
+        if "var" not in context:
+            raise ValueError("No variables found in context")
+        return context["var"]["value"][var_name]
+
+    def get_dagster_session(self, context: Context) -> requests.Session:
+        dagster_cloud_user_token = self.get_variable(context, "dagster_cloud_user_token")
+        session = requests.Session()
+        session.headers.update({"Dagster-Cloud-Api-Token": dagster_cloud_user_token})
+        return session
+
+    def get_dagster_url(self, context: Context) -> str:
+        org_name = self.get_variable(context, "dagster_plus_organization_name")
+        deployment_name = self.get_variable(context, "dagster_plus_deployment_name")
+        return f"https://{org_name}.dagster.plus/{deployment_name}"
+```
+
 #### Migrating common operators
 
 For some common operator patterns, like our dbt operator, Dagster supplies factories to build software defined assets for our tasks. In fact, the `dbt_defs` factory used earlier already backs its assets with definitions, so we can toggle the migration status of the `build_dbt_models` task to `migrated: True` in the migration state file:
