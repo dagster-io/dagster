@@ -22,7 +22,6 @@ const apisRequiringVariableType = new Set([
   'useMutation',
   'useSubscription',
   'useLazyQuery',
-  'useIndexedDBCachedQuery',
 ]);
 
 module.exports = createRule({
