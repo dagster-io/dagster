@@ -893,26 +893,29 @@ class MultiAssetSensorCursorAdvances:
                 initial_asset_cursor.trailing_unconsumed_partitioned_event_ids
             )
 
-            materialization_events = []
-            has_more = True
-            cursor = None
-            while has_more:
-                result = context.instance.fetch_materializations(
-                    AssetRecordsFilter(
-                        asset_key=asset_key,
-                        after_storage_id=latest_consumed_event_id_at_tick_start,
-                        before_storage_id=greatest_consumed_event_id_in_tick,
-                    ),
-                    ascending=True,
-                    limit=FETCH_MATERIALIZATION_BATCH_SIZE,
-                    cursor=cursor,
+            if greatest_consumed_event_id_in_tick > (latest_consumed_event_id_at_tick_start or 0):
+                materialization_events = []
+                has_more = True
+                cursor = None
+                while has_more:
+                    result = context.instance.fetch_materializations(
+                        AssetRecordsFilter(
+                            asset_key=asset_key,
+                            after_storage_id=latest_consumed_event_id_at_tick_start,
+                            before_storage_id=greatest_consumed_event_id_in_tick,
+                        ),
+                        ascending=True,
+                        limit=FETCH_MATERIALIZATION_BATCH_SIZE,
+                        cursor=cursor,
+                    )
+                    cursor = result.cursor
+                    has_more = result.has_more
+                    materialization_events.extend(result.records)
+                unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
+                    materialization_events
                 )
-                cursor = result.cursor
-                has_more = result.has_more
-                materialization_events.extend(result.records)
-            unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
-                materialization_events
-            )
+            else:
+                unconsumed_events = []
 
             # Iterate through events in ascending order, storing the latest unconsumed
             # event for each partition. If an advanced event exists for a partition, clear
