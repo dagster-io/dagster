@@ -45,8 +45,17 @@ module.exports = createRule({
         if (queryType.typeName.type !== 'Identifier') {
           return;
         }
+        
         const queryName = queryType.typeName.name;
         const variablesName = queryName + 'Variables';
+        const secondType = node.typeParameters.params[1];
+        if (secondType &&
+          (secondType.type === 'TSTypeReference' &&
+            secondType.typeName.type === 'Identifier' &&
+            secondType.typeName.name === variablesName)
+        ) {
+          return
+        }
         let queryImportSpecifier = null;
         const importDeclaration = context.getSourceCode().ast.body.find(
           (node) =>
@@ -61,6 +70,7 @@ module.exports = createRule({
         if (!importDeclaration) {
           return;
         }
+
         const importPath = importDeclaration.source.value;
         const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
         const fullPath = path.join(currentPath, importPath + '.ts');
@@ -76,13 +86,6 @@ module.exports = createRule({
           return;
         }
         // This is a Query type with a generated QueryVariables type. Make sure we're using it
-        const secondType = node.typeParameters.params[1];
-        if (
-          !secondType ||
-          (secondType.type === 'TSTypeReference' &&
-            secondType.typeName.type === 'Identifier' &&
-            secondType.typeName.name !== variablesName)
-        ) {
           context.report({
             messageId: 'missing-graphql-variables-type',
             node,
@@ -102,7 +105,6 @@ module.exports = createRule({
               yield fixer.insertTextAfter(queryType, `, ${variablesName}`);
             },
           });
-        }
       },
     };
   },
