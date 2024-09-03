@@ -1,11 +1,15 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from airflow import DAG
 from airflow.models import BaseOperator
 
-from dagster_airlift.in_airflow.dagster_operator import build_dagster_task
+from dagster_airlift.in_airflow.dagster_operator import (
+    BaseProxyToDagsterOperator,
+    DefaultProxyToDagsterOperator,
+    build_dagster_task,
+)
 
 from ..migration_state import AirflowMigrationState
 
@@ -15,6 +19,7 @@ def mark_as_dagster_migrating(
     global_vars: Dict[str, Any],
     migration_state: AirflowMigrationState,
     logger: Optional[logging.Logger] = None,
+    dagster_operator_klass: Type[BaseProxyToDagsterOperator] = DefaultProxyToDagsterOperator,
 ) -> None:
     """Alters all airflow dags in the current context to be marked as migrating to dagster.
     Uses a migration dictionary to determine the status of the migration for each task within each dag.
@@ -78,7 +83,7 @@ def mark_as_dagster_migrating(
             logger.debug(
                 f"Creating new operator for task {original_op.task_id} in dag {original_op.dag_id}"
             )
-            new_op = build_dagster_task(original_op)
+            new_op = build_dagster_task(original_op, dagster_operator_klass)
             original_op.dag.task_dict[original_op.task_id] = new_op
 
             new_op.upstream_task_ids = original_op.upstream_task_ids

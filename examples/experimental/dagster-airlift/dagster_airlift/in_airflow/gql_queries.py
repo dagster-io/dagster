@@ -1,3 +1,9 @@
+VERIFICATION_QUERY = """
+query VerificationQuery {
+    version
+}
+"""
+
 ASSET_NODES_QUERY = """
 query AssetNodeQuery {
     assetNodes {

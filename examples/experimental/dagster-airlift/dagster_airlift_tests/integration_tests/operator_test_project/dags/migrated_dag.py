@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from airflow import DAG
-from dagster_airlift.in_airflow.dagster_operator import DagsterOperator
+from dagster_airlift.in_airflow.dagster_operator import DefaultProxyToDagsterOperator
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
@@ -24,5 +24,5 @@ dag = DAG(
     is_paused_upon_creation=False,
     start_date=datetime(2023, 1, 1),
 )
-print_task = DagsterOperator(task_id="some_task", dag=dag)
-other_task = DagsterOperator(task_id="other_task", dag=dag)
+print_task = DefaultProxyToDagsterOperator(task_id="some_task", dag=dag)
+other_task = DefaultProxyToDagsterOperator(task_id="other_task", dag=dag)
