@@ -85,6 +85,7 @@ def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
         finally:
             conn.cursor().execute(f"drop table {schema_name}.{table_name}")
 
+
 def test_handle_empty():
     handler = SnowflakePandasTypeHandler()
     connection = MagicMock()
@@ -107,6 +108,7 @@ def test_handle_empty():
             connection,
         )
     assert metadata["dagster/row_count"] == 0
+
 
 def test_handle_output():
     handler = SnowflakePandasTypeHandler()
@@ -203,7 +205,7 @@ def test_build_snowflake_pandas_io_manager():
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
 @pytest.mark.integration
-def test_io_manager_with_snowflake_pandas_empty_data(io_manager):
+def test_io_manager_with_snowflake_pandas_only_columns(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
         db_name=DATABASE,
@@ -213,11 +215,11 @@ def test_io_manager_with_snowflake_pandas_empty_data(io_manager):
 
         @op(out={table_name: Out(io_manager_key="snowflake", metadata={"schema": SCHEMA})})
         def emit_pandas_df(_):
-            return pandas.DataFrame([])
+            return pandas.DataFrame({"apa": [], "bepa": []})
 
         @op
         def read_pandas_df(df: pandas.DataFrame):
-            assert set(df.columns) == {}
+            assert set(df.columns) == {"apa", "bepa"}
             assert len(df.index) == 0
 
         @job(
@@ -228,6 +230,7 @@ def test_io_manager_with_snowflake_pandas_empty_data(io_manager):
 
         res = io_manager_test_job.execute_in_process()
         assert res.success
+
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 @pytest.mark.parametrize(
