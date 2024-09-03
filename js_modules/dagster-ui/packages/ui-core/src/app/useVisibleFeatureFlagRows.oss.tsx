@@ -37,4 +37,8 @@ export const useVisibleFeatureFlagRows = () => [
     ),
     flagType: FeatureFlag.flagSettingsPage,
   },
+  {
+    key: 'New code location page',
+    flagType: FeatureFlag.flagCodeLocationPage,
+  },
 ];
