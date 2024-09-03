@@ -8,7 +8,7 @@ import requests
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 
-from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
+from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 

@@ -7,8 +7,8 @@ import pytest
 from dagster import DagsterInstance
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster_airlift.constants import MIGRATED_TAG, TASK_ID_TAG
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend
-from dagster_airlift.core.utils import MIGRATED_TAG, TASK_ID_TAG
 
 from .utils import (
     poll_for_materialization,

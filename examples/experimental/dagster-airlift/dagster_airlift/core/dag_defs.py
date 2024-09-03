@@ -7,7 +7,7 @@ from dagster import (
     _check as check,
 )
 
-from dagster_airlift.core.utils import DAG_ID_TAG, TASK_ID_TAG
+from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
 
 
 class TaskDefs:

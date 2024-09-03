@@ -25,8 +25,9 @@ from dagster._core.utils import toposort_flatten
 from dagster._record import record
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 
-from .airflow_instance import AirflowInstance, TaskInstance
-from .utils import MIGRATED_TAG, get_dag_id_from_asset, get_task_id_from_asset
+from dagster_airlift.constants import MIGRATED_TAG
+from dagster_airlift.core.airflow_instance import AirflowInstance, TaskInstance
+from dagster_airlift.core.utils import get_dag_id_from_asset, get_task_id_from_asset
 
 
 def build_airflow_polling_sensor(

@@ -4,7 +4,7 @@ from dagster import AssetSpec
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from typing_extensions import TypeAlias
 
-from .utils import DAG_ID_TAG, TASK_ID_TAG
+from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
 
 CoercibleToAssetSpec: TypeAlias = Union[AssetSpec, CoercibleToAssetKey]
 
