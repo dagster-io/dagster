@@ -45,16 +45,17 @@ module.exports = createRule({
         if (queryType.typeName.type !== 'Identifier') {
           return;
         }
-        
+
         const queryName = queryType.typeName.name;
         const variablesName = queryName + 'Variables';
         const secondType = node.typeParameters.params[1];
-        if (secondType &&
-          (secondType.type === 'TSTypeReference' &&
-            secondType.typeName.type === 'Identifier' &&
-            secondType.typeName.name === variablesName)
+        if (
+          secondType &&
+          secondType.type === 'TSTypeReference' &&
+          secondType.typeName.type === 'Identifier' &&
+          secondType.typeName.name === variablesName
         ) {
-          return
+          return;
         }
         let queryImportSpecifier = null;
         const importDeclaration = context.getSourceCode().ast.body.find(
@@ -70,41 +71,26 @@ module.exports = createRule({
         if (!importDeclaration) {
           return;
         }
-
-        const importPath = importDeclaration.source.value;
-        const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
-        const fullPath = path.join(currentPath, importPath + '.ts');
-
-        const graphqlTypeFile = fs.readFileSync(fullPath, {encoding: 'utf8'});
-
-        // This part is kind of hacky. I should use the parser service to find the identifier
-        // but this is faster then tokenizing the whole file
-        if (
-          !graphqlTypeFile.includes('export type ' + variablesName) &&
-          !graphqlTypeFile.includes('export interface ' + variablesName)
-        ) {
-          return;
-        }
         // This is a Query type with a generated QueryVariables type. Make sure we're using it
-          context.report({
-            messageId: 'missing-graphql-variables-type',
-            node,
-            data: {
-              queryType: queryName,
-              variablesType: variablesName,
-              api: API,
-            },
-            *fix(fixer) {
-              if (
-                !importDeclaration.specifiers.find(
-                  (node) => node.type === 'ImportSpecifier' && node.local.name === variablesName,
-                )
-              ) {
-                yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
-              }
-              yield fixer.insertTextAfter(queryType, `, ${variablesName}`);
-            },
-          });
+        context.report({
+          messageId: 'missing-graphql-variables-type',
+          node,
+          data: {
+            queryType: queryName,
+            variablesType: variablesName,
+            api: API,
+          },
+          *fix(fixer) {
+            if (
+              !importDeclaration.specifiers.find(
+                (node) => node.type === 'ImportSpecifier' && node.local.name === variablesName,
+              )
+            ) {
+              yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
+            }
+            yield fixer.insertTextAfter(queryType, `, ${variablesName}`);
+          },
+        });
       },
     };
   },
