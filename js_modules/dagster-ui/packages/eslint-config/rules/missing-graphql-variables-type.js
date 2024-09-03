@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+const { ESLintUtils, AST_NODE_TYPES } = require('@typescript-eslint/utils');
 
 const createRule = ESLintUtils.RuleCreator((name) => name);
 
@@ -17,13 +17,13 @@ const createRule = ESLintUtils.RuleCreator((name) => name);
  *
  */
 
-const APIS = new Set(['useQuery', 'useMutation', 'useSubscription']);
-const APIToEnding = {
-  useQuery: 'Query',
-  useMutation: 'Mutation',
-  useSubscription: 'Subscription',
-  useLazyQuery: 'LazyQuery',
-};
+const apisRequiringVariableType = new Set([
+  'useQuery',
+  'useMutation',
+  'useSubscription',
+  'useLazyQuery',
+  'useIndexedDBCachedQuery',
+]);
 
 module.exports = createRule({
   create(context) {
@@ -34,7 +34,7 @@ module.exports = createRule({
           return;
         }
         // if it's not a useQuery call then ignore
-        if (!APIS.has(callee.name)) {
+        if (!apisRequiringVariableType.has(callee.name)) {
           return;
         }
         const API = callee.name;
@@ -47,10 +47,6 @@ module.exports = createRule({
           return;
         }
         const queryName = queryType.typeName.name;
-        // if the type doesn't end with Query then ignore
-        if (!queryName.endsWith(APIToEnding[API])) {
-          return;
-        }
         const variablesName = queryName + 'Variables';
         let queryImportSpecifier = null;
         const importDeclaration = context.getSourceCode().ast.body.find(
@@ -67,7 +63,7 @@ module.exports = createRule({
         const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
         const fullPath = path.join(currentPath, importPath + '.ts');
 
-        const graphqlTypeFile = fs.readFileSync(fullPath, {encoding: 'utf8'});
+        const graphqlTypeFile = fs.readFileSync(fullPath, { encoding: 'utf8' });
 
         // This part is kind of hacky. I should use the parser service to find the identifier
         // but this is faster then tokenizing the whole file
