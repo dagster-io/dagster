@@ -1,8 +1,8 @@
 import {Box, MainContent, NonIdealState, SpinnerWithText} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 import {Redirect, Switch, useParams} from 'react-router-dom';
-import {CodeLocationNotFound} from 'shared/workspace/CodeLocationNotFound';
 
+import {CodeLocationNotFound} from './CodeLocationNotFound';
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
 import {WorkspaceContext} from './WorkspaceContext';
