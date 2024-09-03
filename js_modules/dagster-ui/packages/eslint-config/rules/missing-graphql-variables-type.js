@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { ESLintUtils, AST_NODE_TYPES } = require('@typescript-eslint/utils');
+const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
 
 const createRule = ESLintUtils.RuleCreator((name) => name);
 
@@ -63,7 +63,7 @@ module.exports = createRule({
         const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
         const fullPath = path.join(currentPath, importPath + '.ts');
 
-        const graphqlTypeFile = fs.readFileSync(fullPath, { encoding: 'utf8' });
+        const graphqlTypeFile = fs.readFileSync(fullPath, {encoding: 'utf8'});
 
         // This part is kind of hacky. I should use the parser service to find the identifier
         // but this is faster then tokenizing the whole file
