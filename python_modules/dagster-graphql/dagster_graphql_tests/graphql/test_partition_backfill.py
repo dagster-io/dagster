@@ -72,6 +72,10 @@ PARTITION_PROGRESS_QUERY = """
         user
         title
         description
+        cancelableRuns {
+          id
+          runId
+        }
       }
       ... on PythonError {
         message
@@ -1063,7 +1067,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             [
                 (DagsterRunStatus.SUCCESS, "2"),
                 (DagsterRunStatus.SUCCESS, "3"),
-                (DagsterRunStatus.SUCCESS, "4"),
+                (DagsterRunStatus.STARTED, "4"),
                 (DagsterRunStatus.CANCELED, "5"),
             ],
             backfill_id,
@@ -1080,13 +1084,14 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
         assert result.data["partitionBackfillOrError"]["numPartitions"] == 4
+        assert len(result.data["partitionBackfillOrError"]["cancelableRuns"]) == 1
         run_stats = _get_run_stats(
             result.data["partitionBackfillOrError"]["partitionStatuses"]["results"]
         )
         assert run_stats.get("total") == 4
         assert run_stats.get("queued") == 0
-        assert run_stats.get("in_progress") == 0
-        assert run_stats.get("success") == 3
+        assert run_stats.get("in_progress") == 1
+        assert run_stats.get("success") == 2
         assert run_stats.get("failure") == 0
         assert run_stats.get("canceled") == 1
 
