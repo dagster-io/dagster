@@ -57,7 +57,7 @@ In this example:
 - We defined `region_partitions` using `StaticPartitionsDefinition` with a list of regions.
 - The `regional_sales_data` and `daily_sales_summary` are defined with the same partitioning scheme.
 
-TODO: Link to Backfill page to explain how to backfill reginonal sales data
+TODO: Link to Backfill page to explain how to backfill regional sales data
 
 ### Define two-dimensional partitions
 
@@ -110,7 +110,7 @@ TODO
 
 TODO
 
-## Integrating Dagster Partitions with External Systems: Incremental Models and dbt
+## Integrating Dagster partitions with external systems: incremental models and dbt
 
 TODO
 

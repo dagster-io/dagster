@@ -49,9 +49,9 @@ All user code runs within your environment, in isolation from Dagster system cod
 
 ## The agent
 
-Because the agent communicates with the Dagster+ control plane over the agent API, it’s possible to support agents that operate in arbitrary compute environments.
+Because the agent communicates with the Dagster+ control plane over the agent API, it's possible to support agents that operate in arbitrary compute environments.
 
-This means that over time, Dagster+’s support for different user deployment environments will expand and custom agents can take advantage of bespoke compute environments such as HPC.
+This means that over time, Dagster+'s support for different user deployment environments will expand and custom agents can take advantage of bespoke compute environments such as HPC.
 
 Refer to the [Agents documentation](/todo) for more info, including the agents that are currently supported.
 
