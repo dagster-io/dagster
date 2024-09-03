@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Type
 from airflow import DAG
 from airflow.models import BaseOperator
 
-from dagster_airlift.in_airflow.dagster_operator import (
+from dagster_airlift.in_airflow.base_proxy_operator import (
     BaseProxyToDagsterOperator,
     DefaultProxyToDagsterOperator,
     build_dagster_task,
