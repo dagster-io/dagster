@@ -180,7 +180,8 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
         default="dagster", description="ADLS Gen2 file system prefix to write to."
     )
     lease_duration: int = Field(
-        description="Lease duration in seconds. Must be between 15 and 60 seconds or -1 for infinite."
+        default=60,
+        description="Lease duration in seconds. Must be between 15 and 60 seconds or -1 for infinite.",
     )
 
     @classmethod
