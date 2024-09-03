@@ -12,6 +12,7 @@ import {useCallback, useMemo} from 'react';
 import {DagsterTag} from './RunTag';
 import {
   RunTagKeysQuery,
+  RunTagKeysQueryVariables,
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
@@ -172,7 +173,10 @@ const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill, DagsterTag.Parti
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
 
-  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysQuery>(RUN_TAG_KEYS_QUERY);
+  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<
+    RunTagKeysQuery,
+    RunTagKeysQueryVariables
+  >(RUN_TAG_KEYS_QUERY);
   const client = useApolloClient();
   const {UserDisplay} = useLaunchPadHooks();
 
