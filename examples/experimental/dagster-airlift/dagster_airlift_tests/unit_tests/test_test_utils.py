@@ -11,10 +11,16 @@ from dagster_airlift.test import (
 
 
 def test_test_instance() -> None:
-    """Test the AirflowTestInstance class."""
+    """Test the AirflowInstanceFake class."""
     dag_info = make_dag_info(dag_id="test_dag", file_token="test_file_token")
     task_info = make_task_info(dag_id="test_dag", task_id="test_task")
-    task_instance = make_task_instance(dag_id="test_dag", task_id="test_task", run_id="test_run_id")
+    task_instance = make_task_instance(
+        dag_id="test_dag",
+        task_id="test_task",
+        run_id="test_run_id",
+        start_date=datetime(2022, 1, 1),
+        end_date=datetime(2022, 1, 2),
+    )
     dag_run = make_dag_run(
         dag_id="test_dag",
         run_id="test_run_id",
@@ -61,6 +67,7 @@ def test_test_instance() -> None:
             dag_id="nonexistent_dag", start_date=datetime(2022, 1, 1), end_date=datetime(2022, 1, 2)
         )
 
+    assert test_instance.list_dags() == [dag_info]
     assert test_instance.get_dag_info(dag_id="test_dag") == dag_info
     # Matching range
     assert test_instance.get_dag_runs(

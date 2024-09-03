@@ -1,8 +1,6 @@
 from pathlib import Path
-from typing import List
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_airlift.core.airflow_instance import DagInfo
 from dagster_airlift.core.dag_defs import dag_defs, task_defs
 from dagster_airlift.core.defs_from_airflow import build_defs_from_airflow_instance
 from dagster_airlift.dbt import dbt_defs
@@ -11,9 +9,8 @@ from dagster_airlift.migration_state import (
     DagMigrationState,
     TaskMigrationState,
 )
+from dagster_airlift.test import make_instance
 from dagster_dbt.dbt_project import DbtProject
-
-from .conftest import make_test_instance
 
 
 def get_dbt_project_path() -> Path:
@@ -34,21 +31,9 @@ def test_dbt_defs() -> None:
 
     assert isinstance(dbt_defs_inst, Definitions)
 
-    def list_dags(self) -> List[DagInfo]:
-        return [
-            DagInfo(
-                webserver_url="http://localhost:8080",
-                dag_id="dag_one",
-                metadata={"file_token": "blah"},
-            ),
-            DagInfo(
-                webserver_url="http://localhost:8080",
-                dag_id="dag_two",
-                metadata={"file_token": "blah"},
-            ),
-        ]
-
-    test_airflow_instance = make_test_instance(list_dags_override=list_dags)
+    test_airflow_instance = make_instance(
+        dag_and_task_structure={"dag_one": ["task_one"], "dag_two": ["task_two"]}
+    )
 
     initial_defs = Definitions.merge(
         dag_defs(
