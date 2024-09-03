@@ -149,13 +149,13 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
                 body: (
                   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
                     IndexedDB cache has been reset.
-                    <Button
+                    <ButtonLink
                       onClick={() => {
                         window.location.reload();
                       }}
                     >
                       Click here to reload the page
-                    </Button>
+                    </ButtonLink>
                   </Box>
                 ),
               });
