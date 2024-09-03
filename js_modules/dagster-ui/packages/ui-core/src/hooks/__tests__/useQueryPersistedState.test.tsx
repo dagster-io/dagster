@@ -1,8 +1,9 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useCallback, useMemo} from 'react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {MemoryRouter} from 'react-router-dom';
 
+import {Route} from '../../app/Route';
 import {useQueryPersistedState} from '../useQueryPersistedState';
 
 const Test = ({options}: {options: Parameters<typeof useQueryPersistedState>[0]}) => {
