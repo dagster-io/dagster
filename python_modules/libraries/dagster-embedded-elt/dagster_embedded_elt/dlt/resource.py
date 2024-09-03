@@ -8,6 +8,7 @@ from dagster import (
     MaterializeResult,
     MetadataValue,
     OpExecutionContext,
+    TableColumnConstraints,
     _check as check,
 )
 from dagster._annotations import experimental, public
@@ -113,14 +114,37 @@ class DagsterDltResource(ConfigurableResource):
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
+        default_schemas = dlt_pipeline.default_schema.to_dict().get("tables", {})
+        child_tables_metadata = {
+            table: TableSchema(
+                columns=[
+                    TableColumn(
+                        name=column.get("name") or "",
+                        type=column.get("data_type") or "string",
+                        constraints=TableColumnConstraints(
+                            nullable=column.get("nullable") or True
+                        ),
+                    )
+                    for column in schema.get("columns", {}).values()
+                ]
+            )
+            for table, schema in default_schemas.items()
+            if table.startswith(f"{resource.table_name}__")
+        }
         table_columns = [
-            TableColumn(name=column.get("name"), type=column.get("data_type"))
-            for pkg in load_info_dict.get("load_packages", [])
-            for table in pkg.get("tables", [])
-            for column in table.get("columns", [])
-            if table.get("name") == resource.table_name
+            TableColumn(
+                name=column.get("name") or "",
+                type=column.get("data_type") or "string",
+                constraints=TableColumnConstraints(
+                    nullable=column.get("nullable") or True
+                ),
+            )
+            for column in default_schemas.get(str(resource.table_name), {})
+            .get("columns", {})
+            .values()
         ]
         base_metadata = {
+            **child_tables_metadata,
             **base_metadata,
             **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
         }
