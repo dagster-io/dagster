@@ -58,6 +58,9 @@ module.exports = createRule({
               }
             }),
         );
+        if (!importDeclaration) {
+          return;
+        }
         const importPath = importDeclaration.source.value;
         const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
         const fullPath = path.join(currentPath, importPath + '.ts');

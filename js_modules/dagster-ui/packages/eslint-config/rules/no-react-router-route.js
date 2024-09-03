@@ -36,9 +36,6 @@ module.exports = createRule({
 
               const newImport = `import { Route } from '${relativeImportPath}';\n`;
 
-              const newImportRange =
-                routeSpecifier === node.specifiers[0] ? importRange : routeRange;
-
               const fixes = [];
 
               if (node.specifiers.length === 1) {
