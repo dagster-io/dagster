@@ -67,7 +67,7 @@ Next, create a `_source.yml` file that points dbt to the upstream `raw_customers
 
 <CodeExample filePath="guides/etl/transform-dbt/basic-dbt-project/models/example/_source.yml" language="yaml" title="_source.yml_" />
 
-{/* TODO: Maybe screenshot to show the lineage? */}
+<!-- TODO: Maybe screenshot to show the lineage? -->
 
 ## Adding downstream dependencies
 
@@ -83,4 +83,4 @@ You can schedule your dbt models by using the `dagster-dbt`'s `build_schedule_fr
 
 ## Next steps
 
-[comment]: <> (TODO: Add link to dbt partitioning guide)
+<!-- TODO: Add link to dbt partitioning guide -->
