@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     AutoMaterializePolicy,
     AutoMaterializeRule,
+    AutomationCondition,
     Definitions,
     MonthlyPartitionsDefinition,
 )
@@ -148,6 +149,44 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
         pass
 
     for item in assets.auto_materialize_policies_by_key.values():
+        assert "0 1 * * *" in str(item)
+
+
+def test_get_automation_condition(dlt_pipeline: Pipeline):
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_automation_condition(self, resource: DltResource) -> Optional[AutomationCondition]:
+            return AutomationCondition.eager() | AutomationCondition.on_cron("0 1 * * *")
+
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def assets():
+        pass
+
+    for item in assets.automation_conditions_by_key.values():
+        assert "0 1 * * *" in str(item)
+
+
+def test_get_automation_condition_converts_auto_materialize_policy(dlt_pipeline: Pipeline):
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_auto_materialize_policy(
+            self, resource: DltResource
+        ) -> Optional[AutoMaterializePolicy]:
+            return AutoMaterializePolicy.eager().with_rules(
+                AutoMaterializeRule.materialize_on_cron("0 1 * * *")
+            )
+
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def assets():
+        pass
+
+    for item in assets.automation_conditions_by_key.values():
         assert "0 1 * * *" in str(item)
 
 
