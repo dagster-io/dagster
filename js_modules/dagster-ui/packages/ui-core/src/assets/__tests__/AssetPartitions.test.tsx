@@ -2,8 +2,9 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {getByTestId, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useState} from 'react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {MemoryRouter} from 'react-router-dom';
 
+import {Route} from '../../app/Route';
 import {AssetKeyInput} from '../../graphql/types';
 import {AssetPartitionListProps} from '../AssetPartitionList';
 import {AssetPartitionStatus} from '../AssetPartitionStatus';

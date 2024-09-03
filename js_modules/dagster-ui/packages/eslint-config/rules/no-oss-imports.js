@@ -1,8 +1,11 @@
 /* eslint-disable */
 
 const path = require('path');
+const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
 
-module.exports = {
+const createRule = ESLintUtils.RuleCreator((name) => name);
+
+module.exports = createRule({
   meta: {
     type: 'problem',
     docs: {
@@ -14,9 +17,10 @@ module.exports = {
     fixable: 'code',
     schema: [], // no options
   },
+  defaultOptions: [],
   create(context) {
     return {
-      ImportDeclaration(node) {
+      [AST_NODE_TYPES.ImportDeclaration](node) {
         if (node.source.value.endsWith('.oss') && node.source.value.startsWith('.')) {
           context.report({
             node,
@@ -33,7 +37,7 @@ module.exports = {
           });
         }
       },
-      ImportExpression(node) {
+      [AST_NODE_TYPES.ImportExpression](node) {
         if (node.source.value.endsWith('.oss') && node.source.value.startsWith('.')) {
           context.report({
             node,
@@ -52,4 +56,4 @@ module.exports = {
       },
     };
   },
-};
+});
