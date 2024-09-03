@@ -1,6 +1,7 @@
 import {
   AssetFilterBaseType,
   AssetFilterType,
+  FilterableAssetDefinition,
   filterAssetDefinition,
 } from 'shared/assets/useAssetDefinitionFilterState.oss';
 
@@ -187,7 +188,7 @@ describe('filterAssetDefinition', () => {
       const filters: Partial<AssetFilterType> = {
         selectAllFilters: [filter],
       };
-      const definition = {
+      const definition: FilterableAssetDefinition = {
         repository: buildRepository({
           name: group.repositoryName,
           location: buildRepositoryLocation({
@@ -195,7 +196,7 @@ describe('filterAssetDefinition', () => {
           }),
         }),
         groupName: group.groupName,
-        computeKind: 'computeKind1',
+        kinds: ['computeKind1'],
         changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
         owners: [owner],
         tags: [tag],
