@@ -12,7 +12,7 @@ Asset selection may be used to:
 
 - Define a job that targets a selection of assets
 - Select a set of assets to view in the Dagster UI
-- Select a set of assets for an ad-hoc run
+- Select a set of assets for an adhoc run
 
 ## Syntax usage
 
