@@ -410,19 +410,20 @@ class DbtCliInvocation:
 
             with self.process.stdout:
                 for raw_line in self.process.stdout or []:
-                    raw_event = raw_line.decode().strip()
+                    raw_event_str = raw_line.decode().strip()
 
                     try:
-                        raw_event = orjson.loads(raw_event)
+                        raw_event = orjson.loads(raw_event_str)
 
                         # Parse the error message from the event, if it exists.
                         is_error_message = raw_event["info"]["level"] == "error"
                         if is_error_message:
                             self._error_messages.append(raw_event["info"]["msg"])
-                    except:
-                        pass
 
-                    yield raw_event
+                        yield raw_event
+                    except:
+                        yield raw_event_str
+
         except DagsterExecutionInterruptedError:
             logger.info(f"Forwarding interrupt signal to dbt command: `{self.dbt_command}`.")
 
