@@ -100,6 +100,15 @@ class DagsterDltResource(ConfigurableResource):
             for job in load_package.get("jobs", [])
             if job.get("table_name") == resource.table_name
         ]
+        # "dagster/row_count" is only appropriate when using dlt in "replace" mode,
+        # hence using the more accurate "rows_loaded"
+        for metrics in dlt_pipeline.last_trace.last_extract_info.asdict().get(
+            "table_metrics", {}
+        ):
+            if metrics.get("table_name") == resource.table_name:
+                base_metadata["rows_loaded"] = MetadataValue.int(
+                    metrics.get("items_count", {})
+                )
 
         table_columns = [
             TableColumn(name=column.get("name"), type=column.get("data_type"))
@@ -167,7 +176,9 @@ class DagsterDltResource(ConfigurableResource):
         dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
 
         asset_key_dlt_source_resource_mapping = {
-            dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
+            dagster_dlt_translator.get_asset_key(
+                dlt_source_resource
+            ): dlt_source_resource
             for dlt_source_resource in dlt_source.selected_resources.values()
         }
 
@@ -195,8 +206,13 @@ class DagsterDltResource(ConfigurableResource):
 
         has_asset_def: bool = bool(context and context.has_assets_def)
 
-        for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
-            metadata = self.extract_resource_metadata(dlt_source_resource, load_info)
+        for (
+            asset_key,
+            dlt_source_resource,
+        ) in asset_key_dlt_source_resource_mapping.items():
+            metadata = self.extract_resource_metadata(
+                dlt_source_resource, load_info, dlt_pipeline
+            )
 
             if has_asset_def:
                 yield MaterializeResult(asset_key=asset_key, metadata=metadata)
