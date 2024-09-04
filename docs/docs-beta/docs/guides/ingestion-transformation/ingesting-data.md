@@ -52,7 +52,7 @@ Writing code in a language like Python to ingest data into a platform is also a 
 
 For example, imagine there's a CSV file of counties on the internet and you want to load it into your Snowflake data warehouse as a table. To do this, you might directly define an asset that represents that table in your warehouse. The asset's materialization function fetches data from the internet and loads it into that table:
 
-<!-- TODO update example -->
+{/* TODO update example */}
 
 ```python
 @asset
@@ -63,6 +63,6 @@ def counties(snowflake: SnowflakeResource) -> None:
 
 ## Next steps
 
-<!-- TODO add next steps -->
+{/* TODO add next steps */}
 
 - Learn how to [transform data using Dagster's dbt integration](/guides/ingestion-transformation/transform-dbt)

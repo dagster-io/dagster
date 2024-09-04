@@ -117,7 +117,7 @@ helm --namespace dagster-cloud upgrade agent \
 
 You can see basic health information about your agent in the Dagster+ UI:
 
-<!-- TODO: Screenshot -->
+{/* TODO: Screenshot */}
 
 ### View logs
 

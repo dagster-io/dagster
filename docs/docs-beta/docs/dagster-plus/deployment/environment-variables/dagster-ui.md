@@ -41,7 +41,7 @@ Before you begin, use the deployment switcher to select the right deployment.
     - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
 
 
-<!-- TODO replace placeholder image -->
+{/* TODO replace placeholder image */}
 
 ![Screenshot of adding environment variables](/img/placeholder.svg)
 

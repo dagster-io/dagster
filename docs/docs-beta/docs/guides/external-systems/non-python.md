@@ -14,7 +14,7 @@ Dagster is written in Python, but that doesn't mean it's that Python is the only
 
 ## Create a script using Tensorflow in JavaScript
 
-<!--TODO: consider changing guide to step-based-guide template-->
+{/* TODO: consider changing guide to step-based-guide template */}
 
 In this example, we will orchestrate a JavaScript script that reads in a CSV file, and uses the Tensorflow  to train a sequential model using Dagster Pipes.
 
@@ -30,7 +30,7 @@ Create an asset that takes the `PipesSubprocessClient` resource, and set the `co
 You will need `node` in the environment you are running Dagster, along with Tensorflow installed.
 :::
 
-<!--TODO: consider adding instructions for installing dependencies-->
+{/* TODO: consider adding instructions for installing dependencies */}
 
 <CodeExample filePath="guides/non-python/pipes-asset.py" language="python" title="Asset using Dagster Pipes." />
 
