@@ -504,3 +504,40 @@ table {
     transform: rotate(0deg);
   }
 }
+
+/* API Docs */
+dl {
+  padding: 4px 0px 0px 4px;
+  border: 1px solid var(--theme-color-keyline);
+  font-weight: 200;
+  background-color: var(--theme-color-background-blue);
+  line-height: 1.2;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+dt {
+  box-shadow: 0px 1px 0px var(--theme-color-keyline);
+  font-weight: 600;
+  font-size: 15px;
+  padding-bottom: 0px;
+}
+
+dd {
+  background-color: var(--theme-color-background-light);
+  font-weight: 400;
+  padding: 4px;
+  margin-left: -2px;
+  line-height: 1.4;
+}
+
+dd p {
+  margin: 0;
+}
+
+dd code {
+  background-color: var(--theme-color-background-default);
+  border: 1px solid var(--theme-color-keyline);
+  border-radius: 4px;
+  padding: 0.1rem;
+}
