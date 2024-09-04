@@ -15,7 +15,7 @@ from typing import (
 )
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
-from dagster._core.definitions.entity_subset import SerializableEntitySubset
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset

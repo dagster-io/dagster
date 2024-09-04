@@ -4,7 +4,10 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional
 
 import dagster._check as check
-from dagster._core.definitions.entity_subset import EntitySubsetSerializer, SerializableEntitySubset
+from dagster._core.asset_graph_view.serializable_entity_subset import (
+    EntitySubsetSerializer,
+    SerializableEntitySubset,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
