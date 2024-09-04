@@ -131,6 +131,12 @@ class DagsterDltResource(ConfigurableResource):
             for table, schema in default_schemas.items()
             if table.startswith(f"{resource.table_name}__")
         }
+
+        columns = (
+            default_schemas.get(str(resource.table_name), {})
+            .get("columns", {})
+            .values()
+        )
         table_columns = [
             TableColumn(
                 name=column.get("name") or "",
@@ -139,9 +145,7 @@ class DagsterDltResource(ConfigurableResource):
                     nullable=column.get("nullable") or True
                 ),
             )
-            for column in default_schemas.get(str(resource.table_name), {})
-            .get("columns", {})
-            .values()
+            for column in columns
         ]
         base_metadata = {
             **child_tables_metadata,
