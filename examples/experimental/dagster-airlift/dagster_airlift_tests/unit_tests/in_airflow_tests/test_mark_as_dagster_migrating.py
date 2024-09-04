@@ -30,6 +30,13 @@ def test_mark_as_dagster_migrating(mock_airflow_variable: None) -> None:
             }
         ),
     )
+    # Both dags should have the tag "Migrating to Dagster"
+    assert len(globals_fake["task_is_migrated"].tags) == 1
+    assert len(globals_fake["task_isnt_migrated"].tags) == 1
+
+    assert "1 Task Marked as Migrating to Dagster" in globals_fake["task_is_migrated"].tags
+    assert "0 Tasks Marked as Migrating to Dagster" in globals_fake["task_isnt_migrated"].tags
+
     # Only the task marked as migrated should be replaced with a DagsterOperator
     assert isinstance(
         globals_fake["task_is_migrated"].task_dict["task"], BaseProxyToDagsterOperator
