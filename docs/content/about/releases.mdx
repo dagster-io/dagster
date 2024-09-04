@@ -50,8 +50,12 @@ Dagster deployments can have multiple versions of Dagster running simultaneously
 
 A Dagster deployment consists of a set of [code locations](https://docs.dagster.io/concepts/code-locations), as well as _host processes_: the web server and [daemon](https://docs.dagster.io/deployment/dagster-daemon).
 
-- The code locations within a deployment can each depend on a different Dagster version.
-- The host processes within a deployment are expected to all have the same Dagster version, and that Dagster version is expected to be greater than or equal to the greatest Dagster version used by any code location within the deployment. In Dagster+ deployments, Dagster+ automatically keeps host processes up-to-date, so no user action is require to achieve this. In OSS deployments, users are expected to upgrade their host processes before upgrading the version of Dagster used in their code locations.
+- **Code locations** within a deployment can each depend on a different Dagster version.
+- **Host processes** within a deployment are expected to have the same Dagster version. That Dagster version is expected to be greater than or equal to the greatest Dagster version used by any code location within the deployment.
+
+  - **In Dagster+ deployments**, Dagster+ automatically keeps host processes up-to-date so no user action is required.
+
+  - **In OSS deployments**, users are expected to upgrade their host processes before upgrading the version of Dagster used in their code locations.
 
 ---
 
