@@ -33,17 +33,14 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 
-from dagster_airlift.core.utils import convert_to_valid_dagster_name
-from dagster_airlift.migration_state import AirflowMigrationState
-
-from .airflow_instance import AirflowInstance, DagInfo, TaskInfo
-from .utils import (
-    DAG_ID_TAG,
-    MIGRATED_TAG,
-    TASK_ID_TAG,
+from dagster_airlift.constants import DAG_ID_TAG, MIGRATED_TAG, TASK_ID_TAG
+from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo, TaskInfo
+from dagster_airlift.core.utils import (
+    convert_to_valid_dagster_name,
     get_dag_id_from_asset,
     get_task_id_from_asset,
 )
+from dagster_airlift.migration_state import AirflowMigrationState
 
 
 # We serialize dictionaries as json, and json doesn't know how to serialize AssetKeys. So we wrap the mapping

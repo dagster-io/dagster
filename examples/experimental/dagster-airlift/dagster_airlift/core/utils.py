@@ -7,9 +7,7 @@ from dagster import (
 )
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 
-MIGRATED_TAG = "airlift/task_migrated"
-DAG_ID_TAG = "airlift/dag_id"
-TASK_ID_TAG = "airlift/task_id"
+from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
 
 
 def convert_to_valid_dagster_name(name: str) -> str:
