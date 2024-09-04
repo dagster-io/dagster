@@ -16,7 +16,6 @@ IAM
 PEX
 RBAC
 RDS
-S3
 SCIM
 SHA
 
@@ -50,7 +49,6 @@ PingOne
 Postgres
 Pydantic
 REST API
-[Ss]erverless
 Snowflake
 Tensorflow
 Twilio
@@ -60,6 +58,8 @@ We have
 [Mm]aterializations
 [Mm]emoization
 [Rr]epo
+[Ss]3
+[Ss]erverless
 [Ss]ubprocess
 \bDagster\b
 auditable
