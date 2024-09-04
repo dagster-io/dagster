@@ -1060,7 +1060,6 @@ class AssetDaemon(DagsterDaemon):
                     instance=instance,
                     workspace_process_context=workspace_process_context,
                     run_request_execution_data_cache=run_request_execution_data_cache,
-                    asset_graph=asset_graph,
                     debug_crash_flags=debug_crash_flags,
                     logger=self._logger,
                 )

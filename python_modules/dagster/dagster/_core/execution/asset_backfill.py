@@ -756,7 +756,6 @@ def _submit_runs_and_update_backfill_in_chunks(
                 run_request_idx,
                 instance,
                 workspace_process_context,
-                asset_graph,
                 run_request_execution_data_cache,
                 {},
                 logger,
