@@ -34,11 +34,13 @@ class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         child_result = self.operand.evaluate(
             context.for_child_condition(
-                child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
+                child_condition=self.operand,
+                child_index=0,
+                candidate_subset=context.candidate_subset,
             )
         )
         return AutomationResult(
-            context=context, true_slice=child_result.true_slice, child_results=[child_result]
+            context=context, true_subset=child_result.true_subset, child_results=[child_result]
         )
 
 
@@ -83,7 +85,7 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
             context.asset_graph.get_downstream_automation_conditions(asset_key=context.key)
         )
 
-        true_slice = context.get_empty_slice()
+        true_subset = context.get_empty_subset()
         child_results = []
         for i, (downstream_condition, asset_keys) in enumerate(
             sorted(downstream_conditions.items(), key=lambda x: sorted(x[1]))
@@ -96,11 +98,13 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
             child_context = context.for_child_condition(
                 child_condition=child_condition,
                 child_index=i,
-                candidate_slice=context.candidate_slice,
+                candidate_subset=context.candidate_subset,
             )
             child_result = child_condition.evaluate(child_context)
 
             child_results.append(child_result)
-            true_slice = true_slice.compute_union(child_result.true_slice)
+            true_subset = true_subset.compute_union(child_result.true_subset)
 
-        return AutomationResult(context=context, true_slice=true_slice, child_results=child_results)
+        return AutomationResult(
+            context=context, true_subset=true_subset, child_results=child_results
+        )

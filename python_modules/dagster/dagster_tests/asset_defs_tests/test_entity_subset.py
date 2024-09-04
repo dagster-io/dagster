@@ -14,7 +14,7 @@ from dagster import (
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
-from dagster._core.definitions.entity_subset import EntitySubset
+from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
@@ -105,14 +105,14 @@ def test_serialization(value, use_valid_asset_subset) -> None:
     if use_valid_asset_subset:
         asset_subset = ValidAssetSubset(key=AssetKey("foo"), value=value)
     else:
-        asset_subset = EntitySubset(key=AssetKey("foo"), value=value)
+        asset_subset = SerializableEntitySubset(key=AssetKey("foo"), value=value)
 
     serialized_asset_subset = serialize_value(asset_subset)
     assert "ValidAssetSubset" not in serialized_asset_subset
 
-    round_trip_asset_subset = deserialize_value(serialized_asset_subset, EntitySubset)
+    round_trip_asset_subset = deserialize_value(serialized_asset_subset, SerializableEntitySubset)
 
-    assert isinstance(round_trip_asset_subset, EntitySubset)
+    assert isinstance(round_trip_asset_subset, SerializableEntitySubset)
     # should always be deserialized as an AssetSubset
     assert not isinstance(round_trip_asset_subset, ValidAssetSubset)
 

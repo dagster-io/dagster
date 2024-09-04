@@ -21,8 +21,8 @@ class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
         previous_code_version = context.cursor
         current_code_version = context.asset_graph.get(context.key).code_version
         if previous_code_version is None or previous_code_version == current_code_version:
-            true_slice = context.get_empty_slice()
+            true_subset = context.get_empty_subset()
         else:
-            true_slice = context.candidate_slice
+            true_subset = context.candidate_subset
 
-        return AutomationResult(context, true_slice, cursor=current_code_version)
+        return AutomationResult(context, true_subset, cursor=current_code_version)

@@ -15,7 +15,7 @@ from typing import (
 )
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
-from dagster._core.definitions.entity_subset import EntitySubset
+from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
         AutomationContext,
     )
 
-StructuredCursor = Union[str, EntitySubset, Sequence[EntitySubset]]
+StructuredCursor = Union[str, SerializableEntitySubset, Sequence[SerializableEntitySubset]]
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
 
@@ -44,10 +44,10 @@ class HistoricalAllPartitionsSubsetSentinel:
 
 
 def get_serializable_candidate_subset(
-    candidate_subset: Union[EntitySubset, HistoricalAllPartitionsSubsetSentinel],
-) -> Union[EntitySubset, HistoricalAllPartitionsSubsetSentinel]:
+    candidate_subset: Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel],
+) -> Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]:
     """Do not serialize the candidate subset directly if it is an AllPartitionsSubset."""
-    if isinstance(candidate_subset, EntitySubset) and isinstance(
+    if isinstance(candidate_subset, SerializableEntitySubset) and isinstance(
         candidate_subset.value, AllPartitionsSubset
     ):
         return HistoricalAllPartitionsSubsetSentinel()
@@ -77,7 +77,7 @@ class AutomationConditionSnapshot(NamedTuple):
 class AssetSubsetWithMetadata(NamedTuple):
     """An asset subset with metadata that corresponds to it."""
 
-    subset: EntitySubset
+    subset: SerializableEntitySubset
     metadata: MetadataMapping
 
     @property
@@ -93,8 +93,10 @@ class AutomationConditionEvaluation(NamedTuple):
     start_timestamp: Optional[float]
     end_timestamp: Optional[float]
 
-    true_subset: EntitySubset[AssetKey]
-    candidate_subset: Union[EntitySubset[AssetKey], HistoricalAllPartitionsSubsetSentinel]
+    true_subset: SerializableEntitySubset[AssetKey]
+    candidate_subset: Union[
+        SerializableEntitySubset[AssetKey], HistoricalAllPartitionsSubsetSentinel
+    ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
@@ -166,14 +168,14 @@ class AutomationConditionEvaluationState:
         return self.previous_evaluation.asset_key
 
     @property
-    def true_subset(self) -> EntitySubset:
+    def true_subset(self) -> SerializableEntitySubset:
         return self.previous_evaluation.true_subset
 
 
 @whitelist_for_serdes
 class AutomationConditionNodeCursor(NamedTuple):
-    true_subset: EntitySubset
-    candidate_subset: Union[EntitySubset, HistoricalAllPartitionsSubsetSentinel]
+    true_subset: SerializableEntitySubset
+    candidate_subset: Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
 
@@ -201,7 +203,7 @@ class AutomationConditionCursor(NamedTuple):
             has changed since the last time this was evaluated.
     """
 
-    previous_requested_subset: EntitySubset
+    previous_requested_subset: SerializableEntitySubset
     effective_timestamp: float
     last_event_id: Optional[int]
 
@@ -251,7 +253,7 @@ class AutomationConditionCursor(NamedTuple):
             return node_cursors
 
         return AutomationConditionCursor(
-            previous_requested_subset=result.true_slice.convert_to_serializable_subset(),
+            previous_requested_subset=result.true_subset.convert_to_serializable_subset(),
             effective_timestamp=context.evaluation_time.timestamp(),
             last_event_id=context.max_storage_id,
             node_cursors_by_unique_id=_gather_node_cursors(result),
