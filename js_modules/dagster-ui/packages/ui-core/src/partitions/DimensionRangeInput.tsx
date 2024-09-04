@@ -60,7 +60,6 @@ export const DimensionRangeInput = ({
       value={valueString}
       style={{display: 'flex', width: '100%', flex: 1, flexGrow: 1}}
       onChange={(e) => {
-        console.log('setValueString(e.currentTarget.value)', e.currentTarget.value);
         setValueString(e.currentTarget.value);
       }}
       onKeyDown={onKeyDown}
