@@ -2,13 +2,13 @@ from abc import ABC, abstractproperty
 from enum import Enum
 from typing import Dict, FrozenSet, NamedTuple, Optional, Tuple
 
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (

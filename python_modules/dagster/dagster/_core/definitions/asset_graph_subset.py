@@ -16,8 +16,8 @@ from typing import (
 )
 
 from dagster import _check as check
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
