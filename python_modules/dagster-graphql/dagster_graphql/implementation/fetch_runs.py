@@ -30,7 +30,7 @@ from dagster._time import datetime_from_timestamp
 from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
-    from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+    from dagster._core.asset_graph_view.batch_instance_loader import BatchAssetRecordLoader
 
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
     from dagster_graphql.schema.errors import GrapheneRunNotFoundError
@@ -195,7 +195,7 @@ def get_assets_latest_info(
 
     asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
 
-    asset_records = asset_record_loader.get_asset_records(asset_keys)
+    asset_records = asset_record_loader.get_values(asset_keys)
 
     latest_materialization_by_asset = {
         asset_record.asset_entry.asset_key: (

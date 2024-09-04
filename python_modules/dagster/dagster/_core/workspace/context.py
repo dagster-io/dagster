@@ -23,6 +23,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.asset_graph_view.batch_instance_loader import BatchAssetRecordLoader
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
@@ -47,7 +48,6 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.permissions import (
     PermissionResult,
@@ -358,7 +358,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
             read_only_locations, "read_only_locations"
         )
         self._checked_permissions: Set[str] = set()
-        self._asset_record_loader = BatchAssetRecordLoader(self._instance, {})
+        self._asset_record_loader = BatchAssetRecordLoader(self._instance)
         self._loaders = {}
 
     @property

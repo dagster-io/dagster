@@ -6,6 +6,7 @@ from dagster import (
     DagsterError,
     _check as check,
 )
+from dagster._core.asset_graph_view.batch_instance_loader import BatchAssetRecordLoader
 from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -32,7 +33,6 @@ from dagster._core.remote_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
@@ -625,10 +625,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             before_timestamp = None
 
         if self._asset_record_loader and limit == 1 and not partitions and not before_timestamp:
-            latest_materialization_event = (
-                self._asset_record_loader.get_latest_materialization_for_asset_key(
-                    self._external_asset_node.asset_key
-                )
+            latest_materialization_event = self._asset_record_loader.get_latest_materialization(
+                self._external_asset_node.asset_key
             )
 
             if not latest_materialization_event:
@@ -668,10 +666,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             and not partitions
             and not before_timestamp
         ):
-            latest_observation_event = (
-                self._asset_record_loader.get_latest_observation_for_asset_key(
-                    self._external_asset_node.asset_key
-                )
+            latest_observation_event = self._asset_record_loader.get_latest_observation(
+                self._external_asset_node.asset_key
             )
 
             if not latest_observation_event:
@@ -826,7 +822,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         asset_record_loader = BatchAssetRecordLoader(
             instance=graphene_info.context.instance,
-            asset_keys=[dep.downstream_asset_key for dep in depended_by_asset_nodes],
+            initial_keys=[dep.downstream_asset_key for dep in depended_by_asset_nodes],
         )
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
@@ -880,7 +876,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         asset_record_loader = BatchAssetRecordLoader(
             instance=graphene_info.context.instance,
-            asset_keys=[dep.upstream_asset_key for dep in self._external_asset_node.dependencies],
+            initial_keys=[dep.upstream_asset_key for dep in self._external_asset_node.dependencies],
         )
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,

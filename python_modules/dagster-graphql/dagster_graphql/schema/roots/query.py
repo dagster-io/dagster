@@ -1025,7 +1025,7 @@ class GrapheneQuery(graphene.ObjectType):
             return []
 
         asset_record_loader = graphene_info.context.asset_record_loader
-        asset_record_loader.add_asset_keys([node.assetKey for node in results])
+        asset_record_loader.add_keys([node.assetKey for node in results])
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
             asset_keys=[node.assetKey for node in results],
@@ -1161,7 +1161,7 @@ class GrapheneQuery(graphene.ObjectType):
         }
 
         asset_record_loader = graphene_info.context.asset_record_loader
-        asset_record_loader.add_asset_keys(asset_keys)
+        asset_record_loader.add_keys(asset_keys)
 
         return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
 

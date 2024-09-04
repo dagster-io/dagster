@@ -30,7 +30,7 @@ from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
-    from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+    from dagster._core.asset_graph_view.batch_instance_loader import BatchAssetRecordLoader
     from dagster._core.storage.event_log.base import AssetRecord
 
 
@@ -436,7 +436,7 @@ def get_and_update_asset_status_cache_value(
     batch_asset_record_loader: Optional["BatchAssetRecordLoader"] = None,
 ) -> Optional[AssetStatusCacheValue]:
     if batch_asset_record_loader:
-        asset_record = batch_asset_record_loader.get_asset_record(asset_key)
+        asset_record = batch_asset_record_loader.get(asset_key)
     else:
         asset_record = next(iter(instance.get_asset_records(asset_keys=[asset_key])), None)
 
