@@ -9,6 +9,15 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvariantViolationError
 
 
+def test_is_valid_definition_tag_key_kinds() -> None:
+    assert is_valid_definition_tag_key("dagster/kind/foo") is True
+    assert is_valid_definition_tag_key("dagster/kind/foo.bar") is True
+    assert is_valid_definition_tag_key("dagster/kind/") is False
+    assert is_valid_definition_tag_key("dagster/kind/" + "a" * 63) is True
+
+    assert is_valid_definition_tag_key("dragster/kind/foo") is False
+
+
 def test_is_valid_definition_tag_key():
     assert is_valid_definition_tag_key("abc") is True
     assert is_valid_definition_tag_key("abc.xhz") is True
