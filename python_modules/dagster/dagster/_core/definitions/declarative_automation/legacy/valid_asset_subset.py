@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional
 
 import dagster._check as check
-from dagster._core.definitions.entity_subset import EntitySubset, EntitySubsetSerializer
+from dagster._core.definitions.entity_subset import EntitySubsetSerializer, SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, PartitionsDefinition
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 
 
 @whitelist_for_serdes(serializer=EntitySubsetSerializer, storage_field_names={"key": "asset_key"})
-class ValidAssetSubset(EntitySubset[AssetKey]):
+class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
     """Legacy construct used for doing operations over EntitySubsets that are known to be valid. This
-    functionality is subsumed by AssetSlice.
+    functionality is subsumed by EntitySubset.
     """
 
     def inverse(
@@ -43,24 +43,24 @@ class ValidAssetSubset(EntitySubset[AssetKey]):
         value = oper(self.value, other.value)
         return replace(self, value=value)
 
-    def __sub__(self, other: EntitySubset) -> "ValidAssetSubset":
+    def __sub__(self, other: SerializableEntitySubset) -> "ValidAssetSubset":
         """Returns an EntitySubset representing self.asset_partitions - other.asset_partitions."""
         valid_other = self.get_valid(other)
         if not self.is_partitioned:
             return replace(self, value=self.bool_value and not valid_other.bool_value)
         return self._oper(valid_other, operator.sub)
 
-    def __and__(self, other: EntitySubset) -> "ValidAssetSubset":
+    def __and__(self, other: SerializableEntitySubset) -> "ValidAssetSubset":
         """Returns an EntitySubset representing self.asset_partitions & other.asset_partitions."""
         return self._oper(self.get_valid(other), operator.and_)
 
-    def __or__(self, other: EntitySubset) -> "ValidAssetSubset":
+    def __or__(self, other: SerializableEntitySubset) -> "ValidAssetSubset":
         """Returns an EntitySubset representing self.asset_partitions | other.asset_partitions."""
         return self._oper(self.get_valid(other), operator.or_)
 
     @staticmethod
     def coerce_from_subset(
-        subset: EntitySubset, partitions_def: Optional[PartitionsDefinition]
+        subset: SerializableEntitySubset, partitions_def: Optional[PartitionsDefinition]
     ) -> "ValidAssetSubset":
         """Converts an EntitySubset to a ValidAssetSubset by returning a copy of this EntitySubset
         if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
@@ -70,13 +70,13 @@ class ValidAssetSubset(EntitySubset[AssetKey]):
         else:
             return ValidAssetSubset.empty(subset.key, partitions_def)
 
-    def _is_compatible_with_subset(self, other: "EntitySubset") -> bool:
+    def _is_compatible_with_subset(self, other: "SerializableEntitySubset") -> bool:
         if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
             return self.is_compatible_with_partitions_def(other.value.partitions_def)
         else:
             return self.is_partitioned == other.is_partitioned
 
-    def get_valid(self, other: EntitySubset) -> "ValidAssetSubset":
+    def get_valid(self, other: SerializableEntitySubset) -> "ValidAssetSubset":
         """Creates a ValidAssetSubset from the given EntitySubset by returning a replace of the given
         EntitySubset if it is compatible with this EntitySubset, otherwise returns an empty subset.
         """

@@ -24,42 +24,42 @@ def test_since_condition_unpartitioned() -> None:
 
     # nothing true
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # primary becomes true, but reference has never been true
     true_set_primary.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     true_set_primary.remove(AssetKeyPartitionKey(AssetKey("A")))
 
     # reference becomes true, and it's after primary
     true_set_reference.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
     true_set_reference.remove(AssetKeyPartitionKey(AssetKey("A")))
 
     # primary becomes true again, and it's since reference has become true
     true_set_primary.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     true_set_primary.remove(AssetKeyPartitionKey(AssetKey("A")))
 
     # remains true on the neprimaryt evaluation
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
 
     # primary becomes true again, still doesn't change anything
     true_set_primary.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     true_set_primary.remove(AssetKeyPartitionKey(AssetKey("A")))
 
     # now reference becomes true again
     true_set_reference.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
     true_set_reference.remove(AssetKeyPartitionKey(AssetKey("A")))
 
     # remains false on the neprimaryt evaluation
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0

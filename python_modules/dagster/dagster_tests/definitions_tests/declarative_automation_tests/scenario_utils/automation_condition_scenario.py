@@ -44,7 +44,7 @@ class FalseAutomationCondition(AutomationCondition):
         return ""
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
-        return AutomationResult(context, true_slice=context.get_empty_slice())
+        return AutomationResult(context, true_subset=context.get_empty_subset())
 
 
 @dataclass(frozen=True)
@@ -65,7 +65,7 @@ class AutomationConditionScenarioState(ScenarioState):
             ap_by_key[ap.asset_key].add(ap)
         return {
             asset_key: mock.MagicMock(
-                true_slice=asset_graph_view.get_asset_slice_from_asset_partitions(asset_key, aps),
+                true_subset=asset_graph_view.get_asset_subset_from_asset_partitions(asset_key, aps),
                 cursor=None,
             )
             for asset_key, aps in ap_by_key.items()

@@ -36,17 +36,19 @@ class DepConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         # only evaluate parents of the current candidates
 
-        dep_candidate_slice = context.candidate_slice.compute_parent_slice(self.dep_key)
+        dep_candidate_subset = context.candidate_subset.compute_parent_subset(self.dep_key)
         dep_context = context.for_child_condition(
-            child_condition=self.operand, child_index=0, candidate_slice=dep_candidate_slice
+            child_condition=self.operand, child_index=0, candidate_subset=dep_candidate_subset
         )
 
         # evaluate condition against the dependency
         dep_result = self.operand.evaluate(dep_context)
 
-        # find all children of the true dep slice
-        true_slice = dep_result.true_slice.compute_child_slice(context.key)
-        return AutomationResult(context=context, true_slice=true_slice, child_results=[dep_result])
+        # find all children of the true dep subset
+        true_subset = dep_result.true_subset.compute_child_subset(context.key)
+        return AutomationResult(
+            context=context, true_subset=true_subset, child_results=[dep_result]
+        )
 
 
 class DepCondition(BuiltinAutomationCondition[AssetKey]):
@@ -120,7 +122,7 @@ class AnyDepsCondition(DepCondition):
 
     def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         dep_results = []
-        true_slice = context.get_empty_slice()
+        true_subset = context.get_empty_subset()
 
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
@@ -128,14 +130,14 @@ class AnyDepsCondition(DepCondition):
                 context.for_child_condition(
                     child_condition=dep_condition,
                     child_index=i,
-                    candidate_slice=context.candidate_slice,
+                    candidate_subset=context.candidate_subset,
                 )
             )
             dep_results.append(dep_result)
-            true_slice = true_slice.compute_union(dep_result.true_slice)
+            true_subset = true_subset.compute_union(dep_result.true_subset)
 
-        true_slice = context.candidate_slice.compute_intersection(true_slice)
-        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)
+        true_subset = context.candidate_subset.compute_intersection(true_subset)
+        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)
 
 
 @whitelist_for_serdes
@@ -150,7 +152,7 @@ class AllDepsCondition(DepCondition):
 
     def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
         dep_results = []
-        true_slice = context.candidate_slice
+        true_subset = context.candidate_subset
 
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
@@ -158,10 +160,10 @@ class AllDepsCondition(DepCondition):
                 context.for_child_condition(
                     child_condition=dep_condition,
                     child_index=i,
-                    candidate_slice=context.candidate_slice,
+                    candidate_subset=context.candidate_subset,
                 )
             )
             dep_results.append(dep_result)
-            true_slice = true_slice.compute_intersection(dep_result.true_slice)
+            true_subset = true_subset.compute_intersection(dep_result.true_subset)
 
-        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)
+        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)

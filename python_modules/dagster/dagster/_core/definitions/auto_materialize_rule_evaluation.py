@@ -8,7 +8,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.entity_subset import EntitySubset
+from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
@@ -130,7 +130,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 condition_snapshot=AutomationConditionNodeSnapshot("", "", "", None, None),
                 start_timestamp=None,
                 end_timestamp=None,
-                true_subset=EntitySubset(key=AssetKey("unknown"), value=False),
+                true_subset=SerializableEntitySubset(key=AssetKey("unknown"), value=False),
                 candidate_subset=HistoricalAllPartitionsSubsetSentinel(),
                 subsets_with_metadata=[],
                 child_evaluations=[],
