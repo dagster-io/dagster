@@ -36,10 +36,8 @@ def build_airflow_polling_sensor(
         name="airflow_dag_status_sensor",
         minimum_interval_seconds=1,
         default_status=DefaultSensorStatus.RUNNING,
-        # We use an empty asset_selection because: (1) we want airlift to support older dagster
-        # versions, so we don't use the 1.8+ `target` param; (2) the sensor will only ever execute
-        # asset checks, so we don't want the sensor to target any assets.
-        asset_selection=AssetSelection.assets(),
+        # This sensor will only ever execute asset checks and not asset materializations.
+        asset_selection=AssetSelection.all_asset_checks(),
     )
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
@@ -119,9 +117,7 @@ def build_airflow_polling_sensor(
         context.update_cursor(str(current_date.timestamp()))
         return SensorResult(
             asset_events=[sorted_mat[1] for sorted_mat in sorted_mats],
-            run_requests=[
-                RunRequest(asset_check_keys=list(asset_check_keys_to_request), asset_selection=[])
-            ]
+            run_requests=[RunRequest(asset_check_keys=list(asset_check_keys_to_request))]
             if asset_check_keys_to_request
             else None,
         )
