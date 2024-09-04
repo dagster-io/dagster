@@ -118,7 +118,7 @@ TODO: add picture previously at "/images/dagster-cloud/user-token-management/cod
 | Start and stop [schedules](/concepts/schedules)                          | ❌     | ❌        | ✅       | ✅     | ✅                             |
 | Start and stop [schedules](/concepts/sensors)                            | ❌     | ❌        | ✅       | ✅     | ✅                             |
 | Wipe assets                                                              | ❌     | ❌        | ✅       | ✅     | ✅                             |
-| Launch and cancel [schedules](/quides/ingestion-transformation/backfill) | ❌     | ✅        | ✅       | ✅     | ✅                             |
+| Launch and cancel [schedules](/guides/ingestion-transformation/backfill) | ❌     | ✅        | ✅       | ✅     | ✅                             |
 | Add dynamic partitions                                                   | ❌     | ❌        | ✅       | ✅     | ✅                             |
 
 
