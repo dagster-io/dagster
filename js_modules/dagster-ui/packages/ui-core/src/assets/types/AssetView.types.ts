@@ -34,6 +34,7 @@ export type AssetViewDefinitionQuery = {
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
+          kinds: Array<string>;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -16313,6 +16314,7 @@ export type AssetViewDefinitionNodeFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  kinds: Array<string>;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;

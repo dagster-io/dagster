@@ -21,7 +21,7 @@ import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {AssetComputeKindTag} from '../graph/KindTags';
+import {AssetKind} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -82,6 +82,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
       onToggleChecked({checked, shiftKey});
     }
   };
+  const kinds = definition?.kinds;
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
@@ -102,14 +103,18 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 textStyle="middle-truncate"
               />
             </div>
-            {definition && (
-              <AssetComputeKindTag
-                reduceColor
-                reduceText
-                definition={definition}
-                style={{position: 'relative'}}
-                currentPageFilter={computeKindFilter}
-              />
+            {kinds && (
+              <>
+                {kinds?.map((kind) => (
+                  <AssetKind
+                    key={kind}
+                    reduceColor
+                    reduceText
+                    kind={kind}
+                    style={{position: 'relative'}}
+                  />
+                ))}
+              </>
             )}
           </Box>
           <div
