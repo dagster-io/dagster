@@ -661,6 +661,7 @@ type AssetNode {
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   tags: [DefinitionTag!]!
+  kinds: [String!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!

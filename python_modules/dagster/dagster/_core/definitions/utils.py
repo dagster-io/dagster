@@ -226,7 +226,14 @@ def normalize_tags(
 
 # Inspired by allowed Kubernetes labels:
 # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-VALID_DEFINITION_TAG_KEY_REGEX_STR = r"^([A-Za-z0-9_.-]{1,63}/)?[A-Za-z0-9_.-]{1,63}$"
+
+# We allow in some cases for users to specify multi-level namespaces for tags,
+# right now we only allow this for the `dagster/kind` namespace, which is how asset kinds are
+# encoded under the hood.
+VALID_NESTED_NAMESPACES_TAG_KEYS = r"dagster/kind/"
+VALID_DEFINITION_TAG_KEY_REGEX_STR = (
+    r"^([A-Za-z0-9_.-]{1,63}/|" + VALID_NESTED_NAMESPACES_TAG_KEYS + r")?[A-Za-z0-9_.-]{1,63}$"
+)
 VALID_DEFINITION_TAG_KEY_REGEX = re.compile(VALID_DEFINITION_TAG_KEY_REGEX_STR)
 VALID_DEFINITION_TAG_KEY_EXPLANATION = (
     "Allowed characters: alpha-numeric, '_', '-', '.'. "

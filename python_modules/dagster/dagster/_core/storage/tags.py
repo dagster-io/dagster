@@ -5,6 +5,8 @@ import dagster._check as check
 SYSTEM_TAG_PREFIX = "dagster/"
 HIDDEN_TAG_PREFIX = ".dagster/"
 
+KIND_PREFIX = f"{SYSTEM_TAG_PREFIX}kind/"
+
 REPOSITORY_LABEL_TAG = f"{HIDDEN_TAG_PREFIX}repository"
 
 SCHEDULE_NAME_TAG = f"{SYSTEM_TAG_PREFIX}schedule_name"

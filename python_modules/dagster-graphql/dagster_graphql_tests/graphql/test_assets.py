@@ -721,6 +721,36 @@ GET_ASSET_BACKFILL_POLICY = """
     }
 """
 
+
+GET_TAGS = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                assetKey {
+                    path
+                }
+                tags {
+                    key
+                    value
+                }
+            }
+        }
+    }
+"""
+
+GET_KINDS = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                assetKey {
+                    path
+                }
+                kinds
+            }
+        }
+    }
+"""
+
 GET_TARGETING_INSTIGATORS = """
     query AssetNodeQuery($assetKey: AssetKeyInput!) {
         assetNodeOrError(assetKey: $assetKey) {
@@ -2562,6 +2592,63 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         ]
         assert len(fresh_diamond_bottom) == 1
         assert fresh_diamond_bottom[0]["autoMaterializePolicy"]["policyType"] == "LAZY"
+
+    def test_tags(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_TAGS,
+            variables={
+                "assetKey": {"path": ["second_kinds_key"]},
+            },
+        )
+
+        second_kinds_key = result.data["assetNodeOrError"]
+        assert second_kinds_key["tags"] == [{"key": "dagster/kind/python", "value": ""}]
+
+    def test_kinds(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_KINDS,
+            variables={
+                "assetKey": {"path": ["first_kinds_key"]},
+            },
+        )
+
+        first_kinds_key = result.data["assetNodeOrError"]
+        assert set(first_kinds_key["kinds"]) == {"python", "airflow"}
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_KINDS,
+            variables={
+                "assetKey": {"path": ["second_kinds_key"]},
+            },
+        )
+
+        second_kinds_key = result.data["assetNodeOrError"]
+        assert set(second_kinds_key["kinds"]) == {"python"}
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_KINDS,
+            variables={
+                "assetKey": {"path": ["third_kinds_key"]},
+            },
+        )
+
+        third_kinds_key = result.data["assetNodeOrError"]
+        assert set(third_kinds_key["kinds"]) == {"python"}
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_KINDS,
+            variables={
+                "assetKey": {"path": ["fourth_kinds_key"]},
+            },
+        )
+
+        fourth_kinds_key = result.data["assetNodeOrError"]
+        assert set(fourth_kinds_key["kinds"]) == {"python"}
 
     def test_has_asset_checks(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(graphql_context, HAS_ASSET_CHECKS)
