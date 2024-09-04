@@ -45,29 +45,6 @@ export const buildDefinitionTag = memoize(
   (tag) => [tag.key, tag.value].join('|@-@|'),
 );
 
-export function useAssetTagsForAssets(
-  assets: {definition?: {tags?: DefinitionTag[] | null} | null}[],
-): DefinitionTag[] {
-  return useMemo(
-    () =>
-      Array.from(
-        new Set(
-          assets
-            .flatMap((a) => a.definition?.tags?.map((tag) => JSON.stringify(tag)) ?? [])
-            .filter((o) => o),
-        ),
-      )
-        .map((jsonTag) => buildDefinitionTag(JSON.parse(jsonTag)))
-        .sort((a, b) =>
-          // Sort by key then by value
-          a.key.localeCompare(b.key) === 0
-            ? a.value.localeCompare(b.value)
-            : a.key.localeCompare(b.key),
-        ),
-    [assets],
-  );
-}
-
 export function doesFilterArrayMatchValueArray<T, V>(
   filterArray: T[],
   valueArray: V[],
@@ -98,3 +75,26 @@ export const BaseConfig: StaticBaseConfig<DefinitionTag> = {
   getStringValue: ({value, key}: DefinitionTag) => `${key}: ${value}`,
   matchType: 'all-of',
 };
+
+export function useAssetTagsForAssets(
+  assets: {definition?: {tags?: DefinitionTag[] | null} | null}[],
+): DefinitionTag[] {
+  return useMemo(
+    () =>
+      Array.from(
+        new Set(
+          assets
+            .flatMap((a) => a.definition?.tags?.map((tag) => JSON.stringify(tag)) ?? [])
+            .filter((o) => o),
+        ),
+      )
+        .map((jsonTag) => buildDefinitionTag(JSON.parse(jsonTag)))
+        .sort((a, b) =>
+          // Sort by key then by value
+          a.key.localeCompare(b.key) === 0
+            ? a.value.localeCompare(b.value)
+            : a.key.localeCompare(b.key),
+        ),
+    [assets],
+  );
+}

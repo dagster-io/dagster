@@ -16,8 +16,8 @@ export const useKindFilter = ({
   kinds?: null | string[];
   setKinds?: null | ((s: string[]) => void);
 }) => {
-  const memoizedState = useMemo(() => kinds?.map((kind) => kind), [kinds]);
   return useStaticSetFilter<string>({
+    ...BaseConfig,
     allValues: useMemo(
       () =>
         allAssetKinds.map((value) => ({
@@ -27,12 +27,11 @@ export const useKindFilter = ({
       [allAssetKinds],
     ),
     menuWidth: '300px',
-    state: memoizedState ?? emptyArray,
+    state: kinds ?? emptyArray,
     onStateChanged: (values) => {
       setKinds?.(Array.from(values));
     },
     canSelectAll: false,
-    ...BaseConfig,
   });
 };
 
