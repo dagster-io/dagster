@@ -97,7 +97,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                     "variables": {"executionParams": execution_params},
                 },
                 # Timeout in seconds
-                timeout=3,
+                timeout=10,
             )
             run_id = response.json()["data"]["launchPipelineExecution"]["run"]["id"]
             logger.debug(f"Launched run {run_id}...")

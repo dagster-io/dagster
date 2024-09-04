@@ -10,7 +10,8 @@ from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
-from ..migration_state import DagMigrationState
+from dagster_airlift.migration_state import AirflowMigrationState, DagMigrationState
+
 from .utils import convert_to_valid_dagster_name
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
@@ -53,6 +54,25 @@ class AirflowInstance:
             raise DagsterError(
                 f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
             )
+
+    def list_variables(self) -> List[Dict[str, Any]]:
+        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/variables")
+        if response.status_code == 200:
+            return response.json()["variables"]
+        else:
+            raise DagsterError(
+                "Failed to fetch variables. Status code: {response.status_code}, Message: {response.text}"
+            )
+
+    def get_migration_state(self) -> AirflowMigrationState:
+        variables = self.list_variables()
+        dag_dict = {}
+        for var_dict in variables:
+            if var_dict["key"].endswith("_dagster_migration_state"):
+                dag_id = var_dict["key"].replace("_dagster_migration_state", "")
+                migration_dict = json.loads(var_dict["value"])
+                dag_dict[dag_id] = DagMigrationState.from_dict(migration_dict)
+        return AirflowMigrationState(dags=dag_dict)
 
     def get_task_instance(self, dag_id: str, task_id: str, run_id: str) -> "TaskInstance":
         response = self.auth_backend.get_session().get(
@@ -200,17 +220,6 @@ class DagInfo:
     @property
     def file_token(self) -> str:
         return self.metadata["file_token"]
-
-    @property
-    def migration_state(self) -> DagMigrationState:
-        tags = self.metadata.get("tags") or []
-        migration_tag = next(
-            (tag for tag in tags if "DAGSTER_MIGRATION_STATUS" in tag["name"]), None
-        )
-        if migration_tag:
-            migration_dict = json.loads(migration_tag["name"])["DAGSTER_MIGRATION_STATUS"]
-            return DagMigrationState.from_dict(migration_dict)
-        return DagMigrationState(tasks={})
 
 
 @record
