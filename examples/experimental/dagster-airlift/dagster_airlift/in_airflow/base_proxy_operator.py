@@ -29,7 +29,10 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         session = self.get_dagster_session(context)
         dagster_url = self.get_dagster_url(context)
         response = session.post(
-            f"{dagster_url}/graphql", json={"query": VERIFICATION_QUERY}, timeout=3
+            # Timeout in seconds
+            f"{dagster_url}/graphql",
+            json={"query": VERIFICATION_QUERY},
+            timeout=3,
         )
         if response.status_code != 200:
             raise Exception(
@@ -50,7 +53,10 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
         assets_to_trigger = {}  # key is (repo_location, repo_name, job_name), value is list of asset keys
         # create graphql client
         response = session.post(
-            f"{dagster_url}/graphql", json={"query": ASSET_NODES_QUERY}, timeout=3
+            # Timeout in seconds
+            f"{dagster_url}/graphql",
+            json={"query": ASSET_NODES_QUERY},
+            timeout=3,
         )
         for asset_node in response.json()["data"]["assetNodes"]:
             tags = {tag["key"]: tag["value"] for tag in asset_node["tags"]}
@@ -90,6 +96,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                     "query": TRIGGER_ASSETS_MUTATION,
                     "variables": {"executionParams": execution_params},
                 },
+                # Timeout in seconds
                 timeout=3,
             )
             run_id = response.json()["data"]["launchPipelineExecution"]["run"]["id"]
@@ -103,6 +110,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                 response = session.post(
                     f"{dagster_url}/graphql",
                     json={"query": RUNS_QUERY, "variables": {"runId": run_id}},
+                    # Timeout in seconds
                     timeout=3,
                 )
                 run_status = response.json()["data"]["runOrError"]["status"]
