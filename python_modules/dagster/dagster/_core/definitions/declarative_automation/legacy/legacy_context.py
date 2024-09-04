@@ -18,7 +18,8 @@ from typing import (
     TypeVar,
 )
 
-from dagster._core.asset_graph_view.asset_graph_view import EntitySubset
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
@@ -29,7 +30,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition

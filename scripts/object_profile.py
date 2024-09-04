@@ -9,8 +9,8 @@ from tempfile import TemporaryDirectory
 # An example of when this is useful is measuring the impact of changing the backing class
 # for a model object from a NamedTuple to a dataclass or pydantic model (DagsterModel).
 import memray  # type: ignore
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.entity_subset import SerializableEntitySubset
 
 fixed_key = AssetKey("asset_key")
 
