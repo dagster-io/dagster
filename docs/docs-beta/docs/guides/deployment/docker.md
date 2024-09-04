@@ -3,13 +3,13 @@ title: "Deploying with Docker Compose"
 description: A guide to deploying Dagster with Docker Compose.
 ---
 
-This guide provides instructions for deploying Dagster using Docker Compose. This is useful when you want to, for example, deploy Dagster on an AWS EC2 host. A typical Dagster Docker deployment includes a several long-running containers: one for the web server, one for the daemon, and one for each code location. It also typically executes each run in its own container.
+This guide provides instructions for deploying Dagster using Docker Compose. This is useful when you want to, for example, deploy Dagster on an AWS EC2 host. A typical Dagster Docker deployment includes a several long-running containers: one for the webserver, one for the daemon, and one for each code location. It also typically executes each run in its own container.
 
 ## What you'll learn
 
 - The different Docker containers that run as part of a Dagster Docker deployment
 - How to define Docker images for each of these containers
-- How to write a docker-compose file that stands up these containers
+- How to write a Docker Compose file that stands up these containers
 
 <details>
   <summary>Prerequisites</summary>
@@ -19,9 +19,9 @@ This guide provides instructions for deploying Dagster using Docker Compose. Thi
 </details>
 
 
-## Define a Docker image for the Dagster web server and daemon
+## Define a Docker image for the Dagster webserver and daemon
 
-The Dagster web server and daemon are the two _host processes_ in a Dagster deployment. They typically each run in their own container, using the same Docker image. This image contains Dagster packages and configuration, but no user code.
+The Dagster webserver and daemon are the two _host processes_ in a Dagster deployment. They typically each run in their own container, using the same Docker image. This image contains Dagster packages and configuration, but no user code.
 
 To build this Docker image, use a Dockerfile like the following, with a name like `Dockerfile_dagster`:
 
@@ -46,7 +46,7 @@ WORKDIR $DAGSTER_HOME
 ```
 
 Additionally, the following files should be in the same directory as the Docker file:
-- A `workspace.yaml` to tell the web server and daemon the location of the code servers
+- A `workspace.yaml` to tell the webserver and daemon the location of the code servers
 - A `dagster.yaml` to configure the Dagster instance
 
 ## Define a Docker image for each code location
@@ -74,9 +74,9 @@ EXPOSE 4000
 CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-f", "definitions.py"]
 ```
 
-## Write a docker-compose file
+## Write a Docker Compose file
 
-The following `docker-compose.yaml` defines how to run the web server container, daemon container, code location containers, and database container:
+The following `docker-compose.yaml` defines how to run the webserver container, daemon container, code location containers, and database container:
 
 ```yaml title="docker-compose.yaml"
 version: "3.7"

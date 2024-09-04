@@ -20,7 +20,7 @@ You'll also need access to a container registry to which you can push images and
 
 We recommend installing the Dagster+ agent using [Helm](https://helm.sh).
 
-## Step 1: Create a Kubernetes namespace
+## Step 1: create a Kubernetes namespace
 
 ```shell
 kubectl create namespace dagster-cloud
@@ -113,11 +113,11 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
-## Troubleshooting Tips
+## Troubleshooting tips
 
 You can see basic health information about your agent in the Dagster+ UI:
 
-TODO: Screenshot
+{/* TODO: Screenshot */}
 
 ### View logs
 

@@ -57,7 +57,7 @@ In this example:
 - We defined `region_partitions` using `StaticPartitionsDefinition` with a list of regions.
 - The `regional_sales_data` and `daily_sales_summary` are defined with the same partitioning scheme.
 
-TODO: Link to Backfill page to explain how to backfill reginonal sales data
+{/* TODO: Link to Backfill page to explain how to backfill regional sales data */}
 
 ### Define two-dimensional partitions
 
@@ -94,25 +94,25 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets.
 - A downstream asset can depend on one or more partitions of an upstream asset
 - The partitioning schemes don't need to be identical, but they should be compatible
 
-TODO
+{/* TODO */}
 
 ### Dependencies between time-based and static partitions
 
 Combining time-based and static partitions allows you to analyze data across both temporal and categorical dimensions. This is particularly useful for scenarios like regional time series analysis.
 
-TODO
+{/* TODO */}
 
 ### Dependencies between time-based and dynamic partitions
 
-TODO
+{/* TODO */}
 
 ### Dependencies between time-based partitions and un-partitioned assets
 
-TODO
+{/* TODO */}
 
-## Integrating Dagster Partitions with External Systems: Incremental Models and dbt
+## Integrating Dagster partitions with external systems: incremental models and dbt
 
-TODO
+{/* TODO */}
 
 ## Next steps
 

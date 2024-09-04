@@ -3,7 +3,7 @@ title: "Running non-Python languages"
 sidebar_position: 60
 ---
 
-Dagster is written in Python, but that doesn't mean it's limited to running Python to materialize assets. With Pipes, you can run code in other languages and send information back forth with Dagster. This guide covers how to run JavaScript with Dagster using Pipes, however, the same principle will apply to other languages.
+Dagster is written in Python, but that doesn't mean it's that Python is the only language that can be used when materializing assets. With Pipes, you can run code in other languages and send information back forth with Dagster. This guide covers how to run JavaScript with Dagster using Pipes, however, the same principle will apply to other languages.
 
 <details>
 <summary>Prerequisites</summary>
@@ -14,7 +14,7 @@ Dagster is written in Python, but that doesn't mean it's limited to running Pyth
 
 ## Create a script using Tensorflow in JavaScript
 
-TODO: consider changing guide to step-based-guide template
+{/* TODO: consider changing guide to step-based-guide template */}
 
 In this example, we will orchestrate a JavaScript script that reads in a CSV file, and uses the Tensorflow  to train a sequential model using Dagster Pipes.
 
@@ -30,7 +30,7 @@ Create an asset that takes the `PipesSubprocessClient` resource, and set the `co
 You will need `node` in the environment you are running Dagster, along with Tensorflow installed.
 :::
 
-TODO: consider adding instructions for installing dependencies
+{/* TODO: consider adding instructions for installing dependencies */}
 
 <CodeExample filePath="guides/non-python/pipes-asset.py" language="python" title="Asset using Dagster Pipes." />
 

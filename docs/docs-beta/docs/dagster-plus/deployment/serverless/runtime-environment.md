@@ -49,7 +49,7 @@ When possible, you should add dependencies by including the corresponding Python
 When adding dependencies with the `setup.py` file isn't possible, you can build a custom base image:
 
 :::note
-Setting a custom base image is not supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
+Setting a custom base image isn't supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
 :::
 
 1. Include `dagster-cloud[serverless]` as a dependency in your Docker image by adding the following line to your `Dockerfile`:
@@ -99,6 +99,7 @@ If you want to include the data folder, modify your `setup.py` to add the `packa
 <CodeExample filePath="dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py" language="Python" title="Loading data files in setup.py" />
 
 ## Disable PEX deploys \{#disable-pex}
+
 Prior to using PEX files, Dagster+ deployed code using Docker images. This feature is still available.
 
 You can disable PEX in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.

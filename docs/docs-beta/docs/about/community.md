@@ -21,7 +21,7 @@ Dagster itself, defined as the code and intellectual property in the [Dagster pu
 
 ### Our pledge
 
-As members, contributors, and core team members, we pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
+As members, contributors, and core team members, we pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible, or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
 
 We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
 
@@ -45,9 +45,9 @@ Examples of unacceptable behavior include:
 
 ### Slack content guidelines
 
-The Dagster core team will do its best to respond to every message but can't guarantee a response to everyone. Please don't treat the community as your own personal customer support service.
+The Dagster core team will do its best to respond to every message but can't guarantee a response to everyone. Don't treat the community as your own personal customer support service.
 
-Community members are expected to follow the guidelines for discussion in the Dagster community. Please make an effort to contribute quality content so that our community can spend more time hanging out and talking about issues rather than cleaning and filtering our communication channels.
+Community members are expected to follow the guidelines for discussion in the Dagster community. Make an effort to contribute quality content so that our community can spend more time hanging out and talking about issues rather than cleaning and filtering our communication channels.
 
 - Start discussions in the [right channels](https://app.slack.com/client/TCDGQDUKF/browse-channels)
 - Craft questions with sufficient detail to reproduce issues or address any concerns
@@ -79,12 +79,12 @@ The Dagster core team will follow these Community Impact Guidelines in determini
 | Level | Community impact | Consequence |
 |---|----|----|
 | Reminder | Use of inappropriate language or other behavior deemed unprofessional or unwelcome in the community. | A private, written reminder from the Dagster core team, providing clarity around the nature of the violation and an explanation of why the behavior was inappropriate. |
-| Warning | A violation through a single incident or series of actions. | A warning with consequencyarn lints for continued behavior. No interaction with the people involved, including unsolicited interaction with those enforcing the Code of Conduct, for a specified period of time. This includes avoiding interactions in community spaces and external channels like social media. Violating these terms will lead to a permanent ban. |
+| Warning | A violation through a single incident or series of actions. | A warning with consequences for continued behavior. No interaction with the people involved, including unsolicited interaction with those enforcing the Code of Conduct, for a specified period of time. This includes avoiding interactions in community spaces and external channels like social media. Violating these terms will lead to a permanent ban. |
 | Permanent ban | Demonstrating a pattern of violation of community standards, including sustained inappropriate behavior, harassment of an individual, or aggression toward or disparagement of classes of individuals. | A permanent ban from any sort of public interaction within the community. |
 
 ### Attribution
 
-- This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.0, available [here](https://www.contributor-covenant.org/version/2/0/code_of_conduct.html).
+- This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.0, available at: [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct.html).
 - Community Impact Guidelines were inspired by [Mozilla's code of conduct enforcement ladder](https://github.com/mozilla/diversity).
 - Content Guidelines were inspired by [Discourse's FAQ for public discussion](https://meta.discourse.org/faq) and [dbt's Rules of the Road](https://docs.getdbt.com/docs/contributing/slack-rules-of-the-road).
-- For answers to common questions about this code of conduct, see the [Contributor Covenant FAQ](https://www.contributor-covenant.org/faq). Translations are available [here](https://www.contributor-covenant.org/translations).
+- For answers to common questions about this code of conduct, see the [Contributor Covenant FAQ](https://www.contributor-covenant.org/faq), or the [Contributor Covenant Translations](https://www.contributor-covenant.org/translations).

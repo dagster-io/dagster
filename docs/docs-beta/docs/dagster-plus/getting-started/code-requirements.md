@@ -26,7 +26,7 @@ To work with Dagster+, your Dagster code:
 
 - **Must run in an environment where the `dagster` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
 
-Additionally, note that:
+**Note**:
 
 - Different code locations can use different versions of Dagster
 - Dagster+ doesn't require a [`workspace.yaml` file](/todo). You can still create a `workspace.yaml` file to load your code in an open source Dagster webserver instance, but doing so won't affect how your code is loaded in Dagster+.

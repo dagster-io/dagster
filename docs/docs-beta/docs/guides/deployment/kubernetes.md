@@ -191,7 +191,7 @@ This command gets the full name of the `webserver` pod from the output of `kubec
 ### Step 6.2: Visit your Dagster deployment
 The webserver has been port-forwarded to `8080`, so you can visit the Dagster deployment by going to [http://127.0.0.1:8080](http://127.0.0.1:8080). You should see the Dagster landing page
 
-TODO SCREENSHOT
+{/* TODO screenshot */}
 
 
 ### Step 6.3: Materialize an asset

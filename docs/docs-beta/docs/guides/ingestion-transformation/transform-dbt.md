@@ -83,4 +83,4 @@ You can schedule your dbt models by using the `dagster-dbt`'s `build_schedule_fr
 
 ## Next steps
 
-[comment]: <> (TODO: Add link to dbt partitioning guide)
+{/* TODO: Add link to dbt partitioning guide */}

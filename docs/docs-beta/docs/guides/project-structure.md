@@ -8,7 +8,7 @@ title: "How to structure your Dagster project"
 Refer to the project scaffolding tutorial to learn how to create a new Dagster project.
 :::
 
-There are many ways to structure your Dagster project, it can be difficult to know where to start. In this guide, we will walk through our recommendations for how to start with organizing your code. While these are just our recommendations, feel free to deviate from them as your needs evolve.
+There are many ways to structure your Dagster project, and it can be difficult to know where to start. In this guide, we will walk you through our recommendations for how to organize your Dagster project. As your project grows, you are welcome to deviate from these recommendations.
 
 ## What you'll learn
 
@@ -51,7 +51,7 @@ There are several paradigms in which you can structure your project. Choosing on
 
 ### Option 1: Structured by technology
 
-Data engineer often have a strong understanding of the underlying technologies that are used in their data pipelines. For that reason, it's often beneficial to structure projects by the technology that are being used. This enables engineers to easily navigate the code base and locate files pertaining to the specific technology.
+Data engineers often have a strong understanding of the underlying technologies that are used in their data pipelines. Because of that, it's often beneficial to organize your project by technology. This enables engineers to easily navigate the code base and locate files pertaining to the specific technology.
 
 Within the technology modules, sub-modules can be created to further organize your code.
 

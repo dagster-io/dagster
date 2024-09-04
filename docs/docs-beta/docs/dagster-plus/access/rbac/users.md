@@ -42,13 +42,13 @@ After the user is created, you can [add the user to teams and assign user roles 
 
 After a user is created, the **Manage user permissions** window will automatically display. You can also access this window by clicking **Edit** next to a user in the users table.
 
-TODO: Add picture previously at "/images/dagster-cloud/user-token-management/manage-new-user-permissions.png"
+{/* TODO: Add picture previously at "/images/dagster-cloud/user-token-management/manage-new-user-permissions.png" */}
 
 ### Adding users to teams
 
 Using the **Teams** field, you can add users to one or more teams. This is useful for centralizing permission sets for different types of users. Refer to the [Managing teams](/dagster-plus/access/rbac/teams) guide for more info about creating and managing teams.
 
-TODO: Add picture previously at "/images/dagster-cloud/user-token-management/add-user-to-teams.png
+{/* TODO: Add picture previously at "/images/dagster-cloud/user-token-management/add-user-to-teams.png */}
 
 **Note**: When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to the [Managing user roles and permissions](/dagster-plus/access/rbac/user-roles-permissions) guide for more info.
 

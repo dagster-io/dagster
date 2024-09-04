@@ -27,7 +27,7 @@ This guide builds upon the concepts in the [asset factories](/guides/data-modeli
 
 ## Building an asset factory in Python
 
-Imagine a data analytics team that maintains a large number of tables. In order to support analytics needs, the team runs queries and constructs new tables from the results.
+Imagine a data analytics team that maintains a large number of tables. To support analytics needs, the team runs queries and constructs new tables from the results.
 
 Each table can be represented in YAML by a name, upstream asset dependencies, and a query:
 <CodeExample filePath="guides/data-modeling/asset-factories-with-deps/table_definitions.yaml" language="yaml" title="YAML Definition for ETL tables" />
