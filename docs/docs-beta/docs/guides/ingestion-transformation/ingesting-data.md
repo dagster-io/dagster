@@ -52,14 +52,7 @@ Writing code in a language like Python to ingest data into a platform is also a 
 
 For example, imagine there's a CSV file of counties on the internet and you want to load it into your Snowflake data warehouse as a table. To do this, you might directly define an asset that represents that table in your warehouse. The asset's materialization function fetches data from the internet and loads it into that table:
 
-{/* TODO update example */}
-
-```python
-@asset
-def counties(snowflake: SnowflakeResource) -> None:
-    data = fetch_some_data()
-    snowflake.conn.execute("INSERT INTO ...")
-```
+<CodeExample filePath="guides/data-ingestion/custom-data-ingestion.py" language="python" title="Custom data ingestion" />
 
 ## Next steps
 
