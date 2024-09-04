@@ -97,3 +97,31 @@ def test_on_missing_hourly_partitioned() -> None:
     state = state.with_runs(run_request("A", "2020-02-02-01:00"))
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
+
+
+def test_on_missing_without_time_limit() -> None:
+    state = (
+        AutomationConditionScenarioState(
+            two_assets_in_sequence,
+            automation_condition=AutomationCondition.on_missing().without(
+                AutomationCondition.in_latest_time_window()
+            ),
+            ensure_empty_result=False,
+        )
+        .with_asset_properties(partitions_def=hourly_partitions_def)
+        .with_current_time("2020-02-02T01:05:00")
+    )
+
+    # parent hasn't updated yet
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # historical parents updated, matters
+    state = state.with_runs(run_request("A", "2019-07-05-00:00"))
+    state = state.with_runs(run_request("A", "2019-04-05-00:00"))
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 2
+
+    # B has been requested, so don't request again
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0

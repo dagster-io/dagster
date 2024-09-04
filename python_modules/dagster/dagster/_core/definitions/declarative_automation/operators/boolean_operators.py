@@ -1,5 +1,6 @@
 from typing import List, Optional, Sequence
 
+import dagster._check as check
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -44,6 +45,18 @@ class AndAutomationCondition(AutomationCondition):
             child_results.append(child_result)
             true_slice = true_slice.compute_intersection(child_result.true_slice)
         return AutomationResult(context, true_slice, child_results=child_results)
+
+    def without(self, condition: AutomationCondition) -> "AndAutomationCondition":
+        """Returns a copy of this condition without the specified child condition."""
+        check.param_invariant(
+            condition in self.operands, "condition", "Condition not found in operands"
+        )
+        operands = [child for child in self.operands if child != condition]
+        if len(operands) < 2:
+            check.failed("Cannot have fewer than 2 operands in an AndAutomationCondition")
+        return AndAutomationCondition(
+            operands=[child for child in self.operands if child != condition]
+        )
 
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")

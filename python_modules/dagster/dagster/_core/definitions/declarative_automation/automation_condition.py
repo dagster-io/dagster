@@ -439,7 +439,7 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def eager() -> "AutomationCondition":
+    def eager() -> "AndAutomationCondition":
         """Returns an AutomationCondition which will cause missing asset partitions to be
         materialized, and will materialize asset partitions whenever their parents are updated.
 
@@ -463,7 +463,7 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AndAutomationCondition":
         """Returns an AutomationCondition which will cause asset partitions to be materialized
         on a given cron schedule, after all of their dependencies have been updated since the latest
         tick of that cron schedule.
@@ -482,7 +482,7 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def on_missing() -> "AutomationCondition":
+    def on_missing() -> "AndAutomationCondition":
         """Returns an AutomationCondition which will cause missing asset partitions to be materialized as soon as possible,
         after all of their dependencies have been materialized.
 
