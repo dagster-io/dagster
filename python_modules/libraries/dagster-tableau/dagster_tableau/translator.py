@@ -10,6 +10,7 @@ from dagster._record import record
 class TableauContentType(Enum):
     """Enum representing each object in Tableau's ontology."""
 
+    WORKBOOK = "workbook"
     VIEW = "view"
     DATA_SOURCE = "data_source"
 
@@ -30,6 +31,8 @@ class TableauWorkspaceData:
     Provided as context for the translator so that it can resolve dependencies between content.
     """
 
+    site_id: str
+    workbooks_by_id: Dict[str, TableauContentData]
     views_by_id: Dict[str, TableauContentData]
     data_sources_by_id: Dict[str, TableauContentData]
 
