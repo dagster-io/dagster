@@ -67,7 +67,7 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
     case AssetFilterSearchResultType.CodeLocation:
       return 'Code location';
     case AssetFilterSearchResultType.Kind:
-      return 'Compute kind';
+      return 'Kind';
     case AssetFilterSearchResultType.Tag:
       return 'Tag';
     case AssetFilterSearchResultType.Owner:
