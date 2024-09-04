@@ -90,7 +90,7 @@ def _location_with_mocked_versions(dagster_library_versions: Mapping[str, str]):
 
 
 def test_feature_flags(workspace_request_context):
-    workspace_snapshot = workspace_request_context.get_workspace_snapshot()
+    workspace_snapshot = workspace_request_context.get_code_location_entries()
 
     error_loc = workspace_snapshot["error_loc"]
     assert get_feature_flags_for_location(error_loc) == {

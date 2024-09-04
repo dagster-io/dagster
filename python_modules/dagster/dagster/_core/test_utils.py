@@ -529,7 +529,7 @@ def load_external_repo(
     workspace_context: WorkspaceProcessContext, repo_name: str
 ) -> ExternalRepository:
     code_location_entry = next(
-        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+        iter(workspace_context.create_request_context().get_code_location_entries().values())
     )
     assert code_location_entry.code_location, code_location_entry.load_error
     return code_location_entry.code_location.get_repository(repo_name)

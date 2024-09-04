@@ -68,7 +68,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
                     next(
                         iter(
                             workspace_context.create_request_context()
-                            .get_workspace_snapshot()
+                            .get_code_location_entries()
                             .values()
                         )
                     ).code_location
@@ -113,7 +113,7 @@ def instance_with_multiple_code_locations(
             location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
             for code_location_entry in (
-                workspace_context.create_request_context().get_workspace_snapshot().values()
+                workspace_context.create_request_context().get_code_location_entries().values()
             ):
                 code_location: CodeLocation = check.not_none(code_location_entry.code_location)
                 location_infos[code_location.name] = CodeLocationInfoForSensorTest(

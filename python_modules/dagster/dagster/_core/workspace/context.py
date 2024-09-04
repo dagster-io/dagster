@@ -95,7 +95,7 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
         pass
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         pass
 
     @abstractmethod
@@ -176,17 +176,19 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
     def code_locations(self) -> Sequence[CodeLocation]:
         return [
             entry.code_location
-            for entry in self.get_workspace_snapshot().values()
+            for entry in self.get_code_location_entries().values()
             if entry.code_location
         ]
 
     @property
     def code_location_names(self) -> Sequence[str]:
-        return list(self.get_workspace_snapshot())
+        return list(self.get_code_location_entries())
 
     def code_location_errors(self) -> Sequence[SerializableErrorInfo]:
         return [
-            entry.load_error for entry in self.get_workspace_snapshot().values() if entry.load_error
+            entry.load_error
+            for entry in self.get_code_location_entries().values()
+            if entry.load_error
         ]
 
     def has_code_location_error(self, name: str) -> bool:
@@ -373,7 +375,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         return self._workspace_snapshot
 
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:

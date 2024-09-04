@@ -472,7 +472,7 @@ class AssetDaemon(DagsterDaemon):
         if use_auto_materialize_sensors:
             workspace_snapshot = {
                 location_entry.origin.location_name: location_entry
-                for location_entry in workspace.get_workspace_snapshot().values()
+                for location_entry in workspace.get_code_location_entries().values()
             }
 
             eligible_sensors_and_repos = []

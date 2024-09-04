@@ -364,7 +364,7 @@ def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessCo
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
-            .get_workspace_snapshot()
+            .get_code_location_entries()
             .values()
         )
     ).code_location

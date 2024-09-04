@@ -751,7 +751,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         instance,
     ) as workspace_context:
         code_location = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location
         external_repo = code_location.get_repository("the_status_in_code_repo")
@@ -929,7 +929,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
         instance,
     ) as workspace_context:
         code_location = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location
         external_repo = code_location.get_repository("the_status_in_code_repo")
@@ -1005,7 +1005,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
                 next(
                     iter(
                         full_workspace_context.create_request_context()
-                        .get_workspace_snapshot()
+                        .get_code_location_entries()
                         .values()
                     )
                 ).code_location,
@@ -1194,12 +1194,12 @@ def test_schedule_mutation(
     executor: ThreadPoolExecutor,
 ):
     repo_one = next(
-        iter(workspace_one.create_request_context().get_workspace_snapshot().values())
+        iter(workspace_one.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore
         "the_repo"
     )
     repo_two = next(
-        iter(workspace_two.create_request_context().get_workspace_snapshot().values())
+        iter(workspace_two.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore
         "the_repo"
     )
@@ -1531,7 +1531,7 @@ class TestSchedulerRun:
         executor: ThreadPoolExecutor,
     ):
         code_location = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location is not None
         external_repo = code_location.get_repository("the_repo")
