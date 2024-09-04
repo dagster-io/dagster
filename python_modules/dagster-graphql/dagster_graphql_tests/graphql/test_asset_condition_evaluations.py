@@ -4,6 +4,7 @@ from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
 from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
@@ -11,7 +12,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
