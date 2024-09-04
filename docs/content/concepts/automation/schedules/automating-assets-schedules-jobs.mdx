@@ -41,7 +41,6 @@ Let's assume we already have a few assets in our project in a group named `ecomm
 def orders_asset():
     return 1
 
-
 @asset(group_name="ecommerce_assets")
 def users_asset():
     return 2
@@ -115,24 +114,25 @@ from dagster import (
 def orders_asset():
     return 1
 
-
 @asset(group_name="ecommerce_assets")
 def users_asset():
     return 2
 
+ecommerce_job = define_asset_job(
+    "ecommerce_job", AssetSelection.groups("ecommerce_assets")
+)
 
+ecommerce_schedule = ScheduleDefinition(
+    job=ecommerce_job,
+    cron_schedule="15 5 * * 1-5",
+    default_status=DefaultScheduleStatus.RUNNING,
+)
 
-# end_job
-
-
-# start_schedule
-
-
-# start_definitions
 defs = Definitions(
     assets=[orders_asset, users_asset],
     jobs=[ecommerce_job],
     schedules=[ecommerce_schedule],
+)
 ```
 
 ---
