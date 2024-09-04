@@ -879,7 +879,7 @@ def test_group_name_requirements():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "Empty asset group name was provided, which is not permitted."
+            "Empty asset group name was provided, which is not permitted. "
             "Set group_name=None to use the default group_name or set non-empty string"
         ),
     ):
