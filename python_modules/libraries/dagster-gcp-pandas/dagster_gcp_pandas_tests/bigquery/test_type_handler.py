@@ -80,7 +80,7 @@ def test_io_manager_asset_metadata() -> None:
         mat = mats[0]
 
         assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
-            f"{SCHEMA}.{table_name}"
+            f"{os.getenv('GCP_PROJECT_ID')}.{SCHEMA}.{table_name}"
         )
 
 
