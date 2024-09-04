@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, EntitySubset
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,

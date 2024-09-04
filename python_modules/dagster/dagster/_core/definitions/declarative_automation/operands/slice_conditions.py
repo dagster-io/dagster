@@ -2,7 +2,7 @@ import datetime
 from abc import abstractmethod
 from typing import Optional
 
-from dagster._core.asset_graph_view.asset_graph_view import EntitySubset
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
