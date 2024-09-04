@@ -19,16 +19,15 @@ To complete the steps in this guide, you'll need:
 
 </details>
 
-
 ## Adding users
 
 Before you start, note that:
 
 - **If SCIM provisioning is enabled,** you'll need to add new users in your IdP. Adding users will be disabled in Dagster+.
 - **If using Google for SSO**, users must be added in Dagster+ before they can log in.
-- **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the [SSO setup guides](/dagster-plus/access/authentication#single-sign-on) for setup instructions for each of our supported IdP solutions.
+- **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the [SSO setup guides](/dagster-plus/access/authentication) for setup instructions for each of our supported IdP solutions.
 
-By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-plus/deployment/settings#sso-default-role).
+By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/todo).
 
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
@@ -43,24 +42,24 @@ After the user is created, you can [add the user to teams and assign user roles 
 
 After a user is created, the **Manage user permissions** window will automatically display. You can also access this window by clicking **Edit** next to a user in the users table.
 
-TODO: Add picture previously at "/images/dagster-cloud/user-token-management/manage-new-user-permissions.png"
+{/* TODO: Add picture previously at "/images/dagster-cloud/user-token-management/manage-new-user-permissions.png" */}
 
 ### Adding users to teams
 
-Using the **Teams** field, you can add users to one or more teams. This is useful for centralizing permission sets for different types of users. Refer to the [Managing teams](/dagster-plus/account/managing-users/managing-teams) guide for more info about creating and managing teams.
+Using the **Teams** field, you can add users to one or more teams. This is useful for centralizing permission sets for different types of users. Refer to the [Managing teams](/dagster-plus/access/rbac/teams) guide for more info about creating and managing teams.
 
-TODO: Add picture previously at "/images/dagster-cloud/user-token-management/add-user-to-teams.png
+{/* TODO: Add picture previously at "/images/dagster-cloud/user-token-management/add-user-to-teams.png */}
 
-**Note**: When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to the [Managing user roles and permissions](/dagster-plus/access/rbac/user-roles-permissions#applying-role-overrides) guide for more info.
+**Note**: When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to the [Managing user roles and permissions](/dagster-plus/access/rbac/user-roles-permissions) guide for more info.
 
 ### Assigning user roles
 
 In the **Roles** section, you can assign the select the appropriate [user role](/dagster-plus/access/rbac/user-roles-permissions) for each deployment.
 
 1. Next to a deployment, click **Edit user role**.
-2. Select the user role for the deployment. This [user role](/dagster-plus/access/rbac/user-roles-permissionss) will be used as the default for all code locations in the deployment.
+2. Select the user role for the deployment. This [user role](/dagster-plus/access/rbac/user-roles-permissions) will be used as the default for all code locations in the deployment.
 3. Click **Save**.
-4. **Pro only**: To set permissions for individual [code locations](/dagster-plus/access/rbac/user-roles-permissions#code-locations) in a deployment:
+4. **Pro only**: To set permissions for individual [code locations](/dagster-plus/access/rbac/user-roles-permissions) in a deployment:
     1. Click the toggle to the left of the deployment to open a list of code locations.
     2. Next to a code location, click **Edit user role**.
     3. Select the user role for the code location.

@@ -1,4 +1,5 @@
 import {Box, Icon, Tag} from '@dagster-io/ui-components';
+import {useLocation} from 'react-router-dom';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
@@ -14,6 +15,7 @@ interface Props {
 
 export const CodeLocationDefinitionsNav = (props: Props) => {
   const {repoAddress, repository} = props;
+  const {pathname} = useLocation();
   const jobCount = repository.pipelines.filter(({name}) => !isHiddenAssetGroupJob(name)).length;
   const scheduleCount = repository.schedules.length;
   const sensorCount = repository.sensors.length;
@@ -79,7 +81,13 @@ export const CodeLocationDefinitionsNav = (props: Props) => {
     <>
       <Box padding={{bottom: 12}}>
         {items.map((item) => {
-          return <SideNavItem key={item.key} item={item} active={false} />;
+          return (
+            <SideNavItem
+              key={item.key}
+              item={item}
+              active={item.type === 'link' && pathname === item.path}
+            />
+          );
         })}
       </Box>
     </>

@@ -6,13 +6,13 @@ sidebar_label: 'Asset selection syntax'
 
 # Asset selection syntax
 
-This reference contains information about the syntax for selection assets, including a variety of examples for selecting assets and their downstream and upstream dependencies.
+This reference contains information about the syntax for asset selections, including a variety of examples for selecting assets and their downstream and upstream dependencies.
 
 Asset selection may be used to:
 
 - Define a job that targets a selection of assets
 - Select a set of assets to view in the Dagster UI
-- Select a set of assets for an ad-hoc run
+- Select a set of assets for an adhoc run
 
 ## Syntax usage
 

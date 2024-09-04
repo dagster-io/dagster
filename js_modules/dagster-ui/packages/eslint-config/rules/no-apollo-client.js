@@ -1,21 +1,12 @@
-/* eslint-disable */
+const {findRelativeImportPath} = require('../util/findRelativeImportPath');
+const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+const createRule = ESLintUtils.RuleCreator((name) => name);
 
-const fs = require('fs');
-const path = require('path');
-
-module.exports = {
-  meta: {
-    type: 'suggestion',
-    fixable: 'code',
-    messages: {
-      useWrappedApolloClient:
-        'Please use our wrapped apollo-client module which includes performance instrumentation.',
-    },
-  },
+module.exports = createRule({
   create(context) {
     return {
-      ImportDeclaration(node) {
-        if (context.getFilename().endsWith('/apollo-client')) {
+      [AST_NODE_TYPES.ImportDeclaration](node) {
+        if (context.getFilename().endsWith('/apollo-client/index.tsx')) {
           return;
         }
         if (node.source.value === '@apollo/client') {
@@ -26,35 +17,29 @@ module.exports = {
               const currentFilePath = context.getFilename();
               const relativeImportPath = findRelativeImportPath(
                 currentFilePath,
-                'src/apollo-client',
-                'index.tsx',
+                'src/apollo-client/index.tsx',
               );
 
-              return fixer.replaceText(node.source, `'${relativeImportPath}'`);
+              // If we can't find the file then it means we're not in the ui-core package (we might be in cloud) so
+              // grab the import from @dagster-io/ui-core.
+              return fixer.replaceText(
+                node.source,
+                `'${relativeImportPath ?? '@dagster-io/ui-core/apollo-client'}'`,
+              );
             },
           });
         }
       },
     };
   },
-};
-
-function findRelativeImportPath(currentFilePath, targetDirName, targetFileName) {
-  let currentDir = path.dirname(currentFilePath);
-
-  while (currentDir !== path.parse(currentDir).root) {
-    const srcPath = path.join(currentDir, targetDirName);
-    const targetFilePath = path.join(srcPath, targetFileName);
-
-    if (fs.existsSync(targetFilePath)) {
-      return path.relative(path.dirname(currentFilePath), srcPath);
-    }
-
-    currentDir = path.dirname(currentDir);
-  }
-
-  // If we can't find the file then it means we're not in the ui-core package (we might be in cloud) so
-  // grab the import from @dagster-io/ui-core.
-
-  return '@dagster-io/ui-core/apollo-client';
-}
+  name: 'no-apollo-client',
+  meta: {
+    type: 'suggestion',
+    fixable: 'code',
+    messages: {
+      useWrappedApolloClient:
+        'Please use our wrapped apollo-client module which includes performance instrumentation.',
+    },
+  },
+  defaultOptions: [],
+});

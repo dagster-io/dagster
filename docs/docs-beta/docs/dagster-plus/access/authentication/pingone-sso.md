@@ -49,7 +49,7 @@ To complete the steps in this guide, you'll need:
     2. When finished, click **Save and Continue.**
 2.  In the **Configure SAML** page:
     1.  Fill in the following:
-        - **ACS URLS** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
+        - **ACS URLs** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
            ```
            https://<organization_name>.dagster.cloud/auth/saml/consume

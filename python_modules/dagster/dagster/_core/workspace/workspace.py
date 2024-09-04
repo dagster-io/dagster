@@ -3,6 +3,7 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Tuple
 
+from dagster._record import record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -40,29 +41,17 @@ class CodeLocationStatusEntry(NamedTuple):
     update_timestamp: float
 
 
-class IWorkspace(ABC):
-    """Manages a set of CodeLocations."""
-
-    @abstractmethod
-    def get_code_location(self, location_name: str) -> "CodeLocation":
-        """Return the CodeLocation for the given location name, or raise an error if there is an error loading it."""
-
-    @abstractmethod
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
-        """Return an entry for each location in the workspace."""
-
-    @abstractmethod
-    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
-        pass
+@record
+class WorkspaceSnapshot:
+    code_location_entries: Mapping[str, CodeLocationEntry]
 
     @cached_property
     def asset_graph(self) -> "RemoteAssetGraph":
-        """Returns a workspace scoped RemoteAssetGraph."""
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
         code_locations = (
             location_entry.code_location
-            for location_entry in self.get_workspace_snapshot().values()
+            for location_entry in self.code_location_entries.values()
             if location_entry.code_location
         )
         repos = (
@@ -85,6 +74,30 @@ class IWorkspace(ABC):
             repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
             external_asset_checks=asset_checks,
         )
+
+    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
+        return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})
+
+
+class IWorkspace(ABC):
+    """Manages a set of CodeLocations."""
+
+    @abstractmethod
+    def get_code_location(self, location_name: str) -> "CodeLocation":
+        """Return the CodeLocation for the given location name, or raise an error if there is an error loading it."""
+
+    @abstractmethod
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
+        """Return an entry for each location in the workspace."""
+
+    @abstractmethod
+    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
+        pass
+
+    @property
+    @abstractmethod
+    def asset_graph(self) -> "RemoteAssetGraph":
+        pass
 
 
 def location_status_from_location_entry(

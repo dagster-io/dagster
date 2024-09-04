@@ -1,7 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta, StoryFn} from '@storybook/react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {MemoryRouter} from 'react-router-dom';
 
+import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,

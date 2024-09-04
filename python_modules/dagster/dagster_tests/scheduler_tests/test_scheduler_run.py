@@ -751,7 +751,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         instance,
     ) as workspace_context:
         code_location = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location
         external_repo = code_location.get_repository("the_status_in_code_repo")
@@ -896,11 +896,18 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         # Now try with an error workspace - the job state should not be deleted
         # since its associated with an errored out location
         with freeze_time(freeze_datetime):
-            workspace_context._location_entry_dict[  # noqa: SLF001
+            new_location_entry = workspace_context._workspace_snapshot.code_location_entries[  # noqa
                 "test_location"
-            ] = workspace_context._location_entry_dict["test_location"]._replace(  # noqa: SLF001
+            ]._replace(
                 code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
+            )
+
+            workspace_context._workspace_snapshot = (  # noqa
+                workspace_context._workspace_snapshot.with_code_location(  # noqa
+                    "test_location",
+                    new_location_entry,
+                )
             )
 
             evaluate_schedules(workspace_context, executor, get_current_datetime())
@@ -929,7 +936,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
         instance,
     ) as workspace_context:
         code_location = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location
         external_repo = code_location.get_repository("the_status_in_code_repo")
@@ -1005,7 +1012,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
                 next(
                     iter(
                         full_workspace_context.create_request_context()
-                        .get_workspace_snapshot()
+                        .get_code_location_entries()
                         .values()
                     )
                 ).code_location,
@@ -1194,12 +1201,12 @@ def test_schedule_mutation(
     executor: ThreadPoolExecutor,
 ):
     repo_one = next(
-        iter(workspace_one.create_request_context().get_workspace_snapshot().values())
+        iter(workspace_one.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore
         "the_repo"
     )
     repo_two = next(
-        iter(workspace_two.create_request_context().get_workspace_snapshot().values())
+        iter(workspace_two.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore
         "the_repo"
     )
@@ -1531,7 +1538,7 @@ class TestSchedulerRun:
         executor: ThreadPoolExecutor,
     ):
         code_location = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location
         assert code_location is not None
         external_repo = code_location.get_repository("the_repo")

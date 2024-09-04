@@ -29,7 +29,9 @@ from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
-DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = 2
+DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = int(
+    os.getenv("DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS", "25")
+)
 DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE: Final[int] = 4
 
 
@@ -410,24 +412,25 @@ class DbtCliInvocation:
 
             with self.process.stdout:
                 for raw_line in self.process.stdout or []:
-                    raw_event = raw_line.decode().strip()
+                    raw_event_str = raw_line.decode().strip()
 
                     try:
-                        raw_event = orjson.loads(raw_event)
+                        raw_event = orjson.loads(raw_event_str)
 
                         # Parse the error message from the event, if it exists.
                         is_error_message = raw_event["info"]["level"] == "error"
                         if is_error_message:
                             self._error_messages.append(raw_event["info"]["msg"])
-                    except:
-                        pass
 
-                    yield raw_event
+                        yield raw_event
+                    except:
+                        yield raw_event_str
+
         except DagsterExecutionInterruptedError:
             logger.info(f"Forwarding interrupt signal to dbt command: `{self.dbt_command}`.")
-
             self.process.send_signal(signal.SIGINT)
             self.process.wait(timeout=self.termination_timeout_seconds)
+            logger.info(f"dbt process terminated with exit code `{self.process.returncode}`.")
 
             raise
 

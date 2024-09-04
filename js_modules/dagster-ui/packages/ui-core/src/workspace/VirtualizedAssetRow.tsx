@@ -21,12 +21,8 @@ import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {
-  AssetComputeKindTag,
-  AssetStorageKindTag,
-  isCanonicalStorageKindTag,
-} from '../graph/KindTags';
-import {AssetKeyInput, DefinitionTag} from '../graphql/types';
+import {AssetComputeKindTag} from '../graph/KindTags';
+import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
@@ -51,7 +47,6 @@ interface AssetRowProps {
   start: number;
   onRefresh: () => void;
   computeKindFilter?: StaticSetFilter<string>;
-  storageKindFilter?: StaticSetFilter<DefinitionTag>;
 }
 
 export const VirtualizedAssetRow = (props: AssetRowProps) => {
@@ -69,7 +64,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     showRepoColumn,
     view = 'flat',
     computeKindFilter,
-    storageKindFilter,
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
@@ -88,8 +82,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
       onToggleChecked({checked, shiftKey});
     }
   };
-
-  const storageKindTag = definition?.tags.find(isCanonicalStorageKindTag);
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
@@ -117,15 +109,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 definition={definition}
                 style={{position: 'relative'}}
                 currentPageFilter={computeKindFilter}
-              />
-            )}
-            {storageKindTag && (
-              <AssetStorageKindTag
-                reduceColor
-                reduceText
-                storageKind={storageKindTag.value}
-                style={{position: 'relative'}}
-                currentPageFilter={storageKindFilter}
               />
             )}
           </Box>

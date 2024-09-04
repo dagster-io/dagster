@@ -110,7 +110,6 @@ def _create_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
-    asset_graph: RemoteAssetGraph,
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -133,6 +132,7 @@ def _create_asset_run(
             # create a new request context for each run in case the code location server
             # is swapped out in the middle of the submission process
             workspace = workspace_process_context.create_request_context()
+            asset_graph = workspace.asset_graph
             execution_data = _get_job_execution_data_from_run_request(
                 asset_graph,
                 run_request,
@@ -225,7 +225,6 @@ def submit_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
-    asset_graph: RemoteAssetGraph,
     run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -263,7 +262,6 @@ def submit_asset_run(
             run_request_index,
             instance,
             run_request_execution_data_cache,
-            asset_graph,
             workspace_process_context,
             debug_crash_flags,
             logger,

@@ -40,7 +40,7 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
         forward_termination (bool): Whether to send a SIGINT signal to the subprocess
             if the orchestration process is interrupted or canceled. Defaults to True.
         termination_timeout_seconds (float): How long to wait after forwarding termination
-            for the subprocess to exit. Defaults to 2.
+            for the subprocess to exit. Defaults to 20.
     """
 
     def __init__(
@@ -50,7 +50,7 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
         forward_termination: bool = True,
-        termination_timeout_seconds: float = 2,
+        termination_timeout_seconds: float = 20,
     ):
         self.env = check.opt_mapping_param(env, "env", key_type=str, value_type=str)
         self.cwd = check.opt_str_param(cwd, "cwd")

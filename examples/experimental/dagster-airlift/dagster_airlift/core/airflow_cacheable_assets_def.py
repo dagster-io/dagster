@@ -11,8 +11,10 @@ from dagster import (
     JsonMetadataValue,
     MarkdownMetadataValue,
     _check as check,
+    external_asset_from_spec,
     multi_asset,
 )
+from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -31,6 +33,7 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 
+from dagster_airlift.core.utils import convert_to_valid_dagster_name
 from dagster_airlift.migration_state import AirflowMigrationState
 
 from .airflow_instance import AirflowInstance, DagInfo, TaskInfo
@@ -194,7 +197,7 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
                     specs=[dag_spec.to_asset_spec({})],
-                    name=key.to_user_string().replace("/", "__"),
+                    name=key.to_python_identifier(),
                     tags={DAG_ID_TAG: dag_id},
                 )
             )
@@ -342,7 +345,12 @@ def construct_assets_with_task_migration_info_applied(
         )
         dag_id = get_dag_id_from_asset(asset)
         if dag_id is None:
-            new_assets_defs.append(asset)
+            # The cacheable assets abstraction can only handle returning a list of assetsdefinitions, not specs. So if specs are passed in,
+            # we need to coerce them.
+            if isinstance(asset, AssetSpec):
+                new_assets_defs.append(external_asset_from_spec(asset))
+            else:
+                new_assets_defs.append(asset)
             continue
         overall_migration_status = None
         overall_task_id = None
@@ -413,10 +421,13 @@ def construct_assets_with_task_migration_info_applied(
                 )
             )
         else:
+            unique_identifier = unique_id_from_asset_and_check_keys(
+                [spec.key for spec in new_specs]
+            )
             new_assets_defs.append(
                 build_airflow_asset_from_specs(
                     specs=new_specs,
-                    name=f"{overall_dag_id}__{overall_task_id}",
+                    name=convert_to_valid_dagster_name(f"airflow_task_mapped_{unique_identifier}"),
                     tags=asset.node_def.tags if isinstance(asset, AssetsDefinition) else {},
                 )
             )

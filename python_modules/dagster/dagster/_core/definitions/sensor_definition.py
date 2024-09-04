@@ -30,6 +30,7 @@ from dagster._annotations import deprecated, deprecated_param, experimental_para
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import (
+    AssetCheckKeysSelection,
     AssetSelection,
     CoercibleToAssetSelection,
     KeysAssetSelection,
@@ -73,7 +74,7 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._time import get_current_datetime
 from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import normalize_renamed_param
+from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -1394,7 +1395,7 @@ def _run_requests_with_base_asset_jobs(
     asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
     result = []
     for run_request in run_requests:
-        if run_request.asset_selection:
+        if run_request.asset_selection is not None:
             asset_keys = run_request.asset_selection
 
             unexpected_asset_keys = (
@@ -1408,11 +1409,30 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
+        if run_request.asset_check_keys is not None:
+            asset_check_keys = run_request.asset_check_keys
+
+            unexpected_asset_check_keys = (
+                AssetCheckKeysSelection(selected_asset_check_keys=asset_check_keys)
+                - outer_asset_selection
+            ).resolve_checks(asset_graph)
+            if unexpected_asset_check_keys:
+                deprecation_warning(
+                    subject="Including asset check keys in a sensor RunRequest that are not a subset of the sensor asset_selection",
+                    breaking_version="1.9.0",
+                    additional_warn_text=f"Unexpected asset check keys: {unexpected_asset_check_keys}.",
+                )
+        else:
+            asset_check_keys = KeysAssetSelection(selected_keys=list(asset_keys)).resolve_checks(
+                asset_graph
+            )
+
         base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
                 job_name=base_job.name,  # type: ignore  # (possible none)
                 asset_selection=list(asset_keys),
+                asset_check_keys=list(asset_check_keys),
             )
         )
 

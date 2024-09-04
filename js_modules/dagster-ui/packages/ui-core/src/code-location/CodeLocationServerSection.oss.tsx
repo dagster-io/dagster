@@ -1,1 +1,1 @@
-export const CodeLocationServerSection = () => <></>;
+export const CodeLocationServerSection = ({locationName: _}: {locationName: string}) => null;

@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-imports, dagster-rules/no-apollo-client */
 import {
   LazyQueryHookOptions,
   OperationVariables,

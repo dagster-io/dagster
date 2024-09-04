@@ -18,22 +18,15 @@ export function useAssetGraphExplorerFilters({
   loading,
   clearExplorerPath,
 }: Props) {
-  const {
-    filterButton,
-    computeKindFilter,
-    storageKindFilter,
-    groupsFilter,
-    activeFiltersJsx,
-    filterFn,
-  } = useAssetCatalogFiltering({
-    assets: nodes,
-    includeRepos: isGlobalGraph,
-    loading,
-  });
+  const {filterButton, computeKindFilter, groupsFilter, activeFiltersJsx, filterFn} =
+    useAssetCatalogFiltering({
+      assets: nodes,
+      includeRepos: isGlobalGraph,
+      loading,
+    });
 
   return {
     computeKindTagsFilter: computeKindFilter,
-    storageKindTagsFilter: storageKindFilter,
     groupsFilter,
     button: filterButton,
     filterFn,

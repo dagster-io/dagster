@@ -7,7 +7,7 @@ sidebar_label: "Kubernetes"
 
 # Running Dagster+ agents on Kubernetes
 
-This page provides instructions for running the [Dagster+ agent](dagster-plus/getting-started/whats-dagster-plus#Agents) on a [Kubernetes](https://kubernetes.io) cluster.
+This page provides instructions for running the [Dagster+ agent](/todo) on a [Kubernetes](https://kubernetes.io) cluster.
 
 ## Installation
 
@@ -20,7 +20,7 @@ You'll also need access to a container registry to which you can push images and
 
 We recommend installing the Dagster+ agent using [Helm](https://helm.sh).
 
-## Step 1: Create a Kubernetes namespace
+## Step 1: create a Kubernetes namespace
 
 ```shell
 kubectl create namespace dagster-cloud
@@ -28,7 +28,7 @@ kubectl create namespace dagster-cloud
 
 ## Step 2: Create an agent token secret
 
-[Generate an agent token](dagster-plus/deployment/tokens) and set it as a Kubernetes secret:
+[Generate an agent token](/dagster-plus/deployment/hybrid/tokens) and set it as a Kubernetes secret:
 
 ```shell
 kubectl --namespace dagster-cloud create secret generic dagster-cloud-agent-token --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=<token>
@@ -70,7 +70,7 @@ You can customize your Dagster+ agent using [Helm values](https://artifacthub.io
 
 ### Configuring your agents to serve branch deployments
 
-[Branch deployments](dagster-plus/deployment/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
+[Branch deployments](/dagster-plus/deployment/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
 ```yaml
 # values.yaml
@@ -113,11 +113,11 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
-## Troubleshooting Tips
+## Troubleshooting tips
 
 You can see basic health information about your agent in the Dagster+ UI:
 
-TODO: Screenshot
+{/* TODO: Screenshot */}
 
 ### View logs
 
