@@ -21,39 +21,39 @@ def test_newly_true_condition() -> None:
 
     # nothing true
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # becomes true
     true_set.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
 
     # now on the next tick, this asset is no longer newly true
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # see above
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # see above
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # now condition becomes false, result still false
     true_set.remove(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # see above
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # becomes true again
     true_set.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
 
     # no longer newly true
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0

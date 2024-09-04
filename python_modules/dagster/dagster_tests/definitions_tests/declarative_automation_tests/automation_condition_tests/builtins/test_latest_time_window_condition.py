@@ -21,7 +21,7 @@ def test_in_latest_time_window_unpartitioned() -> None:
     )
 
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
 
 
 def test_in_latest_time_window_unpartitioned_lookback() -> None:
@@ -33,7 +33,7 @@ def test_in_latest_time_window_unpartitioned_lookback() -> None:
     )
 
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
 
 
 def test_in_latest_time_window_static_partitioned() -> None:
@@ -42,7 +42,7 @@ def test_in_latest_time_window_static_partitioned() -> None:
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 2
+    assert result.true_subset.size == 2
 
 
 def test_in_latest_time_window_static_partitioned_lookback() -> None:
@@ -54,7 +54,7 @@ def test_in_latest_time_window_static_partitioned_lookback() -> None:
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 2
+    assert result.true_subset.size == 2
 
 
 def test_in_latest_time_window_time_partitioned() -> None:
@@ -65,19 +65,19 @@ def test_in_latest_time_window_time_partitioned() -> None:
     # no partitions exist yet
     state = state.with_current_time(time_partitions_start_datetime)
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     state = state.with_current_time("2020-02-02T01:00:00")
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
-    assert result.true_slice.expensively_compute_asset_partitions() == {
+    assert result.true_subset.size == 1
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-01")
     }
 
     state = state.with_current_time_advanced(days=5)
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
-    assert result.true_slice.expensively_compute_asset_partitions() == {
+    assert result.true_subset.size == 1
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-06")
     }
 
@@ -93,12 +93,12 @@ def test_in_latest_time_window_time_partitioned_lookback() -> None:
     # no partitions exist yet
     state = state.with_current_time(time_partitions_start_datetime)
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     state = state.with_current_time("2020-02-07T01:00:00")
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 3
-    assert result.true_slice.expensively_compute_asset_partitions() == {
+    assert result.true_subset.size == 3
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-06"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-05"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-04"),
@@ -106,8 +106,8 @@ def test_in_latest_time_window_time_partitioned_lookback() -> None:
 
     state = state.with_current_time_advanced(days=5)
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 3
-    assert result.true_slice.expensively_compute_asset_partitions() == {
+    assert result.true_subset.size == 3
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-11"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-10"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-09"),

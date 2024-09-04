@@ -88,7 +88,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
         if (
             previous_cursor is None
             or previous_cursor.result_value_hash != result.value_hash
-            or not result.true_slice.is_empty
+            or not result.true_subset.is_empty
         ):
             updated_evaluations.append(result.serializable_evaluation)
 

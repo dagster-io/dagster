@@ -11,7 +11,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.entity_subset import EntitySubset
+from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
@@ -431,11 +431,11 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 description=description,
                 unique_id=str(random.randint(0, 100000000)),
             ),
-            true_subset=EntitySubset(
+            true_subset=SerializableEntitySubset(
                 key=asset_key,
                 value=partitions_def.subset_with_partition_keys(true_partition_keys),
             ),
-            candidate_subset=EntitySubset(
+            candidate_subset=SerializableEntitySubset(
                 key=asset_key,
                 value=partitions_def.subset_with_partition_keys(candidate_partition_keys),
             )

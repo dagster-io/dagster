@@ -18,7 +18,7 @@ from typing import (
     TypeVar,
 )
 
-from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
+from dagster._core.asset_graph_view.asset_graph_view import EntitySubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
@@ -29,7 +29,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.entity_subset import EntitySubset
+from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -151,7 +151,7 @@ class LegacyRuleEvaluationContext:
         self,
         child_condition: "AutomationCondition",
         child_unique_id: str,
-        candidate_slice: EntitySlice,
+        candidate_subset: EntitySubset,
     ) -> "LegacyRuleEvaluationContext":
         return dataclasses.replace(
             self,
@@ -160,7 +160,7 @@ class LegacyRuleEvaluationContext:
             if self.cursor
             else None,
             candidate_subset=ValidAssetSubset(
-                key=candidate_slice.key, value=candidate_slice.get_internal_value()
+                key=candidate_subset.key, value=candidate_subset.get_internal_value()
             ),
             root_ref=self.root_context,
             start_timestamp=get_current_timestamp(),
@@ -193,13 +193,13 @@ class LegacyRuleEvaluationContext:
         return self.cursor.effective_timestamp if self.cursor else None
 
     @property
-    def previous_true_subset(self) -> EntitySubset:
+    def previous_true_subset(self) -> SerializableEntitySubset:
         if self.node_cursor is None:
             return self.empty_subset()
         return self.node_cursor.true_subset
 
     @property
-    def previous_candidate_subset(self) -> EntitySubset:
+    def previous_candidate_subset(self) -> SerializableEntitySubset:
         if self.node_cursor is None:
             return self.empty_subset()
         candidate_subset = self.node_cursor.candidate_subset
@@ -252,7 +252,7 @@ class LegacyRuleEvaluationContext:
 
     @property
     @root_property
-    def _previous_tick_discarded_subset(self) -> Optional[EntitySubset[AssetKey]]:
+    def _previous_tick_discarded_subset(self) -> Optional[SerializableEntitySubset[AssetKey]]:
         """Fetches the unique id corresponding to the DiscardOnMaxMaterializationsExceededRule, if
         that rule is part of the broader condition.
         """
@@ -294,7 +294,7 @@ class LegacyRuleEvaluationContext:
 
     @property
     @root_property
-    def previous_tick_requested_subset(self) -> EntitySubset:
+    def previous_tick_requested_subset(self) -> SerializableEntitySubset:
         """The set of asset partitions that were requested (or discarded) on the previous tick."""
         if self.cursor is None:
             return self.empty_subset()
@@ -416,7 +416,7 @@ class LegacyRuleEvaluationContext:
         asset_partitions_by_frozen_metadata: Mapping[
             FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
         ],
-        ignore_subset: EntitySubset,
+        ignore_subset: SerializableEntitySubset,
     ) -> Tuple[ValidAssetSubset, Sequence[AssetSubsetWithMetadata]]:
         """Combines information calculated on this tick with information from the previous tick,
         returning a tuple of the combined true subset and the combined subsets with metadata.
