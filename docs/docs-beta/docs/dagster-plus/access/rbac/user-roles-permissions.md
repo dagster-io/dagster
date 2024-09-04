@@ -156,7 +156,7 @@ Agent tokens are accessed in the UI by navigating to **user menu (your icon) > O
 
 |                                                        | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 |--------------------------------------------------------|------|----------|--------|----|---------------------------|
-| View [agent tokens](/dagster-plus/deployement/tokens)  | ❌     | ❌        | ❌      | ❌   | ✅                         |
+| View [agent tokens](/dagster-plus/deployment/hybrid/tokens)  | ❌     | ❌        | ❌      | ❌   | ✅                         |
 | Create agent tokens                                    | ❌    | ❌        | ❌      | ❌   | ✅                         |
 | Edit agent tokens                                      | ❌    | ❌        | ❌      | ❌   | ✅                         |
 | Revoke agent tokens                                    | ❌     | ❌        | ❌      |❌     | ✅                          |
@@ -169,7 +169,7 @@ User tokens are accessed in the UI by navigating to **user menu (your icon) > Or
 
 |                                                                     | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 |---------------------------------------------------------------------|------|---------|-------|----|---------------------------|
-| View and create own [user tokens](/dagster-plus/deployement/tokens) | ✅     | ✅        | ✅      | ✅   | ✅                         |
+| View and create own [user tokens](/todo) | ✅     | ✅        | ✅      | ✅   | ✅                         |
 | List all user tokens                                                | ❌    | ❌       | ❌     | ❌  | ✅                         |
 | Revoke all user tokens                                              | ❌    | ❌       | ❌     | ❌  | ✅                         |
 
@@ -205,10 +205,10 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 |                                                                           | Viewer | Launcher | Editor | Admin | Organization <br/> admin     |
 |---------------------------------------------------------------------------|------|----------|----|---|-------------------------------|
-| Manage [alerts](/dagster-plus/deployement/alerts)                         | ❌     | ❌         | ✅  | ✅ | ✅                             |
+| Manage [alerts](/dagster-plus/deployment/alerts)                         | ❌     | ❌         | ✅  | ✅ | ✅                             |
 | Edit workspace                                                            | ❌    | ❌        | ✅  | ✅ | ✅                             |
 | [Administer SAML](/dagster-plus/access/authentication)                    | ❌    | ❌        | ❌   | ❌  | ✅                             |
-| [Manage SCIM](/dagster-plus/access/authentication/scim-provisionning) | ❌    | ❌        | ❌   | ❌  | ✅                             |
+| [Manage SCIM](/todo) | ❌    | ❌        | ❌   | ❌  | ✅                             |
 | View usage                                                                | ❌    | ❌        | ❌   | ❌  | ✅                             |
 | Manage billing                                                            | ❌    | ❌        | ❌  | ❌ | ✅                             |
 | View audit logs                                                           | ❌    | ❌        | ❌   | ❌  | ✅                             |
@@ -218,5 +218,5 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 
 - Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/access/rbac/users)
 - Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/access/rbac/teams)
-- Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/access/authentication/scim-provisioning)
+- Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/todo)
 - Learn more about authentication in [Understanding Authentication](/dagster-plus/access/authentication)
