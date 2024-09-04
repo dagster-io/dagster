@@ -1,3 +1,4 @@
+import os
 import signal
 import subprocess
 import sys
@@ -20,7 +21,9 @@ from dagster_sdf.sdf_information_schema import SdfInformationSchema
 
 logger = get_dagster_logger()
 
-DAGSTER_SDF_TERMINATION_TIMEOUT_SECONDS = 2
+DAGSTER_SDF_TERMINATION_TIMEOUT_SECONDS = int(
+    os.getenv("DAGSTER_SDF_TERMINATION_TIMEOUT_SECONDS", "25")
+)
 
 
 @dataclass
@@ -240,6 +243,8 @@ class SdfCliInvocation:
 
             self.process.send_signal(signal.SIGINT)
             self.process.wait(timeout=self.termination_timeout_seconds)
+
+            logger.info(f"sdf process terminated with exit code `{self.process.returncode}`.")
 
             raise
 

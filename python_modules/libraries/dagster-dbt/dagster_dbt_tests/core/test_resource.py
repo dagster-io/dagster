@@ -144,6 +144,11 @@ def test_dbt_cli_subprocess_cleanup(
         dbt_cli_invocation_1.wait()
 
     assert "Forwarding interrupt signal to dbt command" in caplog.text
+    assert (
+        f"dbt process terminated with exit code `{dbt_cli_invocation_1.process.returncode}`."
+        in caplog.text
+    )
+
     assert dbt_cli_invocation_1.process.returncode < 0
 
 
