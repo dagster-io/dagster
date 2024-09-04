@@ -1,6 +1,7 @@
 import time
 from typing import Dict, List, Union, cast
 
+import dagster._check as check
 import requests
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.events.log import EventLogEntry
@@ -71,9 +72,18 @@ def poll_for_asset_check(
     evaluation = instance.get_latest_asset_check_evaluation_record(asset_check_key=target)
 
     total_time_elapsed = 0
-    while evaluation is None or evaluation.status not in (
-        AssetCheckExecutionRecordStatus.SUCCEEDED,
-        AssetCheckExecutionRecordStatus.FAILED,
+    while (
+        evaluation is None
+        or evaluation.status
+        not in (
+            AssetCheckExecutionRecordStatus.SUCCEEDED,
+            AssetCheckExecutionRecordStatus.FAILED,
+        )
+        or check.not_none(instance.get_run_by_id(evaluation.run_id)).status
+        not in (
+            DagsterRunStatus.SUCCESS,
+            DagsterRunStatus.FAILURE,
+        )
     ):
         time.sleep(poll_interval)
         total_time_elapsed += poll_interval
