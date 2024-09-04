@@ -21,41 +21,41 @@ def test_eager_unpartitioned() -> None:
 
     # parent hasn't updated yet
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # parent updated, now can execute
     state = state.with_runs(run_request("A"))
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
 
     # B has not yet materialized, but it has been requested, so don't request again
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # same as above
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # now B has been materialized, so really shouldn't execute again
     state = state.with_runs(
         *(
             run_request(ak, pk)
-            for ak, pk in result.true_slice.expensively_compute_asset_partitions()
+            for ak, pk in result.true_subset.expensively_compute_asset_partitions()
         )
     )
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # A gets materialized again before the hour, execute B again
     state = state.with_runs(run_request("A"))
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     # however, B fails
     state = state.with_failed_run_for_asset("B")
 
     # do not try to materialize B again immediately
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
 
 def test_eager_hourly_partitioned() -> None:
@@ -71,40 +71,40 @@ def test_eager_hourly_partitioned() -> None:
 
     # parent hasn't updated yet
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # historical parent updated, doesn't matter
     state = state.with_runs(run_request("A", "2019-07-05-00:00"))
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # latest parent updated, now can execute
     state = state.with_runs(run_request("A", "2020-02-02-00:00"))
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     state = state.with_runs(
         *(
             run_request(ak, pk)
-            for ak, pk in result.true_slice.expensively_compute_asset_partitions()
+            for ak, pk in result.true_subset.expensively_compute_asset_partitions()
         )
     )
 
     # now B has been materialized, so don't execute again
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # new partition comes into being, parent hasn't been materialized yet
     state = state.with_current_time_advanced(hours=1)
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # parent gets materialized, B requested
     state = state.with_runs(run_request("A", "2020-02-02-01:00"))
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     # but it fails
     state = state.with_failed_run_for_asset("B", "2020-02-02-01:00")
 
     # B does not get immediately requested again
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0

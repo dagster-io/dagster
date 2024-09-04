@@ -22,7 +22,7 @@ class EntitySubsetSerializer(DataclassSerializer):
         # backcompat
         return "AssetSubset"
 
-    def before_pack(self, value: "EntitySubset") -> "EntitySubset":
+    def before_pack(self, value: "SerializableEntitySubset") -> "SerializableEntitySubset":
         if value.is_partitioned:
             return replace(value, value=value.subset_value.to_serializable_subset())
         return value
@@ -34,8 +34,8 @@ class EntitySubsetSerializer(DataclassSerializer):
     old_storage_names={"AssetSubset"},
 )
 @dataclass(frozen=True)
-class EntitySubset(Generic[T_EntityKey]):
-    """Represents a subset of a given EntityKey."""
+class SerializableEntitySubset(Generic[T_EntityKey]):
+    """Represents a serializable subset of a given EntityKey."""
 
     key: T_EntityKey
     value: EntitySubsetValue

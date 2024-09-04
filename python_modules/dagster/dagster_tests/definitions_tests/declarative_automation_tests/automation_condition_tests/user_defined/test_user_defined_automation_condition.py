@@ -10,12 +10,12 @@ def test_cursoring() -> None:
         def evaluate(self, context: AutomationContext) -> AutomationResult:
             if context.cursor == "hi":
                 cursor = None
-                true_slice = context.candidate_slice
+                true_subset = context.candidate_subset
             else:
                 cursor = "hi"
-                true_slice = context.get_empty_slice()
+                true_subset = context.get_empty_subset()
 
-            return AutomationResult(context, true_slice=true_slice, cursor=cursor)
+            return AutomationResult(context, true_subset=true_subset, cursor=cursor)
 
     @asset(automation_condition=MyAutomationCondition())
     def my_asset() -> None: ...
@@ -40,7 +40,7 @@ def test_logging(caplog) -> None:
             context.log.debug("DEBUG_THING")
             context.log.info("INFO_THING")
 
-            return AutomationResult(context, true_slice=context.get_empty_slice())
+            return AutomationResult(context, true_subset=context.get_empty_subset())
 
     @asset(automation_condition=MyAutomationCondition())
     def my_asset() -> None: ...
