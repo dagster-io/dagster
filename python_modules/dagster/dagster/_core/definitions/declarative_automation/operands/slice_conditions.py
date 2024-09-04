@@ -2,7 +2,7 @@ import datetime
 from abc import abstractmethod
 from typing import Optional
 
-from dagster._core.asset_graph_view.asset_graph_view import EntitySlice
+from dagster._core.asset_graph_view.asset_graph_view import EntitySubset
 from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
@@ -14,30 +14,30 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
 
-class SliceAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
-    """Base class for simple conditions which compute a simple slice of the asset graph."""
+class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
+    """Base class for simple conditions which compute a simple subset of the asset graph."""
 
     @property
     def requires_cursor(self) -> bool:
         return False
 
     @abstractmethod
-    def compute_slice(
+    def compute_subset(
         self, context: AutomationContext[T_EntityKey]
-    ) -> EntitySlice[T_EntityKey]: ...
+    ) -> EntitySubset[T_EntityKey]: ...
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         # don't compute anything if there are no candidates
-        if context.candidate_slice.is_empty:
-            true_slice = context.get_empty_slice()
+        if context.candidate_subset.is_empty:
+            true_subset = context.get_empty_subset()
         else:
-            true_slice = self.compute_slice(context)
+            true_subset = self.compute_subset(context)
 
-        return AutomationResult(context, true_slice)
+        return AutomationResult(context, true_subset)
 
 
 @whitelist_for_serdes
-class MissingAutomationCondition(SliceAutomationCondition[AssetKey]):
+class MissingAutomationCondition(SubsetAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Missing"
@@ -46,14 +46,14 @@ class MissingAutomationCondition(SliceAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "missing"
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
-        return context.asset_graph_view.compute_missing_subslice(
-            context.key, from_slice=context.candidate_slice
+    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+        return context.asset_graph_view.compute_missing_subset(
+            context.key, from_subset=context.candidate_subset
         )
 
 
 @whitelist_for_serdes
-class InProgressAutomationCondition(SliceAutomationCondition[AssetKey]):
+class InProgressAutomationCondition(SubsetAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Part of an in-progress run"
@@ -62,12 +62,12 @@ class InProgressAutomationCondition(SliceAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "in_progress"
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
-        return context.asset_graph_view.compute_in_progress_asset_slice(asset_key=context.key)
+    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+        return context.asset_graph_view.compute_in_progress_asset_subset(asset_key=context.key)
 
 
 @whitelist_for_serdes
-class FailedAutomationCondition(SliceAutomationCondition[AssetKey]):
+class FailedAutomationCondition(SubsetAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Latest run failed"
@@ -76,12 +76,12 @@ class FailedAutomationCondition(SliceAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "failed"
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
-        return context.asset_graph_view.compute_failed_asset_slice(asset_key=context.key)
+    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+        return context.asset_graph_view.compute_failed_asset_subset(asset_key=context.key)
 
 
 @whitelist_for_serdes
-class WillBeRequestedCondition(SliceAutomationCondition[AssetKey]):
+class WillBeRequestedCondition(SubsetAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Will be requested this tick"
@@ -101,20 +101,20 @@ class WillBeRequestedCondition(SliceAutomationCondition[AssetKey]):
             parent_key=context.key,
         )
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
+    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
         current_result = context.current_tick_results_by_key.get(context.key)
         if (
             current_result
-            and current_result.true_slice
+            and current_result.true_subset
             and self._executable_with_root_context_key(context)
         ):
-            return current_result.true_slice
+            return current_result.true_subset
         else:
-            return context.get_empty_slice()
+            return context.get_empty_subset()
 
 
 @whitelist_for_serdes
-class NewlyRequestedCondition(SliceAutomationCondition[AssetKey]):
+class NewlyRequestedCondition(SubsetAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Was requested on the previous tick"
@@ -123,12 +123,12 @@ class NewlyRequestedCondition(SliceAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "newly_requested"
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
-        return context.previous_requested_slice or context.get_empty_slice()
+    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+        return context.previous_requested_subset or context.get_empty_subset()
 
 
 @whitelist_for_serdes
-class NewlyUpdatedCondition(SliceAutomationCondition[AssetKey]):
+class NewlyUpdatedCondition(SubsetAutomationCondition[AssetKey]):
     @property
     def description(self) -> str:
         return "Updated since previous tick"
@@ -137,18 +137,18 @@ class NewlyUpdatedCondition(SliceAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "newly_updated"
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
-        # if it's the first time evaluating, just return the empty slice
+    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+        # if it's the first time evaluating, just return the empty subset
         if context.previous_evaluation_time is None:
-            return context.get_empty_slice()
+            return context.get_empty_subset()
         else:
-            return context.asset_graph_view.compute_updated_since_cursor_slice(
+            return context.asset_graph_view.compute_updated_since_cursor_subset(
                 asset_key=context.key, cursor=context.previous_max_storage_id
             )
 
 
 @whitelist_for_serdes
-class CronTickPassedCondition(SliceAutomationCondition):
+class CronTickPassedCondition(SubsetAutomationCondition):
     cron_schedule: str
     cron_timezone: str
 
@@ -168,7 +168,7 @@ class CronTickPassedCondition(SliceAutomationCondition):
         )
         return next(previous_ticks)
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice:
+    def compute_subset(self, context: AutomationContext) -> EntitySubset:
         previous_cron_tick = self._get_previous_cron_tick(context.evaluation_time)
         if (
             # no previous evaluation
@@ -176,13 +176,13 @@ class CronTickPassedCondition(SliceAutomationCondition):
             # cron tick was not newly passed
             or previous_cron_tick < context.previous_evaluation_time
         ):
-            return context.get_empty_slice()
+            return context.get_empty_subset()
         else:
-            return context.candidate_slice
+            return context.candidate_subset
 
 
 @whitelist_for_serdes
-class InLatestTimeWindowCondition(SliceAutomationCondition[AssetKey]):
+class InLatestTimeWindowCondition(SubsetAutomationCondition[AssetKey]):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
 
     @staticmethod
@@ -215,7 +215,7 @@ class InLatestTimeWindowCondition(SliceAutomationCondition[AssetKey]):
     def name(self) -> str:
         return "in_latest_time_window"
 
-    def compute_slice(self, context: AutomationContext) -> EntitySlice[AssetKey]:
-        return context.asset_graph_view.compute_latest_time_window_slice(
+    def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
+        return context.asset_graph_view.compute_latest_time_window_subset(
             context.key, lookback_delta=self.lookback_timedelta
         )

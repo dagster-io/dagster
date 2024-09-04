@@ -30,23 +30,23 @@ def test_requested_previous_tick() -> None:
 
     # was not requested on the previous tick, as there was no tick
     state, result = state.evaluate("A")
-    assert get_result(result).true_slice.size == 0
+    assert get_result(result).true_subset.size == 0
 
     # still was not requested on the previous tick
     state, result = state.evaluate("A")
-    assert get_result(result).true_slice.size == 0
+    assert get_result(result).true_subset.size == 0
 
     # now we ensure that the asset does get requested this tick
     true_set.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
     # requested this tick, not the previous tick
-    assert get_result(result).true_slice.size == 0
+    assert get_result(result).true_subset.size == 0
     true_set.remove(AssetKeyPartitionKey(AssetKey("A")))
 
     # requested on the previous tick
     state, result = state.evaluate("A")
-    assert get_result(result).true_slice.size == 1
+    assert get_result(result).true_subset.size == 1
 
     # requested two ticks ago
     state, result = state.evaluate("A")
-    assert get_result(result).true_slice.size == 0
+    assert get_result(result).true_subset.size == 0

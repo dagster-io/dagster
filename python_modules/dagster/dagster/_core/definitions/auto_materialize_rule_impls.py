@@ -25,7 +25,7 @@ from dagster._core.definitions.base_asset_graph import sort_key_for_asset_partit
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
-from dagster._core.definitions.entity_subset import EntitySubset
+from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
@@ -73,8 +73,10 @@ class MaterializeOnRequiredForFreshnessRule(
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
             context.legacy_context.root_context
         )
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -213,10 +215,10 @@ class MaterializeOnCronRule(
             - context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
             asset_subset_to_request
         )
-        return AutomationResult(context, true_slice=true_slice)
+        return AutomationResult(context, true_subset=true_subset)
 
 
 @whitelist_for_serdes
@@ -440,8 +442,10 @@ class MaterializeOnParentUpdatedRule(
                 ignore_subset=context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset,
             )
         )
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -454,12 +458,12 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
     def description(self) -> str:
         return "materialization is missing"
 
-    def get_handled_subset(self, context: "AutomationContext") -> EntitySubset:
+    def get_handled_subset(self, context: "AutomationContext") -> SerializableEntitySubset:
         """Returns the AssetSubset which has been handled (materialized, requested, or discarded).
         Accounts for cases in which the partitions definition may have changed between ticks.
         """
         previous_handled_subset = (
-            context.legacy_context.node_cursor.get_structured_cursor(EntitySubset)
+            context.legacy_context.node_cursor.get_structured_cursor(SerializableEntitySubset)
             if context.legacy_context.node_cursor
             else None
         )
@@ -548,7 +552,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
 
         return AutomationResult(
             context,
-            true_slice=context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
+            true_subset=context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                 unhandled_candidates
             ),
             # we keep track of the handled subset instead of the unhandled subset because new
@@ -606,8 +610,10 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -665,8 +671,10 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -761,8 +769,10 @@ class SkipOnNotAllParentsUpdatedRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -998,7 +1008,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
 
         return AutomationResult(
             context,
-            true_slice=context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
+            true_subset=context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                 context.legacy_context.candidate_subset - all_parents_updated_subset
             ),
             structured_cursor=list(updated_subsets_by_key.values()),
@@ -1051,8 +1061,10 @@ class SkipOnRequiredButNonexistentParentsRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult(context, true_slice, subsets_with_metadata=subsets_with_metadata)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset, subsets_with_metadata=subsets_with_metadata)
 
 
 @whitelist_for_serdes
@@ -1094,8 +1106,10 @@ class SkipOnBackfillInProgressRule(
         else:
             true_subset = context.legacy_context.candidate_subset & backfilling_subset
 
-        true_slice = context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(true_subset)
-        return AutomationResult(context, true_slice)
+        true_subset = context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
+            true_subset
+        )
+        return AutomationResult(context, true_subset)
 
 
 @whitelist_for_serdes
@@ -1125,7 +1139,7 @@ class DiscardOnMaxMaterializationsExceededRule(
 
         return AutomationResult(
             context,
-            context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
+            context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                 ValidAssetSubset.from_asset_partitions_set(
                     context.legacy_context.asset_key,
                     context.legacy_context.partitions_def,
@@ -1165,13 +1179,13 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
             if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
                 return AutomationResult(
                     context,
-                    context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
+                    context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                         context.legacy_context.candidate_subset
                     ),
                 )
         return AutomationResult(
             context,
-            context.asset_graph_view.legacy_get_asset_slice_from_valid_subset(
+            context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(
                 context.legacy_context.empty_subset()
             ),
         )

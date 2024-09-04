@@ -17,7 +17,7 @@ from typing import (
 
 from dagster import _check as check
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.entity_subset import EntitySubset
+from dagster._core.definitions.entity_subset import SerializableEntitySubset
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
@@ -75,15 +75,17 @@ class AssetGraphSubset(NamedTuple):
 
     def get_asset_subset(
         self, asset_key: AssetKey, asset_graph: BaseAssetGraph
-    ) -> EntitySubset[AssetKey]:
+    ) -> SerializableEntitySubset[AssetKey]:
         """Returns an AssetSubset representing the subset of a specific asset that this
         AssetGraphSubset contains.
         """
         partitions_def = asset_graph.get(asset_key).partitions_def
         if partitions_def is None:
-            return EntitySubset(key=asset_key, value=asset_key in self.non_partitioned_asset_keys)
+            return SerializableEntitySubset(
+                key=asset_key, value=asset_key in self.non_partitioned_asset_keys
+            )
         else:
-            return EntitySubset(
+            return SerializableEntitySubset(
                 key=asset_key,
                 value=self.partitions_subsets_by_asset_key.get(
                     asset_key, partitions_def.empty_subset()
@@ -117,7 +119,7 @@ class AssetGraphSubset(NamedTuple):
 
     def iterate_asset_subsets(
         self, asset_graph: BaseAssetGraph
-    ) -> Iterable[EntitySubset[AssetKey]]:
+    ) -> Iterable[SerializableEntitySubset[AssetKey]]:
         """Returns an Iterable of AssetSubsets representing the subset of each asset that this
         AssetGraphSubset contains.
         """
