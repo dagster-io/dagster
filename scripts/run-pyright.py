@@ -73,6 +73,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--no-cache",
+    action="store_true",
+    default=False,
+    help="If rebuilding pyright environments, do not use the uv cache. This is much slower but can be useful for debugging.",
+)
+
+parser.add_argument(
     "--rebuild",
     "-r",
     action="store_true",
@@ -120,6 +127,7 @@ class Params(TypedDict):
     mode: Literal["env", "path"]
     targets: Sequence[str]
     json: bool
+    no_cache: bool
     rebuild: bool
     update_pins: bool
     venv_python: str
@@ -232,6 +240,7 @@ def get_params(args: argparse.Namespace) -> Params:
         json=args.json,
         rebuild=args.rebuild,
         unannotated=args.unannotated,
+        no_cache=args.no_cache,
         venv_python=venv_python,
         skip_typecheck=args.skip_typecheck,
     )
@@ -273,7 +282,9 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
     return env_path_map
 
 
-def normalize_env(env: str, rebuild: bool, update_pins: bool, venv_python: str) -> None:
+def normalize_env(
+    env: str, rebuild: bool, update_pins: bool, venv_python: str, no_cache: bool
+) -> None:
     venv_path = os.path.join(get_env_path(env), ".venv")
     python_path = f"{venv_path}/bin/python"
     if (rebuild or update_pins) and os.path.exists(venv_path):
@@ -299,13 +310,14 @@ def normalize_env(env: str, rebuild: bool, update_pins: bool, venv_python: str) 
                         "install",
                         "--python",
                         python_path,
-                        "-r",
-                        dest_requirements_path,
                         # editable-mode=compat ensures dagster-internal editable installs are done
                         # in a way that is legible to pyright (i.e. not using import hooks). See:
                         #  https://github.com/microsoft/pyright/blob/main/docs/import-resolution.md#editable-installs
                         "--config-settings",
                         "editable-mode=compat",
+                        "-r",
+                        dest_requirements_path,
+                        "--no-cache" if no_cache else "",
                         *extra_pip_install_args,
                     ]
                 ),
@@ -520,7 +532,9 @@ if __name__ == "__main__":
         env_path_map = {env: None for env in params["targets"]}
 
     for env in env_path_map:
-        normalize_env(env, params["rebuild"], params["update_pins"], params["venv_python"])
+        normalize_env(
+            env, params["rebuild"], params["update_pins"], params["venv_python"], params["no_cache"]
+        )
     if params["skip_typecheck"]:
         print("Successfully built environments. Skipping typecheck.")
     elif len(env_path_map) == 0:
