@@ -25,7 +25,11 @@ from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
+    WorkspaceSnapshot,
+)
 
 
 @asset
@@ -156,9 +160,11 @@ def _make_location_entry(defs_attr: str, instance: DagsterInstance):
 def _make_context(instance: DagsterInstance, defs_attrs):
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
-        workspace_snapshot={
-            defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
-        },
+        workspace_snapshot=WorkspaceSnapshot(
+            code_location_entries={
+                defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
+            }
+        ),
         process_context=mock.MagicMock(),
         version=None,
         source=None,
