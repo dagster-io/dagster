@@ -131,6 +131,5 @@ pendulum<3
 -e examples/experimental/dagster-blueprints
 -e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-airlift/examples/dbt-example
--e examples/experimental/dagster-airlift/examples/simple-migration
 -e examples/experimental/dagster-airlift/examples/tutorial-example
 -e examples/use_case_repository[dev]
