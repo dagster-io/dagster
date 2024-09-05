@@ -1169,7 +1169,7 @@ class ExternalAssetNode(IHaveNew):
             execution_set_identifier=execution_set_identifier,
             required_top_level_resources=required_top_level_resources or [],
             auto_materialize_policy=auto_materialize_policy,
-            automation_condition_snapshot=automation_condition_snapshot,
+            automation_condition_snapshot=None,  # automation_condition_snapshot,
             backfill_policy=backfill_policy,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
