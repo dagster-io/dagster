@@ -17,10 +17,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 STDINDENT = 4
-MAXWIDTH = 120
 
 
-def my_wrap(text: str, width: int = MAXWIDTH, **kwargs: Any) -> list[str]:
+def my_wrap(text: str, width: int = 120, **kwargs: Any) -> list[str]:
     w = TextWrapper(width=width, **kwargs)
     return w.wrap(text)
 
@@ -152,6 +151,8 @@ class MdxTranslator(SphinxTranslator):
         self.in_literal = False
         self.desc_count = 0
 
+        self.max_line_width = self.config.max_line_width or 120
+
     ############################################################
     # Utility and State Methods
     ############################################################
@@ -193,7 +194,7 @@ class MdxTranslator(SphinxTranslator):
             if not toformat:
                 return
             if wrap:
-                res = my_wrap("".join(toformat), width=MAXWIDTH - maxindent)
+                res = my_wrap("".join(toformat), width=self.max_line_width - maxindent)
             else:
                 res = "".join(toformat).splitlines()
             if end:

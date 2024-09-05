@@ -21,6 +21,8 @@ def setup(app: Sphinx):
     # Link transform function for links, by default returns docname + mdx_link_suffix
     app.add_config_value("mdx_link_transform", None, "env")
 
+    app.add_config_value("mdx_max_line_width", 120, "env")
+
     return {
         "version": __version__,
         "parallel_read_safe": True,
