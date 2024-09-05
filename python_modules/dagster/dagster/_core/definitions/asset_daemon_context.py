@@ -27,7 +27,6 @@ from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
@@ -102,15 +101,13 @@ class AssetDaemonContext:
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
-        stale_resolver = CachingStaleStatusResolver(
-            instance=instance, asset_graph=asset_graph, instance_queryer=self.instance_queryer
-        )
         self._asset_graph_view = AssetGraphView(
             temporal_context=TemporalContext(
                 effective_dt=self.instance_queryer.evaluation_time,
                 last_event_id=instance.event_log_storage.get_maximum_record_id(),
             ),
-            stale_resolver=stale_resolver,
+            instance=instance,
+            asset_graph=asset_graph,
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
