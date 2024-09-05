@@ -44,7 +44,7 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/dagster-plus/deployment-types), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](/dagster-plus/deployment/branch-deployments).
+Organization Admins have access to the entire organization, including all [deployments](/dagster-plus/deployment/deployment-types), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](/dagster-plus/deployment/branch-deployments).
 
 
 | Level                  | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -130,12 +130,12 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 
 |                                                                                              | Viewer | Launcher  | Editor | Admin | Organization <br/> admin     |
 |----------------------------------------------------------------------------------------------|-------|-----------|--------|-------|-------------------------------|
-| View [deployments](/dagster-plus/deployment-types)                                           | ✅     | ✅         | ✅      | ✅     | ✅                             |
-| Modify [deployment](/dagster-plus/deployment-types) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| View [deployments](/dagster-plus/deployment/deployment-types)                                           | ✅     | ✅         | ✅      | ✅     | ✅                             |
+| Modify [deployment](/dagster-plus/deployment/deployment-types) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Create, edit, delete [environment variables](/dagster-plus/deployment/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | View [environment variable](/dagster-plus/deployment/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Export [environment variables](/dagster-plus/deployment/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Create and delete [deployments](/dagster-plus/deployment-types)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
+| Create and delete [deployments](/dagster-plus/deployment/deployment-types)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
 | Create [Branch Deployments](/dagster-plus/deployment/branch-deployments)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 

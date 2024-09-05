@@ -3,7 +3,7 @@ Airbyte (dagster-airbyte)
 
 This library provides a Dagster integration with `Airbyte <https://www.airbyte.com/>`_.
 
-For more information on getting started, see the `Airbyte integration guide </integrations/airbyte>`_.
+For more information on getting started, see the `Airbyte integration guide <https://docs.dagster.io/integrations/airbyte>`_.
 
 .. currentmodule:: dagster_airbyte
 
