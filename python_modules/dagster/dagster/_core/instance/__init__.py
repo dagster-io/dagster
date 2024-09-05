@@ -2433,7 +2433,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
         for event in events:
             run_id = event.run_id
-            if event.is_dagster_event and event.get_dagster_event().is_job_event:
+            if (
+                not self._event_storage.handles_run_events_in_store_event
+                and event.is_dagster_event
+                and event.get_dagster_event().is_job_event
+            ):
                 self._run_storage.handle_run_event(run_id, event.get_dagster_event())
 
             for sub in self._subscribers[run_id]:
