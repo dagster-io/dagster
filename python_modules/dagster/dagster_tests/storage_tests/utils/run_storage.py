@@ -81,6 +81,10 @@ class TestRunStorage:
         with request.param() as s:
             yield s
 
+    @pytest.fixture(name="instance")
+    def instance(self, request) -> Optional[DagsterInstance]:
+        return None
+
     # Override for storages that are not allowed to delete runs
     def can_delete_runs(self):
         return True
