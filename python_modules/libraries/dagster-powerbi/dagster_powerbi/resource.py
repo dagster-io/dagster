@@ -1,3 +1,5 @@
+import re
+import time
 from typing import Any, Dict, Sequence, Type
 
 import requests
@@ -7,11 +9,14 @@ from dagster import (
     Definitions,
     _check as check,
     external_assets_from_specs,
+    multi_asset,
 )
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.events import Failure
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
@@ -22,7 +27,12 @@ from dagster_powerbi.translator import (
     PowerBIWorkspaceData,
 )
 
-BASE_API_URL = "https://api.powerbi.com/v1.0/myorg/"
+BASE_API_URL = "https://api.powerbi.com/v1.0/myorg"
+
+
+def _clean_op_name(name: str) -> str:
+    """Cleans an input to be a valid Dagster op name."""
+    return re.sub(r"[^a-z0-9A-Z]+", "_", name)
 
 
 class PowerBIWorkspace(ConfigurableResource):
@@ -32,8 +42,16 @@ class PowerBIWorkspace(ConfigurableResource):
 
     api_token: str = Field(..., description="An API token used to connect to PowerBI.")
     workspace_id: str = Field(..., description="The ID of the PowerBI group to use.")
+    refresh_poll_interval: int = Field(
+        default=5, description="The interval in seconds to poll for refresh status."
+    )
+    refresh_timeout: int = Field(
+        default=300, description="The maximum time in seconds to wait for a refresh to complete."
+    )
 
-    def fetch_json(self, endpoint: str) -> Dict[str, Any]:
+    def fetch(
+        self, endpoint: str, method: str = "GET", json: Any = None, group_scoped: bool = True
+    ) -> requests.Response:
         """Fetch JSON data from the PowerBI API. Raises an exception if the request fails.
 
         Args:
@@ -46,11 +64,53 @@ class PowerBIWorkspace(ConfigurableResource):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_token}",
         }
-        response = requests.get(
-            f"{BASE_API_URL}/groups/{self.workspace_id}/{endpoint}", headers=headers
+        base_url = f"{BASE_API_URL}/groups/{self.workspace_id}" if group_scoped else BASE_API_URL
+        response = requests.request(
+            method=method,
+            url=f"{base_url}/{endpoint}",
+            headers=headers,
+            json=json,
+            allow_redirects=True,
         )
         response.raise_for_status()
-        return response.json()
+        return response
+
+    def fetch_json(
+        self, endpoint: str, method: str = "GET", json: Any = None, group_scoped: bool = True
+    ) -> Dict[str, Any]:
+        return self.fetch(endpoint, method, json, group_scoped=group_scoped).json()
+
+    def trigger_refresh(self, dataset_id: str) -> None:
+        """Triggers a refresh of a PowerBI dataset."""
+        response = self.fetch(
+            method="POST",
+            endpoint=f"datasets/{dataset_id}/refreshes",
+            json={"notifyOption": "NoNotification"},
+            group_scoped=False,
+        )
+        if response.status_code != 202:
+            raise Failure(f"Refresh failed to start: {response.content}")
+
+    def poll_refresh(self, dataset_id: str) -> None:
+        """Polls the refresh status of a PowerBI dataset until it completes or fails."""
+        status = None
+
+        start = time.monotonic()
+        while status not in ["Completed", "Failed"]:
+            if time.monotonic() - start > self.refresh_timeout:
+                raise Failure(f"Refresh timed out after {self.refresh_timeout} seconds.")
+
+            last_refresh = self.fetch_json(
+                f"datasets/{dataset_id}/refreshes",
+                group_scoped=False,
+            )["value"][0]
+            status = last_refresh["status"]
+
+            time.sleep(self.refresh_poll_interval)
+
+        if status == "Failed":
+            error = last_refresh.get("serviceExceptionJson")
+            raise Failure(f"Refresh failed: {error}")
 
     @cached_method
     def get_reports(self) -> Dict[str, Any]:
@@ -129,6 +189,7 @@ class PowerBIWorkspace(ConfigurableResource):
     def build_assets(
         self,
         dagster_powerbi_translator: Type[DagsterPowerBITranslator],
+        enable_refresh_semantic_models: bool,
     ) -> Sequence[CacheableAssetsDefinition]:
         """Returns a set of CacheableAssetsDefinition which will load Power BI content from
         the workspace and translates it into AssetSpecs, using the provided translator.
@@ -141,10 +202,18 @@ class PowerBIWorkspace(ConfigurableResource):
             Sequence[CacheableAssetsDefinition]: A list of CacheableAssetsDefinitions which
                 will load the Power BI content.
         """
-        return [PowerBICacheableAssetsDefinition(self, dagster_powerbi_translator)]
+        return [
+            PowerBICacheableAssetsDefinition(
+                self,
+                dagster_powerbi_translator,
+                enable_refresh_semantic_models=enable_refresh_semantic_models,
+            )
+        ]
 
     def build_defs(
-        self, dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator
+        self,
+        dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
+        enable_refresh_semantic_models: bool = False,
     ) -> Definitions:
         """Returns a Definitions object which will load Power BI content from
         the workspace and translate it into assets, using the provided translator.
@@ -157,14 +226,23 @@ class PowerBIWorkspace(ConfigurableResource):
             Definitions: A Definitions object which will build and return the Power BI content.
         """
         return Definitions(
-            assets=self.build_assets(dagster_powerbi_translator=dagster_powerbi_translator)
+            assets=self.build_assets(
+                dagster_powerbi_translator=dagster_powerbi_translator,
+                enable_refresh_semantic_models=enable_refresh_semantic_models,
+            )
         )
 
 
 class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
-    def __init__(self, workspace: PowerBIWorkspace, translator: Type[DagsterPowerBITranslator]):
+    def __init__(
+        self,
+        workspace: PowerBIWorkspace,
+        translator: Type[DagsterPowerBITranslator],
+        enable_refresh_semantic_models: bool,
+    ):
         self._workspace = workspace
         self._translator_cls = translator
+        self._enable_refresh_semantic_models = enable_refresh_semantic_models
         super().__init__(unique_id=self._workspace.workspace_id)
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
@@ -180,7 +258,8 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
     def build_definitions(
-        self, data: Sequence[AssetsDefinitionCacheableData]
+        self,
+        data: Sequence[AssetsDefinitionCacheableData],
     ) -> Sequence[AssetsDefinition]:
         workspace_data = PowerBIWorkspaceData.from_content_data(
             self._workspace.workspace_id,
@@ -192,13 +271,43 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
 
         translator = self._translator_cls(context=workspace_data)
 
-        all_content = [
-            *workspace_data.dashboards_by_id.values(),
-            *workspace_data.reports_by_id.values(),
-            *workspace_data.semantic_models_by_id.values(),
-            *workspace_data.data_sources_by_id.values(),
+        if self._enable_refresh_semantic_models:
+            all_external_data = [
+                *workspace_data.dashboards_by_id.values(),
+                *workspace_data.reports_by_id.values(),
+                *workspace_data.data_sources_by_id.values(),
+            ]
+            all_executable_data = [*workspace_data.semantic_models_by_id.values()]
+        else:
+            all_external_data = [
+                *workspace_data.dashboards_by_id.values(),
+                *workspace_data.reports_by_id.values(),
+                *workspace_data.data_sources_by_id.values(),
+                *workspace_data.semantic_models_by_id.values(),
+            ]
+            all_executable_data = []
+
+        all_external_asset_specs = [
+            translator.get_asset_spec(content) for content in all_external_data
+        ]
+        all_executable_asset_specs = [
+            translator.get_asset_spec(content) for content in all_executable_data
         ]
 
-        return external_assets_from_specs(
-            [translator.get_asset_spec(content) for content in all_content]
-        )
+        executable_assets = []
+        for content, spec in zip(all_executable_data, all_executable_asset_specs):
+            dataset_id = content.properties["id"]
+
+            @multi_asset(
+                specs=[spec],
+                name="_".join(spec.key.path),
+                resource_defs={"power_bi": self._workspace.get_resource_definition()},
+            )
+            def asset_fn(context: AssetExecutionContext, power_bi: PowerBIWorkspace) -> None:
+                power_bi.trigger_refresh(dataset_id)
+                power_bi.poll_refresh(dataset_id)
+                context.log.info("Refresh completed.")
+
+            executable_assets.append(asset_fn)
+
+        return [*external_assets_from_specs(all_external_asset_specs), *executable_assets]
