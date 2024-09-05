@@ -20,7 +20,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._time import datetime_from_timestamp
 
 if TYPE_CHECKING:
@@ -51,6 +51,17 @@ def get_serializable_candidate_subset(
     ):
         return HistoricalAllPartitionsSubsetSentinel()
     return candidate_subset
+
+
+class ForwardCompatSerializer(NamedTupleSerializer):
+    """Exists to ensure we can deserialize workspaces with AutomationConditionSnapshots defined."""
+
+    def unpack(self, *args, **kwargs) -> None:
+        return None
+
+
+@whitelist_for_serdes(storage_name="AutomationConditionSnapshot")
+class ForwardCompatAutomationConditionSnapshot(NamedTuple): ...
 
 
 @whitelist_for_serdes(storage_name="AssetConditionSnapshot")
