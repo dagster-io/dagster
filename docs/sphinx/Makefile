@@ -16,7 +16,7 @@ install:
 
 copy_mdx:
 	rm -rf ../docs-beta/docs/api/*.mdx
-	cp -rf _build/mdx/index.mdx ../docs-beta/docs/api/
+	cp -rf _build/mdx/sections/api/apidocs/* ../docs-beta/docs/api/
 	
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

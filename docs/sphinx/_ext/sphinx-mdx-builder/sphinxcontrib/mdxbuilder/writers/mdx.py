@@ -148,10 +148,10 @@ class MdxTranslator(SphinxTranslator):
         self.stateindent = [0]
         self.context: list[str] = []
         self.list_counter: list[int] = []
-        self.in_literal = False
+        self.in_literal = 0
         self.desc_count = 0
 
-        self.max_line_width = self.config.max_line_width or 120
+        self.max_line_width = self.config.mdx_max_line_width or 120
 
     ############################################################
     # Utility and State Methods
@@ -236,12 +236,9 @@ class MdxTranslator(SphinxTranslator):
     def visit_Text(self, node: nodes.Text) -> None:
         if isinstance(node.parent, nodes.reference):
             return
+        content = node.astext()
         if self.in_literal:
-            # Escape < characters in literal blocks
-            content = node.astext().replace("<", "\\<")
-            content = node.astext().replace("{", "\\{")
-        else:
-            content = node.astext()
+            content = node.astext().replace("<", "\\<").replace("{", "\\{")
         self.add_text(content)
 
     def depart_Text(self, node: Element) -> None:
@@ -331,20 +328,24 @@ class MdxTranslator(SphinxTranslator):
     # desc_inline sig fragment in inline text
 
     def visit_desc(self, node: Element) -> None:
+        self.in_literal += 1
         self.desc_count += 1
         self.new_state(0)
         self.add_text("<dl>")
 
     def depart_desc(self, node: Element) -> None:
+        self.in_literal -= 1
         self.add_text("</dl>")
         self.end_state(wrap=False, end=None)
         self.desc_count -= 1
 
     def visit_desc_signature(self, node: Element) -> None:
+        self.in_literal += 1
         self.new_state()
         self.add_text("<dt>")
 
     def depart_desc_signature(self, node: Element) -> None:
+        self.in_literal -= 1
         self.add_text("</dt>")
         self.end_state(wrap=False, end=None)
 
@@ -355,12 +356,15 @@ class MdxTranslator(SphinxTranslator):
         pass
 
     def visit_desc_content(self, node: Element) -> None:
+        self.in_literal += 1
         self.new_state()
-        self.add_text("<dd>")
+        self.add_text("<dd>\n")
 
     def depart_desc_content(self, node: Element) -> None:
+        self.in_literal -= 1
+        self.add_text("\n")
         self.add_text("</dd>")
-        self.end_state(wrap=False, end=None)
+        self.end_state(wrap=False)
 
     def visit_desc_inline(self, node: Element) -> None:
         self.add_text("<span>")
@@ -663,29 +667,25 @@ class MdxTranslator(SphinxTranslator):
         return self.depart_strong(node)
 
     def visit_literal(self, node: Element) -> None:
-        self.in_literal = True
         self.add_text("`")
 
     def depart_literal(self, node: Element) -> None:
-        self.in_literal = False
         self.add_text("`")
 
     def visit_literal_block(self, node: Element) -> None:
-        self.in_literal = True
+        self.in_literal += 1
         lang = node.get("language", "default")
         self.new_state()
         self.add_text(f"```{lang}\n")
 
     def depart_literal_block(self, node: Element) -> None:
-        self.in_literal = False
+        self.in_literal -= 1
         self.end_state(wrap=False, end=["```"])
 
     def visit_inline(self, node: Element) -> None:
-        self.in_literal = True
         self.add_text("`")
 
     def depart_inline(self, node: Element) -> None:
-        self.in_literal = False
         self.add_text("`")
 
     def visit_problematic(self, node: Element) -> None:
