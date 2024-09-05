@@ -22,7 +22,6 @@ from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
-    from dagster._core.definitions.data_version import CachingStaleStatusResolver
     from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
         ValidAssetSubset,
     )
@@ -87,44 +86,36 @@ class AssetGraphView:
         effective_dt: Optional[datetime] = None,
         last_event_id: Optional[int] = None,
     ):
-        from dagster._core.definitions.data_version import CachingStaleStatusResolver
         from dagster._core.instance import DagsterInstance
 
         instance = instance or DagsterInstance.ephemeral()
-        stale_resolver = CachingStaleStatusResolver(
-            instance=instance,
-            asset_graph=defs.get_asset_graph(),
-        )
-        check.invariant(stale_resolver.instance_queryer, "Ensure instance queryer is constructed")
         return AssetGraphView(
-            stale_resolver=stale_resolver,
             temporal_context=TemporalContext(
                 effective_dt=effective_dt or get_current_datetime(),
                 last_event_id=last_event_id or instance.event_log_storage.get_maximum_record_id(),
             ),
+            instance=instance,
+            asset_graph=defs.get_asset_graph(),
         )
 
     def __init__(
         self,
         *,
         temporal_context: TemporalContext,
-        stale_resolver: "CachingStaleStatusResolver",
+        instance: "DagsterInstance",
+        asset_graph: "BaseAssetGraph",
     ):
-        # Current these properties have the ability to be lazily constructed.
-        # We instead are going to try to retain the invariant that they are
-        # constructed upfront so that initialization time is well-understood
-        # and deterministic. If there are cheap operations that do not
-        # require these instances, we should move them to a different abstraction.
+        from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-        # ensure it is already constructed rather than created on demand
-        check.invariant(stale_resolver._instance_queryer)  # noqa: SLF001
-        # ensure it is already constructed rather than created on demand
-        check.invariant(stale_resolver._asset_graph)  # noqa: SLF001
-
-        # stale resolver has a CachingInstanceQueryer which has a DagsterInstance
-        # so just passing the CachingStaleStatusResolver is enough
-        self._stale_resolver = stale_resolver
         self._temporal_context = temporal_context
+        self._instance = instance
+        self._asset_graph = asset_graph
+
+        self._queryer = CachingInstanceQueryer(
+            instance=instance,
+            asset_graph=asset_graph,
+            evaluation_time=temporal_context.effective_dt,
+        )
 
     @property
     def effective_dt(self) -> datetime:
@@ -136,11 +127,7 @@ class AssetGraphView:
 
     @property
     def asset_graph(self) -> "BaseAssetGraph[BaseAssetNode]":
-        return self._stale_resolver.asset_graph
-
-    @property
-    def _queryer(self) -> "CachingInstanceQueryer":
-        return self._stale_resolver.instance_queryer
+        return self._asset_graph
 
     # In our transitional period there are lots of code path that take
     # a AssetGraphView and then call methods on the queryer. This is

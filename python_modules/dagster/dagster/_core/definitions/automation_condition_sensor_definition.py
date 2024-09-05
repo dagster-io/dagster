@@ -5,7 +5,6 @@ from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -18,7 +17,6 @@ from dagster._core.definitions.sensor_definition import (
 )
 from dagster._core.definitions.utils import check_valid_name, normalize_tags
 from dagster._time import get_current_datetime
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 def evaluate_automation_conditions(context: SensorEvaluationContext):
@@ -30,23 +28,13 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
 
     asset_graph = check.not_none(context.repository_def).asset_graph
 
-    instance_queryer = CachingInstanceQueryer(
-        context.instance,
-        asset_graph,
-        evaluation_time=get_current_datetime(),
-        logger=context.log,
-    )
-
     asset_graph_view = AssetGraphView(
-        stale_resolver=CachingStaleStatusResolver(
-            instance=context.instance,
-            asset_graph=asset_graph,
-            instance_queryer=instance_queryer,
-        ),
         temporal_context=TemporalContext(
-            effective_dt=instance_queryer.evaluation_time,
+            effective_dt=get_current_datetime(),
             last_event_id=None,
         ),
+        instance=context.instance,
+        asset_graph=asset_graph,
     )
 
     data_time_resolver = CachingDataTimeResolver(
@@ -71,7 +59,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
     results, to_request = evaluator.evaluate()
     new_cursor = cursor.with_updates(
         evaluation_id=cursor.evaluation_id,
-        evaluation_timestamp=instance_queryer.evaluation_time.timestamp(),
+        evaluation_timestamp=asset_graph_view.effective_dt.timestamp(),
         newly_observe_requested_asset_keys=[],  # skip for now, hopefully forever
         condition_cursors=[result.get_new_cursor() for result in results],
     )
