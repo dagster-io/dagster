@@ -21,6 +21,7 @@ from dagster import (
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
@@ -1486,7 +1487,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # Test that when partition a is materialized that the materialized partitions are a
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="a")
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         selector = infer_job_selector(graphql_context, "partition_materialization_job")
         result = execute_dagster_graphql(
@@ -1508,7 +1509,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # Test that when partition c is materialized that the materialized partitions are a, c
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1552,7 +1553,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             tags={"fail": "true"},
         )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1575,7 +1576,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             tags={"fail": "true"},
         )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1608,7 +1609,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         stats_result = execute_dagster_graphql(
             graphql_context,
@@ -1722,7 +1723,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             graphql_context, "time_partitioned_assets_job", partition_key=time_0
         )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         selector = infer_job_selector(graphql_context, "time_partitioned_assets_job")
         result = execute_dagster_graphql(
@@ -1748,7 +1749,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             graphql_context, "time_partitioned_assets_job", partition_key=time_2
         )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1776,7 +1777,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             graphql_context, "time_partitioned_assets_job", partition_key=time_1
         )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1899,7 +1900,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # Test with 1 run on all assets
         first_run_id = _create_run(graphql_context, "failure_assets_job")
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1932,7 +1933,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             asset_selection=[{"path": ["asset_3"]}],
         )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -2282,7 +2283,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 asset_selection=[AssetKey("multipartitions_1")],
             )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -2402,7 +2403,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 tags={"fail": "true"},
             )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -2451,7 +2452,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 tags={"fail": "true"},
             )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -2483,7 +2484,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 MultiPartitionKey({"date": partition_field[0], "ab": partition_field[1]}),
             )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -2524,7 +2525,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             MultiPartitionKey({"dynamic": "1", "static": "a"}),
         )
 
-        graphql_context.asset_record_loader.clear_cache()
+        graphql_context.clear_loaders_for(AssetRecord)
 
         counter = Counter()
         traced_counter.set(counter)
