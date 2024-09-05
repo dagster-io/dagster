@@ -108,6 +108,8 @@ extensions = [
     "dagster_sphinx",
     # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
+    # Render MDX
+    "sphinxcontrib.mdxbuilder",
 ]
 
 # -- Extension configuration -------------------------------------------------
