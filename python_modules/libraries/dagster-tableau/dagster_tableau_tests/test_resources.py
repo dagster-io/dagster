@@ -21,13 +21,14 @@ def test_basic_resource_request(args) -> None:
 
     fake_personal_access_token_name = "fake_personal_access_token_name"
     fake_personal_access_token_value = uuid.uuid4().hex
+    fake_site_name = "fake_site_name"
     fake_site_id = uuid.uuid4().hex
     fake_api_token = uuid.uuid4().hex
 
     resource_args = {
         "personal_access_token_name": fake_personal_access_token_name,
         "personal_access_token_value": fake_personal_access_token_value,
-        "site_id": fake_site_id,
+        "site_name": fake_site_name,
         host_key: fake_host_value,
     }
 
@@ -36,7 +37,7 @@ def test_basic_resource_request(args) -> None:
     responses.add(
         method=responses.POST,
         url=f"{resource.api_base_url}/auth/signin",
-        json={"credentials": {"token": fake_api_token}},
+        json={"credentials": {"site": {"id": fake_site_id}, "token": fake_api_token}},
         status=200,
     )
     responses.add(
