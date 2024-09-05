@@ -226,6 +226,14 @@ class MdxTranslator(SphinxTranslator):
             self.states.append([])
             self.states[-1].extend(result)
 
+    def get_permalink_ref(self, node: Element, title: str) -> str:
+        ids = " ".join(node.get("ids", []))
+        if node["ids"]:
+            return (
+                f"<a class='headerlink' ids='{ids}' href='#{node['ids'][0]}' title='{title}'>_</a>"
+            )
+        raise ValueError(f"No ids found for node: {node}")
+
     def unknown_visit(self, node: Element) -> None:
         node_type = node.__class__.__name__
         if node_type not in self._warned:
@@ -346,6 +354,7 @@ class MdxTranslator(SphinxTranslator):
 
     def depart_desc_signature(self, node: Element) -> None:
         self.in_literal -= 1
+        self.add_text(self.get_permalink_ref(node, "Link to this definition"))
         self.add_text("</dt>")
         self.end_state(wrap=False, end=None)
 
