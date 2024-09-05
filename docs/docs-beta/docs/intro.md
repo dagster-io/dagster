@@ -1,6 +1,7 @@
 ---
 title: Welcome
 slug: /
+displayed_sidebar: 'docs'
 ---
 
 # Dagster documentation
