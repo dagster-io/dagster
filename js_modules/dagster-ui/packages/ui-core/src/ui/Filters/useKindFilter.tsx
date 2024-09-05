@@ -31,7 +31,7 @@ export const useKindFilter = ({
     onStateChanged: (values) => {
       setKinds?.(Array.from(values));
     },
-    canSelectAll: false,
+    canSelectAll: true,
   });
 };
 
