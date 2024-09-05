@@ -11,9 +11,12 @@ query AssetNodeQuery {
         assetKey {
             path
         }
-        tags {
-            key
-            value
+        metadataEntries {
+            ... on TextMetadataEntry {
+                label
+                text
+            }
+            __typename
         }
         opName
         jobs {

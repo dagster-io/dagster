@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, Union
+from typing import Any, Dict, Mapping, Union
 
 from dagster import (
     AssetsDefinition,
@@ -7,7 +7,7 @@ from dagster import (
     _check as check,
 )
 
-from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
+from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
 
 
 class TaskDefs:
@@ -16,19 +16,19 @@ class TaskDefs:
         self.defs = defs
 
 
-def apply_tags_to_all_specs(defs: Definitions, tags: Dict[str, str]) -> Definitions:
+def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> Definitions:
     return Definitions(
         assets=[
             # Right now we make assumptions that we only support AssetSpec and AssetsDefinition
             # in orchesrated_defs.
             # https://linear.app/dagster-labs/issue/FOU-369/support-cacheableassetsdefinition-and-sourceasset-in-airlift
-            assets_def_with_af_tags(
+            assets_def_with_af_metadata(
                 check.inst(
                     asset,
                     (AssetSpec, AssetsDefinition),
                     "Only supports AssetSpec and AssetsDefinition right now",
                 ),
-                tags,
+                metadata,
             )
             for asset in (defs.assets or [])
         ],
@@ -42,17 +42,17 @@ def apply_tags_to_all_specs(defs: Definitions, tags: Dict[str, str]) -> Definiti
     )
 
 
-def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
-    return spec._replace(tags={**spec.tags, **tags})
+def spec_with_metadata(spec: AssetSpec, metadata: Mapping[str, str]) -> "AssetSpec":
+    return spec._replace(metadata={**spec.metadata, **metadata})
 
 
-def assets_def_with_af_tags(
-    assets_def: Union[AssetsDefinition, AssetSpec], tags: Mapping[str, str]
+def assets_def_with_af_metadata(
+    assets_def: Union[AssetsDefinition, AssetSpec], metadata: Mapping[str, str]
 ) -> Union[AssetsDefinition, AssetSpec]:
     return (
-        assets_def.map_asset_specs(lambda spec: spec_with_tags(spec, tags))
+        assets_def.map_asset_specs(lambda spec: spec_with_metadata(spec, metadata))
         if isinstance(assets_def, AssetsDefinition)
-        else spec_with_tags(assets_def, tags)
+        else spec_with_metadata(assets_def, metadata)
     )
 
 
@@ -60,7 +60,7 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
     """Construct a Dagster :py:class:`Definitions` object with definitions
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
 
-    Concretely this adds tags to all asset specs in the provided definitions
+    Concretely this adds metadata to all asset specs in the provided definitions
     with the provided dag_id and task_id. Dag id is tagged with the
     "airlift/dag_id" key and task id is tagged with the "airlift/task_id" key.
 
@@ -77,9 +77,9 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
     defs_to_merge = []
     for task_def in defs:
         defs_to_merge.append(
-            apply_tags_to_all_specs(
+            apply_metadata_to_all_specs(
                 defs=task_def.defs,
-                tags={DAG_ID_TAG: dag_id, TASK_ID_TAG: task_def.task_id},
+                metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_def.task_id},
             )
         )
     return Definitions.merge(*defs_to_merge)

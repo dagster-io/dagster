@@ -7,7 +7,7 @@ import pytest
 from dagster import DagsterInstance
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster_airlift.constants import MIGRATED_TAG, TASK_ID_TAG
+from dagster_airlift.constants import MIGRATED_TAG, TASK_ID_METADATA_KEY
 from dagster_airlift.core import AirflowInstance, BasicAuthBackend
 
 from .utils import (
@@ -100,10 +100,10 @@ def test_migration_status(
         )
 
         _assert_dagster_migration_states_are(
-            True, where=lambda spec: spec.tags.get(TASK_ID_TAG) == "load_raw_customers"
+            True, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) == "load_raw_customers"
         )
         _assert_dagster_migration_states_are(
-            False, where=lambda spec: spec.tags.get(TASK_ID_TAG) != "load_raw_customers"
+            False, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) != "load_raw_customers"
         )
 
     with mark_tasks_migrated({"build_dbt_models"}):
@@ -122,10 +122,10 @@ def test_migration_status(
         )
 
         _assert_dagster_migration_states_are(
-            True, where=lambda spec: spec.tags.get(TASK_ID_TAG) == "build_dbt_models"
+            True, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) == "build_dbt_models"
         )
         _assert_dagster_migration_states_are(
-            False, where=lambda spec: spec.tags.get(TASK_ID_TAG) != "build_dbt_models"
+            False, where=lambda spec: spec.tags.get(TASK_ID_METADATA_KEY) != "build_dbt_models"
         )
 
     with mark_tasks_migrated({"load_raw_customers", "build_dbt_models", "export_customers"}):
