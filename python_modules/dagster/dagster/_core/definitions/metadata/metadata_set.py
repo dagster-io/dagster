@@ -7,6 +7,8 @@ from typing_extensions import TypeVar
 from dagster import _check as check
 from dagster._core.definitions.metadata.metadata_value import (
     MetadataValue,
+    TableColumn as TableColumn,
+    TableColumnConstraints as TableColumnConstraints,
     TableColumnLineage,
     TableSchema,
 )
