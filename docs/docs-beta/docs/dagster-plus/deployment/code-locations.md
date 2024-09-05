@@ -5,7 +5,7 @@ displayed_sidebar: "dagsterPlus"
 
 # Code locations
 
-Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph. To add your first code location, follow the [getting started](/dagster-plus/getting-started) guide.
+Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 
 This guide will cover three options for adding a new code location:
 - Adding a code location manually
@@ -15,7 +15,7 @@ This guide will cover three options for adding a new code location:
 <details>
 <summary>Prerequisites</summary>
 
-1. An existing Dagster project. Refer to the [recommended project structure](/tutorial/create-new-project) for more information.
+1. An existing Dagster project. Refer to the [recommended project structure](/tutorial/create-new-project) and [code requirements](/dagster-plus/deployment/code-requirements) pages for more information.
 
 2. Editor, Admin, or Organization Admin permissions in Dagster+.
 

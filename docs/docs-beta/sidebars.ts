@@ -254,11 +254,11 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: 'doc',
-          id: 'dagster-plus/getting-started/whats-dagster-plus',
+          id: 'dagster-plus/whats-dagster-plus',
         },
         {
           type: 'doc',
-          id: 'dagster-plus/getting-started/code-requirements',
+          id: 'dagster-plus/getting-started',
         },
       ],
     },
@@ -267,11 +267,6 @@ const sidebars: SidebarsConfig = {
       label: 'Features',
       collapsible: false,
       items: [
-        {
-          type: 'doc',
-          label: 'Deployment types',
-          id: 'dagster-plus/deployment-types',
-        },
         {
           type: 'category',
           label: 'Insights',
@@ -339,10 +334,6 @@ const sidebars: SidebarsConfig = {
               id: 'dagster-plus/deployment/alerts/slack',
             },
           ],
-        },
-        {
-          type: 'doc',
-          id: 'dagster-plus/multi-tenancy',
         },
         {
           type: 'category',
@@ -424,11 +415,6 @@ const sidebars: SidebarsConfig = {
             id: 'dagster-plus/deployment/hybrid',
           },
           items: [
-            {
-              type: 'doc',
-              label: 'Architecture',
-              id: 'dagster-plus/deployment/hybrid/architecture',
-            },
             {
               type: 'doc',
               label: 'Tokens',

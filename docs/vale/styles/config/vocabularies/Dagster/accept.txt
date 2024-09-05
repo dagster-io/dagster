@@ -79,3 +79,14 @@ uncomment
 vCPU
 vCPUs
 we have
+
+
+SLA
+SLAs
+performant
+SOC
+GDPR
+HIPAA
+IAM
+ECS
+AWS
