@@ -19,7 +19,7 @@ Dagster supports several ways of creating assets, but this guide will focus on u
 
 To follow the steps in this guide, you'll need:
 
-- To have Dagster installed. Refer to the [Installation](/tutorial/installation) guide for more information.
+- To have Dagster installed. Refer to the [Installation](/getting-started/installation) guide for more information.
 
 </details>
 
