@@ -87,18 +87,31 @@ In this example:
 
 Now that you've seen how to model partitioned assets in different ways, this section shows how to define dependencies between various partitioned assets, and between partitioned assets and un-partitioned assets.
 
-### Dependencies between time-based partitions
-
 Partitioned assets in Dagster can have dependencies on other partitioned assets. This allows you to create complex data pipelines where the output of one partitioned asset feeds into another. Here's how it works:
 
 - A downstream asset can depend on one or more partitions of an upstream asset
 - The partitioning schemes don't need to be identical, but they should be compatible
 
+### Dependencies between different time-based partitions
+
+In [Define time-partitioned assets](#define-time-partitioned-assets), we created two time-partitioned assets: `daily_sales_data` and `daily_sales_summary`, which can simply be executed at the same time in a single schedule.
+
+However, sometimes you might want to define dependencies between different time-based partitions. For example, you might want to aggregate daily data into a weekly report.
+
+In this case, we have a `weekly_sales_summary` asset that depends on the `daily_sales_data` asset. Here's how to set up dependencies between different time-based partitions:
+
 <CodeExample filePath="guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" title="Time-based partition dependencies" />
 
-```python
+In this example:
 
-```
+1. We have a `daily_sales_data` asset partitioned by day, which will be executed daily.
+2. The `weekly_sales_summary` asset depends on the `daily_sales_data` asset, which will be executed weekly.
+3. To define the dependency, we use `AssetDep` with `TimeWindowPartitionMapping`. Dagster automatically infers the mapping between weekly and daily partitions using this API. For example, it knows that the "2024-08-25" weekly partition depends on daily partitions from "2024-08-25" to "2024-08-31".
+4. To automate the execution of these assets, we use `AutomationCondition.eager()`. This ensures `weekly_sales_summary` runs weekly after all seven daily partitions of `daily_sales_data` are up-to-date. Declarative Automation is a powerful feature in Dagster that allows you to declaratively define when assets should be executed, without having to write custom scheduling logic. For more details, see [Declarative Automation](/concepts/automation/declarative-automation).
+
+### Dependencies between time-based partitions and un-partitioned assets
+
+TODO
 
 ### Dependencies between time-based and static partitions
 
