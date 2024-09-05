@@ -109,8 +109,9 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
       }
 
       // Check if the query has changed. If so, perform a replace. Otherwise, do nothing
-      // to ensure that we don't end up in a `replace` loop.
-      if (!areQueriesEqual(currentQueryString, next)) {
+      // to ensure that we don't end up in a `replace` loop. If we're not in prod, always run
+      // the `replace` so that we surface any unwanted loops during development.
+      if (process.env.NODE_ENV !== 'production' || !areQueriesEqual(currentQueryString, next)) {
         currentQueryString = next;
         history.replace(`${location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`);
       }
