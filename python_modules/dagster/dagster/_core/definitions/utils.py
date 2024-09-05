@@ -290,17 +290,21 @@ def validate_asset_owner(owner: str, key: "AssetKey") -> None:
         )
 
 
-def normalize_group_name(group_name: Optional[str]) -> str:
+def validate_group_name(group_name: Optional[str]) -> None:
     """Ensures a string name is valid and returns a default if no name provided."""
     if group_name:
         check_valid_chars(group_name)
-        return group_name
     elif group_name == "":
         raise DagsterInvalidDefinitionError(
-            "Empty asset group name was provided, which is not permitted."
+            "Empty asset group name was provided, which is not permitted. "
             "Set group_name=None to use the default group_name or set non-empty string"
         )
-    return DEFAULT_GROUP_NAME
+
+
+def normalize_group_name(group_name: Optional[str]) -> str:
+    """Ensures a string name is valid and returns a default if no name provided."""
+    validate_group_name(group_name)
+    return group_name or DEFAULT_GROUP_NAME
 
 
 def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:

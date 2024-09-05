@@ -15,6 +15,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import (
     resolve_automation_condition,
     validate_asset_owner,
+    validate_group_name,
     validate_tags_strict,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -147,6 +148,8 @@ class AssetSpec(
 
         key = AssetKey.from_coercible(key)
         asset_deps = coerce_to_deps_and_check_duplicates(deps, key)
+
+        validate_group_name(group_name)
 
         owners = check.opt_sequence_param(owners, "owners", of_type=str)
         for owner in owners:
