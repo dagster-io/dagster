@@ -73,9 +73,9 @@ def record_error(env: BuildEnvironment, message: str) -> None:
 
 
 def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: object) -> None:
-    if name != "__init__" and not obj.__doc__:
+    if name != "__init__" and not hasattr(obj, "__doc__"):
         message = (
-            f"Docstring not found for {object.__name__}.{name}. "
+            f"Docstring not found for {obj.__name__}.{name}. "
             "All public methods and properties must have docstrings."
         )
         record_error(env, message)
