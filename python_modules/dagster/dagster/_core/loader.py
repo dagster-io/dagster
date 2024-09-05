@@ -75,6 +75,9 @@ class LoadingContext(ABC):
 
         return self.loaders[ttype]
 
+    def clear_loaders_for(self, ttype: Type["InstanceLoadableBy"]):
+        del self.loaders[ttype]
+
 
 # Expected there may be other "Loadable" base classes based on what is needed to load.
 
@@ -101,7 +104,7 @@ class InstanceLoadableBy(ABC, Generic[TKey]):
         raise NotImplementedError()
 
     @classmethod
-    async def gen(cls, context: LoadingContext, id: TKey) -> Self:
+    async def gen(cls, context: LoadingContext, id: TKey) -> Optional[Self]:
         """Fetch an object by its id."""
         loader, _ = context.get_loaders_for(cls)
         return await loader.load(id)
