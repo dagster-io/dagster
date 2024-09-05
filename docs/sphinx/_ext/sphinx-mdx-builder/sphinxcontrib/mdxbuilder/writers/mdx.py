@@ -184,6 +184,8 @@ class MdxTranslator(SphinxTranslator):
         end: Sequence[str] | None = ("",),
         first: str | None = None,
     ) -> None:
+        if len(self.stateindent) == 0:
+            self.stateindent = [0]
         content = self.states.pop()
         maxindent = sum(self.stateindent)
         indent = self.stateindent.pop()
@@ -218,7 +220,11 @@ class MdxTranslator(SphinxTranslator):
                 text = first + result[0][1].pop(0)
                 result.insert(0, (newindent, [text]))
 
-        self.states[-1].extend(result)
+        if len(self.states) >= 1:
+            self.states[-1].extend(result)
+        else:
+            self.states.append([])
+            self.states[-1].extend(result)
 
     def unknown_visit(self, node: Element) -> None:
         node_type = node.__class__.__name__
@@ -233,6 +239,7 @@ class MdxTranslator(SphinxTranslator):
         if self.in_literal:
             # Escape < characters in literal blocks
             content = node.astext().replace("<", "\\<")
+            content = node.astext().replace("{", "\\{")
         else:
             content = node.astext()
         self.add_text(content)
@@ -685,6 +692,53 @@ class MdxTranslator(SphinxTranslator):
         self.add_text(f"```\n{node.astext()}\n```")
         raise nodes.SkipNode
 
+    def visit_block_quote(self, node: Element) -> None:
+        self.add_text("> ")
+
+    def depart_block_quote(self, node: Element) -> None:
+        self.add_text(self.nl)
+        self.end_state(wrap=False)
+
+    def visit_transition(self, node: Element) -> None:
+        self.new_state(0)
+        self.add_text("-----")
+
+    def depart_transition(self, node: Element) -> None:
+        self.end_state(wrap=False)
+
+    def visit_line_block(self, node: Element) -> None:
+        self.new_state()
+        self.add_text("<div className='lineblock'>")
+
+    def depart_line_block(self, node: Element) -> None:
+        self.add_text("</div>")
+        self.end_state()
+
+    def visit_container(self, node: Element) -> None:
+        pass
+
+    def depart_container(self, node: Element) -> None:
+        pass
+
+    def visit_raw(self, node: Element) -> None:
+        if "text" in node.get("format", "").split():
+            self.new_state(0)
+            self.add_text(node.astext())
+            self.end_state(wrap=False)
+        raise nodes.SkipNode
+
+    def visit_line(self, node: Element) -> None:
+        pass
+
+    def depart_line(self, node: Element) -> None:
+        self.add_text("\n")
+
+    def visit_caption(self, node: Element) -> None:
+        pass
+
+    def depart_caption(self, node: Element) -> None:
+        pass
+
     # Misc. skipped nodes
     #####################o
 
@@ -805,3 +859,15 @@ class MdxTranslator(SphinxTranslator):
     def depart_flag(self, node: Element) -> None:
         self.add_text("\n:::\n")
         self.end_state(wrap=False)
+
+    def visit_inline_flag(self, node: Element) -> None:
+        self.log_visit(node)
+
+    def depart_inline_flag(self, node: Element) -> None:
+        pass
+
+    def visit_collapse_node(self, node: Element) -> None:
+        raise nodes.SkipNode
+
+    def visit_CollapseNode(self, node: Element) -> None:
+        raise nodes.SkipNode
