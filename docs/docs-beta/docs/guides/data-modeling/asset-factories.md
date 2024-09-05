@@ -26,7 +26,7 @@ The asset factory pattern can solve both of these problems.
 
 To follow the steps in this guide, you'll need:
 
-- A basic understanding of Dagster and assets. See the [Quick Start](/tutorial/quick-start) tutorial for an overview.
+- A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
 - High-level familiarity with Dagster's [Resources system](/concepts/resources)
 - Familiarity with SQL, YAML and Amazon Web Services (AWS) S3.
 - Basic familiarity with [Pydantic](https://docs.pydantic.dev/latest/) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/).
