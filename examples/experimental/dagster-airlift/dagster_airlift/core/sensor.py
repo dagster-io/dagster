@@ -161,14 +161,16 @@ def get_unmigrated_info(
                 assets_def.key
             )  # There should only be one key in the case of a "dag" asset
         else:
-            migrated = (
-                MIGRATED_TAG in assets_def.node_def.tags
-                and assets_def.node_def.tags[MIGRATED_TAG] == "True"
+            migration_state = {spec.tags.get(MIGRATED_TAG) for spec in assets_def.specs}
+            check.invariant(
+                len(migration_state) == 1,
+                "Migration state should match across all specs for a given asset",
             )
-            if migrated:
+            if migration_state.pop() == "True":
                 continue
-            else:
-                task_keys_per_dag[dag_id].update((task_id, spec.key) for spec in assets_def.specs)
+
+            task_keys_per_dag[dag_id].update((task_id, spec.key) for spec in assets_def.specs)
+
     for asset_check_key in repository_def.asset_checks_defs_by_key.keys():
         checks_per_key[asset_check_key.asset_key].add(asset_check_key)
 
