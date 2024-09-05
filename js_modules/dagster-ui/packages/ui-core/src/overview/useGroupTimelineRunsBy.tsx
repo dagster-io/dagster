@@ -1,4 +1,5 @@
 import {useCallback, useMemo} from 'react';
+import {useHistory} from 'react-router-dom';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
@@ -23,12 +24,18 @@ export const useGroupTimelineRunsBy = (
     [defaultValue],
   );
 
+  const history = useHistory();
   const [groupRunsBy, setGroupRunsBy] = useStateWithStorage(storageKey, validate);
   const setGroupByWithDefault = useCallback(
     (value: GroupRunsBy) => {
       setGroupRunsBy(value || defaultValue);
+
+      // Update URL with selected group by field
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('groupBy', value || defaultValue);
+      history.replace({search: searchParams.toString()});
     },
-    [defaultValue, setGroupRunsBy],
+    [defaultValue, setGroupRunsBy, history],
   );
 
   return useMemo(() => [groupRunsBy, setGroupByWithDefault], [groupRunsBy, setGroupByWithDefault]);
