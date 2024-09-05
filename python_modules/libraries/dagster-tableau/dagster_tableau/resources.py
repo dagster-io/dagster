@@ -114,6 +114,7 @@ class TableauCloudWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Cloud and provides utilities
     to interact with the Tableau API.
     """
+
     pod_name: str = Field(..., description="The pod name of the Tableau Cloud workspace.")
 
     @property
@@ -125,6 +126,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Server and provides utilities
     to interact with the Tableau API.
     """
+
     server_name: str = Field(..., description="The server name of the Tableau Server workspace.")
 
     @property
