@@ -139,7 +139,7 @@ However, in Dagster, you'll model your pipelines using assets as the fundamental
 
 2. Open your web browser and navigate to `http://localhost:3000`, where you should see the Dagster UI:
 
-   ![2048 resolution](/images/getting-started/quickstart/2048-resolution.png)
+   ![2048 resolution](/images/getting-started/quickstart/dagster-ui-start.png)
 
 3. In the top navigation, click **Assets > View global asset lineage**.
 
