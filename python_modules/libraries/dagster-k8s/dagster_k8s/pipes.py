@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import string
 from contextlib import contextmanager
 from pathlib import Path
@@ -43,7 +44,7 @@ from dagster_k8s.utils import get_common_labels
 
 
 def get_pod_name(run_id: str, op_name: str):
-    clean_op_name = op_name.replace("_", "-")
+    clean_op_name = re.sub("[^a-z0-9-]", "", op_name.lower().replace("_", "-"))
     suffix = "".join(random.choice(string.digits) for i in range(10))
     return f"dagster-{run_id[:18]}-{clean_op_name[:20]}-{suffix}"
 
