@@ -16,6 +16,7 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -151,7 +152,10 @@ def _execute_run_command_body(
     else:
         metrics_thread, metrics_thread_shutdown_event = None, None
 
-    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+    recon_job = recon_job_from_origin(
+        cast(JobPythonOrigin, dagster_run.job_code_origin),
+        DefinitionsLoadContext(load_type="run_worker", repository_load_data=None),
+    )
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -266,7 +270,10 @@ def _resume_run_command_body(
     else:
         metrics_thread, metrics_thread_shutdown_event = None, None
 
-    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+    recon_job = recon_job_from_origin(
+        cast(JobPythonOrigin, dagster_run.job_code_origin),
+        DefinitionsLoadContext(load_type="run_worker", repository_load_data=None),
+    )
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -469,14 +476,15 @@ def _execute_step_command_body(
         else:
             repository_load_data = None
 
-        recon_job = (
-            recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
-            .with_repository_load_data(repository_load_data)
-            .get_subset(
-                op_selection=dagster_run.resolved_op_selection,
-                asset_selection=dagster_run.asset_selection,
-                asset_check_selection=dagster_run.asset_check_selection,
-            )
+        recon_job = recon_job_from_origin(
+            cast(JobPythonOrigin, dagster_run.job_code_origin),
+            context=DefinitionsLoadContext(
+                load_type="step_worker", repository_load_data=repository_load_data
+            ),
+        ).get_subset(
+            op_selection=dagster_run.resolved_op_selection,
+            asset_selection=dagster_run.asset_selection,
+            asset_check_selection=dagster_run.asset_check_selection,
         )
 
         execution_plan = create_execution_plan(
