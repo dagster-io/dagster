@@ -20,8 +20,7 @@ def test_basic_construction_and_identity() -> None:
     assert asset_graph_view_t0.effective_dt == effective_dt
     assert asset_graph_view_t0.last_event_id == last_event_id
 
-    # hiding stale resolver deliberately but want to test instance object identity
-    assert asset_graph_view_t0._stale_resolver.instance_queryer.instance is instance  # noqa: SLF001
+    assert asset_graph_view_t0._instance is instance  # noqa: SLF001
 
     assert asset_graph_view_t0.asset_graph.all_asset_keys == {an_asset.key}
 

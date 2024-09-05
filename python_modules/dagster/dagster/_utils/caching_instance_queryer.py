@@ -71,6 +71,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         asset_graph: BaseAssetGraph,
         evaluation_time: Optional[datetime] = None,
         logger: Optional[logging.Logger] = None,
+        asset_record_loader: Optional[BatchAssetRecordLoader] = None,
     ):
         self._instance = instance
         self._asset_graph = asset_graph
