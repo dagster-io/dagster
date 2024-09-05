@@ -5,7 +5,6 @@ import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
-import {RepositoryCountTags} from './RepositoryCountTags';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
 import {buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
@@ -35,7 +34,7 @@ export type CodeLocationRowType =
       status: CodeLocationRowStatusType;
     };
 
-const TEMPLATE_COLUMNS = '3fr 1fr 1fr 240px 160px';
+const TEMPLATE_COLUMNS = '3fr 1fr 1fr 160px';
 
 interface LocationRowProps {
   locationEntry: WorkspaceRepositoryLocationNode | null;
@@ -63,7 +62,6 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell>{'\u2013'}</RowCell>
           <RowCell>
             <JoinedButtons>
               <ReloadButton location={name} />
@@ -115,9 +113,6 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell>
-            <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
-          </RowCell>
           <RowCell style={{alignItems: 'flex-end'}}>
             <JoinedButtons>
               <ReloadButton location={locationStatus.name} />
@@ -136,7 +131,6 @@ export const VirtualizedCodeLocationHeader = () => {
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Updated</HeaderCell>
-      <HeaderCell>Definitions</HeaderCell>
       <HeaderCell style={{textAlign: 'right'}}>Actions</HeaderCell>
     </HeaderRow>
   );
