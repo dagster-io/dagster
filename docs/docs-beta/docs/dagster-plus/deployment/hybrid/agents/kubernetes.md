@@ -49,7 +49,11 @@ helm --namespace dagster-cloud install agent --install dagster-cloud/dagster-clo
 
 ## Upgrading
 
-You can use Helm to do rolling upgrades of your Dagster+ agent
+You can use Helm to do rolling upgrades of your Dagster+ agent. The version of the agent does not need to be the same as the version of Dagster used in your projects. The Dagster+ control plane is upgraded automatically but is backwards compatible with older versions of the agent.
+
+:::tip
+We recommend upgrading your Dagster+ agent every 6 months
+:::
 
 ```yaml
 # values.yaml
@@ -64,11 +68,32 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
+## Troubleshooting tips
+
+You can see basic health information about your agent in the Dagster+ UI:
+
+{/* TODO: Screenshot */}
+
+### View logs
+
+```shell
+kubectl --namespace dagster-cloud logs -l deployment=agent
+```
+
+
 ## Common configurations
 
-You can customize your Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values). Some common configuration include
+There are three places to customize how Dagster interacts with Kubernetes:
+- *Globally* by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
+- *Per Project* by configuring the `dagster_cloud.yaml` file for your [code location](/dagster-plus/deployment/code-locations)
+- *Per Asset or Job* by adding tags to the [asset](/todo), [job](/todo), or [customizing the Kubernetes pipes invocation](/todo)
 
-### Configuring your agents to serve branch deployments
+Changes apply in a hierarchy, for example a customization for an asset will over-ride a default set globally in the agent configuration. 
+
+An exhaustive list of settings is available [here](/dagster-plus/deployment/hybrid/agents/settings), but common options are presented below. 
+
+
+### Configure your agents to serve branch deployments
 
 [Branch deployments](/dagster-plus/deployment/branch-deployments) are lightweight staging environments created for each code change. To configure your Dagster+ agent to manage them:
 
@@ -84,7 +109,7 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
-### High availability configurations
+### Deploy a high availability architecture
 
 You can configure your Dagster+ agent to run with multiple replicas. Work will be load balanced across all replicas.
 
@@ -113,14 +138,52 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
-## Troubleshooting tips
+### Use a secret to pull images 
 
-You can see basic health information about your agent in the Dagster+ UI:
+The agent is responsible for managing the lifecycle of your code locations and will typically need to pull images after your CICD process builds them and pushes them to your registry. You can specify a secret the agent will use to authenticate to your image registry.
 
-{/* TODO: Screenshot */}
+:::tip
+For cloud based Kubernetes such as AWS EKS, AKS, or GCP, you typically do not need an image pull secret. The role used by Kubernetes will have permission to access the registry. You can skip this configuration.
+:::
 
-### View logs
+First create the secret. This step will vary based on the registry you use, but for DockerHub: 
+
+```
+kubectl create secret docker-registry regCred \
+  --docker-server=DOCKER_REGISTRY_SERVER \
+  --docker-username=DOCKER_USER \
+  --docker-password=DOCKER_PASSWORD \
+  --docker-email=DOCKER_EMAIL
+```
+
+Use helm to configure the agent with the secret:
+
+```yaml file=values.yaml
+# values.yaml
+imagePullSecrets: [regCred]
+```
 
 ```shell
-kubectl --namespace dagster-cloud logs -l deployment=agent
+helm --namespace dagster-cloud upgrade agent \
+    dagster-cloud/dagster-cloud-agent \
+    --values ./values.yaml
 ```
+
+### Don't send Dagster+ stdout and stderr 
+
+### Make secrets available to your code 
+
+### Use a different role for a specific code location
+
+### Use an agent installed in a different environement for a deployment
+
+### Use an agent installed in a different environement for a code location
+
+### Set default resources for a code location 
+
+### Request more resources (CPU, memory, GPUs) for an asset 
+
+:::note 
+This guide shows how to request more resources for the Dagster run of an asset. If your Dagster asset uses the [Kubernetes pipes client](/todo) you should instead request resources like [this](https://github.com/dagster-io/hooli-data-eng-pipelines/blob/master/hooli_data_eng/assets/forecasting/__init__.py#L257-L288).
+:::
+
