@@ -106,6 +106,7 @@ extensions = [
     "sphinx_click.ext",
     # Dagster-labs-authored extension with custom directives and sphinx processing.
     "dagster_sphinx",
+    "sphinx_toolbox.collapse",
     # Render MDX
     "sphinxcontrib.mdxbuilder",
 ]
