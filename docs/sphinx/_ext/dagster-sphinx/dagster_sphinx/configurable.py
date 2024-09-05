@@ -93,7 +93,7 @@ def config_field_to_lines(field, name=None) -> List[str]:
             if isinstance(val, dict):
                 ls = json.dumps(val, indent=4).split("\n")
                 lines.append("")
-                lines.append("    .. collapse:: Default Value:")
+                lines.append("        Default Value:")
                 lines.append("")
                 lines.append("        .. code-block:: javascript")
                 lines.append("")
@@ -108,7 +108,7 @@ def config_field_to_lines(field, name=None) -> List[str]:
         lines.append("")
         # for the top level, no need to indent
         indent = "    " if name else ""
-        lines.append(indent + ".. collapse:: Config Schema:")
+        lines.append(indent + "Config Schema:")
         for name, subfield in field.config_type.fields.items():
             # indent all of these lines to fit under the collapse block
             lines += [indent + "    " + line for line in config_field_to_lines(subfield, name=name)]

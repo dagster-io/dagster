@@ -217,8 +217,10 @@ class MdxTranslator(SphinxTranslator):
             else:
                 text = first + result[0][1].pop(0)
                 result.insert(0, (newindent, [text]))
-
-        self.states[-1].extend(result)
+        if len(self.states) >= 1:
+            self.states[-1].extend(result)
+        else:
+            self.states.append(result)
 
     def unknown_visit(self, node: Element) -> None:
         node_type = node.__class__.__name__
@@ -685,6 +687,53 @@ class MdxTranslator(SphinxTranslator):
         self.add_text(f"```\n{node.astext()}\n```")
         raise nodes.SkipNode
 
+    def visit_block_quote(self, node: Element) -> None:
+        self.add_text("> ")
+
+    def depart_block_quote(self, node: Element) -> None:
+        self.add_text(self.nl)
+        self.end_state(wrap=False)
+
+    def visit_transition(self, node: Element) -> None:
+        self.new_state(0)
+        self.add_text("-----")
+
+    def depart_transition(self, node: Element) -> None:
+        self.end_state(wrap=False)
+
+    def visit_line_block(self, node: Element) -> None:
+        self.new_state()
+        self.add_text("<div className='lineblock'>")
+
+    def depart_line_block(self, node: Element) -> None:
+        self.add_text("</div>")
+        self.end_state()
+
+    def visit_container(self, node: Element) -> None:
+        pass
+
+    def depart_container(self, node: Element) -> None:
+        pass
+
+    def visit_raw(self, node: Element) -> None:
+        if "text" in node.get("format", "").split():
+            self.new_state(0)
+            self.add_text(node.astext())
+            self.end_state(wrap=False)
+        raise nodes.SkipNode
+
+    def visit_line(self, node: Element) -> None:
+        pass
+
+    def depart_line(self, node: Element) -> None:
+        self.add_text("\n")
+
+    def visit_caption(self, node: Element) -> None:
+        pass
+
+    def depart_caption(self, node: Element) -> None:
+        pass
+
     # Misc. skipped nodes
     #####################o
 
@@ -790,18 +839,27 @@ class MdxTranslator(SphinxTranslator):
     # TODO: Move these out of this module and extract out docusaurus
     # style admonitions
     def visit_flag(self, node: Element) -> None:
+        self.new_state()
         flag_type = node.attributes["flag_type"]
-        message = node.attributes["message"].replace(":::", "")
+        message = ""
+        if "message" in node.attributes:
+            message = node.attributes["message"].replace(":::", "")
         set_flag = "info"
         if flag_type == "experimental":
             set_flag = "danger"
         if flag_type == "deprecated":
             set_flag = "warning"
 
-        self.new_state()
         self.add_text(f":::{set_flag}[{flag_type}]\n")
         self.add_text(f"{message}\n")
 
     def depart_flag(self, node: Element) -> None:
         self.add_text("\n:::\n")
         self.end_state(wrap=False)
+
+    def visit_inline_flag(self, node: Element) -> None:
+        # TODO: Implement this
+        self.log_visit(node)
+
+    def depart_inline_flag(self, node: Element) -> None:
+        pass
