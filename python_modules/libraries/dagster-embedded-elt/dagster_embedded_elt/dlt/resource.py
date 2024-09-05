@@ -6,7 +6,6 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     MaterializeResult,
-    MetadataValue,
     OpExecutionContext,
     TableColumnConstraints,
     _check as check,
@@ -15,6 +14,7 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
+from dlt.common.schema import Schema
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
@@ -68,6 +68,18 @@ class DagsterDltResource(ConfigurableResource):
 
         return {k: _recursive_cast(v) for k, v in mapping.items()}
 
+    def _extract_table_schema_metadata(self, table_name: str, schema: Schema) -> TableSchema:
+        return TableSchema(
+            columns=[
+                TableColumn(
+                    name=column.get("name") or "",
+                    type=column.get("data_type") or "string",
+                    constraints=TableColumnConstraints(nullable=column.get("nullable") or True),
+                )
+                for column in schema.get_table_columns(table_name).values()
+            ]
+        )
+
     def extract_resource_metadata(
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
@@ -114,43 +126,20 @@ class DagsterDltResource(ConfigurableResource):
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
-        default_schemas = dlt_pipeline.default_schema.to_dict().get("tables", {})
-        child_tables_metadata = {
-            table: TableSchema(
-                columns=[
-                    TableColumn(
-                        name=column.get("name") or "",
-                        type=column.get("data_type") or "string",
-                        constraints=TableColumnConstraints(
-                            nullable=column.get("nullable") or True
-                        ),
-                    )
-                    for column in schema.get("columns", {}).values()
-                ]
-            )
-            for table, schema in default_schemas.items()
-            if table.startswith(f"{resource.table_name}__")
-        }
-
-        columns = (
-            default_schemas.get(str(resource.table_name), {})
-            .get("columns", {})
-            .values()
-        )
-        table_columns = [
-            TableColumn(
-                name=column.get("name") or "",
-                type=column.get("data_type") or "string",
-                constraints=TableColumnConstraints(
-                    nullable=column.get("nullable") or True
-                ),
-            )
-            for column in columns
+        schema = dlt_pipeline.default_schema
+        table_names = [
+            name for name in schema.data_table_names() if name.startswith(f"{resource.table_name}__")
         ]
+        child_tables_schema = {
+            table_name: self._extract_table_schema_metadata(table_name, schema)
+            for table_name in table_names
+        }
+        table_schema = self._extract_table_schema_metadata(str(resource.table_name), schema)
+
         base_metadata = {
-            **child_tables_metadata,
+            **child_tables_schema,
             **base_metadata,
-            **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
+            **TableMetadataSet(column_schema=table_schema),
         }
 
         return base_metadata

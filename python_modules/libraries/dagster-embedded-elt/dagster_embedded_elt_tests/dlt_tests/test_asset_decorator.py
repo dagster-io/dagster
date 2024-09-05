@@ -13,7 +13,10 @@ from dagster import (
     MonthlyPartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata.metadata_value import TableSchemaMetadataValue
+from dagster._core.definitions.metadata.metadata_value import (
+    TableColumnConstraints,
+    TableSchemaMetadataValue,
+)
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
@@ -100,7 +103,11 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
             columns=[
-                TableColumn(name="id", type="bigint"),
+                TableColumn(
+                    name="id",
+                    type="bigint",
+                    constraints=TableColumnConstraints(nullable=False),
+                ),
                 TableColumn(name="name", type="text"),
                 TableColumn(name="last_modified_dt", type="text"),
                 TableColumn(name="_dlt_load_id", type="text"),
