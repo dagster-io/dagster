@@ -56,7 +56,7 @@ def airflow_home_fixture(local_env) -> Path:
 def mark_tasks_migrated_fixture(
     dags_dir: Path,
     reserialize_dags: Callable[[], None],
-) -> Callable[[AbstractSet[str]], contextlib.AbstractContextManager[None]]:
+) -> Callable[[AbstractSet[str]], contextlib.AbstractContextManager]:
     """Returns a context manager that marks the specified tasks as migrated in the migration state file
     for the duration of the context manager's scope.
     """
