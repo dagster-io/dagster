@@ -4,7 +4,7 @@ from dagster import AssetSpec
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from typing_extensions import TypeAlias
 
-from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
+from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
 
 CoercibleToAssetSpec: TypeAlias = Union[AssetSpec, CoercibleToAssetKey]
 
@@ -18,6 +18,8 @@ def specs_from_task(
     return [
         asset
         if isinstance(asset, AssetSpec)
-        else AssetSpec(key=asset, tags={DAG_ID_TAG: dag_id, TASK_ID_TAG: task_id})
+        else AssetSpec(
+            key=asset, metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_id}
+        )
         for asset in assets
     ]

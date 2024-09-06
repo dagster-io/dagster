@@ -48,7 +48,7 @@ def build_definitions_airflow_asset_graph(
                     AssetSpec(
                         asset_key,
                         deps=deps,
-                        tags={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
+                        metadata={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
                     )
                 )
     instance = make_instance(

@@ -1,9 +1,10 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Set, Type
 
 from airflow import DAG
-from airflow.models import BaseOperator
+from airflow.models import BaseOperator, Variable
+from airflow.utils.session import create_session
 
 from dagster_airlift.in_airflow.base_proxy_operator import (
     BaseProxyToDagsterOperator,
@@ -38,11 +39,13 @@ def mark_as_dagster_migrating(
         logger = logging.getLogger("dagster_airlift")
     logger.debug(f"Searching for dags migrating to dagster{suffix}...")
     migrating_dags: List[DAG] = []
+    all_dag_ids: Set[str] = set()
     # Do a pass to collect dags and ensure that migration information is set correctly.
     for obj in global_vars.values():
         if not isinstance(obj, DAG):
             continue
         dag: DAG = obj
+        all_dag_ids.add(dag.dag_id)
         if not migration_state.dag_has_migration_state(dag.dag_id):
             logger.debug(f"Dag with id `{dag.dag_id}` has no migration state. Skipping...")
             continue
@@ -59,14 +62,27 @@ def mark_as_dagster_migrating(
                 )
         migrating_dags.append(dag)
 
+    if len(all_dag_ids) == 0:
+        raise Exception(
+            "No dags found in globals dictionary. Ensure that your dags are available from global context, and that the call to mark_as_dagster_migrating is the last line in your dag file."
+        )
+
     for dag in migrating_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as migrating.")
-        dag.tags.append(
-            json.dumps(
-                {"DAGSTER_MIGRATION_STATUS": migration_state.get_migration_dict_for_dag(dag.dag_id)}
-            )
-        )
+        set_migration_var_for_dag(dag.dag_id, migration_state)
         migration_state_for_dag = migration_state.dags[dag.dag_id]
+        num_migrated_tasks = len(
+            [
+                task_id
+                for task_id, task_state in migration_state_for_dag.tasks.items()
+                if task_state.migrated
+            ]
+        )
+        task_possessive = "Task" if num_migrated_tasks == 1 else "Tasks"
+        dag.tags = [
+            *dag.tags,
+            f"{num_migrated_tasks} {task_possessive} Marked as Migrating to Dagster",
+        ]
         migrated_tasks = set()
         for task_id, task_state in migration_state_for_dag.tasks.items():
             if not task_state.migrated:
@@ -94,3 +110,12 @@ def mark_as_dagster_migrating(
         logger.debug(f"Migrated tasks {migrated_tasks} in dag {dag.dag_id}.")
     logging.debug(f"Migrated {len(migrating_dags)}.")
     logging.debug(f"Completed marking dags and tasks as migrating to dagster{suffix}.")
+
+
+def set_migration_var_for_dag(dag_id: str, migration_state: AirflowMigrationState) -> None:
+    with create_session() as session:
+        Variable.set(
+            key=f"{dag_id}_dagster_migration_state",
+            value=json.dumps(migration_state.dags[dag_id].to_dict()),
+            session=session,
+        )

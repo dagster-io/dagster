@@ -8,7 +8,7 @@ import requests
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 
-from dagster_airlift.constants import DAG_ID_TAG, TASK_ID_TAG
+from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 
@@ -59,10 +59,15 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             timeout=3,
         )
         for asset_node in response.json()["data"]["assetNodes"]:
-            tags = {tag["key"]: tag["value"] for tag in asset_node["tags"]}
+            text_metadata_entries = {
+                entry["label"]: entry["text"]
+                for entry in asset_node["metadataEntries"]
+                if entry["__typename"] == "TextMetadataEntry"
+            }
             # match assets based on conventional dag_id__task_id naming or based on explicit tags
             if asset_node["opName"] == expected_op_name or (
-                tags.get(DAG_ID_TAG) == dag_id and tags.get(TASK_ID_TAG) == task_id
+                text_metadata_entries.get(DAG_ID_METADATA_KEY) == dag_id
+                and text_metadata_entries.get(TASK_ID_METADATA_KEY) == task_id
             ):
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
@@ -97,7 +102,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                     "variables": {"executionParams": execution_params},
                 },
                 # Timeout in seconds
-                timeout=3,
+                timeout=10,
             )
             run_id = response.json()["data"]["launchPipelineExecution"]["run"]["id"]
             logger.debug(f"Launched run {run_id}...")

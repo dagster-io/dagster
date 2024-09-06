@@ -106,8 +106,9 @@ extensions = [
     "sphinx_click.ext",
     # Dagster-labs-authored extension with custom directives and sphinx processing.
     "dagster_sphinx",
-    # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
+    # Render MDX
+    "sphinxcontrib.mdxbuilder",
 ]
 
 # -- Extension configuration -------------------------------------------------
@@ -152,6 +153,7 @@ autodoc_mock_imports = [
     "kubernetes",
     "lazy_object_proxy",
     "mlflow",
+    "mypy_boto3_glue",
     "mysql",
     "oauth2client",
     "orjson",

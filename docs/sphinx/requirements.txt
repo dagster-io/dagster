@@ -1,0 +1,5 @@
+  sphinx>=8,<9
+  sphinx-click
+  sphinx_toolbox
+  sphinxcontrib-serializinghtml
+  sphinxcontrib-mdxbuilder

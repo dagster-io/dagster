@@ -345,10 +345,14 @@ We can create a custom `BaseProxyToDagsterOperator` subclass which will retrieve
 will be made using that api key.
 
 ```python
-# tutorial_example/airflow_dags/custom_proxy.py
+# tutorial_example/custom_operator_examples/custom_proxy.py
+from pathlib import Path
+
 import requests
+from airflow import DAG
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import BaseProxyToDagsterOperator
+from dagster_airlift.in_airflow import BaseProxyToDagsterOperator, mark_as_dagster_migrating
+from dagster_airlift.migration_state import load_migration_state_from_yaml
 
 
 class CustomProxyToDagsterOperator(BaseProxyToDagsterOperator):
@@ -363,11 +367,16 @@ class CustomProxyToDagsterOperator(BaseProxyToDagsterOperator):
     def get_dagster_url(self, context: Context) -> str:
         return "https://dagster.example.com/"
 
-...
+
+dag = DAG(
+    dag_id="custom_proxy_example",
+)
 
 # At the end of your dag file
 mark_as_dagster_migrating(
-    global_vars=globals(), migration_state=..., dagster_operator_klass=CustomProxyToDagsterOperator
+    global_vars=globals(),
+    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+    dagster_operator_klass=CustomProxyToDagsterOperator,
 )
 ```
 
@@ -377,7 +386,7 @@ You can use a customer proxy operator to establish a connection to a dagster plu
 Airflow Variables. To set a dagster plus user token, follow this guide: https://docs.dagster.io/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens.
 
 ```python
-# tutorial_example/airflow_dags/plus_proxy_operator.py
+# tutorial_example/custom_operator_examples/plus_proxy_operator.py
 import requests
 from airflow.utils.context import Context
 from dagster_airlift.in_airflow import BaseProxyToDagsterOperator

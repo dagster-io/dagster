@@ -3,8 +3,6 @@ title: ''
 description: ''
 ---
 
-# [TOPIC]
-
 This section is an intro that includes:
 
 - A brief description of what the topic is,
@@ -53,14 +51,14 @@ Schedules run jobs at fixed time intervals and have two main components:
 
 - A job, which targets a selection of assets or ops
 
-- A cron expression, which defines when the schedule runs. Simple and complex schedules are supported, allowing you to have fine-grained control over when runs are executed. With cron syntax, you can:
+- A cron expression, which defines when the schedule runs. Basic and complex schedules are supported, allowing you to have fine-grained control over when runs are executed. With cron syntax, you can:
 
   - Create custom schedules like Every hour from 9:00AM - 5:00PM with cron expressions (0 9-17 \* \* \*)
   - Quickly create basic schedules like Every day at midnight with predefined cron definitions (@daily, @midnight)
 
   To make creating cron expressions easier, you can use an online tool like Crontab Guru. This tool allows you to create and describe cron expressions in a human-readable format and test the execution dates produced by the expression. Note: While this tool is useful for general cron expression testing, always remember to test your schedules in Dagster to ensure the results are as expected.
 
-For a schedule to run, it must be turned on and an active dagster-daemon process must be running. If you used dagster dev to start the Dagster UI/webserver, the daemon process will be automatically launched alongside the webserver.
+For a schedule to run, it must be turned on and an active dagster-daemon process must be running. If you used `dagster dev` to start the Dagster UI/webserver, the daemon process will be automatically launched alongside the webserver.
 
 After these criteria are met, the schedule will run at the interval specified in the cron expression. Schedules will execute in UTC by default, but you can specify a custom timezone.
 
