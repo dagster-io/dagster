@@ -1,7 +1,7 @@
-import {useCallback, useMemo} from 'react';
+import {useCallback, useMemo, useEffect} from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 
 const GROUP_BY_KEY = 'dagster.run-timeline-group-by';
 
@@ -9,7 +9,6 @@ export type GroupRunsBy = 'job' | 'automation';
 
 export const useGroupTimelineRunsBy = (
   defaultValue: GroupRunsBy = 'job',
-  storageKey = GROUP_BY_KEY,
 ): [GroupRunsBy, (value: GroupRunsBy) => void] => {
   const validate = useCallback(
     (value: string) => {
@@ -25,18 +24,32 @@ export const useGroupTimelineRunsBy = (
   );
 
   const history = useHistory();
-  const [groupRunsBy, setGroupRunsBy] = useStateWithStorage(storageKey, validate);
+  const [groupRunsBy, setGroupRunsBy] = useQueryAndLocalStoragePersistedState<GroupRunsBy>({
+    localStorageKey: GROUP_BY_KEY,
+    queryKey: 'groupBy',
+    encode: (value) => {
+      return {groupBy: value};
+    },
+    decode: (pair) => {
+      return validate(pair.groupBy);
+    },
+    isEmptyState: (value) => !value,
+  });
+
   const setGroupByWithDefault = useCallback(
     (value: GroupRunsBy) => {
       setGroupRunsBy(value || defaultValue);
-
-      // Update URL with selected group by field
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.set('groupBy', value || defaultValue);
-      history.replace({search: searchParams.toString()});
     },
     [defaultValue, setGroupRunsBy, history],
   );
+
+  // Runs on initial render to ensure groupBy query param is set.
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (!searchParams.has('groupBy')) {
+      setGroupByWithDefault(defaultValue);
+    }
+  }, [location.search, setGroupByWithDefault, defaultValue]);
 
   return useMemo(() => [groupRunsBy, setGroupByWithDefault], [groupRunsBy, setGroupByWithDefault]);
 };

@@ -136,13 +136,6 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
     [rows, visibleObjectKeys],
   );
 
-  // Runs on initial render to ensure groupBy query param is set.
-  React.useEffect(() => {
-    if (!new URLSearchParams(window.location.search).has('groupBy')) {
-      setGroupRunsBy(groupRunsBy);
-    }
-  }, [setGroupRunsBy, groupRunsBy]);
-
   return (
     <>
       <Header refreshState={refreshState} />
