@@ -130,17 +130,3 @@ You can use Dagster's rich metadata to use a schedule or a sensor to only start 
 
 <CodeExample filePath="guides/tbd/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
 
-
-
-## Questions for PR comments:
-
-* Should we keep the following sections or move them to a "concepts" page? 
-  * glossary
-  * Setting priority for ops/assets
-  * Freeing concurrency slots
-  * Throttling concurrency-limited runs
-  * Troubleshooting
-* tag_concurrency_limits could use a major look -- is bug noted [here](https://github.com/dagster-io/dagster/issues/23508) accurate, or does this still work with Postgres / MySQL?
-* question: include Dagster insance settings (`dagster.yaml / Dagster+ Deployment settings) examples as inline YAML, keep the folder with the dagster.yaml?
-To repro, need to `export DAGSTER_HOME=$(pwd)/global_concurrency` (and for tag_concurrency, need an OSS version using Postgres / MYSQL)
-* (from Linear) How can I set concurrency limits on a resource? -- I don't think this is possible, other than via using the concurrency tags.
