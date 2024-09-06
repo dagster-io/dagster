@@ -24,6 +24,7 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.loader import EphemeralLoadingContext
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._utils import file_relative_path
 
@@ -49,7 +50,9 @@ class ActivityHistory(NamedTuple):
 
         for asset_key in list(asset_graph.materializable_asset_keys):
             get_and_update_asset_status_cache_value(
-                instance, asset_key, asset_graph.get(asset_key).partitions_def
+                EphemeralLoadingContext(instance),
+                asset_key,
+                asset_graph.get(asset_key).partitions_def,
             )
 
 

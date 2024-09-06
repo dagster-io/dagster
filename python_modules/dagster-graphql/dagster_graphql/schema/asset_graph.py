@@ -1117,13 +1117,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             materialized_partition_subset,
             failed_partition_subset,
             in_progress_subset,
-        ) = get_partition_subsets(
-            graphene_info.context.instance,
-            graphene_info.context,
-            asset_key,
-            self._dynamic_partitions_loader,
-            partitions_def,
-        )
+        ) = get_partition_subsets(graphene_info.context, asset_key, partitions_def)
 
         return build_partition_statuses(
             self._dynamic_partitions_loader,
@@ -1148,10 +1142,8 @@ class GrapheneAssetNode(graphene.ObjectType):
                 failed_partition_subset,
                 in_progress_subset,
             ) = get_partition_subsets(
-                graphene_info.context.instance,
                 graphene_info.context,
                 asset_key,
-                self._dynamic_partitions_loader,
                 (
                     self._external_asset_node.partitions_def_data.get_partitions_definition()
                     if self._external_asset_node.partitions_def_data

@@ -37,7 +37,7 @@ from dagster._core.errors import (
 )
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.instance import DagsterInstance
 from dagster._core.loader import LoadingContext
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 RECORD_BATCH_SIZE = 1000
 
 
-class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
+class CachingInstanceQueryer(LoadingContext):
     """Provides utility functions for querying for asset-materialization related data from the
     instance which will attempt to limit redundant expensive calls. Intended for use within the
     scope of a single "request" (e.g. GQL request, sensor tick).
@@ -138,11 +138,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
 
         partitions_def = check.not_none(self.asset_graph.get(asset_key).partitions_def)
         return get_and_update_asset_status_cache_value(
-            instance=self.instance,
-            asset_key=asset_key,
-            partitions_def=partitions_def,
-            dynamic_partitions_loader=self,
-            loading_context=self._loading_context,
+            context=self, asset_key=asset_key, partitions_def=partitions_def
         )
 
     @cached_method
