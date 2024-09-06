@@ -2915,7 +2915,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        return [AssetCheckExecutionRecord.from_db_row(row) for row in rows]
+        return [AssetCheckExecutionRecord.from_db_row(row, key=check_key) for row in rows]
 
     def get_latest_asset_check_execution_by_key(
         self, check_keys: Sequence[AssetCheckKey]
@@ -2965,13 +2965,14 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        return {
-            AssetCheckKey(
+        results = {}
+        for row in rows:
+            check_key = AssetCheckKey(
                 asset_key=check.not_none(AssetKey.from_db_string(cast(str, row["asset_key"]))),
                 name=cast(str, row["check_name"]),
-            ): AssetCheckExecutionRecord.from_db_row(row)
-            for row in rows
-        }
+            )
+            results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
+        return results
 
     @property
     def supports_asset_checks(self):
