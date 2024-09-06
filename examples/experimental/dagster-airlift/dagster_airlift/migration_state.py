@@ -18,6 +18,9 @@ class TaskMigrationState(NamedTuple):
             raise Exception("Expected 'migrated' key to be a boolean")
         return TaskMigrationState(task_id=task_dict["id"], migrated=task_dict["migrated"])
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {"id": self.task_id, "migrated": self.migrated}
+
 
 class DagMigrationState(NamedTuple):
     tasks: Dict[str, TaskMigrationState]
@@ -35,6 +38,9 @@ class DagMigrationState(NamedTuple):
             task_migration_states[task_state.task_id] = task_state
         return DagMigrationState(tasks=task_migration_states)
 
+    def to_dict(self) -> Dict[str, Sequence[Dict[str, Any]]]:
+        return {"tasks": [task_state.to_dict() for task_state in self.tasks.values()]}
+
     def is_task_migrated(self, task_id: str) -> bool:
         if task_id not in self.tasks:
             return False
@@ -44,7 +50,7 @@ class DagMigrationState(NamedTuple):
 class AirflowMigrationState(NamedTuple):
     dags: Dict[str, DagMigrationState]
 
-    def get_migration_state_for_task(self, dag_id: str, task_id: str) -> Optional[bool]:
+    def get_migration_state_for_task(self, *, dag_id: str, task_id: str) -> Optional[bool]:
         if dag_id not in self.dags:
             return None
         if task_id not in self.dags[dag_id].tasks:

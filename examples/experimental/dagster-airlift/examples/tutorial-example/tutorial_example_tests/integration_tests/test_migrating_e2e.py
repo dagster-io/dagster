@@ -70,9 +70,16 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        assert not dag.migration_state.is_task_migrated("load_raw_customers")
-        assert not dag.migration_state.is_task_migrated("build_dbt_models")
-        assert not dag.migration_state.is_task_migrated("export_customers")
+        migration_state = instance.get_migration_state()
+        assert not migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="load_raw_customers"
+        )
+        assert not migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="build_dbt_models"
+        )
+        assert not migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="export_customers"
+        )
 
         _assert_dagster_migration_states_are(False)
 
@@ -81,9 +88,16 @@ def test_migration_status(
         dag = instance.list_dags()[0]
 
         assert dag.dag_id == "rebuild_customers_list"
-        assert dag.migration_state.is_task_migrated("load_raw_customers")
-        assert not dag.migration_state.is_task_migrated("build_dbt_models")
-        assert not dag.migration_state.is_task_migrated("export_customers")
+        migration_state = instance.get_migration_state()
+        assert migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="load_raw_customers"
+        )
+        assert not migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="build_dbt_models"
+        )
+        assert not migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="export_customers"
+        )
 
         _assert_dagster_migration_states_are(
             True, where=lambda spec: spec.tags.get(TASK_ID_TAG) == "load_raw_customers"
@@ -96,9 +110,16 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        assert not dag.migration_state.is_task_migrated("load_raw_customers")
-        assert dag.migration_state.is_task_migrated("build_dbt_models")
-        assert not dag.migration_state.is_task_migrated("export_customers")
+        migration_state = instance.get_migration_state()
+        assert not migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="load_raw_customers"
+        )
+        assert migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="build_dbt_models"
+        )
+        assert not migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="export_customers"
+        )
 
         _assert_dagster_migration_states_are(
             True, where=lambda spec: spec.tags.get(TASK_ID_TAG) == "build_dbt_models"
@@ -111,9 +132,16 @@ def test_migration_status(
         assert len(instance.list_dags()) == 1
         dag = instance.list_dags()[0]
         assert dag.dag_id == "rebuild_customers_list"
-        assert dag.migration_state.is_task_migrated("load_raw_customers")
-        assert dag.migration_state.is_task_migrated("build_dbt_models")
-        assert dag.migration_state.is_task_migrated("export_customers")
+        migration_state = instance.get_migration_state()
+        assert migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="load_raw_customers"
+        )
+        assert migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="build_dbt_models"
+        )
+        assert migration_state.get_migration_state_for_task(
+            dag_id="rebuild_customers_list", task_id="export_customers"
+        )
 
         _assert_dagster_migration_states_are(True)
 

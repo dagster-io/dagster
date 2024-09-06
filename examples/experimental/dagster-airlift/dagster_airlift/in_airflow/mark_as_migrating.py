@@ -3,7 +3,8 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Type
 
 from airflow import DAG
-from airflow.models import BaseOperator
+from airflow.models import BaseOperator, Variable
+from airflow.utils.session import create_session
 
 from dagster_airlift.in_airflow.base_proxy_operator import (
     BaseProxyToDagsterOperator,
@@ -68,11 +69,7 @@ def mark_as_dagster_migrating(
 
     for dag in migrating_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as migrating.")
-        dag.tags.append(
-            json.dumps(
-                {"DAGSTER_MIGRATION_STATUS": migration_state.get_migration_dict_for_dag(dag.dag_id)}
-            )
-        )
+        set_migration_var_for_dag(dag.dag_id, migration_state)
         migration_state_for_dag = migration_state.dags[dag.dag_id]
         migrated_tasks = set()
         for task_id, task_state in migration_state_for_dag.tasks.items():
@@ -101,3 +98,12 @@ def mark_as_dagster_migrating(
         logger.debug(f"Migrated tasks {migrated_tasks} in dag {dag.dag_id}.")
     logging.debug(f"Migrated {len(migrating_dags)}.")
     logging.debug(f"Completed marking dags and tasks as migrating to dagster{suffix}.")
+
+
+def set_migration_var_for_dag(dag_id: str, migration_state: AirflowMigrationState) -> None:
+    with create_session() as session:
+        Variable.set(
+            key=f"{dag_id}_dagster_migration_state",
+            value=json.dumps(migration_state.dags[dag_id].to_dict()),
+            session=session,
+        )
