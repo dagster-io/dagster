@@ -46,7 +46,7 @@ def get_instigation_ticks(
 
     statuses = [TickStatus(status) for status in status_strings] if status_strings else None
 
-    if batch_loader and limit and not cursor and not before and not after:
+    if batch_loader and limit and not cursor and not before and not after and not statuses:
         if instigator_type == InstigatorType.SENSOR:
             ticks = batch_loader.get_sensor_ticks(
                 instigator_origin_id,
