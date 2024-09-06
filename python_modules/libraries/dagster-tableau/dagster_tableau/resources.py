@@ -95,6 +95,11 @@ class BaseTableauWorkspace(ConfigurableResource):
         return self._fetch_json(self._with_site_id("workbooks"))
 
     @cached_method
+    def get_workbook(self, workbook_id) -> Dict[str, Any]:
+        """Fetches information, including views and tags, for a given workbook."""
+        return self._fetch_json(self._with_site_id(f"workbooks/{workbook_id}"))
+
+    @cached_method
     def get_workbook_data_sources(
         self,
         workbook_id: str,
