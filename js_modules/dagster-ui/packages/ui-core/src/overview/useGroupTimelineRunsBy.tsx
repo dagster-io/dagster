@@ -1,5 +1,4 @@
-import {useCallback, useMemo, useEffect} from 'react';
-import {useHistory} from 'react-router-dom';
+import {useCallback, useMemo} from 'react';
 
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 
@@ -23,7 +22,6 @@ export const useGroupTimelineRunsBy = (
     [defaultValue],
   );
 
-  const history = useHistory();
   const [groupRunsBy, setGroupRunsBy] = useQueryAndLocalStoragePersistedState<GroupRunsBy>({
     localStorageKey: GROUP_BY_KEY,
     queryKey: 'groupBy',
@@ -40,16 +38,8 @@ export const useGroupTimelineRunsBy = (
     (value: GroupRunsBy) => {
       setGroupRunsBy(value || defaultValue);
     },
-    [defaultValue, setGroupRunsBy, history],
+    [defaultValue, setGroupRunsBy],
   );
-
-  // Runs on initial render to ensure groupBy query param is set.
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    if (!searchParams.has('groupBy')) {
-      setGroupByWithDefault(defaultValue);
-    }
-  }, [location.search, setGroupByWithDefault, defaultValue]);
 
   return useMemo(() => [groupRunsBy, setGroupByWithDefault], [groupRunsBy, setGroupByWithDefault]);
 };
