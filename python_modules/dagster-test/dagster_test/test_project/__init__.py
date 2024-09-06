@@ -92,7 +92,7 @@ def get_test_project_recon_job(
     filename: Optional[str] = None,
 ) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructableJobForTest(
+    return ReOriginatedReconstructableJobForTest(  # type: ignore # ignored for update, fix me!
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",
