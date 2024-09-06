@@ -18,7 +18,6 @@ from typing import (
 import dagster._seven as seven
 from dagster import (
     AssetKey,
-    DagsterInstance,
     MultiPartitionsDefinition,
     _check as check,
 )
@@ -424,11 +423,9 @@ def get_unique_asset_id(
 
 
 def get_partition_subsets(
-    instance: DagsterInstance,
-    loading_context: LoadingContext,
+    context: LoadingContext,
     asset_key: AssetKey,
-    dynamic_partitions_loader: DynamicPartitionsStore,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition],
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
     the second is the failed partitions, and the third are in progress.
@@ -436,15 +433,13 @@ def get_partition_subsets(
     if not partitions_def:
         return None, None, None
 
-    if instance.can_read_asset_status_cache() and is_cacheable_partition_type(partitions_def):
+    if context.instance.can_read_asset_status_cache() and is_cacheable_partition_type(
+        partitions_def
+    ):
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
-            instance,
-            asset_key,
-            partitions_def,
-            dynamic_partitions_loader,
-            loading_context,
+            context, asset_key, partitions_def
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
@@ -468,13 +463,13 @@ def get_partition_subsets(
         # If the partition status can't be cached, fetch partition status from storage
         if isinstance(partitions_def, MultiPartitionsDefinition):
             materialized_keys = get_materialized_multipartitions(
-                instance, asset_key, partitions_def
+                context.instance, asset_key, partitions_def
             )
         else:
-            materialized_keys = instance.get_materialized_partitions(asset_key)
+            materialized_keys = context.instance.get_materialized_partitions(asset_key)
 
         validated_keys = get_validated_partition_keys(
-            dynamic_partitions_loader, partitions_def, set(materialized_keys)
+            context, partitions_def, set(materialized_keys)
         )
 
         materialized_subset = (
@@ -483,15 +478,14 @@ def get_partition_subsets(
             else partitions_def.empty_subset()
         )
 
-        asset_record = AssetRecord.blocking_get(loading_context, asset_key)
+        asset_record = AssetRecord.blocking_get(context, asset_key)
 
         failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
-            instance,
+            context,
             asset_key,
             partitions_def,
-            dynamic_partitions_loader,
             last_planned_materialization_storage_id=get_last_planned_storage_id(
-                instance, asset_key, asset_record
+                context.instance, asset_key, asset_record
             ),
         )
 

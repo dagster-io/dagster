@@ -21,6 +21,7 @@ from dagster._core.events import (
     DagsterEvent,
     StepMaterializationData,
 )
+from dagster._core.loader import EphemeralLoadingContext
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.partition_status_cache import (
     RUN_FETCH_BATCH_SIZE,
@@ -61,7 +62,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
 
         assert cached_status
@@ -108,7 +109,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-02")
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
 
         assert cached_status
@@ -147,14 +148,14 @@ class TestPartitionStatusCache:
         assert len(asset_records) == 0
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert not cached_status
 
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-01")
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.latest_storage_id
@@ -173,7 +174,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-02")
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.latest_storage_id
@@ -195,7 +196,7 @@ class TestPartitionStatusCache:
         )
         asset_job.execute_in_process(instance=instance, partition_key="a")
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset
@@ -234,7 +235,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.latest_storage_id
@@ -251,7 +252,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset
@@ -284,7 +285,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-01")
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset
@@ -314,7 +315,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance, partition_key="a_partition")
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset is None
@@ -333,14 +334,14 @@ class TestPartitionStatusCache:
 
         # no events
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert not cached_status
 
         asset_job.execute_in_process(instance=instance, partition_key="fail1", raise_on_error=False)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         # failed partition
         assert partitions_def.deserialize_subset(
@@ -357,7 +358,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance, partition_key="fail2", raise_on_error=False)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         # cache is updated with new failed partition, successful partition is ignored
         assert partitions_def.deserialize_subset(
@@ -389,7 +390,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         # cache is updated after successful materialization of fail1
         assert partitions_def.deserialize_subset(
@@ -419,7 +420,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         # in progress materialization is ignored
         assert partitions_def.deserialize_subset(
@@ -444,7 +445,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance, partition_key="fail1", raise_on_error=False)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         # failed partition
         assert partitions_def.deserialize_subset(
@@ -482,13 +483,13 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
 
         instance.report_run_failed(run_1)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status.deserialize_failed_partition_subsets(
             partitions_def
@@ -519,7 +520,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status.deserialize_failed_partition_subsets(
             partitions_def
@@ -531,7 +532,7 @@ class TestPartitionStatusCache:
         instance.report_run_failed(run_2)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status.deserialize_failed_partition_subsets(
             partitions_def
@@ -557,7 +558,7 @@ class TestPartitionStatusCache:
         asset_job.execute_in_process(instance=instance, partition_key="good1")
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status
         assert cached_status.latest_storage_id
@@ -591,7 +592,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
 
         assert cached_status.deserialize_in_progress_partition_subsets(
@@ -601,7 +602,7 @@ class TestPartitionStatusCache:
         delete_runs_instance.delete_run(run_1.run_id)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert not cached_status.earliest_in_progress_materialization_event_id
 
@@ -651,7 +652,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         early_id = cached_status.earliest_in_progress_materialization_event_id
         assert cached_status.deserialize_in_progress_partition_subsets(
@@ -677,7 +678,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert (
             partitions_def.deserialize_subset(
@@ -693,7 +694,7 @@ class TestPartitionStatusCache:
         instance.report_run_failed(run_2)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
@@ -706,7 +707,7 @@ class TestPartitionStatusCache:
         instance.report_run_canceled(run_1)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
@@ -768,7 +769,7 @@ class TestPartitionStatusCache:
         )
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert cached_status.deserialize_in_progress_partition_subsets(
             partitions_def
@@ -778,7 +779,7 @@ class TestPartitionStatusCache:
         instance.report_run_failed(run_2)
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
@@ -821,7 +822,7 @@ class TestPartitionStatusCache:
         asset_key = AssetKey("my_asset")
 
         cached_status = get_and_update_asset_status_cache_value(
-            instance, asset_key, asset_graph.get(asset_key).partitions_def
+            EphemeralLoadingContext(instance), asset_key, asset_graph.get(asset_key).partitions_def
         )
         failed_subset = cached_status.deserialize_failed_partition_subsets(
             asset_graph.get(asset_key).partitions_def

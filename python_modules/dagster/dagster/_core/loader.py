@@ -1,10 +1,12 @@
+import functools
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Generic, Iterable, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, Generic, Iterable, Optional, Sequence, Tuple, Type, TypeVar
 
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._utils.aiodataloader import BlockingDataLoader, DataLoader
 
 TResult = TypeVar("TResult")
@@ -42,7 +44,7 @@ Additional resources:
 """
 
 
-class LoadingContext(ABC):
+class LoadingContext(ABC, DynamicPartitionsStore):
     """A scoped object in which Loadable objects will be fetched in batches and cached.
 
     Expected to be implemented by request scoped context objects that have access to the DagsterInstance.
@@ -67,16 +69,41 @@ class LoadingContext(ABC):
 
             batch_load_fn = partial(ttype._batch_load, instance=self.instance)  # noqa
             blocking_batch_load_fn = partial(ttype._blocking_batch_load, instance=self.instance)  # noqa
+            max_batch_size = ttype._batch_load_size()  # noqa
 
             self.loaders[ttype] = (
-                DataLoader(batch_load_fn=batch_load_fn),
-                BlockingDataLoader(batch_load_fn=blocking_batch_load_fn),
+                DataLoader(batch_load_fn=batch_load_fn, max_batch_size=max_batch_size),
+                BlockingDataLoader(
+                    batch_load_fn=blocking_batch_load_fn, max_batch_size=max_batch_size
+                ),
             )
 
         return self.loaders[ttype]
 
     def clear_loaders_for(self, ttype: Type["InstanceLoadableBy"]):
         del self.loaders[ttype]
+
+    @functools.lru_cache(maxsize=None)
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self.instance.get_dynamic_partitions(partitions_def_name)
+
+    @functools.lru_cache(maxsize=None)
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return partition_key in self.get_dynamic_partitions(partitions_def_name=partitions_def_name)
+
+
+class EphemeralLoadingContext(LoadingContext):
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+        self._loaders = {}
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
+    @property
+    def loaders(self) -> Dict[Type, DataLoader]:
+        return self._loaders
 
 
 # Expected there may be other "Loadable" base classes based on what is needed to load.
@@ -102,6 +129,11 @@ class InstanceLoadableBy(ABC, Generic[TKey]):
         # an async one, we provide two separate functions here to allow sync and async
         # calls to coexist.
         raise NotImplementedError()
+
+    @classmethod
+    def _batch_load_size(cls) -> Optional[int]:
+        """Maximum batch size when loading."""
+        return None
 
     @classmethod
     async def gen(cls, context: LoadingContext, id: TKey) -> Optional[Self]:

@@ -54,6 +54,7 @@ from dagster._core.instance.config import (
     get_tick_retention_settings,
 )
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.loader import EphemeralLoadingContext
 from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
@@ -2163,7 +2164,9 @@ class DagsterInstance(DynamicPartitionsStore):
             get_and_update_asset_status_cache_value,
         )
 
-        cached_value = get_and_update_asset_status_cache_value(self, asset_key, partitions_def)
+        cached_value = get_and_update_asset_status_cache_value(
+            EphemeralLoadingContext(self), asset_key, partitions_def
+        )
 
         if isinstance(cached_value, AssetStatusCacheValue):
             materialized_partitions = cached_value.deserialize_materialized_partition_subsets(
