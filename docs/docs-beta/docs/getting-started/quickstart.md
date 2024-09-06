@@ -7,13 +7,17 @@ sidebar_label: "Quickstart"
 
 # Build your first Dagster project
 
-Welcome to Dagster! In this guide, you'll use Dagster to create a basic Extract, Transform, Load (ETL) pipeline that extracts data from a CSV file and transforms it.
+Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline that:
+
+- Extracts data from a CSV file
+- Transforms the data
+- Loads the transformed data to a new CSV file
 
 ## What you'll learn
 
 - How to set up a basic Dagster project
-- How to create a Dagster asset for each step of the ETL process
-- How to use Dagster's built-in features to monitor and execute your pipeline
+- How to create a Dagster asset for each step of the Extract, Transform, and Load (ETL) process
+- How to use Dagster's UI to monitor and execute your pipeline
 
 ## Prerequisites
 
