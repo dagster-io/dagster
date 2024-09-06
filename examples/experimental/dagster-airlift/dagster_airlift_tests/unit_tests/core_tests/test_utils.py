@@ -20,7 +20,7 @@ def test_retrieve_by_asset_tag() -> None:
     """Test that we can retrieve the dag and task id from the asset tags. Test that error edge cases are properly handled."""
 
     # 1. Single spec retrieval
-    @asset(tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"})
+    @asset(metadata={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"})
     def one_spec():
         pass
 
@@ -32,11 +32,11 @@ def test_retrieve_by_asset_tag() -> None:
         specs=[
             AssetSpec(
                 key=AssetKey(["simple"]),
-                tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
+                metadata={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
             ),
             AssetSpec(
                 key=AssetKey(["other"]),
-                tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
+                metadata={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
             ),
         ]
     )
@@ -51,11 +51,11 @@ def test_retrieve_by_asset_tag() -> None:
         specs=[
             AssetSpec(
                 key=AssetKey(["simple"]),
-                tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
+                metadata={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
             ),
             AssetSpec(
                 key=AssetKey(["other"]),
-                tags={"airlift/dag_id": "other_dag", "airlift/task_id": "other_task"},
+                metadata={"airlift/dag_id": "other_dag", "airlift/task_id": "other_task"},
             ),
         ]
     )
@@ -72,7 +72,7 @@ def test_retrieve_by_asset_tag() -> None:
         specs=[
             AssetSpec(
                 key=AssetKey(["simple"]),
-                tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
+                metadata={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
             ),
             AssetSpec(key=AssetKey(["other"])),
         ]
@@ -111,7 +111,7 @@ def test_retrieve_by_name() -> None:
 
 def test_op_asset_tag_mismatch() -> None:
     @asset(
-        tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
+        metadata={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"},
         op_tags={"airlift/dag_id": "other_dag", "airlift/task_id": "other_task"},
     )
     def mismatched():
@@ -125,7 +125,7 @@ def test_op_asset_tag_mismatch() -> None:
 
 
 def test_op_asset_name_mismatch() -> None:
-    @asset(tags={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"})
+    @asset(metadata={"airlift/dag_id": "print_dag", "airlift/task_id": "print_task"})
     def other_dag__other_task():
         pass
 
@@ -155,4 +155,4 @@ def test_specs_to_tasks() -> None:
     assert all(isinstance(_def, AssetSpec) for _def in defs)
     assert len(list(defs)) == 2
     spec = next(iter(defs))
-    assert spec.tags["airlift/dag_id"] == "dag"
+    assert spec.metadata["airlift/dag_id"] == "dag"

@@ -114,7 +114,7 @@ def test_coerce_specs() -> None:
     """Test that asset specs are properly coerced into asset keys."""
     # Initialize an airflow instance with a dag "dag", which contains a task "task". There are no task instances or runs.
 
-    spec = AssetSpec(key="a", tags={"airlift/dag_id": "dag", "airlift/task_id": "task"})
+    spec = AssetSpec(key="a", metadata={"airlift/dag_id": "dag", "airlift/task_id": "task"})
     defs = build_defs_from_airflow_instance(
         airflow_instance=make_instance({"dag": ["task"]}),
         defs=Definitions(
@@ -133,7 +133,8 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
     """Test that invalid dagster names are converted to valid names."""
     a = AssetKey("a")
     spec = AssetSpec(
-        key=a, tags={"airlift/dag_id": "dag-with-hyphens", "airlift/task_id": "task-with-hyphens"}
+        key=a,
+        metadata={"airlift/dag_id": "dag-with-hyphens", "airlift/task_id": "task-with-hyphens"},
     )
     defs = build_defs_from_airflow_instance(
         airflow_instance=make_instance({"dag-with-hyphens": ["task-with-hyphens"]}),
@@ -219,21 +220,21 @@ def test_transitive_asset_deps() -> None:
     assert [dep.asset_key for dep in next(iter(dag2_asset.specs)).deps] == [c_key]
     a_asset = repo_def.assets_defs_by_key[a_key]
     assert [dep.asset_key for dep in next(iter(a_asset.specs)).deps] == []
-    assert "airlift/dag_id" in next(iter(a_asset.specs)).tags
-    assert next(iter(a_asset.specs)).tags["airlift/dag_id"] == "dag1"
-    assert "airlift/task_id" in next(iter(a_asset.specs)).tags
-    assert next(iter(a_asset.specs)).tags["airlift/task_id"] == "task"
+    assert "airlift/dag_id" in next(iter(a_asset.specs)).metadata
+    assert next(iter(a_asset.specs)).metadata["airlift/dag_id"] == "dag1"
+    assert "airlift/task_id" in next(iter(a_asset.specs)).metadata
+    assert next(iter(a_asset.specs)).metadata["airlift/task_id"] == "task"
 
     b_asset = repo_def.assets_defs_by_key[b_key]
     assert [dep.asset_key for dep in next(iter(b_asset.specs)).deps] == [a_key]
-    assert "airlift/dag_id" not in next(iter(b_asset.specs)).tags
-    assert "airlift/task_id" not in next(iter(b_asset.specs)).tags
+    assert "airlift/dag_id" not in next(iter(b_asset.specs)).metadata
+    assert "airlift/task_id" not in next(iter(b_asset.specs)).metadata
     c_asset = repo_def.assets_defs_by_key[c_key]
     assert [dep.asset_key for dep in next(iter(c_asset.specs)).deps] == [b_key]
-    assert "airlift/dag_id" in next(iter(c_asset.specs)).tags
-    assert next(iter(c_asset.specs)).tags["airlift/dag_id"] == "dag2"
-    assert "airlift/task_id" in next(iter(c_asset.specs)).tags
-    assert next(iter(c_asset.specs)).tags["airlift/task_id"] == "task"
+    assert "airlift/dag_id" in next(iter(c_asset.specs)).metadata
+    assert next(iter(c_asset.specs)).metadata["airlift/dag_id"] == "dag2"
+    assert "airlift/task_id" in next(iter(c_asset.specs)).metadata
+    assert next(iter(c_asset.specs)).metadata["airlift/task_id"] == "task"
 
 
 def test_peered_dags() -> None:
