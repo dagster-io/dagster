@@ -102,6 +102,28 @@ query SensorsByStatusQuery($repositorySelector: RepositorySelector!, $status: In
 }
 """
 
+GET_SENSORS_TICKS_BY_STATUS_QUERY = """
+query SensorsTicksByStatusQuery($repositorySelector: RepositorySelector!, $statuses: [InstigationTickStatus!]) {
+  sensorsOrError(repositorySelector: $repositorySelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensors {
+      results {
+        name
+        sensorState {
+          ticks(statuses: $statuses) {
+            status
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 
 GET_SENSOR_QUERY = """
 query SensorQuery($sensorSelector: SensorSelector!) {
@@ -1243,6 +1265,10 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
+    repository_selector = {
+        "repositoryLocationName": main_repo_location_name(),
+        "repositoryName": main_repo_name(),
+    }
     sensor_name = "always_no_config_sensor"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
@@ -1352,6 +1378,21 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         == result.data["sensorOrError"]["sensorState"]["tick"]["tickId"]
         == str(skipped_tick_id)
     )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SENSORS_TICKS_BY_STATUS_QUERY,
+        variables={
+            "repositorySelector": repository_selector,
+            "statuses": ["FAILURE", "SUCCESS"],
+        },
+    )
+    all_sensors = result.data["sensorsOrError"]["results"]
+    selected_sensor = next(
+        (sensor for sensor in all_sensors if sensor["name"] == sensor_selector["sensorName"]), None
+    )
+    assert selected_sensor
+    assert len(selected_sensor["sensorState"]["ticks"]) == 2
 
 
 def _get_unloadable_sensor_origin(name):
