@@ -26,7 +26,7 @@ from deltalake.schema import (
     PrimitiveType,
     Schema,
 )
-from deltalake.table import FilterLiteralType, _filters_to_expression
+from deltalake.table import FilterLiteralType, filters_to_expression
 
 from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
@@ -60,7 +60,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         save_mode = metadata.get("mode")
         main_save_mode = resource_config.get("mode")
         main_custom_metadata = resource_config.get("custom_metadata")
-        overwrite_schema = resource_config.get("overwrite_schema")
+        schema_mode = resource_config.get("schema_mode")
         writerprops = resource_config.get("writer_properties")
 
         if save_mode is not None:
@@ -88,7 +88,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             # TODO make robust and move to function
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
-        write_deltalake(  # type: ignore
+        write_deltalake(
             table_or_uri=connection.table_uri,
             data=reader,
             storage_options=connection.storage_options,
@@ -96,7 +96,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             partition_filters=partition_filters,
             partition_by=partition_columns,
             engine=engine,
-            overwrite_schema=metadata.get("overwrite_schema") or overwrite_schema,
+            schema_mode=metadata.get("schema_mode") or schema_mode,
             custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
             writer_properties=WriterProperties(**writerprops)  # type: ignore
             if writerprops is not None
@@ -193,7 +193,6 @@ def partition_dimensions_to_dnf(
 
 
 def _value_dnf(table_partition: TablePartitionDimension, data_type: str, str_values: bool):
-    # ", ".join(f"'{partition}'" for partition in table_partition.partitions)
     partition = cast(Sequence[str], table_partition.partitions)
     if len(partition) > 1:
         raise ValueError(f"Array partition values are not yet supported: {data_type} / {partition}")
@@ -252,7 +251,7 @@ def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Da
             table_schema=table.schema(),
         )
         if partition_filters is not None:
-            partition_expr = _filters_to_expression([partition_filters])
+            partition_expr = filters_to_expression([partition_filters])
 
     dataset = table.to_pyarrow_dataset()
     if partition_expr is not None:
