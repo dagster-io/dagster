@@ -530,9 +530,9 @@ class DagsterKubernetesClient:
         wait_for_state: WaitForPodState = WaitForPodState.Ready,
         wait_initial_timeout: float = DEFAULT_WAIT_TIMEOUT,
         wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
-        wait_time_between_attempts: str = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+        wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         start_time: Any = None,
-        ignore_containers: set | None = None,
+        ignore_containers: Optional[Set] = None,
     ) -> None:
         """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
