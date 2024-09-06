@@ -883,6 +883,7 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     assert expected_specs_by_key[AssetKey("customers")].tags == {
         "foo": "",
         "bar-baz": "",
+        "dagster/kind/dbt": "",
         **StorageKindTagSet(storage_kind="duckdb"),
     }
     assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {
@@ -892,7 +893,10 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     }
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
         assert my_dbt_assets.tags_by_key[asset_key] == {**StorageKindTagSet(storage_kind="duckdb")}
-        assert expected_specs_by_key[asset_key].tags == {**StorageKindTagSet(storage_kind="duckdb")}
+        assert expected_specs_by_key[asset_key].tags == {
+            **StorageKindTagSet(storage_kind="duckdb"),
+            "dagster/kind/dbt": "",
+        }
 
 
 def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:

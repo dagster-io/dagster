@@ -148,7 +148,9 @@ class AssetOut(
             code_version=self.code_version,
         )
 
-    def to_spec(self, key: AssetKey, deps: Sequence[AssetDep]) -> AssetSpec:
+    def to_spec(
+        self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
+    ) -> AssetSpec:
         with disable_dagster_warnings():
             return AssetSpec.dagster_internal_init(
                 key=key,
@@ -160,7 +162,7 @@ class AssetOut(
                 freshness_policy=self.freshness_policy,
                 automation_condition=self.automation_condition,
                 owners=self.owners,
-                tags=self.tags,
+                tags={**additional_tags, **self.tags} if self.tags else additional_tags,
                 deps=deps,
                 auto_materialize_policy=None,
                 partitions_def=None,

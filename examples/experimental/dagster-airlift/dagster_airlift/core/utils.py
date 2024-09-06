@@ -6,6 +6,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.utils import VALID_NAME_REGEX
+from dagster._core.storage.tags import KIND_PREFIX
 
 from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
 
@@ -78,3 +79,7 @@ def prop_from_metadata(
                 )
         return prop
     return None
+
+
+def airflow_kind_dict() -> dict:
+    return {f"{KIND_PREFIX}airflow": ""}
