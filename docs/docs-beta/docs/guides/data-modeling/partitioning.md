@@ -94,7 +94,7 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets.
 
 ### Dependencies between different time-based partitions
 
-In [Define time-partitioned assets](#define-time-partitioned-assets), we created two time-partitioned assets: `daily_sales_data` and `daily_sales_summary`, which can simply be executed at the same time in a single schedule.
+In [Define time-partitioned assets](#define-time-partitioned-assets), we created two time-partitioned assets: `daily_sales_data` and `daily_sales_summary`, which can be executed at the same time in a single schedule.
 
 However, sometimes you might want to define dependencies between different time-based partitions. For example, you might want to aggregate daily data into a weekly report.
 
