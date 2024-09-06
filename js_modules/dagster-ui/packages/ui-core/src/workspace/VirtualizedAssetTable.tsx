@@ -5,7 +5,6 @@ import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedA
 import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {DefinitionTag} from '../graphql/types';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
@@ -23,7 +22,6 @@ interface Props {
   showRepoColumn: boolean;
   view?: AssetViewType;
   computeKindFilter?: StaticSetFilter<string>;
-  storageKindFilter?: StaticSetFilter<DefinitionTag>;
 }
 
 export const VirtualizedAssetTable = (props: Props) => {
@@ -37,7 +35,6 @@ export const VirtualizedAssetTable = (props: Props) => {
     showRepoColumn,
     view = 'flat',
     computeKindFilter,
-    storageKindFilter,
   } = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = Object.keys(groups).length;
@@ -100,7 +97,6 @@ export const VirtualizedAssetTable = (props: Props) => {
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onRefresh={onRefresh}
                 computeKindFilter={computeKindFilter}
-                storageKindFilter={storageKindFilter}
               />
             );
           })}

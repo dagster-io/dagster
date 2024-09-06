@@ -79,7 +79,7 @@ For more examples of how to create asset sensors, see the [How-To Use Asset Sens
 
 ## Declarative Automation
 
-TODO: add content
+{/* TODO: add content */}
 
 ## How to choose the right automation method
 
@@ -101,8 +101,8 @@ Use this table to help guide your decision:
 
 ## Next steps
 
-- Learn more about [advanced scheduling patterns] - TODO ADD LINK
-- Explore [complex sensor examples] - TODO ADD LINK
-- Dive into [Declarative Automation best practices] - TODO ADD LINK
+- Learn more about [advanced scheduling patterns] - {/* TODO ADD LINK */}
+- Explore [complex sensor examples] - {/* TODO ADD LINK */}
+- Dive into [Declarative Automation best practices] - {/* TODO ADD LINK */}
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.

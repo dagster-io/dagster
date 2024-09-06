@@ -448,6 +448,7 @@ export type AssetNode = {
   isPartitioned: Scalars['Boolean']['output'];
   jobNames: Array<Scalars['String']['output']>;
   jobs: Array<Pipeline>;
+  kinds: Array<Scalars['String']['output']>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition: Maybe<Run>;
   metadataEntries: Array<
@@ -6519,6 +6520,7 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     jobs: overrides && overrides.hasOwnProperty('jobs') ? overrides.jobs! : [],
+    kinds: overrides && overrides.hasOwnProperty('kinds') ? overrides.kinds! : [],
     latestMaterializationByPartition:
       overrides && overrides.hasOwnProperty('latestMaterializationByPartition')
         ? overrides.latestMaterializationByPartition!

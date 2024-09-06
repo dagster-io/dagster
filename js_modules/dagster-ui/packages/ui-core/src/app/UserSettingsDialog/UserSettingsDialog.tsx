@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  ButtonLink,
   Checkbox,
   Colors,
   Dialog,
@@ -15,6 +16,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {UserPreferences} from 'shared/app/UserSettingsDialog/UserPreferences.oss';
 
 import {CodeLinkProtocolSelect} from '../../code-links/CodeLinkProtocol';
+import {showCustomAlert} from '../CustomAlertProvider';
 import {getFeatureFlags, setFeatureFlags} from '../Flags';
 
 type OnCloseFn = (event: React.SyntheticEvent<HTMLElement>) => void;
@@ -128,11 +130,44 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
         <Box padding={{bottom: 8}} flex={{direction: 'column', gap: 4}}>
           <UserPreferences onChangeRequiresReload={setAreaPreferencesChanged} />
         </Box>
-        <Box padding={{top: 16}} border="top">
+        <Box padding={{vertical: 16}} border="top">
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
           {experimentalSettings}
+        </Box>
+        <Box padding={{top: 16}} border="top">
+          <ButtonLink
+            onClick={() => {
+              indexedDB.databases().then((databases) => {
+                databases.forEach((db) => {
+                  db.name && indexedDB.deleteDatabase(db.name);
+                });
+              });
+              showCustomAlert({
+                title: 'Caches reset',
+                body: (
+                  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                    IndexedDB cache has been reset.
+                    <ButtonLink
+                      onClick={() => {
+                        window.location.reload();
+                      }}
+                    >
+                      Click here to reload the page
+                    </ButtonLink>
+                  </Box>
+                ),
+              });
+            }}
+          >
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              Reset IndexedDB cache
+              <Tooltip content="If you're seeing stale definitions or experiencing client side bugs then this may fix it">
+                <Icon name="info" />
+              </Tooltip>
+            </Box>
+          </ButtonLink>
         </Box>
       </DialogBody>
       <DialogFooter topBorder>

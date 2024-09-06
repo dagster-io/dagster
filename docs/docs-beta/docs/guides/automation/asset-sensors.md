@@ -63,6 +63,9 @@ stateDiagram-v2
     UserEvaluationFunction --> SkipReason
     SkipReason --> [*]
     RunRequest --> [*]
+
+    class UserEvaluationFunction userDefined
+    classDef userDefined fill: var(--theme-color-accent-lavendar)
 ```
 
 In this example, the `@asset_sensor` decorator allows you to define a custom evaluation function that returns a `RunRequest` object when the asset is materialized and certain metadata is present,
@@ -75,7 +78,6 @@ otherwise it skips the run.
 By providing a configuration to the `RunRequest` object, you can trigger a job with a specific configuration. This is useful when you want to trigger a job with custom parameters based on custom logic you define. For example, you might use a sensor to trigger a job when an asset is materialized, but also pass metadata about that materialization to the job.
 
 <CodeExample filePath="guides/automation/asset-sensor-with-config.py" language="python" title="Asset Sensor with Config" />
-
 
 ## Monitor multiple assets
 

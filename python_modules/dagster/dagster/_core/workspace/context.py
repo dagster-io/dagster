@@ -59,12 +59,14 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
     CodeLocationStatusEntry,
     IWorkspace,
+    WorkspaceSnapshot,
     location_status_from_location_entry,
 )
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.remote_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
@@ -95,15 +97,7 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
         pass
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
-        pass
-
-    @abstractmethod
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
-        pass
-
-    @abstractmethod
-    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         pass
 
     @property
@@ -176,17 +170,19 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
     def code_locations(self) -> Sequence[CodeLocation]:
         return [
             entry.code_location
-            for entry in self.get_workspace_snapshot().values()
+            for entry in self.get_code_location_entries().values()
             if entry.code_location
         ]
 
     @property
     def code_location_names(self) -> Sequence[str]:
-        return list(self.get_workspace_snapshot())
+        return list(self.get_code_location_entries())
 
     def code_location_errors(self) -> Sequence[SerializableErrorInfo]:
         return [
-            entry.load_error for entry in self.get_workspace_snapshot().values() if entry.load_error
+            entry.load_error
+            for entry in self.get_code_location_entries().values()
+            if entry.load_error
         ]
 
     def has_code_location_error(self, name: str) -> bool:
@@ -345,7 +341,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
         self,
         instance: DagsterInstance,
-        workspace_snapshot: Mapping[str, CodeLocationEntry],
+        workspace_snapshot: WorkspaceSnapshot,
         process_context: "IWorkspaceProcessContext",
         version: Optional[str],
         source: Optional[object],
@@ -373,16 +369,16 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
-        return self._workspace_snapshot
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
+        return self._workspace_snapshot.code_location_entries
 
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
-        return self._workspace_snapshot.get(name)
+        return self._workspace_snapshot.code_location_entries.get(name)
 
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         return [
             location_status_from_location_entry(entry)
-            for entry in self._workspace_snapshot.values()
+            for entry in self._workspace_snapshot.code_location_entries.values()
         ]
 
     @property
@@ -431,6 +427,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def loaders(self) -> Dict[Type, DataLoader]:
         return self._loaders
+
+    @property
+    def asset_graph(self) -> "RemoteAssetGraph":
+        return self._workspace_snapshot.asset_graph
 
 
 class IWorkspaceProcessContext(ABC):
@@ -517,7 +517,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         self._version = version
 
-        # Guards changes to _location_entry_dict, _watch_thread_shutdown_events and _watch_threads
+        # Guards changes to _workspace_snapshot, _watch_thread_shutdown_events and _watch_threads
         self._lock = threading.Lock()
         self._watch_thread_shutdown_events: Dict[str, threading.Event] = {}
         self._watch_threads: Dict[str, threading.Thread] = {}
@@ -542,7 +542,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
             )
 
-        self._location_entry_dict: Dict[str, CodeLocationEntry] = {}
+        self._workspace_snapshot: WorkspaceSnapshot = WorkspaceSnapshot(code_location_entries={})
         self._update_workspace(
             {
                 origin.location_name: self._load_location(origin, reload=False)
@@ -670,47 +670,51 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             update_timestamp=time.time(),
         )
 
-    def create_snapshot(self) -> Mapping[str, CodeLocationEntry]:
+    def get_workspace_snapshot(self) -> WorkspaceSnapshot:
         with self._lock:
-            return self._location_entry_dict.copy()
+            return self._workspace_snapshot
 
     @property
     def code_locations_count(self) -> int:
         with self._lock:
-            return len(self._location_entry_dict)
+            return len(self._workspace_snapshot.code_location_entries)
 
     @property
     def code_location_names(self) -> Sequence[str]:
         with self._lock:
-            return list(self._location_entry_dict)
+            return list(self._workspace_snapshot.code_location_entries)
 
     def has_code_location(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
 
         with self._lock:
             return (
-                location_name in self._location_entry_dict
-                and self._location_entry_dict[location_name].code_location is not None
+                location_name in self._workspace_snapshot.code_location_entries
+                and self._workspace_snapshot.code_location_entries[location_name].code_location
+                is not None
             )
 
     def has_code_location_error(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
         with self._lock:
             return (
-                location_name in self._location_entry_dict
-                and self._location_entry_dict[location_name].load_error is not None
+                location_name in self._workspace_snapshot.code_location_entries
+                and self._workspace_snapshot.code_location_entries[location_name].load_error
+                is not None
             )
 
     def reload_code_location(self, name: str) -> None:
-        new = self._load_location(self._location_entry_dict[name].origin, reload=True)
+        new_entry = self._load_location(
+            self._workspace_snapshot.code_location_entries[name].origin, reload=True
+        )
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._location_entry_dict[name] = new
+            self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
 
     def shutdown_code_location(self, name: str) -> None:
         with self._lock:
-            self._location_entry_dict[name].origin.shutdown_server()
+            self._workspace_snapshot.code_location_entries[name].origin.shutdown_server()
 
     def refresh_workspace(self) -> None:
         updated_locations = {
@@ -735,11 +739,11 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             previous_threads = self._watch_threads
             self._watch_threads = {}
 
-            previous_locations = self._location_entry_dict
-            self._location_entry_dict = new_locations
+            previous_locations = self._workspace_snapshot.code_location_entries
+            self._workspace_snapshot = WorkspaceSnapshot(code_location_entries=new_locations)
 
             # start monitoring for new locations
-            for entry in self._location_entry_dict.values():
+            for entry in new_locations.values():
                 if isinstance(entry.origin, GrpcServerCodeLocationOrigin):
                     self._start_watch_thread(entry.origin)
 
@@ -757,7 +761,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def create_request_context(self, source: Optional[object] = None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
-            workspace_snapshot=self.create_snapshot(),
+            workspace_snapshot=self.get_workspace_snapshot(),
             process_context=self,
             version=self.version,
             source=source,
@@ -783,11 +787,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def refresh_code_location(self, name: str) -> None:
         # This method reloads the webserver's copy of the code from the remote gRPC server without
         # restarting it, and returns a new request context created from the updated process context
-        new = self._load_location(self._location_entry_dict[name].origin, reload=False)
+        new_entry = self._load_location(
+            self._workspace_snapshot.code_location_entries[name].origin, reload=False
+        )
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._location_entry_dict[name] = new
+            self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
 
     def __enter__(self):
         return self

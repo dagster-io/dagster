@@ -30,6 +30,7 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -190,7 +191,6 @@ class CodeLocation(AbstractContextManager):
     ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         pass
 
-    @abstractmethod
     def get_external_partition_tags(
         self,
         repository_handle: RepositoryHandle,
@@ -198,6 +198,41 @@ class CodeLocation(AbstractContextManager):
         partition_name: str,
         instance: DagsterInstance,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
+        from dagster._core.remote_representation.external_data import ExternalPartitionTagsData
+
+        if is_implicit_asset_job_name(job_name):
+            # Implicit asset jobs never have custom tag-for-partition functions, and the
+            # PartitionsDefinitions on the assets are always available on the host, so we can just
+            # determine the tags using information on the host.
+            # In addition to the performance benefits, this is convenient in the case where the
+            # implicit asset job has assets with different PartitionsDefinitions, as the gRPC
+            # API for getting partition tags from the code server doesn't support an asset selection.
+            external_repo = self.get_repository(repository_handle.repository_name)
+            return ExternalPartitionTagsData(
+                name=partition_name,
+                tags=external_repo.get_partition_tags_for_implicit_asset_job(
+                    partition_name=partition_name,
+                    job_name=job_name,
+                    selected_asset_keys=selected_asset_keys,
+                    instance=instance,
+                ),
+            )
+        else:
+            return self.get_external_partition_tags_from_repo(
+                repository_handle=repository_handle,
+                job_name=job_name,
+                partition_name=partition_name,
+                instance=instance,
+            )
+
+    @abstractmethod
+    def get_external_partition_tags_from_repo(
+        self,
+        repository_handle: RepositoryHandle,
+        job_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -221,9 +256,7 @@ class CodeLocation(AbstractContextManager):
                     partition_names=external_partition_set.get_partition_names(instance=instance)
                 )
             else:
-                return self.get_external_partition_names_from_repo(
-                    repository_handle, job_name, selected_asset_keys
-                )
+                return self.get_external_partition_names_from_repo(repository_handle, job_name)
         else:
             # Asset jobs might have no corresponding partition set but still have partitioned
             # assets, so we get the partition names using the assets.
@@ -238,7 +271,6 @@ class CodeLocation(AbstractContextManager):
         self,
         repository_handle: RepositoryHandle,
         job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -491,13 +523,12 @@ class InProcessCodeLocation(CodeLocation):
             instance_ref=instance.get_ref(),
         )
 
-    def get_external_partition_tags(
+    def get_external_partition_tags_from_repo(
         self,
         repository_handle: RepositoryHandle,
         job_name: str,
         partition_name: str,
         instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(job_name, "job_name")
@@ -509,19 +540,16 @@ class InProcessCodeLocation(CodeLocation):
             job_name=job_name,
             partition_name=partition_name,
             instance_ref=instance.get_ref(),
-            selected_asset_keys=selected_asset_keys,
         )
 
     def get_external_partition_names_from_repo(
         self,
         repository_handle: RepositoryHandle,
         job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return get_partition_names(
             self._get_repo_def(repository_handle.repository_name),
             job_name=job_name,
-            selected_asset_keys=selected_asset_keys,
         )
 
     def get_external_schedule_execution_data(
@@ -883,31 +911,25 @@ class GrpcServerCodeLocation(CodeLocation):
             self.client, repository_handle, job_name, partition_name, instance
         )
 
-    def get_external_partition_tags(
+    def get_external_partition_tags_from_repo(
         self,
         repository_handle: RepositoryHandle,
         job_name: str,
         partition_name: str,
         instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
     ) -> "ExternalPartitionTagsData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(job_name, "job_name")
         check.str_param(partition_name, "partition_name")
 
         return sync_get_external_partition_tags_grpc(
-            self.client, repository_handle, job_name, partition_name, instance, selected_asset_keys
+            self.client, repository_handle, job_name, partition_name, instance
         )
 
     def get_external_partition_names_from_repo(
-        self,
-        repository_handle: RepositoryHandle,
-        job_name: str,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        self, repository_handle: RepositoryHandle, job_name: str
     ) -> Union[ExternalPartitionNamesData, "ExternalPartitionExecutionErrorData"]:
-        return sync_get_external_partition_names_grpc(
-            self.client, repository_handle, job_name, selected_asset_keys
-        )
+        return sync_get_external_partition_names_grpc(self.client, repository_handle, job_name)
 
     def get_external_schedule_execution_data(
         self,
@@ -980,3 +1002,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
         return self._dagster_library_versions
+
+
+def is_implicit_asset_job_name(job_name: str) -> bool:
+    return job_name.startswith(IMPLICIT_ASSET_JOB_NAME)

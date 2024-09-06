@@ -436,6 +436,26 @@ class ExternalRepository:
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
         instance: DagsterInstance,
     ) -> Sequence[str]:
+        return self._get_partitions_def_for_job(
+            job_name=job_name, selected_asset_keys=selected_asset_keys
+        ).get_partition_keys(dynamic_partitions_store=instance)
+
+    def get_partition_tags_for_implicit_asset_job(
+        self,
+        job_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        instance: DagsterInstance,
+        partition_name: str,
+    ) -> Mapping[str, str]:
+        return self._get_partitions_def_for_job(
+            job_name=job_name, selected_asset_keys=selected_asset_keys
+        ).get_tags_for_partition_key(partition_name)
+
+    def _get_partitions_def_for_job(
+        self,
+        job_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ) -> PartitionsDefinition:
         asset_nodes = self.get_external_asset_nodes(job_name)
         unique_partitions_defs: Set[PartitionsDefinition] = set()
         for asset_node in asset_nodes:
@@ -448,9 +468,7 @@ class ExternalRepository:
                 )
 
         if len(unique_partitions_defs) == 1:
-            return next(iter(unique_partitions_defs)).get_partition_keys(
-                dynamic_partitions_store=instance
-            )
+            return next(iter(unique_partitions_defs))
         else:
             check.failed(
                 "There is no PartitionsDefinition shared by all the provided assets."

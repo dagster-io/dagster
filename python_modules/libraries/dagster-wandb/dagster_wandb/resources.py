@@ -55,7 +55,7 @@ def wandb_resource(context: InitResourceContext) -> Dict[str, Any]:
     """
     api_key = context.resource_config["api_key"]
     host = context.resource_config["host"]
-    wandb.login(
+    wandb.login(  # type: ignore # ignored for update, fix me!
         key=api_key,
         host=host,
         anonymous="never",

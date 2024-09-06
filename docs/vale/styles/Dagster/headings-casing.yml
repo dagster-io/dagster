@@ -1,5 +1,7 @@
 ## This rule finds section headings that don't use sentence casing.
 ## Ex: This is correct, but This Is Not Correct
+##
+## Setting indicators ":" allows capitalization after colon (e.g. Step 1: Testing)
 
 extends: capitalization
 message: "'%s' should be in sentence case"
@@ -7,32 +9,35 @@ level: error
 scope: heading
 match: $sentence
 exceptions:
-  - Airbyte
-  - AirFlow
   - "Amazon (ECS|Redshift)"
+  - "Google (BigQuery|Cloud Platform|Workspace)"
+  - APIs
+  - Airbyte - AirFlow
   - Azure Active Directory
   - BigQuery
   - Branch Deployments
-  - Change Tracking
   - CI
+  - CI/CD
   - CLI
+  - Change Tracking
+  - Dagster+
   - Databricks
   - Datadog
-  - dbt
   - DuckDB
   - ETL
   - GitHub
+  - GitLab
   - Gitlab
-  - "Google (BigQuery|Cloud Platform|Workspace)"
   - Hybrid
-  - Insights
   - IP
-  - Microsoft Teams
+  - Insights
+  - Kubernetes
   - MLflow
+  - Microsoft Teams
   - MongoDB
   - MySQL
-  - OneLogin
   - Okta
+  - OneLogin
   - OpenAI
   - PagerDuty
   - Pandera
@@ -40,9 +45,13 @@ exceptions:
   - Postgres
   - Role-based Access Control
   - S3
+  - SAML
   - SCIM
+  - SSO
   - Slack
   - Snowflake
-  - SSO
   - Twilio
   - UI
+  - dbt
+indicators:
+  - ":"

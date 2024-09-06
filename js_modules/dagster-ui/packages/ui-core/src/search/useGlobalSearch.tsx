@@ -17,7 +17,6 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {buildStorageKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
 import {AssetOwner, DefinitionTag, buildDefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -32,12 +31,6 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
 export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
-  })}`;
-};
-
-export const linkToAssetTableWithStorageKindFilter = (storageKind: string) => {
-  return `/assets?${qs.stringify({
-    storageKindTags: JSON.stringify([buildStorageKindTag(storageKind)]),
   })}`;
 };
 
@@ -220,13 +213,11 @@ const secondaryDataToSearchResults = (
       node,
       href: assetDetailsPathForKey(node.key),
       type: SearchResultType.Asset,
-      tags: node
-        .definition!.tags.filter(isCanonicalStorageKindTag)
-        .concat(
-          node.definition!.computeKind
-            ? buildDefinitionTag({key: 'dagster/compute_kind', value: node.definition!.computeKind})
-            : [],
-        ),
+      tags: node.definition!.tags.concat(
+        node.definition!.computeKind
+          ? buildDefinitionTag({key: 'dagster/compute_kind', value: node.definition!.computeKind})
+          : [],
+      ),
     }));
 
   if (searchContext === 'global') {
@@ -240,15 +231,6 @@ const secondaryDataToSearchResults = (
         description: '',
         type: AssetFilterSearchResultType.ComputeKind,
         href: linkToAssetTableWithComputeKindFilter(computeKind),
-        numResults: assetCount,
-      }),
-    );
-    const storageKindResults: SearchResult[] = countsBySection.countsByStorageKind.map(
-      ({storageKind, assetCount}) => ({
-        label: storageKind,
-        description: '',
-        type: AssetFilterSearchResultType.StorageKind,
-        href: linkToAssetTableWithStorageKindFilter(storageKind),
         numResults: assetCount,
       }),
     );
@@ -300,7 +282,6 @@ const secondaryDataToSearchResults = (
     return [
       ...assets,
       ...computeKindResults,
-      ...storageKindResults,
       ...tagResults,
       ...codeLocationResults,
       ...ownerResults,

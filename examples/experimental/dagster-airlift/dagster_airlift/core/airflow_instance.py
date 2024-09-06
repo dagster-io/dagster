@@ -1,6 +1,7 @@
 import datetime
 import json
 from abc import ABC
+from functools import cached_property
 from typing import Any, Dict, List
 
 import requests
@@ -9,7 +10,9 @@ from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
-from ..migration_state import DagMigrationState
+from dagster_airlift.migration_state import AirflowMigrationState, DagMigrationState
+
+from .utils import convert_to_valid_dagster_name
 
 TERMINAL_STATES = {"success", "failed", "skipped", "up_for_retry", "up_for_reschedule"}
 
@@ -51,6 +54,25 @@ class AirflowInstance:
             raise DagsterError(
                 f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
             )
+
+    def list_variables(self) -> List[Dict[str, Any]]:
+        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/variables")
+        if response.status_code == 200:
+            return response.json()["variables"]
+        else:
+            raise DagsterError(
+                "Failed to fetch variables. Status code: {response.status_code}, Message: {response.text}"
+            )
+
+    def get_migration_state(self) -> AirflowMigrationState:
+        variables = self.list_variables()
+        dag_dict = {}
+        for var_dict in variables:
+            if var_dict["key"].endswith("_dagster_migration_state"):
+                dag_id = var_dict["key"].replace("_dagster_migration_state", "")
+                migration_dict = json.loads(var_dict["value"])
+                dag_dict[dag_id] = DagMigrationState.from_dict(migration_dict)
+        return AirflowMigrationState(dags=dag_dict)
 
     def get_task_instance(self, dag_id: str, task_id: str, run_id: str) -> "TaskInstance":
         response = self.auth_backend.get_session().get(
@@ -170,6 +192,10 @@ class AirflowInstance:
                 airflow_date, "%Y-%m-%dT%H:%M:%S.%f+00:00"
             ).timestamp()
 
+    @staticmethod
+    def airflow_date_from_datetime(datetime: datetime.datetime) -> str:
+        return datetime.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
 
 @record
 class DagInfo:
@@ -181,21 +207,19 @@ class DagInfo:
     def url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
 
+    @cached_property
+    def dagster_safe_dag_id(self) -> str:
+        """Name based on the dag_id that is safe to use in dagster."""
+        return convert_to_valid_dagster_name(self.dag_id)
+
     @property
     def dag_asset_key(self) -> AssetKey:
         # Conventional asset key representing a successful run of an airfow dag.
-        return AssetKey(["airflow_instance", "dag", self.dag_id])
+        return AssetKey(["airflow_instance", "dag", self.dagster_safe_dag_id])
 
     @property
-    def migration_state(self) -> DagMigrationState:
-        tags = self.metadata.get("tags") or []
-        migration_tag = next(
-            (tag for tag in tags if "DAGSTER_MIGRATION_STATUS" in tag["name"]), None
-        )
-        if migration_tag:
-            migration_dict = json.loads(migration_tag["name"])["DAGSTER_MIGRATION_STATUS"]
-            return DagMigrationState.from_dict(migration_dict)
-        return DagMigrationState(tasks={})
+    def file_token(self) -> str:
+        return self.metadata["file_token"]
 
 
 @record
@@ -275,5 +299,13 @@ class DagRun:
         return AirflowInstance.timestamp_from_airflow_date(self.metadata["start_date"])
 
     @property
+    def start_datetime(self) -> datetime.datetime:
+        return datetime.datetime.strptime(self.metadata["start_date"], "%Y-%m-%dT%H:%M:%S+00:00")
+
+    @property
     def end_date(self) -> float:
         return AirflowInstance.timestamp_from_airflow_date(self.metadata["end_date"])
+
+    @property
+    def end_datetime(self) -> datetime.datetime:
+        return datetime.datetime.strptime(self.metadata["end_date"], "%Y-%m-%dT%H:%M:%S+00:00")

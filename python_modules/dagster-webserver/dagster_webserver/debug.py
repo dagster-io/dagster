@@ -9,6 +9,7 @@ from dagster._core.workspace.context import (
     IWorkspaceProcessContext,
     WorkspaceRequestContext,
 )
+from dagster._core.workspace.workspace import WorkspaceSnapshot
 from dagster._serdes.serdes import deserialize_value
 
 from dagster_webserver.cli import (
@@ -34,7 +35,7 @@ class WebserverDebugWorkspaceProcessContext(IWorkspaceProcessContext):
     def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
-            workspace_snapshot={},
+            workspace_snapshot=WorkspaceSnapshot(code_location_entries={}),
             process_context=self,
             version=__version__,
             source=source,

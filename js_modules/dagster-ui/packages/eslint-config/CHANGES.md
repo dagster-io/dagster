@@ -1,3 +1,7 @@
+## 1.0.17 (September 3, 2024)
+
+- Added no-react-router-route rule.
+
 ## 1.0.16 (August 28, 2024)
 
 - Added no-apollo-client rule.

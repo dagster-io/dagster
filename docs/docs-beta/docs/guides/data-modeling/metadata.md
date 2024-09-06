@@ -54,7 +54,7 @@ Here's an example of some tags you might apply to an asset:
 {"domain": "marketing", "pii": "true"}
 ```
 
-**Metadata** allows you to attach rich information to the asset, like a Markdown description, a table schema, or a time series. Metadata is more flexible than tags, as it can store more complex information. Metadata can be attached to an asset at definition time (that is, when the code is first imported) or at runtime (every time an asset is materialized).
+**Metadata** allows you to attach rich information to the asset, like a Markdown description, a table schema, or a time series. Metadata is more flexible than tags, as it can store more complex information. Metadata can be attached to an asset at definition time (that's, when the code is first imported) or at runtime (every time an asset is materialized).
 
 Here's an example of some metadata you might apply to an asset:
 
@@ -98,7 +98,7 @@ Some metadata keys will be given special treatment in the Dagster UI.
 
 | Key                           | Description                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dagster/uri`                 | **Type:** `str` <br/><br/> The URI for the asset, e.g. "s3://my_bucket/my_object"                                                                                                                                                                                                                                                                               |
+| `dagster/uri`                 | **Type:** `str` <br/><br/> The URI for the asset, for example: "s3://my_bucket/my_object"                                                                                                                                                                                                                                                                               |
 | `dagster/column_schema`       | **Type:** [`TableSchema`](/todo) <br/><br/> For an asset that's a table, the schema of the columns in the table. Refer to the [Table and column metadata](#table-and-column-metadata) section for details.                                                                                                                                                      |
 | `dagster/column_lineage`      | **Type:** [`TableColumnLineage`](/todo) <br/><br/> For an asset that's a table, the lineage of column inputs to column outputs for the table. Refer to the [Table and column metadata](#table-and-column-metadata) section for details.                                                                                                                         |
 | `dagster/row_count`           | **Type:** `int` <br/><br/> For an asset that's a table, the number of rows in the table. Refer to the Table metadata documentation for details.                                                                                                                                                                                                                 |
@@ -108,7 +108,7 @@ Some metadata keys will be given special treatment in the Dagster UI.
 
 ## Table and column metadata
 
-Two of the most powerful metadata types are [`TableSchema`](/todo) and [`TableColumnLineage`](/todo). These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate the [Asset catalog](/todo) via the column lineage.
+Two of the most powerful metadata types are [`TableSchema`](/todo) and [`TableColumnLineage`](/todo). These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate the [Asset catalog](/todo) with the column lineage.
 
 ### Table schema metadata
 
@@ -165,7 +165,7 @@ If you want to customize how code references are attached - such as when you are
 <Tabs>
   <TabItem value="dagster-plus" label="Dagster+">
 
-Dagster+ can automatically annotate your assets with code references to source control such as GitHub or Gitlab.
+Dagster+ can automatically annotate your assets with code references to source control such as GitHub or GitLab.
 
 <CodeExample filePath="guides/data-modeling/metadata/plus-references.py" language="python" title="Production source code references (Dagster+)" />
 
@@ -176,7 +176,7 @@ If you aren't using Dagster+, you can annotate your assets with code references 
 
 <CodeExample filePath="guides/data-modeling/metadata/oss-references.py" language="python" title="Production source code references (OSS)" />
 
-[`link_code_references_to_git`](/todo) currently supports GitHub and Gitlab repositories. It also supports customization of how file paths are mapped; see the [`AnchorBasedFilePathMapping`](/todo) API docs for more information.
+[`link_code_references_to_git`](/todo) currently supports GitHub and GitLab repositories. It also supports customization of how file paths are mapped; see the [`AnchorBasedFilePathMapping`](/todo) API docs for more information.
 
 </TabItem>
 </Tabs>

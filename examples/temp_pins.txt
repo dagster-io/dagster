@@ -11,3 +11,6 @@
 # temporarily introduce pins for these tests until the next version of
 # Dagster is published to PyPI.
 responses==0.23.1
+
+# pydantic 2.9.0 release briefly broke dagster
+pydantic<2.9.0

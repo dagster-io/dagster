@@ -5,29 +5,33 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
+from dagster._core.definitions.utils import VALID_NAME_REGEX
 
-MIGRATED_TAG = "airlift/task_migrated"
-DAG_ID_TAG = "airlift/dag_id"
-TASK_ID_TAG = "airlift/task_id"
+from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+
+
+def convert_to_valid_dagster_name(name: str) -> str:
+    """Converts a name to a valid dagster name by replacing invalid characters with underscores. / is converted to a double underscore."""
+    return "".join(c if VALID_NAME_REGEX.match(c) else "__" if c == "/" else "_" for c in name)
 
 
 def get_task_id_from_asset(asset: Union[AssetsDefinition, AssetSpec]) -> Optional[str]:
-    return _get_prop_from_asset(asset, TASK_ID_TAG, 1)
+    return _get_prop_from_asset(asset, TASK_ID_METADATA_KEY, 1)
 
 
 def get_dag_id_from_asset(asset: Union[AssetsDefinition, AssetSpec]) -> Optional[str]:
-    return _get_prop_from_asset(asset, DAG_ID_TAG, 0)
+    return _get_prop_from_asset(asset, DAG_ID_METADATA_KEY, 0)
 
 
 def _get_prop_from_asset(
-    asset: Union[AssetSpec, AssetsDefinition], prop_tag: str, position: int
+    asset: Union[AssetSpec, AssetsDefinition], prop_metadata_key: str, position: int
 ) -> Optional[str]:
-    prop_from_asset_tags = prop_from_tags(asset, prop_tag)
-    if isinstance(asset, AssetSpec):
+    prop_from_asset_tags = prop_from_metadata(asset, prop_metadata_key)
+    if isinstance(asset, AssetSpec) or not asset.is_executable:
         return prop_from_asset_tags
     prop_from_op_tags = None
-    if asset.node_def.tags and prop_tag in asset.node_def.tags:
-        prop_from_op_tags = asset.node_def.tags[prop_tag]
+    if asset.node_def.tags and prop_metadata_key in asset.node_def.tags:
+        prop_from_op_tags = asset.node_def.tags[prop_metadata_key]
     prop_from_name = None
     if len(asset.node_def.name.split("__")) == 2:
         prop_from_name = asset.node_def.name.split("__")[position]
@@ -49,22 +53,28 @@ def _get_prop_from_asset(
     return prop_from_asset_tags or prop_from_op_tags or prop_from_name
 
 
-def prop_from_tags(asset: Union[AssetsDefinition, AssetSpec], prop_tag: str) -> Optional[str]:
+def prop_from_metadata(
+    asset: Union[AssetsDefinition, AssetSpec], prop_metadata_key: str
+) -> Optional[str]:
     specs = asset.specs if isinstance(asset, AssetsDefinition) else [asset]
     asset_name = (
-        asset.node_def.name if isinstance(asset, AssetsDefinition) else asset.key.to_user_string()
+        asset.node_def.name
+        if isinstance(asset, AssetsDefinition) and asset.is_executable
+        else asset.key.to_user_string()
     )
-    if any(prop_tag in spec.tags for spec in specs):
+    if any(prop_metadata_key in spec.metadata for spec in specs):
         prop = None
         for spec in specs:
             if prop is None:
-                prop = spec.tags[prop_tag]
+                prop = spec.metadata[prop_metadata_key]
             else:
-                if spec.tags.get(prop_tag) is None:
-                    check.failed(f"Missing {prop_tag} tag in spec {spec.key} for {asset_name}")
+                if spec.metadata.get(prop_metadata_key) is None:
+                    check.failed(
+                        f"Missing {prop_metadata_key} tag in spec {spec.key} for {asset_name}"
+                    )
                 check.invariant(
-                    prop == spec.tags[prop_tag],
-                    f"Task ID mismatch within same AssetsDefinition: {prop} != {spec.tags[prop_tag]}",
+                    prop == spec.metadata[prop_metadata_key],
+                    f"Task ID mismatch within same AssetsDefinition: {prop} != {spec.metadata[prop_metadata_key]}",
                 )
         return prop
     return None

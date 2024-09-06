@@ -14,6 +14,7 @@ export type AssetTableDefinitionFragment = {
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
+  kinds: Array<string>;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -51,6 +52,7 @@ export type AssetTableFragment = {
     computeKind: string | null;
     hasMaterializePermission: boolean;
     description: string | null;
+    kinds: Array<string>;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;

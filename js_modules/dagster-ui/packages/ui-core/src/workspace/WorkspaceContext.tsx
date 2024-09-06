@@ -9,6 +9,7 @@ import {RepoAddress} from './types';
 import {
   CodeLocationStatusQuery,
   CodeLocationStatusQueryVariables,
+  LocationStatusEntryFragment,
   LocationWorkspaceQuery,
   LocationWorkspaceQueryVariables,
   WorkspaceLocationFragment,
@@ -52,6 +53,7 @@ type SetVisibleOrHiddenFn = (repoAddresses: RepoAddress[]) => void;
 type WorkspaceState = {
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
+  locationStatuses: Record<string, LocationStatusEntryFragment>;
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
   data: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>;
@@ -314,6 +316,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
           Object.keys(locationStatuses).every((locationName) => locationEntriesData[locationName])
         ),
         locationEntries,
+        locationStatuses,
         allRepos,
         visibleRepos,
         toggleVisible,

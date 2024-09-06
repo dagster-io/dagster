@@ -7,7 +7,6 @@ displayed_sidebar: 'dagsterPlus'
 
 In this guide, you'll configure PingOne to use single sign-on (SSO) with your Dagster+ organization.
 
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -24,7 +23,6 @@ To complete the steps in this guide, you'll need:
 
 </details>
 
-
 ## Step 1: Add the Dagster+ app in PingOne \{#dagster-app}
 
 1. Sign into your PingOne Console.
@@ -38,30 +36,35 @@ To complete the steps in this guide, you'll need:
 
    ![Add App](/img/placeholder.svg)
 
-
 ## Step 2: Configure SSO in PingOne \{#configure-sso}
 
 1.  In the **Create App Profile** page:
+
     1. Add an application name, description, and icon:
 
        ![Application Details](/img/placeholder.svg)
 
     2. When finished, click **Save and Continue.**
-2.  In the **Configure SAML** page:
-    1.  Fill in the following:
-        - **ACS URLS** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-           ```
-           https://<organization_name>.dagster.cloud/auth/saml/consume
-           ```
+2.  In the **Configure SAML** page:
+
+    1.  Fill in the following:
+
+        - **ACS URLs** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
+
+          ```
+          https://<organization_name>.dagster.cloud/auth/saml/consume
+          ```
 
         - **Assertion Validity Duration**: Type `60`.
-        In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
+          In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
 
         ![Service Provider Details](/img/placeholder.svg)
 
     2.  When finished, click **Save and Continue.**
+
 3.  In the **Map Attributes** page:
+
     1. Configure the following attributes:
 
        | Application attribute | Outgoing value |
@@ -75,7 +78,6 @@ To complete the steps in this guide, you'll need:
        ![Attribute Mapping](/img/placeholder.svg)
 
     2. When finished, click **Save and Continue.**
-
 
 ## Step 3: Upload the SAML metadata to Dagster+ \{#upload-saml}
 
@@ -96,7 +98,6 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
      --url https://<organization_name>.dagster.cloud
    ```
 
-
 ## Step 4: Grant access to users \{#grant-access}
 
 Next, you'll assign users to the Dagster+ application in PingOne. This will allow them to log in using their PingOne credentials when the single sign-on flow is initiated.
@@ -105,8 +106,8 @@ Next, you'll assign users to the Dagster+ application in PingOne. This will allo
 2. Click the **pencil icon** to edit the **Group membership policy**:
 
    ![Assign New Login](/img/placeholder.svg)
-3. Edit the policy as needed to grant users access to the application.
 
+3. Edit the policy as needed to grant users access to the application.
 
 import TestSSO from '../../../partials/\_TestSSO.md';
 

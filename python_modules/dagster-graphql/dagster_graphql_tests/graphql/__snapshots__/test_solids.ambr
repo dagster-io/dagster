@@ -310,6 +310,22 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'asset_with_compute_storage_kinds',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_with_compute_storage_kinds',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'asset_yields_observation',
           }),
           'invocations': list([
@@ -1359,6 +1375,22 @@
               }),
               'solidHandle': dict({
                 'handleID': 'multi',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'multi_asset_with_kinds',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'multi_asset_with_kinds',
               }),
             }),
           ]),

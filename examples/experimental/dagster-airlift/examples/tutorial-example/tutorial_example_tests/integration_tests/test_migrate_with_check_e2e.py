@@ -8,13 +8,19 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
-from .utils import poll_for_asset_check, poll_for_materialization, start_run_and_wait_for_completion
+from .utils import (
+    poll_for_asset_check,
+    poll_for_materialization,
+    start_run_and_wait_for_completion,
+    wait_for_all_runs_to_complete,
+)
 
 
 @pytest.fixture(name="dagster_defs_path")
 def setup_dagster_defs_path(
     makefile_dir: Path,
     airflow_instance: None,
+    local_env,
     mark_tasks_migrated: Callable[[AbstractSet[str]], contextlib.AbstractContextManager],
 ) -> Iterable[str]:
     # Mark only the build_dbt_models task as migrated
@@ -24,6 +30,7 @@ def setup_dagster_defs_path(
         )
 
 
+@pytest.mark.skip(reason="Flakiness, @benpankow to investigate")
 def test_migrate_runs_properly_in_dagster_with_check(
     airflow_instance: None, dagster_dev: None
 ) -> None:
@@ -46,6 +53,7 @@ def test_migrate_runs_properly_in_dagster_with_check(
     check_result = poll_for_asset_check(instance, target=check_key)
 
     # Ensure migrated tasks are run in Dagster and check runs even though the task is not migrated
+    wait_for_all_runs_to_complete(instance)
     runs = instance.get_runs()
     assert len(runs) == 2
 

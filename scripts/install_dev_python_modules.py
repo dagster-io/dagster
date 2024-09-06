@@ -155,6 +155,12 @@ def main(
     # image build!
     cmd = ["uv", "pip", "install"] + (["--system"] if system else []) + install_targets
 
+    # Force compat mode for editable installs to avoid
+    # polluting uv cache for pyright install
+    # See https://github.com/dagster-io/dagster/pull/24212
+    # and https://github.com/astral-sh/uv/issues/7028
+    cmd += ["--config-settings", "editable-mode=compat"]
+
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')
 

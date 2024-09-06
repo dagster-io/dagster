@@ -1,7 +1,7 @@
 ---
-title: "Hybrid agent tokens"
-displayed_sidebar: "dagsterPlus"
-sidebar_position: 20
+title: 'Hybrid agent tokens'
+displayed_sidebar: 'dagsterPlus'
+sidebar_position: 30
 ---
 
 # Hybrid agent tokens

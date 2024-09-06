@@ -879,7 +879,7 @@ def test_group_name_requirements():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "Empty asset group name was provided, which is not permitted."
+            "Empty asset group name was provided, which is not permitted. "
             "Set group_name=None to use the default group_name or set non-empty string"
         ),
     ):
@@ -2288,6 +2288,42 @@ def test_asset_spec_with_tags():
 
         @multi_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])  # key has illegal character
         def assets(): ...
+
+
+def test_asset_spec_with_kinds() -> None:
+    @multi_asset(specs=[AssetSpec("asset1", tags={"dagster/kind/python": ""})])
+    def assets(): ...
+
+    assert assets.specs_by_key[AssetKey("asset1")].kinds == {"python"}
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Assets can have at most two kinds currently."
+    ):
+
+        @multi_asset(
+            specs=[
+                AssetSpec(
+                    "asset1",
+                    tags={
+                        "dagster/kind/python": "",
+                        "dagster/kind/snowflake": "",
+                        "dagster/kind/bigquery": "",
+                    },
+                )
+            ]
+        )
+        def assets2(): ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Can not specify compute_kind on both the @multi_asset and kinds on AssetSpecs.",
+    ):
+
+        @multi_asset(
+            compute_kind="my_compute_kind",
+            specs=[AssetSpec("asset1", tags={"dagster/kind/python": ""})],
+        )
+        def assets3(): ...
 
 
 def test_asset_out_with_tags():

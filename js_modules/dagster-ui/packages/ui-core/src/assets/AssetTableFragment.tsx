@@ -31,6 +31,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    kinds
     repository {
       id
       name

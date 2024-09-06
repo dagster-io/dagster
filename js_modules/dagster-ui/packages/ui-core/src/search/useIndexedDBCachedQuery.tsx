@@ -1,6 +1,6 @@
 import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext} from 'react';
+import React, {createContext, useCallback, useContext, useEffect} from 'react';
 
 import {
   ApolloClient,
@@ -10,6 +10,7 @@ import {
   useApolloClient,
 } from '../apollo-client';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
+import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 type CacheData<TQuery> = {
   data: TQuery;
@@ -137,6 +138,13 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     }
     fetch(true);
   }, [fetch, skip]);
+
+  const dep = useBlockTraceUntilTrue(`useIndexedDBCachedQuery-${key}`, !!data);
+  useEffect(() => {
+    if (error) {
+      dep.completeDependency(CompletionType.ERROR);
+    }
+  }, [error, dep]);
 
   return {
     data,

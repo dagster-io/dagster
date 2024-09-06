@@ -12,6 +12,11 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/data-modeling/asset-factories/python-asset-factory.py",
     f"{snippets_folder}/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py",
     f"{snippets_folder}/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py",
+    # setuptools.setup() eventually parses the command line that caused setup() to be called.
+    # it errors because the command line for this test is for pytest and doesn't align with the arguments
+    # setup() expects. So omit files that call setup() since they cannot be loaded without errors.
+    f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/data_files_setup.py",
+    f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_setup.py",
 }
 
 

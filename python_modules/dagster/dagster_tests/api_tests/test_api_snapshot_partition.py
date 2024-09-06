@@ -52,7 +52,7 @@ def test_external_partition_names_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         repository_handle = code_location.get_repository("bar_repo").handle
         data = sync_get_external_partition_names_grpc(
-            code_location.client, repository_handle, "baz", None
+            code_location.client, repository_handle, "baz"
         )
         assert isinstance(data, ExternalPartitionNamesData)
         assert data.partition_names == list(string.ascii_lowercase)
@@ -97,10 +97,7 @@ def test_external_partition_names_deserialize_error_grpc(instance: DagsterInstan
         result = deserialize_value(
             api_client.external_partition_names(
                 partition_names_args=PartitionNamesArgs(
-                    repository_origin=repository_origin,
-                    job_name="foo",
-                    partition_set_name="foo_partition_set",
-                    selected_asset_keys=None,
+                    repository_origin=repository_origin, partition_set_name="foo_partition_set"
                 )._replace(repository_origin="INVALID"),
             )
         )
@@ -170,11 +167,9 @@ def test_external_partition_config_deserialize_error_grpc(instance: DagsterInsta
             api_client.external_partition_config(
                 partition_args=PartitionArgs(
                     repository_origin=repository_handle.get_external_origin(),
-                    job_name="foo",
                     partition_set_name="foo_partition_set",
                     partition_name="bar",
                     instance_ref=instance.get_ref(),
-                    selected_asset_keys=None,
                 )._replace(repository_origin="INVALID"),
             )
         )
@@ -192,7 +187,6 @@ def test_external_partitions_tags_grpc(instance: DagsterInstance):
             "baz",
             "c",
             instance=instance,
-            selected_asset_keys=None,
         )
         assert isinstance(data, ExternalPartitionTagsData)
         assert data.tags
@@ -244,11 +238,9 @@ def test_external_partitions_tags_deserialize_error_grpc(instance: DagsterInstan
             api_client.external_partition_tags(
                 partition_args=PartitionArgs(
                     repository_origin=repository_origin,
-                    job_name="fooba",
                     partition_set_name="fooba_partition_set",
                     partition_name="c",
                     instance_ref=instance.get_ref(),
-                    selected_asset_keys=None,
                 )._replace(repository_origin="INVALID"),
             )
         )
@@ -261,7 +253,7 @@ def test_external_partitions_tags_error_grpc(instance: DagsterInstance):
 
         with pytest.raises(DagsterUserCodeProcessError):
             sync_get_external_partition_tags_grpc(
-                code_location.client, repository_handle, "error_partition_tags", "c", instance, None
+                code_location.client, repository_handle, "error_partition_tags", "c", instance
             )
 
 
@@ -325,7 +317,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         assert data.run_config == {}
 
         data = sync_get_external_partition_tags_grpc(
-            code_location.client, repository_handle, "dynamic_job", "a", instance, None
+            code_location.client, repository_handle, "dynamic_job", "a", instance
         )
         assert isinstance(data, ExternalPartitionTagsData)
         assert data.tags

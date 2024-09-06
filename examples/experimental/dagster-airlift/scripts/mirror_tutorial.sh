@@ -49,7 +49,7 @@ git add .
 
 echo "Committing with version $version..."
 # Commit message is the version number
-git commit -m "$version"
+git commit -m "$version" --allow-empty
 
 echo "Pushing to origin..."
 # Push to origin

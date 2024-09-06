@@ -5,7 +5,7 @@ displayed_sidebar: "dagsterPlus"
 
 # Code locations
 
-Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph. To add your first code location, follow the [getting started](/dagster-plus/getting-started) guide.
+Separate code locations allow you to deploy different projects that still roll up into a single Dagster+ deployment with one global lineage graph.
 
 This guide will cover three options for adding a new code location:
 - Adding a code location manually
@@ -15,7 +15,7 @@ This guide will cover three options for adding a new code location:
 <details>
 <summary>Prerequisites</summary>
 
-1. An existing Dagster project. Refer to the [recommended project structure](/tutorial/create-new-project) for more information.
+1. An existing Dagster project. Refer to the [recommended project structure](/tutorial/create-new-project) and [code requirements](/dagster-plus/deployment/code-requirements) pages for more information.
 
 2. Editor, Admin, or Organization Admin permissions in Dagster+.
 
@@ -98,8 +98,8 @@ To get started, review the appropriate example repository and then create your G
 
 - [GitHub repository with Dagster+ Serverless](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/)
 - [GitHub repository with Dagster+ Hybrid](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/)
-- [Gitlab CI/CD for Dagster+ Serverless](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/serverless-ci.yml)
-- [Gitlab CI/CD for Dagster+ Hybrid](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/hybrid-ci.yml)
+- [GitLab CI/CD for Dagster+ Serverless](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/serverless-ci.yml)
+- [GitLab CI/CD for Dagster+ Hybrid](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/hybrid-ci.yml)
 
 
 Overall, the Git repository should contain:
@@ -133,7 +133,7 @@ Overall, the Git repository should contain:
         package_name: quickstart
     ```
 
-3. A CI/CD workflow file that contains the steps for adding your code location. These are the same steps outlined in the preceding section. Here is a minimal example workflow file for a Dagster+ Hybrid organization based on [this Gitlab template](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/hybrid-ci.yml).
+3. A CI/CD workflow file that contains the steps for adding your code location. These are the same steps outlined in the preceding section. Here is a minimal example workflow file for a Dagster+ Hybrid organization based on [this GitLab template](https://github.com/dagster-io/dagster-cloud-action/blob/main/gitlab/hybrid-ci.yml).
 
     ```yaml
     variables:

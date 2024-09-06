@@ -75,9 +75,7 @@ export const BackfillRowLoader = (props: {
   const {data} = statusQueryResult;
   const {hasCancelableRuns} = React.useMemo(() => {
     if (data?.partitionBackfillOrError.__typename === 'PartitionBackfill') {
-      if ('partitionBackfill' in data.partitionBackfillOrError) {
-        return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
-      }
+      return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
     }
     return {hasCancelableRuns: false};
   }, [data]);
