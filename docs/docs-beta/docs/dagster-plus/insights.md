@@ -31,7 +31,7 @@ To access Insights, click **Insights** in the top navigation bar in the UI:
 
 The left navigation panel on this page contains a list of available metrics. For each metric, the daily, weekly, or monthly aggregated values are displayed in the graph.
 
-Use the tabs bove the charts to view metrics for **Assets**, **Asset groups**, **Jobs**, and **Deployments**.
+Use the tabs above the charts to view metrics for **Assets**, **Asset groups**, **Jobs**, and **Deployments**.
 
 These metrics are updated on a daily basis. Refer to the [Built-in metrics](#built-in-metrics) section for more information about what Dagster provides out of the box.
 
