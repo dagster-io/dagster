@@ -8,8 +8,6 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
 
-POWERBI_PREFIX = "powerbi/"
-
 
 def _get_last_filepath_component(path: str) -> str:
     """Returns the last component of a file path."""
