@@ -44,24 +44,24 @@ You can control the number of assets or ops that are running concurrently within
 <Tabs>
   <TabItem value="Assets" label="Asset job">
     <CodeExample filePath="guides/tbd/concurrency-job-asset.py" language="python" title="Asset concurrency limits in a job" />
-  
+
   </TabItem>
 
   <TabItem value="Ops" label="Op job">
     <CodeExample filePath="guides/tbd/concurrency-job-op.py" language="python" title="Op concurrency limits in a job" />
-  
+
   </TabItem>
 </Tabs>
 
 
 ## Limit how many of a certain type of op or asset can run across all runs
 
-You can a limit for all ops or assets with a specific tag key or key-value pair. Ops or assets above that limit will be qeued. Use `tag_concurrency_limits` in the job’s config, either in Python or using the Launchpad in the Dagster UI.
+You can a limit for all ops or assets with a specific tag key or key-value pair. Ops or assets above that limit will be queued. Use `tag_concurrency_limits` in the job’s config, either in Python or using the Launchpad in the Dagster UI.
 
 For example, if you want to limit the number of ops or assets that are running with a key of `database`
 
 :::warning
-This feature is experimental and is only supported with Postgres/MySQL storages.
+This feature is experimental and is only supported with Postgres/MySQL storage.
 :::
 
 
@@ -83,7 +83,7 @@ To specify a global concurrency limit using the CLI, use:
 dagster instance concurrency set database 1
 ```
 
-A default concurrency limit can be configured for the instance, for any concurrency keys that do not have an explicit limit set:
+A default concurrency limit can be configured for the instance, for any concurrency keys that don't have an explicit limit set:
 
 * Dagster+: Use the Dagster+ UI or the dagster-cloud CLI
 * Dagster Open Source: Use your instance's dagster.yaml
@@ -97,11 +97,11 @@ concurrency:
 <Tabs>
   <TabItem value="Asset Tag" label="Asset tag concurrency limits">
     <CodeExample filePath="guides/tbd/concurrency-tag-key-asset.py" language="python" title="No more than 1 asset running with a tag of 'database'" />
-  
+
   </TabItem>
   <TabItem value="Op Tag" label="Asset tag concurrency limits">
   <CodeExample filePath="guides/tbd/concurrency-tag-key-op.py" language="python" title="No more than 1 op running with a tag of 'database'" />
-  
+
   </TabItem>
 </Tabs>
 
@@ -110,7 +110,7 @@ Or you can configure it in the job definition:
 <Tabs>
   <TabItem value="Asset Tag with Job" label="Asset tag concurrency limits in a job">
     <CodeExample filePath="guides/tbd/concurrency-tag-key-job-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' job example" />
-  
+
   </TabItem>
   <TabItem value="Op Tag with Job" label="Op tag concurrency limits in a job">
   <CodeExample filePath="guides/tbd/concurrency-tag-key-job-op.py" language="python" title="No more than 1 op running with a tag of 'database' job example" />
