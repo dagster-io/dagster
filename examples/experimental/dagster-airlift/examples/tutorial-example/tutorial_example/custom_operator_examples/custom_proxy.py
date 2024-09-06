@@ -1,6 +1,10 @@
+from pathlib import Path
+
 import requests
+from airflow import DAG
 from airflow.utils.context import Context
 from dagster_airlift.in_airflow import BaseProxyToDagsterOperator, mark_as_dagster_migrating
+from dagster_airlift.migration_state import load_migration_state_from_yaml
 
 
 class CustomProxyToDagsterOperator(BaseProxyToDagsterOperator):
@@ -16,9 +20,13 @@ class CustomProxyToDagsterOperator(BaseProxyToDagsterOperator):
         return "https://dagster.example.com/"
 
 
-...
+dag = DAG(
+    dag_id="custom_proxy_example",
+)
 
 # At the end of your dag file
 mark_as_dagster_migrating(
-    global_vars=globals(), migration_state=..., dagster_operator_klass=CustomProxyToDagsterOperator
+    global_vars=globals(),
+    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+    dagster_operator_klass=CustomProxyToDagsterOperator,
 )
