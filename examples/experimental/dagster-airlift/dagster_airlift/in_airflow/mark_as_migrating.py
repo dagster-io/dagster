@@ -71,6 +71,18 @@ def mark_as_dagster_migrating(
         logger.debug(f"Tagging dag {dag.dag_id} as migrating.")
         set_migration_var_for_dag(dag.dag_id, migration_state)
         migration_state_for_dag = migration_state.dags[dag.dag_id]
+        num_migrated_tasks = len(
+            [
+                task_id
+                for task_id, task_state in migration_state_for_dag.tasks.items()
+                if task_state.migrated
+            ]
+        )
+        task_possessive = "Task" if num_migrated_tasks == 1 else "Tasks"
+        dag.tags = [
+            *dag.tags,
+            f"{num_migrated_tasks} {task_possessive} Marked as Migrating to Dagster",
+        ]
         migrated_tasks = set()
         for task_id, task_state in migration_state_for_dag.tasks.items():
             if not task_state.migrated:
