@@ -225,6 +225,7 @@ def get_asset_nodes_by_asset_key(
     stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
         asset_graph=lambda: graphene_info.context.asset_graph,
+        loading_context=graphene_info.context,
     )
 
     dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)

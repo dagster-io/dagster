@@ -11,7 +11,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Type,
     Union,
     cast,
 )
@@ -47,7 +46,6 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._time import get_current_datetime
-from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -58,7 +56,7 @@ if TYPE_CHECKING:
 RECORD_BATCH_SIZE = 1000
 
 
-class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
+class CachingInstanceQueryer(DynamicPartitionsStore):
     """Provides utility functions for querying for asset-materialization related data from the
     instance which will attempt to limit redundant expensive calls. Intended for use within the
     scope of a single "request" (e.g. GQL request, sensor tick).
@@ -71,11 +69,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
         self,
         instance: DagsterInstance,
         asset_graph: BaseAssetGraph,
+        loading_context: LoadingContext,
         evaluation_time: Optional[datetime] = None,
         logger: Optional[logging.Logger] = None,
     ):
         self._instance = instance
-        self._loaders = {}
+        self._loading_context = loading_context
+
         self._asset_graph = asset_graph
         self._logger = logger or logging.getLogger("dagster")
 
@@ -99,10 +99,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
         return self._instance
 
     @property
-    def loaders(self) -> Dict[Type, DataLoader]:
-        return self._loaders
-
-    @property
     def asset_graph(self) -> BaseAssetGraph:
         return self._asset_graph
 
@@ -118,7 +114,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
         """For performance, batches together queries for selected assets."""
         from dagster._core.storage.event_log.base import AssetRecord
 
-        AssetRecord.blocking_get_many(self, asset_keys)
+        AssetRecord.blocking_get_many(self._loading_context, asset_keys)
 
     ####################
     # ASSET STATUS CACHE
@@ -136,7 +132,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
             asset_key=asset_key,
             partitions_def=partitions_def,
             dynamic_partitions_loader=self,
-            loading_context=self,
+            loading_context=self._loading_context,
         )
 
     @cached_method
@@ -233,7 +229,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
     def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
         from dagster._core.storage.event_log.base import AssetRecord
 
-        return AssetRecord.blocking_get(self, asset_key)
+        return AssetRecord.blocking_get(self._loading_context, asset_key)
 
     def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
         if self.asset_graph.get(asset_key).is_observable:

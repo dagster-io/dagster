@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, Dict, NamedTuple, Optional, Type
 
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
@@ -17,7 +17,9 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
+from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
+from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -56,7 +58,7 @@ class TemporalContext(NamedTuple):
     last_event_id: Optional[int]
 
 
-class AssetGraphView:
+class AssetGraphView(LoadingContext):
     """The Asset Graph View. It is a view of the asset graph from the perspective of a specific
     temporal context.
 
@@ -109,13 +111,23 @@ class AssetGraphView:
 
         self._temporal_context = temporal_context
         self._instance = instance
+        self._loaders = {}
         self._asset_graph = asset_graph
 
         self._queryer = CachingInstanceQueryer(
             instance=instance,
             asset_graph=asset_graph,
+            loading_context=self,
             evaluation_time=temporal_context.effective_dt,
         )
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
+    @property
+    def loaders(self) -> Dict[Type, DataLoader]:
+        return self._loaders
 
     @property
     def effective_dt(self) -> datetime:

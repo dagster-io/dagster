@@ -17,6 +17,7 @@ from typing_extensions import Final
 
 from dagster import _check as check
 from dagster._annotations import deprecated, experimental
+from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -381,12 +382,14 @@ class CachingStaleStatusResolver:
         self,
         instance: "DagsterInstance",
         asset_graph: Union["BaseAssetGraph", Callable[[], "BaseAssetGraph"]],
+        loading_context: LoadingContext,
         instance_queryer: Optional["CachingInstanceQueryer"] = None,
     ):
         from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
         self._instance = instance
         self._instance_queryer = instance_queryer
+        self._loading_context = loading_context
         if isinstance(asset_graph, BaseAssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
@@ -621,7 +624,9 @@ class CachingStaleStatusResolver:
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
         if self._instance_queryer is None:
-            self._instance_queryer = CachingInstanceQueryer(self._instance, self.asset_graph)
+            self._instance_queryer = CachingInstanceQueryer(
+                self._instance, self.asset_graph, self._loading_context
+            )
         return self._instance_queryer
 
     @cached_method

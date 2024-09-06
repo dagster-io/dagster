@@ -138,3 +138,19 @@ class InstanceLoadableBy(ABC, Generic[TKey]):
         """Ensure the provided ids will be fetched on the next blocking query."""
         _, blocking_loader = context.get_loaders_for(cls)
         blocking_loader.prepare(ids)
+
+
+class LoadingContextForTest(LoadingContext):
+    """Loading context intended to be used in unit tests that would not otherwise construct a LoadingContext."""
+
+    def __init__(self, instance: "DagsterInstance"):
+        self._instance = instance
+        self._loaders = {}
+
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._instance
+
+    @property
+    def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
+        return self._loaders

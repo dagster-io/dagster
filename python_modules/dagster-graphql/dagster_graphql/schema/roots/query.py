@@ -1042,6 +1042,7 @@ class GrapheneQuery(graphene.ObjectType):
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
             asset_graph=load_asset_graph,
+            loading_context=graphene_info.context,
         )
 
         base_deployment_context = graphene_info.context.get_base_deployment_context()

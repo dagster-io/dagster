@@ -40,7 +40,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._time import get_current_timestamp
+from dagster._time import get_current_datetime, get_current_timestamp
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -96,18 +96,21 @@ class AssetDaemonContext:
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
         self._evaluation_id = evaluation_id
-        self._instance_queryer = CachingInstanceQueryer(
-            instance, asset_graph, evaluation_time=evaluation_time, logger=logger
-        )
-        self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
         self._asset_graph_view = AssetGraphView(
             temporal_context=TemporalContext(
-                effective_dt=self.instance_queryer.evaluation_time,
+                effective_dt=evaluation_time or get_current_datetime(),
                 last_event_id=instance.event_log_storage.get_maximum_record_id(),
             ),
             instance=instance,
             asset_graph=asset_graph,
+        )
+        self._instance_queryer = CachingInstanceQueryer(
+            instance,
+            asset_graph,
+            evaluation_time=evaluation_time,
+            loading_context=self._asset_graph_view,
+            logger=logger,
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
