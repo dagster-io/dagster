@@ -11,7 +11,12 @@ weekly_partitions = dg.WeeklyPartitionsDefinition(start_date="2024-01-01")
 
 
 # Define the partitioned asset
-@dg.asset(partitions_def=daily_partitions)
+@dg.asset(
+    partitions_def=daily_partitions,
+    # highlight-start
+    automation_condition=dg.AutomationCondition.on_cron(cron_schedule="0 1 * * *"),
+    # highlight-end
+)
 def daily_sales_data(context: dg.AssetExecutionContext):
     date = context.partition_key
     # Simulate fetching daily sales data
@@ -26,21 +31,21 @@ def daily_sales_data(context: dg.AssetExecutionContext):
 
 @dg.asset(
     partitions_def=weekly_partitions,
-    deps=[
-        dg.AssetDep(
-            "daily_sales_data",
-            partition_mapping=dg.TimeWindowPartitionMapping(),
-        )
-    ],
+    # highlight-start
+    automation_condition=dg.AutomationCondition.eager(),
+    # highlight-end
+    deps=[daily_sales_data],
 )
 def weekly_sales_summary(context: dg.AssetExecutionContext):
     week = context.partition_key
+    # highlight-start
     partition_key_range = context.asset_partition_key_range_for_input(
         "daily_sales_data"
     )
     start_date = partition_key_range.start
     end_date = partition_key_range.end
     context.log.info(f"start_date: {start_date}, end_date: {end_date}")
+    # highlight-end
 
     df = pd.DataFrame()
     for date in pd.date_range(start_date, end_date):
