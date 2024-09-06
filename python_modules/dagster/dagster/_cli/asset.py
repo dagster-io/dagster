@@ -14,6 +14,10 @@ from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartit
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import recon_job_from_origin, recon_repository_from_origin
 from dagster._utils.interrupts import capture_interrupts
@@ -28,6 +32,12 @@ def asset_cli():
 @python_origin_target_argument
 @click.option("--select", help="Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
+@click.option(
+    "--partition-range-start", help="Start range of asset partition to target", required=False
+)
+@click.option(
+    "--partition-range-end", help="End range of asset partition to target", required=False
+)
 def asset_materialize_command(**kwargs):
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli(
@@ -59,6 +69,16 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
     partition = kwargs.get("partition")
+    partition_range_start = kwargs.get("partition_range_start")
+    partition_range_end = kwargs.get("partition_range_end")
+
+    if partition and (partition_range_start or partition_range_end):
+        check.failed("Cannot specify both --partition and --partition-range options. Use only one.")
+
+    if partition_range_start or partition_range_end:
+        if not (partition_range_start and partition_range_end):
+            check.failed("Both --partition-range-start and --partition-range-end must be provided.")
+
     if partition:
         if all(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is None
@@ -78,7 +98,27 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
                 "All selected assets must have a PartitionsDefinition containing the passed"
                 f" partition key `{partition}` or have no PartitionsDefinition."
             )
-
+    elif partition_range_start:
+        try:
+            implicit_job_def.validate_partition_key(
+                partition_range_start,
+                selected_asset_keys=asset_keys,
+                dynamic_partitions_store=instance,
+            )
+            implicit_job_def.validate_partition_key(
+                check.not_none(partition_range_end),
+                selected_asset_keys=asset_keys,
+                dynamic_partitions_store=instance,
+            )
+        except DagsterUnknownPartitionError:
+            raise DagsterInvalidSubsetError(
+                "All selected assets must have a PartitionsDefinition containing the passed"
+                f" partition key `{partition_range_start}` or have no PartitionsDefinition."
+            )
+        tags = {
+            ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
+            ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
+        }
     else:
         if any(
             implicit_job_def.asset_layer.get(asset_key).partitions_def is not None

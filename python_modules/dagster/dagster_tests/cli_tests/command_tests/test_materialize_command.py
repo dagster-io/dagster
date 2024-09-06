@@ -7,11 +7,20 @@ from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
 
-def invoke_materialize(select: str, partition: Optional[str] = None):
+def invoke_materialize(
+    select: str,
+    partition: Optional[str] = None,
+    partition_range_start: Optional[str] = None,
+    partition_range_end: Optional[str] = None,
+):
     runner = CliRunner()
     options = ["-f", file_relative_path(__file__, "assets.py"), "--select", select]
     if partition:
         options.extend(["--partition", partition])
+    if partition_range_start:
+        options.extend(["--partition-range-start", partition_range_start])
+    if partition_range_end:
+        options.extend(["--partition-range-end", partition_range_end])
     return runner.invoke(asset_materialize_command, options)
 
 
@@ -120,6 +129,54 @@ def test_conflicting_partitions():
         assert "There is no PartitionsDefinition shared by all the provided assets" in str(
             result.exception
         )
+
+
+def test_partition_and_partition_range_options():
+    with instance_for_test():
+        result = invoke_materialize(
+            "daily_partitioned_asset",
+            partition="2020-01-01",
+            partition_range_start="2020-01-01",
+        )
+        assert (
+            "Cannot specify both --partition and --partition-range options. Use only one."
+            in str(result.exception)
+        )
+
+
+def test_partition_range_end_missing():
+    with instance_for_test():
+        result = invoke_materialize(
+            "daily_partitioned_asset",
+            partition_range_start="2020-01-01",
+        )
+        assert "Both --partition-range-start and --partition-range-end must be provided." in str(
+            result.exception
+        )
+
+
+def test_partition_range_start_missing():
+    with instance_for_test():
+        result = invoke_materialize(
+            "daily_partitioned_asset",
+            partition_range_end="2020-01-01",
+        )
+        assert "Both --partition-range-start and --partition-range-end must be provided." in str(
+            result.exception
+        )
+
+
+def test_partition_range_single_run_backfill_policy():
+    with instance_for_test() as instance:
+        result = invoke_materialize(
+            "daily_partitioned_asset",
+            partition_range_start="2020-01-01",
+            partition_range_end="2020-01-03",
+        )
+        assert "RUN_SUCCESS" in result.output
+        event = instance.get_latest_materialization_event(AssetKey("daily_partitioned_asset"))
+        assert event is not None
+        assert event.asset_materialization.partition == "2020-01-03"
 
 
 def test_failure():
