@@ -61,7 +61,7 @@ To follow the steps in this guide, you'll need:
 ## Step 2: Create the Dagster project structure
 
 :::info
-The project structure in this guide is simplified to allow you to get started quickly. As a next step, check out the [ETL pipeline tutorial](/tutorial/tutorial-etl) to learn how to build more complex pipelines using best practices.
+The project structure in this guide is simplified to allow you to get started quickly. When creating new projects, use `dagster project scaffold` to generate a complete Dagster project.
 :::
 
 Next, you'll create a basic Dagster project that looks like this:

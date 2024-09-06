@@ -18,10 +18,20 @@ After installing Python, it's recommended that you set up a virtual environment.
 
 There are many ways to do this, but this guide will use `venv` as it doesn't require additional dependencies.
 
+<Tabs>
+<TabItem value="macos" label="MacOS">
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv venv
+source venv/bin/activate
 ```
+</TabItem>
+<TabItem value="windows" label="Windows">
+```bash
+python -m venv venv
+source venv\Scripts\activate
+```
+</TabItem>
+</Tabs>
 
 :::tip
 **Looking for something more powerful than `venv`?** Try `pyenv` or `pyenv-virtualenv`, which can help you manage multiple versions of Python on a single machine. Learn more in the [pyenv GitHub repository](https://github.com/pyenv/pyenv).
@@ -50,12 +60,6 @@ The version numbers of Dagster should be printed in the terminal:
 ```bash
 > dagster --version
 dagster, version 1.8.4
-```
-
-If you see `dagster, version 1!0+dev`, then you have the development version of Dagster installed. You can install the latest stable version by providing a version to the `pip install` command, for example:
-
-```bash
-pip install 'dagster==1.8.4'
 ```
 
 ## Troubleshooting
