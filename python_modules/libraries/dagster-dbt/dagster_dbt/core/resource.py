@@ -627,6 +627,9 @@ class DbtCliResource(ConfigurableResource):
             # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
             # for more information.
             **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
+            # The DBT_PROJECT_DIR environment variable is set to the path containing the dbt project
+            # See https://docs.getdbt.com/reference/dbt_project.yml for more information.
+            **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
         }
 
         selection_args: List[str] = []

@@ -258,6 +258,17 @@ def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
         )
 
 
+def test_dbt_project_dir_conflicting_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DBT_PROJECT_DIR", "nonexistent")
+    assert (
+        DbtCliResource(
+            project_dir=os.fspath(test_jaffle_shop_path),
+        )
+        .cli(["parse"])
+        .is_successful()
+    )
+
+
 def test_dbt_partial_parse(dbt: DbtCliResource) -> None:
     test_jaffle_shop_path.joinpath("target", PARTIAL_PARSE_FILE_NAME).unlink(missing_ok=True)
 
