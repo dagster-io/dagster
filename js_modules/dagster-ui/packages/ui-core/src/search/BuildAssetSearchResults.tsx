@@ -1,5 +1,6 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
+import {isKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -96,6 +97,10 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
       }
 
       assetDefinition.tags.forEach((tag) => {
+        // Skip kind tags
+        if (isKindTag(tag)) {
+          return;
+        }
         const stringifiedTag = JSON.stringify(tag);
         assetCountByTag.increment(stringifiedTag);
       });
