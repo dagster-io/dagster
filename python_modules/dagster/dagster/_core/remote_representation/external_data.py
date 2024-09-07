@@ -99,7 +99,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._core.storage.tags import COMPUTE_KIND_TAG, STORAGE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
@@ -1191,6 +1191,10 @@ class ExternalAssetNode(IHaveNew):
             return self.auto_materialize_policy.to_automation_condition()
         else:
             return None
+
+    @property
+    def storage_kind(self) -> Optional[str]:
+        return (self.tags or {}).get(STORAGE_KIND_TAG)
 
 
 ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]

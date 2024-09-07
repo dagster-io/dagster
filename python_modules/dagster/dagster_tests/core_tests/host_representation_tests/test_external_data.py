@@ -27,6 +27,7 @@ from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import ScheduleType
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -41,6 +42,7 @@ from dagster._core.remote_representation.external_data import (
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
 )
+from dagster._core.storage.tags import STORAGE_KIND_TAG
 from dagster._serdes import deserialize_value, serialize_value, unpack_value
 from dagster._time import create_datetime, get_timezone
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -1331,3 +1333,24 @@ def test_back_compat_team_owners():
 
     external_asset_node = unpack_value(packed_1_7_7_external_asset)
     assert external_asset_node.owners == ["team:foo", "hi@me.com"]
+
+
+def test_external_asset_storage_kind():
+    @asset(tags={**StorageKindTagSet(storage_kind="snowflake")})
+    def asset1():
+        return 1
+
+    @asset(tags={"foo": "bar"})
+    def asset2():
+        return 1
+
+    external_asset_nodes = _get_external_asset_nodes_from_definitions(
+        Definitions(assets=[asset1, asset2])
+    )
+
+    asset1_external = external_asset_nodes[0]
+    asset2_external = external_asset_nodes[1]
+    assert asset1_external.storage_kind == "snowflake"
+    assert asset1_external.tags == {STORAGE_KIND_TAG: "snowflake"}
+    assert asset2_external.storage_kind is None
+    assert asset2_external.tags == {"foo": "bar"}
