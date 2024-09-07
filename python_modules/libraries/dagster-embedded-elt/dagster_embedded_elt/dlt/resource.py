@@ -6,6 +6,7 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     MaterializeResult,
+    MetadataValue,
     OpExecutionContext,
     _check as check,
 )
@@ -13,8 +14,10 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
+from dlt.destinations.exceptions import DatabaseUndefinedRelation
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
+from dlt.pipeline.exceptions import SqlClientNotAvailable
 from dlt.pipeline.pipeline import Pipeline
 
 from dagster_embedded_elt.dlt.constants import (
@@ -67,13 +70,19 @@ class DagsterDltResource(ConfigurableResource):
         return {k: _recursive_cast(v) for k, v in mapping.items()}
 
     def extract_resource_metadata(
-        self, resource: DltResource, load_info: LoadInfo
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        resource: DltResource,
+        load_info: LoadInfo,
+        dlt_pipeline: Pipeline,
     ) -> Mapping[str, Any]:
         """Helper method to extract dlt resource metadata from load info dict.
 
         Args:
+            context (Union[OpExecutionContext, AssetExecutionContext]): Asset or op execution context
             resource (DltResource): The dlt resource being materialized
             load_info (LoadInfo): Run metadata from dlt `pipeline.run(...)`
+            dlt_pipeline (Pipeline): The dlt pipeline used by `resource`
 
         Returns:
             Mapping[str, Any]: Asset-specific metadata dictionary
@@ -100,15 +109,28 @@ class DagsterDltResource(ConfigurableResource):
             for job in load_package.get("jobs", [])
             if job.get("table_name") == resource.table_name
         ]
-        # "dagster/row_count" is only appropriate when using dlt in "replace" mode,
-        # hence using the more accurate "rows_loaded"
-        for metrics in dlt_pipeline.last_trace.last_extract_info.asdict().get(
-            "table_metrics", {}
-        ):
+        for metrics in dlt_pipeline.last_trace.last_extract_info.asdict().get("table_metrics", {}):
             if metrics.get("table_name") == resource.table_name:
-                base_metadata["rows_loaded"] = MetadataValue.int(
-                    metrics.get("items_count", {})
-                )
+                base_metadata["rows_loaded"] = MetadataValue.int(metrics.get("items_count", None))
+        try:
+            with dlt_pipeline.sql_client() as client:
+                with client.execute_query(
+                    f"""
+                        SELECT
+                        count(*) as row_count
+                        FROM
+                        {resource.table_name}
+                    """,
+                ) as cursor:
+                    row_count_result = cursor.fetchone()
+        # Filesystem does not have a SQL client and table might not be found
+        except (SqlClientNotAvailable, DatabaseUndefinedRelation):
+            # TODO: Add logging
+            row_count_result = None
+        # Need to use 'partition_row_count' for partitioned assets
+        row_count = None
+        if row_count_result and not context.has_partition_key:
+            row_count = row_count_result[0]
 
         table_columns = [
             TableColumn(name=column.get("name"), type=column.get("data_type"))
@@ -119,7 +141,9 @@ class DagsterDltResource(ConfigurableResource):
         ]
         base_metadata = {
             **base_metadata,
-            **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
+            **TableMetadataSet(
+                column_schema=TableSchema(columns=table_columns), row_count=row_count
+            ),
         }
 
         return base_metadata
@@ -176,9 +200,7 @@ class DagsterDltResource(ConfigurableResource):
         dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
 
         asset_key_dlt_source_resource_mapping = {
-            dagster_dlt_translator.get_asset_key(
-                dlt_source_resource
-            ): dlt_source_resource
+            dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
             for dlt_source_resource in dlt_source.selected_resources.values()
         }
 
@@ -211,7 +233,7 @@ class DagsterDltResource(ConfigurableResource):
             dlt_source_resource,
         ) in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(
-                dlt_source_resource, load_info, dlt_pipeline
+                context, dlt_source_resource, load_info, dlt_pipeline
             )
 
             if has_asset_def:
