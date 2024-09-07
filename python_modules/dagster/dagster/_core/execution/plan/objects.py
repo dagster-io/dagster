@@ -1,13 +1,17 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Set
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
     normalize_metadata,
 )
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    NamedTupleSerializer,
+)
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.types import ExcInfo
 
@@ -79,7 +83,25 @@ class ErrorSource(Enum):
     INTERRUPT = "INTERRUPT"
 
 
-@whitelist_for_serdes
+class AssetKeyCompactSerializer(NamedTupleSerializer):
+    def before_unpack(self, _, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+        asset_keys = unpacked_dict.get("asset_keys")
+        if asset_keys:
+            unpacked_dict["asset_keys"] = {
+                AssetKey.from_db_string(key) for key in unpacked_dict["asset_keys"]
+            }
+
+        return unpacked_dict
+
+    def before_pack(self, value: NamedTuple) -> NamedTuple:
+        asset_keys = value.asset_keys  # type: ignore
+        if asset_keys:
+            value = value._replace(asset_keys={key.to_string() for key in asset_keys})
+
+        return value
+
+
+@whitelist_for_serdes(serializer=AssetKeyCompactSerializer)
 class StepFailureData(
     NamedTuple(
         "_StepFailureData",
@@ -87,10 +109,11 @@ class StepFailureData(
             ("error", Optional[SerializableErrorInfo]),
             ("user_failure_data", Optional[UserFailureData]),
             ("error_source", ErrorSource),
+            ("asset_keys", Optional[Set[AssetKey]]),
         ],
     )
 ):
-    def __new__(cls, error, user_failure_data, error_source=None):
+    def __new__(cls, error, user_failure_data, error_source=None, asset_keys=None):
         return super(StepFailureData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -100,6 +123,7 @@ class StepFailureData(
             error_source=check.opt_inst_param(
                 error_source, "error_source", ErrorSource, default=ErrorSource.FRAMEWORK_ERROR
             ),
+            asset_keys=check.opt_set_param(asset_keys, "asset_keys", AssetKey),
         )
 
     @property
@@ -142,6 +166,22 @@ def step_failure_event_from_exc_info(
             error_source=error_source,
         ),
     )
+
+
+@whitelist_for_serdes(serializer=AssetKeyCompactSerializer)
+class StepStartData(NamedTuple("_StepStartData", [("asset_keys", Set[AssetKey])])):
+    def __new__(cls, asset_keys: Set[AssetKey]):
+        return super(StepStartData, cls).__new__(
+            cls, asset_keys=check.set_param(asset_keys, "asset_keys", AssetKey)
+        )
+
+
+@whitelist_for_serdes(serializer=AssetKeyCompactSerializer)
+class StepSkippedData(NamedTuple("_StepSkippedData", [("asset_keys", Set[AssetKey])])):
+    def __new__(cls, asset_keys: Set[AssetKey]):
+        return super(StepSkippedData, cls).__new__(
+            cls, asset_keys=check.set_param(asset_keys, "asset_keys", AssetKey)
+        )
 
 
 @whitelist_for_serdes
