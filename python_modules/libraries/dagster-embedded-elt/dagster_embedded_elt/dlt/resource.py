@@ -109,9 +109,11 @@ class DagsterDltResource(ConfigurableResource):
             for job in load_package.get("jobs", [])
             if job.get("table_name") == resource.table_name
         ]
-        for metrics in dlt_pipeline.last_trace.last_extract_info.asdict().get("table_metrics", {}):
-            if metrics.get("table_name") == resource.table_name:
-                base_metadata["rows_loaded"] = MetadataValue.int(metrics.get("items_count", None))
+        rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
+            str(resource.table_name), None
+        )
+        if rows_loaded:
+            base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
         try:
             with dlt_pipeline.sql_client() as client:
                 with client.execute_query(
