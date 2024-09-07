@@ -59,7 +59,7 @@ partitioned_op_schedule = build_schedule_from_partitioned_job(
 ## Next steps
 
 - Learn more about schedules in [Understanding Automation](/concepts/automation)
-- React to events with [sensors](/guides/automation/sensors)
+- React to events with [sensors](/guides/sensors)
 - Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to schedules
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.

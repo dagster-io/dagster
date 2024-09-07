@@ -26,8 +26,8 @@ Examples of external assets could be files in a data lake that are populated by 
 
 To follow the steps in this guide, you'll need:
 
-- A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
-- Familiarity with [Sensors](/guides/automation/sensors)
+- A basic understanding of Dagster and assets. See the [Quick Start](/tutorial/quick-start) tutorial for an overview.
+- Familiarity with [Sensors](/guides/sensors)
 </details>
 
 ---
@@ -48,13 +48,13 @@ There are two main ways to do this: "pulling" external assets events with sensor
 
 ### "Pulling" with sensors
 
-You can use a Dagster [sensor](/guides/automation/sensors) to regularly poll the external system and "pull" information about the external asset into Dagster.
+You can use a Dagster [sensor](/guides/sensors) to regularly poll the external system and "pull" information about the external asset into Dagster.
 
 For example, here's how you would poll an external system (like an SFTP server) to update an external asset whenever the file is changed.
 
 <CodeExample filePath="guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" title="Pulling external asset events with sensors" />
 
-See the [sensors guide](/guides/automation/sensors) for more information about sensors.
+See the [sensors guide](/guides/sensors) for more information about sensors.
 
 ### "Pushing" with the REST API
 

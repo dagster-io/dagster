@@ -58,4 +58,4 @@ For example, imagine there's a CSV file of counties on the internet and you want
 
 {/* TODO add next steps */}
 
-- Learn how to [transform data using Dagster's dbt integration](/guides/ingestion-transformation/transform-dbt)
+- Learn how to [transform data using Dagster's dbt integration](/guides/transform-dbt)
