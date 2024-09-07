@@ -541,3 +541,67 @@ dd code {
   border-radius: 4px;
   padding: 0.1rem;
 }
+
+/* Card and CardGroup styles */
+.card-group {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  &.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  &.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  &.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  display: block; 
+  background-color: var(--theme-color-background-light);
+  border: 1px solid var(--theme-color-keyline);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  text-decoration: none; 
+  color: inherit; 
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  i {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--theme-color-accent-blue);
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: var(--theme-color-text-light);
+    margin-bottom: 1rem;
+    font-weight: 500;
+  }
+
+  a {
+    display: inline-block;
+    color: var(--theme-color-accent-blue);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
