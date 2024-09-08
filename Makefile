@@ -34,8 +34,8 @@ ruff:
 	ruff format .
 
 check_ruff:
-	ruff check .
-	ruff format --check .
+	ruff check --diff .
+	ruff format --diff --check .
 
 check_prettier:
 #NOTE:  excludes README.md because it's a symlink
