@@ -1,0 +1,284 @@
+"""Module containing functions for merging Kubernetes log streams."""
+
+import contextlib
+import itertools
+import logging
+import queue
+import threading
+from collections import deque
+from collections.abc import Callable, Generator, Iterator
+from dataclasses import dataclass, field
+from typing import Any, Mapping
+
+import pendulum
+
+_default_logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, order=True)
+class LogItem:
+    """LogItem to put into the log priority queue."""
+
+    timestamp: str
+    log: Any = field(compare=False)
+
+
+def _deduplicate(recent_messages: "deque[LogItem]") -> Callable[[LogItem], bool]:
+    def _should_drop(x: LogItem) -> bool:
+        if (
+            len(recent_messages) == recent_messages.maxlen
+            and x.timestamp <= recent_messages[0].timestamp
+        ):
+            # We have maxed out the buffer, so drop the messages if we oldest message that we've seen is newer
+            # than the message that we are getting from the stream.
+            return True
+
+        return x in recent_messages
+
+    return _should_drop
+
+
+def _process_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
+    timestamp = ""
+    log = ""
+
+    for log_chunk in stream:
+        for line in log_chunk.decode("utf-8").split("\n"):
+            maybe_timestamp, _, tail = line.partition(" ")
+            if not timestamp:
+                # The first item in the stream will always have a timestamp.
+                timestamp = maybe_timestamp
+                log = tail
+            elif maybe_timestamp == timestamp:
+                # We have multiple messages with the same timestamp in this chunk, add them separated
+                # with a new line
+                log += f"\n{tail}"
+            elif not (
+                len(maybe_timestamp) == len(timestamp) and _is_kube_timestamp(maybe_timestamp)
+            ):
+                # The line is continuation of a long line that got truncated and thus doesn't
+                # have a timestamp in the beginning of the line.
+                # Since all timestamps in the RFC format returned by Kubernetes have the same
+                # length (when represented as strings) we know that the value won't be a timestamp
+                # if the string lengths differ, however if they do not differ, we need to parse the
+                # timestamp.
+                log += line
+            else:
+                # New log line has been observed, send in the next cycle
+                yield LogItem(timestamp=timestamp, log=log)
+                timestamp = maybe_timestamp
+                log = tail
+
+    # Send the last message that we were building
+    if log or timestamp:
+        yield LogItem(timestamp=timestamp, log=log)
+
+
+def _is_kube_timestamp(maybe_timestamp: str) -> bool:
+    try:
+        pendulum.parse(maybe_timestamp)
+        return True
+    except Exception:
+        return False
+
+
+def _enqueue(
+    streams: queue.Queue,
+    out: queue.PriorityQueue,
+    recent_messages_buffer_size: int,
+    logger: logging.Logger,
+) -> None:
+    """Enqueue all of the log messages to a priority queue.
+
+    This allows us to consume all of the messages in a single thread in case the
+    Dagster's handler is not thread safe (which could be the case because right
+    now it is being used from a single thread only).
+
+    This expects the logs to be of the format b'<timestamp> <msg>' and only the
+    '<msg>' is forwarded to Dagster. If the <timestamp> is not there then the lines
+    will be joined together. There is a limitation that the first item in the stream
+    needs to always contain a timestamp as the first element.
+
+    The timestamp is expected to be in '2024-03-22T02:17:29.885548Z' format and
+    if the subsecond part will be truncated to microseconds.
+
+    If we fail parsing the timestamp, then the priority will be set to zero in
+    order to not drop any log items.
+
+    Args:
+    ----
+        streams: A queue of all the streams that need to be processed.
+        out: The priority queue to output the messages. We use LogItem to output
+            it.
+        recent_messages_buffer_size: The size of the buffer for storing the recent messages.
+        logger: A simple function to print diagnostic logs.
+
+    """
+    label, log_stream = streams.get()
+
+    # Fixed length queue to dedupe logs
+    recent_messages = deque(maxlen=recent_messages_buffer_size)
+    try:
+        for i, stream in enumerate(log_stream):
+            logger.debug(f"Starting to process the '{label}' log stream: {i}...")
+            for log_item in itertools.dropwhile(
+                _deduplicate(recent_messages),
+                _process_stream(stream),
+            ):
+                recent_messages.append(log_item)
+                out.put(log_item)
+    finally:
+        logger.debug(f"Finished processing the '{label}' log stream")
+        streams.task_done()
+
+
+def _handle(
+    logs: queue.Queue,
+    handler: Callable,
+    shutdown: threading.Event,
+    interval: float,
+    logger: logging.Logger,
+) -> None:
+    """Handle all of the logs from the priority queue.
+
+    Args:
+    ----
+        logs: The logs to process.
+        handler: The function to call for each log line.
+        shutdown: The threading.Event for signaling that we have to stop processing.
+        interval: The interval on how often to poll the logs if the queue is empty.
+        logger: A simple function to print diagnostic logs.
+
+    """
+    logger.debug(
+        f"Starting to process the merged log stream, will poll the incoming message queue every {interval}s..."
+    )
+    while True:
+        try:
+            # We need to wait for some time for the logs to be put to the priority queue so that they come out as
+            # ordered. If we were to wait on the `logs` queue, we would get the log as soon as it is available and that
+            # is not what we want.
+            entry = logs.get(block=False)
+        except queue.Empty:
+            shutdown.wait(timeout=interval)
+            continue
+
+        try:
+            if entry.log is StopIteration:
+                logger.debug("Shutting down log handler stream...")
+                # This is a special value to finish the processing
+                break
+
+            for line in entry.log.split("\n"):
+                handler(line)
+        except Exception as e:
+            logger.warning(f"An error occurred during processing '{entry.log}': {e}")
+        finally:
+            logs.task_done()
+
+
+@contextlib.contextmanager
+def merge_streams(
+    streams: Mapping[str, Generator],
+    handler: Callable,
+    recent_messages_buffer_size: int = 500,
+    logger: logging.Logger = _default_logger,
+) -> Generator[None, None, None]:
+    """merge_streams and handle them with a single handler.
+
+    The list of streams will be processed in separate threads and the handler will accept
+    each message separately. We expect streams to produce log messages in the format of
+        b'<timestamp> <msg>'
+
+    Args:
+    ----
+        streams: A dict of generators that will provide log messages. It is expected to sometimes observe duplicate
+            messages, which will be deduplicated. The keys to the dictionary are the labels of each stream for
+            debugging purposes.
+        handler: The handler to use on each log message returned
+            by the stream.
+        recent_messages_buffer_size: The size of the buffer for storing the recent messages.
+        logger: The function for logging.
+
+    """
+    workers = queue.Queue()
+    logs = queue.PriorityQueue()
+
+    for label, log_stream in streams.items():
+        workers.put((label, log_stream))
+
+    shutdown = threading.Event()
+    threads = [
+        # Make threads the individual extract logs calls
+        safe_thread(
+            target=_enqueue,
+            kwargs={
+                "streams": workers,
+                "out": logs,
+                "recent_messages_buffer_size": recent_messages_buffer_size,
+                "logger": logger,
+            },
+            logger=logger,
+        )
+        for i in range(len(streams))
+    ] + [
+        # TODO @aignas 2024-03-22: we could add a buffer if there is a lot of lag between
+        # when the logs appear in the priority queue and when they are processed.
+        safe_thread(
+            target=_handle,
+            kwargs={
+                "logs": logs,
+                "handler": handler,
+                "shutdown": shutdown,
+                "interval": 1,
+                "logger": logger,
+            },
+            logger=logger,
+        ),
+    ]
+
+    for t in threads:
+        t.start()
+
+    try:
+        yield
+    finally:
+        # The shutdown process is:
+        # 1. Wait until all log produces are done
+        # 2. Add a special log item that will be processed the last and the handler thread will exit itself
+        # 3. Set the shutdown event to signal the thread that it should shutdown.
+        # 4. Join the queue
+        workers.join()
+        logs.put(
+            LogItem(
+                # Because the timestamps start with a number, any alpha literal will be sorted as the last here
+                timestamp="end-of-queue",
+                log=StopIteration,
+            )
+        )
+        shutdown.set()
+        logs.join()
+
+        # Join the threads to ensure that there are none hanging around
+        for t in threads:
+            t.join()
+
+
+def safe_thread(*, target: Callable, logger: logging.Logger, kwargs: dict) -> threading.Thread:
+    """Wrap the thread target so that we can capture the exceptions.
+
+    Args:
+    ----
+        target: The target function.
+        logger: A simple function to print diagnostic logs.
+        kwargs: The kwargs to pass to the functions that need to be threaded.
+
+    """
+
+    def _fn(**kwargs: Any) -> None:
+        try:
+            target(**kwargs)
+        except Exception as e:
+            logger.exception(f"An unhandled exception happened during processing: {e}")
+
+    return threading.Thread(target=_fn, kwargs=kwargs)
