@@ -528,7 +528,7 @@ class DagsterKubernetesClient:
         pod_name: str,
         namespace: str,
         wait_for_state: WaitForPodState = WaitForPodState.Ready,
-        wait_initial_timeout: float = DEFAULT_WAIT_TIMEOUT,
+        pod_launch_timeout: float = DEFAULT_WAIT_TIMEOUT,
         wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         start_time: Any = None,
@@ -542,7 +542,7 @@ class DagsterKubernetesClient:
             namespace (str): Namespace in which the pod is located.
             wait_for_state (WaitForPodState, optional): Whether to wait for pod readiness or
                 termination. Defaults to waiting for readiness.
-            wait_initial_timeout (numeric, optional): Timeout after which to give up and raise exception
+            pod_launch_timeout (numeric, optional): Timeout after which to give up and raise exception
                 if the pod never appears. Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
                 Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
@@ -561,7 +561,7 @@ class DagsterKubernetesClient:
         check.str_param(namespace, "namespace")
         check.inst_param(wait_for_state, "wait_for_state", WaitForPodState)
         check.numeric_param(wait_timeout, "wait_timeout")
-        check.numeric_param(wait_initial_timeout, "wait_initial_timeout")
+        check.numeric_param(pod_launch_timeout, "pod_launch_timeout")
         check.numeric_param(wait_time_between_attempts, "wait_time_between_attempts")
 
         self.logger(f'Waiting for pod "{pod_name}"')
@@ -579,7 +579,7 @@ class DagsterKubernetesClient:
             ).items
             pod = pods[0] if pods else None
 
-            if wait_initial_timeout and self.timer() - start > wait_initial_timeout:
+            if pod_launch_timeout and self.timer() - start > pod_launch_timeout:
                 raise DagsterK8sError(
                     f"Timed out while waiting for pod to become ready with pod info: {pod!s}"
                 )
@@ -603,7 +603,7 @@ class DagsterKubernetesClient:
             ).items
             pod = pods[0] if pods else None
             if pod is None:
-                raise DagsterK8sError("Pod was unexpectedly killed")
+                raise DagsterK8sError(f'Pod "{pod_name}" was unexpectedly killed')
 
             if wait_timeout and self.timer() - start > wait_timeout:
                 raise DagsterK8sError(
