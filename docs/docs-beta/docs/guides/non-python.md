@@ -1,5 +1,6 @@
 ---
-title: "Running non-Python languages"
+title: "External Compute"
+sidebar_label: "Dagster Pipes"
 sidebar_position: 60
 ---
 

@@ -1,441 +1,413 @@
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
-    docs: [
+  docs: [
+    {
+      type: 'category',
+      label: 'Getting Started',
+      collapsed: false,
+      items: ['intro', 'getting-started/quickstart', 'tutorial/installation'],
+    },
+    {
+      type: 'category',
+      label: 'Tutorial',
+      items: ['tutorial/tutorial-etl'],
+    },
+    {
+      type: 'category',
+      label: 'Build',
+      items: [
         {
-            type: 'category',
-            label: 'Getting Started',
-            collapsed: false,
-            items: ['intro', 'tutorial/quick-start', 'tutorial/installation'],
+          type: 'category',
+          label: 'Build a pipeline',
+          items: [
+            'guides/data-assets',
+            'guides/metadata',
+            'guides/partitioning',
+            'guides/external-assets',
+          ],
         },
         {
-            type: 'category',
-            label: 'Tutorial',
-            items: ['tutorial/tutorial-etl'],
+          type: 'category',
+          label: 'Configure',
+          items: ['guides/configuring-assets', 
+            'guides/asset-factories',
+            'guides/resources',
+            'guides/io-managers',
+          ],
         },
         {
-            type: 'category',
-            label: 'Build',
-            items: [
-                {
-                    type: 'category',
-                    label: 'Create a pipeline',
-                    items: [
-                        'guides/data-assets',
-                        'guides/metadata',
-                        'guides/partitioning',
-                        'guides/external-assets',
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Configure behavior',
-                    items: [
-                        'guides/configuring-assets',
-                        'todo',
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Abstracting logic',
-                    items: [
-                        'guides/asset-factories',
-                        'guides/asset-factories-with-deps',
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Common use cases',
-                    items: [
-                        'guides/ingesting-data',
-                        'guides/transform-dbt',
-                        'todo',
-                    ],
-                },
-            ],
+          type: 'category',
+          label: 'Integrate',
+          items: [
+            'guides/ingesting-data',
+            'guides/transform-dbt',
+            'guides/non-python',
+          ],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Automate',
+      items: [
+        'guides/schedules',
+        'guides/sensors',
+        'guides/asset-sensors',
+        'guides/declarative-automation',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Test',
+      items: [
+        'guides/asset-checks',
+        'guides/data-freshness-testing',
+        'guides/unit-tests-assets-and-ops',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Deploy',
+      items: [
+        {
+          type: 'category',
+          label: 'Self-hosting Dagster',
+          items: ['guides/kubernetes', 'guides/docker'],
         },
         {
-            type: 'category',
-            label: 'Scale',
-            items: [
-                {
-                    type: 'category',
-                    label: 'Integrate with systems',
-                    items: [
-                        'todo',
-                        'guides/non-python',
-                        'todo',
-                        'guides/io-managers',
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Data Quality',
-                    items: [
-                        'guides/asset-checks',
-                        'guides/data-freshness-testing',
-                        'guides/unit-tests-assets-and-ops',
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Automate Pipelines',
-                    items: [
-                        'todo',
-                        'todo',
-                        'guides/asset-sensors',
-                    ],
-                },
-            ],
+          type: 'category',
+          label: 'Dagster Plus',
+          items: ['guides/dagster-plus', 'guides/self-hosted-to-dagster-plus'],
+        },
+        'guides/secrets',
+        'guides/code-locations',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Understand',
+      items: [
+        {
+          type: 'category',
+          label: 'Assets',
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'concepts/assets',
+            },
+          ],
         },
         {
-            type: 'category',
-            label: 'Deploy',
-            items: [
-                {
-                    type: 'category',
-                    label: 'Self-hosting Dagster',
-                    items: [
-                        'guides/kubernetes',
-                        'todo',
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Dagster Plus',
-                    items: [
-                        'guides/dagster-plus',
-                        'guides/self-hosted-to-dagster-plus',
-                    ],
-                },
-                'guides/secrets',
-                'guides/code-locations',
-            ],
+          type: 'category',
+          label: 'Automation and Scheduling',
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'concepts/automation',
+            },
+          ],
         },
         {
-            type: 'category',
-            label: 'Understand',
-            items: [
-                {
-                    type: 'category',
-                    label: 'Assets',
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'concepts/assets',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Automation and Scheduling',
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'concepts/automation',
-                        },
-                    ],
-                },
-                {
-                    type: 'doc',
-                    label: 'Partitions',
-                    id: 'concepts/partitions',
-                },
-                {
-                    type: 'doc',
-                    label: 'Resources',
-                    id: 'concepts/resources',
-                },
-                {
-                    type: 'doc',
-                    label: 'I/O managers',
-                    id: 'concepts/io-managers',
-                },
-                {
-                    type: 'category',
-                    label: 'Ops and jobs',
-                    link: {
-                        type: 'doc',
-                        id: 'concepts/ops-jobs',
-                    },
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'concepts/ops-jobs',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Execution',
-                    link: {
-                        type: 'doc',
-                        id: 'concepts/execution',
-                    },
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'concepts/execution',
-                        },
-                    ],
-                },
-            ],
+          type: 'doc',
+          label: 'Partitions',
+          id: 'concepts/partitions',
         },
         {
-            type: 'category',
-            label: 'About',
-            items: [
-                {
-                    type: 'autogenerated',
-                    dirName: 'about',
-                },
-            ],
-        },
-    ],
-    dagsterPlus: [
-        {
-            type: 'category',
-            label: 'Getting started',
-            collapsible: false,
-            className: 'category-non-collapsible',
-            items: [
-                {
-                    type: 'doc',
-                    id: 'dagster-plus/whats-dagster-plus',
-                },
-                {
-                    type: 'doc',
-                    id: 'dagster-plus/getting-started',
-                },
-            ],
+          type: 'doc',
+          label: 'Resources',
+          id: 'concepts/resources',
         },
         {
-            type: 'category',
-            label: 'Features',
-            collapsible: false,
-            items: [
-                {
-                    type: 'category',
-                    label: 'Insights',
-                    link: {
-                        type: 'doc',
-                        id: 'dagster-plus/insights',
-                    },
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'dagster-plus/insights',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Branch Deployments (CI)',
-                    link: {
-                        type: 'doc',
-                        id: 'dagster-plus/deployment/branch-deployments',
-                    },
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'dagster-plus/deployment/branch-deployments',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Alerts',
-                    link: {
-                        type: 'doc',
-                        id: 'dagster-plus/deployment/alerts',
-                    },
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Manage alerts in the UI',
-                            id: 'dagster-plus/deployment/alerts/ui',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Manage alerts with the CLI',
-                            id: 'dagster-plus/deployment/alerts/cli',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Email',
-                            id: 'dagster-plus/deployment/alerts/email',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Microsoft Teams',
-                            id: 'dagster-plus/deployment/alerts/microsoft-teams',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'PagerDuty',
-                            id: 'dagster-plus/deployment/alerts/pagerduty',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Slack',
-                            id: 'dagster-plus/deployment/alerts/slack',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Authentication & access control',
-                    items: [
-                        {
-                            type: 'category',
-                            label: 'Role-based Access Control',
-                            link: {
-                                type: 'doc',
-                                id: 'dagster-plus/access/rbac',
-                            },
-                            items: [
-                                {
-                                    type: 'autogenerated',
-                                    dirName: 'dagster-plus/access/rbac',
-                                },
-                            ],
-                        },
-                        {
-                            type: 'category',
-                            label: 'Single Sign-on (SSO)',
-                            items: [
-                                'dagster-plus/access/authentication/azure-ad-sso',
-                                'dagster-plus/access/authentication/google-workspace-sso',
-                                'dagster-plus/access/authentication/okta-sso',
-                                'dagster-plus/access/authentication/onelogin-sso',
-                                'dagster-plus/access/authentication/pingone-sso',
-                            ],
-                        },
-                        {
-                            type: 'category',
-                            label: 'SCIM provisioning',
-                            items: [
-                                {
-                                    type: 'link',
-                                    label: 'Azure Active Directory',
-                                    href: 'https://learn.microsoft.com/en-us/azure/active-directory/saas-apps/dagster-cloud-provisioning-tutorial',
-                                },
-                                {
-                                    type: 'doc',
-                                    label: 'Okta',
-                                    id: 'dagster-plus/access/authentication/okta-scim',
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    type: 'doc',
-                    id: 'dagster-plus/saved-views',
-                },
-            ],
+          type: 'doc',
+          label: 'I/O managers',
+          id: 'concepts/io-managers',
         },
         {
-            type: 'category',
-            label: 'Deployment',
-            collapsible: false,
-            items: [
-                {
-                    type: 'category',
-                    label: 'Serverless',
-                    link: {
-                        type: 'doc',
-                        id: 'dagster-plus/deployment/serverless',
-                    },
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'dagster-plus/deployment/serverless',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Hybrid',
-                    link: {
-                        type: 'doc',
-                        id: 'dagster-plus/deployment/hybrid',
-                    },
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Tokens',
-                            id: 'dagster-plus/deployment/hybrid/tokens',
-                        },
-                        {
-                            type: 'category',
-                            label: 'Agents',
-                            items: [
-                                {
-                                    type: 'autogenerated',
-                                    dirName: 'dagster-plus/deployment/hybrid/agents',
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'CI/CD',
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'dagster-plus/deployment/branch-deployments',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Code locations',
-                    link: {
-                        type: 'doc',
-                        id: 'dagster-plus/deployment/code-locations',
-                    },
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'dagster-plus/deployment/code-locations',
-                        },
-                    ],
-                },
-                {
-                    type: 'category',
-                    label: 'Environment variables',
-                    link: {
-                        type: 'doc',
-                        id: 'dagster-plus/deployment/environment-variables',
-                    },
-                    items: [
-                        {
-                            type: 'autogenerated',
-                            dirName: 'dagster-plus/deployment/environment-variables',
-                        },
-                    ],
-                },
-                {
-                    type: 'doc',
-                    label: 'Settings',
-                    id: 'dagster-plus/settings',
-                },
-            ],
+          type: 'category',
+          label: 'Ops and jobs',
+          link: {
+            type: 'doc',
+            id: 'concepts/ops-jobs',
+          },
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'concepts/ops-jobs',
+            },
+          ],
         },
-    ],
-    api: [
         {
-            type: 'category',
-            label: 'Dagster API',
-            items: [
-                {
-                    type: 'autogenerated',
-                    dirName: 'api',
-                },
-            ],
+          type: 'category',
+          label: 'Execution',
+          link: {
+            type: 'doc',
+            id: 'concepts/execution',
+          },
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'concepts/execution',
+            },
+          ],
         },
-    ],
+      ],
+    },
+    {
+      type: 'category',
+      label: 'About',
+      items: [
+        {
+          type: 'autogenerated',
+          dirName: 'about',
+        },
+      ],
+    },
+  ],
+  dagsterPlus: [
+    {
+      type: 'category',
+      label: 'Getting started',
+      collapsible: false,
+      className: 'category-non-collapsible',
+      items: [
+        {
+          type: 'doc',
+          id: 'dagster-plus/whats-dagster-plus',
+        },
+        {
+          type: 'doc',
+          id: 'dagster-plus/getting-started',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Features',
+      collapsible: false,
+      items: [
+        {
+          type: 'category',
+          label: 'Insights',
+          link: {
+            type: 'doc',
+            id: 'dagster-plus/insights',
+          },
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'dagster-plus/insights',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Branch Deployments (CI)',
+          link: {
+            type: 'doc',
+            id: 'dagster-plus/deployment/branch-deployments',
+          },
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'dagster-plus/deployment/branch-deployments',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Alerts',
+          link: {
+            type: 'doc',
+            id: 'dagster-plus/deployment/alerts',
+          },
+          items: [
+            {
+              type: 'doc',
+              label: 'Manage alerts in the UI',
+              id: 'dagster-plus/deployment/alerts/ui',
+            },
+            {
+              type: 'doc',
+              label: 'Manage alerts with the CLI',
+              id: 'dagster-plus/deployment/alerts/cli',
+            },
+            {
+              type: 'doc',
+              label: 'Email',
+              id: 'dagster-plus/deployment/alerts/email',
+            },
+            {
+              type: 'doc',
+              label: 'Microsoft Teams',
+              id: 'dagster-plus/deployment/alerts/microsoft-teams',
+            },
+            {
+              type: 'doc',
+              label: 'PagerDuty',
+              id: 'dagster-plus/deployment/alerts/pagerduty',
+            },
+            {
+              type: 'doc',
+              label: 'Slack',
+              id: 'dagster-plus/deployment/alerts/slack',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Authentication & access control',
+          items: [
+            {
+              type: 'category',
+              label: 'Role-based Access Control',
+              link: {
+                type: 'doc',
+                id: 'dagster-plus/access/rbac',
+              },
+              items: [
+                {
+                  type: 'autogenerated',
+                  dirName: 'dagster-plus/access/rbac',
+                },
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Single Sign-on (SSO)',
+              items: [
+                'dagster-plus/access/authentication/azure-ad-sso',
+                'dagster-plus/access/authentication/google-workspace-sso',
+                'dagster-plus/access/authentication/okta-sso',
+                'dagster-plus/access/authentication/onelogin-sso',
+                'dagster-plus/access/authentication/pingone-sso',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'SCIM provisioning',
+              items: [
+                {
+                  type: 'link',
+                  label: 'Azure Active Directory',
+                  href: 'https://learn.microsoft.com/en-us/azure/active-directory/saas-apps/dagster-cloud-provisioning-tutorial',
+                },
+                {
+                  type: 'doc',
+                  label: 'Okta',
+                  id: 'dagster-plus/access/authentication/okta-scim',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'doc',
+          id: 'dagster-plus/saved-views',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Deployment',
+      collapsible: false,
+      items: [
+        {
+          type: 'category',
+          label: 'Serverless',
+          link: {
+            type: 'doc',
+            id: 'dagster-plus/deployment/serverless',
+          },
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'dagster-plus/deployment/serverless',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Hybrid',
+          link: {
+            type: 'doc',
+            id: 'dagster-plus/deployment/hybrid',
+          },
+          items: [
+            {
+              type: 'doc',
+              label: 'Tokens',
+              id: 'dagster-plus/deployment/hybrid/tokens',
+            },
+            {
+              type: 'category',
+              label: 'Agents',
+              items: [
+                {
+                  type: 'autogenerated',
+                  dirName: 'dagster-plus/deployment/hybrid/agents',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'CI/CD',
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'dagster-plus/deployment/branch-deployments',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Code locations',
+          link: {
+            type: 'doc',
+            id: 'dagster-plus/deployment/code-locations',
+          },
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'dagster-plus/deployment/code-locations',
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Environment variables',
+          link: {
+            type: 'doc',
+            id: 'dagster-plus/deployment/environment-variables',
+          },
+          items: [
+            {
+              type: 'autogenerated',
+              dirName: 'dagster-plus/deployment/environment-variables',
+            },
+          ],
+        },
+        {
+          type: 'doc',
+          label: 'Settings',
+          id: 'dagster-plus/settings',
+        },
+      ],
+    },
+  ],
+  api: [
+    {
+      type: 'category',
+      label: 'Dagster API',
+      items: [
+        {
+          type: 'autogenerated',
+          dirName: 'api',
+        },
+      ],
+    },
+  ],
 };
 
 export default sidebars;

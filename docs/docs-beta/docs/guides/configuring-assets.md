@@ -1,6 +1,6 @@
 ---
 title: Configuring assets using the Dagster UI
-sidebar_label: Configuring assets using the Dagster UI
+sidebar_label: Configure asset runs
 sidebar_position: 50
 ---
 

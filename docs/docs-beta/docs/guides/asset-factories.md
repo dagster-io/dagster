@@ -1,7 +1,7 @@
 ---
 title: 'Creating domain-specific languages with asset factories'
 sidebar_position: 60
-sidebar_label: 'Creating domain-specific languages'
+sidebar_label: 'Asset factories'
 ---
 
 Often in data engineering, you'll find yourself needing to create a large number of similar assets. For example:

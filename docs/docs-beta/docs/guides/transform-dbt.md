@@ -1,6 +1,7 @@
 ---
 title: Transforming data with dbt
 sidebar_position: 20
+sidebar_label: Transform data with dbt
 last_update:
   date: 2024-08-26
   author: Nick Roach

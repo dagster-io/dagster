@@ -1,5 +1,6 @@
 ---
 title: "Defining data assets with decorators"
+sidebar_label: "Create Assets"
 sidebar_position: 10
 ---
 
