@@ -942,7 +942,7 @@ def test_wait_for_termination_pod_is_deleted():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace", wait_for_state=WaitForPodState.Terminated)
 
-    assert str(exc_info.value).startswith("Pod was unexpectedly killed")
+    assert str(exc_info.value).startswith(f'Pod "{pod_name}" was unexpectedly killed')
 
 
 def test_wait_for_ready_pod_is_deleted():
@@ -960,4 +960,4 @@ def test_wait_for_ready_pod_is_deleted():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
-    assert str(exc_info.value).startswith("Pod was unexpectedly killed")
+    assert str(exc_info.value).startswith(f'Pod "{pod_name}" was unexpectedly killed')
