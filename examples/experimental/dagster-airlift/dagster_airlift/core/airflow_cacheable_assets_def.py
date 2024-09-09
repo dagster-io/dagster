@@ -380,7 +380,7 @@ def construct_assets_with_task_migration_info_applied(
             # metadata fields from the original spec it was built from after deserializing.
             cacheable_specs.task_asset_specs[spec.key].to_asset_spec(
                 additional_metadata=spec.metadata,
-                additional_tags=airflow_kind_dict() if overall_migration_status == "False" else {},
+                additional_tags=airflow_kind_dict() if overall_migration_status != "True" else {},
             )
             for spec in specs
         ]
