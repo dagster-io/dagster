@@ -122,7 +122,7 @@ def test_no_loadable_targets():
 
     assert (
         str(exc_info.value)
-        == 'No repositories, jobs, pipelines, graphs, or asset definitions found in "nada".'
+        == 'No Definitions, function decorated with @definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "nada".'
     )
 
 
@@ -258,3 +258,22 @@ def test_local_directory_file():
 
     with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
         loadable_targets_from_python_file(path, working_directory=os.path.dirname(path))
+
+
+@pytest.mark.parametrize(
+    "filename", ["definitions_loader_with_context.py", "definitions_loader_no_context.py"]
+)
+def test_definitions_loader(filename):
+    module_path = file_relative_path(__file__, filename)
+    loadable_targets = loadable_targets_from_python_file(module_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "defs"
+
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(module_path, symbol, None), None
+    )
+
+    assert isinstance(repo_def, RepositoryDefinition)
+    assert len(repo_def.assets_defs_by_key) == 1
