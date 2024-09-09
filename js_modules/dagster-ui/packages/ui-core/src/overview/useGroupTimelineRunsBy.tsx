@@ -1,6 +1,6 @@
 import {useCallback, useMemo} from 'react';
 
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 
 const GROUP_BY_KEY = 'dagster.run-timeline-group-by';
 
@@ -8,7 +8,6 @@ export type GroupRunsBy = 'job' | 'automation';
 
 export const useGroupTimelineRunsBy = (
   defaultValue: GroupRunsBy = 'job',
-  storageKey = GROUP_BY_KEY,
 ): [GroupRunsBy, (value: GroupRunsBy) => void] => {
   const validate = useCallback(
     (value: string) => {
@@ -23,7 +22,18 @@ export const useGroupTimelineRunsBy = (
     [defaultValue],
   );
 
-  const [groupRunsBy, setGroupRunsBy] = useStateWithStorage(storageKey, validate);
+  const [groupRunsBy, setGroupRunsBy] = useQueryAndLocalStoragePersistedState<GroupRunsBy>({
+    localStorageKey: GROUP_BY_KEY,
+    queryKey: 'groupBy',
+    encode: (value) => {
+      return {groupBy: value};
+    },
+    decode: (pair) => {
+      return validate(pair.groupBy);
+    },
+    isEmptyState: (value) => !value,
+  });
+
   const setGroupByWithDefault = useCallback(
     (value: GroupRunsBy) => {
       setGroupRunsBy(value || defaultValue);
