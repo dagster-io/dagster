@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping, Sequence
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 
 
@@ -132,11 +133,20 @@ class DagsterPowerBITranslator:
             self.get_report_asset_key(self.workspace_data.reports_by_id[report_id])
             for report_id in tile_report_ids
         ]
+        url = data.properties.get("webUrl")
+        metadata = (
+            {
+                "url": MetadataValue.url(url),
+            }
+            if url
+            else {}
+        )
 
         return AssetSpec(
             key=self.get_dashboard_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
+            tags={"dagster/kind/powerbi": ""},
             deps=report_keys,
+            metadata=metadata,
         )
 
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -150,7 +160,7 @@ class DagsterPowerBITranslator:
         return AssetSpec(
             key=self.get_report_asset_key(data),
             deps=[dataset_key] if dataset_key else None,
-            tags={"dagster/storage_kind": "powerbi"},
+            tags={"dagster/kind/powerbi": ""},
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -165,7 +175,7 @@ class DagsterPowerBITranslator:
 
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
+            tags={"dagster/kind/powerbi": ""},
             deps=source_keys,
         )
 
@@ -184,5 +194,5 @@ class DagsterPowerBITranslator:
     def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
         return AssetSpec(
             key=self.get_data_source_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
+            tags={"dagster/kind/powerbi": ""},
         )

@@ -125,8 +125,20 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
         assert len(workspace_data_api_mocks.calls) == 5
 
-        # 5 PowerBI external assets, one materializable asset
-        assert len(repository_def.assets_defs_by_key) == 5 + 1
+        # 3 PowerBI external assets, one materializable asset
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
+
+        # Assert that all Power BI assets have upstreams, which are resolved
+        for asset_def in repository_def.assets_defs_by_key.values():
+            for key, deps in asset_def.asset_deps.items():
+                if "dagster/kind/powerbi" not in asset_def.tags_by_key[key]:
+                    continue
+                if key.path[0] == "semantic_model":
+                    continue
+                assert len(deps) > 0, f"Expected upstreams for {key}"
+                assert all(
+                    dep in repository_def.assets_defs_by_key for dep in deps
+                ), f"Asset {key} depends on {deps} which are not in the repository"
 
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data
