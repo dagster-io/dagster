@@ -11,13 +11,12 @@ import { Card, CardGroup } from '@site/src/components/Cards';
 
 Dagster is a data orchestrator built for data engineers, with integrated lineage, observability, a declarative programming model and best-in-class testability.
 
-
 <CodeExample filePath="getting-started/hello-world.py" language="python" />
 
 ## Get started
 
 <CardGroup cols={3}>
-  <Card title="Quickstart" href="/tutorial/quick-start">
+  <Card title="Quickstart" href="/getting-started/quickstart">
       Build your first Dagster pipeline in our Quickstart tutorial.
   </Card>
   <Card title="Thinking in Assets"  href="/concepts/assets/thinking-in-assets">
