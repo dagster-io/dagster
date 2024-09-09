@@ -86,6 +86,15 @@ def are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
     return True
 
 
+def kwarg_as_tuple(kwargs: ClickArgMapping, key: str) -> Tuple[str, ...]:
+    value = kwargs.get(key)
+    if value is None:
+        return tuple()
+    if isinstance(value, str):
+        return (value,)
+    return tuple(value)
+
+
 WORKSPACE_CLI_ARGS = (
     "workspace",
     "python_file",
@@ -147,7 +156,7 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
             "grpc_port",
             "grpc_socket",
         )
-        python_files = kwargs["python_file"]
+        python_files = kwarg_as_tuple(kwargs, "python_file")
 
         working_directory = get_working_directory_from_kwargs(kwargs)
 
@@ -187,7 +196,7 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
             "grpc_socket",
         )
 
-        module_names = kwargs["module_name"]
+        module_names = kwarg_as_tuple(kwargs, "module_name")
 
         check.is_tuple(module_names, of_type=str)
 

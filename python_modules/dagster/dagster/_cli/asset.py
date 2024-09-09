@@ -117,6 +117,8 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
                 f" partition key `{partition}` or have no PartitionsDefinition."
             )
     elif partition_range_start:
+        assert partition_range_end is not None
+
         backfill_policy_type = resolve_backfill_policy(
             [implicit_job_def.asset_layer.get(next(iter(asset_keys))).backfill_policy]
         ).policy_type
@@ -138,7 +140,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
                 dynamic_partitions_store=instance,
             )
             implicit_job_def.validate_partition_key(
-                check.not_none(partition_range_end),
+                partition_range_end,
                 selected_asset_keys=asset_keys,
                 dynamic_partitions_store=instance,
             )
@@ -169,71 +171,73 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
                     external_repo, implicit_job_def.name
                 )
 
-            job_partition_set = next(
-                (
-                    external_partition_set
-                    for external_partition_set in external_repo.get_external_partition_sets()
-                    if external_partition_set.job_name == external_job.name
-                ),
-                None,
-            )
+                job_partition_set = next(
+                    (
+                        external_partition_set
+                        for external_partition_set in external_repo.get_external_partition_sets()
+                        if external_partition_set.job_name == external_job.name
+                    ),
+                    None,
+                )
 
-            if not job_partition_set:
-                raise click.UsageError(f"Job `{external_job.name}` is not partitioned.")
+                if not job_partition_set:
+                    raise click.UsageError(f"Job `{external_job.name}` is not partitioned.")
 
-            repo_handle = RepositoryHandle(
-                repository_name=external_repo.name,
-                code_location=code_location,
-            )
+                repo_handle = RepositoryHandle(
+                    repository_name=external_repo.name,
+                    code_location=code_location,
+                )
 
-            partition_keys = check.not_none(
-                implicit_job_def.partitions_def
-            ).get_partition_keys_in_range(PartitionKeyRange(start=..., end=...))
+                partition_keys = check.not_none(
+                    implicit_job_def.partitions_def
+                ).get_partition_keys_in_range(
+                    PartitionKeyRange(start=partition_range_start, end=partition_range_end)
+                )
 
-            backfill_id = make_new_backfill_id()
-            backfill_job = PartitionBackfill(
-                backfill_id=backfill_id,
-                partition_set_origin=job_partition_set.get_external_origin(),
-                status=BulkActionStatus.REQUESTED,
-                partition_names=partition_keys,
-                from_failure=False,
-                reexecution_steps=None,
-                tags={},
-                backfill_timestamp=get_current_timestamp(),
-            )
-            try:
-                partition_execution_data = (
-                    code_location.get_external_partition_set_execution_param_data(
-                        repository_handle=repo_handle,
-                        partition_set_name=job_partition_set.name,
-                        partition_names=partition_keys,
-                        instance=instance,
+                backfill_id = make_new_backfill_id()
+                backfill_job = PartitionBackfill(
+                    backfill_id=backfill_id,
+                    partition_set_origin=job_partition_set.get_external_origin(),
+                    status=BulkActionStatus.REQUESTED,
+                    partition_names=partition_keys,
+                    from_failure=False,
+                    reexecution_steps=None,
+                    tags={},
+                    backfill_timestamp=get_current_timestamp(),
+                )
+                try:
+                    partition_execution_data = (
+                        code_location.get_external_partition_set_execution_param_data(
+                            repository_handle=repo_handle,
+                            partition_set_name=job_partition_set.name,
+                            partition_names=partition_keys,
+                            instance=instance,
+                        )
                     )
-                )
-            except Exception:
-                error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                instance.add_backfill(
-                    backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
-                )
-                raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
+                except Exception:
+                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                    instance.add_backfill(
+                        backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
+                    )
+                    raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
 
-            assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
+                assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 
-            for partition_data in partition_execution_data.partition_data:
-                dagster_run = create_backfill_run(
-                    instance,
-                    code_location,
-                    external_job,
-                    job_partition_set,
-                    backfill_job,
-                    partition_data.name,
-                    partition_data.tags,
-                    partition_data.run_config,
-                )
-                if dagster_run:
-                    instance.submit_run(dagster_run.run_id, workspace)
+                for partition_data in partition_execution_data.partition_data:
+                    dagster_run = create_backfill_run(
+                        instance,
+                        code_location,
+                        external_job,
+                        job_partition_set,
+                        backfill_job,
+                        partition_data.name,
+                        partition_data.tags,
+                        partition_data.run_config,
+                    )
+                    if dagster_run:
+                        instance.submit_run(dagster_run.run_id, workspace)
 
-            instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
+                instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 
             return
     else:
