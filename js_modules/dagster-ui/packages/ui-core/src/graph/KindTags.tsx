@@ -18,6 +18,7 @@ export const isCanonicalComputeKindTag = (tag: DefinitionTag) =>
 export const isCanonicalStorageKindTag = (tag: DefinitionTag) => tag.key === STORAGE_KIND_TAG;
 
 export const isKindTag = (tag: DefinitionTag) => tag.key.startsWith(KIND_TAG_PREFIX);
+export const isSystemTag = isKindTag;
 export const getKindFromTag = (tag: DefinitionTag) => tag.key.slice(KIND_TAG_PREFIX.length);
 
 export const AssetComputeKindTag = ({
