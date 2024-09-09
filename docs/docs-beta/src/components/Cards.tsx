@@ -8,7 +8,7 @@ interface CardProps {
   children: React.ReactNode;
 }
 
-const Card: React.FC<CardProps> = ({ title, icon, href, children }) => (
+const Card: React.FC<CardProps> = ({title, icon, href, children}) => (
   <Link to={href} className="card">
     <h3>{title}</h3>
     <i className={`icon-${icon}`}></i>
@@ -21,10 +21,8 @@ interface CardGroupProps {
   children: React.ReactNode;
 }
 
-const CardGroup: React.FC<CardGroupProps> = ({ cols, children }) => (
-  <div className={`card-group cols-${cols}`}>
-    {children}
-  </div>
+const CardGroup: React.FC<CardGroupProps> = ({cols, children}) => (
+  <div className={`card-group cols-${cols}`}>{children}</div>
 );
 
-export { Card, CardGroup };
+export {Card, CardGroup};
