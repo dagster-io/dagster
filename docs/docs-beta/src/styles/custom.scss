@@ -612,3 +612,42 @@ dd code {
     }
   }
 }
+
+
+/**
+ * api docs: inline flag
+ *
+ * available options:
+ * - info
+ * - danger
+ * - warning
+ */
+
+span {
+  &.flag {
+    font-weight: var(--ifm-font-weight-semibold);
+    border-radius: 8px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  &.flag-info {
+    background-color: var(--theme-color-background-cyan);
+    border: 1px solid var(--theme-color-text-cyan);
+    color: var(--theme-color-text-cyan);
+
+  }
+
+  &.flag-danger {
+    background-color: var(--theme-color-background-red);
+    border: 1px solid var(--theme-color-text-red);
+    color: var(--theme-color-text-red);
+  }
+
+  &.flag-warning {
+    background-color: var(--theme-color-background-yellow);
+    border: 1px solid var(--theme-color-text-yellow);
+    color: var(--theme-color-text-yellow);
+  }
+
+}

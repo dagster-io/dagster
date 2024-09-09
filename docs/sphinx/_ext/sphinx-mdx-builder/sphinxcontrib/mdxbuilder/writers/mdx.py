@@ -839,21 +839,28 @@ class MdxTranslator(SphinxTranslator):
         self.current_row.append(text.replace("\n", ""))
         self.stateindent.pop()
 
-    # Dagster specific nodes
-    ###########################################################################
-    # TODO: Move these out of this module and extract out docusaurus
-    # style admonitions
+    ####################################################################################################
+    #                                         Dagster Specific                                         #
+    ####################################################################################################
+
+    # TODO: Move these out of this module and extract out docusaurus style admonitions
+
+    def _flag_to_level(self, flag_type: str) -> str:
+        """Maps flag type to style that will be using in CSS and admonitions."""
+        level = "info"
+        if flag_type == "experimental":
+            level = "warning"
+        if flag_type == "deprecated":
+            level = "danger"
+        return level
+
     def visit_flag(self, node: Element) -> None:
         flag_type = node.attributes["flag_type"]
         message = node.attributes["message"].replace(":::", "")
-        set_flag = "info"
-        if flag_type == "experimental":
-            set_flag = "danger"
-        if flag_type == "deprecated":
-            set_flag = "warning"
+        level = self._flag_to_level(flag_type)
 
         self.new_state()
-        self.add_text(f":::{set_flag}[{flag_type}]\n")
+        self.add_text(f":::{level}[{flag_type}]\n")
         self.add_text(f"{message}\n")
 
     def depart_flag(self, node: Element) -> None:
@@ -861,10 +868,13 @@ class MdxTranslator(SphinxTranslator):
         self.end_state(wrap=False)
 
     def visit_inline_flag(self, node: Element) -> None:
-        self.log_visit(node)
+        flag_type = node.attributes["flag_type"]
+        level = self._flag_to_level(flag_type)
+        self.add_text(f'<span className="flag flag-{level}">')
+        self.add_text(node.attributes["flag_type"])
 
     def depart_inline_flag(self, node: Element) -> None:
-        pass
+        self.add_text("</span>")
 
     def visit_collapse_node(self, node: Element) -> None:
         raise nodes.SkipNode
