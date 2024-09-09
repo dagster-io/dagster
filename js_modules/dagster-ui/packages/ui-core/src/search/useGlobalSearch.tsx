@@ -17,7 +17,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetOwner, DefinitionTag, buildDefinitionTag} from '../graphql/types';
+import {AssetOwner, DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
@@ -28,9 +28,9 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
 };
 
-export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
+export const linkToAssetTableWithKindFilter = (kind: string) => {
   return `/assets?${qs.stringify({
-    computeKindTags: JSON.stringify([computeKind]),
+    kinds: JSON.stringify([kind]),
   })}`;
 };
 
@@ -213,11 +213,8 @@ const secondaryDataToSearchResults = (
       node,
       href: assetDetailsPathForKey(node.key),
       type: SearchResultType.Asset,
-      tags: node.definition!.tags.concat(
-        node.definition!.computeKind
-          ? buildDefinitionTag({key: 'dagster/compute_kind', value: node.definition!.computeKind})
-          : [],
-      ),
+      tags: node.definition!.tags,
+      kinds: node.definition!.kinds,
     }));
 
   if (searchContext === 'global') {
@@ -225,15 +222,13 @@ const secondaryDataToSearchResults = (
   } else {
     const countsBySection = buildAssetCountBySection(nodes);
 
-    const computeKindResults: SearchResult[] = countsBySection.countsByComputeKind.map(
-      ({computeKind, assetCount}) => ({
-        label: computeKind,
-        description: '',
-        type: AssetFilterSearchResultType.ComputeKind,
-        href: linkToAssetTableWithComputeKindFilter(computeKind),
-        numResults: assetCount,
-      }),
-    );
+    const kindResults: SearchResult[] = countsBySection.countsByKind.map(({kind, assetCount}) => ({
+      label: kind,
+      description: '',
+      type: AssetFilterSearchResultType.Kind,
+      href: linkToAssetTableWithKindFilter(kind),
+      numResults: assetCount,
+    }));
 
     const tagResults: SearchResult[] = countsBySection.countPerTag.map(({tag, assetCount}) => ({
       label: buildTagString(tag),
@@ -281,7 +276,7 @@ const secondaryDataToSearchResults = (
     );
     return [
       ...assets,
-      ...computeKindResults,
+      ...kindResults,
       ...tagResults,
       ...codeLocationResults,
       ...ownerResults,
@@ -604,6 +599,7 @@ export const SEARCH_SECONDARY_QUERY = gql`
         key
         value
       }
+      kinds
       repository {
         id
         name

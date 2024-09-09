@@ -21,7 +21,7 @@ interface Props {
   onRefresh: () => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
-  computeKindFilter?: StaticSetFilter<string>;
+  kindFilter?: StaticSetFilter<string>;
 }
 
 export const VirtualizedAssetTable = (props: Props) => {
@@ -34,7 +34,7 @@ export const VirtualizedAssetTable = (props: Props) => {
     onRefresh,
     showRepoColumn,
     view = 'flat',
-    computeKindFilter,
+    kindFilter,
   } = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = Object.keys(groups).length;
@@ -96,7 +96,7 @@ export const VirtualizedAssetTable = (props: Props) => {
                 checked={checkedDisplayKeys.has(row.displayKey)}
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onRefresh={onRefresh}
-                computeKindFilter={computeKindFilter}
+                kindFilter={kindFilter}
               />
             );
           })}
