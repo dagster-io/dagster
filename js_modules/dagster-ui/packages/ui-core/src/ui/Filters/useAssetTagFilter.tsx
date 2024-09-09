@@ -2,6 +2,7 @@ import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 
+import {isKindTag} from '../../graph/KindTags';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
 import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
@@ -53,7 +54,12 @@ export function useAssetTagsForAssets(
       Array.from(
         new Set(
           assets
-            .flatMap((a) => a.definition?.tags?.map((tag) => JSON.stringify(tag)) ?? [])
+            .flatMap(
+              (a) =>
+                a.definition?.tags
+                  ?.filter((tag) => !isKindTag(tag))
+                  .map((tag) => JSON.stringify(tag)) ?? [],
+            )
             .filter((o) => o),
         ),
       )
