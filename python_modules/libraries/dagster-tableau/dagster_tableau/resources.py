@@ -1,15 +1,23 @@
 import datetime
 import uuid
 from abc import abstractmethod
+from typing import Any, Dict, Mapping, Optional, Sequence, Type, Union, cast
 from contextlib import contextmanager
-from typing import Any, Dict, Mapping, Optional, Union, cast
 
 import jwt
 import requests
 from dagster import ConfigurableResource
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
+
+from dagster_tableau.translator import (
+    DagsterTableauTranslator,
+    TableauContentData,
+    TableauContentType,
+    TableauWorkspaceData,
+)
 
 TABLEAU_REST_API_VERSION = "3.23"
 
@@ -273,6 +281,81 @@ class BaseTableauWorkspace(ConfigurableResource):
         self._client.sign_in()
         yield self._client
         self._client.sign_out()
+
+    def fetch_tableau_workspace_data(
+            self,
+    ) -> TableauWorkspaceData:
+        """Retrieves all Tableau content from the workspace and returns it as a TableauWorkspaceData object.
+        Future work will cache this data to avoid repeated calls to the Tableau API.
+
+        Returns:
+            TableauWorkspaceData: A snapshot of the Tableau workspace's content.
+        """
+        workbooks_data = self.get_workbooks()["workbooks"]
+        workbook_ids = [workbook["id"] for workbook in workbooks_data["workbook"]]
+
+        workbooks_by_id = {}
+        views_by_id = {}
+        data_sources_by_id = {}
+        for workbook_id in workbook_ids:
+            workbook_data = self.get_workbook(workbook_id=workbook_id)["workbook"]
+            raw_data_sources_data = self.get_workbook_data_sources(workbook_id=workbook_id)
+
+            augmented_workbook_data = {**workbook_data, **raw_data_sources_data}
+            workbooks_by_id[workbook_id] = TableauContentData(
+                content_type=TableauContentType.WORKBOOK, properties=augmented_workbook_data
+            )
+
+            for view_data in workbook_data["views"]["view"]:
+                augmented_view_data = {**view_data, "workbook": {"id": workbook_id}}
+                views_by_id[view_data["id"]] = TableauContentData(
+                    content_type=TableauContentType.VIEW, properties=augmented_view_data
+                )
+
+            for data_source_data in raw_data_sources_data["connections"]["connection"]:
+                data_sources_by_id[data_source_data["datasource"]["id"]] = TableauContentData(
+                    content_type=TableauContentType.DATA_SOURCE,
+                    properties=data_source_data["datasource"],
+                )
+
+        return TableauWorkspaceData(
+            site_id=self._site_id,
+            workbooks_by_id=workbooks_by_id,
+            views_by_id=views_by_id,
+            data_sources_by_id=data_sources_by_id,
+        )
+
+    def build_asset_specs(
+            self,
+            dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+    ) -> Sequence[AssetSpec]:
+        """Fetches Tableau content from the workspace and translates it into AssetSpecs,
+        using the provided translator.
+        Future work will cache this data to avoid repeated calls to the Tableau API.
+
+        Args:
+            dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
+                to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+
+        Returns:
+            Sequence[AssetSpec]: A list of AssetSpecs representing the Tableau content.
+        """
+        response = self.sign_in()
+        self._api_token = response["credentials"]["token"]
+        self._site_id = response["credentials"]["site"]["id"]
+        workspace_data = self.fetch_tableau_workspace_data()
+        self.sign_out()
+        self._api_token = None
+        self._site_id = None
+        translator = dagster_tableau_translator(context=workspace_data)
+
+        all_content = [
+            *workspace_data.views_by_id.values(),
+            *workspace_data.data_sources_by_id.values(),
+        ]
+
+        return [translator.get_asset_spec(content) for content in all_content]
+
 
 
 @experimental
