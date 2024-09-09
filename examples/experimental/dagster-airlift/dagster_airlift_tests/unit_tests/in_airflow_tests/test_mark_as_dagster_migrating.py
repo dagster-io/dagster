@@ -1,3 +1,4 @@
+import copy
 import json
 
 import pytest
@@ -12,36 +13,63 @@ from dagster_airlift_tests.unit_tests.in_airflow_tests.conftest import (
 )
 
 
+def test_mark_as_dagster_migrating_sqlite_backend(
+    mock_airflow_variable: None, sqlite_backend: None, caplog
+) -> None:
+    """Test that when using sqlite backend, we dont attempt to set the variable."""
+    globals_fake = build_dags_dict_given_structure(
+        {
+            "dag": {"task": []},
+        }
+    )
+
+    mark_as_dagster_migrating(
+        global_vars=globals_fake,
+        migration_state=AirflowMigrationState.from_dict(
+            {
+                "dag": {"tasks": [{"id": "task", "migrated": True}]},
+            }
+        ),
+    )
+    assert any(
+        "Using sqlite backend" in record.message and record.levelname == "INFO"
+        for record in caplog.records
+    )
+
+    assert VAR_DICT == {}
+
+
 def test_mark_as_dagster_migrating(mock_airflow_variable: None) -> None:
     """Test that we can mark a set of dags as migrating to dagster, and as a result, operators are replaced and tags are added."""
     globals_fake = build_dags_dict_given_structure(
         {
             "task_is_migrated": {"task": []},
-            "task_isnt_migrated": {"task": []},
+            "initially_not_migrated": {"task": []},
             "should_be_ignored": {"task": []},
         }
     )
+    original_globals = copy.deepcopy(globals_fake)
     mark_as_dagster_migrating(
         global_vars=globals_fake,
         migration_state=AirflowMigrationState.from_dict(
             {
                 "task_is_migrated": {"tasks": [{"id": "task", "migrated": True}]},
-                "task_isnt_migrated": {"tasks": [{"id": "task", "migrated": False}]},
+                "initially_not_migrated": {"tasks": [{"id": "task", "migrated": False}]},
             }
         ),
     )
     # Both dags should have the tag "Migrating to Dagster"
     assert len(globals_fake["task_is_migrated"].tags) == 1
-    assert len(globals_fake["task_isnt_migrated"].tags) == 1
+    assert len(globals_fake["initially_not_migrated"].tags) == 1
 
     assert "1 Task Marked as Migrating to Dagster" in globals_fake["task_is_migrated"].tags
-    assert "0 Tasks Marked as Migrating to Dagster" in globals_fake["task_isnt_migrated"].tags
+    assert "0 Tasks Marked as Migrating to Dagster" in globals_fake["initially_not_migrated"].tags
 
     # Only the task marked as migrated should be replaced with a DagsterOperator
     assert isinstance(
         globals_fake["task_is_migrated"].task_dict["task"], BaseProxyToDagsterOperator
     )
-    assert isinstance(globals_fake["task_isnt_migrated"].task_dict["task"], PythonOperator)
+    assert isinstance(globals_fake["initially_not_migrated"].task_dict["task"], PythonOperator)
     assert isinstance(globals_fake["should_be_ignored"].task_dict["task"], PythonOperator)
 
     # Check the variable store
@@ -49,8 +77,46 @@ def test_mark_as_dagster_migrating(mock_airflow_variable: None) -> None:
         "task_is_migrated_dagster_migration_state": json.dumps(
             {"tasks": [{"id": "task", "migrated": True}]}
         ),
-        "task_isnt_migrated_dagster_migration_state": json.dumps(
+        "initially_not_migrated_dagster_migration_state": json.dumps(
             {"tasks": [{"id": "task", "migrated": False}]}
+        ),
+    }
+
+    # Change initially_not_migrated to be migrated
+    mark_as_dagster_migrating(
+        global_vars=original_globals,
+        migration_state=AirflowMigrationState.from_dict(
+            {
+                "task_is_migrated": {"tasks": [{"id": "task", "migrated": True}]},
+                "initially_not_migrated": {"tasks": [{"id": "task", "migrated": True}]},
+            }
+        ),
+    )
+    # Both dags should have the tag "Migrating to Dagster"
+    assert len(original_globals["task_is_migrated"].tags) == 1
+    assert len(original_globals["initially_not_migrated"].tags) == 1
+
+    assert "1 Task Marked as Migrating to Dagster" in original_globals["task_is_migrated"].tags
+    assert (
+        "1 Task Marked as Migrating to Dagster" in original_globals["initially_not_migrated"].tags
+    )
+
+    # Both tasks should be replaced with a DagsterOperator
+    assert isinstance(
+        original_globals["task_is_migrated"].task_dict["task"], BaseProxyToDagsterOperator
+    )
+    assert isinstance(
+        original_globals["initially_not_migrated"].task_dict["task"], BaseProxyToDagsterOperator
+    )
+    assert isinstance(original_globals["should_be_ignored"].task_dict["task"], PythonOperator)
+
+    # Check the variable store
+    assert VAR_DICT == {
+        "task_is_migrated_dagster_migration_state": json.dumps(
+            {"tasks": [{"id": "task", "migrated": True}]}
+        ),
+        "initially_not_migrated_dagster_migration_state": json.dumps(
+            {"tasks": [{"id": "task", "migrated": True}]}
         ),
     }
 

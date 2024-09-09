@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -11,6 +14,8 @@ from dagster import (
     schedule,
     sensor,
 )
+from dagster._core.errors import DagsterError
+from dagster._core.test_utils import environ
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.test import make_instance
 
@@ -154,7 +159,7 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
 
 
 def test_transitive_asset_deps() -> None:
-    """Test that cross-dag transitive asset dependencies rae correctly generated."""
+    """Test that cross-dag transitive asset dependencies are correctly generated."""
     # Asset graph is a -> b -> c where a and c are in different dags, and b isn't in any dag.
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
         assets_per_task={
@@ -268,3 +273,54 @@ def test_observed_assets() -> None:
             "airflow_instance/dag/dag": ["e", "f"],
         },
     )
+
+
+def test_sqlite_backed_airflow_instance() -> None:
+    """Test that a sqlite-backed airflow instance can be correctly peered, and errors when the correct info can't be found."""
+    defs = build_definitions_airflow_asset_graph(
+        assets_per_task={
+            "dag": {"task": []},
+        },
+        config={
+            "sections": [
+                {
+                    "name": "database",
+                    "options": [{"key": "sql_alchemy_conn", "value": "sqlite://"}],
+                },
+            ],
+        },
+    )
+
+    assert defs.assets
+    assert len(list(defs.assets)) == 1
+    with pytest.raises(DagsterError, match="missing DAGSTER_AIRLIFT_MIGRATION_STATE_DIR"):
+        defs.get_repository_def()
+
+    with environ(
+        {
+            "DAGSTER_AIRLIFT_MIGRATION_STATE_DIR": str(
+                Path(__file__).parent / "migration_state_for_sqlite_test"
+            ),
+        }
+    ):
+        defs = build_definitions_airflow_asset_graph(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            config={
+                "sections": [
+                    {
+                        "name": "database",
+                        "options": [{"key": "sql_alchemy_conn", "value": "postgres://"}],
+                    },
+                ],
+            },
+        )
+
+        assert defs.assets
+        assert len(list(defs.assets)) == 1
+        repo_def = defs.get_repository_def()
+        assert len(repo_def.assets_defs_by_key) == 2
+        task_asset = repo_def.assets_defs_by_key[AssetKey("a")]
+        assert not task_asset.is_executable
+        assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "False"

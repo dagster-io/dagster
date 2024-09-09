@@ -4,7 +4,7 @@ import subprocess
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, Optional
 
 import mock
 import pytest
@@ -139,12 +139,18 @@ def setup_dagster(dagster_home: str, dagster_defs_path: str) -> Generator[Any, N
 VAR_DICT = {}
 
 
-def dummy_get_var(key: str) -> str:
-    return VAR_DICT[key]
+def dummy_get_var(key: str) -> Optional[str]:
+    return VAR_DICT.get(key)
 
 
 def dummy_set_var(key: str, value: str, session: Any) -> None:
     return VAR_DICT.update({key: value})
+
+
+@pytest.fixture
+def sqlite_backend():
+    with environ({"AIRFLOW__CORE__SQL_ALCHEMY_CONN": "sqlite://"}):
+        yield
 
 
 @pytest.fixture

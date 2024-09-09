@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 from dagster import (
     AssetKey,
@@ -18,7 +18,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._time import get_current_datetime
 from dagster_airlift.core import build_defs_from_airflow_instance
-from dagster_airlift.test import make_dag_run, make_instance
+from dagster_airlift.test import DEFAULT_TEST_CONFIG, make_dag_run, make_instance
 
 
 def strip_to_first_of_month(dt: datetime) -> datetime:
@@ -42,6 +42,7 @@ def build_definitions_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
+    config: Dict[str, Any] = DEFAULT_TEST_CONFIG,
 ) -> Definitions:
     specs = []
     dag_and_task_structure = defaultdict(list)
@@ -72,6 +73,7 @@ def build_definitions_airflow_asset_graph(
     instance = make_instance(
         dag_and_task_structure=dag_and_task_structure,
         dag_runs=runs,
+        config=config,
     )
     defs = Definitions.merge(
         additional_defs,

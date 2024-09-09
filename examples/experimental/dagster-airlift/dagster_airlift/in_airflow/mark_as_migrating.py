@@ -3,6 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Type
 
 from airflow import DAG
+from airflow.configuration import conf
 from airflow.models import BaseOperator, Variable
 from airflow.utils.session import create_session
 
@@ -11,8 +12,7 @@ from dagster_airlift.in_airflow.base_proxy_operator import (
     DefaultProxyToDagsterOperator,
     build_dagster_task,
 )
-
-from ..migration_state import AirflowMigrationState
+from dagster_airlift.migration_state import AirflowMigrationState, DagMigrationState
 
 
 def mark_as_dagster_migrating(
@@ -69,7 +69,7 @@ def mark_as_dagster_migrating(
 
     for dag in migrating_dags:
         logger.debug(f"Tagging dag {dag.dag_id} as migrating.")
-        set_migration_var_for_dag(dag.dag_id, migration_state)
+        set_migration_state_for_dag_if_changed(dag.dag_id, migration_state.dags[dag.dag_id], logger)
         migration_state_for_dag = migration_state.dags[dag.dag_id]
         num_migrated_tasks = len(
             [
@@ -112,10 +112,39 @@ def mark_as_dagster_migrating(
     logging.debug(f"Completed marking dags and tasks as migrating to dagster{suffix}.")
 
 
-def set_migration_var_for_dag(dag_id: str, migration_state: AirflowMigrationState) -> None:
+def set_migration_state_for_dag_if_changed(
+    dag_id: str, migration_state: DagMigrationState, logger: logging.Logger
+) -> None:
+    if is_using_sqlite_backend():
+        logger.info(
+            "Using sqlite backend, indicating local execution. Not setting migration state in airflow metadata database, and instead expect dagster to be pointed at migration state via DAGSTER_AIRLIFT_MIGRATION_STATE_DIR env var."
+        )
+        return
+    else:
+        prev_migration_state = get_migration_var_for_dag(dag_id)
+        if prev_migration_state is None or prev_migration_state != migration_state:
+            logger.info(
+                f"Migration state for dag {dag_id} has changed. Setting migration state in airflow metadata database via Variable."
+            )
+            set_migration_var_for_dag(dag_id, migration_state)
+
+
+def is_using_sqlite_backend() -> bool:
+    """Sqlite backends can only support one concurrent write to airflow's metadata database. So when sqlite is used, we instead write to local file."""
+    return conf.get("database", "sql_alchemy_conn").startswith("sqlite")
+
+
+def get_migration_var_for_dag(dag_id: str) -> Optional[DagMigrationState]:
+    migration_var = Variable.get(f"{dag_id}_dagster_migration_state")
+    if not migration_var:
+        return None
+    return DagMigrationState.from_dict(json.loads(migration_var))
+
+
+def set_migration_var_for_dag(dag_id: str, migration_state: DagMigrationState) -> None:
     with create_session() as session:
         Variable.set(
             key=f"{dag_id}_dagster_migration_state",
-            value=json.dumps(migration_state.dags[dag_id].to_dict()),
+            value=json.dumps(migration_state.to_dict()),
             session=session,
         )
