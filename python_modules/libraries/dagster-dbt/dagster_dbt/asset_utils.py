@@ -51,6 +51,7 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.utils import is_valid_definition_tag_key
 from dagster._utils.merger import merge_dicts
 
 from dagster_dbt.utils import (
@@ -528,6 +529,13 @@ def default_owners_from_dbt_resource_props(
         return None
 
     return [owner]
+
+
+def default_tags_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> Mapping[str, str]:
+    tags = dbt_resource_props.get("tags", [])
+    return {tag: "" for tag in tags if is_valid_definition_tag_key(tag)}
 
 
 def default_freshness_policy_fn(dbt_resource_props: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
