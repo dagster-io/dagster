@@ -20,7 +20,7 @@ Often, you will want to be able to tweak some parameters when materializing thes
 
 To follow the steps in this guide, you'll need:
 
-- A basic understanding of Dagster and assets. See the [Quick Start](/tutorial/quick-start) tutorial for an overview.
+- A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
 - Familiarity with [Pydantic](https://docs.pydantic.dev/latest/)
 - An understanding of [Ops vs Assets](/concepts/ops-jobs/ops-vs-assets)
 </details>

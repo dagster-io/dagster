@@ -23,7 +23,7 @@ In Dagster, you can attach ownership information, organize your assets with tags
 
 To follow the steps in this guide, you'll need:
 
-- A basic understanding of Dagster and assets. See the [Quick Start](/tutorial/quick-start) tutorial for an overview.
+- A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
 </details>
 
 ---

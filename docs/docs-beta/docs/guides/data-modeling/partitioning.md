@@ -20,7 +20,7 @@ In Dagster, partitioning is a powerful technique for managing large datasets, im
 
 To follow the steps in this guide, you'll need:
 
-- A basic understanding of Dagster and assets. See the [Quick Start](/tutorial/quick-start) tutorial for an overview.
+- A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
 
 </details>
 
