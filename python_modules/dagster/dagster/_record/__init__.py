@@ -112,8 +112,8 @@ def _namedtuple_record_transform(
         (cls, base),
         {  # these will override an implementation on the class if it exists
             **{n: getattr(base, n) for n in field_set.keys()},
-            "__iter__": _banned_iter,
-            "__getitem__": _banned_idx,
+            "__iter__": _create_banned_iter(cls.__name__),
+            "__getitem__": _create_banned_idx(cls.__name__),
             "__hidden_iter__": base.__iter__,
             _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
             _RECORD_ANNOTATIONS_FIELD: field_set,
@@ -439,12 +439,16 @@ def build_args_and_assignment_strs(
     return kw_args_str, set_calls_str
 
 
-def _banned_iter(*args, **kwargs):
-    raise Exception("Iteration is not allowed on `@record`s.")
+def _create_banned_iter(typename):
+    def _banned_iter(*args, **kwargs):
+        raise Exception(f"Iteration is not allowed on {typename} since it is an @record.")
+
+    return _banned_iter
 
 
-def _banned_idx(*args, **kwargs):
-    raise Exception("Index access is not allowed on `@record`s.")
+def _create_banned_idx(typename):
+    def _banned_idx(*args, **kwargs):
+        raise Exception(f"Index access is not allowed on {typename} since it is an @record.")
 
 
 def _true(_):
