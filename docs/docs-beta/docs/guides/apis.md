@@ -74,7 +74,7 @@ You can also fetch environment variables using the `os` library. Dagster treats 
 
 ## Next steps
 
-- [Authenticate to a resource](/guides/external-systems/authentication.md)
+- [Authenticate to a resource](/guides/authentication.md)
 - [Use different resources in different execution environments](/todo)
 - [Set environment variables in Dagster+](/todo)
 - Learn what [Dagster-provided resources](/todo) are available to use

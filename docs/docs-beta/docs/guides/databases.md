@@ -56,6 +56,6 @@ See [Dagster Integrations](https://dagster.io/integrations) for resource types t
 
 ## Next steps
 
-- Explore how to use resources for [Connecting to APIs](/guides/external-systems/apis)
+- Explore how to use resources for [Connecting to APIs](/guides/apis)
 - Go deeper into [Understanding Resources](/concepts/resources)
 

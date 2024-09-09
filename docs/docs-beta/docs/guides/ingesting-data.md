@@ -2,7 +2,7 @@
 title: Ingesting data with Dagster
 description: Learn how to orchestrate data ingestion with Dagster
 sidebar_position: 10
-sidebar_label: Ingesting data
+sidebar_label: Ingest data with embedded-elt
 ---
 
 Dagster is often used to orchestrate the ingestion of data into a data warehouse or data lake, where it can be queried and transformed. Dagster integrates with several tools that are purpose-built for data ingestion, and it also enables writing custom code for ingesting data.
@@ -58,4 +58,4 @@ For example, imagine there's a CSV file of counties on the internet and you want
 
 {/* TODO add next steps */}
 
-- Learn how to [transform data using Dagster's dbt integration](/guides/ingestion-transformation/transform-dbt)
+- Learn how to [transform data using Dagster's dbt integration](/guides/transform-dbt)

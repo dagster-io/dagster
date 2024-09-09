@@ -1,7 +1,7 @@
 ---
 title: 'Programmatically defining dependencies using asset factories'
 sidebar_position: 60
-sidebar_label: 'Programmatically defining dependencies'
+sidebar_label: 'Asset Factories (2)'
 ---
 
 In data engineering, it's often helpful to reuse code to define similar assets. For example, you may want to represent every file in a directory as an asset.
@@ -20,7 +20,7 @@ Using an asset factory reduces complexity and creates a pluggable entry point to
 <details>
   <summary>Prerequisites</summary>
 
-This guide builds upon the concepts in the [asset factories](/guides/data-modeling/asset-factories) tutorial.
+This guide builds upon the concepts in the [asset factories](/guides/asset-factories) tutorial.
 </details>
 
 ---

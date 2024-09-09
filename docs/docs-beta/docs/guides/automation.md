@@ -45,7 +45,7 @@ To make creating cron expressions easier, you can use an online tool like [Cront
 - You need to run jobs at regular intervals
 - You want basic time-based automation
 
-For examples of how to create schedules, see [How-To Use Schedules](/guides/automation/schedules).
+For examples of how to create schedules, see [How-To Use Schedules](/guides/schedules).
 
 For more information about how Schedules work, see [About Schedules](/concepts/schedules).
 
@@ -62,7 +62,7 @@ Like schedules, sensors operate on a selection of assets, known as [Jobs](/conce
 - You need event-driven automation
 - You want to react to changes in external systems
 
-For more examples of how to create sensors, see the [How-To Use Sensors](/guides/automation/sensors) guide.
+For more examples of how to create sensors, see the [How-To Use Sensors](/guides/sensors) guide.
 
 For more information about how sensors work, see the [About Sensors](/concepts/sensors) concept page.
 
@@ -75,7 +75,7 @@ Asset Sensors trigger jobs when specified assets are materialized, allowing you 
 - You need to trigger jobs based on asset materializations
 - You want to create dependencies between different jobs or code locations
 
-For more examples of how to create asset sensors, see the [How-To Use Asset Sensors](/guides/automation/asset-sensors) guide.
+For more examples of how to create asset sensors, see the [How-To Use Asset Sensors](/guides/asset-sensors) guide.
 
 ## Declarative Automation
 

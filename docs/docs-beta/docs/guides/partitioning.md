@@ -1,7 +1,7 @@
 ---
 title: Partitioning assets
 description: Learn how to partition your data in Dagster.
-sidebar_label: Partitioning assets
+sidebar_label: Partition data
 sidebar_position: 30
 ---
 

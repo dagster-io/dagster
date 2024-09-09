@@ -1,7 +1,7 @@
 ---
 title: "Managing stored data with I/O managers"
 sidebar_position: 50
-sidebar_label: "Storing data with I/O managers"
+sidebar_label: "I/O managers"
 ---
 
 I/O managers in Dagster provide a way to separate the code that's responsible for logical data transformation from the code that's responsible for reading and writing the results.  This can help reduce boiler plate code and make it easy to swap out where your data is stored.

@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from '@docusaurus/Link';
-
+import Heading from '@theme/Heading';
 interface CardProps {
   title: string;
   icon: string;
@@ -10,7 +10,7 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({title, icon, href, children}) => (
   <Link to={href} className="card">
-    <h3>{title}</h3>
+    <Heading as="h3">{title}</Heading>
     <i className={`icon-${icon}`}></i>
     <p>{children}</p>
   </Link>
