@@ -9,6 +9,7 @@ from dagster._cli.workspace.cli_target import (
     python_origin_target_argument,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidSubsetError, DagsterUnknownPartitionError
 from dagster._core.execution.api import execute_job
@@ -99,6 +100,15 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
                 f" partition key `{partition}` or have no PartitionsDefinition."
             )
     elif partition_range_start:
+        for asset_key in asset_keys:
+            backfill_policy = implicit_job_def.asset_layer.get(asset_key).backfill_policy
+            if (
+                backfill_policy is not None
+                and backfill_policy.policy_type != BackfillPolicyType.SINGLE_RUN
+            ):
+                check.failed(
+                    "Provided partition range, but not all assets have a single-run backfill policy."
+                )
         try:
             implicit_job_def.validate_partition_key(
                 partition_range_start,
