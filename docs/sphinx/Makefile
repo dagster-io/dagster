@@ -13,8 +13,9 @@ install:
 	pip install uv
 	uv pip install -r requirements.txt
 	uv pip install -e _ext/dagster-sphinx
+	uv pip install -e _ext/sphinx-mdx-builder
 
-copy_mdx:
+mdx_copy:
 	rm -rf ../docs-beta/docs/api/*.mdx
 	cp -rf _build/mdx/sections/api/apidocs/* ../docs-beta/docs/api/
 	
