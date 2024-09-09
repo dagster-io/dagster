@@ -1,0 +1,46 @@
+---
+layout: 'Integration'
+status: 'published'
+name: 'Fivetran'
+title: 'Tap into Fivetran sources from within your pipelines'
+excerpt: 'Orchestrate Fivetran connectors and schedule syncs with upstream or downstream dependencies.'
+date: '2022-11-07'
+apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-fivetran'
+docslink: 'https://docs.dagster.io/integrations/fivetran'
+partnerlink: 'https://www.fivetran.com/'
+logo: '/integrations/Fivetran.svg'
+categories:
+  - 'ETL'
+enabledBy:
+  - ''
+enables:
+  - ''
+---
+
+### About this integration
+
+With the Dagster-Fivetran integration you can orchestrate ingestion steps as part of a larger pipeline. Programatically interface with the Fivetran REST API to launch syncs and monitor their progress. Tap into software-defined assets and build a set of assets straight off a Fivetran ingestion.
+
+### Installation
+
+```bash
+pip install dagster-fivetran
+```
+
+### Example
+
+```python
+from dagster import EnvVar
+from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance
+import os
+
+fivetran_instance = FivetranResource(
+    api_key="some_key",
+    api_secret=EnvVar("FIVETRAN_SECRET"),
+)
+fivetran_assets = load_assets_from_fivetran_instance(fivetran_instance)
+```
+
+### About Fivetran
+
+**Fivetran** ingests data from SaaS applications, databases, and servers. The data is stored and typically used for analytics.

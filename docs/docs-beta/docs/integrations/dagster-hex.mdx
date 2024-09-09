@@ -1,0 +1,61 @@
+---
+layout: 'Integration'
+status: 'draft'
+name: 'Hex'
+title: 'Using Dagster with Hex'
+excerpt: 'Work in Hex, then pull Hex apps in to your pipeline as Software Defined Assets.'
+date: '2022-11-07'
+apireflink: ''
+docslink: 'https://hex.tech/integrations/dagster'
+partnerlink: 'https://hex.tech/'
+communityIntegration: true
+logo: '/integrations/Hex.svg'
+categories:
+  - 'BI'
+enabledBy:
+  - ''
+enables:
+  - ''
+---
+
+### About this integration
+
+Including Hex in your Dagster data pipelines and orchestration workflows lets you do things like:
+
+- Trigger a Hex app to update cached values after an upstream transformation completes
+- Run a Hex project with passed-in input parameters based on a form submission in another app
+- Automatically kick off a model re-run through Hex when new source data lands
+
+With this integration, you can call the Hex API to run a project until it completes.
+Dagster Ops can return an `AssetMaterialization` of a Hex dataset.
+
+### Installation
+
+```bash
+pip install dagster-hex
+```
+
+### Example
+
+```python
+from dagster_hex.resources import hex_resource
+from dagster import job
+from dagster_hex.ops import hex_project_op
+
+API_KEY = 'abc123'
+PROJ_ID = 'i-love-uuids'
+
+my_resource = hex_resource.configured({'api_key': API_KEY})
+run_hex_op = hex_project_op.configured(
+    {"project_id": PROJ_ID},
+    name='run_job'
+)
+
+@job(resource_defs={"hex": my_resource})
+def hex_job():
+    run_hex_op()
+```
+
+### About Hex
+
+The Dagster **Hex** library lets Dagster users easily add Hex apps as assets in Dagster pipelines, executing runs of or accessing metadata about Hex apps in response to upstream events and triggers.

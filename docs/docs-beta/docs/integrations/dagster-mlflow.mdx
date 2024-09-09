@@ -1,0 +1,70 @@
+---
+layout: 'Integration'
+status: 'draft'
+name: 'MLflow'
+title: 'Dagster + MLflow'
+excerpt: 'Streamline the process of productionizing, maintaining and monitoring machine learning models.'
+date: '2022-11-07'
+apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-mlflow'
+docslink: ''
+partnerlink: 'https://mlflow.org/'
+logo: '/integrations/MLflow.svg'
+categories:
+  - 'Compute'
+enabledBy:
+  - ''
+enables:
+  - ''
+---
+
+### About this integration
+
+With `dagster-mlflow`, you can initialize an MLflow run and use it for all steps within a Dagster run. Additionally, you can access all of MLflow’s methods as well as the [MLflow tracking](https://www.mlflow.org/docs/latest/tracking.html) client’s methods.
+
+### Installation
+
+```bash
+pip install dagster-mlflow
+```
+
+### Example
+
+```python
+from dagster_mlflow import end_mlflow_on_run_finished, mlflow_tracking
+from dagster import op, job
+
+@op(required_resource_keys={"mlflow"})
+def mlflow_op(context):
+    context.mlflow.log_params(some_params)
+    context.mlflow.tracking.MlflowClient().create_registered_model(some_model_name)
+
+mlflow = mlflow_tracking.configured({
+    "experiment_name": "my_experiment",
+    "mlflow_tracking_uri": "http://localhost:5000",
+
+    # if want to run a nested run, provide parent_run_id
+    "parent_run_id": "an_existing_mlflow_run_id",
+
+    # env variables to pass to mlflow
+    "env": {
+        "MLFLOW_S3_ENDPOINT_URL": "my_s3_endpoint",
+        "AWS_ACCESS_KEY_ID": "my_aws_key_id",
+        "AWS_SECRET_ACCESS_KEY": "my_secret",
+    },
+
+    # env variables you want to log as mlflow tags
+    "env_to_tag": ["DOCKER_IMAGE_TAG"],
+
+    # key-value tags to add to your experiment
+    "extra_tags": {"super": "experiment"},
+})
+
+@end_mlflow_on_run_finished
+@job(resource_defs={"mlflow": mlflow})
+def mlf_example():
+    mlflow_op()
+```
+
+### About MLflow
+
+**[MLflow](https://docs.databricks.com/mlflow/index.html)** is an open source platform for managing the end-to-end machine learning lifecycle.
