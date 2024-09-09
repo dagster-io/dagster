@@ -11,9 +11,9 @@ def test_resource(tmp_path):
 
     @asset
     def create_table(duckdb: DuckDBResource):
-        df = sample_df  # noqa: F841
+        my_df = sample_df  # noqa: F841
         with duckdb.get_connection() as conn:
-            conn.execute("CREATE TABLE my_table AS SELECT * FROM sample_df")
+            conn.execute("CREATE TABLE my_table AS SELECT * FROM my_df")
 
     @asset
     def read_table(duckdb: DuckDBResource):
