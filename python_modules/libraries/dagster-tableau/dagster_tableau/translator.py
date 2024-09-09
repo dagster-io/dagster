@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from typing import Any, Mapping
 
@@ -5,6 +6,11 @@ from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
+
+
+def _clean_asset_name(name: str) -> str:
+    """Cleans an input to be a valid Dagster asset name."""
+    return re.sub(r"[^a-z0-9A-Z.]+", "_", name).lower()
 
 
 class TableauContentType(Enum):
@@ -57,8 +63,34 @@ class DagsterTableauTranslator:
         else:
             check.assert_never(data.content_type)
 
-    def get_view_asset_key(self, data: TableauContentData) -> AssetKey: ...
-    def get_view_spec(self, data: TableauContentData) -> AssetSpec: ...
+    def get_view_asset_key(self, data: TableauContentData) -> AssetKey:
+        return AssetKey(["view", _clean_asset_name(data.properties["name"])])
 
-    def get_data_source_asset_key(self, data: TableauContentData) -> AssetKey: ...
-    def get_data_source_spec(self, data: TableauContentData) -> AssetSpec: ...
+    def get_view_spec(self, data: TableauContentData) -> AssetSpec:
+        workbook_id = data.properties["workbook"]["id"]
+        workbook_data = self.workspace_data.workbooks_by_id.get(workbook_id)
+        workbook_connections = workbook_data.properties.get("connections", {}).get("connection", [])
+
+        data_source_ids = {connection["datasource"]["id"] for connection in workbook_connections}
+
+        data_source_keys = [
+            self.get_data_source_asset_key(
+                self.workspace_data.data_sources_by_id.get(data_source_id)
+            )
+            for data_source_id in data_source_ids
+        ]
+
+        return AssetSpec(
+            key=self.get_view_asset_key(data),
+            deps=data_source_keys if data_source_keys else None,
+            tags={"dagster/storage_kind": "tableau"},
+        )
+
+    def get_data_source_asset_key(self, data: TableauContentData) -> AssetKey:
+        return AssetKey([_clean_asset_name(data.properties["name"])])
+
+    def get_data_source_spec(self, data: TableauContentData) -> AssetSpec:
+        return AssetSpec(
+            key=self.get_data_source_asset_key(data),
+            tags={"dagster/storage_kind": "tableau"},
+        )
