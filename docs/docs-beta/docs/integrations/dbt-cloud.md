@@ -20,7 +20,7 @@ enables:
 
 ### About this integration
 
-Dagster allows you to run dbt Cloud™ jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
+Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
 
 ### Installation
 

@@ -4,7 +4,7 @@ status: 'published'
 name: 'AWS Redshift'
 title: 'Dagster & AWS Redshift'
 sidebar_label: 'AWS Redshift'
-excerpt: 'Using this integration, you can seamlessly integrate AWS Redshift into your Dagster workflows, leveraging Redshift's data warehousing capabilities for your data pipelines.'
+excerpt: "Using this integration, you can seamlessly integrate AWS Redshift into your Dagster workflows, leveraging Redshift's data warehousing capabilities for your data pipelines."
 date: '2024-06-21'
 apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-aws'
 docslink: ''
