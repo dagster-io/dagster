@@ -1,13 +1,16 @@
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Dict, Mapping, Optional, Union
 
 from dagster import (
     AssetsDefinition,
     AssetSpec,
+    AssetKey,
     Definitions,
     _check as check,
+    SourceAsset,
 )
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster_airlift.utils import map_to_dag, map_to_task
 
 
 class TaskDefs:
@@ -16,19 +19,16 @@ class TaskDefs:
         self.defs = defs
 
 
-def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> Definitions:
+def map_all_specs_to_task(defs: Definitions, dag_id: str, task_id: str) -> Definitions:
     return Definitions(
         assets=[
             # Right now we make assumptions that we only support AssetSpec and AssetsDefinition
             # in orchesrated_defs.
             # https://linear.app/dagster-labs/issue/FOU-369/support-cacheableassetsdefinition-and-sourceasset-in-airlift
-            assets_def_with_af_metadata(
-                check.inst(
-                    asset,
-                    (AssetSpec, AssetsDefinition),
-                    "Only supports AssetSpec and AssetsDefinition right now",
-                ),
-                metadata,
+            assets_def_with_task_map(
+                _coerce_def_or_spec(asset),
+                dag_id,
+                task_id,
             )
             for asset in (defs.assets or [])
         ],
@@ -42,21 +42,25 @@ def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> 
     )
 
 
-def spec_with_metadata(spec: AssetSpec, metadata: Mapping[str, str]) -> "AssetSpec":
-    return spec._replace(metadata={**spec.metadata, **metadata})
-
-
 def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
     return spec._replace(tags={**spec.tags, **tags})
 
+def _coerce_def_or_spec(asset: Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition, SourceAsset]) -> Union[AssetSpec, AssetsDefinition]:
+    return check.inst(
+                    asset,
+                    (AssetSpec, AssetsDefinition),
+                    "Only supports AssetSpec and AssetsDefinition right now",
+                )
 
-def assets_def_with_af_metadata(
-    assets_def: Union[AssetsDefinition, AssetSpec], metadata: Mapping[str, str]
+def assets_def_with_task_map(
+    assets_def: Union[AssetsDefinition, AssetSpec], dag_id: str, task_id: str
 ) -> Union[AssetsDefinition, AssetSpec]:
     return (
-        assets_def.map_asset_specs(lambda spec: spec_with_metadata(spec, metadata))
+        assets_def.map_asset_specs(
+            lambda spec: map_to_task(spec=spec, dag_id=dag_id, task_id=task_id)
+        )
         if isinstance(assets_def, AssetsDefinition)
-        else spec_with_metadata(assets_def, metadata)
+        else map_to_task(spec=assets_def, dag_id=dag_id, task_id=task_id)
     )
 
 
@@ -78,17 +82,39 @@ def dag_defs(dag_id: str, *defs: TaskDefs, spec: Optional[AssetSpec] = None) -> 
             task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
         )
     """
-    dag_spec = spec_with_metadata(spec, {DAG_ID_METADATA_KEY: dag_id}) if spec else None
+    dag_spec = map_to_dag(spec=spec, dag_id=dag_id) if spec else None
     defs_to_merge = []
     for task_def in defs:
         defs_to_merge.append(
-            apply_metadata_to_all_specs(
+            map_all_specs_to_task(
                 defs=task_def.defs,
-                metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_def.task_id},
+                dag_id=dag_id,
+                task_id=task_def.task_id,
             )
         )
-    return Definitions.merge(*defs_to_merge, Definitions(assets=[dag_spec] if dag_spec else None))
+    return attempt_merge_dupes(Definitions.merge(*defs_to_merge, Definitions(assets=[dag_spec] if dag_spec else None)))
 
+def attempt_merge_dupes(defs: Definitions) -> Definitions:
+    """It's possible that the same asset has been mapped to multiple tasks in the same DAG.
+    If possible, dedupe the asset specs by merging the metadata of the asset specs.
+    """
+    asset_per_key: Dict[AssetKey, Union[AssetSpec, AssetsDefinition]] = {}
+    if not defs.assets:
+        return defs
+    for asset in defs.assets:
+        # This is gonna get gross. The equality check here is going to be a bit complicated. 
+        ...
+            
+    return Definitions(
+        assets=asset_per_key.values(),
+        resources=defs.resources,
+        sensors=defs.sensors,
+        schedules=defs.schedules,
+        jobs=defs.jobs,
+        loggers=defs.loggers,
+        executor=defs.executor,
+        asset_checks=defs.asset_checks,
+    )
 
 def task_defs(task_id, defs: Definitions) -> TaskDefs:
     """Associate a set of definitions with a particular task in Airflow that is being tracked
