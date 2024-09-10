@@ -8,7 +8,7 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetValue,
     SerializableEntitySubset,
 )
-from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.asset_key import T_EntityKey, U_EntityKey
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._utils.cached_method import cached_method
@@ -94,18 +94,14 @@ class EntitySubset(Generic[T_EntityKey]):
         return self.compute_intersection(partition_subset)
 
     @cached_method
-    def compute_parent_subset(
-        self: "EntitySubset[AssetKey]", parent_asset_key: AssetKey
-    ) -> "EntitySubset[AssetKey]":
-        check.inst(self.key, AssetKey)
-        return self._asset_graph_view.compute_parent_asset_subset(parent_asset_key, self)
+    def compute_parent_subset(self, parent_key: AssetKey) -> "EntitySubset[AssetKey]":
+        return self._asset_graph_view.compute_parent_subset(parent_key, self)
 
     @cached_method
     def compute_child_subset(
-        self: "EntitySubset[AssetKey]", child_asset_key: AssetKey
-    ) -> "EntitySubset[AssetKey]":
-        check.inst(self.key, AssetKey)
-        return self._asset_graph_view.compute_child_asset_subset(child_asset_key, self)
+        self: "EntitySubset[AssetKey]", child_key: U_EntityKey
+    ) -> "EntitySubset[U_EntityKey]":
+        return self._asset_graph_view.compute_child_subset(child_key, self)
 
     @property
     def size(self) -> int:

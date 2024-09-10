@@ -199,3 +199,4 @@ class AssetCheckKey(NamedTuple):
 
 EntityKey = Union[AssetKey, AssetCheckKey]
 T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
+U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey, EntityKey)

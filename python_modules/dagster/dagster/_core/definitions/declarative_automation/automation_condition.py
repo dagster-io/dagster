@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Generic, Mapping, Optional, Sequence, Type
 
 from typing_extensions import Self
 
@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         FailedAutomationCondition,
         InLatestTimeWindowCondition,
         InProgressAutomationCondition,
+        LatestCheckStatusCondition,
         MissingAutomationCondition,
         NewlyRequestedCondition,
         NewlyUpdatedCondition,
@@ -223,6 +224,12 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         from dagster._core.definitions.declarative_automation.operators import NewlyTrueCondition
 
         return NewlyTrueCondition(operand=self)
+
+    @experimental
+    @staticmethod
+    def check() -> Type["LatestCheckStatusCondition"]:
+        """Provides access to"""
+        return LatestCheckStatusCondition
 
     @public
     @experimental
