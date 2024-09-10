@@ -28,5 +28,5 @@ source .venv/bin/activate
 export LC_ALL=C.UTF-8
 
 uv pip install tox
-tox -e sphinx
+make mdx
 make mdx_copy

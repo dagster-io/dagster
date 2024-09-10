@@ -28,5 +28,9 @@ mdx-format:  ## Format mdx files
 
 mdx-full-format: docs_ruff mdx-format
 
+
+mdx:
+	tox -e sphinx-mdx
+
 mdx_copy:
 	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs-beta/docs/api/
