@@ -37,7 +37,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_looker_tests*"]),
     install_requires=[
-        "dagster==1.8.5",
+        "dagster==1.8.6",
         "lkml",
         "sqlglot",
     ],

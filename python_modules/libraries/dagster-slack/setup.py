@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.8,<3.13",
     install_requires=[
-        "dagster==1.8.5",
+        "dagster==1.8.6",
         "slack_sdk",
     ],
     zip_safe=False,

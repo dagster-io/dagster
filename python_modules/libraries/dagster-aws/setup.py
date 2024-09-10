@@ -38,7 +38,7 @@ setup(
     install_requires=[
         "boto3",
         "boto3-stubs-lite[ecs,glue]",
-        "dagster==1.8.5",
+        "dagster==1.8.6",
         "packaging",
         "requests",
     ],

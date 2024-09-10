@@ -113,7 +113,7 @@ setup(
         "pydantic>1.10.0,!= 1.10.7,<2.9.0",
         "rich",
         "filelock",
-        "dagster-pipes==1.8.5",
+        "dagster-pipes==1.8.6",
     ],
     extras_require={
         "docker": ["docker"],
