@@ -1,9 +1,9 @@
 import datetime
 from abc import abstractmethod
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
     BuiltinAutomationCondition,
@@ -12,6 +12,9 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
+
+if TYPE_CHECKING:
+    from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionResolvedStatus
 
 
 class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
@@ -219,3 +222,24 @@ class InLatestTimeWindowCondition(SubsetAutomationCondition[AssetKey]):
         return context.asset_graph_view.compute_latest_time_window_subset(
             context.key, lookback_delta=self.lookback_timedelta
         )
+
+
+class LatestCheckStatusCondition(SubsetAutomationCondition[AssetCheckKey]):
+    target_status: Optional["AssetCheckExecutionResolvedStatus"]
+
+    def compute_subset(
+        self, context: AutomationContext[AssetCheckKey]
+    ) -> EntitySubset[AssetCheckKey]:
+        from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+
+        loading_context = context.asset_graph_view
+        latest_record = AssetCheckExecutionRecord.blocking_get(loading_context, context.key)
+        resolved_status = (
+            latest_record.resolve_status(loading_context)
+            if latest_record and latest_record.targets_latest_materialization(loading_context)
+            else None
+        )
+        if resolved_status == self.target_status:
+            return context.candidate_subset
+        else:
+            return context.get_empty_subset()
