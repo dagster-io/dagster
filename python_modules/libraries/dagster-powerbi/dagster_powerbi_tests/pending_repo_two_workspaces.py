@@ -5,15 +5,15 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     PendingRepositoryDefinition,
 )
-from dagster_powerbi import PowerBITokenAuth, PowerBIWorkspace
+from dagster_powerbi import PowerBIToken, PowerBIWorkspace
 
 fake_token = uuid.uuid4().hex
 resource = PowerBIWorkspace(
-    auth=PowerBITokenAuth(api_token=fake_token),
+    credentials=PowerBIToken(api_token=fake_token),
     workspace_id="a2122b8f-d7e1-42e8-be2b-a5e636ca3221",
 )
 resource_second_workspace = PowerBIWorkspace(
-    auth=PowerBITokenAuth(api_token=fake_token),
+    credentials=PowerBIToken(api_token=fake_token),
     workspace_id="c5322b8a-d7e1-42e8-be2b-a5e636ca3221",
 )
 

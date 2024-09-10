@@ -1,8 +1,8 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_powerbi.resource import (
-    PowerBIServicePrincipalAuth as PowerBIServicePrincipalAuth,
-    PowerBITokenAuth as PowerBITokenAuth,
+    PowerBIServicePrincipal as PowerBIServicePrincipal,
+    PowerBIToken as PowerBIToken,
     PowerBIWorkspace as PowerBIWorkspace,
 )
 from dagster_powerbi.translator import DagsterPowerBITranslator as DagsterPowerBITranslator

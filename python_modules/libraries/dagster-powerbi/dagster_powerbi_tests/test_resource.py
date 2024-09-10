@@ -5,8 +5,8 @@ from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.resource import (
     BASE_API_URL,
     MICROSOFT_LOGIN_URL,
-    PowerBIServicePrincipalAuth,
-    PowerBITokenAuth,
+    PowerBIServicePrincipal,
+    PowerBIToken,
 )
 
 
@@ -15,7 +15,7 @@ def test_basic_resource_request() -> None:
     fake_token = uuid.uuid4().hex
     fake_workspace_id = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        auth=PowerBITokenAuth(api_token=fake_token),
+        credentials=PowerBIToken(api_token=fake_token),
         workspace_id=fake_workspace_id,
     )
 
@@ -41,7 +41,7 @@ def test_service_principal_auth() -> None:
     fake_tenant_id = uuid.uuid4().hex
 
     resource = PowerBIWorkspace(
-        auth=PowerBIServicePrincipalAuth(
+        credentials=PowerBIServicePrincipal(
             client_id=fake_client_id,
             client_secret=fake_client_secret,
             tenant_id=fake_tenant_id,

@@ -2,7 +2,7 @@ import abc
 import re
 import time
 from functools import cached_property
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Dict, Mapping, Optional, Sequence, Type, cast
 
 import requests
 from dagster import (
@@ -44,7 +44,7 @@ class PowerBICredentials(ConfigurableResource, abc.ABC):
     def api_token(self) -> str: ...
 
 
-class PowerBITokenAuth(ConfigurableResource):
+class PowerBIToken(ConfigurableResource):
     """Authenticates with PowerBI directly using an API access token."""
 
     api_token: str = Field(..., description="An API access token used to connect to PowerBI.")
@@ -53,7 +53,7 @@ class PowerBITokenAuth(ConfigurableResource):
 MICROSOFT_LOGIN_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/token"
 
 
-class PowerBIServicePrincipalAuth(ConfigurableResource):
+class PowerBIServicePrincipal(ConfigurableResource):
     """Authenticates with PowerBI using a service principal."""
 
     client_id: str = Field(..., description="The application client ID for the service principal.")
@@ -96,21 +96,26 @@ class PowerBIWorkspace(ConfigurableResource):
     to interact with the PowerBI API.
     """
 
-    auth: ResourceDependency[PowerBICredentials]
+    credentials: ResourceDependency[PowerBICredentials]
     workspace_id: str = Field(..., description="The ID of the PowerBI group to use.")
     refresh_poll_interval: int = Field(
         default=5, description="The interval in seconds to poll for refresh status."
     )
     refresh_timeout: int = Field(
-        default=300, description="The maximum time in seconds to wait for a refresh to complete."
+        default=300,
+        description="The maximum time in seconds to wait for a refresh to complete.",
     )
 
     @cached_property
     def api_token(self) -> str:
-        return self.auth.api_token
+        return self.credentials.api_token
 
     def fetch(
-        self, endpoint: str, method: str = "GET", json: Any = None, group_scoped: bool = True
+        self,
+        endpoint: str,
+        method: str = "GET",
+        json: Any = None,
+        group_scoped: bool = True,
     ) -> requests.Response:
         """Fetch JSON data from the PowerBI API. Raises an exception if the request fails.
 
@@ -136,7 +141,11 @@ class PowerBIWorkspace(ConfigurableResource):
         return response
 
     def fetch_json(
-        self, endpoint: str, method: str = "GET", json: Any = None, group_scoped: bool = True
+        self,
+        endpoint: str,
+        method: str = "GET",
+        json: Any = None,
+        group_scoped: bool = True,
     ) -> Dict[str, Any]:
         return self.fetch(endpoint, method, json, group_scoped=group_scoped).json()
 
@@ -309,11 +318,16 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         # This is gross, but will be fixed by https://github.com/dagster-io/dagster/pull/24367/
         workspace = self._workspace.__class__(
             **{
-                **post_process_config(
-                    self._workspace._config_schema.config_type,  # noqa: SLF001
-                    self._workspace._convert_to_config_dictionary(),  # noqa: SLF001
-                ).value,
-                "auth": self._workspace.auth,
+                **cast(
+                    Mapping,
+                    (
+                        post_process_config(
+                            self._workspace._config_schema.config_type,  # noqa: SLF001
+                            self._workspace._convert_to_config_dictionary(),  # noqa: SLF001
+                        ).value
+                    ),
+                ),
+                "credentials": self._workspace.credentials,
             }
         )
 
@@ -382,4 +396,7 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
 
             executable_assets.append(asset_fn)
 
-        return [*external_assets_from_specs(all_external_asset_specs), *executable_assets]
+        return [
+            *external_assets_from_specs(all_external_asset_specs),
+            *executable_assets,
+        ]
