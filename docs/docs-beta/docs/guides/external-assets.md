@@ -13,15 +13,6 @@ External assets differ from native Dagster assets in that Dagster can't material
 
 Examples of external assets could be files in a data lake that are populated by a bespoke internal tool, a CSV file delivered daily by SFTP from a partner, or a table in a data warehouse populated by another orchestrator.
 
-## What you'll learn
-
-- How to create external assets
-- How to create assets that depend on external assets
-- How to record materializations and metadata
-- How to model a DAG of multiple external assets
-
----
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -30,8 +21,6 @@ To follow the steps in this guide, you'll need:
 - A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
 - Familiarity with [Sensors](/guides/sensors)
 </details>
-
----
 
 ## Creating and depending on external assets
 

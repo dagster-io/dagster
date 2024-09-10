@@ -9,15 +9,6 @@ Assets feature prominently in the Dagster UI. It's often helpful to attach infor
 
 In Dagster, you can attach ownership information, organize your assets with tags, attach rich, complex information with metadata, and link your assets with their source code.
 
-## What you'll learn
-
-- How to add owners to your assets
-- How to use tags to organize assets
-- How to attach complex information to an asset using metadata
-- How to link your assets with their source code
-
----
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -25,8 +16,6 @@ To follow the steps in this guide, you'll need:
 
 - A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
 </details>
-
----
 
 ## Adding owners to your assets
 

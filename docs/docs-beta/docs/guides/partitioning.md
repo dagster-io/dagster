@@ -7,14 +7,6 @@ sidebar_position: 30
 
 In Dagster, partitioning is a powerful technique for managing large datasets, improving pipeline performance, and enabling incremental processing. This guide will help you understand how to implement data partitioning in your Dagster projects.
 
-## What you'll learn
-
-- How to define partitions for Dagster assets and jobs
-- How to establish dependencies between partitioned assets
-- How to leverage Dagster partitions with external systems like dbt
-
----
-
 <details>
   <summary>Prerequisites</summary>
 

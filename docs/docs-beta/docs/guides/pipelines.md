@@ -5,13 +5,6 @@ description: "Learn how to create data pipelines using Dagster's asset-based app
 
 In Dagster, data pipelines are created using an asset-based approach. This overview will introduce you to the key concepts and steps involved in building a Dagster pipeline.
 
-## What you'll learn
-
-- The basics of Dagster's asset-based pipelines
-- How to define and connect data assets
-- Ways to enhance your pipeline with metadata and partitioning
-- How to integrate external data sources
-
 <details>
   <summary>Prerequisites</summary>
 
