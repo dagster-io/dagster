@@ -20,15 +20,10 @@ enables:
 
 ### About this integration
 
-Spark jobs typically execute on infrastructure that's specialized for Spark. Spark applications are typically not containerized or executed on Kubernetes. Running Spark code often requires submitting code to a Databricks or EMR cluster.
+Spark jobs typically execute on infrastructure that's specialized for Spark. Spark applications are typically not containerized or executed on Kubernetes.
 
-There are two approaches to writing Dagster ops that invoke Spark computations:
-
-- [Running Pyspark code in ops](https://docs.dagster.io/integrations/spark#running-pyspark-code-in-ops)
-- [Submitting PySpark ops on EMR](https://docs.dagster.io/integrations/spark#submitting-pyspark-ops-on-emr)
-
-`dagster-pyspark` provides a Spark class with methods for configuration and constructing the `spark-submit` command for a Spark job.
+Running Spark code often requires submitting code to a Databricks or EMR cluster. `dagster-pyspark` provides a Spark class with methods for configuration and constructing the `spark-submit` command for a Spark job.
 
 ### About Apache Spark
 
-**Apache Spark** is an open-source unified analytics engine for large-scale data processing. Spark provides an interface for programming clusters with implicit data parallelism and fault tolerance. It also provides libraries for graph computation, SQL for structured data processing, ML and data science.
+**Apache Spark** is an open source unified analytics engine for large-scale data processing. Spark provides an interface for programming clusters with implicit data parallelism and fault tolerance. It also provides libraries for graph computation, SQL for structured data processing, ML, and data science.
