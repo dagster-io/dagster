@@ -13,6 +13,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Final, Self
+
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -25,7 +27,11 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
+from dagster._core.definitions.metadata import (
+    RawMetadataMapping,
+    normalize_metadata,
+    normalize_metadata_value,
+)
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
@@ -44,12 +50,17 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._record import IHaveNew, record_custom
+from dagster._record import IHaveNew, copy, record_custom
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
+
+
+# This is a special metadata key kept private from the user that is intended to namespace source
+# metadata added by integrations on `Definitions.metadata`.
+DEFINITIONS_SOURCE_METADATA_KEY: Final = "__source_data"
 
 
 @public
@@ -670,6 +681,7 @@ class Definitions(IHaveNew):
         jobs = []
         asset_checks = []
         metadata = {}
+        source_metadata = {}
 
         resources = {}
         resource_key_indexes: Dict[str, int] = {}
@@ -684,7 +696,11 @@ class Definitions(IHaveNew):
             schedules.extend(def_set.schedules or [])
             sensors.extend(def_set.sensors or [])
             jobs.extend(def_set.jobs or [])
-            metadata.update(def_set.metadata)
+
+            metadata.update(
+                {k: v for k, v in def_set.metadata.items() if k != DEFINITIONS_SOURCE_METADATA_KEY}
+            )
+            source_metadata.update(def_set.source_metadata)
 
             for resource_key, resource_value in (def_set.resources or {}).items():
                 if resource_key in resources and resources[resource_key] is not resource_value:
@@ -713,6 +729,8 @@ class Definitions(IHaveNew):
                 executor = def_set.executor
                 executor_index = i
 
+        if source_metadata:
+            metadata[DEFINITIONS_SOURCE_METADATA_KEY] = source_metadata
         return Definitions(
             assets=assets,
             schedules=schedules,
@@ -731,3 +749,37 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @public
+    @experimental
+    def with_source_metadata(self, source_metadata: Mapping[str, Any]) -> Self:
+        """Add source metadata to the Definitions object. This is typically used to cache data
+        loaded from some external API that is computed during execution of a DefinitionsLoader in a
+        code server. The cached data is then made available on the DefinitionsLoadContext when the
+        same target is loaded in another context (such as a run worker), allowing use of the cached
+        data to avoid additional external API queries.
+        """
+        updated_source_metadata = normalize_metadata_value(
+            {
+                **self.source_metadata,
+                **source_metadata,
+            }
+        )
+        return copy(
+            self,
+            metadata={
+                **(self.metadata or {}),
+                DEFINITIONS_SOURCE_METADATA_KEY: updated_source_metadata,
+            },
+        )
+
+    @public
+    @property
+    def source_metadata(self) -> Mapping[str, Any]:
+        """Mapping[str, Any]: The JSON-serializable source metadata attached to this Definitions object."""
+        metadata = self.metadata or {}
+        return (
+            check.inst(metadata[DEFINITIONS_SOURCE_METADATA_KEY].value, dict)
+            if DEFINITIONS_SOURCE_METADATA_KEY in metadata
+            else {}
+        )

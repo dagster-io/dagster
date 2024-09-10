@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Union
+=======
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Union
+>>>>>>> c67676d21d ([lazy-defs] Add support for source metadata on Definitions)
 
 from typing_extensions import TypeAlias
 
@@ -56,6 +60,15 @@ class DefinitionsLoadContext:
     def load_type(self) -> DefinitionsLoadType:
         """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
         return self._load_type
+
+    @property
+    def cached_source_metadata(self) -> Mapping[str, Any]:
+        """Mapping[str, Any]: A dictionary containing the cached payloads from external sources of
+        definition metadata.
+        """
+        return (
+            self._repository_load_data.cached_source_metadata if self._repository_load_data else {}
+        )
 
 
 @record

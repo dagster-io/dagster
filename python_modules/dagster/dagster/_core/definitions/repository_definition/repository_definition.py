@@ -48,25 +48,35 @@ if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"cacheable_asset_data": "cached_data_by_key"},
+)
 class RepositoryLoadData(
     NamedTuple(
         "_RepositoryLoadData",
         [
-            ("cached_data_by_key", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
+            ("cacheable_asset_data", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
+            ("cached_source_metadata", Mapping[str, Any]),
         ],
     )
 ):
-    def __new__(cls, cached_data_by_key: Mapping[str, Sequence[AssetsDefinitionCacheableData]]):
+    def __new__(
+        cls,
+        cacheable_asset_data: Mapping[str, Sequence[AssetsDefinitionCacheableData]],
+        cached_source_metadata: Optional[Mapping[str, Any]] = None,
+    ):
         return super(RepositoryLoadData, cls).__new__(
             cls,
-            cached_data_by_key=(
+            cacheable_asset_data=(
                 check.mapping_param(
-                    cached_data_by_key,
-                    "cached_data_by_key",
+                    cacheable_asset_data,
+                    "cacheable_asset_data",
                     key_type=str,
                     value_type=list,
                 )
+            ),
+            cached_source_metadata=check.opt_mapping_param(
+                cached_source_metadata, "cached_source_metadata", key_type=str
             ),
         )
 
@@ -405,7 +415,7 @@ class PendingRepositoryDefinition:
         )
         self._name = name
         self._description = description
-        self._metadata = metadata
+        self._metadata = metadata or {}
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
@@ -414,15 +424,28 @@ class PendingRepositoryDefinition:
     def name(self) -> str:
         return self._name
 
+    @property
+    def source_metadata(self) -> Mapping[str, Any]:
+        from dagster._core.definitions.definitions_class import DEFINITIONS_SOURCE_METADATA_KEY
+
+        return (
+            check.inst(self._metadata[DEFINITIONS_SOURCE_METADATA_KEY].value, dict)
+            if DEFINITIONS_SOURCE_METADATA_KEY in self._metadata
+            else {}
+        )
+
     def _compute_repository_load_data(self) -> RepositoryLoadData:
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
+        cacheable_asset_data = {
+            defn.unique_id: defn.compute_cacheable_data()
+            for defn in self._repository_definitions
+            if isinstance(defn, CacheableAssetsDefinition)
+        }
+
         return RepositoryLoadData(
-            cached_data_by_key={
-                defn.unique_id: defn.compute_cacheable_data()
-                for defn in self._repository_definitions
-                if isinstance(defn, CacheableAssetsDefinition)
-            }
+            cacheable_asset_data=cacheable_asset_data,
+            cached_source_metadata=self.source_metadata,
         )
 
     def _get_repository_definition(
@@ -435,14 +458,14 @@ class PendingRepositoryDefinition:
             if isinstance(defn, CacheableAssetsDefinition):
                 # should always have metadata for each cached defn at this point
                 check.invariant(
-                    defn.unique_id in repository_load_data.cached_data_by_key,
+                    defn.unique_id in repository_load_data.cacheable_asset_data,
                     "No metadata found for CacheableAssetsDefinition with unique_id"
                     f" {defn.unique_id}.",
                 )
                 # use the emtadata to generate definitions
                 resolved_definitions.extend(
                     defn.build_definitions(
-                        data=repository_load_data.cached_data_by_key[defn.unique_id]
+                        data=repository_load_data.cacheable_asset_data[defn.unique_id]
                     )
                 )
             else:
