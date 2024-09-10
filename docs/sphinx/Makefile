@@ -16,7 +16,8 @@ install:
 	uv pip install -e _ext/sphinx-mdx-builder
 
 mdx_copy:
-	rm -rf ../docs-beta/docs/api/*.mdx
+	rm -r ../docs-beta/docs/api/libraries
+	find ../docs-beta/docs/api/*.mdx ! -name index.mdx -exec rm {} +
 	cp -rf _build/mdx/sections/api/apidocs/* ../docs-beta/docs/api/
 	
 # Catch-all target: route all unknown targets to Sphinx using the new
