@@ -1,4 +1,8 @@
+import uuid
+from typing import Callable, Iterator
+
 import pytest
+import responses
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
 SAMPLE_WORKBOOK = {
@@ -45,6 +49,21 @@ def site_name_fixture() -> str:
     return "info-5a38291c26"
 
 
+@pytest.fixture(name="site_id")
+def site_id_fixture() -> str:
+    return uuid.uuid4().hex
+
+
+@pytest.fixture(name="api_token")
+def api_token_fixture() -> str:
+    return uuid.uuid4().hex
+
+
+@pytest.fixture(name="workbook_id")
+def workbook_id_fixture() -> str:
+    return "b75fc023-a7ca-4115-857b-4342028640d0"
+
+
 @pytest.fixture(
     name="workspace_data",
 )
@@ -67,3 +86,54 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
             )
         },
     )
+
+
+@pytest.fixture(
+    name="workspace_data_api_mocks_fn",
+)
+def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: str) -> Callable:
+    def _method(
+        api_base_url,
+        site_id: str = site_id,
+        workbook_id: str = workbook_id,
+        api_token: str = api_token,
+    ) -> Iterator[None]:
+        with responses.RequestsMock() as response:
+            response.add(
+                method=responses.GET,
+                url=f"{api_base_url}/sites/{site_id}/workbooks",
+                json={"workbooks": {"workbook": [{**SAMPLE_WORKBOOK}]}},
+                status=200,
+            )
+
+            response.add(
+                method=responses.GET,
+                url=f"{api_base_url}/sites/{site_id}/workbooks/{workbook_id}",
+                json={"workbook": {**SAMPLE_WORKBOOK}},
+                status=200,
+            )
+
+            response.add(
+                method=responses.GET,
+                url=f"{api_base_url}/sites/{site_id}/workbooks/{workbook_id}/connections",
+                json=SAMPLE_CONNECTIONS,
+                status=200,
+            )
+
+            response.add(
+                method=responses.POST,
+                url=f"{api_base_url}/auth/signin",
+                json={"credentials": {"site": {"id": site_id}, "token": api_token}},
+                status=200,
+            )
+
+            response.add(
+                method=responses.POST,
+                url=f"{api_base_url}/auth/signout",
+                json={},
+                status=200,
+            )
+
+            yield
+
+    return _method
