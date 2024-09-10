@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.6 (core) / 0.24.6 (libraries)
+
+### Bugfixes
+
+- Fixed an issue where runs in Dagster+ Serverless that materialized partitioned assets would sometimes fail with an `object has no attribute '_base_path'` error.
+- [dagster-graphql] Fixed an issue where the `statuses` filter argument to the `sensorsOrError` GraphQL field was sometimes ignored when querying GraphQL for multiple sensors at the same time.
+
 ## 1.8.5 (core) / 0.24.5 (libraries)
 
 ### New
