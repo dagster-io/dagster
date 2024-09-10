@@ -1,7 +1,6 @@
 import logging
 import sys
 import threading
-import time
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
@@ -62,6 +61,7 @@ from dagster._core.workspace.workspace import (
     WorkspaceSnapshot,
     location_status_from_location_entry,
 )
+from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -659,6 +659,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             error = serializable_error_info_from_exc_info(sys.exc_info())
             warnings.warn(f"Error loading repository location {location_name}:{error.to_string()}")
 
+        load_time = get_current_timestamp()
+        if isinstance(location, GrpcServerCodeLocation):
+            version_key = location.server_id
+        else:
+            version_key = str(load_time)
+
         return CodeLocationEntry(
             origin=origin,
             code_location=location,
@@ -667,7 +673,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             display_metadata=(
                 location.get_display_metadata() if location else origin.get_display_metadata()
             ),
-            update_timestamp=time.time(),
+            update_timestamp=load_time,
+            version_key=version_key,
         )
 
     def get_workspace_snapshot(self) -> WorkspaceSnapshot:

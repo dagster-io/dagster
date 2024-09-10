@@ -1524,6 +1524,7 @@ type WorkspaceLocationEntry {
   loadStatus: RepositoryLocationLoadStatus!
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
 }
@@ -3368,6 +3369,7 @@ type WorkspaceLocationStatusEntry {
   name: String!
   loadStatus: RepositoryLocationLoadStatus!
   updateTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
 }
 

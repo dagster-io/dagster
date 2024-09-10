@@ -188,6 +188,7 @@ def fetch_location_statuses(
                     status_entry.load_status
                 ),
                 update_timestamp=status_entry.update_timestamp,
+                version_key=status_entry.version_key,
             )
             for status_entry in workspace_request_context.get_code_location_statuses()
         ]

@@ -25,6 +25,7 @@ export type LocationWorkspaceQuery = {
         name: string;
         loadStatus: Types.RepositoryLocationLoadStatus;
         updatedTimestamp: number;
+        versionKey: string;
         displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
         locationOrLoadError:
@@ -135,6 +136,7 @@ export type WorkspaceLocationNodeFragment = {
   name: string;
   loadStatus: Types.RepositoryLocationLoadStatus;
   updatedTimestamp: number;
+  versionKey: string;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   featureFlags: Array<{__typename: 'FeatureFlag'; name: string; enabled: boolean}>;
   locationOrLoadError:
@@ -454,6 +456,7 @@ export type CodeLocationStatusQuery = {
           name: string;
           loadStatus: Types.RepositoryLocationLoadStatus;
           updateTimestamp: number;
+          versionKey: string;
         }>;
       };
 };
@@ -464,4 +467,5 @@ export type LocationStatusEntryFragment = {
   name: string;
   loadStatus: Types.RepositoryLocationLoadStatus;
   updateTimestamp: number;
+  versionKey: string;
 };
