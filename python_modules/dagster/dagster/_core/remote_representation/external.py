@@ -1098,6 +1098,10 @@ class ExternalSensor:
         return self._external_sensor_data.metadata
 
     @property
+    def tags(self) -> Mapping[str, str]:
+        return self._external_sensor_data.tags
+
+    @property
     def default_status(self) -> DefaultSensorStatus:
         return self._external_sensor_data.default_status or DefaultSensorStatus.STOPPED
 

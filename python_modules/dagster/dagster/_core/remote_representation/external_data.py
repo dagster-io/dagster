@@ -452,6 +452,7 @@ class SensorSnap(IHaveNew):
     default_status: Optional[DefaultSensorStatus]
     sensor_type: Optional[SensorType]
     asset_selection: Optional[AssetSelection]
+    tags: Mapping[str, str]
     run_tags: Mapping[str, str]
 
     def __new__(
@@ -467,6 +468,7 @@ class SensorSnap(IHaveNew):
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
         asset_selection: Optional[AssetSelection] = None,
+        tags: Optional[Mapping[str, str]] = None,
         run_tags: Optional[Mapping[str, str]] = None,
     ):
         if job_name and not target_dict:
@@ -506,6 +508,7 @@ class SensorSnap(IHaveNew):
             ),
             sensor_type=sensor_type,
             asset_selection=asset_selection,
+            tags=tags or {},
             run_tags=run_tags or {},
         )
 
@@ -564,6 +567,7 @@ class SensorSnap(IHaveNew):
             default_status=sensor_def.default_status,
             sensor_type=sensor_def.sensor_type,
             asset_selection=serializable_asset_selection,
+            tags=sensor_def.tags,
             run_tags=(
                 sensor_def.run_tags
                 if isinstance(sensor_def, AutomationConditionSensorDefinition)

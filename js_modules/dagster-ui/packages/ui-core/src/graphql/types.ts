@@ -4955,6 +4955,7 @@ export type Sensor = {
   nextTick: Maybe<DryRunInstigationTick>;
   sensorState: InstigationState;
   sensorType: SensorType;
+  tags: Array<DefinitionTag>;
   targets: Maybe<Array<Target>>;
 };
 
@@ -13957,6 +13958,7 @@ export const buildSensor = (
       overrides && overrides.hasOwnProperty('sensorType')
         ? overrides.sensorType!
         : SensorType.ASSET,
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     targets: overrides && overrides.hasOwnProperty('targets') ? overrides.targets! : [],
   };
 };

@@ -33,3 +33,12 @@ def test_jobless_sensor_uses_eval_fn_name():
         pass
 
     assert my_sensor.name == "my_sensor"
+
+
+def test_sensor_tags():
+    @sensor(tags={"foo": "bar"})
+    def my_sensor():
+        pass
+
+    # auto-serialized to JSON
+    assert my_sensor.tags == {"foo": "bar"}
