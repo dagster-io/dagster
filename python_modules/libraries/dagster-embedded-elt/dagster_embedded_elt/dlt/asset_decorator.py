@@ -146,7 +146,6 @@ def dlt_assets(
     return multi_asset(
         name=name,
         group_name=group_name,
-        compute_kind="dlt",
         can_subset=True,
         partitions_def=partitions_def,
         specs=build_dlt_asset_specs(
