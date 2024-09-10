@@ -34,10 +34,9 @@ def asset_cli():
 @click.option("--select", help="Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
 @click.option(
-    "--partition-range-start", help="Start range of asset partition to target", required=False
-)
-@click.option(
-    "--partition-range-end", help="End range of asset partition to target", required=False
+    "--partition-range",
+    help="Asset partition range to target i.e. <start>...<end>",
+    required=False,
 )
 def asset_materialize_command(**kwargs):
     with capture_interrupts():
@@ -70,15 +69,10 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
     partition = kwargs.get("partition")
-    partition_range_start = kwargs.get("partition_range_start")
-    partition_range_end = kwargs.get("partition_range_end")
+    partition_range = kwargs.get("partition_range")
 
-    if partition and (partition_range_start or partition_range_end):
+    if partition and partition_range:
         check.failed("Cannot specify both --partition and --partition-range options. Use only one.")
-
-    if partition_range_start or partition_range_end:
-        if not (partition_range_start and partition_range_end):
-            check.failed("Both --partition-range-start and --partition-range-end must be provided.")
 
     if partition:
         if all(
@@ -99,7 +93,12 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
                 "All selected assets must have a PartitionsDefinition containing the passed"
                 f" partition key `{partition}` or have no PartitionsDefinition."
             )
-    elif partition_range_start:
+    elif partition_range:
+        if len(partition_range.split("...")) != 2:
+            check.failed("Invalid partition range format. Expected <start>...<end>.")
+
+        partition_range_start, partition_range_end = partition_range.split("...")
+
         for asset_key in asset_keys:
             backfill_policy = implicit_job_def.asset_layer.get(asset_key).backfill_policy
             if (
