@@ -379,7 +379,8 @@ class DbtCliResource(ConfigurableResource):
 
         # If the dbt adapter is DuckDB, set the access mode to READ_ONLY, since DuckDB only allows
         # simultaneous connections for read-only access.
-        try:
+
+        if config.credentials and config.credentials.__class__.__name__ == "DuckDBCredentials":
             from dbt.adapters.duckdb.credentials import DuckDBCredentials
 
             if isinstance(config.credentials, DuckDBCredentials):
@@ -390,12 +391,6 @@ class DbtCliResource(ConfigurableResource):
                 # working directory may not be the same as the dbt project directory
                 with pushd(self.project_dir):
                     config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
-
-        except ImportError:
-            logger.warning(
-                "An error was encountered when creating a handle to the dbt adapter in Dagster.",
-                exc_info=True,
-            )
 
         cleanup_event_logger()
 

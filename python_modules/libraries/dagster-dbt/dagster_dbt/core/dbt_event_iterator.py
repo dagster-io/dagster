@@ -277,14 +277,14 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         # opening multiple connections to the same database when a write connection, such
         # as the one dbt uses, is open.
         event_stream = self
-        try:
+        if (
+            self._dbt_cli_invocation.adapter
+            and self._dbt_cli_invocation.adapter.__class__.__name__ == "DuckDBAdapter"
+        ):
             from dbt.adapters.duckdb import DuckDBAdapter
 
             if isinstance(self._dbt_cli_invocation.adapter, DuckDBAdapter):
                 event_stream = exhaust_iterator_and_yield_results_with_exception(self)
-
-        except ImportError:
-            pass
 
         def _threadpool_wrap_map_fn() -> (
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
