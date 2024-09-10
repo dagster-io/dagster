@@ -30,13 +30,6 @@ def differently_partitioned_asset() -> None: ...
 def single_run_partitioned_asset() -> None: ...
 
 
-@asset(
-    partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-    backfill_policy=BackfillPolicy.multi_run(),
-)
-def multi_run_partitioned_asset() -> None: ...
-
-
 @asset
 def fail_asset() -> None:
     raise Exception("failure")

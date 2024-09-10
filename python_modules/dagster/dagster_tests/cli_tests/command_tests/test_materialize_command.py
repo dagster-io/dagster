@@ -9,12 +9,13 @@ from dagster._utils import file_relative_path
 
 def invoke_materialize(
     select: str,
+    file_path: str = "assets.py",
     partition: Optional[str] = None,
     partition_range_start: Optional[str] = None,
     partition_range_end: Optional[str] = None,
 ):
     runner = CliRunner()
-    options = ["-f", file_relative_path(__file__, "assets.py"), "--select", select]
+    options = ["-f", file_relative_path(__file__, file_path), "--select", select]
     if partition:
         options.extend(["--partition", partition])
     if partition_range_start:
@@ -180,16 +181,16 @@ def test_partition_range_single_run_backfill_policy():
 
 
 def test_partition_range_multi_run_backfill_policy():
-    with instance_for_test():
-        result = invoke_materialize(
+    with instance_for_test() as instance:
+        invoke_materialize(
             "multi_run_partitioned_asset",
+            file_path="asset_multi_run.py",
             partition_range_start="2020-01-01",
             partition_range_end="2020-01-03",
         )
-        assert (
-            "Provided partition range, but not all assets have a single-run backfill policy."
-            in str(result.exception)
-        )
+        partitions = instance.get_materialized_partitions(AssetKey("multi_run_partitioned_asset"))
+        for partition in ["2020-01-01", "2020-01-02", "2020-01-03"]:
+            assert partition in partitions
 
 
 def test_failure():
