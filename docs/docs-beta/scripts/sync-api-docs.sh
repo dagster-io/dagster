@@ -4,6 +4,7 @@
 
 pushd ../sphinx
 
+make install_uv
 make install
 make mdx
 make mdx_copy

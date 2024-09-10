@@ -9,8 +9,11 @@ help:
 
 .PHONY: help Makefile install
 
+install_uv:
+	# `curl` was used over `pip install uv` as this runs in Vercel
+	curl -LsSf https://astral.sh/uv/install.sh | sh
+
 install:
-	pip install uv
 	uv pip install -r requirements.txt
 	uv pip install -e _ext/dagster-sphinx
 	uv pip install -e _ext/sphinx-mdx-builder
