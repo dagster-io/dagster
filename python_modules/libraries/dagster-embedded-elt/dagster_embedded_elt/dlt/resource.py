@@ -207,10 +207,7 @@ class DagsterDltResource(ConfigurableResource):
 
         has_asset_def: bool = bool(context and context.has_assets_def)
 
-        for (
-            asset_key,
-            dlt_source_resource,
-        ) in asset_key_dlt_source_resource_mapping.items():
+        for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(
                 context, dlt_source_resource, load_info, dlt_pipeline
             )
