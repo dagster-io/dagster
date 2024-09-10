@@ -1,10 +1,57 @@
 import itertools
 import textwrap
+import pendulum
 from queue import Queue
+from typing import Iterator
 
 import pytest
-from dagster_k8s.merge_streams import merge_streams
+from dagster._core.pipes.merge_streams import merge_streams, LogItem
 
+
+# Example stream processor that follows Kubernetes log format
+# Borrowed from dagster-k8s/dagster_k8s/pipes.py
+def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
+    timestamp = ""
+    log = ""
+
+    for log_chunk in stream:
+        for line in log_chunk.decode("utf-8").split("\n"):
+            maybe_timestamp, _, tail = line.partition(" ")
+            if not timestamp:
+                # The first item in the stream will always have a timestamp.
+                timestamp = maybe_timestamp
+                log = tail
+            elif maybe_timestamp == timestamp:
+                # We have multiple messages with the same timestamp in this chunk, add them separated
+                # with a new line
+                log += f"\n{tail}"
+            elif not (
+                len(maybe_timestamp) == len(timestamp) and _is_kube_timestamp(maybe_timestamp)
+            ):
+                # The line is continuation of a long line that got truncated and thus doesn't
+                # have a timestamp in the beginning of the line.
+                # Since all timestamps in the RFC format returned by Kubernetes have the same
+                # length (when represented as strings) we know that the value won't be a timestamp
+                # if the string lengths differ, however if they do not differ, we need to parse the
+                # timestamp.
+                log += line
+            else:
+                # New log line has been observed, send in the next cycle
+                yield LogItem(timestamp=timestamp, log=log)
+                timestamp = maybe_timestamp
+                log = tail
+
+    # Send the last message that we were building
+    if log or timestamp:
+        yield LogItem(timestamp=timestamp, log=log)
+
+
+def _is_kube_timestamp(maybe_timestamp: str) -> bool:
+    try:
+        pendulum.parse(maybe_timestamp)
+        return True
+    except Exception:
+        return False
 
 def _iter_all(q):
     while True:
@@ -49,7 +96,8 @@ def _test_merge_logs(*events, recent_messages_buffer_size=10):
 
     with merge_streams(
         streams={str(key): _iter(p) for key, p in producers.items()},
-        handler=handler,
+        log_handler=handler,
+        stream_processor=_process_log_stream,
         recent_messages_buffer_size=recent_messages_buffer_size,
     ):
         _replay(producers=producers, events=events)
@@ -257,7 +305,8 @@ def test_exception_inside_context_manager():
     def _fn():
         with merge_streams(
             streams={str(key): _iter(p) for key, p in producers.items()},
-            handler=handler,
+            log_handler=handler,
+            stream_processor=_process_log_stream,
         ):
             raise RuntimeError("error during merging streams")
 
@@ -281,7 +330,8 @@ def test_exception_inside_producer(caplog):
 
     with merge_streams(
         streams={str(key): _iter(p) for key, p in producers.items()},
-        handler=handler,
+        log_handler=handler,
+        stream_processor=_process_log_stream,
     ):
         pass
 
@@ -300,7 +350,8 @@ def test_exception_inside_consumer(caplog):
 
     with merge_streams(
         streams={str(key): _iter(p) for key, p in producers.items()},
-        handler=handler,
+        log_handler=handler,
+        stream_processor=_process_log_stream,
     ):
         pass
 

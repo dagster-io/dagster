@@ -1,4 +1,4 @@
-"""Module containing functions for merging Kubernetes log streams."""
+"""Module containing functions for merging log streams."""
 
 import contextlib
 import itertools
@@ -9,8 +9,6 @@ from collections import deque
 from collections.abc import Callable, Generator, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Mapping
-
-import pendulum
 
 _default_logger = logging.getLogger(__name__)
 
@@ -38,54 +36,12 @@ def _deduplicate(recent_messages: "deque[LogItem]") -> Callable[[LogItem], bool]
     return _should_drop
 
 
-def _process_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
-    timestamp = ""
-    log = ""
-
-    for log_chunk in stream:
-        for line in log_chunk.decode("utf-8").split("\n"):
-            maybe_timestamp, _, tail = line.partition(" ")
-            if not timestamp:
-                # The first item in the stream will always have a timestamp.
-                timestamp = maybe_timestamp
-                log = tail
-            elif maybe_timestamp == timestamp:
-                # We have multiple messages with the same timestamp in this chunk, add them separated
-                # with a new line
-                log += f"\n{tail}"
-            elif not (
-                len(maybe_timestamp) == len(timestamp) and _is_kube_timestamp(maybe_timestamp)
-            ):
-                # The line is continuation of a long line that got truncated and thus doesn't
-                # have a timestamp in the beginning of the line.
-                # Since all timestamps in the RFC format returned by Kubernetes have the same
-                # length (when represented as strings) we know that the value won't be a timestamp
-                # if the string lengths differ, however if they do not differ, we need to parse the
-                # timestamp.
-                log += line
-            else:
-                # New log line has been observed, send in the next cycle
-                yield LogItem(timestamp=timestamp, log=log)
-                timestamp = maybe_timestamp
-                log = tail
-
-    # Send the last message that we were building
-    if log or timestamp:
-        yield LogItem(timestamp=timestamp, log=log)
-
-
-def _is_kube_timestamp(maybe_timestamp: str) -> bool:
-    try:
-        pendulum.parse(maybe_timestamp)
-        return True
-    except Exception:
-        return False
-
 
 def _enqueue(
     streams: queue.Queue,
     out: queue.PriorityQueue,
     recent_messages_buffer_size: int,
+    stream_processor: Callable,
     logger: logging.Logger,
 ) -> None:
     """Enqueue all of the log messages to a priority queue.
@@ -123,7 +79,7 @@ def _enqueue(
             logger.debug(f"Starting to process the '{label}' log stream: {i}...")
             for log_item in itertools.dropwhile(
                 _deduplicate(recent_messages),
-                _process_stream(stream),
+                stream_processor(stream),
             ):
                 recent_messages.append(log_item)
                 out.put(log_item)
@@ -134,7 +90,7 @@ def _enqueue(
 
 def _handle(
     logs: queue.Queue,
-    handler: Callable,
+    log_handler: Callable,
     shutdown: threading.Event,
     interval: float,
     logger: logging.Logger,
@@ -144,7 +100,7 @@ def _handle(
     Args:
     ----
         logs: The logs to process.
-        handler: The function to call for each log line.
+        log_handler: The function to call for each log line.
         shutdown: The threading.Event for signaling that we have to stop processing.
         interval: The interval on how often to poll the logs if the queue is empty.
         logger: A simple function to print diagnostic logs.
@@ -170,7 +126,7 @@ def _handle(
                 break
 
             for line in entry.log.split("\n"):
-                handler(line)
+                log_handler(line)
         except Exception as e:
             logger.warning(f"An error occurred during processing '{entry.log}': {e}")
         finally:
@@ -180,7 +136,8 @@ def _handle(
 @contextlib.contextmanager
 def merge_streams(
     streams: Mapping[str, Generator],
-    handler: Callable,
+    log_handler: Callable,
+    stream_processor: Callable,
     recent_messages_buffer_size: int = 500,
     logger: logging.Logger = _default_logger,
 ) -> Generator[None, None, None]:
@@ -195,8 +152,9 @@ def merge_streams(
         streams: A dict of generators that will provide log messages. It is expected to sometimes observe duplicate
             messages, which will be deduplicated. The keys to the dictionary are the labels of each stream for
             debugging purposes.
-        handler: The handler to use on each log message returned
+        log_handler: The handler to use on each log message returned
             by the stream.
+        stream_processor: The function that parses the streams into log lines.
         recent_messages_buffer_size: The size of the buffer for storing the recent messages.
         logger: The function for logging.
 
@@ -216,6 +174,7 @@ def merge_streams(
                 "streams": workers,
                 "out": logs,
                 "recent_messages_buffer_size": recent_messages_buffer_size,
+                "stream_processor": stream_processor,
                 "logger": logger,
             },
             logger=logger,
@@ -228,7 +187,7 @@ def merge_streams(
             target=_handle,
             kwargs={
                 "logs": logs,
-                "handler": handler,
+                "log_handler": log_handler,
                 "shutdown": shutdown,
                 "interval": 1,
                 "logger": logger,

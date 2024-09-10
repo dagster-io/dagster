@@ -5,6 +5,7 @@ import re
 import string
 import threading
 import time
+import pendulum
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -26,6 +27,7 @@ from dagster._core.pipes.client import (
     PipesParams,
 )
 from dagster._core.pipes.context import PipesMessageHandler
+from dagster._core.pipes.merge_streams import merge_streams, LogItem
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,
@@ -44,7 +46,6 @@ from dagster_k8s.client import (
     DagsterKubernetesClient,
     WaitForPodState,
 )
-from dagster_k8s.merge_streams import merge_streams
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from dagster_k8s.utils import get_common_labels
 
@@ -156,7 +157,8 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
                 )
                 for container in containers
             },
-            handler=lambda log_line: extract_message_or_forward_to_stdout(handler, log_line),
+            log_handler=lambda log_line: extract_message_or_forward_to_stdout(handler, log_line),
+            stream_processor=_process_log_stream,
             logger=logger,
         ):
             yield
@@ -650,3 +652,47 @@ def build_pod_body(
             "spec": spec,
         },
     )
+
+
+def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
+    timestamp = ""
+    log = ""
+
+    for log_chunk in stream:
+        for line in log_chunk.decode("utf-8").split("\n"):
+            maybe_timestamp, _, tail = line.partition(" ")
+            if not timestamp:
+                # The first item in the stream will always have a timestamp.
+                timestamp = maybe_timestamp
+                log = tail
+            elif maybe_timestamp == timestamp:
+                # We have multiple messages with the same timestamp in this chunk, add them separated
+                # with a new line
+                log += f"\n{tail}"
+            elif not (
+                len(maybe_timestamp) == len(timestamp) and _is_kube_timestamp(maybe_timestamp)
+            ):
+                # The line is continuation of a long line that got truncated and thus doesn't
+                # have a timestamp in the beginning of the line.
+                # Since all timestamps in the RFC format returned by Kubernetes have the same
+                # length (when represented as strings) we know that the value won't be a timestamp
+                # if the string lengths differ, however if they do not differ, we need to parse the
+                # timestamp.
+                log += line
+            else:
+                # New log line has been observed, send in the next cycle
+                yield LogItem(timestamp=timestamp, log=log)
+                timestamp = maybe_timestamp
+                log = tail
+
+    # Send the last message that we were building
+    if log or timestamp:
+        yield LogItem(timestamp=timestamp, log=log)
+
+
+def _is_kube_timestamp(maybe_timestamp: str) -> bool:
+    try:
+        pendulum.parse(maybe_timestamp)
+        return True
+    except Exception:
+        return False
