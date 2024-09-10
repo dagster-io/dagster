@@ -21,7 +21,7 @@ The Hybrid architecture is the most flexible and secure way to deploy Dagster+. 
 Before you begin, you should have:
 
 - A [Dagster+ account](/dagster-plus/getting-started)
-- [Basic familiarity with Dagster](/tutorial/quick-start)
+- [Basic familiarity with Dagster](/getting-started/quickstart)
 
 </details>
 

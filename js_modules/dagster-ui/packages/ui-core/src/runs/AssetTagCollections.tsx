@@ -96,7 +96,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
               to: assetDetailsPathForKey(assetKey),
             },
             {
-              label: 'View downstream lineage',
+              label: 'View lineage',
               to: assetDetailsPathForKey(assetKey, {
                 view: 'lineage',
                 lineageScope: 'downstream',
@@ -131,7 +131,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
             onClick: () => setShowMore(true),
           },
           {
-            label: 'View downstream lineage',
+            label: 'View lineage',
             to: globalAssetGraphPathForAssetsAndDescendants(assetKeys),
           },
         ]}

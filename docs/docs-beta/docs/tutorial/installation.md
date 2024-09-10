@@ -79,4 +79,4 @@ If you encounter any issues during the installation process, refer to the [Dagst
 - [Quickstart Tutorial](/tutorial/quick-start)
 - [ETL Tutorial](/tutorial/tutorial-etl)
 - [Create a new Dagster project](/tutorial/create-new-project)
-- [Creating Data Assets](/guides/data-modeling/data-assets)
+- [Creating Data Assets](/guides/data-assets)

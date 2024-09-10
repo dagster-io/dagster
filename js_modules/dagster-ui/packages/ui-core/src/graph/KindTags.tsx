@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {OpTags} from './OpTags';
 import {DefinitionTag} from '../graphql/types';
-import {linkToAssetTableWithComputeKindFilter} from '../search/useGlobalSearch';
+import {linkToAssetTableWithKindFilter} from '../search/useGlobalSearch';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
@@ -18,6 +18,8 @@ export const isCanonicalComputeKindTag = (tag: DefinitionTag) =>
 export const isCanonicalStorageKindTag = (tag: DefinitionTag) => tag.key === STORAGE_KIND_TAG;
 
 export const isKindTag = (tag: DefinitionTag) => tag.key.startsWith(KIND_TAG_PREFIX);
+export const isSystemTag = isKindTag;
+export const getKindFromTag = (tag: DefinitionTag) => tag.key.slice(KIND_TAG_PREFIX.length);
 
 export const AssetComputeKindTag = ({
   definition,
@@ -37,6 +39,7 @@ export const AssetComputeKindTag = ({
   if (!definition.computeKind) {
     return null;
   }
+
   return (
     <Tooltip
       content={
@@ -67,7 +70,7 @@ export const AssetComputeKindTag = ({
                 ? () => currentPageFilter.setState(new Set([definition.computeKind || '']))
                 : shouldLink
                 ? () => {
-                    window.location.href = linkToAssetTableWithComputeKindFilter(
+                    window.location.href = linkToAssetTableWithKindFilter(
                       definition.computeKind || '',
                     );
                   }

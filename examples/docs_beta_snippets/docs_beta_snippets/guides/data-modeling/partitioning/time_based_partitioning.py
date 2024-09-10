@@ -21,8 +21,8 @@ def daily_sales_data(context: dg.AssetExecutionContext) -> None:
         }
     )
 
-    os.makedirs("daily_sales", exist_ok=True)
-    filename = f"daily_sales/sales_{date}.csv"
+    os.makedirs("data/daily_sales", exist_ok=True)
+    filename = f"data/daily_sales/sales_{date}.csv"
     df.to_csv(filename, index=False)
 
     context.log.info(f"Daily sales data written to {filename}")
@@ -35,7 +35,7 @@ def daily_sales_data(context: dg.AssetExecutionContext) -> None:
 def daily_sales_summary(context):
     partition_date_str = context.partition_key
     # Read the CSV file for the given partition date
-    filename = f"daily_sales/sales_{partition_date_str}.csv"
+    filename = f"data/daily_sales/sales_{partition_date_str}.csv"
     df = pd.read_csv(filename)
 
     # Summarize daily sales
@@ -51,7 +51,6 @@ def daily_sales_summary(context):
 daily_sales_job = dg.define_asset_job(
     name="daily_sales_job",
     selection=[daily_sales_data, daily_sales_summary],
-    partitions_def=daily_partitions,
 )
 
 

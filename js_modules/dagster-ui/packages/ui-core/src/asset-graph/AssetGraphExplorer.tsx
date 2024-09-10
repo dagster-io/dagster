@@ -101,25 +101,24 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {explorerPath, onChangeExplorerPath} = props;
 
-  const {button, filterBar, groupsFilter, computeKindTagsFilter, filterFn} =
-    useAssetGraphExplorerFilters({
-      nodes: React.useMemo(
-        () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
-        [fullAssetGraphData],
-      ),
-      loading: fetchResult.loading,
-      isGlobalGraph: !!props.isGlobalGraph,
-      explorerPath: explorerPath.opsQuery,
-      clearExplorerPath: React.useCallback(() => {
-        onChangeExplorerPath(
-          {
-            ...explorerPath,
-            opsQuery: '',
-          },
-          'push',
-        );
-      }, [explorerPath, onChangeExplorerPath]),
-    });
+  const {button, filterBar, groupsFilter, kindFilter, filterFn} = useAssetGraphExplorerFilters({
+    nodes: React.useMemo(
+      () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
+      [fullAssetGraphData],
+    ),
+    loading: fetchResult.loading,
+    isGlobalGraph: !!props.isGlobalGraph,
+    explorerPath: explorerPath.opsQuery,
+    clearExplorerPath: React.useCallback(() => {
+      onChangeExplorerPath(
+        {
+          ...explorerPath,
+          opsQuery: '',
+        },
+        'push',
+      );
+    }, [explorerPath, onChangeExplorerPath]),
+  });
 
   useEffect(() => {
     setHideNodesMatching(() => (node: AssetNodeForGraphQueryFragment) => !filterFn(node));
@@ -152,7 +151,7 @@ export const AssetGraphExplorer = (props: Props) => {
             graphQueryItems={graphQueryItems}
             filterBar={filterBar}
             filterButton={button}
-            computeKindTagsFilter={computeKindTagsFilter}
+            kindFilter={kindFilter}
             groupsFilter={groupsFilter}
             {...props}
           />
@@ -172,7 +171,7 @@ type WithDataProps = Props & {
   filterBar: React.ReactNode;
   isGlobalGraph?: boolean;
 
-  computeKindTagsFilter: StaticSetFilter<string>;
+  kindFilter: StaticSetFilter<string>;
   groupsFilter: StaticSetFilter<AssetGroupSelector>;
 };
 
@@ -190,7 +189,7 @@ const AssetGraphExplorerWithData = ({
   filterButton,
   filterBar,
   isGlobalGraph = false,
-  computeKindTagsFilter,
+  kindFilter,
   groupsFilter,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
@@ -626,7 +625,7 @@ const AssetGraphExplorerWithData = ({
                       <AssetNode
                         definition={graphNode.definition}
                         selected={selectedGraphNodes.includes(graphNode)}
-                        computeKindTagsFilter={computeKindTagsFilter}
+                        kindFilter={kindFilter}
                       />
                     </AssetNodeContextMenuWrapper>
                   )}

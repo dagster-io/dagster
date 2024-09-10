@@ -116,4 +116,4 @@ To build the site for production:
 yarn build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.

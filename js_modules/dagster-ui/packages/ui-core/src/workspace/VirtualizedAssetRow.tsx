@@ -46,7 +46,7 @@ interface AssetRowProps {
   height: number;
   start: number;
   onRefresh: () => void;
-  computeKindFilter?: StaticSetFilter<string>;
+  kindFilter?: StaticSetFilter<string>;
 }
 
 export const VirtualizedAssetRow = (props: AssetRowProps) => {
@@ -63,7 +63,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     showCheckboxColumn = false,
     showRepoColumn,
     view = 'flat',
-    computeKindFilter,
+    kindFilter,
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
@@ -112,6 +112,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                     reduceText
                     kind={kind}
                     style={{position: 'relative'}}
+                    currentPageFilter={kindFilter}
                   />
                 ))}
               </>

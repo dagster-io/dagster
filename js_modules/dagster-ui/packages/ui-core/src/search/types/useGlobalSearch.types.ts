@@ -102,6 +102,7 @@ export type SearchSecondaryQuery = {
             id: string;
             computeKind: string | null;
             groupName: string;
+            kinds: Array<string>;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
@@ -128,6 +129,7 @@ export type SearchAssetFragment = {
     id: string;
     computeKind: string | null;
     groupName: string;
+    kinds: Array<string>;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;

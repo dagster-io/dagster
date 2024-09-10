@@ -16,13 +16,14 @@ import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {doesFilterArrayMatchValueArray} from '../ui/Filters/useAssetTagFilter';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
   hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
-  computeKinds?: string[];
+  kinds?: string[];
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
@@ -116,10 +117,15 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
     const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
-    const computeKinds = options.computeKinds?.map((c) => c.toLowerCase());
-    const all = computeKinds?.length
+    const kinds = options.kinds?.map((c) => c.toLowerCase());
+    const all = kinds?.length
       ? allFilteredByOpQuery.filter(
-          ({node}) => node.computeKind && computeKinds.includes(node.computeKind.toLowerCase()),
+          ({node}) =>
+            node.kinds &&
+            doesFilterArrayMatchValueArray(
+              kinds,
+              node.kinds.map((k) => k.toLowerCase()),
+            ),
         )
       : allFilteredByOpQuery;
 
@@ -139,7 +145,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     repoFilteredNodes,
     graphQueryItems,
     opsQuery,
-    options.computeKinds,
+    options.kinds,
     options.hideEdgesToNodesOutsideQuery,
   ]);
 

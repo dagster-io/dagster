@@ -1,6 +1,7 @@
 import {
   AssetFilterBaseType,
   AssetFilterType,
+  FilterableAssetDefinition,
   filterAssetDefinition,
 } from 'shared/assets/useAssetDefinitionFilterState.oss';
 
@@ -58,12 +59,12 @@ describe('filterAssetDefinition', () => {
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });
 
-  it('returns false when computeKindTags filter does not match the definition', () => {
+  it('returns false when kinds filter does not match the definition', () => {
     const filters = {
-      computeKindTags: ['computeKind2'],
+      kinds: ['computeKind2'],
     };
     const definition = {
-      computeKind: 'computeKind1',
+      kinds: ['computeKind1'],
     };
     expect(filterAssetDefinition(filters, definition)).toBe(false);
   });
@@ -144,7 +145,7 @@ describe('filterAssetDefinition', () => {
     const filters = {
       codeLocations: [repo],
       groups: [group],
-      computeKindTags: ['computeKind1'],
+      kinds: ['computeKind1'],
       changedInBranch: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
       owners: [owner],
       tags: [tag],
@@ -157,7 +158,7 @@ describe('filterAssetDefinition', () => {
         }),
       }),
       groupName: group.groupName,
-      computeKind: 'computeKind1',
+      kinds: ['computeKind1'],
       changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
       owners: [owner],
       tags: [tag],
@@ -167,7 +168,7 @@ describe('filterAssetDefinition', () => {
   });
 
   (
-    ['changedInBranch', 'computeKindTags', 'groups', 'owners', 'codeLocations', 'tags'] as Array<
+    ['changedInBranch', 'kinds', 'groups', 'owners', 'codeLocations', 'tags'] as Array<
       keyof AssetFilterBaseType
     >
   ).forEach((filter) => {
@@ -187,7 +188,7 @@ describe('filterAssetDefinition', () => {
       const filters: Partial<AssetFilterType> = {
         selectAllFilters: [filter],
       };
-      const definition = {
+      const definition: FilterableAssetDefinition = {
         repository: buildRepository({
           name: group.repositoryName,
           location: buildRepositoryLocation({
@@ -195,7 +196,7 @@ describe('filterAssetDefinition', () => {
           }),
         }),
         groupName: group.groupName,
-        computeKind: 'computeKind1',
+        kinds: ['computeKind1'],
         changedReasons: [ChangeReason.DEPENDENCIES, ChangeReason.PARTITIONS_DEFINITION],
         owners: [owner],
         tags: [tag],
