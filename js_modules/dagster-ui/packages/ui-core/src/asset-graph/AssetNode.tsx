@@ -28,7 +28,7 @@ interface Props {
   kindFilter?: StaticSetFilter<string>;
 }
 
-export const AssetNode = React.memo(({definition, selected}: Props) => {
+export const AssetNode = React.memo(({definition, selected, kindFilter}: Props) => {
   const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
@@ -69,6 +69,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
               key={kind}
               kind={kind}
               style={{position: 'relative', paddingTop: 7, margin: 0}}
+              currentPageFilter={kindFilter}
             />
           ))}
         </Box>
