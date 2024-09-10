@@ -13,6 +13,7 @@ from dagster import (
     external_assets_from_specs,
     multi_asset,
 )
+from dagster._config.post_process import post_process_config
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -49,6 +50,9 @@ class PowerBITokenAuth(ConfigurableResource):
     api_token: str = Field(..., description="An API access token used to connect to PowerBI.")
 
 
+MICROSOFT_LOGIN_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/token"
+
+
 class PowerBIServicePrincipalAuth(ConfigurableResource):
     """Authenticates with PowerBI using a service principal."""
 
@@ -63,7 +67,7 @@ class PowerBIServicePrincipalAuth(ConfigurableResource):
 
     def get_api_token(self) -> str:
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        login_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/token"
+        login_url = MICROSOFT_LOGIN_URL.format(tenant_id=self.tenant_id)
         response = requests.post(
             url=login_url,
             headers=headers,
@@ -302,17 +306,27 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=self._workspace.workspace_id)
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        with self._workspace.process_config_and_initialize_cm() as workspace:
-            workspace_data: PowerBIWorkspaceData = workspace.fetch_powerbi_workspace_data()
-            return [
-                AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
-                for data in [
-                    *workspace_data.dashboards_by_id.values(),
-                    *workspace_data.reports_by_id.values(),
-                    *workspace_data.semantic_models_by_id.values(),
-                    *workspace_data.data_sources_by_id.values(),
-                ]
+        # This is gross, but will be fixed by https://github.com/dagster-io/dagster/pull/24367/
+        workspace = self._workspace.__class__(
+            **{
+                **post_process_config(
+                    self._workspace._config_schema.config_type,  # noqa: SLF001
+                    self._workspace._convert_to_config_dictionary(),  # noqa: SLF001
+                ).value,
+                "auth": self._workspace.auth,
+            }
+        )
+
+        workspace_data: PowerBIWorkspaceData = workspace.fetch_powerbi_workspace_data()
+        return [
+            AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
+            for data in [
+                *workspace_data.dashboards_by_id.values(),
+                *workspace_data.reports_by_id.values(),
+                *workspace_data.semantic_models_by_id.values(),
+                *workspace_data.data_sources_by_id.values(),
             ]
+        ]
 
     def build_definitions(
         self,
