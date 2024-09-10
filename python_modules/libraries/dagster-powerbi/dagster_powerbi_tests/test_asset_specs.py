@@ -131,7 +131,7 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         # Assert that all Power BI assets have upstreams, which are resolved
         for asset_def in repository_def.assets_defs_by_key.values():
             for key, deps in asset_def.asset_deps.items():
-                if "dagster/kind/powerbi" not in asset_def.tags_by_key[key]:
+                if key.path[-1] == "my_materializable_asset":
                     continue
                 if key.path[0] == "semantic_model":
                     continue
