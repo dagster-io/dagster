@@ -1,11 +1,13 @@
 import re
 from enum import Enum
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
+
+TABLEAU_PREFIX = "tableau/"
 
 
 def _clean_asset_name(name: str) -> str:
@@ -30,6 +32,16 @@ class TableauContentData:
     content_type: TableauContentType
     properties: Mapping[str, Any]
 
+    def to_cached_data(self) -> Mapping[str, Any]:
+        return {"content_type": self.content_type.value, "properties": self.properties}
+
+    @classmethod
+    def from_cached_data(cls, data: Mapping[Any, Any]) -> "TableauContentData":
+        return cls(
+            content_type=TableauContentType(data["content_type"]),
+            properties=data["properties"],
+        )
+
 
 @record
 class TableauWorkspaceData:
@@ -41,6 +53,29 @@ class TableauWorkspaceData:
     workbooks_by_id: Mapping[str, TableauContentData]
     views_by_id: Mapping[str, TableauContentData]
     data_sources_by_id: Mapping[str, TableauContentData]
+
+    @classmethod
+    def from_content_data(
+        cls, site_name: str, content_data: Sequence[TableauContentData]
+    ) -> "TableauWorkspaceData":
+        return cls(
+            site_name=site_name,
+            workbooks_by_id={
+                workbook.properties["id"]: workbook
+                for workbook in content_data
+                if workbook.content_type == TableauContentType.WORKBOOK
+            },
+            views_by_id={
+                view.properties["id"]: view
+                for view in content_data
+                if view.content_type == TableauContentType.VIEW
+            },
+            data_sources_by_id={
+                data_source.properties["id"]: data_source
+                for data_source in content_data
+                if data_source.content_type == TableauContentType.DATA_SOURCE
+            },
+        )
 
 
 class DagsterTableauTranslator:

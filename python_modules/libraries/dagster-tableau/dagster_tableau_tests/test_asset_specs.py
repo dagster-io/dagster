@@ -4,6 +4,11 @@ import uuid
 
 import pytest
 import responses
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.api import create_execution_plan, execute_plan
+from dagster._core.instance_for_test import instance_for_test
+from dagster._utils import file_relative_path
 from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
 
 
@@ -75,16 +80,60 @@ def test_translator_spec(
     resource.build_client()
 
     with workspace_data_api_mocks_fn(client=resource._client):
-        all_asset_specs = resource.build_asset_specs()
+        all_assets = resource.build_defs().get_asset_graph().assets_defs
 
         # 1 view and 1 data source
-        assert len(all_asset_specs) == 2
+        assert len(all_assets) == 2
 
         # Sanity check outputs, translator tests cover details here
-        view_spec = next(spec for spec in all_asset_specs if "workbook" in spec.key.path[0])
-        assert view_spec.key.path == ["test_workbook", "view", "sales"]
+        view_asset = next(asset for asset in all_assets if "workbook" in asset.key.path[0])
+        assert view_asset.key.path == ["test_workbook", "view", "sales"]
 
-        data_source_spec = next(
-            spec for spec in all_asset_specs if "datasource" in spec.key.path[0]
+        data_source_asset = next(
+            asset for asset in all_assets if "datasource" in asset.key.path[0]
         )
-        assert data_source_spec.key.path == ["superstore_datasource"]
+        assert data_source_asset.key.path == ["superstore_datasource"]
+
+
+def test_using_cached_asset_data(workspace_data_api_mocks_pending_repo: responses.RequestsMock) -> None:
+    with instance_for_test() as instance:
+        assert len(workspace_data_api_mocks_pending_repo.calls) == 0
+
+        from dagster_tableau_tests.pending_repo import pending_repo_from_cached_asset_metadata
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        assert len(workspace_data_api_mocks_pending_repo.calls) == 5
+
+        # 2 Tableau external assets, one materializable asset
+        assert len(repository_def.assets_defs_by_key) == 2 + 1
+
+        job_def = repository_def.get_job("all_asset_job")
+        repository_load_data = repository_def.repository_load_data
+
+        recon_repo = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "pending_repo.py"),
+            fn_name="pending_repo_from_cached_asset_metadata",
+        )
+        recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
+
+        execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
+
+        run = instance.create_run_for_job(job_def=job_def, execution_plan=execution_plan)
+
+        events = execute_plan(
+            execution_plan=execution_plan,
+            job=recon_job,
+            dagster_run=run,
+            instance=instance,
+        )
+
+        assert (
+                len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+                == 1
+        ), "Expected two successful steps"
+
+        # Two more calls, for when the resource signs in and out in the pending.repo.py
+        assert len(workspace_data_api_mocks_pending_repo.calls) == 7
+
+
