@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
 
 
-class DepConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
+class DepConditionWrapperCondition(BuiltinAutomationCondition[T_EntityKey]):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
     True.
@@ -33,7 +33,7 @@ class DepConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     def description(self) -> str:
         return self.dep_key.to_user_string()
 
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         # only evaluate parents of the current candidates
 
         dep_candidate_subset = context.candidate_subset.compute_parent_subset(self.dep_key)
@@ -51,7 +51,7 @@ class DepConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
         )
 
 
-class DepCondition(BuiltinAutomationCondition[AssetKey]):
+class DepCondition(BuiltinAutomationCondition[T_EntityKey]):
     operand: AutomationCondition
 
     # Should be AssetSelection, but this causes circular reference issues
@@ -99,10 +99,11 @@ class DepCondition(BuiltinAutomationCondition[AssetKey]):
         )
         return self.model_copy(update={"ignore_selection": ignore_selection})
 
-    def _get_dep_keys(
-        self, asset_key: AssetKey, asset_graph: BaseAssetGraph
-    ) -> AbstractSet[AssetKey]:
-        dep_keys = asset_graph.get(asset_key).parent_keys
+    def _get_dep_keys(self, key: T_EntityKey, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
+        if isinstance(key, AssetKey):
+            dep_keys = asset_graph.get(key).parent_keys
+        else:
+            dep_keys = {asset_graph.get(key).key.asset_key}
         if self.allow_selection is not None:
             dep_keys &= self.allow_selection.resolve(asset_graph)
         if self.ignore_selection is not None:
@@ -111,7 +112,7 @@ class DepCondition(BuiltinAutomationCondition[AssetKey]):
 
 
 @whitelist_for_serdes
-class AnyDepsCondition(DepCondition):
+class AnyDepsCondition(DepCondition[T_EntityKey]):
     @property
     def base_description(self) -> str:
         return "Any"
@@ -120,7 +121,7 @@ class AnyDepsCondition(DepCondition):
     def name(self) -> str:
         return "ANY_DEPS_MATCH"
 
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         dep_results = []
         true_subset = context.get_empty_subset()
 
@@ -141,7 +142,7 @@ class AnyDepsCondition(DepCondition):
 
 
 @whitelist_for_serdes
-class AllDepsCondition(DepCondition):
+class AllDepsCondition(DepCondition[T_EntityKey]):
     @property
     def base_description(self) -> str:
         return "All"
@@ -150,7 +151,7 @@ class AllDepsCondition(DepCondition):
     def name(self) -> str:
         return "ALL_DEPS_MATCH"
 
-    def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         dep_results = []
         true_subset = context.candidate_subset
 
