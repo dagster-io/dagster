@@ -31,7 +31,7 @@ class TableauWorkspaceData:
     Provided as context for the translator so that it can resolve dependencies between content.
     """
 
-    site_id: str
+    site_name: str
     workbooks_by_id: Dict[str, TableauContentData]
     views_by_id: Dict[str, TableauContentData]
     data_sources_by_id: Dict[str, TableauContentData]
