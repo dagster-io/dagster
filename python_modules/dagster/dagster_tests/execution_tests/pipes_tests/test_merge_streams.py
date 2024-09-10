@@ -1,11 +1,11 @@
 import itertools
 import textwrap
-import pendulum
 from queue import Queue
 from typing import Iterator
 
+import pendulum
 import pytest
-from dagster._core.pipes.merge_streams import merge_streams, LogItem
+from dagster._core.pipes.merge_streams import LogItem, merge_streams
 
 
 # Example stream processor that follows Kubernetes log format
@@ -52,6 +52,7 @@ def _is_kube_timestamp(maybe_timestamp: str) -> bool:
         return True
     except Exception:
         return False
+
 
 def _iter_all(q):
     while True:

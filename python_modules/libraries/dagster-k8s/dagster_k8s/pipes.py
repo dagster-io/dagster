@@ -5,13 +5,13 @@ import re
 import string
 import threading
 import time
-import pendulum
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
 
 import kubernetes
+import pendulum
 from dagster import (
     OpExecutionContext,
     _check as check,
@@ -27,7 +27,7 @@ from dagster._core.pipes.client import (
     PipesParams,
 )
 from dagster._core.pipes.context import PipesMessageHandler
-from dagster._core.pipes.merge_streams import merge_streams, LogItem
+from dagster._core.pipes.merge_streams import LogItem, merge_streams
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,
@@ -655,6 +655,23 @@ def build_pod_body(
 
 
 def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
+    """This expects the logs to be of the format b'<timestamp> <msg>' and only the
+    '<msg>' is forwarded to Dagster. If the <timestamp> is not there then the lines
+    will be joined together. There is a limitation that the first item in the stream
+    needs to always contain a timestamp as the first element.
+
+    The timestamp is expected to be in '2024-03-22T02:17:29.885548Z' format and
+    if the subsecond part will be truncated to microseconds.
+
+    If we fail parsing the timestamp, then the priority will be set to zero in
+    order to not drop any log items.
+
+    Args:
+        stream (Iterator[bytes]): A stream of log chunks
+
+    Yields:
+        Iterator[LogItem]: A log containing the timestamp and msg
+    """
     timestamp = ""
     log = ""
 
