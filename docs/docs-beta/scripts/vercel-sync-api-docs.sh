@@ -8,7 +8,7 @@
 
 set -e
 
-pushd ..
+cd ..
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.cargo/env
@@ -25,12 +25,8 @@ source .venv/bin/activate
 #   return _setlocale(category, locale)
 #          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # locale.Error: unsupported locale setting
-export LC_ALL=C.UTF-8
-
+export LC_ALL=en_US.UTF-8
 
 uv pip install tox
 tox -e sphinx
-
 make mdx_copy
-
-popd
