@@ -31,7 +31,6 @@ from dagster import (
 from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_specs import build_dbt_asset_specs
@@ -360,7 +359,6 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets.op.tags == {
         **op_tags,
-        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "fqn:*",
     }
 
@@ -369,7 +367,6 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets_with_select.op.tags == {
         **op_tags,
-        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "raw_customers+",
     }
 
@@ -378,7 +375,6 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets_with_exclude.op.tags == {
         **op_tags,
-        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "fqn:*",
         "dagster_dbt/exclude": "raw_customers+",
     }
@@ -393,7 +389,6 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets_with_select_and_exclude.op.tags == {
         **op_tags,
-        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "raw_customers+",
         "dagster_dbt/exclude": "customers",
     }
@@ -850,6 +845,7 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
         "foo": "",
         "bar-baz": "",
         **build_kind_tag("duckdb"),
+        **build_kind_tag("dbt"),
     }
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
         assert has_kind(my_dbt_assets.tags_by_key[asset_key], "duckdb")
