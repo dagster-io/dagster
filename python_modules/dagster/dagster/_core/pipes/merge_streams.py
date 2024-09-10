@@ -36,12 +36,11 @@ def _deduplicate(recent_messages: "deque[LogItem]") -> Callable[[LogItem], bool]
     return _should_drop
 
 
-
 def _enqueue(
     streams: queue.Queue,
     out: queue.PriorityQueue,
     recent_messages_buffer_size: int,
-    stream_processor: Callable,
+    stream_processor: Callable[[Iterator[bytes]], Iterator[LogItem]],
     logger: logging.Logger,
 ) -> None:
     """Enqueue all of the log messages to a priority queue.
@@ -50,23 +49,13 @@ def _enqueue(
     Dagster's handler is not thread safe (which could be the case because right
     now it is being used from a single thread only).
 
-    This expects the logs to be of the format b'<timestamp> <msg>' and only the
-    '<msg>' is forwarded to Dagster. If the <timestamp> is not there then the lines
-    will be joined together. There is a limitation that the first item in the stream
-    needs to always contain a timestamp as the first element.
-
-    The timestamp is expected to be in '2024-03-22T02:17:29.885548Z' format and
-    if the subsecond part will be truncated to microseconds.
-
-    If we fail parsing the timestamp, then the priority will be set to zero in
-    order to not drop any log items.
-
     Args:
     ----
         streams: A queue of all the streams that need to be processed.
         out: The priority queue to output the messages. We use LogItem to output
             it.
         recent_messages_buffer_size: The size of the buffer for storing the recent messages.
+        stream_processor: The function that parses the streams into log lines.
         logger: A simple function to print diagnostic logs.
 
     """
@@ -137,7 +126,7 @@ def _handle(
 def merge_streams(
     streams: Mapping[str, Generator],
     log_handler: Callable,
-    stream_processor: Callable,
+    stream_processor: Callable[[Iterator[bytes]], Iterator[LogItem]],
     recent_messages_buffer_size: int = 500,
     logger: logging.Logger = _default_logger,
 ) -> Generator[None, None, None]:
