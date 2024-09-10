@@ -20,5 +20,6 @@ setup(
         "sphinx",
         "sphinx_toolbox",
         "pydantic",
+        "pyyaml",
     ],
 )
