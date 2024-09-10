@@ -496,7 +496,7 @@ def test_with_owner_replacements(dlt_pipeline: Pipeline) -> None:
 
 
 def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
-    expected_tags = {"customized": "tag", **build_kind_tag("duckdb")}
+    expected_tags = {"customized": "tag", **build_kind_tag("dlt"), **build_kind_tag("duckdb")}
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_tags(self, _) -> Optional[Mapping[str, str]]:
