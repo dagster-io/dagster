@@ -26,12 +26,14 @@ from dagster import (
     op,
 )
 from dagster._core.definitions import materialize
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.events import (
     AssetMaterialization,
@@ -120,6 +122,7 @@ class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
     asset_specs: Sequence[Union[AssetSpec, MultiAssetSpec]]
+    check_specs: Sequence[AssetCheckSpec] = field(default_factory=list)
     current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime())
     sensors: Sequence[SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
@@ -185,6 +188,14 @@ class ScenarioSpec:
                             **{k: v for k, v in spec._asdict().items() if k in params},
                         )
                     )
+        for check_spec in self.check_specs:
+
+            @asset_check(
+                asset=check_spec.asset_key, name=check_spec.key.name, blocking=check_spec.blocking
+            )
+            def _check(): ...
+
+            assets.append(_check)
 
         return assets
 

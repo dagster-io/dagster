@@ -9,7 +9,7 @@ import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -44,8 +44,10 @@ if TYPE_CHECKING:
         WillBeRequestedCondition,
     )
     from dagster._core.definitions.declarative_automation.operators import (
+        AllChecksCondition,
         AllDepsCondition,
         AndAutomationCondition,
+        AnyChecksCondition,
         AnyDepsCondition,
         AnyDownstreamConditionsCondition,
         NewlyTrueCondition,
@@ -265,6 +267,44 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         from dagster._core.definitions.declarative_automation.operators import AllDepsCondition
 
         return AllDepsCondition(operand=condition)
+
+    @public
+    @experimental
+    @staticmethod
+    def any_checks_match(
+        condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
+    ) -> "AnyChecksCondition":
+        """Returns an AutomationCondition that is true for an asset partition if at least one of its
+        checks evaluate to True for the given condition.
+
+        Args:
+            condition (AutomationCondition): The AutomationCondition that will be evaluated against
+                this asset's checks.
+            blocking_only (bool): Determines if this condition will only be evaluated against blocking
+                checks. Defaults to False.
+        """
+        from dagster._core.definitions.declarative_automation.operators import AnyChecksCondition
+
+        return AnyChecksCondition(operand=condition, blocking_only=blocking_only)
+
+    @public
+    @experimental
+    @staticmethod
+    def all_checks_match(
+        condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
+    ) -> "AllChecksCondition":
+        """Returns an AutomationCondition that is true for an asset partition if all of its checks
+        evaluate to True for the given condition.
+
+        Args:
+            condition (AutomationCondition): The AutomationCondition that will be evaluated against
+                this asset's checks.
+            blocking_only (bool): Determines if this condition will only be evaluated against blocking
+                checks. Defaults to False.
+        """
+        from dagster._core.definitions.declarative_automation.operators import AllChecksCondition
+
+        return AllChecksCondition(operand=condition, blocking_only=blocking_only)
 
     @public
     @experimental
