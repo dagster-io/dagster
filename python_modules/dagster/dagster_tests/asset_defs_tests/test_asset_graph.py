@@ -862,6 +862,6 @@ def test_cross_code_location_partition_mapping() -> None:
     )
 
     assert isinstance(
-        asset_graph.get_partition_mapping(asset_key=b.key, parent_asset_key=a.key),
+        asset_graph.get_partition_mapping(key=b.key, parent_asset_key=a.key),
         TimeWindowPartitionMapping,
     )
