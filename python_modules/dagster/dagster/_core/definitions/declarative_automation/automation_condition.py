@@ -10,6 +10,9 @@ from dagster._annotations import experimental, public
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
+from dagster._core.definitions.declarative_automation.check_automation_condition import (
+    CheckAutomationCondition,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -92,6 +95,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         def my_asset(): ...
 
     """
+
+    check = CheckAutomationCondition()
 
     @property
     def requires_cursor(self) -> bool:
@@ -461,6 +466,20 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             return AutomationCondition.any_deps_match(AutomationCondition.in_progress()).with_label(
                 "any_deps_in_progress"
             )
+
+    @experimental
+    @staticmethod
+    def all_deps_blocking_checks_succeeded() -> "AllDepsCondition":
+        """Returns an AutomationCondition that is true for any partition where all upstream
+        blocking checks have succeeded.
+        """
+        with disable_dagster_warnings():
+            return AutomationCondition.all_deps_match(
+                AutomationCondition.all_checks_match(
+                    AutomationCondition.check.succeeded() | AutomationCondition.will_be_requested(),
+                    blocking_only=True,
+                ).with_label("all_blocking_checks_succeeeded")
+            ).with_label("all_deps_blocking_checks_succeeded")
 
     @experimental
     @staticmethod

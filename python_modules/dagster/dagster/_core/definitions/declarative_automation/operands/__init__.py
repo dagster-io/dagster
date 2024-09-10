@@ -6,6 +6,7 @@ from dagster._core.definitions.declarative_automation.operands.slice_conditions 
     FailedAutomationCondition as FailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressAutomationCondition as InProgressAutomationCondition,
+    LatestCheckStatusCondition as LatestCheckStatusCondition,
     MissingAutomationCondition as MissingAutomationCondition,
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
