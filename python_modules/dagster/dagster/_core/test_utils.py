@@ -83,6 +83,7 @@ def assert_namedtuple_lists_equal(
     t2_list: Sequence[T_NamedTuple],
     exclude_fields: Optional[Sequence[str]] = None,
 ) -> None:
+    assert len(t1_list) == len(t2_list)
     for t1, t2 in zip(t1_list, t2_list):
         assert_namedtuples_equal(t1, t2, exclude_fields)
 

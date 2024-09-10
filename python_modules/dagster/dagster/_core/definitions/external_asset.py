@@ -152,13 +152,13 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
             freshness_policy=source_asset.freshness_policy,
             deps=[],
             owners=[],
+            partitions_def=source_asset.partitions_def,
         )
 
         return AssetsDefinition(
             specs=[spec],
             keys_by_output_name=keys_by_output_name,
             node_def=node_def,
-            partitions_def=source_asset.partitions_def,
             # We don't pass the `io_manager_def` because it will already be present in
             # `resource_defs` (it is added during `SourceAsset` initialization).
             resource_defs=source_asset.resource_defs,

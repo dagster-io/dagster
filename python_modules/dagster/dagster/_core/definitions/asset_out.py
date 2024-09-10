@@ -17,6 +17,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import (
     DEFAULT_IO_MANAGER_KEY,
     resolve_automation_condition,
@@ -148,7 +149,12 @@ class AssetOut(
             code_version=self.code_version,
         )
 
-    def to_spec(self, key: AssetKey, deps: Sequence[AssetDep]) -> AssetSpec:
+    def to_spec(
+        self,
+        key: AssetKey,
+        deps: Sequence[AssetDep],
+        partitions_def: Optional[PartitionsDefinition],
+    ) -> AssetSpec:
         with disable_dagster_warnings():
             return AssetSpec.dagster_internal_init(
                 key=key,
@@ -163,7 +169,7 @@ class AssetOut(
                 tags=self.tags,
                 deps=deps,
                 auto_materialize_policy=None,
-                partitions_def=None,
+                partitions_def=partitions_def,
             )
 
     @property

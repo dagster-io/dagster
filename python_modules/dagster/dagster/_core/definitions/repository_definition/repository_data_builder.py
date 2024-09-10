@@ -252,14 +252,15 @@ def build_caching_repository_data_from_list(
             asset_check_keys.update(definition.check_keys)
             asset_checks_defs.append(definition)
         elif isinstance(definition, AssetsDefinition):
-            for key in definition.keys:
-                if key in asset_keys:
-                    raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
+            for spec in definition.specs:
+                if spec.key in asset_keys:
+                    raise DagsterInvalidDefinitionError(f"Duplicate asset key: {spec.key}")
+
+                if spec.partitions_def is not None:
+                    partitions_defs.add(spec.partitions_def)
             for key in definition.check_keys:
                 if key in asset_check_keys:
                     raise DagsterInvalidDefinitionError(f"Duplicate asset check key: {key}")
-            if definition.partitions_def is not None:
-                partitions_defs.add(definition.partitions_def)
 
             asset_keys.update(definition.keys)
             asset_check_keys.update(definition.check_keys)

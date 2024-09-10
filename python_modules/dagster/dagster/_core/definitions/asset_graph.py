@@ -89,11 +89,11 @@ class AssetNode(BaseAssetNode):
 
     @property
     def is_partitioned(self) -> bool:
-        return self.assets_def.partitions_def is not None
+        return self.partitions_def is not None
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        return self.assets_def.partitions_def
+        return self.assets_def.specs_by_key[self.key].partitions_def
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:

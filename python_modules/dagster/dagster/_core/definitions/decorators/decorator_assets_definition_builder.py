@@ -563,7 +563,6 @@ class DecoratorAssetsDefinitionBuilder:
             keys_by_input_name=self.asset_keys_by_input_names,
             keys_by_output_name=self.asset_keys_by_output_name,
             node_def=self.create_op_definition(),
-            partitions_def=self.args.partitions_def,
             can_subset=self.args.can_subset,
             resource_defs=self.args.assets_def_resource_defs,
             backfill_policy=self.args.backfill_policy,
@@ -577,18 +576,61 @@ class DecoratorAssetsDefinitionBuilder:
 
     @cached_property
     def specs(self) -> Sequence[AssetSpec]:
-        specs = self.args.specs if self.args.specs else self._synthesize_specs()
-
-        if not self.group_name:
-            return specs
+        if self.args.specs:
+            specs = self.args.specs
+            self._validate_spec_partitions_defs(specs, self.args.partitions_def)
+        else:
+            specs = self._synthesize_specs()
 
         check.invariant(
-            all((spec.group_name is None or spec.group_name == self.group_name) for spec in specs),
+            not self.group_name
+            or all(
+                (spec.group_name is None or spec.group_name == self.group_name) for spec in specs
+            ),
             "Cannot set group_name parameter on multi_asset if one or more of the"
             " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
         )
 
-        return [spec._replace(group_name=self.group_name) for spec in specs]
+        if not self.group_name and not self.args.partitions_def:
+            return specs
+
+        return [
+            spec._replace(
+                group_name=self.group_name,
+                partitions_def=spec.partitions_def or self.args.partitions_def,
+            )
+            for spec in specs
+        ]
+
+    def _validate_spec_partitions_defs(
+        self, specs: Sequence[AssetSpec], partitions_def: Optional[PartitionsDefinition]
+    ) -> Optional[PartitionsDefinition]:
+        any_spec_has_partitions_def = False
+        any_spec_has_no_partitions_def = False
+        if partitions_def is not None:
+            for spec in specs:
+                if spec.partitions_def is not None and spec.partitions_def != partitions_def:
+                    check.failed(
+                        f"AssetSpec for {spec.key.to_user_string()} has partitions_def "
+                        f"(type={type(spec.partitions_def)}) which is different than the "
+                        f"partitions_def provided to AssetsDefinition (type={type(partitions_def)}).",
+                    )
+
+                any_spec_has_partitions_def = (
+                    any_spec_has_partitions_def or spec.partitions_def is not None
+                )
+                any_spec_has_no_partitions_def = (
+                    any_spec_has_no_partitions_def or spec.partitions_def is None
+                )
+
+        if (
+            partitions_def is not None
+            and any_spec_has_partitions_def
+            and any_spec_has_no_partitions_def
+        ):
+            check.failed(
+                "If partitions_def is provided, then either all specs must have that PartitionsDefinition or none."
+            )
 
     def _synthesize_specs(self) -> Sequence[AssetSpec]:
         resolved_specs = []
@@ -613,7 +655,9 @@ class DecoratorAssetsDefinitionBuilder:
             else:
                 deps = input_deps
 
-            resolved_specs.append(asset_out.to_spec(key, deps=deps))
+            resolved_specs.append(
+                asset_out.to_spec(key, deps=deps, partitions_def=self.args.partitions_def)
+            )
 
         specs = resolved_specs
         return specs

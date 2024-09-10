@@ -251,7 +251,7 @@ def test_non_partitioned_depends_on_specific_partitions():
         exclude_fields=["tags"],
     )
     assert_namedtuple_lists_equal(
-        result.asset_materializations_for_node("downstream"),
+        result.asset_materializations_for_node("downstream_a_b"),
         [AssetMaterialization(AssetKey(["downstream_a_b"]))],
         exclude_fields=["tags"],
     )

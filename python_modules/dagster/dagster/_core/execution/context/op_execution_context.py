@@ -318,7 +318,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
         key_range = self.partition_key_range
-        partitions_def = self.assets_def.partitions_def
+        partitions_def = self._step_execution_context.run_partitions_def
         if partitions_def is None:
             raise DagsterInvariantViolationError(
                 "Cannot access partition_keys for a non-partitioned run"
