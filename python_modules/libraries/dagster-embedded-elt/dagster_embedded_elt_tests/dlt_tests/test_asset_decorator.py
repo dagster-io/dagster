@@ -10,7 +10,6 @@ from dagster import (
     AutoMaterializeRule,
     AutomationCondition,
     Definitions,
-    IntMetadataValue,
     MonthlyPartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
@@ -92,9 +91,6 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     assert all(
         "dagster/column_schema" in materialization.metadata for materialization in materializations
     )
-    assert all(
-        "dagster/row_count" in materialization.metadata for materialization in materializations
-    )
 
     repos_materialization = next(
         materialization
@@ -112,7 +108,6 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
             ]
         ),
     )
-    assert repos_materialization.metadata["dagster/row_count"] == IntMetadataValue(value=3)
 
 
 def test_multi_asset_names_do_not_conflict(dlt_pipeline: Pipeline) -> None:

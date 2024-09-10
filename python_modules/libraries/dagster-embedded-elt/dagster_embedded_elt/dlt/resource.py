@@ -14,10 +14,8 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dlt.common.pipeline import LoadInfo
-from dlt.destinations.exceptions import DatabaseUndefinedRelation
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
-from dlt.pipeline.exceptions import SqlClientNotAvailable
 from dlt.pipeline.pipeline import Pipeline
 
 from dagster_embedded_elt.dlt.constants import (
@@ -110,29 +108,10 @@ class DagsterDltResource(ConfigurableResource):
             if job.get("table_name") == resource.table_name
         ]
         rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
-            str(resource.table_name), None
+            str(resource.table_name)
         )
         if rows_loaded:
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
-        try:
-            with dlt_pipeline.sql_client() as client:
-                with client.execute_query(
-                    f"""
-                        SELECT
-                        count(*) as row_count
-                        FROM
-                        {resource.table_name}
-                    """,
-                ) as cursor:
-                    row_count_result = cursor.fetchone()
-        # Filesystem does not have a SQL client and table might not be found
-        except (SqlClientNotAvailable, DatabaseUndefinedRelation):
-            # TODO: Add logging
-            row_count_result = None
-        # Need to use 'partition_row_count' for partitioned assets
-        row_count = None
-        if row_count_result and not context.has_partition_key:
-            row_count = row_count_result[0]
 
         table_columns = [
             TableColumn(name=column.get("name"), type=column.get("data_type"))
@@ -143,9 +122,7 @@ class DagsterDltResource(ConfigurableResource):
         ]
         base_metadata = {
             **base_metadata,
-            **TableMetadataSet(
-                column_schema=TableSchema(columns=table_columns), row_count=row_count
-            ),
+            **TableMetadataSet(column_schema=TableSchema(columns=table_columns)),
         }
 
         return base_metadata
