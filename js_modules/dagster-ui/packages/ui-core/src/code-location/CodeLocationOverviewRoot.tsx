@@ -9,13 +9,13 @@ import {
   Table,
 } from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
+import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
 import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
 import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
-import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';

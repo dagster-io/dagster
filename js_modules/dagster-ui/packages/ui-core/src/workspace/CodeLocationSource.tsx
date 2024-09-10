@@ -1,4 +1,4 @@
-import {ExternalAnchorButton, Icon} from '@dagster-io/ui-components';
+import {Colors, ExternalAnchorButton, Icon} from '@dagster-io/ui-components';
 
 interface Metadata {
   key: string;
@@ -9,7 +9,7 @@ export const CodeLocationSource = ({metadata}: {metadata: Metadata[]}) => {
   const urlValue = extractRepoURL(metadata);
 
   if (urlValue.type === 'none') {
-    return <div>{'\u2013'}</div>;
+    return <div style={{color: Colors.textDisabled()}}>{'\u2013'}</div>;
   }
 
   if (urlValue.type === 'non-url') {
