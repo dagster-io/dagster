@@ -14,7 +14,7 @@ import {ExplorerPath, explorerPathFromString, explorerPathToString} from './Pipe
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
-} from './types/PipelineExplorerRoot.types';
+} from './types/PipelineExplorerRoot.oss.types';
 import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
