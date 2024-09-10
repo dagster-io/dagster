@@ -11,7 +11,12 @@ from dagster._core.definitions.asset_spec import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode, EntityKey
+from dagster._core.definitions.base_asset_graph import (
+    AssetCheckNode,
+    BaseAssetGraph,
+    BaseAssetNode,
+    EntityKey,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -161,6 +166,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
+        self._asset_check_nodes_by_key = {
+            k: AssetCheckNode(k, v.get_spec_for_check_key(k).blocking)
+            for k, v in assets_defs_by_check_key.items()
+        }
         self._assets_defs_by_check_key = assets_defs_by_check_key
 
     @staticmethod
