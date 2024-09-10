@@ -18,6 +18,12 @@ enables:
   - ''
 ---
 
+### About this integration
+
+The `dagster-pandera` integration library provides an API for generating Dagster Types from [Pandera DataFrame schemas](https://pandera.readthedocs.io/en/stable/dataframe_schemas.html).
+
+Like all Dagster types, Dagster-Pandera-generated types can be used to annotate op inputs and outputs. This provides runtime type-checking with rich error reporting and allows Dagster UI to display information about a DataFrame's structure.
+
 ### Installation
 
 ```bash
@@ -63,9 +69,3 @@ def apple_stock_prices_dirty():
 ### About Pandera
 
 **Pandera** is a statistical data testing toolkit, and a data validation library for scientists, engineers, and analysts seeking correctness.
-
-### About this integration
-
-The `dagster-pandera` integration library provides an API for generating Dagster Types from [Pandera dataframe schemas](https://pandera.readthedocs.io/en/stable/dataframe_schemas.html).
-
-Like all Dagster types, dagster-pandera-generated types can be used to annotate op inputs and outputs. This provides runtime type-checking with rich error reporting and allows Dagit to display information about a dataframe's structure.

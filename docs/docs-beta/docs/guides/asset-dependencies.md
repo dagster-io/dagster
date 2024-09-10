@@ -92,7 +92,7 @@ Consider this example:
 
 <CodeExample filePath="guides/data-assets/passing-data-assets/passing-data-avoid.py" language="python" title="Avoid Passing Data Between Assets" />
 
-This example downloads a zip file from Google Drive, unzips it, and loads the data into a pandas DataFrame. It relies on each asset running on the same file system to perform these operations.
+This example downloads a zip file from Google Drive, unzips it, and loads the data into a Pandas DataFrame. It relies on each asset running on the same file system to perform these operations.
 
 The assets are modeled as tasks, rather than as data assets. For more information on the difference between tasks and data assets, check out the [Thinking in Assets](/concepts/assets/thinking-in-assets) guide.
 
