@@ -94,7 +94,10 @@ jobs:
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: |
+          github.event_name == 'pull_request' || 
+          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
+
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
