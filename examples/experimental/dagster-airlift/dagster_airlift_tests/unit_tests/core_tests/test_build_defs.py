@@ -11,7 +11,7 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs
 from dagster_airlift.test import make_instance
 
 from dagster_airlift_tests.unit_tests.conftest import (
@@ -268,3 +268,26 @@ def test_observed_assets() -> None:
             "airflow_instance/dag/dag": ["e", "f"],
         },
     )
+
+
+def test_dag_spec_override() -> None:
+    """Test that overriding a dag spec allows you to ."""
+    dag_spec = AssetSpec(key="dag_spec", metadata={"other": "metadata"}, deps=["b"])
+    defs = build_definitions_airflow_asset_graph(
+        assets_per_task={
+            "dag": {"task": [("a", [])]},
+        },
+        additional_defs=dag_defs("dag", spec=dag_spec),
+    )
+    assert defs.assets
+    assert len(list(defs.assets)) == 1
+    repo_def = defs.get_repository_def()
+    assert len(repo_def.assets_defs_by_key) == 2
+    dag_spec_asset = repo_def.assets_defs_by_key[AssetKey("dag_spec")]
+    assert len(list(dag_spec_asset.specs)) == 1
+    spec = next(iter(dag_spec_asset.specs))
+    assert spec.metadata["other"] == "metadata"
+    assert spec.metadata["airlift/dag_id"] == "dag"
+    assert "airlift/task_id" not in spec.metadata
+    assert len(list(spec.deps)) == 2
+    assert {dep.asset_key for dep in spec.deps} == {AssetKey("b"), AssetKey("a")}

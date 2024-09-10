@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
 from dagster import (
     AssetsDefinition,
@@ -46,6 +46,10 @@ def spec_with_metadata(spec: AssetSpec, metadata: Mapping[str, str]) -> "AssetSp
     return spec._replace(metadata={**spec.metadata, **metadata})
 
 
+def spec_with_tags(spec: AssetSpec, tags: Mapping[str, str]) -> "AssetSpec":
+    return spec._replace(tags={**spec.tags, **tags})
+
+
 def assets_def_with_af_metadata(
     assets_def: Union[AssetsDefinition, AssetSpec], metadata: Mapping[str, str]
 ) -> Union[AssetsDefinition, AssetSpec]:
@@ -56,7 +60,7 @@ def assets_def_with_af_metadata(
     )
 
 
-def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
+def dag_defs(dag_id: str, *defs: TaskDefs, spec: Optional[AssetSpec] = None) -> Definitions:
     """Construct a Dagster :py:class:`Definitions` object with definitions
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
 
@@ -74,6 +78,7 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
             task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
         )
     """
+    dag_spec = spec_with_metadata(spec, {DAG_ID_METADATA_KEY: dag_id}) if spec else None
     defs_to_merge = []
     for task_def in defs:
         defs_to_merge.append(
@@ -82,7 +87,7 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
                 metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_def.task_id},
             )
         )
-    return Definitions.merge(*defs_to_merge)
+    return Definitions.merge(*defs_to_merge, Definitions(assets=[dag_spec] if dag_spec else None))
 
 
 def task_defs(task_id, defs: Definitions) -> TaskDefs:

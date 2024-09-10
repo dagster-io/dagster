@@ -58,3 +58,15 @@ def test_dag_def_defs() -> None:
     )
     assert asset_spec(defs, "asset_one").metadata[DAG_ID_METADATA_KEY] == "dag_one"
     assert asset_spec(defs, "asset_one").metadata[TASK_ID_METADATA_KEY] == "task_one"
+
+
+def test_dag_def_spec_override() -> None:
+    dag_spec = AssetSpec(key="dag_spec", metadata={"other": "metadata"})
+    defs = dag_defs(
+        "dag_one",
+        spec=dag_spec,
+    )
+    assert defs.assets
+    assert len(list(defs.assets)) == 1
+    assert asset_spec(defs, "dag_spec").metadata["other"] == "metadata"
+    assert asset_spec(defs, "dag_spec").metadata[DAG_ID_METADATA_KEY] == "dag_one"
