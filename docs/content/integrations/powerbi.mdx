@@ -22,30 +22,45 @@ This guide provides instructions for using Dagster with Power BI.
   <summary>Prerequisites</summary>- Familiarity with asset definitions and the
   Dagster asset graph - Familiarity with Dagster resources - Familiarity with
   Power BI concepts, like semantic models, data sources, reports, and dashboards
-  - A Power BI workspace and API token
+  - A Power BI workspace - A service principal configured to access Power BI, or
+  an API access token. For more information, see [Embed Power BI content with
+  service principal and an application
+  secret](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-service-principal)
+  in the Power BI documentation.
 </details>
 
 ### Represent Power BI assets in the asset graph
 
-To load Power BI assets into the Dagster asset graph, you must first construct a `PowerBIWorkspace` resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and API token, which can be passed directly or accessed from the environment using `EnvVar`.
+To load Power BI assets into the Dagster asset graph, you must first construct a `PowerBIWorkspace` resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and credentials. You may configure a service principal or use an API access token, which can be passed directly or accessed from the environment using `EnvVar`.
 
 Dagster can automatically load all semantic models, data sources, reports, and dashboards from your Power BI workspace. Call the `build_defs()` function, which returns a `Definitions` object containing all the asset definitions for these Power BI assets.
 
 ```python file=/integrations/power-bi/representing-power-bi-assets.py
 import uuid
+from http import client
 from typing import cast
 
-from dagster_powerbi import PowerBIWorkspace
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIToken, PowerBIWorkspace
 
 from dagster import Definitions, EnvVar, asset, define_asset_job
 
+# Connect using a service principal
 resource = PowerBIWorkspace(
-    api_token=EnvVar("POWER_BI_API_TOKEN"),
+    credentials=PowerBIServicePrincipal(
+        client_id=EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    ),
     workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
 )
-powerbi_definitions = resource.build_defs()
 
-defs = Definitions.merge(powerbi_definitions)
+# Alternatively, connect directly using an API access token
+resource = PowerBIWorkspace(
+    credentials=PowerBIToken(api_token=EnvVar("POWER_BI_API_TOKEN")),
+    workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
+)
+
+defs = resource.build_defs()
 ```
 
 ### Customize asset definition metadata for Power BI assets
@@ -56,7 +71,11 @@ By default, Dagster will generate asset keys for each Power BI asset based on it
 import uuid
 from typing import cast
 
-from dagster_powerbi import DagsterPowerBITranslator, PowerBIWorkspace
+from dagster_powerbi import (
+    DagsterPowerBITranslator,
+    PowerBIServicePrincipal,
+    PowerBIWorkspace,
+)
 from dagster_powerbi.translator import PowerBIContentData
 
 from dagster import Definitions, EnvVar, asset, define_asset_job
@@ -64,7 +83,11 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 
 resource = PowerBIWorkspace(
-    api_token=EnvVar("POWER_BI_API_TOKEN"),
+    credentials=PowerBIServicePrincipal(
+        client_id=EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    ),
     workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
 )
 
@@ -83,9 +106,7 @@ class MyCustomPowerBITranslator(DagsterPowerBITranslator):
         return super().get_dashboard_asset_key(data).with_prefix("powerbi")
 
 
-powerbi_definitions = resource.build_defs()
-
-defs = Definitions.merge(powerbi_definitions)
+defs = resource.build_defs()
 ```
 
 ### Materialize Power BI semantic models from Dagster
@@ -96,17 +117,54 @@ Dagster's default behavior is to pull in representations of Power BI semantic mo
 import uuid
 from typing import cast
 
-from dagster_powerbi import PowerBIWorkspace
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIWorkspace
 
 from dagster import Definitions, EnvVar, asset, define_asset_job
 
 resource = PowerBIWorkspace(
-    api_token=EnvVar("POWER_BI_API_TOKEN"),
+    credentials=PowerBIServicePrincipal(
+        client_id=EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    ),
     workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
 )
-powerbi_definitions = resource.build_defs(enable_refresh_semantic_models=True)
-
-defs = Definitions.merge(powerbi_definitions)
+defs = resource.build_defs(enable_refresh_semantic_models=True)
 ```
 
 You can then add these semantic models to jobs or as targets of Dagster sensors or schedules to trigger refreshes of the models on a cadence or based on other conditions.
+
+### Load Power BI assets from multiple workspaces
+
+Definitions from multiple Power BI workspaces can be combined by instantiating multiple `PowerBIWorkspace` resources and merging their definitions. This lets you view all your Power BI assets in a single asset graph:
+
+```python file=/integrations/power-bi/multiple-power-bi-workspaces.py
+import uuid
+from http import client
+from typing import cast
+
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIToken, PowerBIWorkspace
+
+from dagster import Definitions, EnvVar, asset, define_asset_job
+
+credentials = PowerBIServicePrincipal(
+    client_id=EnvVar("POWER_BI_CLIENT_ID"),
+    client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+    tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+)
+
+sales_team_workspace = PowerBIWorkspace(
+    credentials=credentials,
+    workspace_id="726c94ff-c408-4f43-8edf-61fbfa1753c7",
+)
+
+marketing_team_workspace = PowerBIWorkspace(
+    credentials=credentials,
+    workspace_id="8b7f815d-4e64-40dd-993c-cfa4fb12edee",
+)
+
+defs = Definitions.merge(
+    sales_team_workspace.build_defs(),
+    marketing_team_workspace.build_defs(),
+)
+```

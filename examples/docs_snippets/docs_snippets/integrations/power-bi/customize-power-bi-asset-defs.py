@@ -1,7 +1,11 @@
 import uuid
 from typing import cast
 
-from dagster_powerbi import DagsterPowerBITranslator, PowerBIWorkspace
+from dagster_powerbi import (
+    DagsterPowerBITranslator,
+    PowerBIServicePrincipal,
+    PowerBIWorkspace,
+)
 from dagster_powerbi.translator import PowerBIContentData
 
 from dagster import Definitions, EnvVar, asset, define_asset_job
@@ -9,7 +13,11 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 
 resource = PowerBIWorkspace(
-    api_token=EnvVar("POWER_BI_API_TOKEN"),
+    credentials=PowerBIServicePrincipal(
+        client_id=EnvVar("POWER_BI_CLIENT_ID"),
+        client_secret=EnvVar("POWER_BI_CLIENT_SECRET"),
+        tenant_id=EnvVar("POWER_BI_TENANT_ID"),
+    ),
     workspace_id=EnvVar("POWER_BI_WORKSPACE_ID"),
 )
 
@@ -28,6 +36,4 @@ class MyCustomPowerBITranslator(DagsterPowerBITranslator):
         return super().get_dashboard_asset_key(data).with_prefix("powerbi")
 
 
-powerbi_definitions = resource.build_defs()
-
-defs = Definitions.merge(powerbi_definitions)
+defs = resource.build_defs()
