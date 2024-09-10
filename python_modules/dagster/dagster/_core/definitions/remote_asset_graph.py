@@ -22,7 +22,12 @@ from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode, EntityKey
+from dagster._core.definitions.base_asset_graph import (
+    AssetCheckNode,
+    BaseAssetGraph,
+    BaseAssetNode,
+    EntityKey,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -229,6 +234,9 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_checks_by_key = asset_checks_by_key
+        self._asset_check_nodes_by_key = {
+            k: AssetCheckNode(k, v.blocking) for k, v in asset_checks_by_key.items()
+        }
         self._asset_check_execution_sets_by_key = asset_check_execution_sets_by_key
 
     @classmethod

@@ -26,7 +26,7 @@ from dagster import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.base_asset_graph import AssetCheckNode, BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
@@ -699,15 +699,15 @@ def test_asset_graph_partial_deserialization(
 
 
 def test_required_assets_and_checks_by_key_check_decorator(
-    asset_graph_from_assets: Callable[..., BaseAssetGraph],
-):
+    asset_graph_from_assets: Callable[..., BaseAssetGraph[BaseAssetNode]],
+) -> None:
     @asset
     def asset0(): ...
 
     @asset_check(asset=asset0)
     def check0(): ...
 
-    @asset_check(asset=asset0)
+    @asset_check(asset=asset0, blocking=True)
     def check1(): ...
 
     asset_graph = asset_graph_from_assets([asset0, check0, check1])
@@ -718,6 +718,16 @@ def test_required_assets_and_checks_by_key_check_decorator(
     assert asset_graph.get_execution_set_asset_and_check_keys(next(iter(check1.check_keys))) == {
         AssetCheckKey(asset0.key, "check1")
     }
+
+    check_node = asset_graph.get(check0.check_key)
+    assert isinstance(check_node, AssetCheckNode)
+    assert check_node.key == check0.check_key
+    assert not check_node.blocking
+    assert check_node.partitions_def is None
+
+    check_node = asset_graph.get(check1.check_key)
+    assert check_node.blocking
+    assert check_node.partitions_def is None
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(
