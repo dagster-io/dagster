@@ -26,7 +26,6 @@ if TYPE_CHECKING:
             "log_level": Field(
                 str,
                 is_required=False,
-                default_value="INFO",
                 description="The logger's threshold.",
             ),
             "name": Field(
@@ -44,9 +43,11 @@ def colored_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     """This logger provides support for sending Dagster logs to stdout in a colored format. It is
     included by default on jobs which do not otherwise specify loggers.
     """
+    log_level = init_context.logger_config.get("log_level", init_context.default_log_level)
+
     return create_console_logger(
         name=init_context.logger_config["name"],
-        level=coerce_valid_log_level(init_context.logger_config["log_level"]),
+        level=coerce_valid_log_level(log_level),
     )
 
 
@@ -56,7 +57,6 @@ def colored_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
             "log_level": Field(
                 str,
                 is_required=False,
-                default_value="INFO",
                 description="The logger's threshold.",
             ),
             "name": Field(
@@ -89,7 +89,8 @@ def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
                 hello_op()
 
     """
-    level = coerce_valid_log_level(init_context.logger_config["log_level"])
+    log_level = init_context.logger_config.get("log_level", init_context.default_log_level)
+    level = coerce_valid_log_level(log_level)
     name = init_context.logger_config["name"]
 
     klass = logging.getLoggerClass()

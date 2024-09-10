@@ -101,6 +101,7 @@ def host_mode_execution_context_event_generator(
                     job_def=None,
                     logger_def=logger_def,
                     run_id=pipeline_run.run_id,
+                    instance=instance,
                 )
             )
         )

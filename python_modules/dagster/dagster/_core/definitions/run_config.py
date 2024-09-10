@@ -107,7 +107,7 @@ class RunConfigSchemaCreationData(NamedTuple):
 def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:
     return Shape(
         {
-            logger_name: def_config_field(logger_definition, is_required=False)
+            logger_name: def_config_field(logger_definition, is_required=None)
             for logger_name, logger_definition in creation_data.logger_defs.items()
         }
     )
