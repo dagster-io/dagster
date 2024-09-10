@@ -6,6 +6,7 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     MaterializeResult,
+    MetadataValue,
     OpExecutionContext,
     TableColumnConstraints,
     _check as check,
@@ -69,12 +70,17 @@ class DagsterDltResource(ConfigurableResource):
         return {k: _recursive_cast(v) for k, v in mapping.items()}
 
     def _extract_table_schema_metadata(self, table_name: str, schema: Schema) -> TableSchema:
+        # Pyright does not detect the default value from 'pop' and 'get'
         return TableSchema(
             columns=[
                 TableColumn(
-                    name=column.get("name") or "",
-                    type=column.get("data_type") or "string",
-                    constraints=TableColumnConstraints(nullable=column.get("nullable") or True),
+                    name=column.pop("name", ""),  # type: ignore
+                    type=column.pop("data_type", "string"),  # type: ignore
+                    constraints=TableColumnConstraints(
+                        nullable=column.pop("nullable", True),  # type: ignore
+                        unique=column.pop("unique", False),  # type: ignore
+                        other=[*column.keys()],  # e.g. "primary_key" or "foreign_key"
+                    ),
                 )
                 for column in schema.get_table_columns(table_name).values()
             ]
@@ -127,17 +133,19 @@ class DagsterDltResource(ConfigurableResource):
             base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
         schema = dlt_pipeline.default_schema
-        table_names = [
-            name for name in schema.data_table_names() if name.startswith(f"{resource.table_name}__")
+        child_table_names = [
+            name
+            for name in schema.data_table_names()
+            if name.startswith(f"{resource.table_name}__")
         ]
-        child_tables_schema = {
+        child_table_schemas = {
             table_name: self._extract_table_schema_metadata(table_name, schema)
-            for table_name in table_names
+            for table_name in child_table_names
         }
         table_schema = self._extract_table_schema_metadata(str(resource.table_name), schema)
 
         base_metadata = {
-            **child_tables_schema,
+            **child_table_schemas,
             **base_metadata,
             **TableMetadataSet(column_schema=table_schema),
         }

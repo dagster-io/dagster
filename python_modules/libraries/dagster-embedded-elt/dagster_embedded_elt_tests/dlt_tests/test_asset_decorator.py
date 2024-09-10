@@ -230,9 +230,7 @@ def test_get_automation_condition(dlt_pipeline: Pipeline):
         assert "0 1 * * *" in str(item)
 
 
-def test_get_automation_condition_converts_auto_materialize_policy(
-    dlt_pipeline: Pipeline,
-):
+def test_get_automation_condition_converts_auto_materialize_policy(dlt_pipeline: Pipeline):
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
