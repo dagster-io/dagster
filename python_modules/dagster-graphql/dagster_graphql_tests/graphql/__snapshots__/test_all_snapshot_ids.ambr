@@ -6318,6 +6318,7 @@
       }
     ],
     "name": "no_multipartitions_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -6356,7 +6357,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[103]
-  '7ef1abf462d45da506f4a41346fc463df457dada'
+  'f53f6915917e179ab89bae44c345e79603f8d42d'
 # ---
 # name: test_all_snapshot_ids[104]
   '''
@@ -8209,6 +8210,7 @@
       }
     ],
     "name": "observation_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -8247,7 +8249,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[107]
-  '56cbc6f2f1527ce32e89fff3a1c260a90797e26a'
+  '77bb631e77718a35cfd31049d03241709f9454ea'
 # ---
 # name: test_all_snapshot_ids[108]
   '''
@@ -9158,6 +9160,7 @@
       }
     ],
     "name": "output_then_hang_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -9198,7 +9201,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[109]
-  '557106a5e60ddca8f667e9daae445616f1f6a120'
+  'c5cbcfa0e6f1c8658773ba21a9a70fd1b7c517eb'
 # ---
 # name: test_all_snapshot_ids[10]
   '''
@@ -10988,6 +10991,7 @@
       }
     ],
     "name": "partition_materialization_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -11026,7 +11030,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[111]
-  'd006ed500ce7bd68754d2c5ef1ad29ca176a0e69'
+  '8b0a6d0b6366a3178821e74b13782124ffa5d0fd'
 # ---
 # name: test_all_snapshot_ids[112]
   '''
@@ -24369,6 +24373,7 @@
       }
     ],
     "name": "static_partitioned_assets_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -24515,7 +24520,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[137]
-  '91aa79ab9d26309c5caa7ea69daa1741fda34362'
+  '95fba788e86b9b4bb2de437436dbf5be782e1f02'
 # ---
 # name: test_all_snapshot_ids[138]
   '''
@@ -26194,6 +26199,9 @@
       }
     ],
     "name": "tagged_job",
+    "run_tags": {
+      "baz": "quux"
+    },
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -26234,7 +26242,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[141]
-  '8e516c94a1e0d32aabc7ea8d8fc27d68afdb45cf'
+  'c3320c44d5fa6c508dfda564e67bc67747b9891c'
 # ---
 # name: test_all_snapshot_ids[142]
   '''
@@ -27260,6 +27268,7 @@
       }
     ],
     "name": "time_partitioned_assets_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -27332,7 +27341,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[143]
-  'cf5f6596eead075696e683b33db56a830ea834d4'
+  '81ecba8b867d1179f0998c86b85a1176aa946456'
 # ---
 # name: test_all_snapshot_ids[144]
   '''
@@ -28358,6 +28367,7 @@
       }
     ],
     "name": "two_assets_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -28430,7 +28440,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[145]
-  'a273aada46419892fdf5bbc48d0878f0e1eecba7'
+  'ce839b23a887f29520c71238335886cbe80337ef'
 # ---
 # name: test_all_snapshot_ids[146]
   '''
@@ -30492,6 +30502,7 @@
       }
     ],
     "name": "typed_assets",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -30606,7 +30617,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[149]
-  '1e553a1a3208ae523ef9d8257bcdf009fab236d2'
+  'dedb9fc5a6627950d8d31dce78af887c18c25160'
 # ---
 # name: test_all_snapshot_ids[14]
   '''
@@ -31625,6 +31636,7 @@
       }
     ],
     "name": "checked_multi_asset_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -31687,7 +31699,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[15]
-  '91e422f2d9b8074941369b90949c58d1e11db034'
+  'c77559c3ffec162d2580606b6cc7aeaf8ab8d9e0'
 # ---
 # name: test_all_snapshot_ids[16]
   '''
@@ -40075,6 +40087,7 @@
       }
     ],
     "name": "__anonymous_asset_job_jobless_schedule",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -41993,6 +42006,7 @@
       }
     ],
     "name": "dynamic_in_multipartitions_success_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -42065,7 +42079,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[33]
-  '38cc700dbc638b2251a61d4112bf2543164e4aa1'
+  '155cb67915656dd22c1d24cac01603648f423b0b'
 # ---
 # name: test_all_snapshot_ids[34]
   '''
@@ -44299,6 +44313,7 @@
       }
     ],
     "name": "dynamic_partitioned_assets_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -44371,7 +44386,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[37]
-  '17fceed1b04705a2ee89a1748860a9a466a0f144'
+  '226bfaa0b42ce356abd18ab86046686cc2c2b9b2'
 # ---
 # name: test_all_snapshot_ids[38]
   '''
@@ -45595,7 +45610,7 @@
   'effe11fd9b8a40682bc8041fcfdaf25f68be4612'
 # ---
 # name: test_all_snapshot_ids[3]
-  '897cefd372caacf2f37ac44731548066b67fa2fd'
+  'fc5c2d069b423eb651fd1b8e68f1537d8ecfdd82'
 # ---
 # name: test_all_snapshot_ids[40]
   '''
@@ -46598,6 +46613,7 @@
       }
     ],
     "name": "executable_test_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -46643,7 +46659,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[41]
-  'b9a0f1ad3f31b0d09659cbcac7d55542a1831b2b'
+  '5c546683c0858a71f27c63a4b294926e1de6a1e1'
 # ---
 # name: test_all_snapshot_ids[42]
   '''
@@ -47639,6 +47655,7 @@
       }
     ],
     "name": "fail_partition_materialization_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -47677,7 +47694,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[43]
-  'e9016541365b463cd2c5ba175e1a8f9b861e2333'
+  '39c8061a712382691a1d8203efadcec978be2173'
 # ---
 # name: test_all_snapshot_ids[44]
   '''
@@ -48774,6 +48791,7 @@
       }
     ],
     "name": "failure_assets_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -48920,7 +48938,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[45]
-  '074faf0cae91a885ddfd97b9e0173f685ea24676'
+  'f07b5f3e9fe1aaec2d455ef01bac50f38db70300'
 # ---
 # name: test_all_snapshot_ids[46]
   '''
@@ -50022,6 +50040,7 @@
       }
     ],
     "name": "foo_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -50188,7 +50207,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[47]
-  '5d7abe02cce403ab7e2f1436c0e3060f766395a8'
+  '7ba20030eeecab26afcfd3cd5a68be1d2f48c427'
 # ---
 # name: test_all_snapshot_ids[48]
   '''
@@ -51293,6 +51312,7 @@
       }
     ],
     "name": "fresh_diamond_assets_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -51446,7 +51466,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[49]
-  '3870f53cc527621d6dc489dbc6980dc72912b085'
+  'a670207753e19f723023819135333b4ac71a281b'
 # ---
 # name: test_all_snapshot_ids[4]
   '''
@@ -52442,6 +52462,7 @@
       }
     ],
     "name": "__anonymous_asset_job_jobless_sensor",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -53567,6 +53588,7 @@
       }
     ],
     "name": "hanging_graph_asset_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [
@@ -53792,7 +53814,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[51]
-  '973fd7484dc9a218cd19ab0344a593053fded3dc'
+  '8d5778a9040bf5a8f2eb894cca019573f72cafb7'
 # ---
 # name: test_all_snapshot_ids[52]
   '''
@@ -54770,6 +54792,7 @@
       }
     ],
     "name": "hanging_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -54885,7 +54908,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[53]
-  '065b896532a7dc8172d7865d74f08375cb96ce96'
+  '2a4c830fed93036921f36e4ff15172e452f21460'
 # ---
 # name: test_all_snapshot_ids[54]
   '''
@@ -55796,6 +55819,7 @@
       }
     ],
     "name": "hanging_partition_asset_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -55836,7 +55860,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[55]
-  'd0700b0d774bc626fd21c3e043778dc00e050e9b'
+  '3fcb711d337cb03bedf5ff7e5ec64b30eefc9ec8'
 # ---
 # name: test_all_snapshot_ids[56]
   '''
@@ -57665,7 +57689,7 @@
   'dc190868e8887ba5ac3669da13473252cd0ab098'
 # ---
 # name: test_all_snapshot_ids[5]
-  '058ff6bc3f0d0dfc1471085bf87f59549eb3cc96'
+  'c23e75a6d1d7a9b89528399a9d27bcc9c90a178e'
 # ---
 # name: test_all_snapshot_ids[60]
   '''
@@ -60421,6 +60445,7 @@
       }
     ],
     "name": "integers_asset_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -60459,7 +60484,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[65]
-  '26b8a0f326020f6af764ac2174883f2e7aaad5a7'
+  '10e316cc85a348c2e9f5c5ec1a076bfe7e036ff2'
 # ---
 # name: test_all_snapshot_ids[66]
   '''
@@ -63320,6 +63345,7 @@
       }
     ],
     "name": "asset_check_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -68023,7 +68049,7 @@
   '1c4b82d393f7eacd9a358e3d82925d2afb9afbc0'
 # ---
 # name: test_all_snapshot_ids[7]
-  'feeab464031ab4e4abbe56cf5d3fe7539c6cd688'
+  '8023256507d183317343a2f6c4703a5ac3800eaf'
 # ---
 # name: test_all_snapshot_ids[80]
   '''
@@ -72763,6 +72789,7 @@
       }
     ],
     "name": "multipartitions_fail_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -72801,7 +72828,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[89]
-  'd583f0bb3aa30af2f5f652e9c65cd3c39b21a8cd'
+  '17bea22424bd5aa8995cc8ae08cd2e0c1be7c019'
 # ---
 # name: test_all_snapshot_ids[8]
   '''
@@ -74681,6 +74708,7 @@
       }
     ],
     "name": "multipartitions_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -74753,7 +74781,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[91]
-  'ca7929c6d4c55692a092000474ada02b6c4047c5'
+  '7fc53a5a9f9ab514b23b938f7fa68cd5fd2f464d'
 # ---
 # name: test_all_snapshot_ids[92]
   '''
@@ -75817,6 +75845,7 @@
       }
     ],
     "name": "named_groups_job",
+    "run_tags": {},
     "solid_definitions_snapshot": {
       "__class__": "SolidDefinitionsSnapshot",
       "composite_solid_def_snaps": [],
@@ -75963,7 +75992,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[93]
-  '8c005fb808a1945e5a62fbac517836a242e27901'
+  'f08d1a06b69649912ba8b056d76b8c7809954c31'
 # ---
 # name: test_all_snapshot_ids[94]
   '''

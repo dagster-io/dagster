@@ -18,6 +18,7 @@ from dagster import (
     asset,
     build_schedule_from_partitioned_job,
     define_asset_job,
+    graph,
     job,
     materialize,
     op,
@@ -521,7 +522,44 @@ observable_source_asset_job = define_asset_job(
 
 @schedule(job=observable_source_asset_job, cron_schedule="@daily")
 def source_asset_observation_schedule():
+    # pp("EVAL")
     return RunRequest(asset_selection=[source_asset.key])
+
+
+@op
+def basic_op():
+    return 1
+
+
+@graph
+def the_graph():
+    basic_op()
+
+
+job_with_tags_with_run_tags = the_graph.to_job(
+    name="job_with_tags_with_run_tags", tags={"tag_foo": "bar"}, run_tags={"run_tag_foo": "bar"}
+)
+job_with_tags_no_run_tags = the_graph.to_job(
+    name="job_with_tags_no_run_tags", tags={"tag_foo": "bar"}
+)
+job_no_tags_with_run_tags = the_graph.to_job(
+    name="job_no_tags_with_run_tags", run_tags={"run_tag_foo": "bar"}
+)
+
+
+@schedule(cron_schedule="@daily", job=job_with_tags_with_run_tags)
+def job_with_tags_with_run_tags_schedule():
+    return RunRequest()
+
+
+@schedule(cron_schedule="@daily", job=job_with_tags_no_run_tags)
+def job_with_tags_no_run_tags_schedule():
+    return RunRequest()
+
+
+@schedule(cron_schedule="@daily", job=job_no_tags_with_run_tags)
+def job_no_tags_with_run_tags_schedule():
+    return RunRequest()
 
 
 @repository
@@ -559,6 +597,12 @@ def the_repo():
         source_asset_observation_schedule,
         static_partitioned_asset1,
         static_partitioned_asset1_schedule,
+        job_with_tags_with_run_tags,
+        job_with_tags_with_run_tags_schedule,
+        job_with_tags_no_run_tags,
+        job_with_tags_no_run_tags_schedule,
+        job_no_tags_with_run_tags,
+        job_no_tags_with_run_tags_schedule,
     ]
 
 
@@ -2957,3 +3001,59 @@ class TestSchedulerRun:
             validate_run_started(
                 scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
             )
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_schedule_run_tags(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        external_repo: ExternalRepository,
+        executor: ThreadPoolExecutor,
+    ) -> None:
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+
+        with freeze_time(freeze_datetime):
+            job_with_tags_with_run_tags_schedule = external_repo.get_external_schedule(
+                "job_with_tags_with_run_tags_schedule"
+            )
+            scheduler_instance.start_schedule(job_with_tags_with_run_tags_schedule)
+
+            job_with_tags_no_run_tags_schedule = external_repo.get_external_schedule(
+                "job_with_tags_no_run_tags_schedule"
+            )
+            scheduler_instance.start_schedule(job_with_tags_no_run_tags_schedule)
+
+            job_no_tags_with_run_tags_schedule = external_repo.get_external_schedule(
+                "job_no_tags_with_run_tags_schedule"
+            )
+            scheduler_instance.start_schedule(job_no_tags_with_run_tags_schedule)
+
+        freeze_datetime = freeze_datetime + relativedelta(seconds=2)
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            runs = scheduler_instance.get_runs()
+
+            with_tags_with_run_tags_run = next(
+                run
+                for run in runs
+                if run.tags.get("dagster/schedule_name") == "job_with_tags_with_run_tags_schedule"
+                # run for run in runs if run.tags.get("dagster/schedule_name") == "source_asset_observation_schedule"
+            )
+            assert "tag_foo" not in with_tags_with_run_tags_run.tags
+            assert with_tags_with_run_tags_run.tags["run_tag_foo"] == "bar"
+
+            with_tags_no_run_tags_run = next(
+                run
+                for run in runs
+                if run.tags.get("dagster/schedule_name") == "job_with_tags_no_run_tags_schedule"
+            )
+            assert with_tags_no_run_tags_run.tags["tag_foo"] == "bar"
+            assert "run_tag_foo" not in with_tags_no_run_tags_run.tags
+
+            no_tags_with_run_tags_run = next(
+                run
+                for run in runs
+                if run.tags.get("dagster/schedule_name") == "job_no_tags_with_run_tags_schedule"
+            )
+            assert "tag_foo" not in no_tags_with_run_tags_run.tags
+            assert no_tags_with_run_tags_run.tags["run_tag_foo"] == "bar"

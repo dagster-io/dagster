@@ -865,7 +865,7 @@ def retry_multi_output_job():
     no_output.alias("grandchild_fail")(passthrough.alias("child_fail")(fail))
 
 
-@job(tags={"foo": "bar"})
+@job(tags={"foo": "bar"}, run_tags={"baz": "quux"})
 def tagged_job():
     @op
     def simple_op():

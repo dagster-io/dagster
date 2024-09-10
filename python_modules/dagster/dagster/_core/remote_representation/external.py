@@ -625,6 +625,14 @@ class ExternalJob(RepresentedJob):
         return self._job_index.job_snapshot.tags
 
     @property
+    def run_tags(self) -> Mapping[str, str]:
+        snapshot_tags = self._job_index.job_snapshot.run_tags
+        # Snapshot tags will be None for snapshots originating from old code servers before the
+        # introduction of run tags. In these cases, the job definition tags are treated as run tags
+        # to maintain backcompat.
+        return snapshot_tags if snapshot_tags is not None else self.tags
+
+    @property
     def metadata(self) -> Mapping[str, MetadataValue]:
         return self._job_index.job_snapshot.metadata
 

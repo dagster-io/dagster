@@ -95,6 +95,7 @@ def build_asset_job(
         Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
     ] = None,
     tags: Optional[Mapping[str, str]] = None,
+    run_tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -189,6 +190,7 @@ def build_asset_job(
             resource_defs=all_resource_defs,
             config=config,
             tags=tags,
+            run_tags=run_tags,
             executor_def=executor_def,
             partitions_def=partitions_def,
             asset_layer=asset_layer,
@@ -198,11 +200,11 @@ def build_asset_job(
             hooks=original_job.hook_defs,
             op_retry_policy=original_job.op_retry_policy,
         )
-
     return graph.to_job(
         resource_defs=all_resource_defs,
         config=config,
         tags=tags,
+        run_tags=run_tags,
         metadata=metadata,
         executor_def=executor_def,
         partitions_def=partitions_def,
