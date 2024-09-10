@@ -9,12 +9,8 @@ help:
 
 .PHONY: help Makefile install
 
-# NOTE: `install_uv` is a separate directive, as we install `uv` using an alternative method from
-# Vercel
-install_uv:
-	pip install uv
-
 install:
+	pip install uv
 	uv pip install -r requirements.txt
 	uv pip install -e _ext/dagster-sphinx
 	uv pip install -e _ext/sphinx-mdx-builder

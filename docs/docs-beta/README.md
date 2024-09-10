@@ -75,14 +75,6 @@ yarn vale /path/to/file      ## check individual file
 yarn vale --no-wrap          ## remove wrapping from output
 ```
 
-### Building API docs
-
-The `sphinx-mdx-builder` in `../sphinx` is used to generate MDX files for our API docs.
-
-```sh
-yarn sync-api-docs
-```
-
 ### Diagrams
 
 You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
