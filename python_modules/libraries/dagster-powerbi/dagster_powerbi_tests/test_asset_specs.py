@@ -166,3 +166,22 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         ), "Expected two successful steps"
 
         assert len(workspace_data_api_mocks.calls) == 5
+
+
+def test_two_workspaces(
+    workspace_data_api_mocks: responses.RequestsMock,
+    second_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with instance_for_test():
+        assert len(workspace_data_api_mocks.calls) == 0
+
+        from dagster_powerbi_tests.pending_repo_two_workspaces import (
+            pending_repo_from_cached_asset_metadata,
+        )
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        assert len(workspace_data_api_mocks.calls) == 9
+
+        # 3 PowerBI external assets from first workspace, 1 from second
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
