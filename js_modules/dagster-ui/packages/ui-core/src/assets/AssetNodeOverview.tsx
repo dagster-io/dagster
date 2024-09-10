@@ -361,6 +361,18 @@ export const AssetNodeOverview = ({
           />
         )}
       </AttributeAndValue>
+      <AttributeAndValue label="Kinds">
+        {(assetNode.kinds.length > 1 || !assetNode.computeKind) &&
+          assetNode.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              style={{position: 'relative'}}
+              kind={kind}
+              reduceColor
+              linkToFilteredAssetsTable
+            />
+          ))}
+      </AttributeAndValue>
       <AttributeAndValue label="Storage">
         {(relationIdentifierMetadata || uriMetadata || storageKindTag) && (
           <Box flex={{direction: 'column', gap: 4}} style={{minWidth: 0}}>
