@@ -391,7 +391,7 @@ export const AssetNodeOverview = ({
             {storageKindTag && (
               <AssetKind
                 style={{position: 'relative'}}
-                storageKind={storageKindTag.value}
+                kind={storageKindTag.value}
                 reduceColor
                 linkToFilteredAssetsTable
               />
