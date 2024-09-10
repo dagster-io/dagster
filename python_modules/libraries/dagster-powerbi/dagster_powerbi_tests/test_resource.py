@@ -2,7 +2,7 @@ import uuid
 
 import responses
 from dagster_powerbi import PowerBIWorkspace
-from dagster_powerbi.resource import BASE_API_URL
+from dagster_powerbi.resource import BASE_API_URL, PowerBITokenAuth
 
 
 @responses.activate
@@ -10,7 +10,7 @@ def test_basic_resource_request() -> None:
     fake_token = uuid.uuid4().hex
     fake_workspace_id = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token,
+        auth=PowerBITokenAuth(api_token=fake_token),
         workspace_id=fake_workspace_id,
     )
 

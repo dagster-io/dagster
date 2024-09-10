@@ -10,7 +10,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_powerbi import PowerBIWorkspace
-from dagster_powerbi.resource import BASE_API_URL
+from dagster_powerbi.resource import BASE_API_URL, PowerBITokenAuth
 
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
@@ -18,7 +18,7 @@ from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_id: str) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token,
+        auth=PowerBITokenAuth(api_token=fake_token),
         workspace_id=workspace_id,
     )
 
@@ -32,7 +32,7 @@ def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_
 def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id: str) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token,
+        auth=PowerBITokenAuth(api_token=fake_token),
         workspace_id=workspace_id,
     )
     all_assets = resource.build_defs().get_asset_graph().assets_defs
@@ -72,7 +72,9 @@ def test_refreshable_semantic_model(
 ) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token, workspace_id=workspace_id, refresh_poll_interval=0
+        auth=PowerBITokenAuth(api_token=fake_token),
+        workspace_id=workspace_id,
+        refresh_poll_interval=0,
     )
     all_assets = (
         resource.build_defs(enable_refresh_semantic_models=True).get_asset_graph().assets_defs
