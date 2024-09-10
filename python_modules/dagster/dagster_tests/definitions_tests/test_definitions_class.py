@@ -11,6 +11,7 @@ from dagster import (
     AssetSpec,
     DagsterInvalidDefinitionError,
     Definitions,
+    Field,
     ResourceDefinition,
     ScheduleDefinition,
     SourceAsset,
@@ -55,7 +56,11 @@ from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidSubsetError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
@@ -306,7 +311,7 @@ def test_custom_executor_in_definitions():
 
 
 def test_custom_loggers_in_definitions():
-    @logger
+    @logger(Field({"foo": Field(str, is_required=False, default_value="bar")}))
     def a_logger(_):
         raise Exception("not executed")
 
@@ -314,13 +319,39 @@ def test_custom_loggers_in_definitions():
     def one():
         return 1
 
-    defs = Definitions(assets=[one], loggers={"custom_logger": a_logger})
+    asset_job_with_logger_config = define_asset_job(
+        "custom_logger_config_job",
+        config={"loggers": {"custom_logger": {"config": {"foo": "baz"}}}},
+    )
+
+    @op
+    def my_op():
+        pass
+
+    @job(config={"loggers": {"custom_logger": {"config": {"foo": "baz"}}}})
+    def my_job():
+        my_op()
+
+    # on its own, my_job's config_mapping is invalid because it references a logger
+    # that does not exist
+    with pytest.raises(DagsterInvalidConfigError):
+        my_job.config_mapping  # noqa
+
+    defs = Definitions(
+        jobs=[asset_job_with_logger_config, my_job],
+        assets=[one],
+        loggers={"custom_logger": a_logger},
+    )
+
+    Definitions.validate_loadable(defs)
 
     asset_job = defs.get_implicit_global_asset_job_def()
     loggers = asset_job.loggers
     assert len(loggers) == 1
     assert "custom_logger" in loggers
     assert loggers["custom_logger"] is a_logger
+
+    defs.get_job_def("my_job").config_mapping  # noqa
 
 
 def test_bad_logger_key():

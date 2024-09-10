@@ -195,7 +195,7 @@ class JobDefinition(IHasInternalInit):
         for key in resource_defs.keys():
             if not key.isidentifier():
                 check.failed(f"Resource key '{key}' must be a valid Python identifier.")
-        was_provided_resources = (
+        self._was_provided_resources = (
             bool(resource_defs)
             if _was_explicitly_provided_resources is None
             else _was_explicitly_provided_resources
@@ -204,7 +204,9 @@ class JobDefinition(IHasInternalInit):
             DEFAULT_IO_MANAGER_KEY: default_job_io_manager,
             **resource_defs,
         }
-        self._required_resource_keys = self._get_required_resource_keys(was_provided_resources)
+        self._required_resource_keys = self._get_required_resource_keys(
+            self._was_provided_resources
+        )
 
         self._config_mapping = None
         self._partitioned_config = None
@@ -233,20 +235,6 @@ class JobDefinition(IHasInternalInit):
 
             elif isinstance(config, dict):
                 self._run_config = config
-                # Using config mapping here is a trick to make it so that the preset will be used even
-                # when no config is supplied for the job.
-                self._config_mapping = _config_mapping_with_default_value(
-                    get_run_config_schema_for_job(
-                        graph_def,
-                        self.resource_defs,
-                        self.executor_def,
-                        self.loggers,
-                        asset_layer,
-                        was_explicitly_provided_resources=was_provided_resources,
-                    ),
-                    config,
-                    self.name,
-                )
             elif config is not None:
                 check.failed(
                     "config param must be a ConfigMapping, a PartitionedConfig, or a dictionary,"
@@ -369,12 +357,28 @@ class JobDefinition(IHasInternalInit):
         return self._partitioned_config
 
     @public
-    @property
+    @cached_property
     def config_mapping(self) -> Optional[ConfigMapping]:
         """The config mapping for the job, if it has one.
 
         A config mapping defines a way to map a top-level config schema to run config for the job.
         """
+        if self._run_config:
+            # Using config mapping here is a trick to make it so that the preset will be used even
+            # when no config is supplied for the job.
+            self._config_mapping = _config_mapping_with_default_value(
+                get_run_config_schema_for_job(
+                    self._graph_def,
+                    self.resource_defs,
+                    self.executor_def,
+                    self.loggers,
+                    self._asset_layer,
+                    was_explicitly_provided_resources=self._was_provided_resources,
+                ),
+                self._run_config,
+                self.name,
+            )
+
         return self._config_mapping
 
     @public
