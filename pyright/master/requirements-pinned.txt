@@ -57,9 +57,9 @@ bitmath==1.3.3.1
 bleach==6.1.0
 blinker==1.8.2
 bokeh==3.5.2
-boto3==1.35.17
+boto3==1.35.18
 boto3-stubs-lite==1.35.17
-botocore==1.35.17
+botocore==1.35.18
 botocore-stubs==1.35.17
 buildkite-test-collector==0.1.9
 cachecontrol==0.14.0
@@ -321,7 +321,7 @@ langchain-community==0.2.9
 langchain-core==0.2.39
 langchain-openai==0.1.14
 langchain-text-splitters==0.2.4
-langsmith==0.1.118
+langsmith==0.1.119
 lazy-object-proxy==1.10.0
 leather==0.4.0
 limits==3.13.0
@@ -359,7 +359,8 @@ msgpack==1.1.0
 multidict==6.1.0
 multimethod==1.10
 mypy-boto3-ecs==1.35.2
-mypy-boto3-glue==1.35.3
+mypy-boto3-emr-serverless==1.35.0
+mypy-boto3-glue==1.35.18
 mypy-extensions==1.0.0
 mypy-protobuf==3.6.0
 mysql-connector-python==9.0.0
@@ -393,7 +394,7 @@ objgraph==3.6.1
 onnx==1.16.2
 onnxconverter-common==1.13.0
 onnxruntime==1.19.2
-openai==1.44.1
+openai==1.45.0
 openapi-schema-validator==0.6.2
 openapi-spec-validator==0.7.1
 opentelemetry-api==1.27.0
@@ -431,10 +432,10 @@ pillow==10.4.0
 pip==24.2
 pkginfo==1.11.1
 platformdirs==4.3.2
-plotly==5.24.0
+plotly==5.24.1
 pluggy==1.5.0
 ply==3.11
-polars==1.7.0
+polars==1.7.1
 portalocker==2.10.1
 prison==0.2.1
 progressbar2==4.5.0
@@ -540,7 +541,7 @@ snowflake-sqlalchemy==1.6.1
 sortedcontainers==2.4.0
 soupsieve==2.6
 sphinx==8.0.2
-sphinx-autodoc-typehints==2.4.0
+sphinx-autodoc-typehints==2.4.1
 sphinx-jinja2-compat==0.3.0
 sphinx-prompt==1.9.0
 sphinx-tabs==3.4.5
@@ -554,7 +555,7 @@ sphinxcontrib-serializinghtml==2.0.0
 sqlalchemy==1.4.54
 sqlalchemy-jsonfield==1.0.2
 sqlalchemy-utils==0.41.2
-sqlglot==25.20.1
+sqlglot==25.21.0
 sqlglotrs==0.2.12
 sqlparse==0.5.1
 sshpubkeys==3.3.1
