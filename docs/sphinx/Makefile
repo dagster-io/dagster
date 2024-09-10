@@ -9,10 +9,10 @@ help:
 
 .PHONY: help Makefile install
 
+# NOTE: `install_uv` is a separate directive, as we install `uv` using an alternative method from
+# Vercel
 install_uv:
-	# `curl` was used over `pip install uv` as this runs in Vercel
-	curl -LsSf https://astral.sh/uv/install.sh | sh
-	source ~/.cargo/env
+	pip install uv
 
 install:
 	uv pip install -r requirements.txt
