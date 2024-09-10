@@ -6,6 +6,7 @@ from dagster import (
     AssetMaterialization,
     ConfigurableResource,
     MaterializeResult,
+    MetadataValue,
     OpExecutionContext,
     _check as check,
 )
@@ -67,13 +68,19 @@ class DagsterDltResource(ConfigurableResource):
         return {k: _recursive_cast(v) for k, v in mapping.items()}
 
     def extract_resource_metadata(
-        self, resource: DltResource, load_info: LoadInfo
+        self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
+        resource: DltResource,
+        load_info: LoadInfo,
+        dlt_pipeline: Pipeline,
     ) -> Mapping[str, Any]:
         """Helper method to extract dlt resource metadata from load info dict.
 
         Args:
+            context (Union[OpExecutionContext, AssetExecutionContext]): Asset or op execution context
             resource (DltResource): The dlt resource being materialized
             load_info (LoadInfo): Run metadata from dlt `pipeline.run(...)`
+            dlt_pipeline (Pipeline): The dlt pipeline used by `resource`
 
         Returns:
             Mapping[str, Any]: Asset-specific metadata dictionary
@@ -100,6 +107,11 @@ class DagsterDltResource(ConfigurableResource):
             for job in load_package.get("jobs", [])
             if job.get("table_name") == resource.table_name
         ]
+        rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
+            str(resource.table_name)
+        )
+        if rows_loaded:
+            base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
         table_columns = [
             TableColumn(name=column.get("name"), type=column.get("data_type"))
@@ -196,7 +208,9 @@ class DagsterDltResource(ConfigurableResource):
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
-            metadata = self.extract_resource_metadata(dlt_source_resource, load_info)
+            metadata = self.extract_resource_metadata(
+                context, dlt_source_resource, load_info, dlt_pipeline
+            )
 
             if has_asset_def:
                 yield MaterializeResult(asset_key=asset_key, metadata=metadata)
