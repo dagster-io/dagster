@@ -1,4 +1,4 @@
-product_id,name,category,price
+product_id,NAME,category,PRICE
 101,Keyboard,Electronics,25.99
 102,Mouse,Electronics,12.50
 103,Notebook,Office Supplies,8.75

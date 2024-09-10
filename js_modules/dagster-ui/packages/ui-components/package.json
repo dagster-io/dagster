@@ -1,6 +1,6 @@
 {
   "name": "@dagster-io/ui-components",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Dagster UI Component Library",
   "license": "Apache-2.0",
   "main": "lib/index.js",

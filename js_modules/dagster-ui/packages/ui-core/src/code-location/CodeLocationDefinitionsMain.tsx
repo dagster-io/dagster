@@ -40,7 +40,7 @@ export const CodeLocationDefinitionsMain = ({repoAddress, repository}: Props) =>
         <Route path="/locations/:repoPath/graphs">
           <CodeLocationGraphsList repoAddress={repoAddress} />
         </Route>
-        <Route path="/locations/:repoPath/ops">
+        <Route path="/locations/:repoPath/ops/:name?">
           <CodeLocationOpsView repoAddress={repoAddress} />
         </Route>
       </Switch>

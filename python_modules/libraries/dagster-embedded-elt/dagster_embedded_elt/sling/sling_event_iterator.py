@@ -109,10 +109,10 @@ def fetch_column_metadata(
                 upstream_asset_key = next(iter(upstream_assets))
                 column_lineage = TableColumnLineage(
                     deps_by_column={
-                        column_name: [
+                        column_name.lower(): [
                             TableColumnDep(
                                 asset_key=upstream_asset_key,
-                                column_name=column_name,
+                                column_name=column_name.lower(),
                             )
                         ]
                         for column_name in column_type_map.keys()
@@ -124,7 +124,7 @@ def fetch_column_metadata(
                 TableMetadataSet(
                     column_schema=TableSchema(
                         columns=[
-                            TableColumn(name=column_name, type=column_type)
+                            TableColumn(name=column_name.lower(), type=column_type)
                             for column_name, column_type in column_type_map.items()
                         ]
                     ),
