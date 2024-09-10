@@ -714,7 +714,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore, LoadingContext):
                 # we are mapping from the partitions of the parent asset to the partitions of
                 # the child asset
                 partition_mapping = self.asset_graph.get_partition_mapping(
-                    asset_key=child_asset_key, parent_asset_key=parent_asset_key
+                    key=child_asset_key, parent_asset_key=parent_asset_key
                 )
                 try:
                     child_partitions_subset = (

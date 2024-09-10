@@ -1,5 +1,6 @@
 from dagster import AssetDep, Definitions, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
 from dagster._core.instance import DagsterInstance
@@ -38,8 +39,9 @@ def test_subset_traversal_static_partitions() -> None:
     @asset(
         deps=[AssetDep(up_numbers, partition_mapping=mapping)],
         partitions_def=letter_static_partitions_def,
+        check_specs=[AssetCheckSpec("down", asset="down_letters")],
     )
-    def down_letters() -> None: ...
+    def down_letters(): ...
 
     defs = Definitions([up_numbers, down_letters])
     instance = DagsterInstance.ephemeral()
@@ -77,6 +79,25 @@ def test_subset_traversal_static_partitions() -> None:
         "2",
         "3",
     }
+
+    full_subset = asset_graph_view_t0.get_full_subset(key=down_letters.key)
+    empty_subset = asset_graph_view_t0.get_empty_subset(key=down_letters.key)
+    full_check_subset = asset_graph_view_t0.get_full_subset(key=down_letters.check_key)
+    empty_check_subset = asset_graph_view_t0.get_empty_subset(key=down_letters.check_key)
+    assert full_subset.compute_child_subset(down_letters.check_key) == full_check_subset
+    assert empty_subset.compute_child_subset(down_letters.check_key) == empty_check_subset
+    assert (
+        full_check_subset.compute_parent_subset(
+            down_letters.key
+        ).expensively_compute_asset_partitions()
+        == full_subset.expensively_compute_asset_partitions()
+    )
+    assert (
+        empty_check_subset.compute_parent_subset(
+            down_letters.key
+        ).expensively_compute_asset_partitions()
+        == empty_subset.expensively_compute_asset_partitions()
+    )
 
     # subset of up to subset of down
     assert up_subset.compute_intersection_with_partition_keys({"2"}).compute_child_subset(

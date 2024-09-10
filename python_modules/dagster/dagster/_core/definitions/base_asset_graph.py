@@ -26,7 +26,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -69,7 +69,19 @@ class ParentsPartitionsResult(NamedTuple):
     required_but_nonexistent_parents_partitions: AbstractSet[AssetKeyPartitionKey]
 
 
-class BaseAssetNode(ABC):
+class BaseEntityNode(ABC, Generic[T_EntityKey]):
+    key: T_EntityKey
+
+    @property
+    @abstractmethod
+    def partitions_def(self) -> Optional[PartitionsDefinition]: ...
+
+    @property
+    @abstractmethod
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]: ...
+
+
+class BaseAssetNode(BaseEntityNode[AssetKey]):
     key: AssetKey
     parent_keys: AbstractSet[AssetKey]
     child_keys: AbstractSet[AssetKey]
@@ -120,14 +132,6 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def partitions_def(self) -> Optional[PartitionsDefinition]: ...
-
-    @property
-    @abstractmethod
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]: ...
-
-    @property
-    @abstractmethod
     def freshness_policy(self) -> Optional[FreshnessPolicy]: ...
 
     @property
@@ -168,7 +172,7 @@ class BaseAssetNode(ABC):
         return f"{self.__class__.__name__}<{self.key.to_user_string()}>"
 
 
-class AssetCheckNode:
+class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
     def __init__(self, key: AssetCheckKey, blocking: bool):
         self.key = key
         self.blocking = blocking
@@ -177,6 +181,10 @@ class AssetCheckNode:
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         # all checks are unpartitioned
         return None
+
+    @property
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+        return {}
 
 
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
@@ -300,9 +308,9 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return {a.group_name for a in self.asset_nodes if a.group_name is not None}
 
     def get_partition_mapping(
-        self, asset_key: AssetKey, parent_asset_key: AssetKey
+        self, key: T_EntityKey, parent_asset_key: AssetKey
     ) -> PartitionMapping:
-        node = self.get(asset_key)
+        node = self.get(key)
         return infer_partition_mapping(
             node.partition_mappings.get(parent_asset_key),
             node.partitions_def,
