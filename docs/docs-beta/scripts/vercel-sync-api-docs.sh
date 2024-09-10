@@ -8,7 +8,7 @@
 
 set -e
 
-pushd ../sphinx
+pushd ..
 
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.cargo/env
@@ -27,8 +27,10 @@ source .venv/bin/activate
 # locale.Error: unsupported locale setting
 export LC_ALL=C.UTF-8
 
-make install
-make mdx
+
+uv pip install tox
+tox -e sphinx
+
 make mdx_copy
 
 popd
