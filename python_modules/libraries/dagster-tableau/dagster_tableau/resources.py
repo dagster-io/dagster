@@ -340,13 +340,9 @@ class BaseTableauWorkspace(ConfigurableResource):
         Returns:
             Sequence[AssetSpec]: A list of AssetSpecs representing the Tableau content.
         """
-        response = self.sign_in()
-        self._api_token = response["credentials"]["token"]
-        self._site_id = response["credentials"]["site"]["id"]
+        self.sign_in()
         workspace_data = self.fetch_tableau_workspace_data()
         self.sign_out()
-        self._api_token = None
-        self._site_id = None
         translator = dagster_tableau_translator(context=workspace_data)
 
         all_content = [
