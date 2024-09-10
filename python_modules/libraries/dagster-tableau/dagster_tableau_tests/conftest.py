@@ -57,17 +57,17 @@ SAMPLE_DATA_SOURCE = {
 }
 
 
-@pytest.fixture(name="site_id")
-def site_id_fixture() -> str:
-    return "68245b5e-41fc-4517-aeec-8a96a0d878d4"
+@pytest.fixture(name="site_name")
+def site_name_fixture() -> str:
+    return "info-5a38291c26"
 
 
 @pytest.fixture(
     name="workspace_data",
 )
-def workspace_data_fixture(site_id: str) -> TableauWorkspaceData:
+def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
     return TableauWorkspaceData(
-        site_id=site_id,
+        site_name=site_name,
         workbooks_by_id={
             SAMPLE_WORKBOOK["id"]: TableauContentData(
                 content_type=TableauContentType.WORKBOOK, properties=SAMPLE_WORKBOOK
