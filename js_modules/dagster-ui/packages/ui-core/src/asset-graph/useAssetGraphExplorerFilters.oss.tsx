@@ -1,19 +1,19 @@
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
 import {AssetGraphFilterBar} from './AssetGraphFilterBar';
-import {GraphNode} from './Utils';
+import {AssetGraphViewType, GraphNode} from './Utils';
 
 type Props = {
   nodes: GraphNode[];
   clearExplorerPath: () => void;
   explorerPath: string;
-  isGlobalGraph: boolean;
+  viewType: AssetGraphViewType;
   loading: boolean;
 };
 
 export function useAssetGraphExplorerFilters({
   nodes,
-  isGlobalGraph,
+  viewType,
   explorerPath,
   loading,
   clearExplorerPath,
@@ -21,7 +21,7 @@ export function useAssetGraphExplorerFilters({
   const {filterButton, kindFilter, groupsFilter, activeFiltersJsx, filterFn} =
     useAssetCatalogFiltering({
       assets: nodes,
-      includeRepos: isGlobalGraph,
+      includeRepos: viewType === AssetGraphViewType.GLOBAL,
       loading,
     });
 

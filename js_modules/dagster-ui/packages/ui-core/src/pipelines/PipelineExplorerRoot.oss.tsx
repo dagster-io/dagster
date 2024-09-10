@@ -14,11 +14,12 @@ import {ExplorerPath, explorerPathFromString, explorerPathToString} from './Pipe
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
-} from './types/PipelineExplorerRoot.types';
+} from './types/PipelineExplorerRoot.oss.types';
 import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -120,6 +121,7 @@ export const PipelineExplorerContainer = ({
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
               onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
+              viewType={AssetGraphViewType.JOB}
             />
           );
         }

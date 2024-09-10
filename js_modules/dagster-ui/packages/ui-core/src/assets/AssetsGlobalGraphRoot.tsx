@@ -10,6 +10,7 @@ import {
 } from './globalAssetGraphPathToString';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -19,7 +20,7 @@ interface AssetGroupRootParams {
   0: string;
 }
 
-export const AssetsGroupsGlobalGraphRoot = () => {
+export const AssetsGlobalGraphRoot = () => {
   useTrackPageView();
   const {0: path} = useParams<AssetGroupRootParams>();
   const history = useHistory();
@@ -65,7 +66,7 @@ export const AssetsGroupsGlobalGraphRoot = () => {
         explorerPath={globalAssetGraphPathFromString(path)}
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
-        isGlobalGraph
+        viewType={AssetGraphViewType.GLOBAL}
       />
     </Page>
   );
@@ -73,4 +74,4 @@ export const AssetsGroupsGlobalGraphRoot = () => {
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
-export default AssetsGroupsGlobalGraphRoot;
+export default AssetsGlobalGraphRoot;

@@ -11,7 +11,7 @@ import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
-import {GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
+import {AssetGraphViewType, GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
@@ -26,7 +26,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
-    isGlobalGraph,
+    viewType,
     onFilterToGroup,
   }: {
     assetGraphData: GraphData;
@@ -39,7 +39,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     expandedGroups: string[];
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
-    isGlobalGraph: boolean;
+    viewType: AssetGraphViewType;
     onFilterToGroup: (group: AssetGroup) => void;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
@@ -86,7 +86,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
       // include pathname so that theres separate storage entries for graphs at different URLs
       // eg. independent group graph should persist open nodes separately
-      localStorageKey: `asset-graph-open-sidebar-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
+      localStorageKey: `asset-graph-open-sidebar-nodes-${viewType}-${explorerPath.pipelineName}`,
       encode: (val) => {
         return {'open-nodes': Array.from(val)};
       },
@@ -210,11 +210,11 @@ export const AssetGraphExplorerSidebar = React.memo(
     const {nav} = React.useContext(LayoutContext);
 
     React.useEffect(() => {
-      if (isGlobalGraph) {
+      if (viewType === 'global') {
         nav.close();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isGlobalGraph]);
+    }, [viewType]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 

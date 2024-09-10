@@ -29,6 +29,7 @@ import {AssetNodeLink} from './ForeignNode';
 import {ToggleDirectionButton, ToggleGroupsButton, useLayoutDirectionState} from './GraphSettings';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
+  AssetGraphViewType,
   GraphData,
   GraphNode,
   graphHasCycles,
@@ -82,7 +83,7 @@ type Props = {
     e: Pick<React.MouseEvent<any>, 'metaKey'>,
     node: AssetLocation,
   ) => void;
-  isGlobalGraph?: boolean;
+  viewType: AssetGraphViewType;
 };
 
 export const MINIMAL_SCALE = 0.6;
@@ -107,7 +108,7 @@ export const AssetGraphExplorer = (props: Props) => {
       [fullAssetGraphData],
     ),
     loading: fetchResult.loading,
-    isGlobalGraph: !!props.isGlobalGraph,
+    viewType: props.viewType,
     explorerPath: explorerPath.opsQuery,
     clearExplorerPath: React.useCallback(() => {
       onChangeExplorerPath(
@@ -169,7 +170,7 @@ type WithDataProps = Props & {
 
   filterButton: React.ReactNode;
   filterBar: React.ReactNode;
-  isGlobalGraph?: boolean;
+  viewType: AssetGraphViewType;
 
   kindFilter: StaticSetFilter<string>;
   groupsFilter: StaticSetFilter<AssetGroupSelector>;
@@ -188,7 +189,7 @@ const AssetGraphExplorerWithData = ({
   allAssetKeys,
   filterButton,
   filterBar,
-  isGlobalGraph = false,
+  viewType,
   kindFilter,
   groupsFilter,
 }: WithDataProps) => {
@@ -209,7 +210,7 @@ const AssetGraphExplorerWithData = ({
 
   const [direction, setDirection] = useLayoutDirectionState();
   const [expandedGroups, setExpandedGroups] = useQueryAndLocalStoragePersistedState<string[]>({
-    localStorageKey: `asset-graph-open-graph-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
+    localStorageKey: `asset-graph-open-graph-nodes-${viewType}-${explorerPath.pipelineName}`,
     encode: (arr) => ({expanded: arr.length ? arr.join(',') : undefined}),
     decode: (qs) => (qs.expanded || '').split(',').filter(Boolean),
     isEmptyState: (val) => val.length === 0,
@@ -433,7 +434,7 @@ const AssetGraphExplorerWithData = ({
     ],
   );
 
-  const [showSidebar, setShowSidebar] = React.useState(isGlobalGraph);
+  const [showSidebar, setShowSidebar] = React.useState(viewType === 'global');
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     groupsFilter?.setState(
@@ -770,7 +771,7 @@ const AssetGraphExplorerWithData = ({
         first={
           showSidebar ? (
             <AssetGraphExplorerSidebar
-              isGlobalGraph={isGlobalGraph}
+              viewType={viewType}
               allAssetKeys={allAssetKeys}
               assetGraphData={assetGraphData}
               fullAssetGraphData={fullAssetGraphData}

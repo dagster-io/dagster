@@ -17,6 +17,12 @@ import {
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {RunStatus} from '../graphql/types';
 
+export enum AssetGraphViewType {
+  GLOBAL = 'global',
+  JOB = 'job',
+  GROUP = 'group',
+}
+
 /**
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
