@@ -1,7 +1,7 @@
 import {useCallback, useMemo} from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 
-import {PipelineExplorerContainer} from './PipelineExplorerRoot';
+import {PipelineExplorerContainer} from './PipelineExplorerRoot.oss';
 import {
   ExplorerPath,
   explorerPathFromString,

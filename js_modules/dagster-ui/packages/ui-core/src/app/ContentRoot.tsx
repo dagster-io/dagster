@@ -13,7 +13,7 @@ const MergedAutomationRoot = lazy(() => import('../automation/MergedAutomationRo
 const FallthroughRoot = lazy(() =>
   import('shared/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
 );
-const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
+const AssetsGlobalGraphRoot = lazy(() => import('../assets/AssetsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
 const InstanceConcurrencyPage = lazy(() => import('../instance/InstanceConcurrency'));
@@ -39,7 +39,7 @@ export const ContentRoot = memo(() => {
       <ErrorBoundary region="page" resetErrorOnChange={[pathname]}>
         <Switch>
           <Route path="/asset-groups(/?.*)">
-            <AssetsGroupsGlobalGraphRoot />
+            <AssetsGlobalGraphRoot />
           </Route>
           <Route path="/assets(/?.*)">
             <AssetFeatureProvider>
