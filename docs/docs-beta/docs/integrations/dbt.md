@@ -22,7 +22,7 @@ enables:
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
 
-Dagster's [Software-defined Asset](https://docs.dagster.io/concepts/assets/software-defined-assets) approach allows Dagster to understand dbt at the level of individual dbt models. This means that you can:
+Dagster assets understand dbt at the level of individual dbt models. This means that you can:
 
 - Use Dagster's UI or APIs to run subsets of your dbt models, seeds, and snapshots.
 - Track failures, logs, and run history for individual dbt models, seeds, and snapshots.
