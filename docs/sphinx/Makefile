@@ -12,7 +12,7 @@ help:
 install_uv:
 	# `curl` was used over `pip install uv` as this runs in Vercel
 	curl -LsSf https://astral.sh/uv/install.sh | sh
-	source $HOME/.cargo/env
+	source ~/.cargo/env
 
 install:
 	uv pip install -r requirements.txt
