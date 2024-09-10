@@ -141,7 +141,14 @@ def _create_asset_run(
                 run_request_execution_data_cache=run_request_execution_data_cache,
             )
 
-        except (DagsterInvalidSubsetError, DagsterUserCodeProcessError):
+        except (DagsterInvalidSubsetError, DagsterUserCodeProcessError) as e:
+            # Only retry on DagsterInvalidSubsetErrors raised within the code server
+            if isinstance(e, DagsterUserCodeProcessError) and not any(
+                error_info.cls_name == "DagsterInvalidSubsetError"
+                for error_info in e.user_code_process_error_infos
+            ):
+                raise
+
             logger.warning(
                 "Error while generating the execution plan, possibly because the code server is "
                 "out of sync with the daemon. The daemon periodically refreshes its representation "
