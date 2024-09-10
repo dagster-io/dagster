@@ -11,6 +11,9 @@ pushd ../sphinx
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.cargo/env
 
+uv venv
+source .venv/bin/activate
+
 make install
 make mdx
 make mdx_copy
