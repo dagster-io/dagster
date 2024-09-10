@@ -1,4 +1,4 @@
-import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
+import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
   docs: [
     {
@@ -29,7 +29,8 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Configure',
-          items: ['guides/configuring-assets', 
+          items: [
+            'guides/configuring-assets',
             'guides/asset-factories',
             'guides/resources',
             'guides/io-managers',
@@ -38,11 +39,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Integrate',
-          items: [
-            'guides/ingesting-data',
-            'guides/transform-dbt',
-            'guides/non-python',
-          ],
+          items: ['guides/ingesting-data', 'guides/transform-dbt', 'guides/non-python'],
         },
       ],
     },
