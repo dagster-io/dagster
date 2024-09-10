@@ -289,7 +289,7 @@ To use <PyObject object="open_pipes_session" />:
 1. Your Databricks job be launched within the scope of the <PyObject object="open_pipes_session" /> context manager; and
 2. Your job is launched on a cluster containing the environment variables available on the yielded `pipes_session`
 
-While your Databricks code is running, any calls to `report_asset_materialization` in the external script are streamed back to Dagster, causing a `MaterializationResult` object to be buffered on the `pipes_session`. You can either:
+While your Databricks code is running, any calls to `report_asset_materialization` in the external script are streamed back to Dagster, causing a `MaterializeResult` object to be buffered on the `pipes_session`. You can either:
 
 - Leave these objects buffered until execution is complete (**Option 1** in below example code), or
 - Stream them to Dagster machinery during execution by calling `yield pipes_session.get_results()` (**Option 2**)
