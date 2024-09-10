@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Optional
+from typing import Mapping, Optional
 
 import requests
 from dagster import ConfigurableResource, InitResourceContext
@@ -45,10 +45,10 @@ class BaseTableauWorkspace(ConfigurableResource):
     def _fetch_json(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[Mapping[str, object]] = None,
         method: str = "GET",
         with_auth_header: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, object]:
         """Fetch JSON data from the Tableau API. Raises an exception if the request fails.
 
         Args:
@@ -68,7 +68,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     def _make_request(
         self,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[Mapping[str, object]] = None,
         method: str = "GET",
         with_auth_header: bool = True,
     ) -> requests.Response:
@@ -78,7 +78,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         }
         if with_auth_header:
             headers["X-tableau-auth"] = self._api_token
-        request_args: Dict[str, Any] = dict(
+        request_args = dict(
             method=method,
             url=f"{self.api_base_url}/{endpoint}",
             headers=headers,
@@ -90,12 +90,12 @@ class BaseTableauWorkspace(ConfigurableResource):
         return response
 
     @cached_method
-    def get_workbooks(self) -> Dict[str, Any]:
+    def get_workbooks(self) -> Mapping[str, object]:
         """Fetches a list of all Tableau workbooks in the workspace."""
         return self._fetch_json(self._with_site_id("workbooks"))
 
     @cached_method
-    def get_workbook(self, workbook_id) -> Dict[str, Any]:
+    def get_workbook(self, workbook_id) -> Mapping[str, object]:
         """Fetches information, including views and tags, for a given workbook."""
         return self._fetch_json(self._with_site_id(f"workbooks/{workbook_id}"))
 
@@ -103,7 +103,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     def get_workbook_data_sources(
         self,
         workbook_id: str,
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, object]:
         """Fetches a list of all data sources for a given workbook."""
         return self._fetch_json(self._with_site_id(f"workbooks/{workbook_id}/connections"))
 
