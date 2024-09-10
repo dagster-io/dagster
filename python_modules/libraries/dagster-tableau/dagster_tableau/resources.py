@@ -27,15 +27,11 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         # Sign in and refresh access token when the resource is initialized
-        response = self.sign_in()
-        self._api_token = response["credentials"]["token"]
-        self._site_id = response["credentials"]["site"]["id"]
+        self.sign_in()
 
     def teardown_after_execution(self, context: InitResourceContext) -> None:
         # Sign out after execution
         self.sign_out()
-        self._api_token = None
-        self._site_id = None
 
     @property
     @abstractmethod
@@ -116,13 +112,18 @@ class BaseTableauWorkspace(ConfigurableResource):
                 "site": {"contentUrl": self.site_name},
             }
         }
-        return self._fetch_json(
+        response = self._fetch_json(
             endpoint="auth/signin", data=data, method="POST", with_auth_header=False
         )
+        self._api_token = response["credentials"]["token"]
+        self._site_id = response["credentials"]["site"]["id"]
+        return response
 
     def sign_out(self) -> None:
         """Sign out from the site in Tableau."""
         self._make_request(endpoint="auth/signout", method="POST")
+        self._api_token = None
+        self._site_id = None
 
     def _with_site_id(self, endpoint: str) -> str:
         return f"sites/{self._site_id}/{endpoint}"
