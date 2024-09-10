@@ -320,6 +320,22 @@ def many_requests_schedule(context):
     ]
 
 
+@schedule(
+    cron_schedule="@daily",
+    job_name="the_job",
+    tags={"foo": "bar"},
+)
+def tags_and_eval_fn_schedule(context):
+    return RunRequest()
+
+
+tags_and_no_eval_fn_schedule = ScheduleDefinition(
+    cron_schedule="@daily",
+    job_name="the_job",
+    tags={"foo": "bar"},
+)
+
+
 def define_multi_run_schedule():
     def gen_runs(context):
         if not context.scheduled_execution_time:

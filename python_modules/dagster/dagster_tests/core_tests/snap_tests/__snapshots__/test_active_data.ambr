@@ -2289,7 +2289,8 @@
         "name": "foo_schedule",
         "partition_set_name": null,
         "pipeline_name": "foo_job",
-        "solid_selection": null
+        "solid_selection": null,
+        "tags": {}
       }
     ],
     "external_sensor_datas": [],

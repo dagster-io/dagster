@@ -1055,8 +1055,9 @@ def define_schedules():
         cron_schedule="@daily",
         job_name="no_config_job",
         execution_timezone="US/Central",
+        tags={"foo": "bar"},
     )
-    def timezone_schedule(_context):
+    def timezone_schedule_with_tags(_context):
         return {}
 
     tagged_job_schedule = ScheduleDefinition(
@@ -1115,7 +1116,7 @@ def define_schedules():
         tagged_job_schedule,
         tagged_job_override_schedule,
         tags_error_schedule,
-        timezone_schedule,
+        timezone_schedule_with_tags,
         invalid_config_schedule,
         running_in_code_schedule,
         composite_cron_schedule,
