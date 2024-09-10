@@ -106,12 +106,66 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
                 TableColumn(
                     name="id",
                     type="bigint",
-                    constraints=TableColumnConstraints(nullable=False),
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["primary_key"]
+                    ),
                 ),
-                TableColumn(name="name", type="text"),
-                TableColumn(name="last_modified_dt", type="text"),
-                TableColumn(name="_dlt_load_id", type="text"),
-                TableColumn(name="_dlt_id", type="text"),
+                TableColumn(
+                    name="name",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="last_modified_dt",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_load_id",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=False, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_id",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=False, unique=True),
+                ),
+            ]
+        ),
+    )
+    assert "repos__contributors" in repos_materialization.metadata
+    assert repos_materialization.metadata["repos__contributors"] == TableSchemaMetadataValue(
+        schema=TableSchema(
+            columns=[
+                TableColumn(
+                    name="value",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=True, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_id",
+                    type="text",
+                    constraints=TableColumnConstraints(nullable=False, unique=True),
+                ),
+                TableColumn(
+                    name="_dlt_parent_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["foreign_key"]
+                    ),
+                ),
+                TableColumn(
+                    name="_dlt_list_idx",
+                    type="bigint",
+                    constraints=TableColumnConstraints(nullable=False, unique=False),
+                ),
+                TableColumn(
+                    name="_dlt_root_id",
+                    type="text",
+                    constraints=TableColumnConstraints(
+                        nullable=False, unique=False, other=["root_key"]
+                    ),
+                ),
             ]
         ),
     )
@@ -176,7 +230,9 @@ def test_get_automation_condition(dlt_pipeline: Pipeline):
         assert "0 1 * * *" in str(item)
 
 
-def test_get_automation_condition_converts_auto_materialize_policy(dlt_pipeline: Pipeline):
+def test_get_automation_condition_converts_auto_materialize_policy(
+    dlt_pipeline: Pipeline,
+):
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_auto_materialize_policy(
             self, resource: DltResource
