@@ -19,5 +19,6 @@ setup(
     install_requires=[
         "sphinx",
         "sphinx_toolbox",
+        "pydantic",
     ],
 )
