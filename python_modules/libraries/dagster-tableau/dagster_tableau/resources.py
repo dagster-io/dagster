@@ -107,7 +107,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         """Fetches a list of all data sources for a given workbook."""
         return self._fetch_json(self._with_site_id(f"workbooks/{workbook_id}/connections"))
 
-    def sign_in(self):
+    def sign_in(self) -> Mapping[str, object]:
         """Sign in to the site in Tableau."""
         data = {
             "credentials": {
@@ -120,11 +120,11 @@ class BaseTableauWorkspace(ConfigurableResource):
             endpoint="auth/signin", data=data, method="POST", with_auth_header=False
         )
 
-    def sign_out(self):
+    def sign_out(self) -> None:
         """Sign out from the site in Tableau."""
-        return self._make_request(endpoint="auth/signout", method="POST")
+        self._make_request(endpoint="auth/signout", method="POST")
 
-    def _with_site_id(self, endpoint: str):
+    def _with_site_id(self, endpoint: str) -> str:
         return f"sites/{self._site_id}/{endpoint}"
 
 
