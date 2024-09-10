@@ -209,7 +209,7 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
 
 @deprecated(
     breaking_version="2.0",
-    additional_warn_text="Please use GCSPickleIOManager instead.",
+    additional_warn_text="Please use ADLS2PickleIOManager instead.",
 )
 class ConfigurablePickledObjectADLS2IOManager(ADLS2PickleIOManager):
     """Renamed to ADLS2PickleIOManager. See ADLS2PickleIOManager for documentation."""
