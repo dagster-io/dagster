@@ -58,12 +58,7 @@ import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {
-  AssetComputeKindTag,
-  AssetStorageKindTag,
-  isCanonicalStorageKindTag,
-  isSystemTag,
-} from '../graph/KindTags';
+import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../graph/KindTags';
 import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
@@ -358,9 +353,9 @@ export const AssetNodeOverview = ({
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
-          <AssetComputeKindTag
+          <AssetKind
             style={{position: 'relative'}}
-            definition={assetNode}
+            kind={assetNode.computeKind}
             reduceColor
             linkToFilteredAssetsTable
           />
@@ -394,7 +389,7 @@ export const AssetNodeOverview = ({
               </Box>
             )}
             {storageKindTag && (
-              <AssetStorageKindTag
+              <AssetKind
                 style={{position: 'relative'}}
                 storageKind={storageKindTag.value}
                 reduceColor
