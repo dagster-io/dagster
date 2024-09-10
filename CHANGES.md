@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.8.7 (core) / 0.24.7 (libraries)
+
+### New
+
+- The `AssetSpec` constructor now raises an error if an invalid group name is provided, instead of an error being raised when constructing the `Definitions` object.
+- `dagster/relation_identifier` metadata is now automatically attached to assets which are stored using a DbIOManager.
+- [ui] Streamlined the code location list view.
+- [ui] The “group by” selection on the Timeline Overview page is now part of the query parameters, meaning it will be retained when linked to directly or when navigating between pages.
+- [dagster-dbt] When instantiating `DbtCliResource`, the `project_dir` argument will now override the `DBT_PROJECT_DIR` environment variable if it exists in the local environment (thanks, [@marijncv](https://github.com/marijncv)!).
+- [dagster-embedded-elt] dlt assets now generate `rows_loaded` metadata (thanks, [@kristianandre](https://github.com/kristianandre)!).
+
+### Bugfixes
+
+- Fixed a bug where setting `asset_selection=[]` on `RunRequest` objects yielded from sensors using `asset_selection` would select all assets instead of none.
+- Fixed bug where the tick status filter for batch-fetched graphql sensors was not being respected.
+- [examples] Fixed missing assets in `assets_dbt_python` example.
+- [dagster-airbyte] Updated the op names generated for Airbyte assets to include the full connection ID, avoiding name collisions.
+- [dagster-dbt] Fixed issue causing dagster-dbt to be unable to load dbt projects where the adapter did not have a `database` field set (thanks, [@dargmuesli](https://github.com/dargmuesli)!)
+
+### Documentation
+
+- Fixed typo on the automation concepts page (thanks, [@oedokumaci](https://github.com/oedokumaci)!)
+
+### Dagster Plus
+
+- You may now wipe specific asset partitions directly from the execution context in user code by calling `DagsterInstance.wipe_asset_partitions`.
+- Dagster+ users with a "Viewer" role can now create private catalog views.
+
 ## 1.8.6 (core) / 0.24.6 (libraries)
 
 ### Bugfixes
