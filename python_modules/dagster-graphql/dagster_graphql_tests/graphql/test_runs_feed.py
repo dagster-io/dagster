@@ -73,7 +73,7 @@ def _create_backfill(graphql_context) -> str:
     backfill = PartitionBackfill(
         backfill_id=make_new_backfill_id(),
         serialized_asset_backfill_data="foo",  # the content of the backfill doesn't matter for testing fetching mega runs
-        status=BulkActionStatus.COMPLETED,
+        status=BulkActionStatus.COMPLETED_SUCCESS,
         reexecution_steps=None,
         tags=None,
         backfill_timestamp=get_current_timestamp(),

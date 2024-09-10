@@ -747,14 +747,16 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         backfill = graphql_context.instance.get_backfill(backfill_id)
 
         # Artificially mark the backfill as complete - verify run status is INCOMPLETE until the runs all succeed
-        graphql_context.instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+        graphql_context.instance.update_backfill(
+            backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS)
+        )
 
         result = execute_dagster_graphql(
             graphql_context,
             PARTITION_PROGRESS_QUERY,
             variables={"backfillId": backfill_id},
         )
-        assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
+        assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED_SUCCESS"
 
     def test_asset_job_backfill_run_stats(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
@@ -1004,7 +1006,9 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         backfill = graphql_context.instance.get_backfill(backfill_id)
 
-        graphql_context.instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+        graphql_context.instance.update_backfill(
+            backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS)
+        )
 
         _seed_runs(
             graphql_context,
@@ -1026,7 +1030,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
-        assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
+        assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED_SUCCESS"
         assert result.data["partitionBackfillOrError"]["numPartitions"] == 4
 
         run_stats = _get_run_stats(
@@ -1060,7 +1064,9 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         backfill = graphql_context.instance.get_backfill(backfill_id)
 
-        graphql_context.instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+        graphql_context.instance.update_backfill(
+            backfill.with_status(BulkActionStatus.COMPLETED_FAILED)
+        )
 
         _seed_runs(
             graphql_context,
@@ -1082,7 +1088,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
-        assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
+        assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED_FAILED"
         assert result.data["partitionBackfillOrError"]["numPartitions"] == 4
         assert len(result.data["partitionBackfillOrError"]["cancelableRuns"]) == 1
         run_stats = _get_run_stats(

@@ -2411,6 +2411,8 @@ enum BulkActionStatus {
   FAILED
   CANCELED
   CANCELING
+  COMPLETED_SUCCESS
+  COMPLETED_FAILED
 }
 
 type DaemonHealth {

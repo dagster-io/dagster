@@ -1032,9 +1032,15 @@ def execute_asset_backfill_iteration(
             # failure, or cancellation). Since the AssetBackfillData object stores materialization states
             # per asset partition, the daemon continues to update the backfill data until all runs have
             # finished in order to display the final partition statuses in the UI.
-            updated_backfill: PartitionBackfill = updated_backfill.with_status(
-                BulkActionStatus.COMPLETED
-            )
+            if (
+                updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
+                > 0
+            ):
+                updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED_FAILED)
+            else:
+                updated_backfill: PartitionBackfill = updated_backfill.with_status(
+                    BulkActionStatus.COMPLETED_SUCCESS
+                )
             instance.update_backfill(updated_backfill)
 
         new_materialized_partitions = (
