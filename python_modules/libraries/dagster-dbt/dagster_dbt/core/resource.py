@@ -683,8 +683,10 @@ class DbtCliResource(ConfigurableResource):
                 adapter = self._initialize_adapter(cli_vars)
 
             except:
-                # defer exceptions until they can be raised in the runtime context of the invocation
-                pass
+                logger.warning(
+                    "An error was encountered when creating a handle to the dbt adapter in Dagster.",
+                    exc_info=True,
+                )
 
             return DbtCliInvocation.run(
                 args=full_dbt_args,
