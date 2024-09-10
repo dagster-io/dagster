@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    return "1!0+dev"
+    return "0.0.6"
     # Uncomment when ready to publish
     # version: Dict[str, str] = {}
     # with open(Path(__file__).parent / "dagster_powerbi/version.py", encoding="utf8") as fp:

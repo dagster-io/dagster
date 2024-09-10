@@ -134,7 +134,7 @@ class DagsterPowerBITranslator:
             for report_id in tile_report_ids
         ]
         url = data.properties.get("webUrl")
-        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
+        metadata = {"view_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_dashboard_asset_key(data),
@@ -150,7 +150,7 @@ class DagsterPowerBITranslator:
         dataset_data = self.workspace_data.semantic_models_by_id.get(dataset_id)
         dataset_key = self.get_semantic_model_asset_key(dataset_data) if dataset_data else None
         url = data.properties.get("webUrl")
-        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
+        metadata = {"view_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_report_asset_key(data),
@@ -168,7 +168,7 @@ class DagsterPowerBITranslator:
             for source_id in source_ids
         ]
         url = data.properties.get("webUrl")
-        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
+        metadata = {"view_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
