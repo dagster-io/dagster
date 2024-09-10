@@ -27,3 +27,6 @@ mdx-format:  ## Format mdx files
 	cd next; yarn mdx-format
 
 mdx-full-format: docs_ruff mdx-format
+
+mdx_copy:
+	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs-beta/docs/api/
