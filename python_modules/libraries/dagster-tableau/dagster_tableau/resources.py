@@ -319,7 +319,7 @@ class BaseTableauWorkspace(ConfigurableResource):
                 )
 
         return TableauWorkspaceData(
-            site_id=self._site_id,
+            site_name=self.site_name,
             workbooks_by_id=workbooks_by_id,
             views_by_id=views_by_id,
             data_sources_by_id=data_sources_by_id,
