@@ -159,7 +159,7 @@ Dagster+ can automatically annotate assets with code references to source contro
 </TabItem>
 <TabItem value="dagster-open-source" label="OSS">
 
-If you aren't using Dagster+, you can annotate your assets with code references to source control, but it requires a little more manual mapping:
+If you aren't using Dagster+, you can annotate your assets with code references to source control, but it requires manual mapping:
 
 <CodeExample filePath="guides/data-modeling/metadata/oss-references.py" language="python" />
 
