@@ -10,8 +10,7 @@ raw_transactions = dg.AssetSpec("raw_transactions")
 # This asset is materialized by Dagster and depends on the
 # external asset.
 @dg.asset(deps=[raw_transactions])
-def cleaned_transactions():
-    ...
+def cleaned_transactions(): ...
 
 
 # Define the Definitions object
