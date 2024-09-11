@@ -1,4 +1,4 @@
-from typing import AbstractSet, Optional, Sequence
+from typing import AbstractSet, Mapping, Optional, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -73,10 +73,19 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             ignored_conditions.add(context.condition)
         return ignored_conditions
 
+    def _get_validated_downstream_conditions(
+        self, downstream_conditions: Mapping[AutomationCondition, AbstractSet[AssetKey]]
+    ) -> Mapping[AutomationCondition, AbstractSet[AssetKey]]:
+        return {
+            condition: keys
+            for condition, keys in downstream_conditions.items()
+            if not condition.has_rule_condition
+        }
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         ignored_conditions = self._get_ignored_conditions(context)
-        downstream_conditions = context.asset_graph.get_downstream_automation_conditions(
-            asset_key=context.asset_key
+        downstream_conditions = self._get_validated_downstream_conditions(
+            context.asset_graph.get_downstream_automation_conditions(asset_key=context.asset_key)
         )
 
         true_slice = context.get_empty_slice()
