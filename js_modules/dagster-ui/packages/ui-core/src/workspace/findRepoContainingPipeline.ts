@@ -1,4 +1,4 @@
-import {DagsterRepoOption} from './WorkspaceContext';
+import {DagsterRepoOption} from './WorkspaceContext/WorkspaceContext';
 
 export const repoContainsPipeline = (
   repo: DagsterRepoOption,

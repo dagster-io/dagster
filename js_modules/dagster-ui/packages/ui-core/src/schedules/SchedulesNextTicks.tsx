@@ -46,7 +46,7 @@ import {
   isThisThingAJob,
   useRepository,
   useRepositoryOptions,
-} from '../workspace/WorkspaceContext';
+} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

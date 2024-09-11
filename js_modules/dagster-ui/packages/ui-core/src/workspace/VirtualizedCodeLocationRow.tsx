@@ -5,7 +5,7 @@ import styled from 'styled-components';
 
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {

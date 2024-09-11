@@ -14,7 +14,7 @@ import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {
   LocationStatusEntryFragment,
   WorkspaceDisplayMetadataFragment,

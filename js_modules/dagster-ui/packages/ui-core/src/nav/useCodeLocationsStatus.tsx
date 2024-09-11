@@ -8,7 +8,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {CodeLocationStatusQuery} from '../workspace/types/WorkspaceQueries.types';
 
 type LocationStatusEntry = {

@@ -19,7 +19,7 @@ import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {RESOURCE_ENTRY_FRAGMENT} from '../resources/WorkspaceResourcesRoot';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesRoot.types';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';

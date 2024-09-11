@@ -3,9 +3,23 @@ import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef, useSta
 import {useSetRecoilState} from 'recoil';
 
 import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from './WorkspaceQueries';
-import {buildRepoAddress} from './buildRepoAddress';
-import {findRepoContainingPipeline} from './findRepoContainingPipeline';
-import {RepoAddress} from './types';
+import {useApolloClient} from '../../apollo-client';
+import {AppContext} from '../../app/AppContext';
+import {useRefreshAtInterval} from '../../app/QueryRefresh';
+import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
+import {PipelineSelector} from '../../graphql/types';
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {codeLocationStatusAtom} from '../../nav/useCodeLocationsStatus';
+import {
+  useClearCachedData,
+  useGetCachedData,
+  useGetData,
+  useIndexedDBCachedQuery,
+} from '../../search/useIndexedDBCachedQuery';
+import {buildRepoAddress} from '../buildRepoAddress';
+import {findRepoContainingPipeline} from '../findRepoContainingPipeline';
+import {RepoAddress} from '../types';
 import {
   CodeLocationStatusQuery,
   CodeLocationStatusQueryVariables,
@@ -17,21 +31,7 @@ import {
   WorkspaceRepositoryFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
-} from './types/WorkspaceQueries.types';
-import {useApolloClient} from '../apollo-client';
-import {AppContext} from '../app/AppContext';
-import {useRefreshAtInterval} from '../app/QueryRefresh';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {PipelineSelector} from '../graphql/types';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
-import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
-import {
-  useClearCachedData,
-  useGetCachedData,
-  useGetData,
-  useIndexedDBCachedQuery,
-} from '../search/useIndexedDBCachedQuery';
+} from '../types/WorkspaceQueries.types';
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
 export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;

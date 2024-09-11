@@ -8,7 +8,7 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {JobFeatureContext} from '../pipelines/JobFeatureContext';
 import {JobTabs} from '../pipelines/JobTabs';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {useRepository} from '../workspace/WorkspaceContext';
+import {useRepository} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 interface Props {

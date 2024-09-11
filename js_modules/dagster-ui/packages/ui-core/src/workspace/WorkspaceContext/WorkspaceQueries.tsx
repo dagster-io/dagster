@@ -1,9 +1,9 @@
-import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
-import {gql} from '../apollo-client';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
-import {RESOURCE_ENTRY_FRAGMENT} from '../resources/WorkspaceResourcesRoot';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {gql} from '../../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../../overview/BasicInstigationStateFragment';
+import {RESOURCE_ENTRY_FRAGMENT} from '../../resources/WorkspaceResourcesRoot';
+import {SENSOR_SWITCH_FRAGMENT} from '../../sensors/SensorSwitch';
+import {REPOSITORY_INFO_FRAGMENT} from '../RepositoryInformation';
 
 export const LOCATION_WORKSPACE_QUERY = gql`
   query LocationWorkspaceQuery($name: String!) {

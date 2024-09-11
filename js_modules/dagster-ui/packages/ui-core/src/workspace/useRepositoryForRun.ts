@@ -1,4 +1,4 @@
-import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
+import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext/WorkspaceContext';
 import {findRepoContainingPipeline, repoContainsPipeline} from './findRepoContainingPipeline';
 
 type MatchType = {

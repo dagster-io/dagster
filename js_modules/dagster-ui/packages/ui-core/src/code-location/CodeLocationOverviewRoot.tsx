@@ -19,7 +19,7 @@ import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
-import {WorkspaceContext, WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext';
+import {WorkspaceContext, WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {LocationStatusEntryFragment} from '../workspace/types/WorkspaceQueries.types';
