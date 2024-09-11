@@ -9,7 +9,7 @@ region_partitions = dg.StaticPartitionsDefinition(["us", "eu", "jp"])
 
 
 # Define the partitioned asset
-@dg.asset(partitions_def=region_partitions)
+@dg.asset(partitions_def=region_partitions)  # Use the region partitioning scheme
 def regional_sales_data(context: dg.AssetExecutionContext) -> None:
     region = context.partition_key
 
@@ -29,7 +29,7 @@ def regional_sales_data(context: dg.AssetExecutionContext) -> None:
 
 
 @dg.asset(
-    partitions_def=region_partitions,
+    partitions_def=region_partitions,  # Use the region partitioning scheme
     deps=[regional_sales_data],
 )
 def daily_sales_summary(context):
