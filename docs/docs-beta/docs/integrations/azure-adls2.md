@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: ' Azure Data Lake Storage Gen 2 (ADLS2)'
-title: 'Dagster &  Azure Data Lake Storage Gen 2 (ADLS2)'
-sidebar_label: ' Azure Data Lake Storage Gen 2 (ADLS2)'
-excerpt: 'Get utilities for ADLS2 and Blob Storage.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-azure'
-docslink: ''
-partnerlink: 'https://azure.microsoft.com/'
-logo: '/integrations/Azure.svg'
+layout: Integration
+status: published
+name:  Azure Data Lake Storage Gen 2 (ADLS2)
+title: Dagster &  Azure Data Lake Storage Gen 2 (ADLS2)
+sidebar_label:  Azure Data Lake Storage Gen 2 (ADLS2)
+excerpt: Get utilities for ADLS2 and Blob Storage.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-azure
+docslink: 
+partnerlink: https://azure.microsoft.com/
+logo: /integrations/Azure.svg
 categories:
-  - 'Storage'
+  - Storage
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

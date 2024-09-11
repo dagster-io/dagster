@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Pandera'
-title: 'Dagster & Pandera'
-sidebar_label: 'Pandera'
-excerpt: 'Generate Dagster Types from Pandera dataframe schemas.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-pandera'
-docslink: 'https://docs.dagster.io/integrations/pandera'
-partnerlink: 'https://pandera.readthedocs.io/en/stable/'
-logo: '/integrations/Pandera.svg'
+layout: Integration
+status: published
+name: Pandera
+title: Dagster & Pandera
+sidebar_label: Pandera
+excerpt: Generate Dagster Types from Pandera dataframe schemas.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pandera
+docslink: https://docs.dagster.io/integrations/pandera
+partnerlink: https://pandera.readthedocs.io/en/stable/
+logo: /integrations/Pandera.svg
 categories:
-  - 'Metadata'
+  - Metadata
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

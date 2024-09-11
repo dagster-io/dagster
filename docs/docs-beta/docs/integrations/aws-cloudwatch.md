@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'AWS CloudWatch'
-title: 'Dagster & AWS CloudWatch'
-sidebar_label: 'AWS CloudWatch'
-excerpt: 'This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs.'
-date: '2024-06-21'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-aws'
-docslink: ''
-partnerlink: 'https://aws.amazon.com/'
-logo: '/integrations/aws-cloudwatch.svg'
+layout: Integration
+status: published
+name: AWS CloudWatch
+title: Dagster & AWS CloudWatch
+sidebar_label: AWS CloudWatch
+excerpt: This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs.
+date: 2024-06-21
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
+docslink: 
+partnerlink: https://aws.amazon.com/
+logo: /integrations/aws-cloudwatch.svg
 categories:
-  - 'Monitoring'
+  - Monitoring
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

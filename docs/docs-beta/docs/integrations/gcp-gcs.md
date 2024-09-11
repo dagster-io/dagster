@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'GCP GCS'
-title: 'Dagster & GCP GCS'
-sidebar_label: 'GCP GCS'
-excerpt: 'Integrate with GCP GCS.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-gcp'
-docslink: ''
-partnerlink: ''
-logo: '/integrations/gcp-gcs.svg'
+layout: Integration
+status: published
+name: GCP GCS
+title: Dagster & GCP GCS
+sidebar_label: GCP GCS
+excerpt: Integrate with GCP GCS.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
+docslink: 
+partnerlink: 
+logo: /integrations/gcp-gcs.svg
 categories:
-  - 'Storage'
+  - Storage
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

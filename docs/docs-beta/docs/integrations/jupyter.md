@@ -1,21 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Jupyter Notebooks'
-title: 'Dagster & Jupyter Notebooks'
-sidebar_label: 'Jupyter Notebooks'
-excerpt: 'Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.'
-date: '2022-11-07'
-apireflink: ''
-docslink: 'https://docs.dagster.io/integrations/dagstermill'
-partnerlink: ''
-logo: '/integrations/Jupyter.svg'
+layout: Integration
+status: published
+name: Jupyter Notebooks
+title: Dagster & Jupyter Notebooks
+sidebar_label: Jupyter Notebooks
+excerpt: Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.
+date: 2022-11-07
+apireflink: 
+docslink: https://docs.dagster.io/integrations/dagstermill
+partnerlink: 
+logo: /integrations/Jupyter.svg
 enabledBy:
-  - 'dagster-dagstermill'
+  - dagster-dagstermill
 categories:
-  - 'Compute'
+  - Compute
 enables:
-  - ''
 ---
 
 ### About Jupyter

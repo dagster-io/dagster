@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Microsoft Teams'
-title: 'Dagster & Microsoft Teams'
-sidebar_label: 'Microsoft Teams'
-excerpt: 'Keep your team up to speed with Teams messages.'
-date: '2024-08-30'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-msteams'
-docslink: ''
-partnerlink: 'https://www.microsoft.com/en-us/microsoft-teams/group-chat-software'
-logo: '/integrations/Microsoft Teams.svg'
+layout: Integration
+status: published
+name: Microsoft Teams
+title: Dagster & Microsoft Teams
+sidebar_label: Microsoft Teams
+excerpt: Keep your team up to speed with Teams messages.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-msteams
+docslink: 
+partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
+logo: /integrations/Microsoft Teams.svg
 categories:
-  - 'Alerting'
+  - Alerting
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

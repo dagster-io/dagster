@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Census'
-title: 'Dagster & Census'
-sidebar_label: 'Census'
-excerpt: 'Trigger Census synchs from within your Dagster pipelines.'
-date: '2022-11-07'
-apireflink: 'http://docs.dagster.io/_apidocs/libraries/dagster-census'
-partnerlink: 'https://www.getcensus.com/'
+layout: Integration
+status: published
+name: Census
+title: Dagster & Census
+sidebar_label: Census
+excerpt: Trigger Census synchs from within your Dagster pipelines.
+date: 2022-11-07
+apireflink: http://docs.dagster.io/_apidocs/libraries/dagster-census
+partnerlink: https://www.getcensus.com/
 communityIntegration: true
-logo: '/integrations/Census.svg'
+logo: /integrations/Census.svg
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

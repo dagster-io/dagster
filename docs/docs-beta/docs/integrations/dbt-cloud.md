@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'dbt Cloud'
-title: 'Dagster & dbt Cloud'
-sidebar_label: 'dbt Cloud'
-excerpt: 'Run dbt Cloud™ jobs as part of your data pipeline.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-dbt#assets-dbt-cloud'
-docslink: 'https://docs.dagster.io/integrations/dbt_cloud'
-partnerlink: ''
-logo: '/integrations/dbt.svg'
+layout: Integration
+status: published
+name: dbt Cloud
+title: Dagster & dbt Cloud
+sidebar_label: dbt Cloud
+excerpt: Run dbt Cloud™ jobs as part of your data pipeline.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dbt#assets-dbt-cloud
+docslink: https://docs.dagster.io/integrations/dbt_cloud
+partnerlink: 
+logo: /integrations/dbt.svg
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

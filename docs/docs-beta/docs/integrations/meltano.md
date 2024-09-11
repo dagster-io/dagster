@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Meltano'
-title: 'Dagster & Meltano'
-sidebar_label: 'Meltano'
-excerpt: 'Tap into open source configurable ETL+ and the Singer integration library.'
-date: '2023-03-25'
-apireflink: ''
-docslink: 'https://github.com/quantile-development/dagster-meltano#readme'
-partnerlink: 'https://meltano.com/'
-logo: '/integrations/Meltano.svg'
+layout: Integration
+status: published
+name: Meltano
+title: Dagster & Meltano
+sidebar_label: Meltano
+excerpt: Tap into open source configurable ETL+ and the Singer integration library.
+date: 2023-03-25
+apireflink: 
+docslink: https://github.com/quantile-development/dagster-meltano#readme
+partnerlink: https://meltano.com/
+logo: /integrations/Meltano.svg
 categories:
-  - 'ETL'
+  - ETL
 communityIntegration: true
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

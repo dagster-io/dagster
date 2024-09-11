@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Docker'
-title: 'Dagster & Docker'
-sidebar_label: 'Docker'
-excerpt: 'Run runs external processes in docker containers directly from Dagster.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-docker'
-docslink: ''
-partnerlink: 'https://www.docker.com/'
-logo: '/integrations/Docker.svg'
+layout: Integration
+status: published
+name: Docker
+title: Dagster & Docker
+sidebar_label: Docker
+excerpt: Run runs external processes in docker containers directly from Dagster.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-docker
+docslink: 
+partnerlink: https://www.docker.com/
+logo: /integrations/Docker.svg
 categories:
-  - 'Compute'
+  - Compute
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Hightouch'
-title: 'Dagster & Hightouch'
-sidebar_label: 'Hightouch'
-excerpt: 'Trigger syncs and monitor them until they complete.'
-date: '2022-11-07'
-docslink: 'https://github.com/hightouchio/dagster-hightouch'
-partnerlink: 'https://hightouch.com/'
+layout: Integration
+status: published
+name: Hightouch
+title: Dagster & Hightouch
+sidebar_label: Hightouch
+excerpt: Trigger syncs and monitor them until they complete.
+date: 2022-11-07
+docslink: https://github.com/hightouchio/dagster-hightouch
+partnerlink: https://hightouch.com/
 communityIntegration: true
-logo: '/integrations/Hightouch.svg'
+logo: /integrations/Hightouch.svg
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

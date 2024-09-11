@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Open Metadata'
-title: 'Dagster & Open Metadata'
-sidebar_label: 'Open Metadata'
-excerpt: 'Configure and schedule Dagster metadata and profiler workflows from the OpenMetadata UI.'
-date: '2022-11-07'
-apireflink: ''
-docslink: 'https://docs.open-metadata.org/connectors/pipeline/dagster'
-partnerlink: 'https://open-metadata.org/'
+layout: Integration
+status: published
+name: Open Metadata
+title: Dagster & Open Metadata
+sidebar_label: Open Metadata
+excerpt: Configure and schedule Dagster metadata and profiler workflows from the OpenMetadata UI.
+date: 2022-11-07
+apireflink: 
+docslink: https://docs.open-metadata.org/connectors/pipeline/dagster
+partnerlink: https://open-metadata.org/
 communityIntegration: true
-logo: '/integrations/OpenMetadata.svg'
+logo: /integrations/OpenMetadata.svg
 categories:
-  - 'Metadata'
+  - Metadata
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

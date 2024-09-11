@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'HashiCorp Vault'
-title: 'Dagster & HashiCorp Vault'
-sidebar_label: 'HashiCorp Vault'
-excerpt: 'Centrally manage credentials and certificates, then use them in your pipelines.'
-date: '2022-11-07'
-apireflink: ''
-docslink: 'https://github.com/silentsokolov/dagster-hashicorp'
-partnerlink: 'https://www.vaultproject.io/'
+layout: Integration
+status: published
+name: HashiCorp Vault
+title: Dagster & HashiCorp Vault
+sidebar_label: HashiCorp Vault
+excerpt: Centrally manage credentials and certificates, then use them in your pipelines.
+date: 2022-11-07
+apireflink: 
+docslink: https://github.com/silentsokolov/dagster-hashicorp
+partnerlink: https://www.vaultproject.io/
 communityIntegration: true
-logo: '/integrations/Hashicorp.svg'
+logo: /integrations/Hashicorp.svg
 categories:
-  - 'Other'
+  - Other
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

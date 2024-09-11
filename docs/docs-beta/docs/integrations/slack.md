@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Slack'
-title: 'Dagster & Slack'
-sidebar_label: 'Slack'
-excerpt: 'Up your notification game and keep stakeholders in the loop.'
-date: '2024-08-30'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-slack'
-docslink: ''
-partnerlink: 'https://slack.com/'
-logo: '/integrations/Slack.svg'
+layout: Integration
+status: published
+name: Slack
+title: Dagster & Slack
+sidebar_label: Slack
+excerpt: Up your notification game and keep stakeholders in the loop.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-slack
+docslink: 
+partnerlink: https://slack.com/
+logo: /integrations/Slack.svg
 categories:
-  - 'Alerting'
+  - Alerting
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

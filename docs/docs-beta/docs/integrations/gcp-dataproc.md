@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'GCP Dataproc'
-title: 'Dagster & GCP Dataproc'
-sidebar_label: 'GCP Dataproc'
-excerpt: 'Integrate with GCP Dataproc.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-gcp'
-docslink: ''
-partnerlink: ''
-logo: '/integrations/gcp-dataproc.svg'
+layout: Integration
+status: published
+name: GCP Dataproc
+title: Dagster & GCP Dataproc
+sidebar_label: GCP Dataproc
+excerpt: Integrate with GCP Dataproc.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
+docslink: 
+partnerlink: 
+logo: /integrations/gcp-dataproc.svg
 categories:
-  - 'Compute'
+  - Compute
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

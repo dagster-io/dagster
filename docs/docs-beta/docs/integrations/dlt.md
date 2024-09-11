@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'dlt'
-title: 'Dagster & dlt'
-sidebar_label: 'dlt'
-excerpt: 'Easily ingest and replicate data between systems with dlt through Dagster.'
-date: '2024-08-30'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-embedded-elt'
-docslink: 'https://docs.dagster.io/integrations/embedded-elt/dlt'
-partnerlink: 'https://www.getdbt.com/'
-logo: '/integrations/dlthub.jpeg'
+layout: Integration
+status: published
+name: dlt
+title: Dagster & dlt
+sidebar_label: dlt
+excerpt: Easily ingest and replicate data between systems with dlt through Dagster.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-embedded-elt
+docslink: https://docs.dagster.io/integrations/embedded-elt/dlt
+partnerlink: https://www.getdbt.com/
+logo: /integrations/dlthub.jpeg
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

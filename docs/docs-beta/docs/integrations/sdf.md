@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'SDF'
-title: 'Dagster & SDF'
-sidebar_label: 'SDF'
-excerpt: 'Put your SDF transformations to work, directly from within Dagster.'
-date: '2024-08-30'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-sdf'
-docslink: 'https://docs.sdf.com/integrations/dagster/getting-started'
-partnerlink: 'https://www.sdf.com/'
+layout: Integration
+status: published
+name: SDF
+title: Dagster & SDF
+sidebar_label: SDF
+excerpt: Put your SDF transformations to work, directly from within Dagster.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-sdf
+docslink: https://docs.sdf.com/integrations/dagster/getting-started
+partnerlink: https://www.sdf.com/
 communityIntegration: true
-logo: '/integrations/sdf.jpeg'
+logo: /integrations/sdf.jpeg
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration
