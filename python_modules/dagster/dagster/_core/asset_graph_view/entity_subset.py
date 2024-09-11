@@ -122,6 +122,10 @@ class EntitySubset(Generic[T_EntityKey]):
         else:
             return self._value.is_empty
 
+    @property
+    def is_partitioned(self) -> bool:
+        return isinstance(self._value, PartitionsSubset)
+
     def get_internal_value(self) -> Union[bool, PartitionsSubset]:
         return self._value
 

@@ -56,7 +56,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
         auto_materialize_run_tags={},
         request_backfills=context.instance.da_request_backfills(),
     )
-    results, to_request = evaluator.evaluate()
+    results, entity_subsets = evaluator.evaluate()
     new_cursor = cursor.with_updates(
         evaluation_id=cursor.evaluation_id,
         evaluation_timestamp=asset_graph_view.effective_dt.timestamp(),
@@ -64,7 +64,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
         condition_cursors=[result.get_new_cursor() for result in results],
     )
     run_requests = build_run_requests(
-        asset_partitions=to_request,
+        entity_subsets=entity_subsets,
         asset_graph=asset_graph,
         # tick_id and sensor tags should get set in daemon
         run_tags=context.instance.auto_materialize_run_tags,

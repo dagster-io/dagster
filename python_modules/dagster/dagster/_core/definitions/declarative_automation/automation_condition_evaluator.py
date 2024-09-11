@@ -1,21 +1,31 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, AbstractSet, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     import datetime
 
-    from dagster._core.asset_graph_view.entity_subset import EntitySubset
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -98,7 +108,7 @@ class AutomationConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
+    def evaluate(self) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[AssetKey]]]:
         self.prefetch()
         for asset_key in self.asset_graph.toposorted_asset_keys:
             if asset_key not in self.asset_keys:
@@ -130,7 +140,7 @@ class AutomationConditionEvaluator:
                 f"requested ({requested_str}) "
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
-        return (list(self.current_results_by_key.values()), self._get_asset_partitions())
+        return self.current_results_by_key.values(), self._get_entity_subsets()
 
     def evaluate_asset(self, asset_key: AssetKey) -> None:
         # evaluate the condition of this asset
@@ -179,15 +189,16 @@ class AutomationConditionEvaluator:
                 if extra:
                     self._execution_set_extras[neighbor_key].append(extra)
 
-    def _get_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
-        return set().union(
-            *(
-                result.true_subset.expensively_compute_asset_partitions()
-                for result in self.current_results_by_key.values()
-            ),
-            *(
-                extra.expensively_compute_asset_partitions()
-                for extras in self._execution_set_extras.values()
-                for extra in extras
-            ),
-        )
+    def _get_entity_subsets(self) -> Iterable[EntitySubset[AssetKey]]:
+        subsets_by_key = {
+            key: result.true_subset for key, result in self.current_results_by_key.items()
+        }
+        # add in any additional asset partitions we need to request to abide by execution
+        # set rules
+        for key, extras in self._execution_set_extras.items():
+            new_value = subsets_by_key.get(key) or self.asset_graph_view.get_empty_subset(key=key)
+            for extra in extras:
+                new_value = new_value.compute_union(extra)
+            subsets_by_key[key] = new_value
+
+        return subsets_by_key.values()
