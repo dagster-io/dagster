@@ -237,6 +237,38 @@ def test_io_manager_with_snowflake_pandas_only_columns(io_manager):
     "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
 )
 @pytest.mark.integration
+def test_io_manager_with_snowflake_pandas_empty_df(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+        # Create a job with the temporary table name as an output, so that it will write to that table
+        # and not interfere with other runs of this test
+
+        @op(out={table_name: Out(io_manager_key="snowflake", metadata={"schema": SCHEMA})})
+        def emit_pandas_df(_):
+            return pandas.DataFrame()
+
+        @op
+        def read_pandas_df(df: pandas.DataFrame):
+            assert set(df.columns) == {}
+            assert df.empty
+
+        @job(
+            resource_defs={"snowflake": io_manager},
+        )
+        def io_manager_test_job():
+            read_pandas_df(emit_pandas_df())
+
+        res = io_manager_test_job.execute_in_process()
+        assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
 def test_io_manager_with_snowflake_pandas(io_manager):
     with temporary_snowflake_table(
         schema_name=SCHEMA,
