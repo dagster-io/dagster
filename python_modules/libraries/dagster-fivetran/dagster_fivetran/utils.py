@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster import AssetMaterialization, MetadataValue
@@ -7,9 +7,6 @@ from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 from dagster_fivetran.types import FivetranOutput
-
-if TYPE_CHECKING:
-    from dagster_fivetran.resources import FivetranResource
 
 
 def get_fivetran_connector_url(connector_details: Mapping[str, Any]) -> str:
@@ -62,6 +59,8 @@ def _table_data_to_materialization(
     fivetran_output: FivetranOutput,
     asset_key_prefix: Sequence[str],
     schema_name: str,
+    schema_source_name: str,
+    table_source_name: str,
     table_data: Mapping[str, Any],
 ) -> Optional[AssetMaterialization]:
     table_name = table_data["name_in_destination"]
@@ -72,23 +71,24 @@ def _table_data_to_materialization(
     return AssetMaterialization(
         asset_key=asset_key,
         description=f"Table generated via Fivetran sync: {schema_name}.{table_name}",
-        metadata=metadata_for_table(
-            table_data,
-            get_fivetran_connector_url(fivetran_output.connector_details),
-            include_column_info=True,
-            database=None,
-            schema=schema_name,
-            table=table_name,
-        ),
+        metadata={
+            **metadata_for_table(
+                table_data,
+                get_fivetran_connector_url(fivetran_output.connector_details),
+                include_column_info=True,
+                database=None,
+                schema=schema_name,
+                table=table_name,
+            ),
+            "schema_source_name": schema_source_name,
+            "table_source_name": table_source_name,
+        },
     )
 
 
 def generate_materializations(
     fivetran_output: FivetranOutput,
     asset_key_prefix: Sequence[str],
-    fivetran_resource: "Optional[FivetranResource]" = None,
-    # In future rework, pull this out to some sort of deferred metadata fetch like in dbt, sling etc
-    fetch_column_metadata: bool = False,
 ) -> Iterator[AssetMaterialization]:
     for schema_source_name, schema in fivetran_output.schema_config["schemas"].items():
         schema_name = schema["name_in_destination"]
@@ -98,26 +98,17 @@ def generate_materializations(
         if not schema["enabled"]:
             continue
 
-        if fetch_column_metadata and not fivetran_resource:
-            raise ValueError(
-                "Cannot fetch column metadata without a FivetranResource to make the API call"
-            )
-
-        connector_id = fivetran_output.connector_details["id"]
-
         for table_source_name, table_data in schema["tables"].items():
             if not table_data["enabled"]:
                 continue
 
-            if fetch_column_metadata and fivetran_resource:
-                table_conn_data = fivetran_resource.make_request(
-                    "GET",
-                    f"connectors/{connector_id}/schemas/{schema_source_name}/tables/{table_source_name}/columns",
-                )
-                table_data["columns"] = table_conn_data["columns"]
-
             mat = _table_data_to_materialization(
-                fivetran_output, asset_key_prefix, schema_name, table_data
+                fivetran_output=fivetran_output,
+                asset_key_prefix=asset_key_prefix,
+                schema_name=schema_name,
+                table_data=table_data,
+                schema_source_name=schema_source_name,
+                table_source_name=table_source_name,
             )
             if mat is not None:
                 yield mat

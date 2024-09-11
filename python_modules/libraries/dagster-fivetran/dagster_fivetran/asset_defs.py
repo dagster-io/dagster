@@ -1,6 +1,7 @@
 import hashlib
 import inspect
 import re
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import (
     Any,
@@ -28,12 +29,15 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix, Output
+from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKeyPrefix, Output
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster._core.utils import imap
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.utils import (
@@ -41,6 +45,35 @@ from dagster_fivetran.utils import (
     get_fivetran_connector_url,
     metadata_for_table,
 )
+
+DEFAULT_MAX_THREADPOOL_WORKERS = 10
+
+
+def _fetch_and_attach_col_metadata(
+    fivetran_resource: FivetranResource, connector_id: str, materialization: AssetMaterialization
+) -> AssetMaterialization:
+    """Subroutine to fetch column metadata for a given table from the Fivetran API and attach it to the
+    materialization.
+    """
+    schema_source_name = materialization.metadata["schema_source_name"].value
+    table_source_name = materialization.metadata["table_source_name"].value
+
+    table_conn_data = fivetran_resource.make_request(
+        "GET",
+        f"connectors/{connector_id}/schemas/{schema_source_name}/tables/{table_source_name}/columns",
+    )
+    columns = check.dict_elem(table_conn_data, "columns")
+    table_columns = sorted(
+        [
+            TableColumn(name=col["name_in_destination"], type="")
+            for col in columns.values()
+            if "name_in_destination" in col and col.get("enabled")
+        ],
+        key=lambda col: col.name,
+    )
+    return materialization.with_metadata(
+        {**materialization.metadata, **TableMetadataSet(column_schema=TableSchema(table_columns))}
+    )
 
 
 def _build_fivetran_assets(
@@ -58,6 +91,7 @@ def _build_fivetran_assets(
     infer_missing_tables: bool,
     op_tags: Optional[Mapping[str, Any]],
     asset_tags: Optional[Mapping[str, Any]],
+    max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -102,25 +136,39 @@ def _build_fivetran_assets(
         )
 
         materialized_asset_keys = set()
-        for materialization in generate_materializations(
-            fivetran_output,
-            asset_key_prefix=asset_key_prefix,
-            fivetran_resource=fivetran,
-            fetch_column_metadata=True,
-        ):
-            # scan through all tables actually created, if it was expected then emit an Output.
-            # otherwise, emit a runtime AssetMaterialization
-            if materialization.asset_key in tracked_asset_keys.values():
-                key = tracked_asset_key_to_user_facing_asset_key[materialization.asset_key]
-                yield Output(
-                    value=None,
-                    output_name=key.to_python_identifier(),
-                    metadata=materialization.metadata,
-                )
-                materialized_asset_keys.add(materialization.asset_key)
 
-            else:
-                yield materialization
+        _map_fn: Callable[[AssetMaterialization], AssetMaterialization] = (
+            lambda materialization: _fetch_and_attach_col_metadata(
+                fivetran, connector_id, materialization
+            )
+            if fetch_column_metadata
+            else materialization
+        )
+        with ThreadPoolExecutor(
+            max_workers=max_threadpool_workers,
+            thread_name_prefix=f"fivetran_{connector_id}",
+        ) as executor:
+            for materialization in imap(
+                executor=executor,
+                iterable=generate_materializations(
+                    fivetran_output,
+                    asset_key_prefix=asset_key_prefix,
+                ),
+                func=_map_fn,
+            ):
+                # scan through all tables actually created, if it was expected then emit an Output.
+                # otherwise, emit a runtime AssetMaterialization
+                if materialization.asset_key in tracked_asset_keys.values():
+                    key = tracked_asset_key_to_user_facing_asset_key[materialization.asset_key]
+                    yield Output(
+                        value=None,
+                        output_name=key.to_python_identifier(),
+                        metadata=materialization.metadata,
+                    )
+                    materialized_asset_keys.add(materialization.asset_key)
+
+                else:
+                    yield materialization
 
         unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
         if infer_missing_tables:
