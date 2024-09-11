@@ -1,4 +1,3 @@
-import datetime
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +18,7 @@ from dagster import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
-from dagster._core.execution.backfill import BulkActionsFilter
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.event_log.base import AssetRecord
@@ -436,16 +435,14 @@ def _fetch_runs_not_in_backfill(
     instance: DagsterInstance,
     cursor: Optional[str],
     limit: int,
-    created_before: Optional[datetime.datetime],
+    filters: Optional[RunsFilter],
 ) -> Sequence[RunRecord]:
-    """Fetches limit RunRecords that are not part of a backfill and were created before a given timestamp."""
-    runs_filter = RunsFilter(created_before=created_before) if created_before else None
-
+    """Fetches limit RunRecords that are not part of a backfill and match filters."""
     runs = []
     while len(runs) < limit:
         # fetch runs in a loop and discard runs that are part of a backfill until we have
         # limit runs to return or have reached the end of the runs table
-        new_runs = instance.get_run_records(limit=limit, cursor=cursor, filters=runs_filter)
+        new_runs = instance.get_run_records(limit=limit, cursor=cursor, filters=filters)
         if len(new_runs) == 0:
             return runs
         cursor = new_runs[-1].dagster_run.run_id
@@ -454,9 +451,106 @@ def _fetch_runs_not_in_backfill(
     return runs[:limit]
 
 
-def get_runs_feed_entries(
-    graphene_info: "ResolveInfo",
+def _backfill_matches_filters(backfill: PartitionBackfill, filters: RunsFilter) -> bool:
+    # the following filters do not apply to backfills, so the backfill cannot match the filters
+    if (
+        len(filters.run_ids) > 0
+        or filters.updated_after is not None
+        or filters.updated_before is not None
+        or filters.snapshot_id is not None
+    ):
+        return False
+    # if filtering by statuses that are not valid backfill statuses, the backfill cannot match the filters
+    if filters.statuses and len(_bulk_action_statuses_from_run_statuses(filters.statuses)) == 0:
+        return False
+
+    # for the remaining filters, ensure that the backfill matches all of them, otehrwise return False
+    if filters.statues and backfill.status not in _bulk_action_statuses_from_run_statuses(
+        filters.statuses
+    ):
+        return False
+
+    if filters.job_name and backfill.job_name != filters.job_name:
+        return False
+
+    # maybe need to remove backfill_id tag from tags?
+    for tag in filters.tags:
+        if backfill.tags.get(tag.key) != tag.value:
+            return False
+
+    if filters.created_before and backfill.timestamp >= filters.created_before:
+        return False
+
+    if filters.created_after and backfill.timestamp <= filters.created_after:
+        return False
+
+    return True
+
+
+def _slow_fetch_entries_for_filter(
+    instance: DagsterInstance, cursor: Optional[str], limit: int, filters: RunsFilter
+):
+    """The BulkActionsTable doesn't have columsn to support some common filter operations. We can still "filter"
+    backfills by instead fetching runs that match the filters and pulling the backfills ids from runs that have backfill ids
+    in their tags.
+    """
+    runs = []
+    backfills = []
+    seen_backfill_ids = set()
+    while len(runs) + len(backfills) < limit:
+        # fetch runs in a loop and split into two lists: runs that are not part of backfills, and backfills
+        # To get the backfills, take the runs that are part of backfills, and if it is a backill we
+        # have not seen before, fetch the backfill and add it to the backfill list if the backfill also matches the filters
+        # do this until we have limit runs and backfills to return or have reached the end of the runs table
+        new_runs = instance.get_run_records(limit=limit, cursor=cursor, filters=filters)
+        if len(new_runs) == 0:
+            return runs, backfills
+        cursor = new_runs[-1].dagster_run.run_id
+        for run in new_runs:
+            if run.dagster_run.tags.get(BACKFILL_ID_TAG) is None:
+                runs.append(run)
+            else:
+                backfill_id = run.dagster_run.tags[BACKFILL_ID_TAG]
+                if backfill_id in seen_backfill_ids:
+                    continue
+                seen_backfill_ids.add(backfill_id)
+                backfill = instance.get_backfill(backfill_id)
+                if backfill and _backfill_matches_filters(backfill, filters):
+                    backfills.append(backfill)
+
+    return runs, backfills
+
+
+def _bulk_action_status_from_run_status(status: DagsterRunStatus) -> Sequence[BulkActionStatus]:
+    """Converts a DagsterRunStatus to the set of BulkActionStatus that display as that DagsterRunStatus in the UI."""
+    if status == DagsterRunStatus.SUCCESS:
+        return [BulkActionStatus.COMPLETED]  # will include COMPLETED_SUCCESS
+    if status == DagsterRunStatus.FAILURE:
+        return [BulkActionStatus.FAILED]  # will include COMPLETE_FAILED
+    if status == DagsterRunStatus.CANCELED:
+        return [BulkActionStatus.CANCELED]
+    if status == DagsterRunStatus.CANCELING:
+        return [BulkActionStatus.CANCELING]
+    if status == DagsterRunStatus.STARTED:
+        return [BulkActionStatus.REQUESTED]
+
+    return []
+
+
+def _bulk_action_statuses_from_run_statuses(
+    statuses: Sequence[DagsterRunStatus],
+) -> Sequence[BulkActionStatus]:
+    full_list = []
+    for status in statuses:
+        full_list.extend(_bulk_action_status_from_run_status(status))
+
+    return full_list
+
+
+def _get_runs_feed_entries(
+    instance: DagsterInstance,
     limit: int,
+    filters: Optional[RunsFilter],
     cursor: Optional[str] = None,
 ) -> "GrapheneRunsFeedConnection":
     """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
@@ -475,7 +569,6 @@ def get_runs_feed_entries(
     check.opt_str_param(cursor, "cursor")
     check.int_param(limit, "limit")
 
-    instance = graphene_info.context.instance
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
@@ -485,23 +578,67 @@ def get_runs_feed_entries(
     created_before_cursor = (
         datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
     )
-    backfills = [
-        GraphenePartitionBackfill(backfill)
-        for backfill in instance.get_backfills(
-            cursor=runs_feed_cursor.backfill_cursor,
-            limit=limit,
-            filters=BulkActionsFilter(created_before=created_before_cursor),
+
+    # filtering by job_name and tags must be done by filtering runs and then pulling backfill ids from the runs
+    if filters is None or (filters.job_name is None and len(filters.tags) == 0):
+        skip_fetching_backfills = False
+        # the following filters do not apply to backfills, so skip fetching backfills if they are set
+        if (
+            len(filters.run_ids) > 0
+            or filters.updated_after is not None
+            or filters.updated_before is not None
+            or filters.snapshot_id is not None
+        ):
+            skip_fetching_backfills = True
+        # if filtering by statuses that are not valid backfill statuses, skip fetching backfills
+        if filters.statuses and len(_bulk_action_statuses_from_run_statuses(filters.statuses)) == 0:
+            skip_fetching_backfills = True
+
+        if not skip_fetching_backfills:
+            converted_statuses = (
+                _bulk_action_statuses_from_run_statuses(filters.statuses)
+                if filters.statuses
+                else None
+            )
+            backfill_filters = BulkActionsFilter(
+                created_before=min(created_before_cursor, filters.created_before)
+                if filters.created_before
+                else created_before_cursor,
+                created_after=filters.created_after,
+                statuses=converted_statuses,
+            )
+            backfills = [
+                GraphenePartitionBackfill(backfill)
+                for backfill in instance.get_backfills(
+                    cursor=runs_feed_cursor.backfill_cursor,
+                    limit=limit,
+                    filters=backfill_filters,
+                )
+            ]
+        else:
+            backfills = []
+        run_filters = filters._replace(
+            created_before=min(created_before_cursor, filters.created_before)
+            if filters.created_before
+            else created_before_cursor
         )
-    ]
-    runs = [
-        GrapheneRun(run)
-        for run in _fetch_runs_not_in_backfill(
-            instance,
+        runs = [
+            GrapheneRun(run)
+            for run in _fetch_runs_not_in_backfill(
+                instance,
+                cursor=runs_feed_cursor.run_cursor,
+                limit=fetch_limit,
+                filters=run_filters,
+            )
+        ]
+    else:
+        runs, backfills = _slow_fetch_entries_for_filter(
+            instance=instance,
             cursor=runs_feed_cursor.run_cursor,
             limit=fetch_limit,
             created_before=created_before_cursor,
+            filters=filters,
         )
-    ]
 
     # if we fetched limit+1 of either runs or backfills, we know there must be more results
     # to fetch on the next call since we will return limit results for this call. Additionally,
@@ -552,3 +689,20 @@ def get_runs_feed_entries(
     return GrapheneRunsFeedConnection(
         results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
     )
+
+
+def get_runs_feed_entries(
+    graphene_info: "ResolveInfo",
+    limit: int,
+    cursor: Optional[str] = None,
+) -> "GrapheneRunsFeedConnection":
+    """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
+    single runs (runs that are not part of a backfill), the cursor to fetch the next page,
+    and a boolean indicating if there are more results to fetch.
+
+    Args:
+        limit (int): max number of results to return
+        cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
+            that querying should start at the beginning of the table for both runs and backfills.
+    """
+    return _get_runs_feed_entries(graphene_info.context.instance, limit, cursor, filters=None)
