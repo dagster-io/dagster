@@ -63,7 +63,7 @@ Keep in mind that tags must contain only strings as keys and values. Additionall
 
 ## Attaching metadata to assets \{#attaching-metadata}
 
-**Metadata** allows you to attach rich information to the asset, like a Markdown description, a table schema, or a time series. Metadata is more flexible than tags, as it can store more complex information. Metadata can be attached to an asset at definition time (that's, when the code is first imported) or at runtime (every time an asset is materialized).
+**Metadata** allows you to attach rich information to the asset, like a Markdown description, a table schema, or a time series. Metadata is more flexible than tags, as it can store more complex information. Metadata can be attached to an asset at definition time, when the code is first imported, or at runtime when an asset is materialized.
 
 ### At definition time \{#definition-time-metadata}
 
