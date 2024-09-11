@@ -1,4 +1,4 @@
----
+--
 title: Representing external data sources with external assets
 sidebar_position: 80
 sidebar_label: 'External data sources'
@@ -8,20 +8,13 @@ One of Dagster's goals is to present a single unified lineage of all of the data
 
 With **external assets**, you can model assets orchestrated by other systems natively within Dagster, ensuring you have a comprehensive catalog of your organization's data. You can also create new data assets downstream of these external assets.
 
-How are external assets different than native Dagster assets? The answer: Dagster can't materialize external assets directly or put them in a schedule. In these cases, an external system must inform Dagster when an external asset is updated.
+Unlike native assets, Dagster can't materialize external assets directly or put them in a schedule. In these cases, an external system must inform Dagster when an external asset is updated.
 
 For example, external assets could be:
 
 - Files in a data lake that are populated by a bespoke internal tool
 - A CSV file delivered daily by SFTP from a partner
 - A table in a data warehouse populated by another orchestrator
-
-## What you'll learn
-
-- How to create external assets
-- How to create assets that depend on external assets
-- How to record materializations and metadata
-- How to model a DAG of multiple external assets
 
 <details>
   <summary>Prerequisites</summary>

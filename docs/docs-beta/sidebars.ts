@@ -18,7 +18,8 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: 'category',
-          label: 'Build a pipeline',
+          label: 'Create a pipeline',
+          link: {type: 'doc', id: 'guides/pipelines'},
           items: [
             'guides/data-assets',
             'guides/metadata',
