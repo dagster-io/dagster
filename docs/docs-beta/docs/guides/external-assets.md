@@ -34,7 +34,7 @@ To follow the steps in this guide, you'll need:
 
 ## Defining external assets
 
-Let's say you have a partner sends you raw transaction data by SFTP on an almost daily basis. This data is later cleaned and stored in an internal data lake.
+Let's say you have a partner who sends you raw transaction data by SFTP on an almost daily basis. This data is later cleaned and stored in an internal data lake.
 
 Because the raw transaction data isn't materialized by Dagster, it makes sense to model it as an external asset. The following example accomplishes this by using `AssetSpec`:
 
