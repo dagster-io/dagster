@@ -5,14 +5,6 @@ sidebar_position: 20
 
 When building a data pipeline, you'll likely need to connect to several external APIs, each with its own specific configuration and behavior. This guide demonstrates how to standardize your API connections and customize their configuration using Dagster resources.
 
-
-## What you'll learn
-
-- How to connect to an API using a Dagster resource
-- How to use that resource in an asset
-- How to configure a resource
-- How to source configuration values from environment variables
-
 <details>
   <summary>Prerequisites</summary>
 

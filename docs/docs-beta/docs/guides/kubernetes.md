@@ -7,13 +7,6 @@ This guide will walk you through how to run the Dagster-specific components of a
 
 Dagster provides [Helm charts](https://github.com/dagster-io/dagster/tree/master/helm) for deploying Dagster that you can customize for your specific needs. For each Dagster component used by the Helm chart, Dagster publishes a corresponding image to [DockerHub](https://hub.docker.com/u/dagster).
 
-## What you'll learn
-
-- How to build a Docker image containing your Dagster project to deploy to your cluster
-- How to access and customize the Dagster-provided Helm charts
-- How to apply the configuration in the Helm charts to your Kubernetes cluster to deploy your Dagster project
-- How to connect to your deployed Dagster project
-
 <details>
   <summary>Prerequisites</summary>
 
