@@ -45,7 +45,7 @@ import {
   isThisThingAJob,
   isThisThingAnAssetJob,
   useRepository,
-} from '../workspace/WorkspaceContext/WorkspaceContext';
+} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

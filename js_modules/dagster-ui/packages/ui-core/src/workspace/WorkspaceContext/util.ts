@@ -1,13 +1,24 @@
 import React, {useContext} from 'react';
 
-import {DagsterRepoOption, HIDDEN_REPO_KEYS, WorkspaceContext} from './WorkspaceContext';
-import {WorkspaceLocationNodeFragment} from './types/WorkspaceQueries.types';
+import {HIDDEN_REPO_KEYS, WorkspaceContext} from './WorkspaceContext';
+import {
+  WorkspaceLocationFragment,
+  WorkspaceLocationNodeFragment,
+  WorkspaceRepositoryFragment,
+} from './types/WorkspaceQueries.types';
 import {AppContext} from '../../app/AppContext';
-import {PipelineSelector, RepositoryLocation} from '../../graphql/types';
+import {PipelineSelector} from '../../graphql/types';
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {findRepoContainingPipeline} from '../findRepoContainingPipeline';
 import {RepoAddress} from '../types';
+
+type Repository = WorkspaceRepositoryFragment;
+type RepositoryLocation = WorkspaceLocationFragment;
+export interface DagsterRepoOption {
+  repositoryLocation: RepositoryLocation;
+  repository: Repository;
+}
 
 export function locationWorkspaceKey(name: string) {
   return `/LocationWorkspace/${name}`;

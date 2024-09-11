@@ -9,11 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import {Link, Redirect, useLocation, useParams, useRouteMatch} from 'react-router-dom';
 
-import {
-  isThisThingAJob,
-  optionToRepoAddress,
-  useRepositoryOptions,
-} from './WorkspaceContext/WorkspaceContext';
+import {isThisThingAJob, optionToRepoAddress, useRepositoryOptions} from './WorkspaceContext/util';
 import {buildRepoPathForHuman} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {workspacePath, workspacePathFromAddress} from './workspacePath';

@@ -9,13 +9,12 @@ import {
   LocationStatusEntryFragment,
   LocationWorkspaceQuery,
   LocationWorkspaceQueryVariables,
-  WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
-  WorkspaceRepositoryFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
 } from './types/WorkspaceQueries.types';
 import {
+  DagsterRepoOption,
   SetVisibleOrHiddenFn,
   locationWorkspaceKey,
   repoLocationToRepos,
@@ -37,17 +36,10 @@ import {
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
 export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
 export const LOCATION_WORKSPACE_QUERY_VERSION = 3;
-type Repository = WorkspaceRepositoryFragment;
-type RepositoryLocation = WorkspaceLocationFragment;
 
 export type WorkspaceRepositorySensor = WorkspaceSensorFragment;
 export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
 export type WorkspaceRepositoryLocationNode = WorkspaceLocationNodeFragment;
-
-export interface DagsterRepoOption {
-  repositoryLocation: RepositoryLocation;
-  repository: Repository;
-}
 
 type WorkspaceState = {
   loading: boolean;

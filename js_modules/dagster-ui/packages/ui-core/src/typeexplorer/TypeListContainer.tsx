@@ -13,7 +13,7 @@ import {
   buildPipelineSelector,
   optionToRepoAddress,
   useRepositoryOptions,
-} from '../workspace/WorkspaceContext/WorkspaceContext';
+} from '../workspace/WorkspaceContext/util';
 import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
 

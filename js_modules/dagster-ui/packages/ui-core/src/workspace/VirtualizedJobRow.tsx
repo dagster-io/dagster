@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {buildPipelineSelector} from './WorkspaceContext/WorkspaceContext';
+import {buildPipelineSelector} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
 import {workspacePathFromAddress} from './workspacePath';
