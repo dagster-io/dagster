@@ -23,7 +23,7 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export const OverviewResourcesRoot = () => {
   useTrackPageView();

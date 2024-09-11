@@ -22,7 +22,7 @@ import {LocationStatus} from '../workspace/CodeLocationRowSet';
 import {WorkspaceContext, WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {LocationStatusEntryFragment} from '../workspace/types/WorkspaceQueries.types';
+import {LocationStatusEntryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 const RIGHT_COLUMN_WIDTH = '280px';
 

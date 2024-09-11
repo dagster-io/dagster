@@ -18,7 +18,7 @@ import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceConte
 import {
   LocationStatusEntryFragment,
   WorkspaceDisplayMetadataFragment,
-} from './types/WorkspaceQueries.types';
+} from './WorkspaceContext/types/WorkspaceQueries.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {

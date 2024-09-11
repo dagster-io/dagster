@@ -5,7 +5,7 @@ import {CodeLocationDefinitionsMain} from './CodeLocationDefinitionsMain';
 import {CodeLocationDefinitionsNav} from './CodeLocationDefinitionsNav';
 import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceRepositoryFragment} from '../workspace/types/WorkspaceQueries.types';
+import {WorkspaceRepositoryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 interface Props {
   repoAddress: RepoAddress;

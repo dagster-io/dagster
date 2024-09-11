@@ -9,7 +9,7 @@ import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
-import {CodeLocationStatusQuery} from '../workspace/types/WorkspaceQueries.types';
+import {CodeLocationStatusQuery} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;

@@ -12,7 +12,7 @@ import {
   LocationStatusEntryFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
-} from './types/WorkspaceQueries.types';
+} from './WorkspaceContext/types/WorkspaceQueries.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';

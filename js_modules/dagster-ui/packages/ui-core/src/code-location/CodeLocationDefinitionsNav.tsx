@@ -5,7 +5,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
 import {numberFormatter} from '../ui/formatters';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceRepositoryFragment} from '../workspace/types/WorkspaceQueries.types';
+import {WorkspaceRepositoryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {

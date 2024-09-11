@@ -3,6 +3,18 @@ import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef, useSta
 import {useSetRecoilState} from 'recoil';
 
 import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from './WorkspaceQueries';
+import {
+  CodeLocationStatusQuery,
+  CodeLocationStatusQueryVariables,
+  LocationStatusEntryFragment,
+  LocationWorkspaceQuery,
+  LocationWorkspaceQueryVariables,
+  WorkspaceLocationFragment,
+  WorkspaceLocationNodeFragment,
+  WorkspaceRepositoryFragment,
+  WorkspaceScheduleFragment,
+  WorkspaceSensorFragment,
+} from './types/WorkspaceQueries.types';
 import {useApolloClient} from '../../apollo-client';
 import {AppContext} from '../../app/AppContext';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
@@ -20,18 +32,6 @@ import {
 import {buildRepoAddress} from '../buildRepoAddress';
 import {findRepoContainingPipeline} from '../findRepoContainingPipeline';
 import {RepoAddress} from '../types';
-import {
-  CodeLocationStatusQuery,
-  CodeLocationStatusQueryVariables,
-  LocationStatusEntryFragment,
-  LocationWorkspaceQuery,
-  LocationWorkspaceQueryVariables,
-  WorkspaceLocationFragment,
-  WorkspaceLocationNodeFragment,
-  WorkspaceRepositoryFragment,
-  WorkspaceScheduleFragment,
-  WorkspaceSensorFragment,
-} from '../types/WorkspaceQueries.types';
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
 export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;

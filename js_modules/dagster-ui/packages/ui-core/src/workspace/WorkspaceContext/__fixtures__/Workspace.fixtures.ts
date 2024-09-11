@@ -12,7 +12,7 @@ import {
   CodeLocationStatusQueryVariables,
   LocationWorkspaceQuery,
   LocationWorkspaceQueryVariables,
-} from '../../types/WorkspaceQueries.types';
+} from '../types/WorkspaceQueries.types';
 import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from '../WorkspaceQueries';
 
 export const buildCodeLocationsStatusQuery = (

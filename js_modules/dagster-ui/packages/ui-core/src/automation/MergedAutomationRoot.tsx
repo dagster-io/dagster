@@ -19,7 +19,7 @@ import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilt
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 type AutomationType = 'schedules' | 'sensors';
 
