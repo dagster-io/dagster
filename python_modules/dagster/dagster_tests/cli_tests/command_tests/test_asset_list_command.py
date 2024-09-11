@@ -31,10 +31,10 @@ def test_no_selection():
                 "differently_partitioned_asset",
                 "downstream_asset",
                 "fail_asset",
-                "partitioned_asset",
-                "some/key/prefix/asset_with_prefix",
-                "single_run_partitioned_asset",
                 "multi_run_partitioned_asset",
+                "partitioned_asset",
+                "single_run_partitioned_asset",
+                "some/key/prefix/asset_with_prefix",
             ]
         )
         + "\n"
