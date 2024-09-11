@@ -16,8 +16,8 @@ In Dagster, data pipelines are created using an asset-based approach. This overv
   <summary>Prerequisites</summary>
 
 Before continuing, you should:
-- Have Dagster installed. Refer to the [Installation guide](/tutorial/installation) for more information.
-- Complete the [Quickstart](/tutorial/quick-start)
+- Have Dagster installed. Refer to the [Installation guide](/getting-started/installation) for more information.
+- Complete the [Quickstart](/getting-started/quickstart)
 
 </details>
 
@@ -52,10 +52,10 @@ Most Dagster pipelines follow these steps:
 
 To start building your Dagster pipeline, dive into the following guides:
 
-- [Define data assets](/guides/dagster/define-data-assets)
-- [Create dependencies between assets](/guides/dagster/create-asset-dependencies)
-- [Enrich assets with metadata](/guides/dagster/enrich-assets-with-metadata)
-- [Partition assets](/guides/dagster/partition-assets)
-- [Represent external data sources](/guides/dagster/represent-external-data-sources)
+- [Define data assets](/guides/data-assets)
+- [Create dependencies between assets](/guides/asset-dependencies)
+- [Enrich assets with metadata](/guides/metadata)
+- [Partition assets](/guides/partitioning)
+- [Represent external data sources](/guides/external-assets)
 
 By following these guides, you'll learn how to create powerful, maintainable data pipelines using Dagster's asset-based approach.
