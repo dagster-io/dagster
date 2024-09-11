@@ -878,3 +878,87 @@ def test_quoted_identifiers_asset(io_manager):
         )
 
         assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_empty_df_asset(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
+
+        # ensure that the table doesn't exist so we know that the I/O manager is properly able to load
+        # from an non-existant table
+        tables = (
+            snowflake_conn.cursor()
+            .execute(f"SHOW TABLES LIKE '{table_name}' IN SCHEMA" f" {DATABASE}.{SCHEMA}")
+            .fetchall()
+        )
+        assert len(tables) == 0
+
+        @asset(
+            key_prefix=SCHEMA,
+            name=table_name,
+        )
+        def empty(context: AssetExecutionContext) -> DataFrame:
+            return DataFrame()
+
+        @asset
+        def loads_empty(empty: pandas.DataFrame) -> None:
+            assert empty.empty
+
+        resource_defs = {"io_manager": io_manager}
+        res = materialize(
+            [empty, loads_empty],
+            resources=resource_defs,
+        )
+
+        assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+@pytest.mark.integration
+def test_upstream_not_materialized(io_manager):
+    with temporary_snowflake_table(
+        schema_name=SCHEMA,
+        db_name=DATABASE,
+    ) as table_name:
+        snowflake_conn = SnowflakeResource(database=DATABASE, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
+
+        # ensure that the table doesn't exist so we know that the I/O manager is properly able to load
+        # from an non-existant table
+        tables = (
+            snowflake_conn.cursor()
+            .execute(f"SHOW TABLES LIKE '{table_name}' IN SCHEMA" f" {DATABASE}.{SCHEMA}")
+            .fetchall()
+        )
+        assert len(tables) == 0
+
+        @asset(
+            key_prefix=SCHEMA,
+            name=table_name,
+        )
+        def upstream(context: AssetExecutionContext) -> DataFrame:
+            return DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+
+        @asset
+        def loads_empty(upstream: pandas.DataFrame) -> None:
+            # in the test we materialize loads_empty without materailzing upstream. The I/O
+            # manager should handle this case and return an empty DataFrame
+            assert upstream.empty
+
+        resource_defs = {"io_manager": io_manager}
+        res = materialize(
+            [loads_empty],
+            resources=resource_defs,
+        )
+
+        assert res.success
