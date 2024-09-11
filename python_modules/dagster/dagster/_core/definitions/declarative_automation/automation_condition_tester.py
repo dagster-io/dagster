@@ -130,7 +130,7 @@ def evaluate_automation_conditions(
     )
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
-        asset_keys={
+        entity_keys={
             key
             for key in asset_selection.resolve(asset_graph)
             if asset_graph.get(key).automation_condition is not None

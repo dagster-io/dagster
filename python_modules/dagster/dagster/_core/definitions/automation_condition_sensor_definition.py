@@ -47,7 +47,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
 
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
-        asset_keys=asset_graph.all_asset_keys,
+        entity_keys=asset_graph.all_asset_keys,
         asset_graph_view=asset_graph_view,
         logger=context.log,
         data_time_resolver=data_time_resolver,
