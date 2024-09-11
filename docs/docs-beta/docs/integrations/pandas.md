@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Pandas'
-title: 'Dagster & Pandas'
-sidebar_label: 'Pandas'
-excerpt: 'Implement validation on pandas DataFrames.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-pandas'
-docslink: 'https://docs.dagster.io/integrations/pandas'
-partnerlink: 'https://pandas.pydata.org/'
-logo: '/integrations/Pandas.svg'
+layout: Integration
+status: published
+name: Pandas
+title: Dagster & Pandas
+sidebar_label: Pandas
+excerpt: Implement validation on pandas DataFrames.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pandas
+docslink: https://docs.dagster.io/integrations/pandas
+partnerlink: https://pandas.pydata.org/
+logo: /integrations/Pandas.svg
 categories:
-  - 'Metadata'
+  - Metadata
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

@@ -1,8 +1,8 @@
 ---
-title: "Installing Dagster"
-description: "Learn how to install Dagster"
+title: Installing Dagster
+description: Learn how to install Dagster
 sidebar_position: 20
-sidebar_label: "Installation"
+sidebar_label: Installation
 ---
 
 # Installing Dagster

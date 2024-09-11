@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Kubernetes'
-title: 'Dagster & Kubernetes'
-sidebar_label: 'Kubernetes'
-excerpt: 'Launch Kubernetes pods and execute external code directly from Dagster.'
-date: '2024-08-30'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-k8s'
-docslink: 'https://docs.dagster.io/concepts/dagster-pipes/kubernetes'
-partnerlink: 'https://kubernetes.io/'
-logo: '/integrations/Kubernetes.svg'
+layout: Integration
+status: published
+name: Kubernetes
+title: Dagster & Kubernetes
+sidebar_label: Kubernetes
+excerpt: Launch Kubernetes pods and execute external code directly from Dagster.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-k8s
+docslink: https://docs.dagster.io/concepts/dagster-pipes/kubernetes
+partnerlink: https://kubernetes.io/
+logo: /integrations/Kubernetes.svg
 categories:
-  - 'Compute'
+  - Compute
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

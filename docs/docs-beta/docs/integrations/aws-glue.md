@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'AWS Glue'
-title: 'Dagster & AWS Glue'
-sidebar_label: 'AWS Glue'
-excerpt: 'The AWS Glue integration enables you to initiate AWS Glue jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.'
-date: '2024-08-20'
-apireflink: 'https://docs.dagster.io/concepts/dagster-pipes/aws-glue'
-docslink: ''
-partnerlink: 'https://aws.amazon.com/'
-logo: '/integrations/aws-glue.svg'
+layout: Integration
+status: published
+name: AWS Glue
+title: Dagster & AWS Glue
+sidebar_label: AWS Glue
+excerpt: The AWS Glue integration enables you to initiate AWS Glue jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.
+date: 2024-08-20
+apireflink: https://docs.dagster.io/concepts/dagster-pipes/aws-glue
+docslink: 
+partnerlink: https://aws.amazon.com/
+logo: /integrations/aws-glue.svg
 categories:
-  - 'Compute'
+  - Compute
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

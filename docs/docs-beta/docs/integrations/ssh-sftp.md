@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'SSH/SFTP'
-title: 'Dagster & SSH/SFTP'
-sidebar_label: 'SSH/SFTP'
-excerpt: 'Establish encrypted connections to networked resources.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-ssh'
-docslink: ''
-partnerlink: 'https://www.ssh.com/academy/ssh/protocol'
-logo: '/integrations/SSH.svg'
+layout: Integration
+status: published
+name: SSH/SFTP
+title: Dagster & SSH/SFTP
+sidebar_label: SSH/SFTP
+excerpt: Establish encrypted connections to networked resources.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-ssh
+docslink: 
+partnerlink: https://www.ssh.com/academy/ssh/protocol
+logo: /integrations/SSH.svg
 categories:
-  - 'Other'
+  - Other
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

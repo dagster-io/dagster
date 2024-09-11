@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'GitHub'
-title: 'Dagster & GitHub'
-sidebar_label: 'GitHub'
-excerpt: 'Integrate with GitHub Apps and automate operations within your github repositories.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-github'
-docslink: ''
-partnerlink: 'https://github.com/'
-logo: '/integrations/Github.svg'
+layout: Integration
+status: published
+name: GitHub
+title: Dagster & GitHub
+sidebar_label: GitHub
+excerpt: Integrate with GitHub Apps and automate operations within your github repositories.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-github
+docslink: 
+partnerlink: https://github.com/
+logo: /integrations/Github.svg
 categories:
-  - 'Other'
+  - Other
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

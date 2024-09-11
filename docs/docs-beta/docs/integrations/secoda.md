@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Secoda'
-title: 'Dagster & Secoda'
-sidebar_label: 'Secoda'
-excerpt: 'Help your team understand metadata from Dagster by adding context in Secoda.'
-date: '2024-02-24'
-apireflink: ''
-docslink: 'https://www.secoda.co/automations/automated-documentation-for-new-integrations-in-dagster'
-partnerlink: 'https://www.secoda.co/integrations/dagster'
+layout: Integration
+status: published
+name: Secoda
+title: Dagster & Secoda
+sidebar_label: Secoda
+excerpt: Help your team understand metadata from Dagster by adding context in Secoda.
+date: 2024-02-24
+apireflink: 
+docslink: https://www.secoda.co/automations/automated-documentation-for-new-integrations-in-dagster
+partnerlink: https://www.secoda.co/integrations/dagster
 communityIntegration: true
-logo: '/integrations/Secoda.svg'
+logo: /integrations/Secoda.svg
 categories:
-  - 'Metadata'
+  - Metadata
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

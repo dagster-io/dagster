@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Sling'
-title: 'Dagster & Sling'
-sidebar_label: 'Sling'
-excerpt: 'Extract and load data from popular data sources to destinations with Sling through Dagster.'
-date: '2024-08-30'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-embedded-elt'
-docslink: 'https://docs.dagster.io/integrations/embedded-elt/sling'
-partnerlink: 'https://slingdata.io/'
-logo: '/integrations/sling.png'
+layout: Integration
+status: published
+name: Sling
+title: Dagster & Sling
+sidebar_label: Sling
+excerpt: Extract and load data from popular data sources to destinations with Sling through Dagster.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-embedded-elt
+docslink: https://docs.dagster.io/integrations/embedded-elt/sling
+partnerlink: https://slingdata.io/
+logo: /integrations/sling.png
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

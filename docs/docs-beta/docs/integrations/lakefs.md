@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'LakeFS'
-title: 'Dagster & LakeFS'
-sidebar_label: 'LakeFS'
-excerpt: 'lakeFS provides version control and complete lineage over the data lake.'
-date: '2023-06-27'
+layout: Integration
+status: published
+name: LakeFS
+title: Dagster & LakeFS
+sidebar_label: LakeFS
+excerpt: lakeFS provides version control and complete lineage over the data lake.
+date: 2023-06-27
 communityIntegration: true
-apireflink: 'https://pydocs.lakefs.io/'
-docslink: ''
-partnerlink: 'https://lakefs.io/'
-logo: '/integrations/lakefs.svg'
+apireflink: https://pydocs.lakefs.io/
+docslink: 
+partnerlink: https://lakefs.io/
+logo: /integrations/lakefs.svg
 categories:
-  - 'Storage'
+  - Storage
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

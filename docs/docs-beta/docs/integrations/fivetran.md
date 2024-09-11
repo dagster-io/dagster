@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Fivetran'
-title: 'Dagster & Fivetran'
-sidebar_label: 'Fivetran'
-excerpt: 'Orchestrate Fivetran connectors and schedule syncs with upstream or downstream dependencies.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-fivetran'
-docslink: 'https://docs.dagster.io/integrations/fivetran'
-partnerlink: 'https://www.fivetran.com/'
-logo: '/integrations/Fivetran.svg'
+layout: Integration
+status: published
+name: Fivetran
+title: Dagster & Fivetran
+sidebar_label: Fivetran
+excerpt: Orchestrate Fivetran connectors and schedule syncs with upstream or downstream dependencies.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-fivetran
+docslink: https://docs.dagster.io/integrations/fivetran
+partnerlink: https://www.fivetran.com/
+logo: /integrations/Fivetran.svg
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

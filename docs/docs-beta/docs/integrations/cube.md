@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Cube'
-title: 'Dagster & Cube'
-sidebar_label: 'Cube'
-excerpt: "Push changes from upstream data sources to Cube's semantic layer."
-date: '2023-08-30'
-apireflink: 'https://cube.dev/docs/orchestration-api/dagster'
-partnerlink: 'https://cube.dev/'
+layout: Integration
+status: published
+name: Cube
+title: Dagster & Cube
+sidebar_label: Cube
+excerpt: "Push changes from upstream data sources to Cubes semantic layer."
+date: 2023-08-30
+apireflink: https://cube.dev/docs/orchestration-api/dagster
+partnerlink: https://cube.dev/
 communityIntegration: true
-logo: '/integrations/cube.svg'
+logo: /integrations/cube.svg
 categories:
-  - 'Other'
+  - Other
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

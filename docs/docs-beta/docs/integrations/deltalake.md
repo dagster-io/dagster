@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Delta Lake'
-title: 'Dagster & Delta Lake'
-sidebar_label: 'Delta Lake'
-excerpt: 'Integrate your pipelines into Delta Lake.'
-date: '2022-11-07'
+layout: Integration
+status: published
+name: Delta Lake
+title: Dagster & Delta Lake
+sidebar_label: Delta Lake
+excerpt: Integrate your pipelines into Delta Lake.
+date: 2022-11-07
 communityIntegration: true
-apireflink: 'https://delta-io.github.io/delta-rs/integrations/delta-lake-dagster/'
-docslink: ''
-partnerlink: 'https://delta.io/'
-logo: '/integrations/DeltaLake.svg'
+apireflink: https://delta-io.github.io/delta-rs/integrations/delta-lake-dagster/
+docslink: 
+partnerlink: https://delta.io/
+logo: /integrations/DeltaLake.svg
 categories:
-  - 'Storage'
+  - Storage
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

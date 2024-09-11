@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'AWS S3'
-title: 'Dagster & AWS S3'
-sidebar_label: 'AWS S3'
-excerpt: 'The AWS S3 integration allows data engineers to easily read and write objects to the durable AWS S3 storage, enabling engineers to have a resilient storage layer when constructing their pipelines.'
-date: '2024-06-21'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-aws'
-docslink: ''
-partnerlink: 'https://aws.amazon.com/'
-logo: '/integrations/aws-s3.svg'
+layout: Integration
+status: published
+name: AWS S3
+title: Dagster & AWS S3
+sidebar_label: AWS S3
+excerpt: The AWS S3 integration allows data engineers to easily read and write objects to the durable AWS S3 storage, enabling engineers to have a resilient storage layer when constructing their pipelines.
+date: 2024-06-21
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
+docslink: 
+partnerlink: https://aws.amazon.com/
+logo: /integrations/aws-s3.svg
 categories:
-  - 'Storage'
+  - Storage
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

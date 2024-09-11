@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'dbt'
-title: 'Dagster & dbt'
-sidebar_label: 'dbt'
-excerpt: 'Put your dbt transformations to work, directly from within Dagster.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-dbt'
-docslink: 'https://docs.dagster.io/integrations/dbt'
-partnerlink: 'https://www.getdbt.com/'
-logo: '/integrations/dbt.svg'
+layout: Integration
+status: published
+name: dbt
+title: Dagster & dbt
+sidebar_label: dbt
+excerpt: Put your dbt transformations to work, directly from within Dagster.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dbt
+docslink: https://docs.dagster.io/integrations/dbt
+partnerlink: https://www.getdbt.com/
+logo: /integrations/dbt.svg
 categories:
-  - 'ETL'
+  - ETL
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

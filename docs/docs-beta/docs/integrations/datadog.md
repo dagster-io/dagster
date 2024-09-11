@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Datadog'
-title: 'Dagster & Datadog'
-sidebar_label: 'Datadog'
-excerpt: 'Publish metrics to Datadog from within Dagster ops and entralize your monitoring metrics.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-datadog'
-docslink: ''
-partnerlink: 'https://www.datadoghq.com/'
-logo: '/integrations/Datadog.svg'
+layout: Integration
+status: published
+name: Datadog
+title: Dagster & Datadog
+sidebar_label: Datadog
+excerpt: Publish metrics to Datadog from within Dagster ops and entralize your monitoring metrics.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-datadog
+docslink: 
+partnerlink: https://www.datadoghq.com/
+logo: /integrations/Datadog.svg
 categories:
-  - 'Monitoring'
+  - Monitoring
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

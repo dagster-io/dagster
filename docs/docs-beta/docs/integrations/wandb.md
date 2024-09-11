@@ -1,22 +1,20 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Weights & Biases'
-title: 'Dagster & Weights & Biases'
-sidebar_label: 'Weights & Biases'
-excerpt: 'Orchestrate your MLOps pipelines and maintain ML assets.'
-date: '2023-02-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-wandb'
-docslink: 'https://docs.wandb.ai/guides/integrations/dagster'
-partnerlink: 'https://wandb.ai/'
+layout: Integration
+status: published
+name: Weights & Biases
+title: Dagster & Weights & Biases
+sidebar_label: Weights & Biases
+excerpt: Orchestrate your MLOps pipelines and maintain ML assets.
+date: 2023-02-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-wandb
+docslink: https://docs.wandb.ai/guides/integrations/dagster
+partnerlink: https://wandb.ai/
 communityIntegration: True
-logo: '/integrations/WandB.svg'
+logo: /integrations/WandB.svg
 categories:
-  - 'Other'
+  - Other
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

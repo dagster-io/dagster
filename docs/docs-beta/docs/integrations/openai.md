@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'OpenAI'
-title: 'Dagster & OpenAI'
-sidebar_label: 'OpenAI'
-excerpt: 'Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.'
-date: '2024-03-12'
-apireflink: 'https://platform.openai.com/docs/introduction'
-docslink: 'https://docs.dagster.io/integrations/openai'
-partnerlink: ''
-logo: '/integrations/openai.svg'
+layout: Integration
+status: published
+name: OpenAI
+title: Dagster & OpenAI
+sidebar_label: OpenAI
+excerpt: Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.
+date: 2024-03-12
+apireflink: https://platform.openai.com/docs/introduction
+docslink: https://docs.dagster.io/integrations/openai
+partnerlink: 
+logo: /integrations/openai.svg
 categories:
-  - 'Other'
+  - Other
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

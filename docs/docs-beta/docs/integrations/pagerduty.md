@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'PagerDuty'
-title: 'Dagster & PagerDuty'
-sidebar_label: 'PagerDuty'
-excerpt: 'Centralize your monitoring with the dagster-pagerduty integration.'
-date: '2024-08-30'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-pagerduty'
-docslink: ''
-partnerlink: 'https://www.pagerduty.com/'
-logo: '/integrations/PagerDuty.svg'
+layout: Integration
+status: published
+name: PagerDuty
+title: Dagster & PagerDuty
+sidebar_label: PagerDuty
+excerpt: Centralize your monitoring with the dagster-pagerduty integration.
+date: 2024-08-30
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pagerduty
+docslink: 
+partnerlink: https://www.pagerduty.com/
+logo: /integrations/PagerDuty.svg
 categories:
-  - 'Alerting'
+  - Alerting
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'GCP BigQuery'
-title: 'Dagster & GCP BigQuery'
-sidebar_label: 'GCP BigQuery'
-excerpt: 'Integrate with GCP BigQuery.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-gcp'
-docslink: ''
-partnerlink: ''
-logo: '/integrations/gcp-bigquery.svg'
+layout: Integration
+status: published
+name: GCP BigQuery
+title: Dagster & GCP BigQuery
+sidebar_label: GCP BigQuery
+excerpt: Integrate with GCP BigQuery.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
+docslink: 
+partnerlink: 
+logo: /integrations/gcp-bigquery.svg
 categories:
-  - 'Storage'
+  - Storage
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

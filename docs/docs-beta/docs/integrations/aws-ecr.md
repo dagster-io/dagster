@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'AWS ECR'
-title: 'Dagster & AWS ECR'
-sidebar_label: 'AWS ECR'
-excerpt: 'This integration allows you to connect to AWS Elastic Container Registry (ECR), enabling you to manage your container images more effectively in your Dagster pipelines.'
-date: '2024-06-21'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-aws'
-docslink: ''
-partnerlink: 'https://aws.amazon.com/'
-logo: '/integrations/aws-ecr.svg'
+layout: Integration
+status: published
+name: AWS ECR
+title: Dagster & AWS ECR
+sidebar_label: AWS ECR
+excerpt: This integration allows you to connect to AWS Elastic Container Registry (ECR), enabling you to manage your container images more effectively in your Dagster pipelines.
+date: 2024-06-21
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
+docslink: 
+partnerlink: https://aws.amazon.com/
+logo: /integrations/aws-ecr.svg
 categories:
-  - 'Other'
+  - Other
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration

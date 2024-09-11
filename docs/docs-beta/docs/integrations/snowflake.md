@@ -1,21 +1,19 @@
 ---
-layout: 'Integration'
-status: 'published'
-name: 'Snowflake'
-title: 'Dagster & Snowflake'
-sidebar_label: 'Snowflake'
-excerpt: 'An integration with the Snowflake data warehouse. Read and write natively to Snowflake from Software Defined Assets.'
-date: '2022-11-07'
-apireflink: 'https://docs.dagster.io/_apidocs/libraries/dagster-snowflake'
-docslink: 'https://docs.dagster.io/integrations/snowflake'
-partnerlink: 'https://www.snowflake.com/en/'
-logo: '/integrations/Snowflake.svg'
+layout: Integration
+status: published
+name: Snowflake
+title: Dagster & Snowflake
+sidebar_label: Snowflake
+excerpt: An integration with the Snowflake data warehouse. Read and write natively to Snowflake from Software Defined Assets.
+date: 2022-11-07
+apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-snowflake
+docslink: https://docs.dagster.io/integrations/snowflake
+partnerlink: https://www.snowflake.com/en/
+logo: /integrations/Snowflake.svg
 categories:
-  - 'Storage'
+  - Storage
 enabledBy:
-  - ''
 enables:
-  - ''
 ---
 
 ### About this integration
