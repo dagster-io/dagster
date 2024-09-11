@@ -2,9 +2,10 @@ import datetime
 import logging
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Mapping, Optional, Sequence, Union
+from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -15,7 +16,6 @@ from dagster._core.definitions.declarative_automation.automation_condition_evalu
     AutomationConditionEvaluator,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.instance import DagsterInstance
 from dagster._time import get_current_datetime
 
@@ -23,13 +23,20 @@ from dagster._time import get_current_datetime
 class EvaluateAutomationConditionsResult:
     def __init__(
         self,
-        requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         cursor: AssetDaemonCursor,
-        results: Sequence[AutomationResult],
+        results: Iterable[AutomationResult],
+        requested_subsets: Iterable[EntitySubset],
     ):
-        self._requested_asset_partitions = requested_asset_partitions
+        self._requested_subsets = requested_subsets
+        self._requested_asset_partitions = set().union(
+            *(
+                subset.expensively_compute_asset_partitions()
+                for subset in requested_subsets
+                if isinstance(subset.key, AssetKey)
+            )
+        )
         self.cursor = cursor
-        self.results = results
+        self.results = list(results)
 
     @cached_property
     def _requested_partitions_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[Optional[str]]]:
@@ -136,7 +143,7 @@ def evaluate_automation_conditions(
         auto_materialize_run_tags={},
         request_backfills=request_backfills,
     )
-    results, requested_asset_partitions = evaluator.evaluate()
+    results, requested_subsets = evaluator.evaluate()
     cursor = AssetDaemonCursor(
         evaluation_id=0,
         last_observe_request_timestamp_by_asset_key={},
@@ -145,7 +152,5 @@ def evaluate_automation_conditions(
     )
 
     return EvaluateAutomationConditionsResult(
-        cursor=cursor,
-        requested_asset_partitions=requested_asset_partitions,
-        results=results,
+        cursor=cursor, requested_subsets=requested_subsets, results=results
     )
