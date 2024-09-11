@@ -46,11 +46,6 @@ def some_schedule():
 
 
 @asset
-def dag__task():
-    pass
-
-
-@asset
 def a():
     pass
 
@@ -60,11 +55,6 @@ b_spec = AssetSpec(key="b")
 
 @asset_check(asset=a)
 def a_check():
-    pass
-
-
-@asset_check(asset=dag__task)
-def other_check():
     pass
 
 
