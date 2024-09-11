@@ -607,7 +607,7 @@ class DagsterKubernetesClient:
 
             if wait_timeout and self.timer() - start > wait_timeout:
                 raise DagsterK8sError(
-                    f"Timed out while waiting for pod to get to status {wait_for_state} with pod info: {pod!s}"
+                    f"Timed out while waiting for pod to get to status {wait_for_state.value} with pod info: {pod!s}"
                 )
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstatus-v1-core
             all_statuses = []
