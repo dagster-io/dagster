@@ -405,7 +405,7 @@ def build_external_execution_context_data(
         context.partition_time_window
         if context.has_partition_key
         and has_one_dimension_time_window_partitioning(
-            context.get_step_execution_context().partitions_def
+            context.get_step_execution_context().run_partitions_def
         )
         else None
     )
