@@ -192,6 +192,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 len([k for k, v in self.propagate_tags.items() if v]) <= 1,
                 "Only one of include_only, include_all, or exclude can be set for the propagate_tags config property",
             )
+        if self.propagate_tags.get("include_only"):
+            invalid_tags = {"dagster/op_selection", "dagster/solid_selection"}
+            check.invariant({invalid_tags - set(self.propagate_tags["include_only"]) == invalid_tags, f"Cannot include {invalid_tags} in include_only"})
 
         self._current_task_metadata = None
         self._current_task = None
@@ -392,38 +395,30 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if any(tag["key"] == "dagster/run_id" for tag in container_context.run_ecs_tags):
             raise Exception("Cannot override system ECS tag: dagster/run_id")
 
+        # these tags often contain * or + characters which are not allowed in ECS tags. They don't seem super useful
+        # from an observability perspective, so we exclude them from the ECS tags
+        tags_to_exclude = ("dagster/op_selection", "dagster/solid_selection",)
+
         if self.propagate_tags:
             # Add contextual Dagster run tags to ECS tags
             tags = run.tags
             if self.propagate_tags.get("include_all"):
                 tags = {
-                    k: v for k, v in run.tags.items() if not k.startswith("ecs/")
+                    k: v for k, v in run.tags.items() if not k.startswith("ecs/") and k not in tags_to_exclude
                 }  # ecs tags are redundant to information already defined on the task
             elif self.propagate_tags.get("include_only"):
                 tags = {
-                    k: v for k, v in run.tags.items() if k in self.propagate_tags["include_only"]
+                    k: v for k, v in run.tags.items() if k in self.propagate_tags["include_only"] and k not in tags_to_exclude
                 }
             elif self.propagate_tags.get("exclude"):
                 tags = {
                     k: v
                     for k, v in run.tags.items()
-                    if k not in self.propagate_tags["exclude"] and not k.startswith("ecs/")
+                    if k not in self.propagate_tags["exclude"] and not k.startswith("ecs/") and k not in tags_to_exclude
                 }
             to_add = [{"key": k, "value": v} for k, v in tags.items()]
         else:
             to_add = []
-
-        # ECS tags can't have * in the value, which is the value passed to `dagster/solid_selection` when all steps in
-        # a run are selected (probably the most common case), or when all tags before or after a step are selected.
-        # We need to replace * with a character that is allowed in ECS tags.
-        for i, k in enumerate(to_add):
-            if k["key"] == "dagster/solid_selection":
-                if k["value"].startswith("*"):
-                    to_add[i]["value"] = to_add[i]["value"].lreplace("*", "ALL_BEFORE_AND_")
-                if k["value"].endswith("*"):
-                    to_add[i]["value"] = to_add[i]["value"].rreplace("*", "_AND_ALL_AFTER")
-                if k["value"] == "*":
-                    to_add[i]["value"] = to_add[i]["value"].replace("*", "ALL")
 
         return [
             {"key": "dagster/run_id", "value": run.run_id},
