@@ -6,8 +6,7 @@ from typing import Mapping, Optional, Sequence, Tuple
 import dagster._check as check
 import mock
 from dagster import AssetKey
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -15,10 +14,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
     AutomationResult,
 )
-from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
-    LegacyRuleEvaluationContext,
+from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+    AutomationConditionEvaluator,
 )
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
     AndAutomationCondition,
 )
@@ -98,40 +97,29 @@ class AutomationConditionScenarioState(ScenarioState):
                 asset_graph=asset_graph,
                 loading_context=LoadingContextForTest(self.instance),
             )
-            daemon_context = AssetDaemonContext(
-                evaluation_id=1,
+            asset_graph_view = AssetGraphView(
+                temporal_context=TemporalContext(
+                    effective_dt=instance_queryer.evaluation_time,
+                    last_event_id=self.instance.event_log_storage.get_maximum_record_id(),
+                ),
                 instance=self.instance,
                 asset_graph=asset_graph,
-                cursor=AssetDaemonCursor.empty(),
-                materialize_run_tags={},
-                observe_run_tags={},
-                auto_observe_asset_keys=None,
-                auto_materialize_asset_keys=None,
-                respect_materialization_data_versions=False,
+            )
+            evaluator = AutomationConditionEvaluator(
+                asset_graph=asset_graph,
+                asset_keys=asset_graph.all_asset_keys,
+                asset_graph_view=asset_graph_view,
                 logger=self.logger,
-                evaluation_time=self.current_time,
-                request_backfills=self.request_backfills,
-            )
-            legacy_context = LegacyRuleEvaluationContext.create_within_asset_daemon(
-                asset_key=asset_key,
-                condition=asset_condition,
-                previous_condition_cursor=self.condition_cursor,
-                instance_queryer=instance_queryer,
                 data_time_resolver=CachingDataTimeResolver(instance_queryer),
-                current_results_by_key={},
-                expected_data_time_mapping={},
-                daemon_context=daemon_context,
-            )
-            context = AutomationContext.create(
-                asset_key=asset_key,
-                asset_graph_view=daemon_context.asset_graph_view,
-                log=self.logger,
-                current_tick_results_by_key=self._get_current_results_by_key(
-                    daemon_context.asset_graph_view
+                cursor=AssetDaemonCursor.empty().with_updates(
+                    0, 0, [], [self.condition_cursor] if self.condition_cursor else []
                 ),
-                condition_cursor=self.condition_cursor,
-                legacy_context=legacy_context,
+                respect_materialization_data_versions=True,
+                auto_materialize_run_tags={},
+                request_backfills=self.instance.da_request_backfills(),
             )
+            evaluator.current_results_by_key = self._get_current_results_by_key(asset_graph_view)  # type: ignore
+            context = AutomationContext.create(asset_key=asset_key, evaluator=evaluator)
 
             full_result = asset_condition.evaluate(context)
             new_state = dataclasses.replace(self, condition_cursor=full_result.get_new_cursor())

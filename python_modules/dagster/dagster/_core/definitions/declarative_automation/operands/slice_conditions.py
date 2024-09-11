@@ -102,7 +102,7 @@ class WillBeRequestedCondition(SubsetAutomationCondition[AssetKey]):
         )
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset[AssetKey]:
-        current_result = context.current_tick_results_by_key.get(context.key)
+        current_result = context.current_results_by_key.get(context.key)
         if (
             current_result
             and current_result.true_subset

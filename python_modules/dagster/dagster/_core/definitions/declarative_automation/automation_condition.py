@@ -716,6 +716,18 @@ class AutomationResult(Generic[T_EntityKey]):
             self.true_subset.convert_to_serializable_subset() or self._serializable_subset_override
         )
 
+    def compute_legacy_expected_data_time(self) -> Optional[datetime.datetime]:
+        from dagster._core.definitions.freshness_based_auto_materialize import (
+            get_expected_data_time_for_asset_key,
+        )
+
+        legacy_context = self._context._legacy_context  # noqa
+        if legacy_context:
+            return get_expected_data_time_for_asset_key(
+                legacy_context, will_materialize=not self.true_subset.is_empty
+            )
+        return None
+
 
 def _compute_subset_value_str(subset: SerializableEntitySubset) -> str:
     """Computes a unique string representing a given AssetSubsets. This string will be equal for

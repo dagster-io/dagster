@@ -1,29 +1,22 @@
-import datetime
 import logging
-import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Sequence, Set, Tuple
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, AbstractSet, Dict, List, Mapping, Optional, Sequence, Tuple
 
-import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
-    LegacyRuleEvaluationContext,
-)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.freshness_based_auto_materialize import (
-    get_expected_data_time_for_asset_key,
-)
-from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+    import datetime
 
-from dataclasses import dataclass, replace
+    from dagster._core.asset_graph_view.entity_subset import EntitySubset
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 @dataclass
@@ -57,17 +50,17 @@ class AutomationConditionEvaluator:
         self.current_results_by_key = {}
         self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
-        self.to_request = set()
         self.num_checked_assets = 0
         self.num_asset_keys = len(asset_keys)
         self.request_backfills = request_backfills
 
-    asset_graph: BaseAssetGraph
+        self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
+        self._execution_set_extras: Dict[AssetKey, List[EntitySubset[AssetKey]]] = defaultdict(list)
+
+    asset_graph: BaseAssetGraph[BaseAssetNode]
     asset_keys: AbstractSet[AssetKey]
     asset_graph_view: AssetGraphView
     current_results_by_key: Dict[AssetKey, AutomationResult]
-    expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]]
-    to_request: Set[AssetKeyPartitionKey]
     num_checked_assets: int
     num_asset_keys: int
     logger: logging.Logger
@@ -108,106 +101,93 @@ class AutomationConditionEvaluator:
     def evaluate(self) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
         self.prefetch()
         for asset_key in self.asset_graph.toposorted_asset_keys:
-            # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.asset_keys:
                 continue
 
-            self.num_checked_assets = self.num_checked_assets + 1
-            start_time = time.time()
+            self.num_checked_assets += 1
             self.logger.debug(
-                "Evaluating asset"
-                f" {asset_key.to_user_string()} ({self.num_checked_assets}/{self.num_asset_keys})"
+                f"Evaluating asset {asset_key.to_user_string()} ({self.num_checked_assets}/{self.num_asset_keys})"
             )
 
             try:
-                (result, expected_data_time) = self.evaluate_asset(
-                    asset_key, self.expected_data_time_mapping, self.current_results_by_key
-                )
+                self.evaluate_asset(asset_key)
             except Exception as e:
                 raise Exception(
                     f"Error while evaluating conditions for asset {asset_key.to_user_string()}"
                 ) from e
 
+            result = self.current_results_by_key[asset_key]
             num_requested = result.true_subset.size
+            requested_str = ",".join(
+                [
+                    (ap.partition_key or "No partition")
+                    for ap in result.true_subset.expensively_compute_asset_partitions()
+                ]
+            )
             log_fn = self.logger.info if num_requested > 0 else self.logger.debug
-
-            to_request_asset_partitions = result.true_subset.expensively_compute_asset_partitions()
-            to_request_str = ",".join(
-                [(ap.partition_key or "No partition") for ap in to_request_asset_partitions]
-            )
-            self.to_request |= to_request_asset_partitions
-
             log_fn(
-                f"Asset {asset_key.to_user_string()} evaluation result: {num_requested}"
-                f" requested ({to_request_str}) ({format(time.time()-start_time, '.3f')} seconds)"
+                f"Asset {asset_key.to_user_string()} evaluation result: {num_requested} "
+                f"requested ({requested_str}) "
+                f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
+        return (list(self.current_results_by_key.values()), self._get_asset_partitions())
 
-            self.current_results_by_key[asset_key] = result
-            self.expected_data_time_mapping[asset_key] = expected_data_time
+    def evaluate_asset(self, asset_key: AssetKey) -> None:
+        # evaluate the condition of this asset
+        context = AutomationContext.create(asset_key=asset_key, evaluator=self)
+        result = context.condition.evaluate(context)
 
-            # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
-            # materialize all of them
-            execution_set_keys = self.asset_graph.get(asset_key).execution_set_asset_keys
-            if len(execution_set_keys) > 1 and num_requested > 0:
-                for neighbor_key in execution_set_keys:
-                    self.expected_data_time_mapping[neighbor_key] = expected_data_time
-
-                    # make sure that the true_subset of the neighbor is accurate -- when it was
-                    # evaluated it may have had a different requested subset. however, because
-                    # all these neighbors must be executed as a unit, we need to union together
-                    # the subset of all required neighbors
-                    if neighbor_key in self.current_results_by_key:
-                        neighbor_true_subset = replace(
-                            result.serializable_evaluation.true_subset, key=neighbor_key
-                        )
-                        self.current_results_by_key[
-                            neighbor_key
-                        ].set_internal_serializable_subset_override(neighbor_true_subset)
-                    self.to_request |= {
-                        ap._replace(asset_key=neighbor_key)
-                        for ap in result.true_subset.expensively_compute_asset_partitions()
-                    }
-
-        return list(self.current_results_by_key.values()), self.to_request
-
-    def evaluate_asset(
-        self,
-        asset_key: AssetKey,
-        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-        current_results_by_key: Mapping[AssetKey, AutomationResult],
-    ) -> Tuple[AutomationResult, Optional[datetime.datetime]]:
-        """Evaluates the AutomationCondition of a given asset key."""
-        automation_condition = check.not_none(self.asset_graph.get(asset_key).automation_condition)
-
-        if automation_condition.has_rule_condition and self.request_backfills:
-            raise DagsterInvalidDefinitionError(
-                "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
-            )
-
-        legacy_context = LegacyRuleEvaluationContext.create(
-            asset_key=asset_key,
-            cursor=self.cursor.get_previous_condition_cursor(asset_key),
-            condition=automation_condition,
-            instance_queryer=self.instance_queryer,
-            data_time_resolver=self.data_time_resolver,
-            current_results_by_key=current_results_by_key,
-            expected_data_time_mapping=expected_data_time_mapping,
-            respect_materialization_data_versions=self.respect_materialization_data_versions,
-            auto_materialize_run_tags=self.auto_materialize_run_tags,
-            logger=self.logger,
+        # update dictionaries to keep track of this result
+        self.current_results_by_key[asset_key] = result
+        self.legacy_expected_data_time_by_key[asset_key] = (
+            result.compute_legacy_expected_data_time()
         )
 
-        context = AutomationContext.create(
-            asset_key=asset_key,
-            asset_graph_view=self.asset_graph_view,
-            log=self.logger,
-            current_tick_results_by_key=current_results_by_key,
-            condition_cursor=self.cursor.get_previous_condition_cursor(asset_key),
-            legacy_context=legacy_context,
-        )
+        # handle cases where an entity must be materialized with others
+        self._handle_execution_set(result)
 
-        result = automation_condition.evaluate(context)
-        expected_data_time = get_expected_data_time_for_asset_key(
-            legacy_context, will_materialize=result.true_subset.size > 0
+    def _handle_execution_set(self, result: AutomationResult[AssetKey]) -> None:
+        # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
+        # materialize all of them
+        asset_key = result.asset_key
+        execution_set_keys = self.asset_graph.get(asset_key).execution_set_asset_keys
+
+        if len(execution_set_keys) > 1 and result.true_subset.size > 0:
+            for neighbor_key in execution_set_keys:
+                self.legacy_expected_data_time_by_key[neighbor_key] = (
+                    self.legacy_expected_data_time_by_key[asset_key]
+                )
+
+                # make sure that the true_subset of the neighbor is accurate -- when it was
+                # evaluated it may have had a different requested subset. however, because
+                # all these neighbors must be executed as a unit, we need to union together
+                # the subset of all required neighbors
+                if neighbor_key in self.current_results_by_key:
+                    neighbor_true_subset = replace(
+                        result.serializable_evaluation.true_subset, key=neighbor_key
+                    )
+                    self.current_results_by_key[
+                        neighbor_key
+                    ].set_internal_serializable_subset_override(neighbor_true_subset)
+
+                extra = self.asset_graph_view.get_subset_from_serializable_subset(
+                    SerializableEntitySubset(
+                        neighbor_key,
+                        result.true_subset.get_internal_value(),
+                    )
+                )
+                if extra:
+                    self._execution_set_extras[neighbor_key].append(extra)
+
+    def _get_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+        return set().union(
+            *(
+                result.true_subset.expensively_compute_asset_partitions()
+                for result in self.current_results_by_key.values()
+            ),
+            *(
+                extra.expensively_compute_asset_partitions()
+                for extras in self._execution_set_extras.values()
+                for extra in extras
+            ),
         )
-        return result, expected_data_time
