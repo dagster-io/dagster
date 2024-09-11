@@ -1,7 +1,7 @@
 ---
 title: Representing external data sources with external assets
 sidebar_position: 80
-sidebar_label: 'External data assets'
+sidebar_label: 'External data sources'
 ---
 
 One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization, even if those assets are orchestrated by systems other than Dagster.
