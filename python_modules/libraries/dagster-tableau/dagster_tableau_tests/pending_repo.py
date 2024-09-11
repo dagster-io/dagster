@@ -25,6 +25,7 @@ resource.sign_in()
 pbi_defs = resource.build_defs()
 resource.sign_out()
 
+
 @asset
 def my_materializable_asset():
     pass

@@ -95,7 +95,9 @@ def test_translator_spec(
         assert data_source_asset.key.path == ["superstore_datasource"]
 
 
-def test_using_cached_asset_data(workspace_data_api_mocks_pending_repo: responses.RequestsMock) -> None:
+def test_using_cached_asset_data(
+    workspace_data_api_mocks_pending_repo: responses.RequestsMock,
+) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks_pending_repo.calls) == 0
 
@@ -129,11 +131,9 @@ def test_using_cached_asset_data(workspace_data_api_mocks_pending_repo: response
         )
 
         assert (
-                len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
-                == 1
+            len([event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS])
+            == 1
         ), "Expected two successful steps"
 
         # Two more calls, for when the resource signs in and out in the pending.repo.py
         assert len(workspace_data_api_mocks_pending_repo.calls) == 7
-
-
