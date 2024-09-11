@@ -3,7 +3,7 @@ import sys
 import traceback
 import uuid
 from types import TracebackType
-from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type
 
 from typing_extensions import TypeAlias
 
@@ -67,7 +67,9 @@ class SerializableErrorInfo(
         return SerializableErrorInfo(message=self.message, stack=[], cls_name=self.cls_name)
 
 
-def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> SerializableErrorInfo:
+def _serializable_error_info_from_tb(
+    tb: traceback.TracebackException,
+) -> SerializableErrorInfo:
     return SerializableErrorInfo(
         # usually one entry, multiple lines for SyntaxError
         "".join(list(tb.format_exception_only())),
@@ -78,14 +80,15 @@ def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> Serial
     )
 
 
-ExceptionInfo: TypeAlias = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None],
-]
+ExceptionInfo: TypeAlias = Tuple[Type[BaseException], BaseException, TracebackType]
 
 
 def _should_redact_user_code_error() -> bool:
-    return str(os.getenv("DAGSTER_REDACT_USER_CODE_ERRORS")).lower() in ("1", "true", "t")
+    return str(os.getenv("DAGSTER_REDACT_USER_CODE_ERRORS")).lower() in (
+        "1",
+        "true",
+        "t",
+    )
 
 
 def serializable_error_info_from_exc_info(
