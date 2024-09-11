@@ -63,7 +63,7 @@ Refer to the [Sensors guide](/guides/sensors) for more information about sensors
 
 ### Pushing with the REST API
 
-You can inform Dagster that an external asset has materialized by pushing the event from an external system to the REST API. The following examples demonstrate how to inform Dagster that a materialzation of the `raw_transactions` external asset has occurred.
+You can inform Dagster that an external asset has materialized by pushing the event from an external system to the REST API. The following examples demonstrate how to inform Dagster that a materialization of the `raw_transactions` external asset has occurred.
 
 The required headers for the REST API depend on whether you're using Dagster+ or OSS. Use the tabs to view an example API request for each Dagster type.
 
