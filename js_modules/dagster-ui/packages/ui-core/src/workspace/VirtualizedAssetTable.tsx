@@ -1,7 +1,11 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
+import {
+  ShimmerRow,
+  VirtualizedAssetCatalogHeader,
+  VirtualizedAssetRow,
+} from './VirtualizedAssetRow';
 import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
@@ -10,7 +14,8 @@ import {Container, Inner} from '../ui/VirtualizedTable';
 
 type Row =
   | {type: 'asset'; path: string[]; displayKey: string; asset: AssetTableFragment}
-  | {type: 'folder'; path: string[]; displayKey: string; assets: AssetTableFragment[]};
+  | {type: 'folder'; path: string[]; displayKey: string; assets: AssetTableFragment[]}
+  | {type: 'shimmer'};
 
 interface Props {
   headerCheckbox: React.ReactNode;
@@ -22,6 +27,7 @@ interface Props {
   showRepoColumn: boolean;
   view?: AssetViewType;
   kindFilter?: StaticSetFilter<string>;
+  isLoading?: boolean;
 }
 
 export const VirtualizedAssetTable = (props: Props) => {
@@ -35,12 +41,25 @@ export const VirtualizedAssetTable = (props: Props) => {
     showRepoColumn,
     view = 'flat',
     kindFilter,
+    isLoading,
   } = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
-  const count = Object.keys(groups).length;
+
+  const rows: Row[] = React.useMemo(() => {
+    if (isLoading) {
+      return new Array(5).fill({type: 'shimmer'});
+    }
+    return Object.entries(groups).map(([displayKey, assets]) => {
+      const path = [...prefixPath, ...JSON.parse(displayKey)];
+      const isFolder = assets.length > 1 || path.join('/') !== assets[0]!.key.path.join('/');
+      return isFolder
+        ? {type: 'folder', path, displayKey, assets}
+        : {type: 'asset', path, displayKey, asset: assets[0]!};
+    });
+  }, [prefixPath, groups, isLoading]);
 
   const rowVirtualizer = useVirtualizer({
-    count,
+    count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 64,
     overscan: 5,
@@ -49,16 +68,6 @@ export const VirtualizedAssetTable = (props: Props) => {
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  const rows: Row[] = React.useMemo(() => {
-    return Object.entries(groups).map(([displayKey, assets]) => {
-      const path = [...prefixPath, ...JSON.parse(displayKey)];
-      const isFolder = assets.length > 1 || path.join('/') !== assets[0]!.key.path.join('/');
-      return isFolder
-        ? {type: 'folder', path, displayKey, assets}
-        : {type: 'asset', path, displayKey, asset: assets[0]!};
-    });
-  }, [prefixPath, groups]);
-
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
@@ -66,6 +75,17 @@ export const VirtualizedAssetTable = (props: Props) => {
         <Inner $totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             const row: Row = rows[index]!;
+            if (row.type === 'shimmer') {
+              return (
+                <ShimmerRow
+                  key={index}
+                  $height={size}
+                  $start={start}
+                  $showRepoColumn={showRepoColumn}
+                />
+              );
+            }
+
             const rowType = () => {
               if (row.type === 'folder') {
                 return 'folder';

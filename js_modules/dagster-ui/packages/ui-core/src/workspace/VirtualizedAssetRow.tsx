@@ -1,4 +1,4 @@
-import {Box, Caption, Checkbox, Colors, Icon} from '@dagster-io/ui-components';
+import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -234,6 +234,32 @@ export const VirtualizedAssetCatalogHeader = ({
     </HeaderRow>
   );
 };
+
+export const ShimmerRow = (props: {$height: number; $start: number; $showRepoColumn: boolean}) => (
+  <Row {...props}>
+    <RowGrid border="bottom" $showRepoColumn={props.$showRepoColumn}>
+      <RowCell>
+        <Skeleton $height={21} $width="45%" />
+      </RowCell>
+      <RowCell>
+        <Skeleton $height={21} $width="45%" />
+      </RowCell>
+      <RowCell>
+        <Skeleton $height={21} $width="45%" />
+      </RowCell>
+      {props.$showRepoColumn ? (
+        <>
+          <RowCell>
+            <Skeleton $height={21} $width="45%" />
+          </RowCell>
+          <RowCell>
+            <Skeleton $height={21} $width="45%" />
+          </RowCell>
+        </>
+      ) : null}
+    </RowGrid>
+  </Row>
+);
 
 export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}) => {
   return (
