@@ -3,15 +3,16 @@ import os
 import random
 import re
 import string
+import sys
 import threading
 import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
 
 import kubernetes
-import pendulum
 from dagster import (
     OpExecutionContext,
     _check as check,
@@ -708,8 +709,37 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
 
 
 def _is_kube_timestamp(maybe_timestamp: str) -> bool:
-    try:
-        pendulum.parse(maybe_timestamp)
-        return True
-    except Exception:
-        return False
+    # fromisoformat only works properly in Python 3.11+
+    # Once pre 3.11 backwards compatibility is dropped
+    # anything after this if statement can be deleted
+    if sys.version_info >= (3, 11):
+        try:
+            datetime.fromisoformat(maybe_timestamp)
+            return True
+        except ValueError:
+            return False
+    # This extra stripping logic is necessary, as Python's strptime fn doesn't
+    # handle valid ISO 8601 timestamps with nanoseconds which we receive in k8s
+    # e.g. 2024-03-22T02:17:29.185548486Z
+
+    # This is likely fine. We're just trying to confirm whether or not it's a
+    # valid timestamp, not trying to parse it with full correctness.
+    if maybe_timestamp.endswith("Z"):
+        maybe_timestamp = maybe_timestamp[:-1]  # Strip the "Z"
+        if "." in maybe_timestamp:
+            # Split at the decimal point to isolate the fractional seconds
+            date_part, frac_part = maybe_timestamp.split(".")
+            maybe_timestamp = f"{date_part}.{frac_part[:6]}Z"
+        else:
+            maybe_timestamp = f"{maybe_timestamp}Z"  # Add the "Z" back if no fractional part
+        try:
+            datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+            return True
+        except ValueError:
+            return False
+    else:
+        try:
+            datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S%z")
+            return True
+        except ValueError:
+            return False
