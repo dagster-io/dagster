@@ -30,9 +30,11 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Configure',
-          items: ['guides/configuring-assets', 
+          items: [
+            'guides/configuring-assets',
             'guides/asset-factories',
             'guides/resources',
+            'guides/apis',
             'guides/io-managers',
           ],
         },
