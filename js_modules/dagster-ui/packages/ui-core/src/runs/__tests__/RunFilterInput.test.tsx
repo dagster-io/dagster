@@ -14,7 +14,7 @@ import {
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {calculateTimeRanges} from '../../ui/BaseFilters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DagsterTag} from '../RunTag';
 import {
   RUN_TAG_KEYS_QUERY,

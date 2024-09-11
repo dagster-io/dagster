@@ -5,18 +5,15 @@ import {
   WorkspaceLocationStatusEntry,
   buildWorkspaceLocationStatusEntries,
   buildWorkspaceLocationStatusEntry,
-} from '../../graphql/types';
-import {buildQueryMock} from '../../testing/mocking';
-import {
-  CODE_LOCATION_STATUS_QUERY,
-  LOCATION_WORKSPACE_QUERY,
-} from '../WorkspaceContext/WorkspaceQueries';
+} from '../../../graphql/types';
+import {buildQueryMock} from '../../../testing/mocking';
 import {
   CodeLocationStatusQuery,
   CodeLocationStatusQueryVariables,
   LocationWorkspaceQuery,
   LocationWorkspaceQueryVariables,
-} from '../types/WorkspaceQueries.types';
+} from '../../types/WorkspaceQueries.types';
+import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from '../WorkspaceQueries';
 
 export const buildCodeLocationsStatusQuery = (
   entries: WorkspaceLocationStatusEntry[],

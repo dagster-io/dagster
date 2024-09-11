@@ -6,7 +6,7 @@ import {RecoilRoot} from 'recoil';
 
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,

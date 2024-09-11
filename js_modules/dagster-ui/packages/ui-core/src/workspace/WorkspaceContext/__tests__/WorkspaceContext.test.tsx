@@ -27,7 +27,7 @@ import {
   locationWorkspaceKey,
   repoLocationToRepos,
 } from '../WorkspaceContext';
-import {buildWorkspaceMocks} from '../../__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../__fixtures__/Workspace.fixtures';
 
 const mockCache = cache as any;
 
