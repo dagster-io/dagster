@@ -25,6 +25,8 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -256,6 +258,7 @@ def _create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetsDefinition]] = None,
+    metadata: Optional[RawMetadataMapping] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     # First, dedupe all definition types.
     sensors = dedupe_object_refs(sensors)
@@ -284,6 +287,7 @@ def _create_repository_using_definitions_args(
         default_executor_def=executor_def,
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
+        metadata=metadata,
     )
     def created_repo():
         return [
@@ -375,6 +379,10 @@ class Definitions(IHaveNew):
             Default loggers for jobs. Individual jobs
             can define their own loggers by setting them explictly.
 
+        metadata (Optional[MetadataMapping]):
+            Arbitrary metadata for the Definitions. Not displayed in the UI but accessible on
+            the Definitions instance at runtime.
+
     Example usage:
 
     .. code-block:: python
@@ -431,6 +439,7 @@ class Definitions(IHaveNew):
     # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
     # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
     asset_checks: Optional[Iterable[AssetsDefinition]] = None
+    metadata: Mapping[str, MetadataValue]
 
     def __new__(
         cls,
@@ -446,6 +455,7 @@ class Definitions(IHaveNew):
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetsDefinition]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         return super().__new__(
             cls,
@@ -457,6 +467,7 @@ class Definitions(IHaveNew):
             executor=executor,
             loggers=loggers,
             asset_checks=asset_checks,
+            metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
         )
 
     @public
@@ -606,6 +617,7 @@ class Definitions(IHaveNew):
             executor=self.executor,
             loggers=self.loggers,
             asset_checks=self.asset_checks,
+            metadata=self.metadata,
         )
 
     def get_asset_graph(self) -> AssetGraph:
@@ -657,6 +669,7 @@ class Definitions(IHaveNew):
         sensors = []
         jobs = []
         asset_checks = []
+        metadata = {}
 
         resources = {}
         resource_key_indexes: Dict[str, int] = {}
@@ -671,6 +684,7 @@ class Definitions(IHaveNew):
             schedules.extend(def_set.schedules or [])
             sensors.extend(def_set.sensors or [])
             jobs.extend(def_set.jobs or [])
+            metadata.update(def_set.metadata)
 
             for resource_key, resource_value in (def_set.resources or {}).items():
                 if resource_key in resources and resources[resource_key] is not resource_value:
@@ -708,6 +722,7 @@ class Definitions(IHaveNew):
             executor=executor,
             loggers=loggers,
             asset_checks=asset_checks,
+            metadata=metadata,
         )
 
     @public

@@ -59,7 +59,7 @@ class _Repository:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -228,7 +228,7 @@ def repository(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
@@ -245,7 +245,7 @@ def repository(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    metadata: Optional[Dict[str, RawMetadataValue]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -280,7 +280,8 @@ def repository(
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
             function.
         description (Optional[str]): A string description of the repository.
-        metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository.
+        metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository. Not
+            displayed in the UI but accessible on RepositoryDefinition at runtime.
         top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
             resource keys to defintions, for resources which should be displayed in the UI.
 
