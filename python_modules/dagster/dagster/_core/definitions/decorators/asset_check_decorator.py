@@ -9,7 +9,11 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
 from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.decorators.asset_decorator import make_asset_deps
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
@@ -104,6 +108,7 @@ def asset_check(
     op_tags: Optional[Mapping[str, Any]] = None,
     retry_policy: Optional[RetryPolicy] = None,
     metadata: Optional[Mapping[str, Any]] = None,
+    automation_condition: Optional[AutomationCondition[AssetCheckKey]] = None,
 ) -> Callable[[AssetCheckFunction], AssetChecksDefinition]:
     """Create a definition for how to execute an asset check.
 
@@ -139,7 +144,8 @@ def asset_check(
             the check, e.g. "dbt" or "spark".
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that executes the check.
         metadata (Optional[Mapping[str, Any]]): A dictionary of static metadata for the check.
-
+        automation_condition (Optional[AutomationCondition]): An AutomationCondition which determines
+            when this check should be executed.
 
     Produces an :py:class:`AssetChecksDefinition` object.
 
@@ -202,6 +208,7 @@ def asset_check(
             additional_deps=additional_ins_and_deps,
             blocking=blocking,
             metadata=metadata,
+            automation_condition=automation_condition,
         )
 
         resource_defs_for_execution = wrap_resources_for_execution(resource_defs)

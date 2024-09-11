@@ -80,6 +80,10 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
     @abstractmethod
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]: ...
 
+    @property
+    @abstractmethod
+    def automation_condition(self) -> Optional["AutomationCondition[T_EntityKey]"]: ...
+
 
 class BaseAssetNode(BaseEntityNode[AssetKey]):
     key: AssetKey
@@ -140,10 +144,6 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
-    def automation_condition(self) -> Optional["AutomationCondition"]: ...
-
-    @property
-    @abstractmethod
     def auto_observe_interval_minutes(self) -> Optional[float]: ...
 
     @property
@@ -173,9 +173,15 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
 
 class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
-    def __init__(self, key: AssetCheckKey, blocking: bool):
+    def __init__(
+        self,
+        key: AssetCheckKey,
+        blocking: bool,
+        automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
+    ):
         self.key = key
         self.blocking = blocking
+        self._automation_condition = automation_condition
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -185,6 +191,10 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return {}
+
+    @property
+    def automation_condition(self) -> Optional["AutomationCondition[AssetCheckKey]"]:
+        return self._automation_condition
 
 
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)

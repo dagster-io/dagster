@@ -964,6 +964,7 @@ class ExternalAssetCheck(IHaveNew):
     job_names: Sequence[str]
     blocking: bool
     additional_asset_keys: Sequence[AssetKey]
+    automation_condition: Optional[AutomationCondition]
 
     def __new__(
         cls,
@@ -974,6 +975,7 @@ class ExternalAssetCheck(IHaveNew):
         job_names: Optional[Sequence[str]] = None,
         blocking: bool = False,
         additional_asset_keys: Optional[Sequence[AssetKey]] = None,
+        automation_condition: Optional[AutomationCondition] = None,
     ):
         return super().__new__(
             cls,
@@ -984,6 +986,7 @@ class ExternalAssetCheck(IHaveNew):
             job_names=job_names or [],
             blocking=blocking,
             additional_asset_keys=additional_asset_keys or [],
+            automation_condition=automation_condition,
         )
 
     @property
@@ -1379,6 +1382,7 @@ def external_asset_checks_from_defs(
                 job_names=job_names,
                 blocking=spec.blocking,
                 additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
+                automation_condition=spec.automation_condition,
             )
         )
 
