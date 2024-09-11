@@ -418,7 +418,7 @@ class PlanExecutionContext(IPlanContext):
                 return cast(str, range_start)
 
     @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
+    def partition_key_range(self) -> PartitionKeyRange:
         from dagster._core.definitions.multi_dimensional_partitions import (
             MultiPartitionsDefinition,
             get_multipartition_key_from_tags,
@@ -1003,7 +1003,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
                         partitions_def,
-                        self.asset_partition_key_range,
+                        self.partition_key_range,
                         dynamic_partitions_store=self.instance,
                     )
                     if partitions_def
@@ -1030,7 +1030,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                     and mapped_partitions_result.required_but_nonexistent_partition_keys
                 ):
                     raise DagsterInvariantViolationError(
-                        f"Partition key range {self.asset_partition_key_range} in"
+                        f"Partition key range {self.partition_key_range} in"
                         f" {self.node_handle.name} depends on invalid partition keys"
                         f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
                         f" upstream asset {upstream_asset_key}"
@@ -1067,7 +1067,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
         if self._partitions_def_for_output(output_name) is not None:
-            return self.asset_partition_key_range
+            return self.partition_key_range
 
         check.failed("The output has no asset partitions")
 
@@ -1137,7 +1137,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
             ).time_window_for_partition_key(self.partition_key)
         elif self.has_partition_key_range:
-            partition_key_range = self.asset_partition_key_range
+            partition_key_range = self.partition_key_range
             partitions_def = cast(
                 Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
             )
