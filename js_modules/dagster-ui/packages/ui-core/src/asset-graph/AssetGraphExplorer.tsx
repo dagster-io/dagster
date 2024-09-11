@@ -6,6 +6,7 @@ import {
   ErrorBoundary,
   Icon,
   NonIdealState,
+  Spinner,
   SplitPanelContainer,
   TextInputContainer,
   Tooltip,
@@ -14,7 +15,7 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
-import {useEffect, useMemo, useState} from 'react';
+import {useLayoutEffect, useMemo, useState} from 'react';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
 import styled from 'styled-components';
 
@@ -63,7 +64,12 @@ import {
   RightInfoPanel,
   RightInfoPanelContent,
 } from '../pipelines/GraphExplorer';
-import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from '../pipelines/GraphNotices';
+import {
+  EmptyDAGNotice,
+  EntirelyFilteredDAGNotice,
+  LoadingContainer,
+  LoadingNotice,
+} from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -102,26 +108,27 @@ export const AssetGraphExplorer = (props: Props) => {
 
   const {explorerPath, onChangeExplorerPath} = props;
 
-  const {button, filterBar, groupsFilter, kindFilter, filterFn} = useAssetGraphExplorerFilters({
-    nodes: React.useMemo(
-      () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
-      [fullAssetGraphData],
-    ),
-    loading: fetchResult.loading,
-    viewType: props.viewType,
-    explorerPath: explorerPath.opsQuery,
-    clearExplorerPath: React.useCallback(() => {
-      onChangeExplorerPath(
-        {
-          ...explorerPath,
-          opsQuery: '',
-        },
-        'push',
-      );
-    }, [explorerPath, onChangeExplorerPath]),
-  });
+  const {button, filterBar, groupsFilter, kindFilter, filterFn, filteredAssetsLoading} =
+    useAssetGraphExplorerFilters({
+      nodes: React.useMemo(
+        () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
+        [fullAssetGraphData],
+      ),
+      loading: fetchResult.loading,
+      viewType: props.viewType,
+      explorerPath: explorerPath.opsQuery,
+      clearExplorerPath: React.useCallback(() => {
+        onChangeExplorerPath(
+          {
+            ...explorerPath,
+            opsQuery: '',
+          },
+          'push',
+        );
+      }, [explorerPath, onChangeExplorerPath]),
+    });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setHideNodesMatching(() => (node: AssetNodeForGraphQueryFragment) => !filterFn(node));
   }, [filterFn]);
 
@@ -154,6 +161,7 @@ export const AssetGraphExplorer = (props: Props) => {
             filterButton={button}
             kindFilter={kindFilter}
             groupsFilter={groupsFilter}
+            filteredAssetsLoading={filteredAssetsLoading}
             {...props}
           />
         );
@@ -167,6 +175,7 @@ type WithDataProps = Props & {
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
+  filteredAssetsLoading: boolean;
 
   filterButton: React.ReactNode;
   filterBar: React.ReactNode;
@@ -192,6 +201,7 @@ const AssetGraphExplorerWithData = ({
   viewType,
   kindFilter,
   groupsFilter,
+  filteredAssetsLoading,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
@@ -646,100 +656,107 @@ const AssetGraphExplorerWithData = ({
       firstMinSize={400}
       secondMinSize={400}
       first={
-        <ErrorBoundary region="graph">
-          {graphQueryItems.length === 0 ? (
-            <EmptyDAGNotice nodeType="asset" isGraph />
-          ) : Object.keys(assetGraphData.nodes).length === 0 ? (
-            <EntirelyFilteredDAGNotice nodeType="asset" />
-          ) : undefined}
-          {loading || !layout ? (
-            <LoadingNotice async={async} nodeType="asset" />
-          ) : (
-            <AssetGraphBackgroundContextMenu
-              direction={direction}
-              setDirection={setDirection}
-              allGroups={allGroups}
-              expandedGroups={expandedGroups}
-              setExpandedGroups={setExpandedGroups}
-            >
-              {svgViewport}
-            </AssetGraphBackgroundContextMenu>
-          )}
-          {setOptions && (
-            <OptionsOverlay>
-              <Checkbox
-                format="switch"
-                label="View as Asset Graph"
-                checked={options.preferAssetRendering}
-                onChange={() => {
-                  onChangeExplorerPath(
-                    {...explorerPath, opNames: selectedDefinitions[0]?.opNames || []},
-                    'replace',
-                  );
-                  setOptions({
-                    ...options,
-                    preferAssetRendering: !options.preferAssetRendering,
-                  });
-                }}
-              />
-            </OptionsOverlay>
-          )}
-
-          <TopbarWrapper>
-            <Box flex={{direction: 'column'}} style={{width: '100%'}}>
-              <Box
-                border={filterBar ? 'bottom' : undefined}
-                flex={{gap: 12, alignItems: 'center'}}
-                padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
+        filteredAssetsLoading ? (
+          <LoadingContainer>
+            <Box margin={{bottom: 24}}>Loading assets…</Box>
+            <Spinner purpose="page" />
+          </LoadingContainer>
+        ) : (
+          <ErrorBoundary region="graph">
+            {graphQueryItems.length === 0 ? (
+              <EmptyDAGNotice nodeType="asset" isGraph />
+            ) : Object.keys(assetGraphData.nodes).length === 0 ? (
+              <EntirelyFilteredDAGNotice nodeType="asset" />
+            ) : undefined}
+            {loading || !layout ? (
+              <LoadingNotice async={async} nodeType="asset" />
+            ) : (
+              <AssetGraphBackgroundContextMenu
+                direction={direction}
+                setDirection={setDirection}
+                allGroups={allGroups}
+                expandedGroups={expandedGroups}
+                setExpandedGroups={setExpandedGroups}
               >
-                {showSidebar ? undefined : (
-                  <Tooltip content="Show sidebar">
-                    <Button
-                      icon={<Icon name="panel_show_left" />}
-                      onClick={() => {
-                        setShowSidebar(true);
-                      }}
+                {svgViewport}
+              </AssetGraphBackgroundContextMenu>
+            )}
+            {setOptions && (
+              <OptionsOverlay>
+                <Checkbox
+                  format="switch"
+                  label="View as Asset Graph"
+                  checked={options.preferAssetRendering}
+                  onChange={() => {
+                    onChangeExplorerPath(
+                      {...explorerPath, opNames: selectedDefinitions[0]?.opNames || []},
+                      'replace',
+                    );
+                    setOptions({
+                      ...options,
+                      preferAssetRendering: !options.preferAssetRendering,
+                    });
+                  }}
+                />
+              </OptionsOverlay>
+            )}
+
+            <TopbarWrapper>
+              <Box flex={{direction: 'column'}} style={{width: '100%'}}>
+                <Box
+                  border={filterBar ? 'bottom' : undefined}
+                  flex={{gap: 12, alignItems: 'center'}}
+                  padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
+                >
+                  {showSidebar ? undefined : (
+                    <Tooltip content="Show sidebar">
+                      <Button
+                        icon={<Icon name="panel_show_left" />}
+                        onClick={() => {
+                          setShowSidebar(true);
+                        }}
+                      />
+                    </Tooltip>
+                  )}
+                  <div>{filterButton}</div>
+                  <GraphQueryInputFlexWrap>
+                    <GraphQueryInput
+                      type="asset_graph"
+                      items={graphQueryItems}
+                      value={explorerPath.opsQuery}
+                      placeholder="Type an asset subset…"
+                      onChange={(opsQuery) =>
+                        onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
+                      }
+                      popoverPosition="bottom-left"
                     />
-                  </Tooltip>
-                )}
-                <div>{filterButton}</div>
-                <GraphQueryInputFlexWrap>
-                  <GraphQueryInput
-                    type="asset_graph"
-                    items={graphQueryItems}
-                    value={explorerPath.opsQuery}
-                    placeholder="Type an asset subset…"
-                    onChange={(opsQuery) =>
-                      onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')
+                  </GraphQueryInputFlexWrap>
+                  <AssetLiveDataRefreshButton />
+                  <LaunchAssetObservationButton
+                    preferredJobName={explorerPath.pipelineName}
+                    scope={
+                      selectedDefinitions.length
+                        ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
+                        : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
                     }
-                    popoverPosition="bottom-left"
                   />
-                </GraphQueryInputFlexWrap>
-                <AssetLiveDataRefreshButton />
-                <LaunchAssetObservationButton
-                  preferredJobName={explorerPath.pipelineName}
-                  scope={
-                    selectedDefinitions.length
-                      ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
-                      : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
-                  }
-                />
-                <LaunchAssetExecutionButton
-                  preferredJobName={explorerPath.pipelineName}
-                  scope={
-                    selectedDefinitions.length
-                      ? {selected: selectedDefinitions}
-                      : {all: allDefinitionsForMaterialize}
-                  }
-                />
+                  <LaunchAssetExecutionButton
+                    preferredJobName={explorerPath.pipelineName}
+                    scope={
+                      selectedDefinitions.length
+                        ? {selected: selectedDefinitions}
+                        : {all: allDefinitionsForMaterialize}
+                    }
+                  />
+                </Box>
+                {filterBar}
               </Box>
-              {filterBar}
-            </Box>
-          </TopbarWrapper>
-        </ErrorBoundary>
+            </TopbarWrapper>
+          </ErrorBoundary>
+        )
       }
       second={
-        selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
+        filteredAssetsLoading ? null : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
           <RightInfoPanel>
             <RightInfoPanelContent>
               <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
@@ -769,24 +786,23 @@ const AssetGraphExplorerWithData = ({
         firstInitialPercent={0}
         secondMinSize={400}
         first={
-          showSidebar ? (
-            <AssetGraphExplorerSidebar
-              viewType={viewType}
-              allAssetKeys={allAssetKeys}
-              assetGraphData={assetGraphData}
-              fullAssetGraphData={fullAssetGraphData}
-              selectedNodes={selectedGraphNodes}
-              selectNode={selectNodeById}
-              explorerPath={explorerPath}
-              onChangeExplorerPath={onChangeExplorerPath}
-              expandedGroups={expandedGroups}
-              setExpandedGroups={setExpandedGroups}
-              hideSidebar={() => {
-                setShowSidebar(false);
-              }}
-              onFilterToGroup={onFilterToGroup}
-            />
-          ) : null
+          <AssetGraphExplorerSidebar
+            viewType={viewType}
+            allAssetKeys={allAssetKeys}
+            assetGraphData={assetGraphData}
+            fullAssetGraphData={fullAssetGraphData}
+            selectedNodes={selectedGraphNodes}
+            selectNode={selectNodeById}
+            explorerPath={explorerPath}
+            onChangeExplorerPath={onChangeExplorerPath}
+            expandedGroups={expandedGroups}
+            setExpandedGroups={setExpandedGroups}
+            hideSidebar={() => {
+              setShowSidebar(false);
+            }}
+            onFilterToGroup={onFilterToGroup}
+            loading={filteredAssetsLoading}
+          />
         }
         second={explorer}
       />
