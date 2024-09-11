@@ -11,17 +11,8 @@ Using metadata in Dagster, you can:
 
 - Attach ownership information
 - Organize assets with tags
-- Attach rich, complex information
+- Attach rich, complex information such as a Markdown description, a table schema, or a time series
 - Link assets with their source code
-
-## What you'll learn
-
-- How to add owners to your assets
-- How to use tags to organize assets
-- How to attach complex information to an asset using metadata
-- How to link your assets with their source code
-
----
 
 <details>
   <summary>Prerequisites</summary>
@@ -30,8 +21,6 @@ To follow the steps in this guide, you'll need:
 
 - Familiarity with [Assets](/guides/data-assets)
 </details>
-
----
 
 ## Adding owners to assets \{#owners}
 
@@ -63,11 +52,13 @@ Keep in mind that tags must contain only strings as keys and values. Additionall
 
 ## Attaching metadata to assets \{#attaching-metadata}
 
-**Metadata** allows you to attach rich information to the asset, like a Markdown description, a table schema, or a time series. Metadata is more flexible than tags, as it can store more complex information. Metadata can be attached to an asset at definition time, when the code is first imported, or at runtime when an asset is materialized.
+**Metadata** allows you to attach rich information to the asset, like a Markdown description, a table schema, or a time series. Metadata is more flexible than tags, as it can store more complex information.
+
+Metadata can be attached to an asset at definition time, when the code is first imported, or at runtime when an asset is materialized.
 
 ### At definition time \{#definition-time-metadata}
 
-Attaching metadata at definition time is similar to how tags are attached:
+Using definition metadata to describe assets can make it easy to provide context for you and your team. This metadata could be descriptions of the assets, the types of assets, or links to relevant documentation.
 
 <CodeExample filePath="guides/data-modeling/metadata/definition-metadata.py" language="python" />
 
@@ -77,7 +68,7 @@ Some metadata keys will be given special treatment in the Dagster UI. See the [S
 
 ### At runtime \{#runtime-metadata}
 
-Metadata attached to assets at materialization allows you to update an asset's information when it changes and track historical metadata, such as execution time and row counts, as a time series.
+With runtime metadata, you can surface information about an asset's materialization, such as how many records were processed or when the materialization occurred. This allows you to update an asset's information when it changes and track historical metadata as a time series.
 
 <CodeExample filePath="guides/data-modeling/metadata/runtime-metadata.py" language="python" />
 
@@ -85,7 +76,7 @@ Numerical metadata is treated as a time series in the Dagster UI.
 
 ## Standard metadata types \{#standard-metadata-types}
 
-Some metadata keys are given special treatment in the Dagster UI.
+The following metadata keys are given special treatment in the Dagster UI.
 
 | Key                           | Description                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -129,7 +120,7 @@ import Experimental from '../partials/\_Experimental.md';
 
 <Experimental />
 
-Attaching code reference metadata to Dagster asset definitions allows you to easily view those assets' source code from the Dagster UI, both in local development and in production.
+To link assets with their source code, you can attach a **code reference**. Code references are a type of metadata that allow you to easily view those assets' source code from the Dagster UI, both in local development and in production.
 
 :::tip
 Many integrations such as [dbt](https://docs.dagster.io/integrations/dbt/reference#attaching-code-reference-metadata) support this capability out of the box.
