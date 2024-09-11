@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -53,7 +53,7 @@ class AutomationContext(Generic[T_EntityKey]):
     create_time: datetime.datetime
 
     asset_graph_view: AssetGraphView
-    current_results_by_key: Mapping[AssetKey, AutomationResult]
+    current_results_by_key: Mapping[EntityKey, AutomationResult]
 
     parent_context: Optional["AutomationContext"]
 
@@ -63,12 +63,10 @@ class AutomationContext(Generic[T_EntityKey]):
     _root_log: logging.Logger
 
     @staticmethod
-    def create(
-        asset_key: AssetKey, evaluator: "AutomationConditionEvaluator"
-    ) -> "AutomationContext":
+    def create(key: EntityKey, evaluator: "AutomationConditionEvaluator") -> "AutomationContext":
         asset_graph = evaluator.asset_graph
         asset_graph_view = evaluator.asset_graph_view
-        condition = check.not_none(asset_graph.get(asset_key).automation_condition)
+        condition = check.not_none(asset_graph.get(key).automation_condition)
         condition_unqiue_id = condition.get_unique_id(parent_unique_id=None, index=None)
 
         if condition.has_rule_condition and evaluator.request_backfills:
@@ -79,14 +77,14 @@ class AutomationContext(Generic[T_EntityKey]):
         return AutomationContext(
             condition=condition,
             condition_unique_id=condition_unqiue_id,
-            candidate_subset=evaluator.asset_graph_view.get_full_subset(key=asset_key),
+            candidate_subset=evaluator.asset_graph_view.get_full_subset(key=key),
             create_time=get_current_datetime(),
             asset_graph_view=asset_graph_view,
             current_results_by_key=evaluator.current_results_by_key,
             parent_context=None,
-            _cursor=evaluator.cursor.get_previous_condition_cursor(asset_key),
-            _legacy_context=LegacyRuleEvaluationContext.create(asset_key, evaluator)
-            if condition.has_rule_condition
+            _cursor=evaluator.cursor.get_previous_condition_cursor(key),
+            _legacy_context=LegacyRuleEvaluationContext.create(key, evaluator)
+            if condition.has_rule_condition and isinstance(key, AssetKey)
             else None,
             _root_log=evaluator.logger,
         )

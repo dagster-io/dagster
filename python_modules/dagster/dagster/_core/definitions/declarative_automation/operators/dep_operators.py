@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -99,11 +99,10 @@ class DepCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
         return self.model_copy(update={"ignore_selection": ignore_selection})
 
-    def _get_dep_keys(self, key: T_EntityKey, asset_graph: BaseAssetGraph) -> AbstractSet[AssetKey]:
-        if isinstance(key, AssetKey):
-            dep_keys = asset_graph.get(key).parent_keys
-        else:
-            dep_keys = {asset_graph.get(key).key.asset_key}
+    def _get_dep_keys(
+        self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
+    ) -> AbstractSet[AssetKey]:
+        dep_keys = asset_graph.get(key).parent_entity_keys
         if self.allow_selection is not None:
             dep_keys &= self.allow_selection.resolve(asset_graph)
         if self.ignore_selection is not None:

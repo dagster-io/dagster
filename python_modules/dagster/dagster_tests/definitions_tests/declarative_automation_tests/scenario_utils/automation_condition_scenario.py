@@ -107,7 +107,7 @@ class AutomationConditionScenarioState(ScenarioState):
             )
             evaluator = AutomationConditionEvaluator(
                 asset_graph=asset_graph,
-                asset_keys=asset_graph.all_asset_keys,
+                entity_keys=asset_graph.all_asset_keys,
                 asset_graph_view=asset_graph_view,
                 logger=self.logger,
                 data_time_resolver=CachingDataTimeResolver(instance_queryer),
@@ -119,7 +119,7 @@ class AutomationConditionScenarioState(ScenarioState):
                 request_backfills=self.instance.da_request_backfills(),
             )
             evaluator.current_results_by_key = self._get_current_results_by_key(asset_graph_view)  # type: ignore
-            context = AutomationContext.create(asset_key=asset_key, evaluator=evaluator)
+            context = AutomationContext.create(key=asset_key, evaluator=evaluator)
 
             full_result = asset_condition.evaluate(context)
             new_state = dataclasses.replace(self, condition_cursor=full_result.get_new_cursor())
