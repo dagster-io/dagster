@@ -4,8 +4,8 @@ import {useLocation} from 'react-router-dom';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
 import {numberFormatter} from '../ui/formatters';
+import {WorkspaceRepositoryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceRepositoryFragment} from '../workspace/types/WorkspaceQueries.types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {

@@ -5,7 +5,7 @@ import {Redirect, Switch, useParams} from 'react-router-dom';
 import {CodeLocationNotFound} from './CodeLocationNotFound';
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
-import {WorkspaceContext} from './WorkspaceContext';
+import {WorkspaceContext} from './WorkspaceContext/WorkspaceContext';
 import {WorkspaceGraphsRoot} from './WorkspaceGraphsRoot';
 import {WorkspaceJobsRoot} from './WorkspaceJobsRoot';
 import {WorkspaceOpsRoot} from './WorkspaceOpsRoot';

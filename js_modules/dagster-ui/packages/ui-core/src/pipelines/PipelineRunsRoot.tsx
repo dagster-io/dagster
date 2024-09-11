@@ -41,7 +41,11 @@ import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {AnchorButton} from '../ui/AnchorButton';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {isThisThingAJob, isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext';
+import {
+  isThisThingAJob,
+  isThisThingAnAssetJob,
+  useRepository,
+} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

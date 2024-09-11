@@ -1,6 +1,6 @@
 // Generated GraphQL types, do not edit manually.
 
-import * as Types from '../../graphql/types';
+import * as Types from '../../../graphql/types';
 
 export type LocationWorkspaceQueryVariables = Types.Exact<{
   name: Types.Scalars['String']['input'];

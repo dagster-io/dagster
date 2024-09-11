@@ -16,7 +16,7 @@ import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTa
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useAssetKindsForAssets, useKindFilter} from '../ui/Filters/useKindFilter';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const EMPTY_ARRAY: any[] = [];

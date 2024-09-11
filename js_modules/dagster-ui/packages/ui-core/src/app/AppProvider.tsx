@@ -36,7 +36,7 @@ import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names

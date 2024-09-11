@@ -31,7 +31,7 @@ import {
   useSuggestionFilter,
 } from '../ui/BaseFilters/useSuggestionFilter';
 import {TimeRangeState, useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
-import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 
 export interface RunsFilterInputProps {
   loading?: boolean;

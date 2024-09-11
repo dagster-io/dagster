@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {useRepositoryOptions} from '../../workspace/WorkspaceContext';
+import {useRepositoryOptions} from '../../workspace/WorkspaceContext/util';
 
 export type JobStateForNav = 'unknown' | 'has-jobs' | 'no-jobs';
 
