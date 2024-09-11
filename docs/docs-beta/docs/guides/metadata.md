@@ -81,7 +81,7 @@ Metadata attached to assets at materialization allows you to update an asset's i
 
 <CodeExample filePath="guides/data-modeling/metadata/runtime-metadata.py" language="python" />
 
-Numerical metadata istreated as a time series in the Dagster UI.
+Numerical metadata is treated as a time series in the Dagster UI.
 
 ## Standard metadata types \{#standard-metadata-types}
 
