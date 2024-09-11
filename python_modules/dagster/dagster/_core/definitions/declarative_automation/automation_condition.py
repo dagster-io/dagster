@@ -616,7 +616,7 @@ class AutomationResult(Generic[T_EntityKey]):
         self._serializable_subset_override: Optional[SerializableEntitySubset] = None
 
     @property
-    def asset_key(self) -> T_EntityKey:
+    def key(self) -> T_EntityKey:
         return self._true_subset.key
 
     @property

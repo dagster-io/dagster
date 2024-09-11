@@ -23,6 +23,7 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
@@ -161,7 +162,7 @@ class AssetDaemonContext:
 
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[AssetKey]]]:
+    ) -> Tuple[Iterable[AutomationResult[EntityKey]], Iterable[EntitySubset[EntityKey]]]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
@@ -202,10 +203,15 @@ class AssetDaemonContext:
         results, entity_subsets = self.get_asset_condition_evaluations()
 
         if self._request_backfills:
+            asset_subsets = cast(
+                Iterable[EntitySubset[AssetKey]],
+                [subset for subset in entity_subsets if isinstance(subset.key, AssetKey)],
+            )
+
             run_requests = (
                 [
                     RunRequest.for_asset_graph_subset(
-                        asset_graph_subset=AssetGraphSubset.from_entity_subsets(entity_subsets),
+                        asset_graph_subset=AssetGraphSubset.from_entity_subsets(asset_subsets),
                         tags=self.auto_materialize_run_tags,
                     )
                 ]
@@ -224,7 +230,7 @@ class AssetDaemonContext:
         # only record evaluation results where something changed
         updated_evaluations = []
         for result in results:
-            previous_cursor = self.cursor.get_previous_condition_cursor(result.asset_key)
+            previous_cursor = self.cursor.get_previous_condition_cursor(result.key)
             if (
                 previous_cursor is None
                 or previous_cursor.result_value_hash != result.value_hash
@@ -251,33 +257,43 @@ class AssetDaemonContext:
         )
 
 
-_PartitionsDefMapping = Mapping[Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]]
+_PartitionsDefKeyAssetKeyMapping = Dict[
+    Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
+]
+_AssetKeyCheckKeysMapping = Dict[AssetKey, Set[AssetCheckKey]]
 
 
-def _get_partitions_def_mapping_from_asset_partitions(
+def _get_mappings_from_asset_partitions(
     asset_partitions: AbstractSet[AssetKeyPartitionKey], asset_graph: BaseAssetGraph
-) -> _PartitionsDefMapping:
-    mapping: _PartitionsDefMapping = defaultdict(set)
+) -> Tuple[_PartitionsDefKeyAssetKeyMapping, _AssetKeyCheckKeysMapping]:
+    asset_mapping: _PartitionsDefKeyAssetKeyMapping = defaultdict(set)
 
     for asset_partition in asset_partitions:
-        mapping[
+        asset_mapping[
             asset_graph.get(asset_partition.asset_key).partitions_def, asset_partition.partition_key
         ].add(asset_partition.asset_key)
 
-    return mapping
+    return asset_mapping, {}
 
 
-def _get_partitions_def_mapping_from_entity_subsets(
+def _get_mappings_from_entity_subsets(
     entity_subsets: Iterable[EntitySubset], asset_graph: BaseAssetGraph
-) -> _PartitionsDefMapping:
-    mapping: _PartitionsDefMapping = defaultdict(set)
+) -> Tuple[_PartitionsDefKeyAssetKeyMapping, _AssetKeyCheckKeysMapping]:
+    asset_mapping: _PartitionsDefKeyAssetKeyMapping = defaultdict(set)
+    asset_check_mapping: _AssetKeyCheckKeysMapping = defaultdict(set)
 
     for subset in entity_subsets:
-        partitions_def = asset_graph.get(subset.key).partitions_def
-        for asset_partition in subset.expensively_compute_asset_partitions():
-            mapping[partitions_def, asset_partition.partition_key].add(asset_partition.asset_key)
+        if isinstance(subset.key, AssetCheckKey):
+            if not subset.is_empty:
+                asset_check_mapping[subset.key.asset_key].add(subset.key)
+        elif isinstance(subset.key, AssetKey):
+            partitions_def = asset_graph.get(subset.key).partitions_def
+            for asset_partition in subset.expensively_compute_asset_partitions():
+                asset_mapping[partitions_def, asset_partition.partition_key].add(
+                    asset_partition.asset_key
+                )
 
-    return mapping
+    return asset_mapping, asset_check_mapping
 
 
 def build_run_requests_from_asset_partitions(
@@ -286,30 +302,32 @@ def build_run_requests_from_asset_partitions(
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     return _build_run_requests_from_partitions_def_mapping(
-        _get_partitions_def_mapping_from_asset_partitions(asset_partitions, asset_graph),
+        _get_mappings_from_asset_partitions(asset_partitions, asset_graph),
         asset_graph,
         run_tags,
     )
 
 
 def build_run_requests(
-    entity_subsets: Iterable[EntitySubset[AssetKey]],
+    entity_subsets: Iterable[EntitySubset[EntityKey]],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     return _build_run_requests_from_partitions_def_mapping(
-        _get_partitions_def_mapping_from_entity_subsets(entity_subsets, asset_graph),
+        _get_mappings_from_entity_subsets(entity_subsets, asset_graph),
         asset_graph,
         run_tags,
     )
 
 
 def _build_run_requests_from_partitions_def_mapping(
-    partitions_def_mapping: _PartitionsDefMapping,
+    mappings: Tuple[_PartitionsDefKeyAssetKeyMapping, _AssetKeyCheckKeysMapping],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     run_requests = []
+
+    partitions_def_mapping, check_keys_to_execute_by_key = mappings
 
     for (
         partitions_def,
@@ -322,6 +340,13 @@ def _build_run_requests_from_partitions_def_mapping(
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
         for asset_keys_in_repo in asset_graph.split_asset_keys_by_repository(asset_keys):
+            # get all checks that are attached to a selected asset
+            asset_check_keys = set()
+            for ak in asset_keys_in_repo:
+                if ak in check_keys_to_execute_by_key:
+                    asset_check_keys.union(check_keys_to_execute_by_key[ak])
+                    del check_keys_to_execute_by_key[ak]
+
             run_requests.append(
                 # Do not call run_request.with_resolved_tags_and_config as the partition key is
                 # valid and there is no config.
@@ -331,8 +356,14 @@ def _build_run_requests_from_partitions_def_mapping(
                     asset_selection=list(asset_keys_in_repo),
                     partition_key=partition_key,
                     tags=tags,
+                    asset_check_keys=list(asset_check_keys),
                 )
             )
+
+    # asset checks that are not being executed alongside any assets
+    remaining_check_keys = set().union(*check_keys_to_execute_by_key.values())
+    if remaining_check_keys:
+        run_requests.append(RunRequest(tags=run_tags, asset_check_keys=list(remaining_check_keys)))
 
     # We don't make public guarantees about sort order, but make an effort to provide a consistent
     # ordering that puts earlier time partitions before later time partitions. Note that, with dates

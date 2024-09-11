@@ -72,7 +72,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
     # only record evaluation results where something changed
     updated_evaluations = []
     for result in results:
-        previous_cursor = cursor.get_previous_condition_cursor(result.asset_key)
+        previous_cursor = cursor.get_previous_condition_cursor(result.key)
         if (
             previous_cursor is None
             or previous_cursor.result_value_hash != result.value_hash
