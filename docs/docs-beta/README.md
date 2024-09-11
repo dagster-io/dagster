@@ -117,3 +117,17 @@ yarn build
 ```
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
+
+## Deployment
+
+This site is built and deployed using Vercel.
+
+### API Documentation
+
+API documentation is built in Vercel by overriding the _Build Command_ to the following:
+
+```sh
+yarn sync-api-docs && yarn build
+```
+
+This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api`.

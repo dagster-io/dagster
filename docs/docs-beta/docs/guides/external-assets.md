@@ -1,66 +1,69 @@
----
+--
 title: Representing external data sources with external assets
 sidebar_position: 80
-sidebar_label: 'External data assets'
+sidebar_label: 'External data sources'
 ---
 
-One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization. This can include assets orchestrated by Dagster and assets orchestrated by other systems.
+One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization, even if those assets are orchestrated by systems other than Dagster.
 
-**External assets** enable you to model assets orchestrated by other systems natively within Dagster's Asset catalog, and create new data assets downstream of these external assets.
+With **external assets**, you can model assets orchestrated by other systems natively within Dagster, ensuring you have a comprehensive catalog of your organization's data. You can also create new data assets downstream of these external assets.
 
-External assets differ from native Dagster assets in that Dagster can't materialize them directly or put them on a schedule. Instead, an external system must inform Dagster of when an external asset is updated.
+Unlike native assets, Dagster can't materialize external assets directly or put them in a schedule. In these cases, an external system must inform Dagster when an external asset is updated.
 
-Examples of external assets could be files in a data lake that are populated by a bespoke internal tool, a CSV file delivered daily by SFTP from a partner, or a table in a data warehouse populated by another orchestrator.
+For example, external assets could be:
 
-## What you'll learn
-
-- How to create external assets
-- How to create assets that depend on external assets
-- How to record materializations and metadata
-- How to model a DAG of multiple external assets
-
----
+- Files in a data lake that are populated by a bespoke internal tool
+- A CSV file delivered daily by SFTP from a partner
+- A table in a data warehouse populated by another orchestrator
 
 <details>
   <summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 
-- A basic understanding of Dagster and assets. See the [Quick Start](/getting-started/quickstart) tutorial for an overview.
+- Familiarity with [Assets](/guides/data-assets)
 - Familiarity with [Sensors](/guides/sensors)
 </details>
 
----
+## Defining external assets
 
-## Creating and depending on external assets
+Let's say you have a partner who sends you raw transaction data by SFTP on an almost daily basis. This data is later cleaned and stored in an internal data lake.
 
-Let's imagine that we have a partner that sends us some raw transaction data by SFTP on, roughly, a daily basis, that's later cleaned and stored in an internal data lake. Because the raw transaction data isn't materialized by Dagster, it makes sense to model it as an external asset.
+Because the raw transaction data isn't materialized by Dagster, it makes sense to model it as an external asset. The following example accomplishes this by using `AssetSpec`:
 
-<CodeExample filePath="guides/data-modeling/external-assets/creating-external-assets.py" language="python" title="Creating an external asset" />
+<CodeExample filePath="guides/data-modeling/external-assets/creating-external-assets.py" language="python" />
 
-See the [AssetSpec API docs](/todo) for all the potential parameters you can provide to an external asset.
+Refer to the [`AssetSpec` API docs](/todo) for the parameters you can provide to an external asset.
 
 ## Recording materializations and metadata
 
-In the preceding example, we modeled the external asset in the asset graph. We also need to inform Dagster whenever an external asset is updated, and include any relevant metadata about the asset.
+When an external asset is modeled in Dagster, you also need to inform Dagster whenever the external asset is updated. You should also include any relevant metadata about the asset, such as the time it was last updated.
 
-There are two main ways to do this: "pulling" external assets events with sensors, and "pushing" external asset events using the REST API.
+There are two main ways to do this:
 
-### "Pulling" with sensors
+- Pulling external assets events with sensors
+- Pushing external asset events using Dagster's REST API
 
-You can use a Dagster [sensor](/guides/sensors) to regularly poll the external system and "pull" information about the external asset into Dagster.
+### Pulling with sensors
 
-For example, here's how you would poll an external system (like an SFTP server) to update an external asset whenever the file is changed.
+You can use a Dagster [sensor](/guides/sensors) to regularly poll the external system and pull information about the external asset into Dagster.
 
-<CodeExample filePath="guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" title="Pulling external asset events with sensors" />
+For example, here's how you would poll an external system like an SFTP server to update an external asset whenever the file is changed.
 
-See the [sensors guide](/guides/sensors) for more information about sensors.
+<CodeExample filePath="guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" />
 
-### "Pushing" with the REST API
+Refer to the [Sensors guide](/guides/sensors) for more information about sensors.
 
-You can inform Dagster that an external asset has materialized by "pushing" the event from an external system to the REST API.
+### Pushing with the REST API
 
-For example, here's how we would inform Dagster of a materialization of the `raw_transactions` external asset in Dagster+:
+You can inform Dagster that an external asset has materialized by pushing the event from an external system to the REST API. The following examples demonstrate how to inform Dagster that a materialization of the `raw_transactions` external asset has occurred.
+
+The required headers for the REST API depend on whether you're using Dagster+ or OSS. Use the tabs to view an example API request for each Dagster type.
+
+<Tabs>
+<TabItem value="dagster-plus" label="Dagster+">
+
+Authentication headers are required if using Dagster+. The request should made to your Dagster+ organization and a specific deployment in the organization.
 
 ```shell
 curl \
@@ -77,7 +80,10 @@ curl \
 }'
 ```
 
-If you're using open source, you don't need the authentication headers and should point it at your open source URL (in this example, `http://localhost:3000`):
+</TabItem>
+<TabItem value="oss" label="OSS">
+
+Authentication headers aren't required if using Dagster OSS. The request should be pointed at your open source URL, which is `http://localhost:3000` in this example.
 
 ```shell
 curl \
@@ -93,10 +99,13 @@ curl \
 }'
 ```
 
-See the [external assets REST API docs](/todo) for more information.
+</TabItem>
+</Tabs>
 
-## Modeling a DAG of external assets
+Refer to the [External assets REST API documentation](/todo) for more information.
+
+## Modeling a graph of external assets
 
 Like regular Dagster assets, external assets can have dependencies. This is useful when you want to model an entire data pipeline orchestrated by another system.
 
-<CodeExample filePath="guides/data-modeling/external-assets/dag-of-external-assets.py" language="python" title="External assets with dependencies" />
+<CodeExample filePath="guides/data-modeling/external-assets/dag-of-external-assets.py" language="python" />

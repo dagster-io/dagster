@@ -15,7 +15,8 @@
     "ts": "tsc -p . --noEmit",
     "vale": "vale ./docs --ext=.md,.mdx",
     "lint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx --fix",
-    "lint-and-vale": "yarn run lint && yarn run vale"
+    "lint-and-vale": "yarn run lint && yarn run vale",
+    "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh"
   },
   "dependencies": {
     "@docusaurus/core": "3.5.2",
