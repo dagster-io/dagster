@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
             'guides/data-assets',
             'guides/metadata',
             'guides/partitioning',
+            'guides/partition-dependencies',
             'guides/external-assets',
           ],
         },
