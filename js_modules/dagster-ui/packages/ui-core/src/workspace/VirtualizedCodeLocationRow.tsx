@@ -6,13 +6,13 @@ import styled from 'styled-components';
 import {CodeLocationMenu} from './CodeLocationMenu';
 import {ImageName, LocationStatus, ModuleOrPackageOrFile, ReloadButton} from './CodeLocationRowSet';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
 import {
   LocationStatusEntryFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
 } from './WorkspaceContext/types/WorkspaceQueries.types';
+import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';

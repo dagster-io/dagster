@@ -25,10 +25,10 @@ import {visibleRepoKeys} from '../overview/visibleRepoKeys';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export const JobsPageContent = () => {
   const {

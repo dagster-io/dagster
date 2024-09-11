@@ -9,8 +9,8 @@ import {CodeLocationSearchableList, SearchableListRow} from './CodeLocationSearc
 import {Route} from '../app/Route';
 import {COMMON_COLLATOR} from '../app/Util';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {RepoAddress} from '../workspace/types';
 import {WorkspaceRepositoryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {

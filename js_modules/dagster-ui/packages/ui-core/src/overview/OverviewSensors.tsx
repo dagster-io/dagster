@@ -29,9 +29,9 @@ import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilt
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {SENSOR_TYPE_META} from '../workspace/VirtualizedSensorRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 function toSetFilterValue(type: SensorType) {
   const label = SENSOR_TYPE_META[type].name;

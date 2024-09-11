@@ -26,10 +26,10 @@ import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export const OverviewSchedules = () => {
   const {
