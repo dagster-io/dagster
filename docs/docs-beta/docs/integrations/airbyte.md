@@ -28,24 +28,7 @@ pip install dagster-airbyte
 
 ### Example
 
-```python
-from dagster import EnvVar
-from dagster_airbyte import AirbyteResource, load_assets_from_airbyte_instance
-import os
-
-# Connect to your OSS Airbyte instance
-airbyte_instance = AirbyteResource(
-    host="localhost",
-    port="8000",
-    # If using basic auth, include username and password:
-    username="airbyte",
-    password=EnvVar("AIRBYTE_PASSWORD")
-)
-
-# Load all assets from your Airbyte instance
-airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
-
-```
+<CodeExample filePath="integrations/airbyte.py" language="python" title="Dagster & Airbyte Example" />
 
 ### About Airbyte
 

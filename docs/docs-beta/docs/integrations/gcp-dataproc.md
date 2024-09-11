@@ -28,34 +28,7 @@ pip install dagster-gcp
 
 ### Examples
 
-```python
-from dagster import asset, Definitions
-from dagster_gcp.dataproc import DataprocResource
-
-
-dataproc_resource = DataprocResource(
-    project_id="your-gcp-project-id",
-    region="your-gcp-region",
-    cluster_name="your-cluster-name",
-    cluster_config_yaml_path="path/to/your/cluster/config.yaml",
-)
-
-
-@asset
-def my_dataproc_asset(dataproc: DataprocResource):
-    with dataproc.get_client() as client:
-        job_details = {
-            "job": {
-                "placement": {"clusterName": dataproc.cluster_name},
-            }
-        }
-        client.submit_job(job_details)
-
-
-defs = Definitions(
-    assets=[my_dataproc_asset], resources={"dataproc": dataproc_resource}
-)
-```
+<CodeExample filePath="integrations/gcp-dataproc.py" language="python" title="Dagster & GCP Dataproc Example" />
 
 ### About Google Cloud Platform Dataproc
 

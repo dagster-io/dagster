@@ -28,66 +28,7 @@ pip install dagster-embedded-elt
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_embedded_elt.sling import (
-    SlingConnectionResource,
-    SlingResource,
-    sling_assets,
-)
-
-source = SlingConnectionResource(
-    name="MY_PG",
-    type="postgres",
-    host="localhost",
-    port=5432,
-    database="my_database",
-    user="my_user",
-    password=dg.EnvVar("PG_PASS"),
-)
-
-target = SlingConnectionResource(
-    name="MY_SF",
-    type="snowflake",
-    host="hostname.snowflake",
-    user="username",
-    database="database",
-    password=dg.EnvVar("SF_PASSWORD"),
-    role="role",
-)
-
-
-@sling_assets(
-    replication_config={
-        "SOURCE": "MY_PG",
-        "TARGET": "MY_SF",
-        "defaults": {
-            "mode": "full-refresh",
-            "object": "{stream_schema}_{stream_table}",
-        },
-        "streams": {
-            "public.accounts": None,
-            "public.users": None,
-            "public.finance_departments": {"object": "departments"},
-        },
-    }
-)
-def sling_assets(context, sling: SlingResource):
-    yield from sling.replicate(context=context)
-
-
-defs = dg.Definitions(
-    assets=[sling_assets],
-    resources={
-        "sling": SlingResource(
-            connections=[
-                source,
-                target,
-            ]
-        )
-    },
-)
-```
+<CodeExample filePath="integrations/sling.py" language="python" title="Dagster & Sling Example" />
 
 ### About dlt
 

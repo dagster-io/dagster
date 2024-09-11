@@ -28,22 +28,7 @@ pip install dagster-duckdb
 
 ### Example
 
-```python
-from dagster_duckdb_pandas import DuckDBPandasIOManager
-from dagster import Definitions, asset
-import pandas as pd
-
-@asset(
-    key_prefix=["my_schema"]  # will be used as the schema in duckdb
-)
-def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
-    return pd.DataFrame()
-
-defs = Definitions(
-    assets=[my_table],
-    resources={"io_manager": DuckDBPandasIOManager(database="my_db.duckdb")}
-)
-```
+<CodeExample filePath="integrations/duckdb.py" language="python" title="Dagster & DuckDB Example" />
 
 ### About DuckDB
 

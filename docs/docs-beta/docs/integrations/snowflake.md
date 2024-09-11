@@ -28,32 +28,7 @@ pip install dagster-snowflake
 
 ### Example
 
-```python
-# Read the docs on Resources to learn more: https://docs.dagster.io/deployment/resources
-# This integration also offers an I/O Manager. Learn more: https://docs.dagster.io/concepts/io-management/io-managers
-from dagster import Definitions, EnvVar, asset
-from dagster_snowflake import SnowflakeResource
-import os
-
-@asset
-def my_table(snowflake: SnowflakeResource):
-  with snowflake.get_connection() as conn:
-    return conn.cursor().execute_query("SELECT * FROM foo")
-
-defs = Definitions(
-    assets=[my_table],
-    resources={
-      "snowflake": SnowflakeResource(
-            account="snowflake account",
-            user="snowflake user",
-            password=EnvVar("SNOWFLAKE_PASSWORD"),
-            database="snowflake database",
-            schema="snowflake schema",
-            warehouse="snowflake warehouse",
-        )
-    }
-)
-```
+<CodeExample filePath="integrations/snowflake.py" language="python" title="Dagster & Snowflake Example" />
 
 ### About Snowflake
 

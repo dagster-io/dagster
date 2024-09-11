@@ -28,24 +28,7 @@ pip install dagster-msteams
 
 ### Example
 
-```python
-# Read the docs on Resources to learn more: https://docs.dagster.io/deployment/resources
-import dagster as dg
-from dagster_msteams import Card, MSTeamsResource
-
-
-@dg.asset
-def microsoft_teams_message(msteams: MSTeamsResource):
-    card = Card()
-    card.add_attachment(text_message="Hello there!")
-    msteams.get_client().post_message(payload=card.payload)
-
-
-defs = dg.Definitions(
-    assets=[microsoft_teams_message],
-    resources={"msteams": MSTeamsResource(hook_url=dg.EnvVar("TEAMS_WEBHOOK_URL"))},
-)
-```
+<CodeExample filePath="integrations/microsoft-teams.py" language="python" title="Dagster & Microsoft Teams Example" />
 
 ### About Microsoft Teams
 

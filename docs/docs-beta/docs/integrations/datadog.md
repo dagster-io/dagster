@@ -28,32 +28,7 @@ pip install dagster-datadog
 
 ### Example
 
-```python
-import os
-
-import dagster as dg
-from dagster_datadog import DatadogResource
-
-
-@dg.asset
-def report_to_datadog(datadog: DatadogResource):
-    datadog_client = datadog.get_client()
-    datadog_client.event("Man down!", "This server needs assistance.")
-    datadog_client.gauge("users.online", 1001, tags=["protocol:http"])
-    datadog_client.increment("page.views")
-
-
-defs = dg.Definitions(
-    assets=[report_to_datadog],
-    resources={
-        "datadog": DatadogResource(
-            api_key=os.environ["DATADOG_API_KEY"],
-            app_key=os.environ["DATADOG_APP_KEY"],
-        )
-    },
-)
-
-```
+<CodeExample filePath="integrations/datadog.py" language="python" title="Dagster & Datadog Example" />
 
 ### About Datadog
 

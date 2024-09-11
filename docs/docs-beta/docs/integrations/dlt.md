@@ -28,38 +28,7 @@ pip install dagster-embedded-elt
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
-from dlt import pipeline
-from dlt_sources.github import github_reactions
-
-
-@dlt_assets(
-    dlt_source=github_reactions("dagster-io", "dagster"),
-    dlt_pipeline=pipeline(
-        pipeline_name="github_issues",
-        dataset_name="github",
-        destination="snowflake",
-    ),
-    name="github",
-    group_name="github",
-)
-def github_issues_to_snowflake_assets(
-    context: dg.AssetExecutionContext, dlt: DagsterDltResource
-):
-    yield from dlt.run(context=context)
-
-
-defs = dg.Definitions(
-    assets=[
-        github_issues_to_snowflake_assets,
-    ],
-    resources={
-        "dlt": DagsterDltResource(),
-    },
-)
-```
+<CodeExample filePath="integrations/dlt.py" language="python" title="Dagster & dlt Example" />
 
 ### About dlt
 

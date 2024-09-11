@@ -31,19 +31,7 @@ pip install dagster-meltano
 
 ### Example
 
-```python
-from dagster import repository, job
-from dagster_meltano import meltano_resource, meltano_run_op
-
-@job(resource_defs={"meltano": meltano_resource})
-def meltano_run_job():
-    tap_done = meltano_run_op("tap-1 target-1")()
-    meltano_run_op("tap-2 target-2")(tap_done)
-
-@repository()
-def repository():
-    return [meltano_run_job]
-```
+<CodeExample filePath="integrations/meltano.py" language="python" title="Dagster & Meltano Example" />
 
 ### About Meltano
 

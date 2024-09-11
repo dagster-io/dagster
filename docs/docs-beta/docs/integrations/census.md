@@ -28,21 +28,7 @@ pip install dagster-census
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_census import CensusResource
-
-
-@dg.asset
-def census_source(census: CensusResource):
-    census.get_source(source_id=1)
-
-
-defs = dg.Definitions(
-    assets=[census_source],
-    resources={"census": CensusResource(api_key=dg.EnvVar("CENSUS_API_KEY"))},
-)
-```
+<CodeExample filePath="integrations/census.py" language="python" title="Dagster & Census Example" />
 
 ### About Census
 

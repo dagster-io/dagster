@@ -28,24 +28,7 @@ pip install dagster-prometheus
 
 ### Example
 
-```python
-#import dagster as dg
-from dagster_prometheus import PrometheusResource
-
-
-@dg.asset
-def prometheus_metric(prometheus: PrometheusResource):
-    prometheus.push_to_gateway(job="my_job_label")
-
-
-defs = dg.Definitions(
-    assets=[prometheus_metric],
-    resources={
-        "prometheus": PrometheusResource(gateway="http://pushgateway.example.org:9091")
-    },
-)
-
-```
+<CodeExample filePath="integrations/prometheus.py" language="python" title="Dagster & Prometheus Example" />
 
 ### About Prometheus
 

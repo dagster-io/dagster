@@ -30,28 +30,7 @@ pip install dagster-hightouch
 
 ### Example
 
-```python
-from dagster import job
-from dagster_hightouch.ops import hightouch_sync_op
-from dagster_hightouch.resources import ht_resource
-import os
-
-HT_ORG = "39619"
-
-run_ht_sync_orgs = hightouch_sync_op.configured(
-    {"sync_id": HT_ORG}, name="hightouch_sfdc_organizations"
-)
-
-@job(
-    resource_defs={
-        "hightouch": ht_resource.configured(
-            {"api_key": os.environ['HIGHTOUCH_API_KEY']},
-        ),
-    }
-)
-def ht_sfdc_job():
-    ht_orgs = run_ht_sync_orgs()
-```
+<CodeExample filePath="integrations/hightouch.py" language="python" title="Dagster & Hightouch Example" />
 
 ### About Hightouch
 

@@ -28,34 +28,7 @@ pip install dagster-aws
 
 ### Examples
 
-```python
-import boto3
-
-from dagster import asset, AssetExecutionContext, Definitions
-from dagster_aws.pipes import PipesLambdaClient
-
-
-lambda_client = boto3.client("lambda", region_name="us-west-1")
-
-lambda_pipes_client = PipesLambdaClient(client=lambda_client)
-
-
-@asset
-def lambda_pipes_asset(
-    context: AssetExecutionContext, lambda_pipes_client: PipesLambdaClient
-):
-    return lambda_pipes_client.run(
-        context=context,
-        function_name="your_lambda_function_name",
-        event={"key": "value"},
-    ).get_materialize_result()
-
-
-defs = Definitions(
-    assets=[lambda_pipes_asset],
-    resources={"lambda_pipes_client": lambda_pipes_client},
-)
-```
+<CodeExample filePath="integrations/aws-lambda.py" language="python" title="Dagster & AWS Lambda Example" />
 
 ### About AWS Lambda
 

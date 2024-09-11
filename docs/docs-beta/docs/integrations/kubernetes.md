@@ -28,28 +28,7 @@ pip install dagster-k8s
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_k8s import PipesK8sClient
-
-
-@dg.asset
-def k8s_pipes_asset(
-    context: dg.AssetExecutionContext, k8s_pipes_client: PipesK8sClient
-):
-    return k8s_pipes_client.run(
-        context=context,
-        image="pipes-example:v1",
-    ).get_materialize_result()
-
-
-defs = dg.Definitions(
-    assets=[k8s_pipes_asset],
-    resources={
-        "k8s_pipes_client": PipesK8sClient(),
-    },
-)
-```
+<CodeExample filePath="integrations/kubernetes.py" language="python" title="Dagster & Kubernetes Example" />
 
 ### Deploying to Kubernetes?
 

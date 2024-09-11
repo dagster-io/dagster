@@ -30,28 +30,7 @@ pip install dagster-aws
 
 ### Examples
 
-```python
-from dagster import asset, Definitions
-from dagster_aws.ecr import ECRPublicResource
-
-
-@asset
-def get_ecr_login_password(ecr_public: ECRPublicResource):
-    return ecr_public.get_client().get_login_password()
-
-
-defs = Definitions(
-    assets=[get_ecr_login_password],
-    resources={
-        "ecr_public": ECRPublicResource(
-            region_name="us-west-1",
-            aws_access_key_id="your_access_key_id",
-            aws_secret_access_key="your_secret_access_key",
-            aws_session_token="your_session_token",
-        )
-    },
-)
-```
+<CodeExample filePath="integrations/aws-ecr.py" language="python" title="Dagster & AWS ECR Example" />
 
 ### About AWS ECR
 

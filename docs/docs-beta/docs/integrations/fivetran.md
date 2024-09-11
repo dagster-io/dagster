@@ -28,17 +28,7 @@ pip install dagster-fivetran
 
 ### Example
 
-```python
-from dagster import EnvVar
-from dagster_fivetran import FivetranResource, load_assets_from_fivetran_instance
-import os
-
-fivetran_instance = FivetranResource(
-    api_key="some_key",
-    api_secret=EnvVar("FIVETRAN_SECRET"),
-)
-fivetran_assets = load_assets_from_fivetran_instance(fivetran_instance)
-```
+<CodeExample filePath="integrations/fivetran.py" language="python" title="Dagster & Fivetran Example" />
 
 ### About Fivetran
 

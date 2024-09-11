@@ -28,20 +28,7 @@ pip install dagster-aws
 
 ### Examples
 
-```python
-from dagster import Definitions, asset
-from dagster_aws.athena import AthenaClientResource
-
-
-@asset
-def example_athena_asset(athena: AthenaClientResource):
-    return athena.get_client().execute_query("SELECT 1", fetch_results=True)
-
-
-defs = Definitions(
-    assets=[example_athena_asset], resources={"athena": AthenaClientResource()}
-)
-```
+<CodeExample filePath="integrations/aws-athena.py" language="python" title="Dagster & AWS Athena Example" />
 
 ### About AWS Athena
 
