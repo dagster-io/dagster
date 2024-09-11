@@ -31,6 +31,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix, Output
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 
@@ -74,7 +75,6 @@ def _build_fivetran_assets(
 
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
-        compute_kind="fivetran",
         resource_defs=resource_defs,
         group_name=group_name,
         op_tags=op_tags,
@@ -85,7 +85,10 @@ def _build_fivetran_assets(
                     **_metadata_by_table_name.get(table, {}),
                     **({"dagster/io_manager_key": io_manager_key} if io_manager_key else {}),
                 },
-                tags=asset_tags,
+                tags={
+                    **build_kind_tag("fivetran"),
+                    **(asset_tags or {}),
+                },
             )
             for table in tracked_asset_keys.keys()
         ],
@@ -323,7 +326,7 @@ def _build_fivetran_assets_from_metadata(
         group_name=assets_defn_meta.group_name,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
-        asset_tags={"dagster/storage_kind": storage_kind} if storage_kind else None,
+        asset_tags=build_kind_tag(storage_kind) if storage_kind else None,
         infer_missing_tables=False,
         op_tags=None,
     )[0]
