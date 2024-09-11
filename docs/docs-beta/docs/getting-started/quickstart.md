@@ -13,14 +13,6 @@ Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline
 - Transforms the data
 - Loads the transformed data to a new CSV file
 
-## What you'll learn
-
-- How to set up a basic Dagster project
-- How to create a Dagster asset for each step of the Extract, Transform, and Load (ETL) process
-- How to use Dagster's UI to monitor and execute your pipeline
-
-## Prerequisites
-
 <details>
   <summary>Prerequisites</summary>
 
