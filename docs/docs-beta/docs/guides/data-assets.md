@@ -1,19 +1,12 @@
 ---
-title: "Defining data assets with decorators"
-sidebar_label: "Create Assets"
+title: 'Defining data assets with decorators'
+sidebar_label: 'Create Assets'
 sidebar_position: 10
 ---
 
 The most common way to create a data asset in Dagster is by annotating a function with an asset decorator. The function computes the contents of the asset, such as a database table or file.
 
 Dagster supports several ways of creating assets, but this guide will focus on using Python decorators to define data assets.
-
-## What you'll learn
-
-- The asset decorators Dagster supports
-- How to define a single asset
-- How to define operations that create multiple assets
-- How to define multiple operations that create a single asset
 
 <details>
   <summary>Prerequisites</summary>
@@ -24,16 +17,14 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-## Asset decorators
-
 Dagster has four types of asset decorators:
 
-| Decorator | Description |
-|--------|---|
-| `@asset` | Defines a single asset. [See an example](#single-asset). |
-| `@multi_asset` | Outputs multiple assets from a single operation. [See an example](#multi-asset). |
-| `@graph_asset` | Outputs a single asset from multiple operations without making each operation itself an asset. [See an example](#graph-asset). |
-| `@graph_multi_asset` | Outputs multiple assets from multiple operations |
+| Decorator            | Description                                                                                                                    |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `@asset`             | Defines a single asset. [See an example](#single-asset).                                                                       |
+| `@multi_asset`       | Outputs multiple assets from a single operation. [See an example](#multi-asset).                                               |
+| `@graph_asset`       | Outputs a single asset from multiple operations without making each operation itself an asset. [See an example](#graph-asset). |
+| `@graph_multi_asset` | Outputs multiple assets from multiple operations                                                                               |
 
 ## Defining operations that create a single asset \{#single-asset}
 
