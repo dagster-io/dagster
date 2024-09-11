@@ -38,6 +38,7 @@ from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
+from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.utils import (
@@ -47,6 +48,7 @@ from dagster_fivetran.utils import (
 )
 
 DEFAULT_MAX_THREADPOOL_WORKERS = 10
+logger = get_dagster_logger()
 
 
 def _fetch_and_attach_col_metadata(
@@ -55,25 +57,36 @@ def _fetch_and_attach_col_metadata(
     """Subroutine to fetch column metadata for a given table from the Fivetran API and attach it to the
     materialization.
     """
-    schema_source_name = materialization.metadata["schema_source_name"].value
-    table_source_name = materialization.metadata["table_source_name"].value
+    try:
+        schema_source_name = materialization.metadata["schema_source_name"].value
+        table_source_name = materialization.metadata["table_source_name"].value
 
-    table_conn_data = fivetran_resource.make_request(
-        "GET",
-        f"connectors/{connector_id}/schemas/{schema_source_name}/tables/{table_source_name}/columns",
-    )
-    columns = check.dict_elem(table_conn_data, "columns")
-    table_columns = sorted(
-        [
-            TableColumn(name=col["name_in_destination"], type="")
-            for col in columns.values()
-            if "name_in_destination" in col and col.get("enabled")
-        ],
-        key=lambda col: col.name,
-    )
-    return materialization.with_metadata(
-        {**materialization.metadata, **TableMetadataSet(column_schema=TableSchema(table_columns))}
-    )
+        table_conn_data = fivetran_resource.make_request(
+            "GET",
+            f"connectors/{connector_id}/schemas/{schema_source_name}/tables/{table_source_name}/columns",
+        )
+        columns = check.dict_elem(table_conn_data, "columns")
+        table_columns = sorted(
+            [
+                TableColumn(name=col["name_in_destination"], type="")
+                for col in columns.values()
+                if "name_in_destination" in col and col.get("enabled")
+            ],
+            key=lambda col: col.name,
+        )
+        return materialization.with_metadata(
+            {
+                **materialization.metadata,
+                **TableMetadataSet(column_schema=TableSchema(table_columns)),
+            }
+        )
+    except Exception as e:
+        logger.warning(
+            "An error occurred while fetching column metadata for table %s",
+            f"Exception: {e}",
+            exc_info=True,
+        )
+        return materialization
 
 
 def _build_fivetran_assets(
