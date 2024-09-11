@@ -22,10 +22,14 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     StructuredCursor,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+        AutomationConditionEvaluator,
+    )
 
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
@@ -49,7 +53,7 @@ class AutomationContext(Generic[T_EntityKey]):
     create_time: datetime.datetime
 
     asset_graph_view: AssetGraphView
-    current_tick_results_by_key: Mapping[AssetKey, AutomationResult]
+    current_results_by_key: Mapping[AssetKey, AutomationResult]
 
     parent_context: Optional["AutomationContext"]
 
@@ -60,28 +64,31 @@ class AutomationContext(Generic[T_EntityKey]):
 
     @staticmethod
     def create(
-        asset_key: AssetKey,
-        asset_graph_view: AssetGraphView,
-        log: logging.Logger,
-        current_tick_results_by_key: Mapping[AssetKey, AutomationResult],
-        condition_cursor: Optional[AutomationConditionCursor],
-        legacy_context: "LegacyRuleEvaluationContext",
+        asset_key: AssetKey, evaluator: "AutomationConditionEvaluator"
     ) -> "AutomationContext":
-        asset_graph = asset_graph_view.asset_graph
+        asset_graph = evaluator.asset_graph
+        asset_graph_view = evaluator.asset_graph_view
         condition = check.not_none(asset_graph.get(asset_key).automation_condition)
         condition_unqiue_id = condition.get_unique_id(parent_unique_id=None, index=None)
+
+        if condition.has_rule_condition and evaluator.request_backfills:
+            raise DagsterInvalidDefinitionError(
+                "Cannot use AutoMaterializePolicies and request backfills. Please use AutomationCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
+            )
 
         return AutomationContext(
             condition=condition,
             condition_unique_id=condition_unqiue_id,
-            candidate_subset=asset_graph_view.get_full_subset(key=asset_key),
+            candidate_subset=evaluator.asset_graph_view.get_full_subset(key=asset_key),
             create_time=get_current_datetime(),
             asset_graph_view=asset_graph_view,
-            current_tick_results_by_key=current_tick_results_by_key,
+            current_results_by_key=evaluator.current_results_by_key,
             parent_context=None,
-            _cursor=condition_cursor,
-            _legacy_context=legacy_context if condition.has_rule_condition else None,
-            _root_log=log,
+            _cursor=evaluator.cursor.get_previous_condition_cursor(asset_key),
+            _legacy_context=LegacyRuleEvaluationContext.create(asset_key, evaluator)
+            if condition.has_rule_condition
+            else None,
+            _root_log=evaluator.logger,
         )
 
     def for_child_condition(
@@ -99,7 +106,7 @@ class AutomationContext(Generic[T_EntityKey]):
             candidate_subset=candidate_subset,
             create_time=get_current_datetime(),
             asset_graph_view=self.asset_graph_view,
-            current_tick_results_by_key=self.current_tick_results_by_key,
+            current_results_by_key=self.current_results_by_key,
             parent_context=self,
             _cursor=self._cursor,
             _legacy_context=self._legacy_context.for_child(
