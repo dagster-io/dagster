@@ -125,7 +125,7 @@ helm --namespace dagster-cloud upgrade agent \
     --values ./values.yaml
 ```
 
-Work load balanced across agents isn't not sticky; there's no guarantee the agent that launched a run will be the same one to receive instructions to terminate it. This is fine if both replicas run on the same Kubernetes cluster because either agent can terminate the run. But if your agents are physically isolated (for example, they run on two different Kubernetes clusters), you should configure:
+Work load balanced across agents isn't sticky; there's no guarantee the agent that launched a run will be the same one to receive instructions to terminate it. This is fine if both replicas run on the same Kubernetes cluster because either agent can terminate the run. But if your agents are physically isolated (for example, they run on two different Kubernetes clusters), you should configure:
 
 ```yaml
 # values.yaml
@@ -295,9 +295,16 @@ locations:
         service_account_name: my_service_account_name
 ```
 
-### Use an agent installed in a different environment for a deployment
+### Run Dagster+ with different Kubernetes clusters
 
-### Use an agent installed in a different environment for a code location
+<Tabs>
+<TabItem value="ha" label="Work can happen in either cluster">
+</TabItem>
+<TabItem value="queues" label="Global asset graph, but projects run in different clusters">
+</TabItem>
+<TabItem value="separate-agents" label="Separate deployments per cluster">
+</TabItem>
+</Tabs>
 
 ### Request resources such as CPU, memory, or GPUs
 
