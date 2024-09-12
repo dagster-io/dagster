@@ -201,10 +201,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     const toFetch = Object.values(locationStatuses).filter((statusEntry) => {
       const d = locationEntriesData[statusEntry.name];
       const locationEntry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
-      return (
-        locationEntry?.loadStatus !== statusEntry?.loadStatus ||
-        locationEntry?.updatedTimestamp !== statusEntry?.updateTimestamp
-      );
+      return locationEntry?.versionKey !== statusEntry?.versionKey;
     });
     prevLocationStatuses.current = locationStatuses;
     return toFetch;

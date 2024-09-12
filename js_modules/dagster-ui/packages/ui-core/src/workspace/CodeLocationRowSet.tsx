@@ -117,7 +117,7 @@ export const LocationStatus = (props: {
     );
   }
 
-  if (locationOrError?.updatedTimestamp !== locationStatus.updateTimestamp) {
+  if (locationOrError?.versionKey !== locationStatus.versionKey) {
     return (
       <Tag minimal intent="primary">
         Loading…

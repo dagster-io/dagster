@@ -5601,6 +5601,7 @@ export type WorkspaceLocationEntry = {
   name: Scalars['String']['output'];
   permissions: Array<Permission>;
   updatedTimestamp: Scalars['Float']['output'];
+  versionKey: Scalars['String']['output'];
 };
 
 export type WorkspaceLocationEntryOrError = PythonError | WorkspaceLocationEntry;
@@ -5619,6 +5620,7 @@ export type WorkspaceLocationStatusEntry = {
   name: Scalars['String']['output'];
   permissions: Array<Permission>;
   updateTimestamp: Scalars['Float']['output'];
+  versionKey: Scalars['String']['output'];
 };
 
 export type WorkspaceOrError = PythonError | Workspace;
@@ -15161,6 +15163,8 @@ export const buildWorkspaceLocationEntry = (
       overrides && overrides.hasOwnProperty('updatedTimestamp')
         ? overrides.updatedTimestamp!
         : 2.68,
+    versionKey:
+      overrides && overrides.hasOwnProperty('versionKey') ? overrides.versionKey! : 'enim',
   };
 };
 
@@ -15196,6 +15200,7 @@ export const buildWorkspaceLocationStatusEntry = (
     permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
     updateTimestamp:
       overrides && overrides.hasOwnProperty('updateTimestamp') ? overrides.updateTimestamp! : 7.09,
+    versionKey: overrides && overrides.hasOwnProperty('versionKey') ? overrides.versionKey! : 'nam',
   };
 };
 

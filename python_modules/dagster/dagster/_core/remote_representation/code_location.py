@@ -678,7 +678,7 @@ class GrpcServerCodeLocation(CodeLocation):
         self._heartbeat = check.bool_param(heartbeat, "heartbeat")
         self._watch_server = check.bool_param(watch_server, "watch_server")
 
-        self.server_id = None
+        self._server_id = None
         self._external_repositories_data = None
 
         self._executable_path = None
@@ -697,7 +697,7 @@ class GrpcServerCodeLocation(CodeLocation):
             )
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
-            self.server_id = server_id if server_id else sync_get_server_id(self.client)
+            self._server_id = server_id if server_id else sync_get_server_id(self.client)
             self.repository_names = set(
                 symbol.repository_name for symbol in list_repositories_response.repository_symbols
             )
@@ -748,6 +748,10 @@ class GrpcServerCodeLocation(CodeLocation):
         except:
             self.cleanup()
             raise
+
+    @property
+    def server_id(self) -> str:
+        return check.not_none(self._server_id)
 
     @property
     def origin(self) -> CodeLocationOrigin:

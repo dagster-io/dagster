@@ -94,17 +94,20 @@ function getLocationMocks(updatedTimestamp = 0) {
   const location1 = buildWorkspaceLocationEntry({
     name: 'location1',
     updatedTimestamp,
+    versionKey: String(updatedTimestamp),
     locationOrLoadError: repositoryLocation1,
   });
   const location2 = buildWorkspaceLocationEntry({
     name: 'location2',
     updatedTimestamp,
+    versionKey: String(updatedTimestamp),
     locationOrLoadError: repositoryLocation2,
   });
 
   const location3 = buildWorkspaceLocationEntry({
     name: 'location3',
     updatedTimestamp,
+    versionKey: String(updatedTimestamp),
     locationOrLoadError: repositoryLocation3,
   });
 
