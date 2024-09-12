@@ -1,31 +1,33 @@
 ---
 title: Create event-based pipelines with sensors
 sidebar_label: Sensors
+title: Creating event-based pipelines with sensors
+sidebar_label: Event triggers
 sidebar_position: 20
 ---
 
-Sensors are a way to trigger runs in response to events in Dagster. Sensors
-run on a regular interval and can either trigger a run, or provide a reason why a run was skipped.
-
-Sensors allow you to respond to events in external systems. For example, you can trigger a run when a new file arrives in an S3 bucket, or when a row is updated in a database.
+Sensors enable you to trigger Dagster runs in response to events from external systems. They run at regular intervals, either triggering a run or explaining why a run was skipped. For example, you can trigger a run when a new file is added to an Amazon S3 bucket or when a database row is updated.
 
 <details>
 <summary>Prerequisites</summary>
+
+To follow the steps in this guide, you'll need:
 
 - Familiarity with [Assets](/concepts/assets)
 - Familiarity with [Ops and Jobs](/concepts/ops-jobs)
 </details>
 
-## Basic sensor example
+## Basic sensor
 
-This example includes a `check_for_new_files` function that simulates finding new files. In a real scenario, this function would check an actual system or directory.
+Sensors are defined with the `@sensor` decorator. The following example includes a `check_for_new_files` function that simulates finding new files. In a real scenario, this function would check an actual system or directory.
 
-The sensor runs every 5 seconds. If it finds new files, it starts a run of `my_job`. If not, it skips the run and logs "No new files found" in the Dagster UI.
+If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
-
-<CodeExample filePath="guides/automation/simple-sensor-example.py" language="python" title="Simple Sensor Example" />
+<CodeExample filePath="guides/automation/simple-sensor-example.py" language="python" />
 
 :::tip
+By default, sensors aren't enabled when first deployed to a Dagster instance. In the Dagster UI, click **Automation > Sensors**  to find and enable a sensor.
+:::
 
 By default, sensors aren't enabled when first deployed to a Dagster instance.
 Click "Automation" in the top navigation to find and enable a sensor.
