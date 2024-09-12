@@ -1,8 +1,8 @@
-from dagster import Definitions, asset
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster import Definitions, JsonMetadataValue, asset
+from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
 
 
-@asset(metadata={DAG_ID_METADATA_KEY: "the_dag", TASK_ID_METADATA_KEY: "some_task"})
+@asset(metadata={AIRFLOW_COUPLING_METADATA_KEY: JsonMetadataValue([("the_dag", "some_task")])})
 def the_dag__some_task():
     return "asset_value"
 
@@ -12,7 +12,7 @@ def unrelated():
     return "unrelated_value"
 
 
-@asset(metadata={DAG_ID_METADATA_KEY: "the_dag", TASK_ID_METADATA_KEY: "other_task"})
+@asset(metadata={AIRFLOW_COUPLING_METADATA_KEY: JsonMetadataValue([("the_dag", "other_task")])})
 def the_dag__other_task():
     return "other_task_value"
 

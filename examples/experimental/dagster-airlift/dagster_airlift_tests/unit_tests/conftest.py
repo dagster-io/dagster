@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Sequence, Tuple, Union
 
 from dagster import (
     AssetKey,
@@ -18,8 +18,11 @@ from dagster._core.definitions.repository_definition.repository_definition impor
     RepositoryDefinition,
 )
 from dagster._time import get_current_datetime
-from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
 from dagster_airlift.test import make_dag_run, make_instance
+
+if TYPE_CHECKING:
+    from dagster_airlift.core.dag_defs import DagDefs
 
 
 def strip_to_first_of_month(dt: datetime) -> datetime:
@@ -45,11 +48,13 @@ def build_definitions_airflow_asset_graph(
     create_runs: bool = True,
     create_assets_defs: bool = True,
 ) -> Definitions:
-    assets = []
+    dag_defs_list: List[Union[Definitions, "DagDefs"]] = [additional_defs]
     dag_and_task_structure = defaultdict(list)
     for dag_id, task_structure in assets_per_task.items():
+        task_defs_list = []
         for task_id, asset_structure in task_structure.items():
             dag_and_task_structure[dag_id].append(task_id)
+            assets = []
             for asset_key, deps in asset_structure:
                 spec = AssetSpec(
                     asset_key,
@@ -65,6 +70,8 @@ def build_definitions_airflow_asset_graph(
                     assets.append(_asset)
                 else:
                     assets.append(spec)
+            task_defs_list.append(task_defs(task_id, Definitions(assets=assets)))
+        dag_defs_list.append(dag_defs(dag_id, *task_defs_list))
     runs = (
         [
             make_dag_run(
@@ -82,11 +89,7 @@ def build_definitions_airflow_asset_graph(
         dag_and_task_structure=dag_and_task_structure,
         dag_runs=runs,
     )
-    defs = Definitions.merge(
-        additional_defs,
-        Definitions(assets=assets),
-    )
-    return build_defs_from_airflow_instance(instance, defs=defs)
+    return build_defs_from_airflow_instance(instance, dag_defs_list=dag_defs_list)
 
 
 def build_and_invoke_sensor(

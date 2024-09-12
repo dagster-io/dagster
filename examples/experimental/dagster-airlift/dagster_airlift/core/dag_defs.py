@@ -1,13 +1,14 @@
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Mapping, Sequence, Union
 
 from dagster import (
     AssetsDefinition,
     AssetSpec,
     Definitions,
+    JsonMetadataValue,
     _check as check,
 )
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
 
 
 class TaskDefs:
@@ -56,7 +57,51 @@ def assets_def_with_af_metadata(
     )
 
 
-def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
+class RefToDefs:
+    def __init__(self, task_id: str, key: str):
+        self.task_id = task_id
+        self.key = key
+
+
+class SharedSentinel:
+    def __init__(self, key: str):
+        self.key = key
+
+
+def mark_as_shared(key: str) -> SharedSentinel:
+    return SharedSentinel(key)
+
+
+class DagDefs:
+    def __init__(self, dag_id: str, task_defs: Dict[str, Union[TaskDefs, RefToDefs]]):
+        self.task_defs = task_defs
+        self.dag_id = dag_id
+
+    def to_defs(self) -> Definitions:
+        return Definitions.merge(
+            *list(
+                apply_metadata_to_all_specs(
+                    defs=task_def_set.defs,
+                    metadata={
+                        AIRFLOW_COUPLING_METADATA_KEY: JsonMetadataValue(
+                            [(self.dag_id, task_def_set.task_id)]
+                        )
+                    },
+                )
+                for task_def_set in self.task_defs.values()
+                if isinstance(task_def_set, TaskDefs)
+            )
+        )
+
+    def get_tasks_referencing_key(self, key: str) -> Sequence[str]:
+        return [
+            task_id
+            for task_id, task_defs in self.task_defs.items()
+            if isinstance(task_defs, RefToDefs) and task_defs.key == key
+        ]
+
+
+def dag_defs(dag_id: str, *defs: Union[TaskDefs, RefToDefs]) -> DagDefs:
     """Construct a Dagster :py:class:`Definitions` object with definitions
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
 
@@ -74,19 +119,41 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
             task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
         )
     """
-    defs_to_merge = []
-    for task_def in defs:
-        defs_to_merge.append(
-            apply_metadata_to_all_specs(
-                defs=task_def.defs,
-                metadata={DAG_ID_METADATA_KEY: dag_id, TASK_ID_METADATA_KEY: task_def.task_id},
-            )
-        )
-    return Definitions.merge(*defs_to_merge)
+    return DagDefs(dag_id, {task_def.task_id: task_def for task_def in defs})
 
 
-def task_defs(task_id, defs: Definitions) -> TaskDefs:
+def task_defs(task_id, defs: Union[Definitions, SharedSentinel]) -> Union[TaskDefs, RefToDefs]:
     """Associate a set of definitions with a particular task in Airflow that is being tracked
     by Airlift tooling.
     """
-    return TaskDefs(task_id, defs)
+    return (
+        TaskDefs(task_id, defs)
+        if not isinstance(defs, SharedSentinel)
+        else RefToDefs(task_id, defs.key)
+    )
+
+
+def resolve_defs(
+    dag_defs: Sequence[Union[DagDefs, Definitions]], keyed_defs: Mapping[str, Definitions]
+) -> Definitions:
+    transformed_defs = []
+    for key, defs in keyed_defs.items():
+        dags_and_tasks = [
+            (dag.dag_id, task_id)
+            for dag in dag_defs
+            if isinstance(dag, DagDefs)
+            for task_id in dag.get_tasks_referencing_key(key)
+        ]
+        transformed_defs.append(
+            apply_metadata_to_all_specs(
+                defs=defs,
+                metadata={AIRFLOW_COUPLING_METADATA_KEY: JsonMetadataValue(dags_and_tasks)},
+            )
+        )
+
+    return Definitions.merge(
+        *list(
+            dag_def.to_defs() if isinstance(dag_def, DagDefs) else dag_def for dag_def in dag_defs
+        ),
+        *transformed_defs,
+    )

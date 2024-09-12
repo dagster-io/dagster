@@ -14,6 +14,7 @@ from dagster import (
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
+    DagDefs,
     build_defs_from_airflow_instance,
     dag_defs,
     task_defs,
@@ -74,7 +75,7 @@ def validate_exported_csv() -> AssetCheckResult:
     )
 
 
-def rebuild_customer_list_defs() -> Definitions:
+def rebuild_customer_list_defs() -> DagDefs:
     return dag_defs(
         "rebuild_customers_list",
         task_defs(
@@ -124,7 +125,7 @@ defs = Definitions.merge(
             ),
             name="airflow_instance_one",
         ),
-        defs=rebuild_customer_list_defs(),
+        dag_defs_list=[rebuild_customer_list_defs()],
     ),
     Definitions(asset_checks=[validate_exported_csv]),
 )

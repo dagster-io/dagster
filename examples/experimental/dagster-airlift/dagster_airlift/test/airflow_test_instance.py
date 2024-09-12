@@ -1,12 +1,15 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 import requests
 
 from dagster_airlift.core import AirflowInstance
 from dagster_airlift.core.airflow_instance import DagInfo, DagRun, TaskInfo, TaskInstance
 from dagster_airlift.core.basic_auth import AirflowAuthBackend
+
+if TYPE_CHECKING:
+    from dagster_airlift.constants import AirflowCoupling
 
 
 class DummyAuthBackend(AirflowAuthBackend):
@@ -29,16 +32,16 @@ class AirflowInstanceFake(AirflowInstance):
         variables: List[Dict[str, Any]] = [],
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
-        self._task_infos_by_dag_and_task_id = {
+        self._task_infos_by_coupling = {
             (task_info.dag_id, task_info.task_id): task_info for task_info in task_infos
         }
-        self._task_instances_by_dag_and_task_id: Dict[Tuple[str, str], List[TaskInstance]] = (
-            defaultdict(list)
+        self._task_instances_by_coupling: Dict["AirflowCoupling", List[TaskInstance]] = defaultdict(
+            list
         )
         for task_instance in task_instances:
-            self._task_instances_by_dag_and_task_id[
-                (task_instance.dag_id, task_instance.task_id)
-            ].append(task_instance)
+            self._task_instances_by_coupling[(task_instance.dag_id, task_instance.task_id)].append(
+                task_instance
+            )
         self._dag_runs_by_dag_id: Dict[str, List[DagRun]] = defaultdict(list)
         for dag_run in dag_runs:
             self._dag_runs_by_dag_id[dag_run.dag_id].append(dag_run)
@@ -87,23 +90,23 @@ class AirflowInstanceFake(AirflowInstance):
     ) -> List[TaskInstance]:
         task_instances = []
         for task_id in set(task_ids):
-            if (dag_id, task_id) not in self._task_instances_by_dag_and_task_id:
+            if (dag_id, task_id) not in self._task_instances_by_coupling:
                 continue
             task_instances.extend(
                 [
                     task_instance
-                    for task_instance in self._task_instances_by_dag_and_task_id[(dag_id, task_id)]
+                    for task_instance in self._task_instances_by_coupling[(dag_id, task_id)]
                     if task_instance.run_id == run_id and task_instance.state in states
                 ]
             )
         return task_instances
 
     def get_task_instance(self, dag_id: str, task_id: str, run_id: str) -> TaskInstance:
-        if (dag_id, task_id) not in self._task_instances_by_dag_and_task_id:
+        if (dag_id, task_id) not in self._task_instances_by_coupling:
             raise ValueError(f"Task instance not found for dag_id {dag_id} and task_id {task_id}")
         if not any(
             task_instance.run_id == run_id
-            for task_instance in self._task_instances_by_dag_and_task_id[(dag_id, task_id)]
+            for task_instance in self._task_instances_by_coupling[(dag_id, task_id)]
         ):
             raise ValueError(
                 f"Task instance not found for dag_id {dag_id}, task_id {task_id}, and run_id {run_id}"
@@ -111,15 +114,15 @@ class AirflowInstanceFake(AirflowInstance):
         return next(
             iter(
                 task_instance
-                for task_instance in self._task_instances_by_dag_and_task_id[(dag_id, task_id)]
+                for task_instance in self._task_instances_by_coupling[(dag_id, task_id)]
                 if task_instance.run_id == run_id
             )
         )
 
     def get_task_info(self, dag_id, task_id) -> TaskInfo:
-        if (dag_id, task_id) not in self._task_infos_by_dag_and_task_id:
+        if (dag_id, task_id) not in self._task_infos_by_coupling:
             raise ValueError(f"Task info not found for dag_id {dag_id} and task_id {task_id}")
-        return self._task_infos_by_dag_and_task_id[(dag_id, task_id)]
+        return self._task_infos_by_coupling[(dag_id, task_id)]
 
     def get_dag_info(self, dag_id) -> DagInfo:
         if dag_id not in self._dag_infos_by_dag_id:

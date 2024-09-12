@@ -1,12 +1,12 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Generator
+from typing import Generator, List, Union
 
 import pytest
 from dagster import AssetSpec, Definitions
 from dagster._core.test_utils import environ
-from dagster_airlift.core.dag_defs import dag_defs, task_defs
+from dagster_airlift.core.dag_defs import DagDefs, dag_defs, task_defs
 from dagster_airlift.core.defs_from_airflow import build_defs_from_airflow_instance
 from dagster_airlift.dbt import dbt_defs
 from dagster_airlift.test import make_instance
@@ -49,7 +49,7 @@ def test_dbt_defs(dbt_project_path: Path, dbt_project_setup: None) -> None:
         dag_and_task_structure={"dag_one": ["task_one"], "dag_two": ["task_two"]}
     )
 
-    initial_defs = Definitions.merge(
+    initial_defs: List[Union[Definitions, DagDefs]] = [
         dag_defs(
             "dag_one",
             task_defs("task_one", dbt_defs_inst),
@@ -60,14 +60,13 @@ def test_dbt_defs(dbt_project_path: Path, dbt_project_setup: None) -> None:
                 "task_two", Definitions(assets=[AssetSpec("downstream", deps=["customers"])])
             ),
         ),
-    )
-
-    assert set((initial_defs.resources or {}).keys()) == {"dbt"}
+    ]
 
     defs = build_defs_from_airflow_instance(
         airflow_instance=test_airflow_instance,
-        defs=initial_defs,
+        dag_defs_list=initial_defs,
     )
+    assert set((defs.resources or {}).keys()) == {"dbt"}
 
     assert isinstance(defs, Definitions)
 

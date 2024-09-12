@@ -1,4 +1,3 @@
-from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core import (
     AirflowInstance,
     BasicAuthBackend,
@@ -35,7 +34,7 @@ airflow_instance = AirflowInstance(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    defs=Definitions.merge(
+    dag_defs_list=[
         dag_defs(
             "load_lakehouse",
             task_defs(
@@ -62,5 +61,5 @@ defs = build_defs_from_airflow_instance(
             csv_path=CSV_PATH,
             duckdb_path=DB_PATH,
         ),
-    ),
+    ],
 )

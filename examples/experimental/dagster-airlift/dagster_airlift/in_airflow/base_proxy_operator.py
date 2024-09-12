@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 import os
 from abc import ABC, abstractmethod
@@ -8,7 +9,7 @@ import requests
 from airflow.models.operator import BaseOperator
 from airflow.utils.context import Context
 
-from dagster_airlift.constants import DAG_ID_METADATA_KEY, TASK_ID_METADATA_KEY
+from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
 
 from .gql_queries import ASSET_NODES_QUERY, RUNS_QUERY, TRIGGER_ASSETS_MUTATION, VERIFICATION_QUERY
 
@@ -58,15 +59,12 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
             timeout=3,
         )
         for asset_node in response.json()["data"]["assetNodes"]:
-            text_metadata_entries = {
-                entry["label"]: entry["text"]
+            json_metadata_entries = {
+                entry["label"]: json.loads(entry["jsonString"])
                 for entry in asset_node["metadataEntries"]
-                if entry["__typename"] == "TextMetadataEntry"
+                if entry["__typename"] == "JsonMetadataEntry"
             }
-            if (
-                text_metadata_entries.get(DAG_ID_METADATA_KEY) == dag_id
-                and text_metadata_entries.get(TASK_ID_METADATA_KEY) == task_id
-            ):
+            if [dag_id, task_id] in json_metadata_entries.get(AIRFLOW_COUPLING_METADATA_KEY, []):
                 repo_location = asset_node["jobs"][0]["repository"]["location"]["name"]
                 repo_name = asset_node["jobs"][0]["repository"]["name"]
                 job_name = asset_node["jobs"][0]["name"]
