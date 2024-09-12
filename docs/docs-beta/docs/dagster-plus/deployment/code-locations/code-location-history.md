@@ -9,12 +9,6 @@ sidebar_label: "Code location history and rollbacks"
 
 Dagster+ automatically tracks metadata every time a code location is loaded. This can be used to understand when changes have been made, and what those changes were. In addition, this metadata can be used to quickly redeploy an older version.
 
-## What you'll learn
-
-- How to view code location history
-- How to roll back a code location to a previous version
-- How to navigate the code location page in the Dagster UI
-
 <details>
   <summary>Prerequisites</summary>
 

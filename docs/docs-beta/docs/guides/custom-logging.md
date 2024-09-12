@@ -3,16 +3,9 @@ title: "Setting up custom logging"
 sidebar_position: 20
 ---
 
-
 # Custom loggers
 
 Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems.
-
-
-## What you'll learn
-
-- How to write a custom logger
-- How to configure your jobs to use this custom logger
 
 <details>
   <summary>Prerequisites</summary>

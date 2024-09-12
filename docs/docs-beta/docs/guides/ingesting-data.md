@@ -13,12 +13,6 @@ This guide covers how to use Dagster for data ingestion.
 This guide focuses on batch data ingestion, as streaming data ingestion doesn't typically rely on an orchestrator to kick off or coordinate computations. However, streaming data assets can still be represented in Dagster for lineage purposes.
 :::
 
-## What you'll learn
-
-- How Dagster helps with data ingestion
-- How to integrate Dagster with different data ingestion tools
-- How to write custom data ingestion pipelines
-
 <details>
   <summary>Prerequisites</summary>
 - Familiarity with [Assets](/concepts/assets)

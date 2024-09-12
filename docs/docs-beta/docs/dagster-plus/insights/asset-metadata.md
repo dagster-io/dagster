@@ -8,10 +8,6 @@ Out of the box, Dagster+ Insights gives you visibility into a variety of common 
 By creating custom metrics from asset metadata, you can use Insights to perform historical aggregation on any
 data your assets can emit.
 
-## What you'll learn
-
-- How to add asset metadata as a custom metric to Dagster+ Insights
-
 <details>
   <summary>Prerequisites</summary>
 

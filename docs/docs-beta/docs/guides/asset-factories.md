@@ -13,14 +13,6 @@ Additionally, you may be serving stakeholders who aren't familiar with Python or
 
 The asset factory pattern can solve both of these problems.
 
-## What you'll learn
-
-- Building an asset factory in Python
-- Driving your asset factory with YAML
-- Improving usability with Pydantic and Jinja
-
----
-
 <details>
   <summary>Prerequisites</summary>
 
