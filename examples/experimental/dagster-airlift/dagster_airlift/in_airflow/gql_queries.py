@@ -18,7 +18,6 @@ query AssetNodeQuery {
             }
             __typename
         }
-        opName
         jobs {
             id
             name

@@ -25,12 +25,6 @@ def build_defs_from_airflow_instance(
 
     Each airflow dag will be represented as a dagster asset, and each dag run will be represented as an asset materialization. A :py:class:`dagster.SensorDefinition` provided in the returned Definitions will be used to poll for dag runs.
 
-    The provided orchestrated defs are expected to contain fully qualified :py:class:`dagster.AssetsDefinition` objects, each of which should be mapped to a task and dag in the provided airflow instance. Using the airflow instance,
-    dagster will provide dependency information between the assets representing tasks, and the dags that they contain. The included :py:class:`dagster.SensorDefinition` will poll for dag runs and materialize runs including each task as an asset for that task.
-
-    There are two ways that the mapping can be done on a provided definition:
-    1. By using the `airlift/dag_id` and `airlift/task_id` op tags on the underlying :py:class:`dagster.NodeDefinition` for the asset.
-    2. By using an opinionated naming format on the :py:class:`dagster.NodeDefinition` for the asset. The naming format is `dag_id__task_id`.
 
     Args:
         airflow_instance (AirflowInstance): The airflow instance to peer with.
