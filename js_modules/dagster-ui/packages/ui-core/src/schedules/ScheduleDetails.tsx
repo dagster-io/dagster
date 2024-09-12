@@ -46,7 +46,13 @@ export const ScheduleDetails = (props: {
   return (
     <>
       <PageHeader
-        title={<Heading>{name}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <a href="/automation">Automation</a>
+            <span>/</span>
+            {name}
+          </Heading>
+        }
         tags={
           <Tag icon="schedule">
             Schedule in <RepositoryLink repoAddress={repoAddress} />

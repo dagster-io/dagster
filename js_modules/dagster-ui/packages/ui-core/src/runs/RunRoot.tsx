@@ -102,8 +102,10 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-              {runId.slice(0, 8)}
+            <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+              <a href="/runs">Runs</a>
+              <span>/</span>
+              <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
             </Heading>
           }
           tags={

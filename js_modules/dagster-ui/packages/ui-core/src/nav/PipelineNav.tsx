@@ -50,7 +50,13 @@ export const PipelineNav = (props: Props) => {
   return (
     <>
       <PageHeader
-        title={<Heading>{pipelineName}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <a href="/jobs">Jobs</a>
+            <span>/</span>
+            {pipelineName}
+          </Heading>
+        }
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
             <Tag icon="job">

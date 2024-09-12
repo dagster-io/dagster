@@ -97,7 +97,13 @@ export const SensorDetails = ({
   return (
     <>
       <PageHeader
-        title={<Heading>{name}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <a href="/automation">Automation</a>
+            <span>/</span>
+            {name}
+          </Heading>
+        }
         icon="sensors"
         tags={
           <Tag icon="sensors">
