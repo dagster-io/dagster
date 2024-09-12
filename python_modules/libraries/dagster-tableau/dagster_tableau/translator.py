@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Mapping
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -22,7 +22,7 @@ class TableauContentData:
     """
 
     content_type: TableauContentType
-    properties: Dict[str, Any]
+    properties: Mapping[str, Any]
 
 
 @record
@@ -32,9 +32,9 @@ class TableauWorkspaceData:
     """
 
     site_name: str
-    workbooks_by_id: Dict[str, TableauContentData]
-    views_by_id: Dict[str, TableauContentData]
-    data_sources_by_id: Dict[str, TableauContentData]
+    workbooks_by_id: Mapping[str, TableauContentData]
+    views_by_id: Mapping[str, TableauContentData]
+    data_sources_by_id: Mapping[str, TableauContentData]
 
 
 class DagsterTableauTranslator:
