@@ -30,7 +30,7 @@ import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
-import {CacheManager} from '../search/useIndexedDBCachedQuery';
+import {CacheManager, getQueryVersion} from '../search/useIndexedDBCachedQuery';
 import {LoadingSpinner} from '../ui/Loading';
 
 type Asset = AssetTableFragment;
@@ -38,7 +38,6 @@ type Asset = AssetTableFragment;
 const groupTableCache = new Map();
 const emptyArray: string[] = [];
 
-export const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
 const DEFAULT_BATCH_LIMIT = 10000;
 
 export function useCachedAssets({
@@ -327,6 +326,7 @@ export const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
 
   ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;
+export const ASSET_CATALOG_TABLE_QUERY_VERSION = getQueryVersion(ASSET_CATALOG_TABLE_QUERY);
 
 // When we load the AssetCatalogTable for a particular asset group, we retrieve `assetNodes`,
 // not `assets`. To narrow the scope of this difference we coerce the nodes to look like

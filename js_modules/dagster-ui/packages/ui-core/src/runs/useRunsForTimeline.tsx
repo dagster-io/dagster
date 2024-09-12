@@ -23,14 +23,13 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {getQueryVersion} from '../search/useIndexedDBCachedQuery';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const BATCH_LIMIT = 500;
-
-export const QUERY_VERSION = 1;
 
 export const useRunsForTimeline = ({
   rangeMs,
@@ -651,6 +650,7 @@ export const COMPLETED_RUN_TIMELINE_QUERY = gql`
 
   ${RUN_TIMELINE_FRAGMENT}
 `;
+export const QUERY_VERSION = getQueryVersion(COMPLETED_RUN_TIMELINE_QUERY);
 
 export const FUTURE_TICKS_QUERY = gql`
   query FutureTicksQuery($tickCursor: Float, $ticksUntil: Float) {

@@ -46,7 +46,6 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         groupSelector: options.groupSelector,
       })}`,
     ),
-    version: 1,
   });
 
   const nodes = fetchResult.data?.assetNodes;
@@ -84,7 +83,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         groupSelector: options.groupSelector,
       })}`,
     ),
-    version: 1,
   });
 
   const nodes = fetchResult.data?.assetNodes;

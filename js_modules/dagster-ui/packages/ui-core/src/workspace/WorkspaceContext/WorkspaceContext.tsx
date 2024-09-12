@@ -27,6 +27,7 @@ import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {codeLocationStatusAtom} from '../../nav/useCodeLocationsStatus';
 import {
+  getQueryVersion,
   useClearCachedData,
   useGetCachedData,
   useGetData,
@@ -34,8 +35,8 @@ import {
 } from '../../search/useIndexedDBCachedQuery';
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
-export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
-export const LOCATION_WORKSPACE_QUERY_VERSION = 3;
+export const CODE_LOCATION_STATUS_QUERY_VERSION = getQueryVersion(CODE_LOCATION_STATUS_QUERY);
+export const LOCATION_WORKSPACE_QUERY_VERSION = getQueryVersion(LOCATION_WORKSPACE_QUERY);
 
 export type WorkspaceRepositorySensor = WorkspaceSensorFragment;
 export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
@@ -68,7 +69,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     CodeLocationStatusQueryVariables
   >({
     query: CODE_LOCATION_STATUS_QUERY,
-    version: CODE_LOCATION_STATUS_QUERY_VERSION,
     key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
   });
   if (typeof jest === 'undefined') {

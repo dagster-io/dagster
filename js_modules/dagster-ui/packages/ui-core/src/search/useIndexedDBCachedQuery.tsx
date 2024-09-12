@@ -1,6 +1,9 @@
+import crypto from 'crypto';
+
+import {print} from 'graphql';
 import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext, useEffect} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
 
 import {
   ApolloClient,
@@ -14,10 +17,15 @@ import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContex
 
 type CacheData<TQuery> = {
   data: TQuery;
-  version: number;
+  version: number | string;
 };
 
 export const KEY_PREFIX = 'indexdbQueryCache:';
+
+export function getQueryVersion(query: DocumentNode) {
+  const printedQuery = print(query);
+  return crypto.createHash('sha256').update(printedQuery).digest('hex');
+}
 
 export class CacheManager<TQuery> {
   private cache: ReturnType<typeof cache<string, CacheData<TQuery>>>;
@@ -30,7 +38,7 @@ export class CacheManager<TQuery> {
     this.cache = cache<string, CacheData<TQuery>>({dbName: this.key, maxCount: 1});
   }
 
-  async get(version: number): Promise<TQuery | undefined> {
+  async get(version: number | string): Promise<TQuery | undefined> {
     if (this.current) {
       return this.current.data;
     }
@@ -52,7 +60,7 @@ export class CacheManager<TQuery> {
     return await this.currentAwaitable;
   }
 
-  async set(data: TQuery, version: number): Promise<void> {
+  async set(data: TQuery, version: number | string): Promise<void> {
     if (
       this.current?.data === data ||
       (JSON.stringify(this.current?.data) === JSON.stringify(data) &&
@@ -71,7 +79,6 @@ export class CacheManager<TQuery> {
 interface QueryHookParams<TVariables extends OperationVariables, TQuery> {
   key: string;
   query: DocumentNode;
-  version: number;
   variables?: TVariables;
   onCompleted?: (data: TQuery) => void;
 }
@@ -80,7 +87,6 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   key,
   skip,
   query,
-  version,
   variables,
 }: QueryHookParams<TVariables, TQuery> & {skip?: boolean}) {
   const client = useApolloClient();
@@ -92,6 +98,8 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
 
   const getData = useGetData();
   const getCachedData = useGetCachedData();
+
+  const version = useMemo(() => getQueryVersion(query), [query]);
 
   const fetch = useCallback(
     async (bypassCache = false) => {
@@ -160,7 +168,7 @@ interface FetchParams<TVariables extends OperationVariables> {
   key: string;
   query: DocumentNode;
   variables?: TVariables;
-  version: number;
+  version: number | string;
   bypassCache?: boolean;
 }
 
@@ -228,7 +236,7 @@ export function useGetCachedData() {
   const {getCacheManager} = useContext(IndexedDBCacheContext);
 
   return useCallback(
-    async <TQuery,>({key, version}: {key: string; version: number}) => {
+    async <TQuery,>({key, version}: {key: string; version: number | string}) => {
       const cacheManager = getCacheManager<TQuery>(key);
       return await cacheManager.get(version);
     },

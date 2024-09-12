@@ -77,7 +77,6 @@ describe('useIndexedDBCachedQuery', () => {
         useIndexedDBCachedQuery({
           key: 'testKey',
           query: ASSET_CATALOG_TABLE_QUERY,
-          version: 1,
         }),
       {
         wrapper: ({children}: {children: ReactNode}) => (
@@ -103,7 +102,6 @@ describe('useIndexedDBCachedQuery', () => {
         useIndexedDBCachedQuery({
           key: 'testKey',
           query: ASSET_CATALOG_TABLE_QUERY,
-          version: 2,
         }),
       {
         wrapper: ({children}: {children: ReactNode}) => <Wrapper mocks={[]}>{children}</Wrapper>,
@@ -125,14 +123,12 @@ describe('useIndexedDBCachedQuery', () => {
         result1 = useIndexedDBCachedQuery({
           key: 'testKey',
           query: ASSET_CATALOG_TABLE_QUERY,
-          version: 2,
         });
         const {fetch} = result1;
         useMemo(() => fetch(), [fetch]);
         result2 = useIndexedDBCachedQuery({
           key: 'testKey',
           query: ASSET_CATALOG_TABLE_QUERY,
-          version: 2,
         });
         const {fetch: fetch2} = result2;
         useMemo(() => fetch2(), [fetch2]);
