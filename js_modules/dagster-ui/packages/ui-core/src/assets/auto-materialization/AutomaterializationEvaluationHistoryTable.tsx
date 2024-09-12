@@ -1,11 +1,15 @@
 import {
   Body2,
   Box,
+  Button,
   ButtonGroup,
   ButtonLink,
-  Checkbox,
   CursorHistoryControls,
   CursorPaginationProps,
+  Icon,
+  Menu,
+  MenuItem,
+  Select,
   Spinner,
   Table,
 } from '@dagster-io/ui-components';
@@ -20,8 +24,8 @@ import {TickStatusTag} from '../../ticks/TickStatusTag';
 interface Props {
   loading: boolean;
   ticks: AssetDaemonTickFragment[];
-  statuses: Set<InstigationTickStatus>;
-  setStatuses: (statuses: Set<InstigationTickStatus>) => void;
+  tickStatus: AutomaterializationTickStatusDisplay;
+  setTickStatus: (status: AutomaterializationTickStatusDisplay) => void;
   setSelectedTick: (tick: AssetDaemonTickFragment | null) => void;
   setTableView: (view: 'evaluations' | 'runs') => void;
   paginationProps: CursorPaginationProps;
@@ -30,8 +34,8 @@ interface Props {
 export const AutomaterializationEvaluationHistoryTable = ({
   loading,
   ticks,
-  statuses,
-  setStatuses,
+  tickStatus,
+  setTickStatus,
   setSelectedTick,
   setTableView,
   paginationProps,
@@ -57,28 +61,7 @@ export const AutomaterializationEvaluationHistoryTable = ({
           />
           {loading && !ticks?.length ? <Spinner purpose="body-text" /> : null}
         </Box>
-        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-          <StatusCheckbox
-            statuses={statuses}
-            setStatuses={setStatuses}
-            status={InstigationTickStatus.STARTED}
-          />
-          <StatusCheckbox
-            statuses={statuses}
-            setStatuses={setStatuses}
-            status={InstigationTickStatus.SUCCESS}
-          />
-          <StatusCheckbox
-            statuses={statuses}
-            setStatuses={setStatuses}
-            status={InstigationTickStatus.FAILURE}
-          />
-          <StatusCheckbox
-            statuses={statuses}
-            setStatuses={setStatuses}
-            status={InstigationTickStatus.SKIPPED}
-          />
-        </Box>
+        <StatusFilter status={tickStatus} onChange={setTickStatus} />
       </Box>
       <TableWrapper>
         <thead>
@@ -142,38 +125,67 @@ export const AutomaterializationEvaluationHistoryTable = ({
   );
 };
 
-const StatusLabels = {
-  [InstigationTickStatus.SKIPPED]: 'None requested',
-  [InstigationTickStatus.STARTED]: 'Started',
-  [InstigationTickStatus.FAILURE]: 'Failed',
-  [InstigationTickStatus.SUCCESS]: 'Requested',
+export enum AutomaterializationTickStatusDisplay {
+  ALL = 'all',
+  FAILED = 'failed',
+  SUCCESS = 'success',
+}
+export const AutomaterializationTickStatusDisplayMappings = {
+  [AutomaterializationTickStatusDisplay.ALL]: [
+    InstigationTickStatus.SUCCESS,
+    InstigationTickStatus.FAILURE,
+    InstigationTickStatus.STARTED,
+    InstigationTickStatus.SKIPPED,
+  ],
+  [AutomaterializationTickStatusDisplay.FAILED]: [InstigationTickStatus.FAILURE],
+  [AutomaterializationTickStatusDisplay.SUCCESS]: [InstigationTickStatus.SUCCESS],
 };
 
-function StatusCheckbox({
+const StatusFilter = ({
   status,
-  statuses,
-  setStatuses,
+  onChange,
 }: {
-  status: InstigationTickStatus;
-  statuses: Set<InstigationTickStatus>;
-  setStatuses: (statuses: Set<InstigationTickStatus>) => void;
-}) {
+  status: AutomaterializationTickStatusDisplay;
+  onChange: (value: AutomaterializationTickStatusDisplay) => void;
+}) => {
+  const items = [
+    {key: AutomaterializationTickStatusDisplay.ALL, label: 'All ticks'},
+    {key: AutomaterializationTickStatusDisplay.SUCCESS, label: 'Requested'},
+    {key: AutomaterializationTickStatusDisplay.FAILED, label: 'Failed'},
+  ];
+  const activeItem = items.find(({key}) => key === status);
   return (
-    <Checkbox
-      label={StatusLabels[status]}
-      checked={statuses.has(status)}
-      onChange={() => {
-        const newStatuses = new Set(statuses);
-        if (statuses.has(status)) {
-          newStatuses.delete(status);
-        } else {
-          newStatuses.add(status);
-        }
-        setStatuses(newStatuses);
+    <Select<(typeof items)[0]>
+      popoverProps={{position: 'bottom-right'}}
+      filterable={false}
+      activeItem={activeItem}
+      items={items}
+      itemRenderer={(item, props) => {
+        return (
+          <MenuItem
+            active={props.modifiers.active}
+            onClick={props.handleClick}
+            key={item.key}
+            text={item.label}
+            style={{width: '300px'}}
+          />
+        );
       }}
-    />
+      itemListRenderer={({renderItem, filteredItems}) => {
+        const renderedItems = filteredItems.map(renderItem).filter(Boolean);
+        return <Menu>{renderedItems}</Menu>;
+      }}
+      onItemSelect={(item) => onChange(item.key)}
+    >
+      <Button
+        rightIcon={<Icon name="arrow_drop_down" />}
+        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+      >
+        {activeItem?.label}
+      </Button>
+    </Select>
   );
-}
+};
 
 const TableWrapper = styled(Table)`
   th,

@@ -1,6 +1,10 @@
-import {useCallback, useEffect, useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 
-import {AutomaterializationEvaluationHistoryTable} from './AutomaterializationEvaluationHistoryTable';
+import {
+  AutomaterializationEvaluationHistoryTable,
+  AutomaterializationTickStatusDisplay,
+  AutomaterializationTickStatusDisplayMappings,
+} from './AutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from './types/AssetDaemonTicksQuery.types';
 import {useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus} from '../../graphql/types';
@@ -33,25 +37,17 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
   setTimerange,
   setParentStatuses,
 }: Props) => {
-  const [statuses, setStatuses] = useQueryPersistedState<Set<InstigationTickStatus>>({
-    queryKey: 'statuses',
-    decode: useCallback(({statuses}: {statuses?: string}) => {
-      return new Set<InstigationTickStatus>(
-        statuses
-          ? JSON.parse(statuses)
-          : [
-              InstigationTickStatus.STARTED,
-              InstigationTickStatus.SUCCESS,
-              InstigationTickStatus.FAILURE,
-              InstigationTickStatus.SKIPPED,
-            ],
-      );
-    }, []),
-    encode: useCallback((raw: Set<InstigationTickStatus>) => {
-      return {statuses: JSON.stringify(Array.from(raw))};
-    }, []),
+  const [tickStatus, setTickStatus] = useQueryPersistedState<AutomaterializationTickStatusDisplay>({
+    queryKey: 'status',
+    defaults: {status: AutomaterializationTickStatusDisplay.ALL},
   });
 
+  const statuses = useMemo(
+    () =>
+      AutomaterializationTickStatusDisplayMappings[tickStatus] ||
+      AutomaterializationTickStatusDisplayMappings[AutomaterializationTickStatusDisplay.ALL],
+    [tickStatus],
+  );
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     AssetSensorTicksQuery,
     AssetSensorTicksQueryVariables
@@ -119,9 +115,9 @@ export const SensorAutomaterializationEvaluationHistoryTable = ({
       ticks={allTicks || []}
       paginationProps={paginationProps}
       setSelectedTick={setSelectedTick}
-      setStatuses={setStatuses}
+      tickStatus={tickStatus}
+      setTickStatus={setTickStatus}
       setTableView={setTableView}
-      statuses={statuses}
     />
   );
 };
