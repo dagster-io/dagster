@@ -835,6 +835,128 @@ def test_waiting_for_pod_initialize_with_init_container():
     assert len(mock_client.sleeper.mock_calls) == 1
 
 
+def test_wait_for_pod_initialize_with_multiple_init_containers():
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=4))
+    waiting_container_status = _create_status(
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    waiting_initcontainer1_status = _create_status(
+        name="init1",
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    waiting_initcontainer2_status = _create_status(
+        name="init2",
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    ready_initcontainer1_status = _ready_running_status(name="init1")
+    ready_initcontainer2_status = _ready_running_status(name="init2")
+
+    two_waiting_inits_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[waiting_initcontainer1_status, waiting_initcontainer2_status],
+    )
+    single_init_ready_waiting_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[ready_initcontainer1_status, waiting_initcontainer2_status],
+    )
+    both_init_ready_waiting_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[ready_initcontainer1_status, ready_initcontainer2_status],
+    )
+
+    mock_client.core_api.list_namespaced_pod.side_effect = [
+        two_waiting_inits_pod,
+        two_waiting_inits_pod,
+        single_init_ready_waiting_pod,
+        both_init_ready_waiting_pod,
+    ]
+
+    pod_name = "a_pod"
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
+
+    assert_logger_calls(
+        mock_client.logger,
+        [
+            f'Waiting for pod "{pod_name}"',
+            f'Waiting for pod "{pod_name}" to initialize...',
+            f'Pod "{pod_name}" is ready, done waiting',
+        ],
+    )
+
+
+# Container states are evaluated in the order that they are in the pod manifest, but
+# it's possible that the second initcontainer can finish first and we test that here.
+def test_wait_for_pod_initialize_with_multiple_init_containers_backwards():
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=5))
+    waiting_container_status = _create_status(
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    waiting_initcontainer1_status = _create_status(
+        name="init1",
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    waiting_initcontainer2_status = _create_status(
+        name="init2",
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    ready_initcontainer1_status = _ready_running_status(name="init1")
+    ready_initcontainer2_status = _ready_running_status(name="init2")
+
+    two_waiting_inits_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[waiting_initcontainer1_status, waiting_initcontainer2_status],
+    )
+    single_init_ready_waiting_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[waiting_initcontainer1_status, ready_initcontainer2_status],
+    )
+    both_init_ready_waiting_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[ready_initcontainer1_status, ready_initcontainer2_status],
+    )
+
+    # we need an extra side effect here compared to the above test since
+    # there's an extra loop iteration
+    mock_client.core_api.list_namespaced_pod.side_effect = [
+        two_waiting_inits_pod,
+        two_waiting_inits_pod,
+        single_init_ready_waiting_pod,
+        both_init_ready_waiting_pod,
+        both_init_ready_waiting_pod,
+    ]
+
+    pod_name = "a_pod"
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
+
+    assert_logger_calls(
+        mock_client.logger,
+        [
+            f'Waiting for pod "{pod_name}"',
+            f'Waiting for pod "{pod_name}" to initialize...',
+            f'Waiting for pod "{pod_name}" to initialize...',
+            f'Pod "{pod_name}" is ready, done waiting',
+        ],
+    )
+
+
 def test_waiting_for_pod_container_creation():
     mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=3))
     single_waiting_pod = _pod_list_for_container_status(

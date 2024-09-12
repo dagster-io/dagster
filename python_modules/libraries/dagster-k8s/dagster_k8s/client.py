@@ -570,6 +570,7 @@ class DagsterKubernetesClient:
 
         # A set of container names that have exited.
         exited_containers = set()
+        ready_initcontainers = set()
         ignore_containers = ignore_containers or set()
         error_logs = []
 
@@ -613,6 +614,7 @@ class DagsterKubernetesClient:
             all_statuses = []
             all_statuses.extend(pod.status.init_container_statuses or [])
             all_statuses.extend(pod.status.container_statuses or [])
+            initcontainer_count = len(pod.status.init_container_statuses or [])
 
             # Filter out ignored containers
             all_statuses = [s for s in all_statuses if s.name not in ignore_containers]
@@ -623,7 +625,9 @@ class DagsterKubernetesClient:
             #
             # In case we are waiting for the pod to be ready, we will exit after
             # the first container in this list is ready.
-            container_status = next(s for s in all_statuses if s.name not in exited_containers)
+            container_status = next(
+                s for s in all_statuses if s.name not in exited_containers | ready_initcontainers
+            )
 
             # State checks below, see:
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstate-v1-core
@@ -638,8 +642,15 @@ class DagsterKubernetesClient:
                         self.sleeper(wait_time_between_attempts)
                         continue
                     else:
-                        self.logger(f'Pod "{pod_name}" is ready, done waiting')
-                        break
+                        if (
+                            initcontainer_count > 0
+                            and len(ready_initcontainers) < initcontainer_count
+                        ):
+                            ready_initcontainers.add(container_status.name)
+                        if len(ready_initcontainers) == initcontainer_count:
+                            self.logger(f'Pod "{pod_name}" is ready, done waiting')
+                            break
+
                 else:
                     check.invariant(
                         wait_for_state == WaitForPodState.Terminated, "New invalid WaitForPodState"
