@@ -90,3 +90,5 @@ export type OverviewSensorsQuery = {
     };
   };
 };
+
+export const OverviewSensorsQueryVersion = 'a4165ae0c5e53e870380e53b7cab308203a28d002f81f0d5e4e767c7d91a3029';

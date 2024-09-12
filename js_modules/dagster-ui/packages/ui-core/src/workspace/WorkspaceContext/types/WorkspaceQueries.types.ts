@@ -465,3 +465,7 @@ export type LocationStatusEntryFragment = {
   loadStatus: Types.RepositoryLocationLoadStatus;
   updateTimestamp: number;
 };
+
+export const LocationWorkspaceQueryVersion = '58140198e643d07c92d272b5eb521271149e048ae111762cfd9cef728e618a8f';
+
+export const CodeLocationStatusQueryVersion = 'eed7ef3f101620565b5893d9ccb83719bd0e1db5c6d66116d2027822bc2593a7';

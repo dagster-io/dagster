@@ -50,6 +50,7 @@
     "fake-indexeddb": "^4.0.2",
     "fuse.js": "^6.4.2",
     "graphql": "^16.8.1",
+    "graphql-codegen-persisted-query-ids": "^0.2.0",
     "highlight.js": "11.6.0",
     "idb-lru-cache": "^0.1.0",
     "lodash": "^4.17.15",

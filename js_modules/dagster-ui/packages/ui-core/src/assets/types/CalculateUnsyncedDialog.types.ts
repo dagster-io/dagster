@@ -23,3 +23,5 @@ export type AssetStaleStatusQuery = {
     } | null;
   }>;
 };
+
+export const AssetStaleStatusQueryVersion = '2c0792a380368dfd0b6c892bd7c18f86bb34e599a2f8b020852b4a6285defa37';

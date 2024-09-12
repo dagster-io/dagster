@@ -94,3 +94,5 @@ export type LaunchPartitionBackfillMutation = {
     | {__typename: 'RunConflict'; message: string}
     | {__typename: 'UnauthorizedError'; message: string};
 };
+
+export const LaunchPartitionBackfillVersion = '12402e3e19e32ede40dbc04673d452c2d4b3e6a09509c80fdd065c92e3640daa';

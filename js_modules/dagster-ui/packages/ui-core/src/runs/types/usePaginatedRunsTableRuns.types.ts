@@ -59,3 +59,5 @@ export type RunsRootQuery = {
         }>;
       };
 };
+
+export const RunsRootQueryVersion = '1e4b08de38e10b8cfd771e756150925d8925d5cdb87650397782f6f030399901';

@@ -33,3 +33,5 @@ export type UsingDefaultLauncherAlertInstanceFragment = {
   runQueuingSupported: boolean;
   runLauncher: {__typename: 'RunLauncher'; name: string} | null;
 };
+
+export const DaemonNotRunningAlertQueryVersion = 'f016870739b8816036750fb916c536889c862b5d591bf7c552f5cdefde693539';
