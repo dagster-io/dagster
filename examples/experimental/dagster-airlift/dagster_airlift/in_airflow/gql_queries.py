@@ -12,9 +12,9 @@ query AssetNodeQuery {
             path
         }
         metadataEntries {
-            ... on TextMetadataEntry {
+            ... on JsonMetadataEntry {
                 label
-                text
+                jsonString 
             }
             __typename
         }

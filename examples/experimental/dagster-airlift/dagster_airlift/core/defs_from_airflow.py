@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import List, Mapping, Optional, Union
 
 from dagster import Definitions
 from dagster._utils.warnings import suppress_dagster_warnings
 
+from dagster_airlift.core.dag_defs import DagDefs, resolve_defs
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor,
@@ -17,11 +18,12 @@ from .airflow_instance import AirflowInstance
 def build_defs_from_airflow_instance(
     airflow_instance: AirflowInstance,
     cache_polling_interval: int = DEFAULT_POLL_INTERVAL,
-    defs: Optional[Definitions] = None,
+    dag_defs_list: List[Union[DagDefs, Definitions]] = [],
     # This parameter will go away once we can derive the migration state from airflow itself, using our built in utilities.
     # Alternatively, we can keep it around to let people override the migration state if they want.
     migration_state_override: Optional[AirflowMigrationState] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    shared_task_defs: Mapping[str, Definitions] = {},
 ) -> Definitions:
     """From a provided airflow instance and a set of airflow-orchestrated dagster definitions, build a set of dagster definitions to peer and observe the airflow instance.
 
@@ -38,6 +40,7 @@ def build_defs_from_airflow_instance(
         Definitions: The definitions to use for the provided airflow instance. Contains an asset per dag, an asset per task in the provided orchestrated defs, all resources provided in the orchestrated defs, and a sensor to poll for airflow dag runs.
 
     """
+    defs = resolve_defs(dag_defs_list, shared_task_defs)
     assets_defs = AirflowCacheableAssetsDefinition(
         airflow_instance=airflow_instance,
         defs=defs,

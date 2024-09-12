@@ -22,16 +22,14 @@ airflow_instance = AirflowInstance(
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    defs=Definitions.merge(
-        *[
-            dag_defs(
-                f"dag_{i}",
-                *[
-                    task_defs(f"task_{i}_{j}", Definitions(assets=[AssetSpec(f"asset_{i}_{j}")]))
-                    for j in range(get_num_tasks())
-                ],
-            )
-            for i in range(get_num_dags())
-        ]
-    ),
+    dag_defs_list=[
+        dag_defs(
+            f"dag_{i}",
+            *[
+                task_defs(f"task_{i}_{j}", Definitions(assets=[AssetSpec(f"asset_{i}_{j}")]))
+                for j in range(get_num_tasks())
+            ],
+        )
+        for i in range(get_num_dags())
+    ],
 )

@@ -29,7 +29,7 @@ def build_asset(key: str) -> AssetsDefinition:
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    defs=Definitions.merge(
+    dag_defs_list=[
         *[
             dag_defs(
                 f"dag_{i}",
@@ -40,5 +40,5 @@ defs = build_defs_from_airflow_instance(
             )
             for i in range(get_num_dags())
         ]
-    ),
+    ],
 )

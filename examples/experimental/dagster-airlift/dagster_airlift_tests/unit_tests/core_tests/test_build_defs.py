@@ -5,6 +5,7 @@ from dagster import (
     AssetsDefinition,
     AssetSpec,
     Definitions,
+    JsonMetadataValue,
     asset,
     asset_check,
     executor,
@@ -14,7 +15,13 @@ from dagster import (
     sensor,
 )
 from dagster._core.test_utils import environ
-from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
+from dagster_airlift.core import (
+    build_defs_from_airflow_instance,
+    dag_defs,
+    mark_as_shared,
+    task_defs,
+)
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
@@ -67,15 +74,17 @@ def test_defs_passthrough() -> None:
     """Test that passed-through definitions are present in the final definitions."""
     defs = build_defs_from_airflow_instance(
         airflow_instance=make_instance({"dag": ["task"]}),
-        defs=Definitions(
-            assets=[a, b_spec],
-            asset_checks=[a_check],
-            jobs=[the_job],
-            sensors=[some_sensor],
-            schedules=[some_schedule],
-            loggers={"the_logger": nonstandard_logger},
-            executor=nonstandard_executor,
-        ),
+        dag_defs_list=[
+            Definitions(
+                assets=[a, b_spec],
+                asset_checks=[a_check],
+                jobs=[the_job],
+                sensors=[some_sensor],
+                schedules=[some_schedule],
+                loggers={"the_logger": nonstandard_logger},
+                executor=nonstandard_executor,
+            )
+        ],
     )
     assert defs.executor == nonstandard_executor
     assert defs.loggers
@@ -107,12 +116,16 @@ def test_coerce_specs() -> None:
     """Test that asset specs are properly coerced into asset keys."""
     # Initialize an airflow instance with a dag "dag", which contains a task "task". There are no task instances or runs.
 
-    spec = AssetSpec(key="a", metadata={"airlift/dag_id": "dag", "airlift/task_id": "task"})
+    spec = AssetSpec(
+        key="a", metadata={AIRFLOW_COUPLING_METADATA_KEY: JsonMetadataValue([("dag", "task")])}
+    )
     defs = build_defs_from_airflow_instance(
         airflow_instance=make_instance({"dag": ["task"]}),
-        defs=Definitions(
-            assets=[spec],
-        ),
+        dag_defs_list=[
+            Definitions(
+                assets=[spec],
+            )
+        ],
     )
     repo = defs.get_repository_def()
     assert len(repo.assets_defs_by_key) == 2
@@ -127,13 +140,19 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
     a = AssetKey("a")
     spec = AssetSpec(
         key=a,
-        metadata={"airlift/dag_id": "dag-with-hyphens", "airlift/task_id": "task-with-hyphens"},
+        metadata={
+            AIRFLOW_COUPLING_METADATA_KEY: JsonMetadataValue(
+                [("dag-with-hyphens", "task-with-hyphens")]
+            )
+        },
     )
     defs = build_defs_from_airflow_instance(
         airflow_instance=make_instance({"dag-with-hyphens": ["task-with-hyphens"]}),
-        defs=Definitions(
-            assets=[spec],
-        ),
+        dag_defs_list=[
+            Definitions(
+                assets=[spec],
+            )
+        ],
     )
 
     repo = defs.get_repository_def()
@@ -299,3 +318,29 @@ def test_local_airflow_instance() -> None:
         assert len(repo_def.assets_defs_by_key) == 2
         task_asset = repo_def.assets_defs_by_key[AssetKey("a")]
         assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "True"
+
+
+def test_multi_task_mapping() -> None:
+    """Test that we can map the same asset to multiple tasks."""
+    instance = make_instance({"dag1": ["task1"], "dag2": ["task2"]})
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance,
+        dag_defs_list=[
+            dag_defs(
+                "dag1",
+                task_defs("task1", mark_as_shared("a")),
+            ),
+            dag_defs(
+                "dag2",
+                task_defs("task2", mark_as_shared("a")),
+            ),
+        ],
+        shared_task_defs={"a": Definitions(assets=[AssetSpec(key="a")])},
+    )
+    repo_def = defs.get_repository_def()
+    assert len(repo_def.assets_defs_by_key) == 3
+    assert {a for a in repo_def.assets_defs_by_key.keys()} == {
+        AssetKey(["airflow_instance", "dag", "dag1"]),
+        AssetKey(["airflow_instance", "dag", "dag2"]),
+        AssetKey("a"),
+    }

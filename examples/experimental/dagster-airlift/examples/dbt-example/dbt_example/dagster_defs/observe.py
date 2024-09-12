@@ -49,7 +49,7 @@ def freshness_defs() -> Definitions:
 
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
-    defs=Definitions.merge(
+    dag_defs_list=[
         dag_defs(
             "load_lakehouse",
             task_defs("load_iris", Definitions(assets=specs_from_lakehouse(csv_path=CSV_PATH))),
@@ -66,5 +66,5 @@ defs = build_defs_from_airflow_instance(
             duckdb_path=DB_PATH,
         ),
         freshness_defs(),
-    ),
+    ],
 )
