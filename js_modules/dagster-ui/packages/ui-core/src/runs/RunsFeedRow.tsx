@@ -19,7 +19,7 @@ import {RunRowTags} from './RunRowTags';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
 import {RunTargetLink} from './RunTargetLink';
-import {RunStateSummary, RunTime} from './RunUtils';
+import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedRow.types';
@@ -90,7 +90,7 @@ export const RunsFeedRow = ({
           >
             <Box flex={{gap: 4, alignItems: 'center'}}>
               <Icon name={entry.__typename === 'PartitionBackfill' ? 'run_with_subruns' : 'run'} />
-              <Mono>{entry.id}</Mono>
+              <Mono>{titleForRun(entry)}</Mono>
             </Box>
           </Link>
           <Box
