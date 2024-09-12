@@ -189,7 +189,7 @@ export function useAssetCatalogFiltering<
     isEnabled,
   ]);
 
-  const filteredAssets = React.useMemo(
+  const filtered = React.useMemo(
     () => assets.filter((a) => filterFn(a.definition ?? {})),
     [filterFn, assets],
   ) as T[];
@@ -199,8 +199,7 @@ export function useAssetCatalogFiltering<
     filterButton: components.button,
     isFiltered,
     filterFn,
-    filteredAssets,
-    filteredAssetsLoading: false,
+    filtered,
     kindFilter,
     groupsFilter,
     renderFilterButton: components.renderButton,

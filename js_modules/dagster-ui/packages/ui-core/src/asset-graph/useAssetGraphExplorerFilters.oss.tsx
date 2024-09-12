@@ -18,18 +18,22 @@ export function useAssetGraphExplorerFilters({
   loading,
   clearExplorerPath,
 }: Props) {
-  const ret = useAssetCatalogFiltering({
-    assets: nodes,
-    includeRepos: viewType === AssetGraphViewType.GLOBAL,
-    loading,
-  });
+  const {filterButton, kindFilter, groupsFilter, activeFiltersJsx, filterFn} =
+    useAssetCatalogFiltering({
+      assets: nodes,
+      includeRepos: viewType === AssetGraphViewType.GLOBAL,
+      loading,
+    });
 
   return {
-    ...ret,
-    button: ret.filterButton,
+    kindFilter,
+    groupsFilter,
+    button: filterButton,
+    filterFn,
+    activeFiltersJsx,
     filterBar: (
       <AssetGraphFilterBar
-        activeFiltersJsx={ret.activeFiltersJsx}
+        activeFiltersJsx={activeFiltersJsx}
         explorerPath={explorerPath}
         clearExplorerPath={clearExplorerPath}
       />

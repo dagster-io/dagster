@@ -203,7 +203,7 @@ export const AssetsCatalogTable = ({
   const {assets, query, error} = useAllAssets({groupSelector});
 
   const {
-    filteredAssets: partiallyFiltered,
+    filtered: partiallyFiltered,
     isFiltered,
     filterButton,
     activeFiltersJsx,
