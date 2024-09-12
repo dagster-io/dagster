@@ -625,7 +625,9 @@ class DagsterKubernetesClient:
             #
             # In case we are waiting for the pod to be ready, we will exit after
             # the first container in this list is ready.
-            container_status = next(s for s in all_statuses if s.name not in exited_containers | ready_initcontainers)
+            container_status = next(
+                s for s in all_statuses if s.name not in exited_containers | ready_initcontainers
+            )
 
             # State checks below, see:
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstate-v1-core
@@ -640,7 +642,10 @@ class DagsterKubernetesClient:
                         self.sleeper(wait_time_between_attempts)
                         continue
                     else:
-                        if initcontainer_count > 0 and len(ready_initcontainers) < initcontainer_count:
+                        if (
+                            initcontainer_count > 0
+                            and len(ready_initcontainers) < initcontainer_count
+                        ):
                             ready_initcontainers.add(container_status.name)
                         if len(ready_initcontainers) == initcontainer_count:
                             self.logger(f'Pod "{pod_name}" is ready, done waiting')
