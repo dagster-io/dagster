@@ -295,7 +295,7 @@ def construct_cacheable_assets_and_infer_dependencies(
                 },
                 tags={
                     **spec.tags,
-                    MIGRATED_TAG: str(migration_state_for_task),
+                    MIGRATED_TAG: str(bool(migration_state_for_task)),
                 },
                 deps=spec_deps,
                 group_name=spec.group_name,

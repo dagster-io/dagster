@@ -10,7 +10,12 @@ from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
-from dagster_airlift.migration_state import AirflowMigrationState, DagMigrationState
+from dagster_airlift.migration_state import (
+    AirflowMigrationState,
+    DagMigrationState,
+    load_migration_state_from_yaml,
+)
+from dagster_airlift.utils import get_local_migration_state_dir
 
 from .utils import convert_to_valid_dagster_name
 
@@ -81,6 +86,9 @@ class AirflowInstance:
             )
 
     def get_migration_state(self) -> AirflowMigrationState:
+        local_migration_dir = get_local_migration_state_dir()
+        if local_migration_dir is not None:
+            return load_migration_state_from_yaml(local_migration_dir)
         variables = self.list_variables()
         dag_dict = {}
         for var_dict in variables:
