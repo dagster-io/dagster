@@ -61,7 +61,7 @@ def _create_run(graphql_context, **kwargs) -> DagsterRun:
 
 
 def _create_run_for_backfill(
-    graphql_context, backfill_id: str, tags: Optional[Mapping[str, str]], **kwargs
+    graphql_context, backfill_id: str, tags: Optional[Mapping[str, str]] = None, **kwargs
 ) -> DagsterRun:
     if tags:
         tags = {**tags, **DagsterRun.tags_for_backfill_id(backfill_id)}
