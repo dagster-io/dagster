@@ -1,17 +1,13 @@
-import json
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 import polars as pl
 import pyarrow.dataset as ds
-import pyarrow.parquet as pq
 from dagster import InputContext, OutputContext
 from dagster._annotations import experimental
 from fsspec.implementations.local import LocalFileSystem
 from packaging.version import Version
-from pyarrow import Table
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
-from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
 if TYPE_CHECKING:
     from upath import UPath
@@ -123,26 +119,6 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
                 }
             )
 
-        Storing custom metadata in the Parquet file schema (this metadata can be read outside of Dagster with a helper function :py:meth:`dagster_polars.PolarsParquetIOManager.read_parquet_metadata`):
-
-        .. code-block:: python
-
-            from dagster_polars import DataFrameWithMetadata
-
-
-            @asset(
-                io_manager_key="polars_parquet_io_manager",
-            )
-            def upstream() -> DataFrameWithMetadata:
-                return pl.DataFrame(...), {"my_custom_metadata": "my_custom_value"}
-
-
-            @asset(
-                io_manager_key="polars_parquet_io_manager",
-            )
-            def downsteam(upstream: DataFrameWithMetadata):
-                df, metadata = upstream
-                assert metadata["my_custom_metadata"] == "my_custom_value"
     """
 
     extension: str = ".parquet"
@@ -152,43 +128,35 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
         context: OutputContext,
         df: pl.LazyFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None,
     ):
         context_metadata = context.definition_metadata or {}
 
-        if metadata is not None:
-            context.log.warning(
-                "Sink not possible with StorageMetadata, instead it's dispatched to pyarrow writer."
-            )
-            return self.write_df_to_path(context, df.collect(), path, metadata)
-        else:
-            fs = path.fs if hasattr(path, "fs") else None
-            if isinstance(fs, LocalFileSystem):
-                compression = context_metadata.get("compression", "zstd")
-                compression_level = context_metadata.get("compression_level")
-                statistics = context_metadata.get("statistics", False)
-                row_group_size = context_metadata.get("row_group_size")
+        fs = path.fs if hasattr(path, "fs") else None
+        if isinstance(fs, LocalFileSystem):
+            compression = context_metadata.get("compression", "zstd")
+            compression_level = context_metadata.get("compression_level")
+            statistics = context_metadata.get("statistics", False)
+            row_group_size = context_metadata.get("row_group_size")
 
-                df.sink_parquet(
-                    str(path),
-                    compression=compression,
-                    compression_level=compression_level,
-                    statistics=statistics,
-                    row_group_size=row_group_size,
-                )
-            else:
-                # TODO(ion): add sink_parquet once this PR gets merged: https://github.com/pola-rs/polars/pull/11519
-                context.log.warning(
-                    "Cloud sink is not possible yet, instead it's dispatched to pyarrow writer which collects it into memory first.",
-                )
-                return self.write_df_to_path(context, df.collect(), path, metadata)
+            df.sink_parquet(
+                str(path),
+                compression=compression,
+                compression_level=compression_level,
+                statistics=statistics,
+                row_group_size=row_group_size,
+            )
+        else:
+            # TODO(ion): add sink_parquet once this PR gets merged: https://github.com/pola-rs/polars/pull/11519
+            context.log.warning(
+                "Cloud sink is not possible yet, instead it's dispatched to pyarrow writer which collects it into memory first.",
+            )
+            return self.write_df_to_path(context, df.collect(), path)
 
     def write_df_to_path(
         self,
         context: OutputContext,
         df: pl.DataFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None,
     ):
         context_metadata = context.definition_metadata or {}
         compression = context_metadata.get("compression", "zstd")
@@ -199,120 +167,39 @@ class PolarsParquetIOManager(BasePolarsUPathIOManager):
 
         fs = path.fs if hasattr(path, "fs") else None
 
-        if metadata is not None:
-            table: Table = df.to_arrow()
-            context.log.warning("StorageMetadata is passed, so the PyArrow writer is used.")
-            existing_metadata = (
-                table.schema.metadata.to_dict() if table.schema.metadata is not None else {}
+        if pyarrow_options is not None:
+            pyarrow_options["filesystem"] = fs
+            df.write_parquet(
+                str(path),
+                compression=compression,  # type: ignore
+                compression_level=compression_level,
+                statistics=statistics,
+                row_group_size=row_group_size,
+                use_pyarrow=True,
+                pyarrow_options=pyarrow_options,
             )
-            existing_metadata.update({DAGSTER_POLARS_STORAGE_METADATA_KEY: json.dumps(metadata)})
-            table = table.replace_schema_metadata(existing_metadata)
-
-            if pyarrow_options is not None and pyarrow_options.get("partition_cols"):
-                pyarrow_options["compression"] = (
-                    None if compression == "uncompressed" else compression
-                )
-                pyarrow_options["compression_level"] = compression_level
-                pyarrow_options["write_statistics"] = statistics
-                pyarrow_options["row_group_size"] = row_group_size
-                pq.write_to_dataset(
-                    table=table,
-                    root_path=str(path),
-                    fs=fs,
-                    **(pyarrow_options or {}),
-                )
-            else:
-                pq.write_table(
-                    table=table,
-                    where=str(path),
-                    row_group_size=row_group_size,
-                    compression=None if compression == "uncompressed" else compression,
+        elif fs is not None:
+            with fs.open(str(path), mode="wb") as f:
+                df.write_parquet(
+                    f,
+                    compression=compression,  # type: ignore
                     compression_level=compression_level,
-                    write_statistics=statistics,
-                    filesystem=fs,
-                    **(pyarrow_options or {}),
+                    statistics=statistics,
+                    row_group_size=row_group_size,
                 )
         else:
-            if pyarrow_options is not None:
-                pyarrow_options["filesystem"] = fs
-                df.write_parquet(
-                    str(path),
-                    compression=compression,  # type: ignore
-                    compression_level=compression_level,
-                    statistics=statistics,
-                    row_group_size=row_group_size,
-                    use_pyarrow=True,
-                    pyarrow_options=pyarrow_options,
-                )
-            elif fs is not None:
-                with fs.open(str(path), mode="wb") as f:
-                    df.write_parquet(
-                        f,
-                        compression=compression,  # type: ignore
-                        compression_level=compression_level,
-                        statistics=statistics,
-                        row_group_size=row_group_size,
-                    )
-            else:
-                df.write_parquet(
-                    str(path),
-                    compression=compression,  # type: ignore
-                    compression_level=compression_level,
-                    statistics=statistics,
-                    row_group_size=row_group_size,
-                )
-
-    @overload
-    def scan_df_from_path(
-        self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
-    ) -> pl.LazyFrame: ...
-
-    @overload
-    def scan_df_from_path(
-        self, path: "UPath", context: InputContext, with_metadata: Literal[True]
-    ) -> LazyFrameWithMetadata: ...
+            df.write_parquet(
+                str(path),
+                compression=compression,  # type: ignore
+                compression_level=compression_level,
+                statistics=statistics,
+                row_group_size=row_group_size,
+            )
 
     def scan_df_from_path(
         self,
         path: "UPath",
         context: InputContext,
-        with_metadata: Optional[bool] = False,
         partition_key: Optional[str] = None,
-    ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]:
-        ldf = scan_parquet(path, context)
-
-        if not with_metadata:
-            return ldf
-        else:
-            ds = get_pyarrow_dataset(path, context)
-            dagster_polars_metadata = (
-                ds.schema.metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8"))
-                if ds.schema.metadata is not None
-                else None
-            )
-
-            metadata = (
-                json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
-            )
-
-            return ldf, metadata
-
-    @classmethod
-    def read_parquet_metadata(cls, path: "UPath") -> StorageMetadata:
-        """Just a helper method to read metadata from a parquet file.
-
-        Is not used internally, but is helpful for reading Parquet metadata from outside of Dagster.
-        :param path:
-        :return:
-        """
-        metadata = pq.read_metadata(
-            str(path), filesystem=path.fs if hasattr(path, "fs") else None
-        ).metadata
-
-        dagster_polars_metadata = (
-            metadata.get(DAGSTER_POLARS_STORAGE_METADATA_KEY.encode("utf-8"))
-            if metadata is not None
-            else None
-        )
-
-        return json.loads(dagster_polars_metadata) if dagster_polars_metadata is not None else {}
+    ) -> Union[pl.LazyFrame]:
+        return scan_parquet(path, context)
