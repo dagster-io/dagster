@@ -838,18 +838,26 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     assert expected_specs_by_key[AssetKey("customers")].tags == {
         "foo": "",
         "bar-baz": "",
+        **build_kind_tag("table"),
         **build_kind_tag("duckdb"),
         **build_kind_tag("dbt"),
     }
     assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {
         "foo": "",
         "bar-baz": "",
+        **build_kind_tag("table"),
         **build_kind_tag("duckdb"),
         **build_kind_tag("dbt"),
     }
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
+        dbt_resource_props_by_asset_key = {
+            DagsterDbtTranslator().get_asset_key(dbt_resource_props): dbt_resource_props
+            for dbt_resource_props in test_meta_config_manifest["nodes"].values()
+        }
+
         assert has_kind(my_dbt_assets.tags_by_key[asset_key], "duckdb")
         assert expected_specs_by_key[asset_key].tags == {
+            **build_kind_tag(dbt_resource_props_by_asset_key[asset_key]["config"]["materialized"]),
             **build_kind_tag("duckdb"),
             **build_kind_tag("dbt"),
         }

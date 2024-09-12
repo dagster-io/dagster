@@ -774,6 +774,7 @@ def build_dbt_multi_asset_args(
         dbt_group_resource_props = (
             dbt_group_resource_props_by_group_name.get(dbt_group_name) if dbt_group_name else None
         )
+        dbt_materialization_type = dbt_resource_props.get("config", {}).get("materialized")
 
         output_name = dagster_name_fn(dbt_resource_props)
         asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
@@ -818,6 +819,7 @@ def build_dbt_multi_asset_args(
             tags={
                 **build_kind_tag("dbt"),
                 **(build_kind_tag(dbt_adapter_type) if dbt_adapter_type else {}),
+                **(build_kind_tag(dbt_materialization_type) if dbt_materialization_type else {}),
                 **dagster_dbt_translator.get_tags(dbt_resource_props),
             },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
