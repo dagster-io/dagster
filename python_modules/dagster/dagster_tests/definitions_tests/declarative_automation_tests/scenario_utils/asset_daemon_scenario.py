@@ -6,7 +6,6 @@ from typing import Any, Callable, NamedTuple, Optional, Sequence, Tuple, Type, c
 
 import dagster._check as check
 from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
@@ -14,6 +13,9 @@ from dagster._core.definitions.asset_daemon_cursor import (
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
+)
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    AutomationTickEvaluationContext,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
@@ -142,7 +144,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 self.serialized_cursor, self.asset_graph, 0
             )
 
-        new_run_requests, new_cursor, new_evaluations = AssetDaemonContext(
+        new_run_requests, new_cursor, new_evaluations = AutomationTickEvaluationContext(
             evaluation_id=cursor.evaluation_id + 1,
             asset_graph=self.asset_graph,
             auto_materialize_asset_keys={

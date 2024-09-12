@@ -22,12 +22,12 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_context import (
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_selection import KeysAssetSelection
+from dagster._core.definitions.automation_tick_evaluation_context import (
     build_run_requests_from_asset_partitions,
     build_run_requests_with_backfill_policies,
 )
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_selection import KeysAssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
