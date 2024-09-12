@@ -9,7 +9,7 @@ In Dagster, partitioning is a powerful technique for managing large datasets, im
 
 There are several ways to partition your data in Dagster:
 
-- [Time-based partitioning](#time-based-based), for processing data in specific time intervals
+- [Time-based partitioning](#time-based), for processing data in specific time intervals
 - [Static partitioning](#static-partitions), for dividing data based on predefined categories
 - [Two-dimensional partitioning](#two-dimensional-partitions), for partitioning data along two different axes simultaneously
 - [Dynamic partitioning](#dynamic-partitions), for creating partitions based on runtime information
