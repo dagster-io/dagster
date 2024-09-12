@@ -162,7 +162,7 @@ class AutomationTickEvaluationContext:
 
     def _get_updated_evaluations(
         self, results: Iterable[AutomationResult]
-    ) -> Sequence[AutomationConditionEvaluation]:
+    ) -> Sequence[AutomationConditionEvaluation[EntityKey]]:
         # only record evaluation results where something changed
         updated_evaluations = []
         for result in results:
@@ -177,7 +177,9 @@ class AutomationTickEvaluationContext:
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
+    ) -> Tuple[
+        Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation[EntityKey]]
+    ]:
         observe_run_requests = self._legacy_build_auto_observe_run_requests()
         results, entity_subsets = self._evaluator.evaluate()
 

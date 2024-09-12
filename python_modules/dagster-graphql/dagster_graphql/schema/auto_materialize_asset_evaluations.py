@@ -240,7 +240,7 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             timestamp=record.timestamp,
             runIds=evaluation_with_run_ids.run_ids,
             rules=sorted(rules, key=lambda rule: rule.className),
-            assetKey=GrapheneAssetKey(path=record.asset_key.path),
+            assetKey=GrapheneAssetKey(path=record.key.path),
         )
 
 
