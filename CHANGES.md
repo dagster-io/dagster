@@ -10,6 +10,7 @@
 - [ui] The “group by” selection on the Timeline Overview page is now part of the query parameters, meaning it will be retained when linked to directly or when navigating between pages.
 - [dagster-dbt] When instantiating `DbtCliResource`, the `project_dir` argument will now override the `DBT_PROJECT_DIR` environment variable if it exists in the local environment (thanks, [@marijncv](https://github.com/marijncv)!).
 - [dagster-embedded-elt] dlt assets now generate `rows_loaded` metadata (thanks, [@kristianandre](https://github.com/kristianandre)!).
+- Added support for pydantic version 1.9.0.
 
 ### Bugfixes
 
@@ -18,6 +19,7 @@
 - [examples] Fixed missing assets in `assets_dbt_python` example.
 - [dagster-airbyte] Updated the op names generated for Airbyte assets to include the full connection ID, avoiding name collisions.
 - [dagster-dbt] Fixed issue causing dagster-dbt to be unable to load dbt projects where the adapter did not have a `database` field set (thanks, [@dargmuesli](https://github.com/dargmuesli)!)
+- [dagster-dbt] Removed a warning about not being able to load the `dbt.adapters.duckdb` module when loading dbt assets without that package installed.
 
 ### Documentation
 
@@ -27,6 +29,7 @@
 
 - You may now wipe specific asset partitions directly from the execution context in user code by calling `DagsterInstance.wipe_asset_partitions`.
 - Dagster+ users with a "Viewer" role can now create private catalog views.
+- Fixed an issue where the default IOManager used by Dagster+ Serverless did not respect setting `allow_missing_partitions` as metadata on a downstream asset.
 
 ## 1.8.6 (core) / 0.24.6 (libraries)
 
