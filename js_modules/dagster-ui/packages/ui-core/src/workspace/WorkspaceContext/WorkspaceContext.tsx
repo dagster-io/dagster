@@ -141,7 +141,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         ...Object.values(cachedLocations).map(async (location) => {
           const locationData = await getCachedData<LocationWorkspaceQuery>({
             key: `${localCacheIdPrefix}${locationWorkspaceKey(location.name)}`,
-            version: CodeLocationStatusQueryVersion,
+            version: LocationWorkspaceQueryVersion,
           });
           const entry = locationData?.workspaceLocationEntryOrError;
           if (!entry) {
