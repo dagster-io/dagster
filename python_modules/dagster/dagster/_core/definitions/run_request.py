@@ -20,6 +20,7 @@ from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
@@ -369,7 +370,10 @@ class SensorResult(
                 "asset_events",
                 List[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]],
             ),
-            ("automation_condition_evaluations", Optional[Sequence[AutomationConditionEvaluation]]),
+            (
+                "automation_condition_evaluations",
+                Optional[Sequence[AutomationConditionEvaluation[EntityKey]]],
+            ),
         ],
     )
 ):

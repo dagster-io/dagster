@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     FrozenSet,
+    Generic,
     Iterator,
     Mapping,
     NamedTuple,
@@ -16,6 +17,7 @@ from typing import (
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -86,23 +88,24 @@ class AssetSubsetWithMetadata(NamedTuple):
 
 
 @whitelist_for_serdes(storage_name="AssetConditionEvaluation")
-class AutomationConditionEvaluation(NamedTuple):
+@dataclass
+class AutomationConditionEvaluation(Generic[T_EntityKey]):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AutomationConditionNodeSnapshot
     start_timestamp: Optional[float]
     end_timestamp: Optional[float]
 
-    true_subset: SerializableEntitySubset[AssetKey]
+    true_subset: SerializableEntitySubset[T_EntityKey]
     candidate_subset: Union[
-        SerializableEntitySubset[AssetKey], HistoricalAllPartitionsSubsetSentinel
+        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
     ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     child_evaluations: Sequence["AutomationConditionEvaluation"]
 
     @property
-    def asset_key(self) -> AssetKey:
+    def key(self) -> T_EntityKey:
         return self.true_subset.key
 
     def for_child(self, child_unique_id: str) -> Optional["AutomationConditionEvaluation"]:
@@ -126,56 +129,31 @@ class AutomationConditionEvaluation(NamedTuple):
 
 
 @whitelist_for_serdes(storage_name="AssetConditionEvaluationWithRunIds")
-class AutomationConditionEvaluationWithRunIds(NamedTuple):
+@dataclass
+class AutomationConditionEvaluationWithRunIds(Generic[T_EntityKey]):
     """A union of an AutomatConditionEvaluation and the set of run IDs that have been launched in
     response to it.
     """
 
-    evaluation: AutomationConditionEvaluation
+    evaluation: AutomationConditionEvaluation[T_EntityKey]
     run_ids: FrozenSet[str]
 
     @property
-    def asset_key(self) -> AssetKey:
-        return self.evaluation.asset_key
+    def key(self) -> T_EntityKey:
+        return self.evaluation.key
 
     @property
     def num_requested(self) -> int:
         return self.evaluation.true_subset.size
 
 
-@whitelist_for_serdes(storage_name="AssetConditionEvaluationState")
-@dataclass(frozen=True)
-class AutomationConditionEvaluationState:
-    """Incremental state calculated during the evaluation of an AutomationCondition. This may be used
-    on the subsequent evaluation to make the computation more efficient.
-
-    Attributes:
-        previous_evaluation: The computed AutomationConditionEvaluation.
-        previous_tick_evaluation_timestamp: The evaluation_timestamp at which the evaluation was performed.
-        max_storage_id: The maximum storage ID over all events used in this computation.
-        extra_state_by_unique_id: A mapping from the unique ID of each condition in the evaluation
-            tree to the extra state that was calculated for it, if any.
-    """
-
-    previous_evaluation: AutomationConditionEvaluation
-    previous_tick_evaluation_timestamp: Optional[float]
-
-    max_storage_id: Optional[int]
-    extra_state_by_unique_id: Mapping[str, Optional[StructuredCursor]]
-
-    @property
-    def asset_key(self) -> AssetKey:
-        return self.previous_evaluation.asset_key
-
-    @property
-    def true_subset(self) -> SerializableEntitySubset:
-        return self.previous_evaluation.true_subset
-
-
 @whitelist_for_serdes
-class AutomationConditionNodeCursor(NamedTuple):
-    true_subset: SerializableEntitySubset
-    candidate_subset: Union[SerializableEntitySubset, HistoricalAllPartitionsSubsetSentinel]
+@dataclass
+class AutomationConditionNodeCursor(Generic[T_EntityKey]):
+    true_subset: SerializableEntitySubset[T_EntityKey]
+    candidate_subset: Union[
+        SerializableEntitySubset[T_EntityKey], HistoricalAllPartitionsSubsetSentinel
+    ]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
     extra_state: Optional[StructuredCursor]
 
@@ -189,7 +167,8 @@ class AutomationConditionNodeCursor(NamedTuple):
 
 
 @whitelist_for_serdes
-class AutomationConditionCursor(NamedTuple):
+@dataclass
+class AutomationConditionCursor(Generic[T_EntityKey]):
     """Incremental state calculated during the evaluation of a AutomationCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
@@ -212,7 +191,7 @@ class AutomationConditionCursor(NamedTuple):
 
     @staticmethod
     def backcompat_from_evaluation_state(
-        evaluation_state: AutomationConditionEvaluationState,
+        evaluation_state: "AutomationConditionEvaluationState",
     ) -> "AutomationConditionCursor":
         """Serves as a temporary method to convert from old representation to the new representation."""
 
@@ -261,7 +240,7 @@ class AutomationConditionCursor(NamedTuple):
         )
 
     @property
-    def asset_key(self) -> AssetKey:
+    def key(self) -> T_EntityKey:
         return self.previous_requested_subset.key
 
     @property
@@ -270,3 +249,23 @@ class AutomationConditionCursor(NamedTuple):
             effective_dt=datetime_from_timestamp(self.effective_timestamp),
             last_event_id=self.last_event_id,
         )
+
+
+@whitelist_for_serdes(storage_name="AssetConditionEvaluationState")
+@dataclass(frozen=True)
+class AutomationConditionEvaluationState:
+    """DEPRECATED: exists only for backcompat purposes."""
+
+    previous_evaluation: AutomationConditionEvaluation
+    previous_tick_evaluation_timestamp: Optional[float]
+
+    max_storage_id: Optional[int]
+    extra_state_by_unique_id: Mapping[str, Optional[StructuredCursor]]
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.previous_evaluation.key
+
+    @property
+    def true_subset(self) -> SerializableEntitySubset:
+        return self.previous_evaluation.true_subset

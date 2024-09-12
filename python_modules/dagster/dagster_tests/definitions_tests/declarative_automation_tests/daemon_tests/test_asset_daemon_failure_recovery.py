@@ -496,10 +496,10 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        asset_key=AssetKey("hourly"), limit=100
+        key=AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("hourly")
     assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }
@@ -605,10 +605,10 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        asset_key=AssetKey("hourly"), limit=100
+        key=AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("hourly")
     assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }

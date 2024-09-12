@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import logging
 import sys
@@ -25,6 +26,7 @@ from typing_extensions import Self
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
@@ -1023,7 +1025,7 @@ def _resolve_run_requests(
 
 def _handle_run_requests_and_automation_condition_evaluations(
     raw_run_requests: Sequence[RunRequest],
-    automation_condition_evaluations: Sequence[AutomationConditionEvaluation],
+    automation_condition_evaluations: Sequence[AutomationConditionEvaluation[EntityKey]],
     cursor: Optional[str],
     instance: DagsterInstance,
     context: SensorLaunchContext,
@@ -1121,15 +1123,14 @@ def _submit_run_requests(
         gen_run_request_results = map(submit_run_request, resolved_run_ids_with_requests)
 
     skipped_runs: List[SkippedSensorRun] = []
-    evaluations_by_asset_key = {
-        evaluation.asset_key: evaluation for evaluation in automation_condition_evaluations
+    evaluations_by_key = {
+        evaluation.key: evaluation for evaluation in automation_condition_evaluations
     }
     updated_evaluation_keys = set()
     for run_request_result in gen_run_request_results:
         yield run_request_result.error_info
 
         run = run_request_result.run
-        asset_keys = set()
 
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
@@ -1138,12 +1139,12 @@ def _submit_run_requests(
             context.add_run_info(run_id=run.backfill_id)
         else:
             context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
-            asset_keys = run.asset_selection or set()
-            for key in asset_keys:
-                if key in evaluations_by_asset_key:
-                    evaluation = evaluations_by_asset_key[key]
-                    evaluations_by_asset_key[key] = evaluation._replace(
-                        run_ids=evaluation.run_ids | {run.run_id}
+            entity_keys = [*(run.asset_selection or []), *(run.asset_check_selection or [])]
+            for key in entity_keys:
+                if key in evaluations_by_key:
+                    evaluation = evaluations_by_key[key]
+                    evaluations_by_key[key] = dataclasses.replace(
+                        evaluation, run_ids=evaluation.run_ids | {run.run_id}
                     )
                     updated_evaluation_keys.add(key)
 
@@ -1154,7 +1155,7 @@ def _submit_run_requests(
     ):
         instance.schedule_storage.add_auto_materialize_asset_evaluations(
             evaluation_id=int(context.tick_id),
-            asset_evaluations=[evaluations_by_asset_key[key] for key in updated_evaluation_keys],
+            asset_evaluations=[evaluations_by_key[key] for key in updated_evaluation_keys],
         )
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")

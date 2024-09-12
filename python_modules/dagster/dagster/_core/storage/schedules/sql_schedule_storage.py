@@ -19,6 +19,7 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
@@ -483,18 +484,21 @@ class SqlScheduleStorage(ScheduleStorage):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds[EntityKey]],
     ):
         if not asset_evaluations:
             return
 
         with self.connect() as conn:
             for evaluation in asset_evaluations:
+                # for now, ignore check keys
+                if not isinstance(evaluation.key, AssetKey):
+                    continue
                 insert_stmt = AssetDaemonAssetEvaluationsTable.insert().values(
                     [
                         {
                             "evaluation_id": evaluation_id,
-                            "asset_key": evaluation.asset_key.to_string(),
+                            "asset_key": evaluation.key.to_string(),
                             "asset_evaluation_body": serialize_value(evaluation),
                             "num_requested": evaluation.num_requested,
                         }
@@ -509,7 +513,7 @@ class SqlScheduleStorage(ScheduleStorage):
                             db.and_(
                                 AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id,
                                 AssetDaemonAssetEvaluationsTable.c.asset_key
-                                == evaluation.asset_key.to_string(),
+                                == evaluation.key.to_string(),
                             )
                         )
                         .values(
@@ -519,8 +523,11 @@ class SqlScheduleStorage(ScheduleStorage):
                     )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
+        # to remove
+        if not isinstance(key, AssetKey):
+            return []
         with self.connect() as conn:
             query = (
                 db_select(
@@ -532,7 +539,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         AssetDaemonAssetEvaluationsTable.c.asset_key,
                     ]
                 )
-                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
+                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == key.to_string())
                 .order_by(AssetDaemonAssetEvaluationsTable.c.evaluation_id.desc())
             ).limit(limit)
 

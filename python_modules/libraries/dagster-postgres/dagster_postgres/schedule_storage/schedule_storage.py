@@ -5,6 +5,7 @@ import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
@@ -183,7 +184,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds[EntityKey]],
     ):
         if not asset_evaluations:
             return
@@ -192,11 +193,13 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             [
                 {
                     "evaluation_id": evaluation_id,
-                    "asset_key": evaluation.asset_key.to_string(),
+                    "asset_key": evaluation.key.to_string(),
                     "asset_evaluation_body": serialize_value(evaluation),
                     "num_requested": evaluation.num_requested,
                 }
                 for evaluation in asset_evaluations
+                # this guard will be removed upstack
+                if isinstance(evaluation.key, AssetKey)
             ]
         )
         upsert_stmt = insert_stmt.on_conflict_do_update(
