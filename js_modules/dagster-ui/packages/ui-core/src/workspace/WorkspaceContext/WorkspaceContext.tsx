@@ -6,9 +6,11 @@ import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from './WorkspaceQ
 import {
   CodeLocationStatusQuery,
   CodeLocationStatusQueryVariables,
+  CodeLocationStatusQueryVersion,
   LocationStatusEntryFragment,
   LocationWorkspaceQuery,
   LocationWorkspaceQueryVariables,
+  LocationWorkspaceQueryVersion,
   WorkspaceLocationNodeFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
@@ -34,8 +36,6 @@ import {
 } from '../../search/useIndexedDBCachedQuery';
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
-export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
-export const LOCATION_WORKSPACE_QUERY_VERSION = 3;
 
 export type WorkspaceRepositorySensor = WorkspaceSensorFragment;
 export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
@@ -68,7 +68,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     CodeLocationStatusQueryVariables
   >({
     query: CODE_LOCATION_STATUS_QUERY,
-    version: CODE_LOCATION_STATUS_QUERY_VERSION,
+    version: CodeLocationStatusQueryVersion,
     key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
   });
   if (typeof jest === 'undefined') {
@@ -132,7 +132,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
        */
       const data = await getCachedData<CodeLocationStatusQuery>({
         key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
-        version: CODE_LOCATION_STATUS_QUERY_VERSION,
+        version: CodeLocationStatusQueryVersion,
       });
       const cachedLocations = getLocations(data);
       const prevCachedLocations: typeof locationStatuses = {};
@@ -141,7 +141,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         ...Object.values(cachedLocations).map(async (location) => {
           const locationData = await getCachedData<LocationWorkspaceQuery>({
             key: `${localCacheIdPrefix}${locationWorkspaceKey(location.name)}`,
-            version: LOCATION_WORKSPACE_QUERY_VERSION,
+            version: LocationWorkspaceQueryVersion,
           });
           const entry = locationData?.workspaceLocationEntryOrError;
           if (!entry) {
@@ -170,7 +170,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         client,
         query: LOCATION_WORKSPACE_QUERY,
         key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
-        version: LOCATION_WORKSPACE_QUERY_VERSION,
+        version: LocationWorkspaceQueryVersion,
         variables: {
           name,
         },
