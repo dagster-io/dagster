@@ -28,7 +28,7 @@ To run the examples, you'll need to install:
 
 ## Step 1: Create a script using Tensorflow in JavaScript
 
-First, you'll create a JavaScript script that reads in a CSV file and uses Tensorflow to train a sequential model.
+First, you'll create a JavaScript script that reads a CSV file and uses Tensorflow to train a sequential model.
 
 Create a file named `tensorflow/main.js` with the following contents:
 
