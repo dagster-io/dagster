@@ -43,7 +43,7 @@ const labelForBackfillStatus = (key: BulkActionStatus) => {
     case BulkActionStatus.REQUESTED:
       return 'In progress';
     case BulkActionStatus.COMPLETED_SUCCESS:
-      return 'Succeeded';
+      return 'Success';
     case BulkActionStatus.COMPLETED_FAILED:
       return 'Failed';
   }
