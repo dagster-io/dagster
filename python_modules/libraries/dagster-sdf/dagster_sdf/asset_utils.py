@@ -1,6 +1,6 @@
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Sequence
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence
 
 from dagster import (
     AssetCheckKey,
@@ -13,7 +13,7 @@ from dagster import (
     define_asset_job,
 )
 
-from .constants import SDF_TARGET_DIR
+from dagster_sdf.constants import SDF_TARGET_DIR
 
 
 def dagster_name_fn(catalog: str, schema: str, table: str) -> str:
@@ -36,7 +36,7 @@ def default_asset_check_key_fn(catalog: str, schema: str, table: str) -> AssetCh
     else:
         asset_key = AssetKey([catalog, schema, table])
     return AssetCheckKey(
-        name=f"{catalog}.{schema}.{table}",
+        name="test",
         asset_key=asset_key,
     )
 
@@ -201,3 +201,37 @@ def default_description_fn(
                 f"#### Materialized SQL:\n```\n{_read_sql_file(path_to_file)}\n```"
             )
     return "\n\n".join(filter(None, description_sections))
+
+
+def get_test_prefix(table_dialect: str) -> str:
+    if table_dialect == "snowflake":
+        return "TEST_"
+    else:
+        return "test_"
+
+
+def exists_in_selected(
+    catalog_name: str,
+    schema_name: str,
+    table_name: str,
+    purpose: str,
+    dialect: str,
+    selected_output_names: AbstractSet[str],
+    asset_checks_enabled: bool,
+) -> bool:
+    asset_output_name = dagster_name_fn(catalog_name, schema_name, table_name)
+    # If asset checks are enabled, ensure tests are only yielded for selected assets
+    if asset_checks_enabled:
+        # Strip test_name_prefix from start of table_id if it exists
+        if purpose == "test":
+            test_name_prefix = get_test_prefix(dialect)
+            asset_output_name = (
+                dagster_name_fn(catalog_name, schema_name, table_name[len(test_name_prefix) :])
+                if table_name.startswith(test_name_prefix)
+                else asset_output_name
+            )
+
+    if asset_output_name in selected_output_names:
+        return True
+    else:
+        return False

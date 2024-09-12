@@ -11,7 +11,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from .repo import noop_job
+from dagster_graphql_tests.graphql.repo import noop_job
 
 SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = """
 query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {

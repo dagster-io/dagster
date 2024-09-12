@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
@@ -11,13 +10,13 @@ import {
   OverviewSchedulesQueryVariables,
 } from './types/OverviewSchedules.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
@@ -26,11 +25,11 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 export const OverviewSchedules = () => {
   const {
@@ -62,7 +61,6 @@ export const OverviewSchedules = () => {
     },
   );
   const {data, loading: queryLoading} = queryResultOverview;
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSchedulesQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

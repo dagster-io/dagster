@@ -25,32 +25,35 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, experimental_param, public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
+from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.target import (
+    ANONYMOUS_ASSET_JOB_PREFIX,
+    AutomationTarget,
+    ExecutableDefinition,
+)
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._serdes import whitelist_for_serdes
-from dagster._time import get_timezone
-from dagster._utils import IHasInternalInit, ensure_gen
-from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
-
-from ..decorator_utils import has_at_least_one_parameter
-from ..errors import (
+from dagster._core.definitions.utils import NormalizedTags, check_valid_name, normalize_tags
+from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from ..instance import DagsterInstance
-from ..instance.ref import InstanceRef
-from ..storage.dagster_run import DagsterRun
-from .run_request import RunRequest, SkipReason
-from .target import ANONYMOUS_ASSET_JOB_PREFIX, AutomationTarget, ExecutableDefinition
-from .utils import NormalizedTags, check_valid_name, normalize_tags
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._serdes import whitelist_for_serdes
+from dagster._time import get_timezone
+from dagster._utils import IHasInternalInit, ensure_gen
+from dagster._utils.merger import merge_dicts
+from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -520,7 +523,7 @@ class ScheduleDefinition(IHasInternalInit):
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
-        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the schedule will execute.
@@ -816,9 +819,10 @@ class ScheduleDefinition(IHasInternalInit):
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
+        from dagster._core.definitions.decorators.schedule_decorator import (
+            DecoratedScheduleFunction,
+        )
         from dagster._core.definitions.sensor_definition import get_context_param_name
-
-        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         if not isinstance(self._execution_fn, DecoratedScheduleFunction):
             raise DagsterInvalidInvocationError(

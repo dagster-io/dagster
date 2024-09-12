@@ -1,7 +1,0 @@
-tasks:
-  t1:
-    migrated: True 
-  t2:
-    migrated: False 
-  t3:
-    migrated: True

@@ -1,9 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
-import {useRepository} from './WorkspaceContext';
+import {useRepository} from './WorkspaceContext/util';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -12,6 +11,7 @@ import {
   WorkspaceSensorsQuery,
   WorkspaceSensorsQueryVariables,
 } from './types/WorkspaceSensorsRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -20,7 +20,6 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {makeSensorKey} from '../sensors/makeSensorKey';
 import {useFilters} from '../ui/BaseFilters';
@@ -57,7 +56,6 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSensorsQuery');
   const {data, loading: queryLoading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

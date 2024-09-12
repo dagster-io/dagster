@@ -17,11 +17,10 @@ if TYPE_CHECKING:
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
+    from dagster._core.execution.context.output import OutputContext
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.log_manager import DagsterLogManager
     from dagster._core.types.dagster_type import DagsterType
-
-    from .output import OutputContext
 
 
 @deprecated_param(

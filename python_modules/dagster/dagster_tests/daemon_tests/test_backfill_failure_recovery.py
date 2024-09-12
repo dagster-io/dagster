@@ -17,7 +17,7 @@ from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._seven import IS_WINDOWS
 from dagster._time import create_datetime
 
-from .conftest import workspace_load_target
+from dagster_tests.daemon_tests.conftest import workspace_load_target
 
 spawn_ctx = multiprocessing.get_context("spawn")
 

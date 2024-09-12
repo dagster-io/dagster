@@ -3,7 +3,7 @@ from collections import OrderedDict, defaultdict
 import dagster._check as check
 from dagster._core.remote_representation import ExternalRepository
 
-from .utils import GraphSelector
+from dagster_graphql.implementation.utils import GraphSelector
 
 
 def get_solid(repo, name):
@@ -15,9 +15,9 @@ def get_solids(repo):
 
 
 def get_used_solid_map(repo):
-    from ..schema.pipelines.pipeline import GraphenePipeline
-    from ..schema.solids import build_solid_handles
-    from ..schema.used_solid import GrapheneNodeInvocationSite, GrapheneUsedSolid
+    from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
+    from dagster_graphql.schema.solids import build_solid_handles
+    from dagster_graphql.schema.used_solid import GrapheneNodeInvocationSite, GrapheneUsedSolid
 
     check.inst_param(repo, "repo", ExternalRepository)
 
@@ -52,9 +52,9 @@ def get_used_solid_map(repo):
 
 
 def get_graph_or_error(graphene_info, graph_selector):
-    from ..schema.errors import GrapheneGraphNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneGraph
-    from ..schema.solids import build_solid_handles
+    from dagster_graphql.schema.errors import GrapheneGraphNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneGraph
+    from dagster_graphql.schema.solids import build_solid_handles
 
     check.inst_param(graph_selector, "graph_selector", GraphSelector)
     if not graphene_info.context.has_code_location(graph_selector.location_name):

@@ -1,9 +1,10 @@
 from typing import Callable, Dict, Generic, Mapping, Optional, Sequence, Type, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    T_RepositoryLevelDefinition,
+)
 from dagster._core.errors import DagsterInvariantViolationError
-
-from .valid_definitions import T_RepositoryLevelDefinition
 
 
 class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):

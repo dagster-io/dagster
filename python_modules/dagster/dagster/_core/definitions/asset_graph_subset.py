@@ -16,6 +16,9 @@ from typing import (
 )
 
 from dagster import _check as check
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
@@ -24,10 +27,6 @@ from dagster._serdes.serdes import (
     SerializableNonScalarKeyMapping,
     whitelist_for_serdes,
 )
-
-from .asset_subset import AssetSubset
-from .base_asset_graph import BaseAssetGraph
-from .events import AssetKey, AssetKeyPartitionKey
 
 
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):

@@ -1,12 +1,18 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
+import {useMemo} from 'react';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {CodeLocationDefinitionsRoot} from '../CodeLocationDefinitionsRoot';
-import {buildSampleRepository} from '../__fixtures__/CodeLocationPages.fixtures';
+import {
+  buildSampleOpsRootQuery,
+  buildSampleRepository,
+  buildSampleRepositoryAssetsQuery,
+  buildSampleRepositoryGraphsQuery,
+} from '../__fixtures__/CodeLocationPages.fixtures';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -28,10 +34,19 @@ export const Default = () => {
     resourceCount: 100,
   });
 
+  const mocks = useMemo(
+    () => [
+      buildSampleOpsRootQuery({repoAddress, opCount: 500}),
+      buildSampleRepositoryGraphsQuery({repoAddress, jobCount: 500, opCount: 500}),
+      buildSampleRepositoryAssetsQuery({repoAddress, groupCount: 10, assetsPerGroup: 100}),
+    ],
+    [repoAddress],
+  );
+
   return (
     <RecoilRoot>
       <MemoryRouter initialEntries={[workspacePathFromAddress(repoAddress, '/jobs')]}>
-        <MockedProvider>
+        <MockedProvider mocks={mocks}>
           <div style={{height: '500px', overflow: 'hidden'}}>
             <CodeLocationDefinitionsRoot
               repoAddress={buildRepoAddress(repoName, locationName)}

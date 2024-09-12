@@ -1,9 +1,9 @@
-import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useContext, useEffect, useRef} from 'react';
 
 import {InstigationEventLogFragment} from './types/InstigationEventLogTable.types';
+import {gql} from '../apollo-client';
 import {EventTypeColumn, Row as LogsRow, TimestampColumn} from '../runs/LogsRowComponents';
 import {
   ColumnWidthsContext,

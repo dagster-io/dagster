@@ -1,7 +1,7 @@
-import {QueryResult} from '@apollo/client';
 import {renderHook} from '@testing-library/react-hooks';
 import {ReactNode, useContext} from 'react';
 
+import {QueryResult} from '../../apollo-client';
 import {
   CompletionType,
   Dependency,

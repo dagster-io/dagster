@@ -9,18 +9,21 @@ from dagster._core.definitions.asset_check_spec import (
     AssetCheckSpec,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.assets import (
+    AssetsDefinition,
+    SourceAsset,
+    unique_id_from_asset_and_check_keys,
+)
 from dagster._core.definitions.decorators.asset_check_decorator import (
     MultiAssetCheckFunction,
     multi_asset_check,
 )
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import JsonMetadataValue
 from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
-
-from ..assets import AssetsDefinition, SourceAsset, unique_id_from_asset_and_check_keys
-from ..events import AssetKey, CoercibleToAssetKey
 
 # Constants
 DEFAULT_FRESHNESS_SEVERITY = AssetCheckSeverity.WARN

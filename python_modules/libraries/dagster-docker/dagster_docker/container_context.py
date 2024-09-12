@@ -13,7 +13,7 @@ from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.dagster_run import DagsterRun
 
 if TYPE_CHECKING:
-    from . import DockerRunLauncher
+    from dagster_docker import DockerRunLauncher
 
 DOCKER_CONTAINER_CONTEXT_SCHEMA = {
     "registry": Field(

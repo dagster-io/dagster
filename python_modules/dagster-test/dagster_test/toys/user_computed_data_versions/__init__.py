@@ -39,7 +39,12 @@ from dagster import (
 )
 from typing_extensions import TypedDict
 
-from .external_system import AssetInfo, ExternalSystem, ProvenanceSpec, SourceAssetInfo
+from dagster_test.toys.user_computed_data_versions.external_system import (
+    AssetInfo,
+    ExternalSystem,
+    ProvenanceSpec,
+    SourceAssetInfo,
+)
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 

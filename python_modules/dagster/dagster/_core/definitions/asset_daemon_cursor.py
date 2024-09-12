@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import (
     FieldSerializer,
@@ -17,13 +18,11 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 
-from .base_asset_graph import BaseAssetGraph
-
 if TYPE_CHECKING:
-    from .declarative_automation.serialized_objects import (
+    from dagster._core.definitions.declarative_automation.serialized_objects import (
         AutomationConditionCursor,
         AutomationConditionEvaluationState,
-        AutomationConditionSnapshot,
+        AutomationConditionNodeSnapshot,
     )
 
 
@@ -33,7 +32,7 @@ class AutomationConditionCursorExtras(NamedTuple):
     evaluations.
     """
 
-    condition_snapshot: "AutomationConditionSnapshot"
+    condition_snapshot: "AutomationConditionNodeSnapshot"
     extras: Mapping[str, PackableValue]
 
 

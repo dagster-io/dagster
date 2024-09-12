@@ -1,12 +1,11 @@
-import {gql, useQuery} from '@apollo/client';
 import {NonIdealState, Spinner} from '@dagster-io/ui-components';
 
 import {
   PartitionRunListQuery,
   PartitionRunListQueryVariables,
 } from './types/PartitionRunList.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunTable} from '../runs/RunTable';
 import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
@@ -29,7 +28,6 @@ export const PartitionRunList = (props: PartitionRunListProps) => {
     },
   );
 
-  useBlockTraceOnQueryResult(queryResult, 'PartitionRunListQuery');
   const {data, loading} = queryResult;
 
   if (loading || !data) {

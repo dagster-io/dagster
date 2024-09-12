@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
@@ -12,6 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 
+import {useMutation} from '../apollo-client';
 import {assertUnreachable} from '../app/Util';
 import {
   OpenWithIntent,

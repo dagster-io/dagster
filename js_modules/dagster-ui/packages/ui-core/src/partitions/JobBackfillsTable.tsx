@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   CursorPaginationControls,
@@ -8,9 +7,9 @@ import {
 import {useEffect, useState} from 'react';
 
 import {JobBackfillsQuery, JobBackfillsQueryVariables} from './types/JobBackfillsTable.types';
+import {gql, useQuery} from '../apollo-client';
 import {RepositorySelector} from '../graphql/types';
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from '../instance/backfill/BackfillTable';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 
 const BACKFILL_PAGE_SIZE = 10;
@@ -36,7 +35,6 @@ export const JobBackfillsTable = ({
       limit: BACKFILL_PAGE_SIZE,
     },
   });
-  useBlockTraceOnQueryResult(queryResult, 'JobBackfillsQuery');
 
   const refetch = queryResult.refetch;
   useEffect(() => {

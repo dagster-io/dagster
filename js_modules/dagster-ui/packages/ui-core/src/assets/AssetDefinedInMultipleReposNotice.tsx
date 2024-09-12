@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Alert, Box, ButtonLink, Colors} from '@dagster-io/ui-components';
 
 import {AssetKey} from './types';
@@ -6,6 +5,7 @@ import {
   AssetDefinitionCollisionQuery,
   AssetDefinitionCollisionQueryVariables,
 } from './types/AssetDefinedInMultipleReposNotice.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -29,6 +29,7 @@ export const AssetDefinedInMultipleReposNotice = ({
     AssetDefinitionCollisionQueryVariables
   >(ASSET_DEFINITION_COLLISION_QUERY, {
     variables: {assetKeys: [{path: assetKey.path}]},
+    blocking: false,
   });
   const {data} = queryResult;
 

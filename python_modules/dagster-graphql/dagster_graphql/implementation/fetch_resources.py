@@ -4,18 +4,24 @@ import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
 from graphene import ResolveInfo
 
-from .utils import UserFacingGraphQLError
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
 
-    from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
+    from dagster_graphql.schema.resources import (
+        GrapheneResourceDetails,
+        GrapheneResourceDetailsList,
+    )
 
 
 def get_top_level_resources_or_error(
     graphene_info: "ResolveInfo", repository_selector: RepositorySelector
 ) -> "GrapheneResourceDetailsList":
-    from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
+    from dagster_graphql.schema.resources import (
+        GrapheneResourceDetails,
+        GrapheneResourceDetailsList,
+    )
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
@@ -42,8 +48,8 @@ def get_top_level_resources_or_error(
 def get_resource_or_error(
     graphene_info: "ResolveInfo", resource_selector: ResourceSelector
 ) -> "GrapheneResourceDetails":
-    from ..schema.errors import GrapheneResourceNotFoundError
-    from ..schema.resources import GrapheneResourceDetails
+    from dagster_graphql.schema.errors import GrapheneResourceNotFoundError
+    from dagster_graphql.schema.resources import GrapheneResourceDetails
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(resource_selector, "resource_selector", ResourceSelector)

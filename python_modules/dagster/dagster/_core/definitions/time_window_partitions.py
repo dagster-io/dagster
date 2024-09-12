@@ -25,6 +25,21 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.partition import (
+    DEFAULT_DATE_FORMAT,
+    AllPartitionsSubset,
+    PartitionedConfig,
+    PartitionsDefinition,
+    PartitionsSubset,
+    ScheduleType,
+    cron_schedule_from_schedule_type_and_offsets,
+)
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
+)
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
@@ -43,19 +58,6 @@ from dagster._utils.schedules import (
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
 )
-
-from ..errors import DagsterInvalidDefinitionError, DagsterInvalidDeserializationVersionError
-from .partition import (
-    DEFAULT_DATE_FORMAT,
-    AllPartitionsSubset,
-    PartitionedConfig,
-    PartitionsDefinition,
-    PartitionsSubset,
-    ScheduleType,
-    cron_schedule_from_schedule_type_and_offsets,
-)
-from .partition_key_range import PartitionKeyRange
-from .timestamp import TimestampWithTimezone
 
 
 def is_second_ambiguous_time(dt: datetime, tz: str):
@@ -2626,7 +2628,7 @@ def fetch_flattened_time_window_ranges(
 def has_one_dimension_time_window_partitioning(
     partitions_def: Optional[PartitionsDefinition],
 ) -> bool:
-    from .multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
     if isinstance(partitions_def, TimeWindowPartitionsDefinition):
         return True
@@ -2648,7 +2650,7 @@ def get_time_partitions_def(
     """For a given PartitionsDefinition, return the associated TimeWindowPartitionsDefinition if it
     exists.
     """
-    from .multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
     if partitions_def is None:
         return None
@@ -2667,7 +2669,7 @@ def get_time_partitions_def(
 def get_time_partition_key(
     partitions_def: Optional[PartitionsDefinition], partition_key: Optional[str]
 ) -> str:
-    from .multi_dimensional_partitions import MultiPartitionsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
     if partitions_def is None or partition_key is None:
         check.failed(

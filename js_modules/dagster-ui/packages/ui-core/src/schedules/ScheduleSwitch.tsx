@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {Box, Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -18,6 +17,7 @@ import {
   ScheduleStateQueryVariables,
   ScheduleSwitchFragment,
 } from './types/ScheduleSwitch.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';

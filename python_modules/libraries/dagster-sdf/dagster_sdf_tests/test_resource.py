@@ -1,19 +1,28 @@
 import os
 import shutil
 from pathlib import Path
-from typing import List, cast
+from typing import cast
 
 import pydantic
 import pytest
 from dagster import In, Nothing, Out, job, op
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import OpExecutionContext
-from dagster_sdf.constants import SDF_DAGSTER_OUTPUT_DIR, SDF_TARGET_DIR
+from dagster_sdf.constants import (
+    DAGSTER_SDF_CATALOG_NAME,
+    DAGSTER_SDF_DIALECT,
+    DAGSTER_SDF_PURPOSE,
+    DAGSTER_SDF_SCHEMA_NAME,
+    DAGSTER_SDF_TABLE_ID,
+    DAGSTER_SDF_TABLE_NAME,
+    SDF_DAGSTER_OUTPUT_DIR,
+    SDF_TARGET_DIR,
+)
 from dagster_sdf.resource import SdfCliResource
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 
-from .sdf_workspaces import moms_flower_shop_path
+from dagster_sdf_tests.sdf_workspaces import moms_flower_shop_path
 
 
 @pytest.fixture(name="sdf", scope="module")
@@ -21,11 +30,9 @@ def sdf_fixture() -> SdfCliResource:
     return SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
 
 
-@pytest.mark.parametrize("global_config_flags", [["--log-form=nested"]])
-def test_sdf_cli(global_config_flags: List[str]) -> None:
+def test_sdf_cli() -> None:
     expected_sdf_cli_args = [
         "sdf",
-        *global_config_flags,
         "--log-level",
         "info",
         "compile",
@@ -36,9 +43,7 @@ def test_sdf_cli(global_config_flags: List[str]) -> None:
         "--target-dir",
     ]
 
-    sdf = SdfCliResource(
-        workspace_dir=os.fspath(moms_flower_shop_path), global_config_flags=global_config_flags
-    )
+    sdf = SdfCliResource(workspace_dir=os.fspath(moms_flower_shop_path))
     sdf_cli_invocation = sdf.cli(["compile", "--save", "table-deps"])
     *_, target_dir = sdf_cli_invocation.process.args  # type: ignore
 
@@ -215,5 +220,11 @@ def test_metadata(sdf: SdfCliResource) -> None:
 
     for event in materialization_events:
         metadata = event.materialization.metadata
-        assert metadata["table_id"]
+        assert metadata[DAGSTER_SDF_TABLE_ID]
+        assert metadata[DAGSTER_SDF_CATALOG_NAME]
+        assert metadata[DAGSTER_SDF_SCHEMA_NAME]
+        assert metadata[DAGSTER_SDF_TABLE_NAME]
+        assert metadata[DAGSTER_SDF_PURPOSE]
+        assert metadata[DAGSTER_SDF_DIALECT]
         assert metadata["Execution Duration"]
+        assert metadata["Materialized From Cache"] is not None

@@ -16,15 +16,13 @@ from dagster._core.storage.asset_check_execution_record import (
 )
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-from dagster_graphql.schema.util import non_null_list
-
-from .asset_key import GrapheneAssetKey
-from .util import ResolveInfo
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from ..implementation.asset_checks_loader import (
+    from dagster_graphql.implementation.asset_checks_loader import (
         AssetChecksExecutionForLatestMaterializationLoader,
     )
 

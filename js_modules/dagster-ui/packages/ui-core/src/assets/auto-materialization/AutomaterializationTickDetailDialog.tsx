@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Caption, Colors, Icon, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {memo, useMemo, useRef, useState} from 'react';
@@ -10,11 +9,11 @@ import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
 } from './types/AutomaterializationTickDetailDialog.types';
+import {gql, useQuery} from '../../apollo-client';
 import {Timestamp} from '../../app/time/Timestamp';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
 import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -191,7 +190,6 @@ const AssetDetailRow = ({
     },
   );
   const {data} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'AssetGroupAndLocationQuery');
 
   const asset = data?.assetOrError.__typename === 'Asset' ? data.assetOrError : null;
   const definition = asset?.definition;

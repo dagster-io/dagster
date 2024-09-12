@@ -12,6 +12,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Union,
 )
 
@@ -40,21 +41,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteJobOrigin,
-    RemotePartitionSetOrigin,
-    RemoteRepositoryOrigin,
-)
-from dagster._core.snap import ExecutionPlanSnapshot
-from dagster._core.snap.job_snapshot import JobSnapshot
-from dagster._core.utils import toposort
-from dagster._record import record
-from dagster._serdes import create_snapshot_id
-from dagster._utils.cached_method import cached_method
-from dagster._utils.schedules import schedule_execution_time_iterator
-
-from .external_data import (
+from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
     EnvVarConsumer,
     ExternalAssetCheck,
@@ -73,9 +60,27 @@ from .external_data import (
     ScheduleSnap,
     SensorSnap,
 )
-from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
-from .job_index import JobIndex
-from .represented import RepresentedJob
+from dagster._core.remote_representation.handle import (
+    InstigatorHandle,
+    JobHandle,
+    PartitionSetHandle,
+    RepositoryHandle,
+)
+from dagster._core.remote_representation.job_index import JobIndex
+from dagster._core.remote_representation.origin import (
+    RemoteInstigatorOrigin,
+    RemoteJobOrigin,
+    RemotePartitionSetOrigin,
+    RemoteRepositoryOrigin,
+)
+from dagster._core.remote_representation.represented import RepresentedJob
+from dagster._core.snap import ExecutionPlanSnapshot
+from dagster._core.snap.job_snapshot import JobSnapshot
+from dagster._core.utils import toposort
+from dagster._record import record
+from dagster._serdes import create_snapshot_id
+from dagster._utils.cached_method import cached_method
+from dagster._utils.schedules import schedule_execution_time_iterator
 
 if TYPE_CHECKING:
     from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
@@ -424,6 +429,51 @@ class ExternalRepository:
             ],
             external_asset_checks=self.get_external_asset_checks(),
         )
+
+    def get_partition_names_for_asset_job(
+        self,
+        job_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        instance: DagsterInstance,
+    ) -> Sequence[str]:
+        return self._get_partitions_def_for_job(
+            job_name=job_name, selected_asset_keys=selected_asset_keys
+        ).get_partition_keys(dynamic_partitions_store=instance)
+
+    def get_partition_tags_for_implicit_asset_job(
+        self,
+        job_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        instance: DagsterInstance,
+        partition_name: str,
+    ) -> Mapping[str, str]:
+        return self._get_partitions_def_for_job(
+            job_name=job_name, selected_asset_keys=selected_asset_keys
+        ).get_tags_for_partition_key(partition_name)
+
+    def _get_partitions_def_for_job(
+        self,
+        job_name: str,
+        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    ) -> PartitionsDefinition:
+        asset_nodes = self.get_external_asset_nodes(job_name)
+        unique_partitions_defs: Set[PartitionsDefinition] = set()
+        for asset_node in asset_nodes:
+            if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
+                continue
+
+            if asset_node.partitions_def_data is not None:
+                unique_partitions_defs.add(
+                    asset_node.partitions_def_data.get_partitions_definition()
+                )
+
+        if len(unique_partitions_defs) == 1:
+            return next(iter(unique_partitions_defs))
+        else:
+            check.failed(
+                "There is no PartitionsDefinition shared by all the provided assets."
+                f" {len(unique_partitions_defs)} unique PartitionsDefinitions."
+            )
 
 
 class ExternalJob(RepresentedJob):

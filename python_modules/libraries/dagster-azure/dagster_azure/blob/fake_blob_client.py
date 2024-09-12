@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from unittest import mock
 
-from .utils import ResourceNotFoundError
+from dagster_azure.blob.utils import ResourceNotFoundError
 
 
 class FakeBlobServiceClient:

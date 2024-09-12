@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-
+import {gql} from '../apollo-client';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 
 export const SENSOR_FRAGMENT = gql`

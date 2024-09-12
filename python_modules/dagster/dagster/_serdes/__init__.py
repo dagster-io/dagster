@@ -1,9 +1,9 @@
-from .config_class import (
+from dagster._serdes.config_class import (
     ConfigurableClass as ConfigurableClass,
     ConfigurableClassData as ConfigurableClassData,
     class_from_code_pointer as class_from_code_pointer,
 )
-from .serdes import (
+from dagster._serdes.serdes import (
     EnumSerializer as EnumSerializer,
     NamedTupleSerializer as NamedTupleSerializer,
     SerializableNonScalarKeyMapping as SerializableNonScalarKeyMapping,
@@ -15,7 +15,7 @@ from .serdes import (
     unpack_value as unpack_value,
     whitelist_for_serdes as whitelist_for_serdes,
 )
-from .utils import (
+from dagster._serdes.utils import (
     create_snapshot_id as create_snapshot_id,
     serialize_pp as serialize_pp,
 )

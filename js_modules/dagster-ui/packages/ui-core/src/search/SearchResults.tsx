@@ -19,7 +19,7 @@ import {
   isAssetFilterSearchResultType,
 } from './types';
 import {assertUnreachable} from '../app/Util';
-import {isCanonicalComputeKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
+import {isCanonicalComputeKindTag} from '../graph/KindTags';
 import {KNOWN_TAGS, TagIcon} from '../graph/OpTags';
 
 const iconForType = (type: SearchResultType | AssetFilterSearchResultType): IconName => {
@@ -49,12 +49,10 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
       return 'account_circle';
     case AssetFilterSearchResultType.AssetGroup:
       return 'asset_group';
-    case AssetFilterSearchResultType.ComputeKind:
+    case AssetFilterSearchResultType.Kind:
       return 'compute_kind';
     case AssetFilterSearchResultType.Tag:
       return 'tag';
-    case AssetFilterSearchResultType.StorageKind:
-      return 'storage_kind';
     case SearchResultType.Page:
       return 'source';
     case AssetFilterSearchResultType.Column:
@@ -68,16 +66,14 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
   switch (type) {
     case AssetFilterSearchResultType.CodeLocation:
       return 'Code location';
-    case AssetFilterSearchResultType.ComputeKind:
-      return 'Compute kind';
+    case AssetFilterSearchResultType.Kind:
+      return 'Kind';
     case AssetFilterSearchResultType.Tag:
       return 'Tag';
     case AssetFilterSearchResultType.Owner:
       return 'Owner';
     case AssetFilterSearchResultType.AssetGroup:
       return 'Group';
-    case AssetFilterSearchResultType.StorageKind:
-      return 'Storage kind';
     case AssetFilterSearchResultType.Column:
       return 'Column';
     default:
@@ -141,20 +137,13 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
 
       icons.push(computeKindSearchIcon);
     }
-
-    const storageKindTag = item.tags?.find(isCanonicalStorageKindTag);
-    if (storageKindTag && KNOWN_TAGS[storageKindTag.value]) {
-      const storageKindSearchIcon = <TagIcon label={storageKindTag.value} />;
-
-      icons.push(storageKindSearchIcon);
-    }
   }
 
-  if (item.type === AssetFilterSearchResultType.ComputeKind) {
+  if (item.type === AssetFilterSearchResultType.Kind) {
     if (KNOWN_TAGS[item.label]) {
-      const computeKindSearchIcon = <TagIcon label={item.label} />;
+      const kindSearchIcon = <TagIcon label={item.label} />;
 
-      icons.push(computeKindSearchIcon);
+      icons.push(kindSearchIcon);
     }
   }
 
@@ -232,12 +221,16 @@ export type SearchResultsProps<T extends ResultType> = {
   onClickResult: (result: T) => void;
   queryString: string;
   results: T[];
+  searching: boolean;
 };
 
 export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>) => {
-  const {highlight, onClickResult, queryString, results} = props;
+  const {highlight, onClickResult, queryString, results, searching} = props;
 
   if (!results.length && queryString) {
+    if (searching) {
+      return;
+    }
     return <NoResults>No results</NoResults>;
   }
 

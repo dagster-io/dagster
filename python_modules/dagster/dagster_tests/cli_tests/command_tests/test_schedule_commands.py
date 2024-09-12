@@ -17,7 +17,10 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.test_utils import environ
 
-from .test_cli_commands import schedule_command_contexts, scheduler_instance
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
+    schedule_command_contexts,
+    scheduler_instance,
+)
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())

@@ -24,8 +24,16 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
+from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.context_creation_job import (
+    ExecutionContextManager,
+    PlanExecutionContextManager,
+    PlanOrchestrationContextManager,
+    orchestration_context_event_generator,
+    scoped_job_context,
+)
+from dagster._core.execution.job_execution_result import JobExecutionResult
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -38,15 +46,6 @@ from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
-
-from .context_creation_job import (
-    ExecutionContextManager,
-    PlanExecutionContextManager,
-    PlanOrchestrationContextManager,
-    orchestration_context_event_generator,
-    scoped_job_context,
-)
-from .job_execution_result import JobExecutionResult
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -120,7 +119,12 @@ def execute_run_iterator(
                         " and is restarted by the cluster. Marking the run as failed.",
                         dagster_run,
                     )
-                    yield instance.report_run_failed(dagster_run)
+                    yield instance.report_run_failed(
+                        dagster_run,
+                        job_failure_data=JobFailureData(
+                            error=None, failure_reason=RunFailureReason.RUN_WORKER_RESTART
+                        ),
+                    )
 
                 return gen_fail_restarted_run_worker()
 

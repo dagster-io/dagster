@@ -3,7 +3,7 @@ import os
 
 import dagster._check as check
 
-from .types import SparkOpError
+from dagster_spark.types import SparkOpError
 
 
 def flatten_dict(d):

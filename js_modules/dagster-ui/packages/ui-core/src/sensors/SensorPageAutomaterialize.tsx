@@ -1,4 +1,3 @@
-import {useLazyQuery} from '@apollo/client';
 import {Box, Colors, Spinner, Subtitle2} from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 
@@ -9,6 +8,7 @@ import {
   AssetSensorTicksQueryVariables,
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
+import {useLazyQuery} from '../apollo-client';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
 import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
@@ -19,7 +19,6 @@ import {InstigationTickStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../instigation/util';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -72,7 +71,6 @@ export const SensorPageAutomaterialize = (props: Props) => {
   const [fetch, queryResult] = useLazyQuery<AssetSensorTicksQuery, AssetSensorTicksQueryVariables>(
     ASSET_SENSOR_TICKS_QUERY,
   );
-  useBlockTraceOnQueryResult(queryResult, 'AssetSensorTicksQuery');
 
   const refresh = useCallback(
     async () => await fetch({variables: getVariables()}),

@@ -363,7 +363,7 @@ def execute_sensor_iteration(
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
         for location_entry in workspace_process_context.create_request_context()
-        .get_workspace_snapshot()
+        .get_code_location_entries()
         .values()
     }
 
@@ -752,7 +752,7 @@ def _resume_tick(
         and instance.schedule_storage.supports_auto_materialize_asset_evaluations
     ):
         evaluations = [
-            record.get_evaluation_with_run_ids(None)
+            record.get_evaluation_with_run_ids()
             for record in instance.schedule_storage.get_auto_materialize_evaluations_for_evaluation_id(
                 evaluation_id=tick.tick_id
             )

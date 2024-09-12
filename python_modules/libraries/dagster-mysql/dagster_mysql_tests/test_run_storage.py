@@ -14,11 +14,20 @@ TestRunStorage.__test__ = False
 class TestMySQLRunStorage(TestRunStorage):
     __test__ = True
 
+    @pytest.fixture(name="instance", scope="function")
+    def instance(self, conn_string):
+        MySQLRunStorage.create_clean_storage(conn_string)
+
+        with instance_for_test(
+            overrides={"storage": {"mysql": {"mysql_url": conn_string}}}
+        ) as instance:
+            yield instance
+
     @pytest.fixture(scope="function", name="storage")
-    def run_storage(self, conn_string):
-        storage = MySQLRunStorage.create_clean_storage(conn_string)
-        assert storage
-        return storage
+    def run_storage(self, instance):
+        run_storage = instance.run_storage
+        assert isinstance(run_storage, MySQLRunStorage)
+        return run_storage
 
     def test_load_from_config(self, conn_string):
         parse_result = urlparse(conn_string)

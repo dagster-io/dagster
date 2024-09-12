@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Caption,
@@ -17,13 +16,13 @@ import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
@@ -74,8 +73,6 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     },
   });
 
-  useBlockTraceOnQueryResult(sensorQueryResult, 'SingleSensorQuery');
-
   const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
@@ -88,8 +85,6 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
       },
     },
   });
-
-  useBlockTraceOnQueryResult(sensorAssetSelectionQueryResult, 'SensorAssetSelectionQuery');
 
   useDelayedRowQuery(
     React.useCallback(() => {

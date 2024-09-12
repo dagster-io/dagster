@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   BaseTag,
   Box,
@@ -29,10 +28,10 @@ import {
   AssetConditionEvaluationRecordFragment,
   GetEvaluationsSpecificPartitionQuery,
 } from './types/GetEvaluationsQuery.types';
+import {gql, useQuery} from '../../apollo-client';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {DimensionPartitionKeys} from '../../graphql/types';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 const emptyArray: any[] = [];
@@ -130,9 +129,6 @@ export const AutomaterializeMiddlePanelWithData = ({
       skip: !definition?.assetKey,
     },
   );
-  useBlockTraceOnQueryResult(fullPartitionsQueryResult, 'FullPartitionsQuery', {
-    skip: !definition?.assetKey,
-  });
 
   const {data} = fullPartitionsQueryResult;
 

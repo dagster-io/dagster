@@ -1,4 +1,3 @@
-import {QueryResult, gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, Icon, Mono, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,18 +7,18 @@ import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu'
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
+import {QueryResult, gql, useLazyQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
-import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
 import {CreatedByTagCell} from '../../runs/CreatedByTag';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
@@ -67,7 +66,6 @@ export const BackfillRowLoader = (props: {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(cancelableRuns[1], 'SingleBackfillQuery');
 
   const [statusQueryFn, statusQueryResult] = cancelableRuns;
 
@@ -77,9 +75,7 @@ export const BackfillRowLoader = (props: {
   const {data} = statusQueryResult;
   const {hasCancelableRuns} = React.useMemo(() => {
     if (data?.partitionBackfillOrError.__typename === 'PartitionBackfill') {
-      if ('partitionBackfill' in data.partitionBackfillOrError) {
-        return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
-      }
+      return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
     }
     return {hasCancelableRuns: false};
   }, [data]);

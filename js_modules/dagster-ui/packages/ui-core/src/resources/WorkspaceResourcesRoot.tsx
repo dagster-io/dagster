@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -7,12 +6,12 @@ import {
   WorkspaceResourcesQuery,
   WorkspaceResourcesQueryVariables,
 } from './types/WorkspaceResourcesRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {WorkspaceHeader} from '../workspace/WorkspaceHeader';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -39,7 +38,6 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceResourcesQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

@@ -9,7 +9,11 @@ from dagster import (
 )
 from dagster._annotations import public
 
-from .asset_utils import default_asset_check_key_fn, default_asset_key_fn, default_description_fn
+from dagster_sdf.asset_utils import (
+    default_asset_check_key_fn,
+    default_asset_key_fn,
+    default_description_fn,
+)
 
 
 @dataclass(frozen=True)

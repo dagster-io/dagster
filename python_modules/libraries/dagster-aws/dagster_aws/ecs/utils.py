@@ -4,7 +4,7 @@ from typing import Any, Mapping
 
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 
-from .tasks import DagsterEcsTaskDefinitionConfig
+from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 
 
 def sanitize_family(family):

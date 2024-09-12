@@ -1,12 +1,11 @@
-import {gql, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {gql, useQuery} from '../apollo-client';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 /**
 The params behavior on this page is a bit nuanced - there are two main query
@@ -65,7 +64,6 @@ export function useRecentAssetEvents(
         },
   });
   const {data, loading, refetch} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'AssetEventsQuery', {skip: !assetKey});
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;

@@ -1,0 +1,14 @@
+extends: substitution
+message: "%s"
+link: https://docs.gitlab.com/ee/development/documentation/styleguide/word_list.html
+level: suggestion
+ignorecase: true
+swap:
+  a number of: "Specify the number or remove the phrase."
+  as well as: "Use 'and' instead of 'as well as'."
+  note that: "Replace with **Note**: [sentence]."
+  please: "Use 'please' only if we've inconvenienced the user."
+  respectively: "Remove 'respectively' and list each option instead."
+  and so on: "Remove 'and so on'. Try to use 'like' and provide examples instead."
+  in order to: "Remove 'in order' and leave 'to'."
+  quite: "Remove 'quite', as it's wordy."

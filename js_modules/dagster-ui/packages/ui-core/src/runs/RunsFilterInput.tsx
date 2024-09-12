@@ -1,4 +1,3 @@
-import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Icon,
@@ -13,9 +12,11 @@ import {useCallback, useMemo} from 'react';
 import {DagsterTag} from './RunTag';
 import {
   RunTagKeysQuery,
+  RunTagKeysQueryVariables,
   RunTagValuesQuery,
   RunTagValuesQueryVariables,
 } from './types/RunsFilterInput.types';
+import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {RunStatus, RunsFilter} from '../graphql/types';
@@ -30,7 +31,7 @@ import {
   useSuggestionFilter,
 } from '../ui/BaseFilters/useSuggestionFilter';
 import {TimeRangeState, useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
-import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 
 export interface RunsFilterInputProps {
   loading?: boolean;
@@ -172,7 +173,10 @@ const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill, DagsterTag.Parti
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
 
-  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysQuery>(RUN_TAG_KEYS_QUERY);
+  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<
+    RunTagKeysQuery,
+    RunTagKeysQueryVariables
+  >(RUN_TAG_KEYS_QUERY);
   const client = useApolloClient();
   const {UserDisplay} = useLaunchPadHooks();
 

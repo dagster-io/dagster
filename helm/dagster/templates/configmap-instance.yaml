@@ -107,6 +107,9 @@ data:
       {{- if $runRetries.maxRetries }}
       max_retries: {{ $runRetries.maxRetries }}
       {{- end }}
+      {{- if hasKey $runRetries "retryOnAssetOrOpFailure" }}
+      retry_on_asset_or_op_failure: {{ $runRetries.retryOnAssetOrOpFailure }}
+      {{- end }}
     {{- end }}
 
     {{- $sensors := .Values.dagsterDaemon.sensors }}

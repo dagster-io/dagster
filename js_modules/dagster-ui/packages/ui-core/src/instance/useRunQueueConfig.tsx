@@ -1,16 +1,13 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {
   InstanceRunQueueConfigQuery,
   InstanceRunQueueConfigQueryVariables,
 } from './types/useRunQueueConfig.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {gql, useQuery} from '../apollo-client';
 
 export const useRunQueueConfig = () => {
   const queryResult = useQuery<InstanceRunQueueConfigQuery, InstanceRunQueueConfigQueryVariables>(
     INSTANCE_RUN_QUEUE_CONFIG,
   );
-  useBlockTraceOnQueryResult(queryResult, 'InstanceRunQueueConfigQuery');
   return queryResult.data?.instance.runQueueConfig;
 };
 

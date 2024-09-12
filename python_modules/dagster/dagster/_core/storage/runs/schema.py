@@ -1,7 +1,7 @@
 import sqlalchemy as db
 from sqlalchemy.dialects import sqlite
 
-from ..sql import MySQLCompatabilityTypes, get_sql_current_timestamp
+from dagster._core.storage.sql import MySQLCompatabilityTypes, get_sql_current_timestamp
 
 RunStorageSqlMetadata = db.MetaData()
 

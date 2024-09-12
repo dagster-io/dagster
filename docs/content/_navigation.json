@@ -343,6 +343,10 @@
                 "path": "/concepts/metadata-tags/asset-metadata/column-level-lineage"
               },
               {
+                "title": "Kind tags",
+                "path": "/concepts/metadata-tags/kind-tags"
+              },
+              {
                 "title": "Op job metadata",
                 "path": "/concepts/metadata-tags/op-job-metadata"
               },
@@ -373,6 +377,10 @@
                     "path": "/concepts/dagster-pipes/subprocess/reference"
                   }
                 ]
+              },
+              {
+                "title": "Dagster Pipes + AWS ECS",
+                "path": "/concepts/dagster-pipes/aws-ecs"
               },
               {
                 "title": "Dagster Pipes + AWS Glue",
@@ -928,7 +936,17 @@
           },
           {
             "title": "Using dbt with Dagster+",
-            "path": "/integrations/dbt/using-dbt-with-dagster-plus"
+            "path": "/integrations/dbt/using-dbt-with-dagster-plus",
+            "children": [
+              {
+                "title": "Using dbt with Serverless deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/serverless"
+              },
+              {
+                "title": "Using dbt with Hybrid deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/hybrid"
+              }
+            ]
           },
           {
             "title": "Reference",
@@ -1090,6 +1108,19 @@
           {
             "title": "Testing with Branch Deployments",
             "path": "/guides/dagster/branch_deployments"
+          }
+        ]
+      },
+      {
+        "title": "Integrations",
+        "children": [
+          {
+            "title": "Approaches to writing integrations",
+            "path": "/guides/integrations/approaches-to-writing-integrations"
+          },
+          {
+            "title": "Writing a multi-asset decorator integration",
+            "path": "/guides/integrations/writing-a-multi-asset-decorator-integration"
           }
         ]
       },

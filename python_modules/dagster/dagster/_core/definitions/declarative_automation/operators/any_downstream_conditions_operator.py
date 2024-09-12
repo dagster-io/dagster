@@ -1,11 +1,13 @@
 from typing import AbstractSet, Optional, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
-
-from ..automation_condition import AutomationCondition, AutomationResult
-from ..automation_context import AutomationContext
 
 
 @record
@@ -27,13 +29,17 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
     def children(self) -> Sequence[AutomationCondition]:
         return [self.operand]
 
+    @property
+    def requires_cursor(self) -> bool:
+        return False
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_result = self.operand.evaluate(
             context.for_child_condition(
                 child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
             )
         )
-        return AutomationResult.create_from_children(
+        return AutomationResult(
             context=context, true_slice=child_result.true_slice, child_results=[child_result]
         )
 
@@ -50,6 +56,10 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
     @property
     def name(self) -> str:
         return "ANY_DOWNSTREAM_CONDITIONS"
+
+    @property
+    def requires_cursor(self) -> bool:
+        return False
 
     def _get_ignored_conditions(
         self, context: AutomationContext
@@ -69,7 +79,7 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             asset_key=context.asset_key
         )
 
-        true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+        true_slice = context.get_empty_slice()
         child_results = []
         for i, (downstream_condition, asset_keys) in enumerate(
             sorted(downstream_conditions.items(), key=lambda x: sorted(x[1]))
@@ -89,6 +99,4 @@ class AnyDownstreamConditionsCondition(AutomationCondition):
             child_results.append(child_result)
             true_slice = true_slice.compute_union(child_result.true_slice)
 
-        return AutomationResult.create_from_children(
-            context=context, true_slice=true_slice, child_results=child_results
-        )
+        return AutomationResult(context=context, true_slice=true_slice, child_results=child_results)

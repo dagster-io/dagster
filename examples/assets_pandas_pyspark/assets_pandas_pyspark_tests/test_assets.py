@@ -1,4 +1,4 @@
-from dagster import load_assets_from_modules, materialize
+from dagster import materialize
 from dagster._core.test_utils import instance_for_test
 
 from assets_pandas_pyspark.assets import spark_asset, table_assets
@@ -9,7 +9,7 @@ def test_weather_assets():
 
     with instance_for_test() as instance:
         assert materialize(
-            load_assets_from_modules([table_assets]),
+            table_assets.defs.assets,
             instance=instance,
             resources={"io_manager": LocalFileSystemIOManager()},
         ).success
@@ -20,7 +20,7 @@ def test_spark_weather_assets():
 
     with instance_for_test() as instance:
         assert materialize(
-            load_assets_from_modules([table_assets, spark_asset]),
+            [*table_assets.defs.assets, spark_asset.daily_temperature_high_diffs],
             instance=instance,
             resources={"io_manager": LocalFileSystemIOManager()},
         ).success

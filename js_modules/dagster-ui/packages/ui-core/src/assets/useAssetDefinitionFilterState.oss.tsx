@@ -2,7 +2,6 @@ import isEqual from 'lodash/isEqual';
 import {SetStateAction, useCallback, useMemo} from 'react';
 
 import {buildAssetGroupSelector} from './AssetGroupSuggest';
-import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {
   AssetGroupSelector,
   AssetNode,
@@ -21,7 +20,7 @@ type Nullable<T> = {
 
 export type FilterableAssetDefinition = Nullable<
   Partial<
-    Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'computeKind'> & {
+    Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
       repository: Pick<AssetNode['repository'], 'name'> & {
         location: Pick<AssetNode['repository']['location'], 'name'>;
       };
@@ -31,8 +30,7 @@ export type FilterableAssetDefinition = Nullable<
 
 export type AssetFilterBaseType = {
   groups: AssetGroupSelector[];
-  computeKindTags: string[];
-  storageKindTags: DefinitionTag[];
+  kinds: string[];
   changedInBranch: ChangeReason[];
   owners: AssetOwner[];
   tags: DefinitionTag[];
@@ -43,39 +41,31 @@ export type AssetFilterType = AssetFilterBaseType & {
   selectAllFilters: Array<keyof AssetFilterBaseType>;
 };
 
-export const useAssetDefinitionFilterState = () => {
+export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: boolean}) => {
   const [filters, setFilters] = useQueryPersistedState<AssetFilterType>({
-    encode: ({
-      groups,
-      computeKindTags,
-      storageKindTags,
-      changedInBranch,
-      owners,
-      tags,
-      codeLocations,
-      selectAllFilters,
-    }) => ({
-      groups: groups?.length ? JSON.stringify(groups) : undefined,
-      computeKindTags: computeKindTags?.length ? JSON.stringify(computeKindTags) : undefined,
-      storageKindTags: storageKindTags?.length ? JSON.stringify(storageKindTags) : undefined,
-      changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
-      owners: owners?.length ? JSON.stringify(owners) : undefined,
-      tags: tags?.length ? JSON.stringify(tags) : undefined,
-      codeLocations: codeLocations?.length ? JSON.stringify(codeLocations) : undefined,
-      selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
-    }),
+    encode: isEnabled
+      ? ({groups, kinds, changedInBranch, owners, tags, codeLocations, selectAllFilters}) => ({
+          groups: groups?.length ? JSON.stringify(groups) : undefined,
+          kinds: kinds?.length ? JSON.stringify(kinds) : undefined,
+          changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
+          owners: owners?.length ? JSON.stringify(owners) : undefined,
+          tags: tags?.length ? JSON.stringify(tags) : undefined,
+          codeLocations: codeLocations?.length ? JSON.stringify(codeLocations) : undefined,
+          selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
+        })
+      : () => ({}),
     decode: (qs) => ({
-      groups: qs.groups ? JSON.parse(qs.groups) : [],
-      computeKindTags: qs.computeKindTags ? JSON.parse(qs.computeKindTags) : [],
-      storageKindTags: qs.storageKindTags ? JSON.parse(qs.storageKindTags) : [],
-      changedInBranch: qs.changedInBranch ? JSON.parse(qs.changedInBranch) : [],
-      owners: qs.owners ? JSON.parse(qs.owners) : [],
-      tags: qs.tags ? JSON.parse(qs.tags) : [],
-      codeLocations: qs.codeLocations
-        ? JSON.parse(qs.codeLocations).map((repo: RepoAddress) =>
-            buildRepoAddress(repo.name, repo.location),
-          )
-        : [],
+      groups: qs.groups && isEnabled ? JSON.parse(qs.groups) : [],
+      kinds: qs.kinds && isEnabled ? JSON.parse(qs.kinds) : [],
+      changedInBranch: qs.changedInBranch && isEnabled ? JSON.parse(qs.changedInBranch) : [],
+      owners: qs.owners && isEnabled ? JSON.parse(qs.owners) : [],
+      tags: qs.tags && isEnabled ? JSON.parse(qs.tags) : [],
+      codeLocations:
+        qs.codeLocations && isEnabled
+          ? JSON.parse(qs.codeLocations).map((repo: RepoAddress) =>
+              buildRepoAddress(repo.name, repo.location),
+            )
+          : [],
       selectAllFilters: qs.selectAllFilters ? JSON.parse(qs.selectAllFilters) : [],
     }),
   });
@@ -86,8 +76,7 @@ export const useAssetDefinitionFilterState = () => {
   );
 
   const {
-    setComputeKindTags,
-    setStorageKindTags,
+    setKinds,
     setGroups,
     setChangedInBranch,
     setOwners,
@@ -104,8 +93,7 @@ export const useAssetDefinitionFilterState = () => {
       };
     }
     return {
-      setComputeKindTags: makeSetter('computeKindTags'),
-      setStorageKindTags: makeSetter('storageKindTags'),
+      setKinds: makeSetter('kinds'),
       setGroups: makeSetter('groups'),
       setChangedInBranch: makeSetter('changedInBranch'),
       setOwners: makeSetter('owners'),
@@ -119,8 +107,7 @@ export const useAssetDefinitionFilterState = () => {
     filters,
     setFilters,
     filterFn,
-    setComputeKindTags,
-    setStorageKindTags,
+    setKinds,
     setGroups,
     setChangedInBranch,
     setOwners,
@@ -181,29 +168,14 @@ export function filterAssetDefinition(
     }
   }
 
-  const isAllComputeKindTagsSelected = filters.selectAllFilters?.includes('computeKindTags');
-  if (isAllComputeKindTagsSelected) {
-    if (!definition?.computeKind?.length) {
+  const isAllKindsSelected = filters.selectAllFilters?.includes('kinds');
+  const kinds = definition?.kinds;
+  if (isAllKindsSelected) {
+    if (!kinds) {
       return false;
     }
-  } else if (filters.computeKindTags?.length) {
-    const lowercased = new Set(filters.computeKindTags.map((c) => c.toLowerCase()));
-    if (!definition?.computeKind || !lowercased.has(definition.computeKind.toLowerCase())) {
-      return false;
-    }
-  }
-
-  const isAllStorageKindTagsSelected = filters.selectAllFilters?.includes('storageKindTags');
-  const storageKindTag = definition?.tags?.find(isCanonicalStorageKindTag);
-  if (isAllStorageKindTagsSelected) {
-    if (!storageKindTag) {
-      return false;
-    }
-  } else if (filters.storageKindTags?.length) {
-    if (
-      !storageKindTag ||
-      !doesFilterArrayMatchValueArray(filters.storageKindTags, [storageKindTag])
-    ) {
+  } else if (filters.kinds?.length) {
+    if (!kinds || !doesFilterArrayMatchValueArray(filters.kinds, kinds)) {
       return false;
     }
   }

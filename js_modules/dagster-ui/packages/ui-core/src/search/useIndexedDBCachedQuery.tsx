@@ -1,15 +1,16 @@
+import {cache} from 'idb-lru-cache';
+import memoize from 'lodash/memoize';
+import React, {createContext, useCallback, useContext, useEffect} from 'react';
+
 import {
   ApolloClient,
   ApolloError,
   DocumentNode,
   OperationVariables,
   useApolloClient,
-} from '@apollo/client';
-import {cache} from 'idb-lru-cache';
-import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext} from 'react';
-
+} from '../apollo-client';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
+import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 type CacheData<TQuery> = {
   data: TQuery;
@@ -77,10 +78,11 @@ interface QueryHookParams<TVariables extends OperationVariables, TQuery> {
 
 export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVariables>({
   key,
+  skip,
   query,
   version,
   variables,
-}: QueryHookParams<TVariables, TQuery>) {
+}: QueryHookParams<TVariables, TQuery> & {skip?: boolean}) {
   const client = useApolloClient();
   const [data, setData] = React.useState<TQuery | undefined>(undefined);
   const [error, setError] = React.useState<ApolloError | undefined>(undefined);
@@ -119,17 +121,30 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   );
 
   React.useEffect(() => {
+    if (skip) {
+      return;
+    }
     getCachedData<TQuery>({key, version}).then((data) => {
       if (data && !dataRef.current) {
         setData(data);
         setLoading(false);
       }
     });
-  }, [key, version, getCachedData, dataRef]);
+  }, [key, version, getCachedData, dataRef, skip]);
 
   React.useEffect(() => {
+    if (skip) {
+      return;
+    }
     fetch(true);
-  }, [fetch]);
+  }, [fetch, skip]);
+
+  const dep = useBlockTraceUntilTrue(`useIndexedDBCachedQuery-${key}`, !!data);
+  useEffect(() => {
+    if (error) {
+      dep.completeDependency(CompletionType.ERROR);
+    }
+  }, [error, dep]);
 
   return {
     data,

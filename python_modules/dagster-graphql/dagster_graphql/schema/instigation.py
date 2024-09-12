@@ -27,15 +27,14 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
+from dagster_graphql.implementation.fetch_instigators import get_tick_log_events
+from dagster_graphql.implementation.fetch_schedules import get_schedule_next_tick
+from dagster_graphql.implementation.fetch_sensors import get_sensor_next_tick
+from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
-
-from ..implementation.fetch_instigators import get_tick_log_events
-from ..implementation.fetch_schedules import get_schedule_next_tick
-from ..implementation.fetch_sensors import get_sensor_next_tick
-from ..implementation.fetch_ticks import get_instigation_ticks
-from ..implementation.loader import RepositoryScopedBatchLoader
-from ..implementation.utils import UserFacingGraphQLError
-from .errors import (
+from dagster_graphql.schema.errors import (
     GrapheneError,
     GraphenePythonError,
     GrapheneRepositoryLocationNotFound,
@@ -43,10 +42,10 @@ from .errors import (
     GrapheneScheduleNotFoundError,
     GrapheneSensorNotFoundError,
 )
-from .logs.log_level import GrapheneLogLevel
-from .repository_origin import GrapheneRepositoryOrigin
-from .tags import GraphenePipelineTag
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
+from dagster_graphql.schema.repository_origin import GrapheneRepositoryOrigin
+from dagster_graphql.schema.tags import GraphenePipelineTag
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 GrapheneInstigationType = graphene.Enum.from_enum(InstigatorType, "InstigationType")
 
@@ -282,7 +281,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
         return str(self._tick.tick_id)
 
     def resolve_runs(self, graphene_info: ResolveInfo):
-        from .pipelines.pipeline import GrapheneRun
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         instance = graphene_info.context.instance
         run_ids = self._tick.origin_run_ids or self._tick.run_ids
@@ -639,7 +638,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         return None
 
     def resolve_runs(self, graphene_info: ResolveInfo, limit: Optional[int] = None):
-        from .pipelines.pipeline import GrapheneRun
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         repository_label = self._instigator_state.origin.repository_origin.get_label()
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:

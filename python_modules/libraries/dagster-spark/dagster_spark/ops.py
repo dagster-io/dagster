@@ -7,7 +7,7 @@ from dagster import (
 )
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
-from .configs import define_spark_config
+from dagster_spark.configs import define_spark_config
 
 
 def create_spark_op(

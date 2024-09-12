@@ -9,8 +9,7 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-
-from .load import (
+from dagster._core.workspace.load import (
     location_origin_from_module_name,
     location_origin_from_package_name,
     location_origin_from_python_file,

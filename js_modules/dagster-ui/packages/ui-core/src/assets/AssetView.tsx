@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
@@ -29,9 +28,11 @@ import {
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
 } from './types/AssetView.types';
+import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
 import {useWipeModal} from './useWipeModal';
+import {gql, useQuery} from '../apollo-client';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -45,7 +46,7 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface Props {
   assetKey: AssetKey;
@@ -163,7 +164,10 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   };
 
   const renderPartitionsTab = () => {
-    if (!definition?.isMaterializable) {
+    // We don't render <AssetLoadingDefinitionState /> here like the other tabs because
+    // AssetPartitions makes graphql requests and we want to avoid a request waterfall.
+    // Instead AssetPartitions will render the AssetLoadingDefinitionState itself.
+    if (!isLoading && !definition?.isMaterializable) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
@@ -257,6 +261,14 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     }
   };
 
+  const repoAddress = useMemo(
+    () =>
+      definition
+        ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+        : null,
+    [definition],
+  );
+
   const setCurrentPage = useSetRecoilState(currentPageAtom);
   const {path} = useRouteMatch();
   useEffect(() => {
@@ -264,21 +276,21 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   }, [path, selectedTab, setCurrentPage]);
 
   const wipe = useWipeModal(
-    definition
-      ? {
-          assetKey: definition.assetKey,
-          repository: definition.repository,
-        }
-      : null,
+    definition ? {assetKey: definition.assetKey, repository: definition.repository} : null,
     refresh,
   );
+
+  const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
+    definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
+    () => {
+      definitionQueryResult.refetch();
+      refresh();
+    },
+  );
+
   const reportEvents = useReportEventsModal(
-    definition
-      ? {
-          assetKey: definition.assetKey,
-          isPartitioned: definition.isPartitioned,
-          repository: definition.repository,
-        }
+    definition && repoAddress
+      ? {assetKey: definition.assetKey, isPartitioned: definition.isPartitioned, repoAddress}
       : null,
     refresh,
   );
@@ -326,11 +338,13 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
                 additionalDropdownOptions={[
                   ...reportEvents.dropdownOptions,
                   ...wipe.dropdownOptions,
+                  ...dynamicPartitionsDelete.dropdownOptions,
                 ]}
               />
             ) : undefined}
             {reportEvents.element}
             {wipe.element}
+            {dynamicPartitionsDelete.element}
           </Box>
         }
       />
@@ -427,7 +441,6 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
     },
   );
 
-  useBlockTraceOnQueryResult(result, 'AssetViewDefinitionQuery');
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {
@@ -470,6 +483,10 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     groupName
     partitionDefinition {
       description
+      dimensionTypes {
+        type
+        dynamicPartitionsDefinitionName
+      }
     }
     partitionKeysByDimension {
       name

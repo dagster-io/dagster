@@ -1,6 +1,6 @@
 import sys
 
-from . import _module_alias_map
+from dagster import _module_alias_map
 
 # Imports of a key will return the module named by the corresponding value.
 sys.meta_path.insert(
@@ -151,7 +151,7 @@ from dagster._core.definitions.auto_materialize_rule import (
 from dagster._core.definitions.auto_materialize_rule_impls import (
     AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
 )
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition as AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy

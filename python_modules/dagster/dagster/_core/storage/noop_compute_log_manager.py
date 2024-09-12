@@ -4,19 +4,18 @@ from typing import IO, Any, Generator, Mapping, Optional, Sequence
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.storage.captured_log_manager import (
+from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
     CapturedLogData,
-    CapturedLogManager,
     CapturedLogMetadata,
     CapturedLogSubscription,
     ComputeIOType,
+    ComputeLogManager,
 )
-from dagster._core.storage.compute_log_manager import ComputeLogManager
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 
-class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
+class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
     """When enabled for a Dagster instance, stdout and stderr will not be available for any step."""
 
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None):

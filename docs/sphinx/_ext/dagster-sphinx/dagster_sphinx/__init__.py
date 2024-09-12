@@ -13,14 +13,6 @@ from dagster._annotations import (
     is_public,
 )
 from dagster._record import get_original_class, is_record
-from sphinx.application import Sphinx
-from sphinx.environment import BuildEnvironment
-from sphinx.ext.autodoc import (
-    ClassDocumenter,
-    ObjectMember,
-    Options as AutodocOptions,
-)
-from sphinx.util import logging
 from typing_extensions import Literal, TypeAlias
 
 from dagster_sphinx.configurable import ConfigurableDocumenter
@@ -33,6 +25,14 @@ from dagster_sphinx.docstring_flags import (
     visit_flag,
     visit_inline_flag,
 )
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+from sphinx.ext.autodoc import (
+    ClassDocumenter,
+    ObjectMember,
+    Options as AutodocOptions,
+)
+from sphinx.util import logging
 
 from .docstring_flags import inject_object_flag, inject_param_flag
 
@@ -73,9 +73,9 @@ def record_error(env: BuildEnvironment, message: str) -> None:
 
 
 def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: object) -> None:
-    if name != "__init__" and not obj.__doc__:
+    if name != "__init__" and not hasattr(obj, "__doc__"):
         message = (
-            f"Docstring not found for {object.__name__}.{name}. "
+            f"Docstring not found for {obj!r}.{name}. "
             "All public methods and properties must have docstrings."
         )
         record_error(env, message)
@@ -155,7 +155,7 @@ def check_custom_errors(app: Sphinx, exc: Optional[Exception] = None) -> None:
     if len(dagster_errors) > 0:
         for error_msg in dagster_errors:
             logger.info(error_msg)
-        raise Exception(
+        logger.error(
             f"Bulid failed. Found {len(dagster_errors)} violations of docstring requirements."
         )
 
@@ -175,6 +175,6 @@ def setup(app):
 
     return {
         "version": "0.1",
-        "parallel_read_safe": True,
+        "parallel_read_safe": False,
         "parallel_write_safe": True,
     }

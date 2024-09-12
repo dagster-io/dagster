@@ -17,31 +17,33 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental_param, public
-from dagster._core.decorator_utils import format_docstring_for_description
-from dagster._core.definitions.config import is_callable_valid_config_arg
-from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._utils import IHasInternalInit
-
-from ..decorator_utils import (
+from dagster._core.decorator_utils import (
+    format_docstring_for_description,
     get_function_params,
     has_at_least_one_parameter,
     is_required_param,
     positional_arg_name_list,
     validate_expected_params,
 )
-from .definition_config_schema import (
+from dagster._core.definitions.config import is_callable_valid_config_arg
+from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
+from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from .resource_invocation import resource_invocation_result
-from .resource_requirement import ResourceDependencyRequirement, ResourceRequirement
-from .scoped_resources_builder import (  # re-exported
+from dagster._core.definitions.resource_invocation import resource_invocation_result
+from dagster._core.definitions.resource_requirement import (
+    ResourceDependencyRequirement,
+    ResourceRequirement,
+)
+from dagster._core.definitions.scoped_resources_builder import (
     IContainsGenerator as IContainsGenerator,
     Resources as Resources,
     ScopedResourcesBuilder as ScopedResourcesBuilder,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._utils import IHasInternalInit
 
 if TYPE_CHECKING:
     from dagster._core.execution.resources_init import InitResourceContext

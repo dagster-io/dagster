@@ -16,7 +16,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster_pipes import DagsterPipesError, PipesContext
 
-from .in_process_client import InProcessPipesClient
+from dagster_tests.execution_tests.pipes_tests.in_process_client import InProcessPipesClient
 
 
 def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:

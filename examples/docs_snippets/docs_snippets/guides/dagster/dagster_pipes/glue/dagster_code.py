@@ -1,7 +1,6 @@
 # start_asset_marker
 import os
 
-# dagster_glue_pipes.py
 import boto3
 from dagster_aws.pipes import PipesGlueClient
 
@@ -14,8 +13,10 @@ def glue_pipes_asset(
 ):
     return pipes_glue_client.run(
         context=context,
-        job_name="Example Job",
-        arguments={"some_parameter_value": "1"},
+        start_job_run_params={
+            "JobName": "Example Job",
+            "Arguments": {"some_parameter": "some_value"},
+        },
     ).get_materialize_result()
 
 

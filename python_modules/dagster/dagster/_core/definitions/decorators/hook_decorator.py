@@ -12,11 +12,10 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.decorator_utils import get_function_params, validate_expected_params
+from dagster._core.definitions.events import HookExecutionResult
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-
-from ...decorator_utils import get_function_params, validate_expected_params
-from ..events import HookExecutionResult
-from ..hook_definition import HookDefinition
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent

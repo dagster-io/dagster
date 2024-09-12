@@ -8,13 +8,13 @@ from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
 from dagster._utils.warnings import suppress_dagster_warnings
 
-from .constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT, SDF_EXECUTABLE, SDF_TARGET_DIR
-from .errors import (
+from dagster_sdf.constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT, SDF_EXECUTABLE, SDF_TARGET_DIR
+from dagster_sdf.errors import (
     DagsterSdfInformationSchemaNotFoundError,
     DagsterSdfWorkspaceNotFoundError,
     DagsterSdfWorkspaceYmlFileNotFoundError,
 )
-from .sdf_information_schema import SdfInformationSchema
+from dagster_sdf.sdf_information_schema import SdfInformationSchema
 
 logger = logging.getLogger("dagster-sdf.artifacts")
 
@@ -51,9 +51,13 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
         Args:
             generate_cli_args (Sequence[str]):
                 The arguments to pass to the sdf cli to prepare the workspace.
-                Default: ["compile", "--save==table-deps"]
+                Default: ["compile", "--save==table-deps,info-schema"]
         """
-        self._generate_cli_args = generate_cli_args or ["compile", "--save", "table-deps"]
+        self._generate_cli_args = generate_cli_args or [
+            "compile",
+            "--save",
+            "table-deps,info-schema",
+        ]
 
     def on_load(self, workspace: "SdfWorkspace"):
         if self.using_dagster_dev() or self.compile_on_load_opt_in():
@@ -79,7 +83,7 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
         )
 
     def _prepare_workspace(self, workspace: "SdfWorkspace") -> None:
-        from .resource import SdfCliResource
+        from dagster_sdf.resource import SdfCliResource
 
         (
             SdfCliResource(workspace_dir=workspace)

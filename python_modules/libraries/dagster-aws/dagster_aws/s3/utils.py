@@ -4,7 +4,7 @@ import boto3
 import dagster._check as check
 from botocore.handlers import disable_signing
 
-from ..utils import construct_boto_client_retry_config
+from dagster_aws.utils import construct_boto_client_retry_config
 
 
 class S3Callback:

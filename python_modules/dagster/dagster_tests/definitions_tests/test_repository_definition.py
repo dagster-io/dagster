@@ -30,16 +30,12 @@ from dagster import (
     sensor,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
-from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._loggers import default_loggers
 
@@ -1412,7 +1408,7 @@ def test_default_loggers_keys_conflict():
     assert the_repo.get_job("the_job").loggers == {"foo": some_logger}
 
 
-def test_base_jobs():
+def test_implicit_asset_job():
     @asset
     def asset1(): ...
 
@@ -1426,44 +1422,9 @@ def test_base_jobs():
     def repo():
         return [asset1, asset2, asset3]
 
-    assert sorted(repo.get_implicit_asset_job_names()) == ["__ASSET_JOB_0", "__ASSET_JOB_1"]
-    assert repo.get_implicit_job_def_for_assets(
-        [asset1.key, asset2.key]
-    ).asset_layer.executable_asset_keys == {
-        asset1.key,
-        asset2.key,
-    }
-    assert repo.get_implicit_job_def_for_assets([asset2.key, asset3.key]) is None
-
-
-def test_base_jobs_stable_partition_sort():
-    partitions_defs = [
-        StaticPartitionsDefinition(["a", "b", "c"]),
-        DailyPartitionsDefinition(
-            start_date="2017-01-01", end_date="2017-01-18", timezone="US/Eastern"
-        ),
-        DailyPartitionsDefinition(
-            start_date="2017-01-01", end_date="2017-01-19", timezone="US/Eastern"
-        ),
-        StaticPartitionsDefinition(["d", "e", "f"]),
-        DynamicPartitionsDefinition(name="foo"),
-    ]
-
-    assets = [
-        asset(key=f"a{i}", partitions_def=partitions_def)(lambda: True)
-        for i, partitions_def in enumerate(partitions_defs)
-    ]
-
-    @repository
-    def repo():
-        return assets
-
-    # This is the sort order of the partitions defs associated with each asset
-    assert repo.get_implicit_job_def_for_assets([assets[4].key]).name == "__ASSET_JOB_0"
-    assert repo.get_implicit_job_def_for_assets([assets[0].key]).name == "__ASSET_JOB_1"
-    assert repo.get_implicit_job_def_for_assets([assets[3].key]).name == "__ASSET_JOB_2"
-    assert repo.get_implicit_job_def_for_assets([assets[1].key]).name == "__ASSET_JOB_3"
-    assert repo.get_implicit_job_def_for_assets([assets[2].key]).name == "__ASSET_JOB_4"
+    job_def = repo.get_implicit_global_asset_job_def()
+    assert job_def.name == "__ASSET_JOB"
+    assert job_def.asset_layer.executable_asset_keys == {asset1.key, asset2.key, asset3.key}
 
 
 def test_auto_materialize_sensors_do_not_conflict():

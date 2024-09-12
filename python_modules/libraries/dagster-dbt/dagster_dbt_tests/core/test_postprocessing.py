@@ -19,8 +19,8 @@ from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, DbtDagsterEven
 from dagster_dbt.core.dbt_event_iterator import _get_dbt_resource_props_from_event
 from dagster_dbt.core.resource import DbtCliResource
 
-from ..conftest import _create_dbt_invocation
-from ..dbt_projects import test_jaffle_shop_path
+from dagster_dbt_tests.conftest import _create_dbt_invocation
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
 pytestmark = pytest.mark.derived_metadata
 

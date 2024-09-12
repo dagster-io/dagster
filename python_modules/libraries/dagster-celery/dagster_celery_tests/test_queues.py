@@ -3,7 +3,7 @@ import time
 
 from dagster._core.test_utils import instance_for_test
 
-from .utils import execute_on_thread, start_celery_worker
+from dagster_celery_tests.utils import execute_on_thread, start_celery_worker
 
 
 def test_multiqueue(rabbitmq):

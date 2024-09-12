@@ -1,10 +1,13 @@
 import graphene
 
-from ...implementation.execution import gen_captured_log_data, gen_events_for_run
-from ..external import GrapheneLocationStateChangeSubscription, gen_location_state_changes
-from ..logs.compute_logs import GrapheneCapturedLogs
-from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
-from ..util import ResolveInfo, non_null_list
+from dagster_graphql.implementation.execution import gen_captured_log_data, gen_events_for_run
+from dagster_graphql.schema.external import (
+    GrapheneLocationStateChangeSubscription,
+    gen_location_state_changes,
+)
+from dagster_graphql.schema.logs.compute_logs import GrapheneCapturedLogs
+from dagster_graphql.schema.pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneSubscription(graphene.ObjectType):

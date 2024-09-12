@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import 'chartjs-adapter-date-fns';
 import {
   Box,
@@ -21,6 +20,7 @@ import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -61,7 +61,7 @@ export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}
 };
 
 interface InnerProps {
-  tickId: number | undefined;
+  tickId: string | undefined;
   instigationSelector: InstigationSelector;
 }
 

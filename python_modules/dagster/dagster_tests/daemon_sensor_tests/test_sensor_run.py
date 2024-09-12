@@ -44,7 +44,7 @@ from dagster import (
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators import op
@@ -79,7 +79,6 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -96,7 +95,7 @@ from dagster._time import create_datetime, get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from mock import patch
 
-from .conftest import create_workspace_load_target
+from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 
 
 @asset
@@ -2633,7 +2632,7 @@ def test_status_in_code_sensor(executor, instance):
         instance=instance,
     ) as workspace_context:
         external_repo = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location.get_repository("the_status_in_code_repo")
 
         with freeze_time(freeze_datetime):
@@ -2908,7 +2907,9 @@ def test_repository_namespacing(executor):
         )
 
         full_location = next(
-            iter(full_workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(
+                full_workspace_context.create_request_context().get_code_location_entries().values()
+            )
         ).code_location
         external_repo = full_location.get_repository("the_repo")
         other_repo = full_location.get_repository("the_other_repo")
@@ -3055,7 +3056,6 @@ def test_sensor_logging_on_tick_failure(
     assert len(records) == 1
     assert records[0][LOG_RECORD_METADATA_ATTR]["orig_message"] == "hello hello"
 
-    assert isinstance(instance.compute_log_manager, CapturedLogManager)
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
 
 

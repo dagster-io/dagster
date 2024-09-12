@@ -9,12 +9,11 @@ from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
+from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.utils import toposort_flatten
 from dagster._record import IHaveNew, copy, record, record_custom
-
-from .node_definition import NodeDefinition
 
 
 @record_custom

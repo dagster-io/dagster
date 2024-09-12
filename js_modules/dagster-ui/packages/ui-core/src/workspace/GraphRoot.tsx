@@ -1,15 +1,14 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {RepoAddress} from './types';
 import {GraphExplorerRootQuery, GraphExplorerRootQueryVariables} from './types/GraphRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {
   GRAPH_EXPLORER_FRAGMENT,
@@ -81,7 +80,6 @@ const GraphExplorerRoot = (props: Props) => {
       },
     },
   );
-  useBlockTraceOnQueryResult(graphResult, 'GraphExplorerRootQuery');
 
   return (
     <Loading<GraphExplorerRootQuery> queryResult={graphResult}>

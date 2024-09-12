@@ -9,18 +9,16 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import resolve_backfill_policy
+from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
-
-from .config import ConfigMapping
-from .metadata import RawMetadataValue
-from .partition import PartitionedConfig
-from .policy import RetryPolicy
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition

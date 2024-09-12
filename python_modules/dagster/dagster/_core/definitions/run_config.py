@@ -19,29 +19,35 @@ from typing_extensions import TypeAlias
 from dagster._annotations import public
 from dagster._config import ALL_CONFIG_BUILTINS, ConfigType, Field, Permissive, Selector, Shape
 from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.configurable import ConfigurableDefinition
+from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.definitions.dependency import (
+    DependencyStructure,
+    GraphNode,
+    Node,
+    NodeHandle,
+    NodeInput,
+    OpNode,
+)
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
     in_process_executor,
 )
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.input import InputDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.op_definition import NodeDefinition, OpDefinition
 from dagster._core.definitions.output import OutputDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.input_manager import IInputManagerDefinition
 from dagster._core.storage.output_manager import IOutputManagerDefinition
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster._utils import check
 
-from .configurable import ConfigurableDefinition
-from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, GraphNode, Node, NodeHandle, NodeInput, OpNode
-from .graph_definition import GraphDefinition
-from .logger_definition import LoggerDefinition
-from .op_definition import NodeDefinition, OpDefinition
-from .resource_definition import ResourceDefinition
-
 if TYPE_CHECKING:
-    from .assets import AssetsDefinition
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 def define_resource_dictionary_cls(

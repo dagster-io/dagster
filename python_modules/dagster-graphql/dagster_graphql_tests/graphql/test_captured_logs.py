@@ -5,8 +5,10 @@ from dagster_graphql.test.utils import (
     infer_job_selector,
 )
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from .utils import sync_execute_get_run_log_data
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
+from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
 CAPTURED_LOGS_QUERY = """
   query CapturedLogsQuery($logKey: [String!]!) {

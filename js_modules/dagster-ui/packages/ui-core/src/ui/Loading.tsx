@@ -1,7 +1,7 @@
-import {ApolloError, QueryResult} from '@apollo/client';
 import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 
+import {ApolloError, QueryResult} from '../apollo-client';
 import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from '../app/HTTPErrorCodes';
 
 interface ILoadingProps<TData> {

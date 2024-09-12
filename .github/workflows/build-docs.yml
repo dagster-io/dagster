@@ -7,18 +7,20 @@ on:
       - docs-prod # prod
     paths:
       - docs/**
+      - "!docs/docs-beta/**" # Exclude docs-beta
       - examples/docs_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
   pull_request:
     paths:
       - docs/**
+      - "!docs/docs-beta/**" # Exclude docs-beta
       - examples/docs_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
 concurrency:
   # Cancel in-progress runs on same branch
-  group: ${{ github.ref }}
+  group: ${{ github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 jobs:
   deploy:

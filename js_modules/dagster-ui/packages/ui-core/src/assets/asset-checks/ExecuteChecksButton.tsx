@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 
@@ -6,6 +5,7 @@ import {
   ExecuteChecksButtonAssetNodeFragment,
   ExecuteChecksButtonCheckFragment,
 } from './types/ExecuteChecksButton.types';
+import {gql} from '../../apollo-client';
 import {CloudOSSContext} from '../../app/CloudOSSContext';
 import {usePermissionsForLocation} from '../../app/Permissions';
 import {AssetCheckCanExecuteIndividually, ExecutionParams} from '../../graphql/types';

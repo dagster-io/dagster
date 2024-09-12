@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -48,6 +47,7 @@ import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {
   FIFTEEN_SECONDS,
@@ -60,7 +60,6 @@ import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses} from '../runs/RunStatuses';
 import {titleForRun} from '../runs/RunUtils';
@@ -81,7 +80,6 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
   >(INSTANCE_CONCURRENCY_LIMITS_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(queryResult, 'InstanceConcurrencyLimitsQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
@@ -751,7 +749,6 @@ const ConcurrencyStepsDialog = ({
       skip: !concurrencyKey,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'ConcurrencyKeyDetailsQuery', {skip: !concurrencyKey});
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
   const refetch = React.useCallback(() => {
@@ -806,9 +803,6 @@ const PendingStepsTable = ({
       skip: !keyInfo.pendingSteps.length,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'RunsForConcurrencyKeyQuery', {
-    skip: !keyInfo.pendingSteps.length,
-  });
   const statusByRunId: {[id: string]: RunStatus} = {};
   const runs =
     queryResult.data?.pipelineRunsOrError.__typename === 'Runs'

@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Tuple,
 from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
+from dagster._core.storage.daemon_cursor import DaemonCursorStorage
 from dagster._core.storage.dagster_run import (
     DagsterRun,
     JobBucket,
@@ -19,8 +20,6 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.sql import AlembicVersion
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import PrintFn
-
-from ..daemon_cursor import DaemonCursorStorage
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.origin import RemoteJobOrigin
@@ -370,9 +369,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def get_backfills(
         self,
-        status: Optional[BulkActionStatus] = None,
+        filters: Optional[BulkActionsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        status: Optional[BulkActionStatus] = None,
     ) -> Sequence[PartitionBackfill]:
         """Get a list of partition backfills."""
 

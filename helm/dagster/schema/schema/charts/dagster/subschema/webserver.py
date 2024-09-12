@@ -2,8 +2,8 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import Extra
 
-from ...utils import kubernetes
-from ...utils.utils import BaseModel
+from schema.charts.utils import kubernetes
+from schema.charts.utils.utils import BaseModel
 
 
 class Server(BaseModel):

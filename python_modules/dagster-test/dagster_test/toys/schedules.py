@@ -93,7 +93,7 @@ def monthly_materialization_schedule():
 
 
 def longitudinal_schedule():
-    from .longitudinal import longitudinal_job
+    from dagster_test.toys.longitudinal import longitudinal_job
 
     @daily_partitioned_config(start_date="2020-01-01", timezone=_toys_tz_info())
     def longitudinal_config(start, _end):

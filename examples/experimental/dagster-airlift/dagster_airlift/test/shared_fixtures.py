@@ -4,8 +4,9 @@ import subprocess
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Generator
+from typing import Any, Callable, Generator, Optional
 
+import mock
 import pytest
 import requests
 from dagster._core.test_utils import environ
@@ -40,11 +41,21 @@ def setup_fixture(airflow_home: Path, dags_dir: Path) -> Generator[Path, None, N
         # Provide link to local dagster installation.
         "DAGSTER_URL": "http://localhost:3333",
     }
-    path_to_script = Path(__file__).parent.parent.parent / "airflow_setup.sh"
+    path_to_script = Path(__file__).parent.parent.parent / "scripts" / "airflow_setup.sh"
     subprocess.run(["chmod", "+x", path_to_script], check=True, env=temp_env)
     subprocess.run([path_to_script, dags_dir], check=True, env=temp_env)
     with environ(temp_env):
         yield airflow_home
+
+
+@pytest.fixture(name="reserialize_dags")
+def reserialize_fixture(airflow_instance: None) -> Callable[[], None]:
+    """Forces airflow to reserialize dags, to ensure that the latest changes are picked up."""
+
+    def _reserialize_dags() -> None:
+        subprocess.check_output(["airflow", "dags", "reserialize"])
+
+    return _reserialize_dags
 
 
 @pytest.fixture(name="airflow_instance")
@@ -118,3 +129,32 @@ def setup_dagster(dagster_home: str, dagster_defs_path: str) -> Generator[Any, N
     assert dagster_ready, "Dagster did not start within 30 seconds..."
     yield process
     os.killpg(process.pid, signal.SIGKILL)
+
+
+####################################################################################################
+# MISCELLANEOUS FIXTURES
+# Fixtures that are useful across contexts.
+####################################################################################################
+
+VAR_DICT = {}
+
+
+def dummy_get_var(key: str) -> Optional[str]:
+    return VAR_DICT.get(key)
+
+
+def dummy_set_var(key: str, value: str, session: Any) -> None:
+    return VAR_DICT.update({key: value})
+
+
+@pytest.fixture
+def sqlite_backend():
+    with environ({"AIRFLOW__CORE__SQL_ALCHEMY_CONN": "sqlite://"}):
+        yield
+
+
+@pytest.fixture
+def mock_airflow_variable():
+    with mock.patch("airflow.models.Variable.get", side_effect=dummy_get_var):
+        with mock.patch("airflow.models.Variable.set", side_effect=dummy_set_var):
+            yield

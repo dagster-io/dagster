@@ -56,20 +56,15 @@ from dagster._core.remote_representation.external_data import (
     job_name_for_external_partition_set_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
-from dagster._core.snap.execution_plan_snapshot import (
-    ExecutionPlanSnapshotErrorData,
-    snapshot_from_execution_plan,
-)
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._grpc.types import ExecutionPlanSnapshotArgs
+from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._serdes.ipc import IPCErrorMessage
 from dagster._time import datetime_from_timestamp
 from dagster._utils import start_termination_thread
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
-
-from .types import ExecuteExternalJobArgs
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -430,30 +425,22 @@ def _get_job_partitions_and_config_for_partition_set_name(
 
 def get_partition_config(
     repo_def: RepositoryDefinition,
-    partition_set_name: str,
+    job_name: str,
     partition_key: str,
     instance_ref: Optional[InstanceRef] = None,
 ) -> Union[ExternalPartitionConfigData, ExternalPartitionExecutionErrorData]:
     try:
-        (
-            _,
-            partitions_def,
-            partitioned_config,
-        ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
+        job_def = repo_def.get_job(job_name)
 
-        with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
-            with user_code_error_boundary(
-                PartitionExecutionError,
-                lambda: (
-                    "Error occurred during the evaluation of the `run_config_for_partition`"
-                    f" function for partition set {partition_set_name}"
-                ),
-            ):
-                partitions_def.validate_partition_key(
-                    partition_key, dynamic_partitions_store=instance
-                )
-                run_config = partitioned_config.get_run_config_for_partition_key(partition_key)
-                return ExternalPartitionConfigData(name=partition_key, run_config=run_config)
+        with user_code_error_boundary(
+            PartitionExecutionError,
+            lambda: (
+                "Error occurred during the evaluation of the `run_config_for_partition`"
+                f" function for job {job_name}"
+            ),
+        ):
+            run_config = job_def.get_run_config_for_partition_key(partition_key)
+            return ExternalPartitionConfigData(name=partition_key, run_config=run_config)
     except Exception:
         return ExternalPartitionExecutionErrorData(
             error=serializable_error_info_from_exc_info(sys.exc_info())
@@ -461,15 +448,10 @@ def get_partition_config(
 
 
 def get_partition_names(
-    repo_def: RepositoryDefinition,
-    partition_set_name: str,
+    repo_def: RepositoryDefinition, job_name: str
 ) -> Union[ExternalPartitionNamesData, ExternalPartitionExecutionErrorData]:
     try:
-        (
-            job_def,
-            partitions_def,
-            _,
-        ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
+        job_def = repo_def.get_job(job_name)
 
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -478,7 +460,9 @@ def get_partition_names(
                 f" partitioned config on job '{job_def.name}'"
             ),
         ):
-            return ExternalPartitionNamesData(partition_names=partitions_def.get_partition_keys())
+            return ExternalPartitionNamesData(
+                partition_names=job_def.get_partition_keys(selected_asset_keys=None)
+            )
     except Exception:
         return ExternalPartitionExecutionErrorData(
             error=serializable_error_info_from_exc_info(sys.exc_info())
@@ -487,35 +471,22 @@ def get_partition_names(
 
 def get_partition_tags(
     repo_def: RepositoryDefinition,
-    partition_set_name: str,
+    job_name: str,
     partition_name: str,
     instance_ref: Optional[InstanceRef] = None,
-):
+) -> Union[ExternalPartitionTagsData, ExternalPartitionExecutionErrorData]:
     try:
-        (
-            job_def,
-            partitions_def,
-            partitioned_config,
-        ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
+        job_def = repo_def.get_job(job_name)
 
-        # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
-        # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
-
-        with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
-            with user_code_error_boundary(
-                PartitionExecutionError,
-                lambda: (
-                    "Error occurred during the evaluation of the `tags_for_partition` function for"
-                    f" partitioned config on job '{job_def.name}'"
-                ),
-            ):
-                partitions_def.validate_partition_key(
-                    partition_name, dynamic_partitions_store=instance
-                )
-                tags = partitioned_config.get_tags_for_partition_key(
-                    partition_name, job_name=job_def.name
-                )
-                return ExternalPartitionTagsData(name=partition_name, tags=tags)
+        with user_code_error_boundary(
+            PartitionExecutionError,
+            lambda: (
+                "Error occurred during the evaluation of the `tags_for_partition` function for"
+                f" partitioned config on job '{job_def.name}'"
+            ),
+        ):
+            tags = job_def.get_tags_for_partition_key(partition_name, selected_asset_keys=None)
+            return ExternalPartitionTagsData(name=partition_name, tags=tags)
 
     except Exception:
         return ExternalPartitionExecutionErrorData(
@@ -528,29 +499,24 @@ def get_external_execution_plan_snapshot(
     job_name: str,
     args: ExecutionPlanSnapshotArgs,
 ):
-    try:
-        job_def = repo_def.get_maybe_subset_job_def(
-            job_name,
-            op_selection=args.op_selection,
-            asset_selection=args.asset_selection,
-            asset_check_selection=args.asset_check_selection,
-        )
+    job_def = repo_def.get_maybe_subset_job_def(
+        job_name,
+        op_selection=args.op_selection,
+        asset_selection=args.asset_selection,
+        asset_check_selection=args.asset_check_selection,
+    )
 
-        return snapshot_from_execution_plan(
-            create_execution_plan(
-                job_def,
-                run_config=args.run_config,
-                step_keys_to_execute=args.step_keys_to_execute,
-                known_state=args.known_state,
-                instance_ref=args.instance_ref,
-                repository_load_data=repo_def.repository_load_data,
-            ),
-            args.job_snapshot_id,
-        )
-    except:
-        return ExecutionPlanSnapshotErrorData(
-            error=serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    return snapshot_from_execution_plan(
+        create_execution_plan(
+            job_def,
+            run_config=args.run_config,
+            step_keys_to_execute=args.step_keys_to_execute,
+            known_state=args.known_state,
+            instance_ref=args.instance_ref,
+            repository_load_data=repo_def.repository_load_data,
+        ),
+        args.job_snapshot_id,
+    )
 
 
 def get_partition_set_execution_param_data(

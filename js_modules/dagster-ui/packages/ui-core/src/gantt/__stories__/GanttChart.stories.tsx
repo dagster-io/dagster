@@ -7,7 +7,7 @@ import {GraphQueryItem} from '../../app/GraphQueryImpl';
 import {RunStatus, buildRun, buildRunGroup, buildRunStatsSnapshot} from '../../graphql/types';
 import {extractMetadataFromLogs} from '../../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../../runs/types/RunMetadataProvider.types';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {GanttChart, GanttChartLoadingState} from '../GanttChart';
 import {RUN_GROUP_PANEL_QUERY} from '../RunGroupPanel';
 import * as Dynamic from '../__fixtures__/dynamic';

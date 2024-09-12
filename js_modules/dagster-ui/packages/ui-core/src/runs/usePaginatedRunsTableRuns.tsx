@@ -1,13 +1,11 @@
-import {gql} from '@apollo/client';
-
 import {RUN_TABLE_RUN_FRAGMENT} from './RunTableRunFragment';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/usePaginatedRunsTableRuns.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PAGE_SIZE} from '../assets/AutoMaterializePolicyPage/useEvaluationsQueryResult';
 import {RunsFilter} from '../graphql/types';
 
-export function usePaginatedRunsTableRuns(filter: RunsFilter) {
+export function usePaginatedRunsTableRuns(filter: RunsFilter, pageSize: number) {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
     RunsRootQueryVariables
@@ -16,7 +14,7 @@ export function usePaginatedRunsTableRuns(filter: RunsFilter) {
       if (runs.pipelineRunsOrError.__typename !== 'Runs') {
         return undefined;
       }
-      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.id;
+      return runs.pipelineRunsOrError.results[pageSize - 1]?.id;
     },
     getResultArray: (data) => {
       if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
@@ -28,7 +26,7 @@ export function usePaginatedRunsTableRuns(filter: RunsFilter) {
       filter,
     },
     query: RUNS_ROOT_QUERY,
-    pageSize: PAGE_SIZE,
+    pageSize,
   });
   return {queryResult, paginationProps};
 }

@@ -12,8 +12,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._utils import mkdir_p
 from dagster._utils.yaml_utils import load_yaml_from_path
 
-from .executor import CeleryExecutor, celery_executor
-from .make_app import make_app
+from dagster_celery.executor import CeleryExecutor, celery_executor
+from dagster_celery.make_app import make_app
 
 
 def create_worker_cli_group():

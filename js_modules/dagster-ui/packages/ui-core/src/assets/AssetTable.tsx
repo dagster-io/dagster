@@ -1,4 +1,3 @@
-import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
@@ -19,10 +18,10 @@ import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
+import {RefetchQueriesFunction} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
-import {AssetKeyInput, DefinitionTag} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -40,8 +39,8 @@ interface Props {
   displayPathForAsset: (asset: Asset) => string[];
   searchPath: string;
   isFiltered: boolean;
-  computeKindFilter?: StaticSetFilter<string>;
-  storageKindFilter?: StaticSetFilter<DefinitionTag>;
+  kindFilter?: StaticSetFilter<string>;
+  isLoading: boolean;
 }
 
 export const AssetTable = ({
@@ -54,11 +53,9 @@ export const AssetTable = ({
   searchPath,
   isFiltered,
   view,
-  computeKindFilter,
-  storageKindFilter,
+  kindFilter,
+  isLoading,
 }: Props) => {
-  const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
-
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
     [assets, displayPathForAsset],
@@ -139,11 +136,11 @@ export const AssetTable = ({
         groups={groupedByDisplayKey}
         checkedDisplayKeys={checkedDisplayKeys}
         onToggleFactory={onToggleFactory}
+        onRefresh={() => refreshState.refetch()}
         showRepoColumn
         view={view}
-        onWipe={(assetKeys: AssetKeyInput[]) => setToWipe(assetKeys)}
-        computeKindFilter={computeKindFilter}
-        storageKindFilter={storageKindFilter}
+        kindFilter={kindFilter}
+        isLoading={isLoading}
       />
     );
   };
@@ -188,12 +185,6 @@ export const AssetTable = ({
         {belowActionBarComponents}
         {content()}
       </Box>
-      <AssetWipeDialog
-        assetKeys={toWipe || []}
-        isOpen={!!toWipe}
-        onClose={() => setToWipe(undefined)}
-        onComplete={() => refreshState.refetch()}
-      />
     </>
   );
 };

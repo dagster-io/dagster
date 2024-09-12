@@ -1,8 +1,8 @@
 import graphene
 
-from .asset_key import GrapheneAssetKey
-from .errors import GraphenePythonError
-from .util import non_null_list
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.errors import GraphenePythonError
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneRunsFeedEntry(graphene.Interface):

@@ -3,8 +3,8 @@
 # Examples:
 #   - See `worker_start_command` in dagster_celery.cli
 #   - deployment-flower.yaml helm chart
-from .make_app import make_app
-from .tasks import create_execute_job_task, create_resume_job_task, create_task
+from dagster_celery.make_app import make_app
+from dagster_celery.tasks import create_execute_job_task, create_resume_job_task, create_task
 
 app = make_app()
 

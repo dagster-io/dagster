@@ -1,6 +1,7 @@
 import {assetNodes} from './LaunchAssetLoaderQuery.fixtures';
+import {LaunchAssetChoosePartitionsDialogProps} from '../LaunchAssetChoosePartitionsDialog';
 
-export const ReleasesJobProps = {
+export const ReleasesJobProps: Omit<LaunchAssetChoosePartitionsDialogProps, 'open' | 'setOpen'> = {
   assets: assetNodes,
   upstreamAssetKeys: [],
   repoAddress: {
@@ -10,7 +11,6 @@ export const ReleasesJobProps = {
   target: {
     type: 'job' as const,
     jobName: '__ASSET_JOB_0',
-    partitionSetName: '__ASSET_JOB_0_partition_set',
+    assetKeys: [{path: ['asset_key_1']}],
   },
-  open: true,
 };

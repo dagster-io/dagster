@@ -1,0 +1,8 @@
+[tool.ruff]
+extend = "../pyproject.toml"
+
+[tool.ruff.lint]
+extend-ignore = [
+    # (relative imports): relative imports are acceptable in examples & docs
+    "TID252"
+]

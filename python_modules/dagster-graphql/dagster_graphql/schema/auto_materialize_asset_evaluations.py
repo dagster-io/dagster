@@ -1,7 +1,6 @@
 from typing import Optional, Sequence, Tuple
 
 import graphene
-from dagster import PartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
 from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -11,34 +10,16 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializeRule
 from dagster_graphql.schema.errors import GrapheneError
-
-from .asset_key import GrapheneAssetKey
-from .auto_materialize_policy import GrapheneAutoMaterializeRule
-from .util import non_null_list
+from dagster_graphql.schema.partition_keys import (
+    GraphenePartitionKeys,
+    GraphenePartitionKeysOrError,
+)
+from dagster_graphql.schema.util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
-
-
-class GraphenePartitionKeys(graphene.ObjectType):
-    partitionKeys = non_null_list(graphene.String)
-
-    class Meta:
-        name = "PartitionKeys"
-
-
-class GraphenePartitionSubsetDeserializationError(graphene.ObjectType):
-    message = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneError,)
-        name = "PartitionSubsetDeserializationError"
-
-
-class GraphenePartitionKeysOrError(graphene.Union):
-    class Meta:
-        types = (GraphenePartitionKeys, GraphenePartitionSubsetDeserializationError)
-        name = "PartitionKeysOrError"
 
 
 class GrapheneTextRuleEvaluationData(graphene.ObjectType):
@@ -242,12 +223,8 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     class Meta:
         name = "AutoMaterializeAssetEvaluationRecord"
 
-    def __init__(
-        self,
-        record: AutoMaterializeAssetEvaluationRecord,
-        partitions_def: Optional[PartitionsDefinition],
-    ):
-        evaluation_with_run_ids = record.get_evaluation_with_run_ids(partitions_def=partitions_def)
+    def __init__(self, record: AutoMaterializeAssetEvaluationRecord):
+        evaluation_with_run_ids = record.get_evaluation_with_run_ids()
         evaluation = evaluation_with_run_ids.evaluation
         (
             rules,

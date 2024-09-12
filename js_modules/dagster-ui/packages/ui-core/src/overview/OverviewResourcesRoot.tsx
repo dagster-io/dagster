@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
@@ -10,21 +9,21 @@ import {
   OverviewResourcesQueryVariables,
 } from './types/OverviewResourcesRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RESOURCE_ENTRY_FRAGMENT} from '../resources/WorkspaceResourcesRoot';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesRoot.types';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {WorkspaceLocationNodeFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 export const OverviewResourcesRoot = () => {
   useTrackPageView();
@@ -51,7 +50,6 @@ export const OverviewResourcesRoot = () => {
     },
   );
   const {data, loading: queryLoading} = queryResultOverview;
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewResourcesQuery');
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.

@@ -10,8 +10,7 @@ defs = Definitions(
     schedules=schedules,
     resources={
         "sdf": SdfCliResource(
-            workspace_dir=sdf_workspace_dir,
-            global_config_flags=["--log-form=nested"]
+            workspace_dir=sdf_workspace_dir
         ),
     },
 )

@@ -14,9 +14,8 @@ from dagster._config import Field, StringSource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.temp_file_manager import TempfileManager
 from dagster._utils import mkdir_p
-
-from .temp_file_manager import TempfileManager
 
 IOStream: TypeAlias = Union[TextIO, BinaryIO]
 

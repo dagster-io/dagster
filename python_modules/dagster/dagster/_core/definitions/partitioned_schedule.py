@@ -1,25 +1,24 @@
 from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._core.errors import DagsterInvalidDefinitionError
-
-from .decorators.schedule_decorator import schedule
-from .job_definition import JobDefinition
-from .multi_dimensional_partitions import MultiPartitionsDefinition
-from .partition import PartitionsDefinition, StaticPartitionsDefinition
-from .run_request import RunRequest, SkipReason
-from .schedule_definition import (
+from dagster._core.definitions.decorators.schedule_decorator import schedule
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.schedule_definition import (
     DefaultScheduleStatus,
     RunRequestIterator,
     ScheduleDefinition,
     ScheduleEvaluationContext,
 )
-from .time_window_partitions import (
+from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
     has_one_dimension_time_window_partitioning,
 )
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
@@ -75,9 +74,9 @@ def build_schedule_from_partitioned_job(
 ) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
     """Creates a schedule from a job that targets
     time window-partitioned or statically-partitioned assets. The job can also be
-    multi-partitioned, as long as one of the partition dimensions is time-partitioned. Refer to the `Partitions API reference </_apidocs/partitions#partitioned-config>`_ for information about time-based run configuration.
+    multi-partitioned, as long as one of the partition dimensions is time-partitioned.
 
-    The schedule executes at the cadence specified by the time partitioning of the job or assets. Refer to the `Partitions documentation </concepts/partitions-schedules-sensors/partitions>`_ for more information.
+    The schedule executes at the cadence specified by the time partitioning of the job or assets.
 
     **Example:**
         .. code-block:: python

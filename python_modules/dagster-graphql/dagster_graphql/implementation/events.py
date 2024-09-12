@@ -44,7 +44,7 @@ MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[Any]:
-    from ..schema.metadata import (
+    from dagster_graphql.schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
         GrapheneCodeReferencesMetadataEntry,
@@ -68,7 +68,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneUrlCodeReference,
         GrapheneUrlMetadataEntry,
     )
-    from ..schema.table import GrapheneTable, GrapheneTableSchema
+    from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
     check.mapping_param(metadata, "metadata", key_type=str)
     for key, value in metadata.items():
@@ -215,8 +215,8 @@ def _to_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Sequence[Any]
 # non-type-checker legible relationship between `event_type` and the class of `event_specific_data`.
 @no_type_check
 def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
-    from ..schema.errors import GraphenePythonError
-    from ..schema.logs.events import (
+    from dagster_graphql.schema.errors import GraphenePythonError
+    from dagster_graphql.schema.logs.events import (
         GrapheneAlertFailureEvent,
         GrapheneAlertStartEvent,
         GrapheneAlertSuccessEvent,
@@ -475,7 +475,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             assetKey=data.asset_key, checkName=data.check_name, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
-        from ..schema.asset_checks import GrapheneAssetCheckEvaluation
+        from dagster_graphql.schema.asset_checks import GrapheneAssetCheckEvaluation
 
         evaluation = GrapheneAssetCheckEvaluation(event_record)
         return GrapheneAssetCheckEvaluationEvent(evaluation=evaluation, **basic_params)
@@ -485,7 +485,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
 
 
 def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
-    from ..schema.logs.events import GrapheneLogMessageEvent
+    from dagster_graphql.schema.logs.events import GrapheneLogMessageEvent
 
     check.inst_param(event_record, "event_record", EventLogEntry)
     check.str_param(pipeline_name, "pipeline_name")
@@ -497,7 +497,7 @@ def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
 
 
 def construct_basic_params(event_record: EventLogEntry) -> Any:
-    from ..schema.logs.log_level import GrapheneLogLevel
+    from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 
     check.inst_param(event_record, "event_record", EventLogEntry)
     dagster_event = event_record.dagster_event

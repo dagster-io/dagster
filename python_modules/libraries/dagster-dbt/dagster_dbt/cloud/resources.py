@@ -22,7 +22,7 @@ from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
 
-from .types import DbtCloudOutput
+from dagster_dbt.cloud.types import DbtCloudOutput
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
 DBT_API_V2_PATH = "api/v2/accounts/"

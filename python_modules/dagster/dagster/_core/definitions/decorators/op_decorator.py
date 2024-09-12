@@ -26,18 +26,17 @@ from dagster._core.decorator_utils import (
     positional_arg_name_list,
 )
 from dagster._core.definitions.inference import infer_input_props
+from dagster._core.definitions.input import In, InputDefinition
+from dagster._core.definitions.output import Out
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.warnings import config_argument_warning, normalize_renamed_param
 
-from ..input import In, InputDefinition
-from ..output import Out
-from ..policy import RetryPolicy
-from ..utils import DEFAULT_OUTPUT
-
 if TYPE_CHECKING:
-    from ..op_definition import OpDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
 
 
 class _Op:
@@ -75,8 +74,7 @@ class _Op:
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
         from dagster._config.pythonic_config import validate_resource_annotated_function
-
-        from ..op_definition import OpDefinition
+        from dagster._core.definitions.op_definition import OpDefinition
 
         validate_resource_annotated_function(fn)
 
@@ -336,7 +334,7 @@ class DecoratedOpFunction(NamedTuple):
         return len(params) > 0 and param_is_var_keyword(params[-1])
 
     def get_output_annotation(self) -> Any:
-        from ..inference import infer_output_props
+        from dagster._core.definitions.inference import infer_output_props
 
         return infer_output_props(self.decorated_fn).annotation
 

@@ -17,10 +17,9 @@ from dagster._utils.merger import merge_dicts
 from pydantic import Field
 from typing_extensions import Literal
 
+from dagster_azure.adls2.file_manager import ADLS2FileManager
+from dagster_azure.adls2.utils import DataLakeServiceClient, create_adls2_client
 from dagster_azure.blob.utils import BlobServiceClient, create_blob_client
-
-from .file_manager import ADLS2FileManager
-from .utils import DataLakeServiceClient, create_adls2_client
 
 
 class ADLS2SASToken(Config):

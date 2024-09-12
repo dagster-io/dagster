@@ -26,7 +26,7 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
 from typing_extensions import Self
 
-from .utils import create_blob_client, generate_blob_sas
+from dagster_azure.blob.utils import create_blob_client, generate_blob_sas
 
 
 class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):

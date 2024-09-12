@@ -13,21 +13,19 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.utils import NormalizedTags, check_valid_name, normalize_tags
 from dagster._core.errors import DagsterInvariantViolationError
 
-from .hook_definition import HookDefinition
-from .utils import NormalizedTags, check_valid_name, normalize_tags
-
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+    from dagster._core.definitions.input import InputDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
+    from dagster._core.definitions.output import OutputDefinition
     from dagster._core.types.dagster_type import DagsterType
-
-    from .asset_layer import AssetLayer
-    from .composition import PendingNodeInvocation
-    from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
-    from .input import InputDefinition
-    from .op_definition import OpDefinition
-    from .output import OutputDefinition
 
 
 # base class for OpDefinition and GraphDefinition
@@ -199,7 +197,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ) -> "PendingNodeInvocation":
-        from .composition import PendingNodeInvocation
+        from dagster._core.definitions.composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
             node_def=self,

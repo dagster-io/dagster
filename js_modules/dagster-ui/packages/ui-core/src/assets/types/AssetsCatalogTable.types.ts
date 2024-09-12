@@ -29,7 +29,16 @@ export type AssetCatalogTableQuery = {
             computeKind: string | null;
             hasMaterializePermission: boolean;
             description: string | null;
-            partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+            kinds: Array<string>;
+            partitionDefinition: {
+              __typename: 'PartitionDefinition';
+              description: string;
+              dimensionTypes: Array<{
+                __typename: 'DimensionDefinitionType';
+                type: Types.PartitionDefinitionType;
+                dynamicPartitionsDefinitionName: string | null;
+              }>;
+            } | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
@@ -74,8 +83,17 @@ export type AssetCatalogGroupTableQuery = {
     computeKind: string | null;
     hasMaterializePermission: boolean;
     description: string | null;
+    kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
-    partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+    partitionDefinition: {
+      __typename: 'PartitionDefinition';
+      description: string;
+      dimensionTypes: Array<{
+        __typename: 'DimensionDefinitionType';
+        type: Types.PartitionDefinitionType;
+        dynamicPartitionsDefinitionName: string | null;
+      }>;
+    } | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
@@ -101,8 +119,17 @@ export type AssetCatalogGroupTableNodeFragment = {
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
+  kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
-  partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;

@@ -1,4 +1,3 @@
-import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
@@ -20,6 +19,7 @@ import {
 } from './types/AssetsCatalogTable.types';
 import {AssetViewType, useAssetView} from './useAssetView';
 import {useBasicAssetSearchInput} from './useBasicAssetSearchInput';
+import {gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -89,7 +89,10 @@ export function useAllAssets({
     ),
   });
 
-  const fetchAssets = useCallback(async () => {
+  const allAssetsQuery = useCallback(async () => {
+    if (groupSelector) {
+      return;
+    }
     try {
       const data = await fetchPaginatedData({
         async fetchData(cursor: string | null | undefined) {
@@ -134,11 +137,7 @@ export function useAllAssets({
         }));
       }
     }
-  }, [batchLimit, cacheManager, client]);
-
-  useEffect(() => {
-    fetchAssets();
-  }, [fetchAssets]);
+  }, [batchLimit, cacheManager, client, groupSelector]);
 
   const groupQuery = useCallback(async () => {
     if (!groupSelector) {
@@ -166,14 +165,20 @@ export function useAllAssets({
     onData(data);
   }, [groupSelector, client]);
 
+  const query = groupSelector ? groupQuery : allAssetsQuery;
+
+  useEffect(() => {
+    query();
+  }, [query]);
+
   return useMemo(() => {
     return {
       assets,
       error,
       loading: !assets && !error,
-      query: groupSelector ? groupQuery : fetchAssets,
+      query,
     };
-  }, [assets, error, fetchAssets, groupQuery, groupSelector]);
+  }, [assets, error, query]);
 }
 
 interface AssetCatalogTableProps {
@@ -198,12 +203,12 @@ export const AssetsCatalogTable = ({
   const {assets, query, error} = useAllAssets({groupSelector});
 
   const {
-    filtered: partiallyFiltered,
+    filteredAssets: partiallyFiltered,
+    filteredAssetsLoading,
     isFiltered,
     filterButton,
     activeFiltersJsx,
-    computeKindFilter,
-    storageKindFilter,
+    kindFilter,
   } = useAssetCatalogFiltering({assets});
 
   const {searchPath, filterInput, filtered} = useBasicAssetSearchInput(
@@ -216,8 +221,8 @@ export const AssetsCatalogTable = ({
   const {displayPathForAsset, displayed} = useMemo(
     () =>
       view === 'flat'
-        ? buildFlatProps(filtered, prefixPath)
-        : buildNamespaceProps(filtered, prefixPath),
+        ? buildFlatProps(filtered as AssetTableFragment[], prefixPath)
+        : buildNamespaceProps(filtered as AssetTableFragment[], prefixPath),
     [filtered, prefixPath, view],
   );
 
@@ -253,6 +258,7 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
+      isLoading={filteredAssetsLoading}
       isFiltered={isFiltered}
       actionBarComponents={
         <>
@@ -280,8 +286,7 @@ export const AssetsCatalogTable = ({
       prefixPath={prefixPath || emptyArray}
       searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
-      computeKindFilter={computeKindFilter}
-      storageKindFilter={storageKindFilter}
+      kindFilter={kindFilter}
     />
   );
 };

@@ -4,8 +4,8 @@ from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, res
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
-from .file_manager import S3FileManager
-from .utils import construct_s3_client
+from dagster_aws.s3.file_manager import S3FileManager
+from dagster_aws.s3.utils import construct_s3_client
 
 T = TypeVar("T")
 

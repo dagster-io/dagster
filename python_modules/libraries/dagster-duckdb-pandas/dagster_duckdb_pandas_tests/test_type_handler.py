@@ -9,7 +9,9 @@ from dagster import (
     AssetIn,
     AssetKey,
     DailyPartitionsDefinition,
+    Definitions,
     DynamicPartitionsDefinition,
+    MetadataValue,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
@@ -101,6 +103,31 @@ def test_duckdb_io_manager_with_assets(tmp_path, io_managers):
             assert out_df["a"].tolist() == [2, 3, 4]
 
             duckdb_conn.close()
+
+
+def test_io_manager_asset_metadata(tmp_path) -> None:
+    @asset
+    def my_pandas_df() -> pd.DataFrame:
+        return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    db_file = os.path.join(tmp_path, "unit_test.duckdb")
+    defs = Definitions(
+        assets=[my_pandas_df],
+        resources={
+            "io_manager": DuckDBPandasIOManager(database=db_file, schema="custom_schema"),
+        },
+    )
+
+    res = defs.get_implicit_global_asset_job_def().execute_in_process()
+    assert res.success
+
+    mats = res.get_asset_materialization_events()
+    assert len(mats) == 1
+    mat = mats[0]
+
+    assert mat.materialization.metadata["dagster/relation_identifier"] == MetadataValue.text(
+        f"{db_file}.custom_schema.my_pandas_df"
+    )
 
 
 def test_duckdb_io_manager_with_schema(tmp_path):

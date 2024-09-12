@@ -27,7 +27,7 @@ from dagster._time import get_current_datetime
 from sqlalchemy import event
 from sqlalchemy.engine import Connection
 
-from ..utils import (
+from dagster_postgres.utils import (
     create_pg_connection,
     pg_alembic_config,
     pg_url_from_config,

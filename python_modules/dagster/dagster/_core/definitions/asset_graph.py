@@ -80,6 +80,10 @@ class AssetNode(BaseAssetNode):
         return self._spec.tags
 
     @property
+    def kinds(self) -> AbstractSet[str]:
+        return self._spec.kinds or set()
+
+    @property
     def owners(self) -> Sequence[str]:
         return self._spec.owners
 

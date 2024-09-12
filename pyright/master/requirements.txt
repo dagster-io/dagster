@@ -37,7 +37,7 @@
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
 -e python_modules/libraries/dagster-airflow[test_airflow_2]
--e python_modules/libraries/dagster-aws[test]
+-e python_modules/libraries/dagster-aws[stubs,test]
 -e python_modules/libraries/dagster-azure/
 -e python_modules/libraries/dagster-celery/
 -e python_modules/libraries/dagster-celery-docker/
@@ -76,6 +76,7 @@
 -e python_modules/libraries/dagster-papertrail/
 -e python_modules/libraries/dagster-polars[deltalake,gcp,test]
 -e python_modules/libraries/dagster-postgres/
+-e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
 -e python_modules/libraries/dagster-sdf/
@@ -130,5 +131,5 @@ pendulum<3
 -e examples/experimental/dagster-blueprints
 -e examples/experimental/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-airlift/examples/dbt-example
--e examples/experimental/dagster-airlift/examples/simple-migration
+-e examples/experimental/dagster-airlift/examples/tutorial-example
 -e examples/use_case_repository[dev]

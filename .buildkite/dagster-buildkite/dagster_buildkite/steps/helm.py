@@ -1,10 +1,10 @@
 import os
 from typing import List
 
-from ..package_spec import PackageSpec
-from ..python_version import AvailablePythonVersion
-from ..step_builder import CommandStepBuilder
-from ..utils import (
+from dagster_buildkite.package_spec import PackageSpec
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import CommandStepBuilder
+from dagster_buildkite.utils import (
     BuildkiteLeafStep,
     BuildkiteStep,
     CommandStep,

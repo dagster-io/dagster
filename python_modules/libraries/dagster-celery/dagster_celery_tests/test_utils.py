@@ -1,6 +1,6 @@
 import os
 
-from .utils import tempdir_wrapper
+from dagster_celery_tests.utils import tempdir_wrapper
 
 
 def test_tempdir_wrapper():

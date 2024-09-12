@@ -4,21 +4,23 @@ import dagster._check as check
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 
+from dagster_graphql.implementation.external import (
+    get_external_job_or_raise,
+    get_full_external_job_or_raise,
+)
+from dagster_graphql.implementation.utils import JobSubsetSelector, UserFacingGraphQLError
 from dagster_graphql.schema.util import ResolveInfo
 
-from .external import get_external_job_or_raise, get_full_external_job_or_raise
-from .utils import JobSubsetSelector, UserFacingGraphQLError
-
 if TYPE_CHECKING:
-    from ..schema.pipelines.pipeline import GraphenePipeline
-    from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
-    from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
+    from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
+    from dagster_graphql.schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
+    from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshot
 
 
 def get_job_snapshot_or_error_from_job_selector(
     graphene_info: ResolveInfo, job_selector: JobSubsetSelector
 ) -> "GraphenePipelineSnapshot":
-    from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
+    from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshot
 
     check.inst_param(job_selector, "pipeline_selector", JobSubsetSelector)
     return GraphenePipelineSnapshot(get_full_external_job_or_raise(graphene_info, job_selector))
@@ -37,7 +39,7 @@ def get_job_snapshot_or_error_from_snap_or_selector(
     job_selector: JobSubsetSelector,
     snapshot_id: str,
 ):
-    from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
+    from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshot
 
     if graphene_info.context.instance.has_job_snapshot(snapshot_id):
         job_snapshot = graphene_info.context.instance.get_historical_job(snapshot_id)
@@ -51,8 +53,8 @@ def get_job_snapshot_or_error_from_snap_or_selector(
 def _get_job_snapshot_from_instance(
     instance: DagsterInstance, snapshot_id: str
 ) -> "GraphenePipelineSnapshot":
-    from ..schema.errors import GraphenePipelineSnapshotNotFoundError
-    from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
+    from dagster_graphql.schema.errors import GraphenePipelineSnapshotNotFoundError
+    from dagster_graphql.schema.pipelines.snapshot import GraphenePipelineSnapshot
 
     if not instance.has_job_snapshot(snapshot_id):
         raise UserFacingGraphQLError(GraphenePipelineSnapshotNotFoundError(snapshot_id))
@@ -85,7 +87,7 @@ def get_job_reference_or_raise(
     reference cannot be retrieved based on the run, e.g, a UserFacingGraphQLError that wraps an
     InvalidSubsetError.
     """
-    from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
+    from dagster_graphql.schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
 
     check.inst_param(dagster_run, "pipeline_run", DagsterRun)
     op_selection = (
@@ -103,7 +105,7 @@ def get_job_reference_or_raise(
 def get_job_from_selector(
     graphene_info: ResolveInfo, selector: JobSubsetSelector
 ) -> "GraphenePipeline":
-    from ..schema.pipelines.pipeline import GraphenePipeline
+    from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 

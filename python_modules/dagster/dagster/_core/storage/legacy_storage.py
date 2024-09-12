@@ -9,13 +9,9 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
-from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import PrintFn
-from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
-
-from .base_storage import DagsterStorage
-from .event_log.base import (
+from dagster._core.storage.base_storage import DagsterStorage
+from dagster._core.storage.event_log.base import (
+    AssetCheckSummaryRecord,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
@@ -24,8 +20,11 @@ from .event_log.base import (
     EventRecordsResult,
     PlannedMaterializationInfo,
 )
-from .runs.base import RunStorage
-from .schedules.base import ScheduleStorage
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -33,7 +32,11 @@ if TYPE_CHECKING:
     from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionsFilter,
+        BulkActionStatus,
+        PartitionBackfill,
+    )
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.instance import DagsterInstance
     from dagster._core.remote_representation.origin import RemoteJobOrigin
@@ -309,11 +312,14 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def get_backfills(
         self,
-        status: Optional["BulkActionStatus"] = None,
+        filters: Optional["BulkActionsFilter"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._storage.run_storage.get_backfills(status, cursor, limit)
+        return self._storage.run_storage.get_backfills(
+            cursor=cursor, limit=limit, filters=filters, status=status
+        )
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)

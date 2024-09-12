@@ -10,7 +10,7 @@ from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.captured_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
@@ -20,7 +20,7 @@ from dagster_gcp.gcs import GCSComputeLogManager
 from google.cloud import storage
 
 ensure_dagster_tests_import()
-from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
+from dagster_tests.storage_tests.test_compute_log_manager import TestComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -337,11 +337,11 @@ def test_storage_download_url_fallback(gcs_bucket):
 
 
 @pytest.mark.integration
-class TestGCSComputeLogManager(TestCapturedLogManager):
+class TestGCSComputeLogManager(TestComputeLogManager):
     __test__ = True
 
-    @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(self, gcs_bucket):
+    @pytest.fixture(name="compute_log_manager")
+    def compute_log_manager(self, gcs_bucket):
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
 

@@ -14,9 +14,15 @@ interface Props {
   loading: boolean;
   codeLocations: CodeLocationRowType[];
   searchValue: string;
+  isFilteredView: boolean;
 }
 
-export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: Props) => {
+export const RepositoryLocationsList = ({
+  loading,
+  codeLocations,
+  searchValue,
+  isFilteredView,
+}: Props) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -50,6 +56,18 @@ export const RepositoryLocationsList = ({loading, codeLocations, searchValue}: P
                 No code locations were found for search query <strong>{searchValue}</strong>.
               </div>
             }
+          />
+        </Box>
+      );
+    }
+
+    if (isFilteredView) {
+      return (
+        <Box padding={{vertical: 32}}>
+          <NonIdealState
+            icon="folder"
+            title="No matching code locations"
+            description={<div>No code locations were found for these filter settings.</div>}
           />
         </Box>
       );

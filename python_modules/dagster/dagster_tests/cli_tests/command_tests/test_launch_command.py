@@ -8,7 +8,7 @@ from dagster._core.test_utils import new_cwd
 from dagster._core.utils import make_new_run_id
 from dagster._utils import file_relative_path
 
-from .test_cli_commands import (
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     default_cli_test_instance,
     launch_command_contexts,
     non_existant_python_file_workspace_args,

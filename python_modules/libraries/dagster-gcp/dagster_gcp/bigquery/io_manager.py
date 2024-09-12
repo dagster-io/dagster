@@ -18,7 +18,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 from pydantic import Field
 
-from .utils import setup_gcp_creds
+from dagster_gcp.bigquery.utils import setup_gcp_creds
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

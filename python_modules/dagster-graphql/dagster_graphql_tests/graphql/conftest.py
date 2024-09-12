@@ -3,11 +3,10 @@ import tempfile
 import pytest
 from dagster._core.test_utils import instance_for_test
 
+from dagster_graphql_tests.graphql.repo import define_test_out_of_process_context
 from dagster_graphql_tests.graphql.repo_definitions import (
     define_definitions_test_out_of_process_context,
 )
-
-from .repo import define_test_out_of_process_context
 
 
 @pytest.yield_fixture(scope="function")

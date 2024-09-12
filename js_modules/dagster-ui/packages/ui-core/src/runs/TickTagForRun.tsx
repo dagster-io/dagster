@@ -32,7 +32,7 @@ export const TickTagForRun = ({instigationSelector, instigationType, tickId}: Pr
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         instigationSelector={instigationSelector}
-        tickId={Number(tickId)}
+        tickId={tickId}
       />
     </>
   );

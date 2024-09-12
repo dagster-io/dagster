@@ -15,7 +15,7 @@ from dagster import (
 )
 from dagster._core.types.dagster_type import PythonObjectDagsterType
 
-from .file_manager import S3FileHandle
+from dagster_aws.s3.file_manager import S3FileHandle
 
 
 def dict_with_fields(name: str, fields: Mapping[str, object]):

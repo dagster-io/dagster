@@ -1,9 +1,9 @@
 # start_marker
 import pandas as pd
-from dagster import AssetKey, SourceAsset, asset
+from dagster import AssetKey, AssetSpec, Definitions, asset
 from pandas import DataFrame
 
-sfo_q2_weather_sample = SourceAsset(
+sfo_q2_weather_sample = AssetSpec(
     key=AssetKey("sfo_q2_weather_sample"),
     description="Weather samples, taken every five minutes at SFO",
     metadata={"format": "csv"},
@@ -22,5 +22,7 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     """Computes the 10 hottest dates."""
     return daily_temperature_highs.nlargest(10, "max_tmpf")
 
+
+defs = Definitions(assets=[sfo_q2_weather_sample, daily_temperature_highs, hottest_dates])
 
 # end_marker

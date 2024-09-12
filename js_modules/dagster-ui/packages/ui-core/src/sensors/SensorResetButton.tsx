@@ -1,10 +1,10 @@
-import {useMutation} from '@apollo/client';
 import {Button, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {RESET_SENSOR_MUTATION, displaySensorMutationErrors} from './SensorMutations';
 import {SensorFragment} from './types/SensorFragment.types';
 import {ResetSensorMutation, ResetSensorMutationVariables} from './types/SensorMutations.types';
+import {useMutation} from '../apollo-client';
 import {DEFAULT_DISABLED_REASON, usePermissionsForLocation} from '../app/Permissions';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -42,7 +42,10 @@ export const SensorResetButton = ({repoAddress, sensor}: Props) => {
     : DEFAULT_DISABLED_REASON;
 
   return (
-    <Tooltip content={tooltipContent} display="flex">
+    <Tooltip
+      content={<div style={{maxWidth: '500px', wordBreak: 'break-word'}}>{tooltipContent}</div>}
+      display="flex"
+    >
       <Button disabled={disabled} onClick={onClick}>
         Reset sensor status
       </Button>

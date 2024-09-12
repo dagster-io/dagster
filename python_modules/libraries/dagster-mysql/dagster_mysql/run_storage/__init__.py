@@ -1,1 +1,1 @@
-from .run_storage import MySQLRunStorage as MySQLRunStorage
+from dagster_mysql.run_storage.run_storage import MySQLRunStorage as MySQLRunStorage

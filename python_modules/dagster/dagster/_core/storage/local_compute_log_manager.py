@@ -18,20 +18,18 @@ from dagster import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.execution.compute_logs import mirror_stream_to_file
+from dagster._core.storage.compute_log_manager import (
+    CapturedLogContext,
+    CapturedLogData,
+    CapturedLogMetadata,
+    CapturedLogSubscription,
+    ComputeIOType,
+    ComputeLogManager,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._seven import json
 from dagster._utils import ensure_dir, ensure_file, touch_file
 from dagster._utils.security import non_secure_md5_hash_str
-
-from .captured_log_manager import (
-    CapturedLogContext,
-    CapturedLogData,
-    CapturedLogManager,
-    CapturedLogMetadata,
-    CapturedLogSubscription,
-    ComputeIOType,
-)
-from .compute_log_manager import ComputeLogManager
 
 DEFAULT_WATCHDOG_POLLING_TIMEOUT: Final = 2.5
 
@@ -43,7 +41,7 @@ IO_TYPE_EXTENSION: Final[Mapping[ComputeIOType, str]] = {
 MAX_FILENAME_LENGTH: Final = 255
 
 
-class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
+class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     """Stores copies of stdout & stderr for each compute step locally on disk."""
 
     def __init__(
@@ -323,7 +321,7 @@ class LocalComputeLogSubscriptionManager:
         )
 
         if not self._observer:
-            self._observer = PollingObserver(self._manager.polling_timeout)
+            self._observer = PollingObserver(timeout=self._manager.polling_timeout)
             self._observer.start()
 
         ensure_dir(directory)

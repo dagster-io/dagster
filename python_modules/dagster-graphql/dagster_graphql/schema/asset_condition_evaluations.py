@@ -11,13 +11,12 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-
-from .asset_key import GrapheneAssetKey
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class AssetConditionEvaluationStatus(enum.Enum):
@@ -274,7 +273,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
         record: AutoMaterializeAssetEvaluationRecord,
         partitions_def: Optional[PartitionsDefinition],
     ):
-        evaluation_with_run_ids = record.get_evaluation_with_run_ids(partitions_def)
+        evaluation_with_run_ids = record.get_evaluation_with_run_ids()
         root_evaluation = evaluation_with_run_ids.evaluation
 
         flattened_evaluations = _flatten_evaluation(evaluation_with_run_ids.evaluation)

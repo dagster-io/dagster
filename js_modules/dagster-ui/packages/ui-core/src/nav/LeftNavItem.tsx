@@ -1,4 +1,3 @@
-import {gql, useFragment, useQuery} from '@apollo/client';
 import {Colors, Icon, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useEffect, useMemo, useState} from 'react';
@@ -9,11 +8,12 @@ import {LeftNavItemType} from './LeftNavItemType';
 import {Item} from './RepositoryContentList';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 import {InstigationStatesQuery, InstigationStatesQueryVariables} from './types/LeftNavItem.types';
+import {gql, useFragment, useQuery} from '../apollo-client';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
 import {humanCronString} from '../schedules/humanCronString';
-import {useRepository} from '../workspace/WorkspaceContext';
+import {useRepository} from '../workspace/WorkspaceContext/util';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface LeftNavItemProps {

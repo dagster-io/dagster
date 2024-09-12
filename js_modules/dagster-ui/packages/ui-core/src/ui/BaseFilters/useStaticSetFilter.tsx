@@ -339,7 +339,15 @@ export function SetFilterActiveState({
             interactionKind="hover"
             position="bottom"
             content={
-              <Box padding={{vertical: 8, horizontal: 12}} flex={{direction: 'column', gap: 4}}>
+              <Box
+                padding={{vertical: 8, horizontal: 12}}
+                style={{
+                  maxHeight: 'min(500px, 50vh)',
+                  overflowY: 'scroll',
+                  display: 'grid',
+                  gap: 4,
+                }}
+              >
                 {arr.map((value, index) => (
                   <div
                     key={index}

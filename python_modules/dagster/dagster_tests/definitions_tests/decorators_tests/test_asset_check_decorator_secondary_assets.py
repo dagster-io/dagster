@@ -12,7 +12,9 @@ from dagster import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 
-from .test_asset_check_decorator import execute_assets_and_checks
+from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (
+    execute_assets_and_checks,
+)
 
 
 @asset

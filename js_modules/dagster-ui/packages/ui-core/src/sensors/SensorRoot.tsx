@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
@@ -14,6 +13,7 @@ import {
   SensorRootQuery,
   SensorRootQueryVariables,
 } from './types/SensorRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -24,7 +24,6 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -69,7 +68,6 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(queryResult, 'SensorRootQuery');
 
   const selectionQueryResult = useQuery<
     SensorAssetSelectionQuery,
@@ -78,7 +76,6 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(selectionQueryResult, 'SensorAssetSelectionQuery');
 
   const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);

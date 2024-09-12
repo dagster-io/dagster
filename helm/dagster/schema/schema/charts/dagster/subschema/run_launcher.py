@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field
 
-from ...utils import kubernetes
-from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
+from schema.charts.utils import kubernetes
+from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class RunLauncherType(str, Enum):

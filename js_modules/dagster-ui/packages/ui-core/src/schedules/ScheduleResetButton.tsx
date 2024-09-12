@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 import {Button, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
@@ -8,6 +7,7 @@ import {
   ResetScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
+import {useMutation} from '../apollo-client';
 import {DEFAULT_DISABLED_REASON, usePermissionsForLocation} from '../app/Permissions';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -45,7 +45,10 @@ export const ScheduleResetButton = ({repoAddress, schedule}: Props) => {
     : DEFAULT_DISABLED_REASON;
 
   return (
-    <Tooltip content={tooltipContent} display="flex">
+    <Tooltip
+      content={<div style={{maxWidth: '500px', wordBreak: 'break-word'}}>{tooltipContent}</div>}
+      display="flex"
+    >
       <Button disabled={disabled} onClick={onClick}>
         Reset schedule status
       </Button>

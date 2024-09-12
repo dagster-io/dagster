@@ -7,7 +7,7 @@ from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator, DagsterSdfT
 from dagster_sdf.resource import SdfCliResource
 from dagster_sdf.sdf_workspace import SdfWorkspace
 
-from .sdf_workspaces import moms_flower_shop_path
+from dagster_sdf_tests.sdf_workspaces import moms_flower_shop_path
 
 
 def test_table_metadata_column_schema(moms_flower_shop_target_dir: Path) -> None:

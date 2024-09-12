@@ -311,7 +311,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_runs_over_graphql(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
         # other code in this file which reads itself to load a repo
-        from .utils import sync_execute_get_run_log_data
+        from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
         selector = infer_job_selector(graphql_context, "required_resource_job")
 
@@ -426,7 +426,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_run_config(self, graphql_context: WorkspaceRequestContext):
         # This include needs to be here because its inclusion screws up
         # other code in this file which reads itself to load a repo
-        from .utils import sync_execute_get_run_log_data
+        from dagster_graphql_tests.graphql.utils import sync_execute_get_run_log_data
 
         selector = infer_job_selector(graphql_context, "required_resource_job")
 

@@ -69,15 +69,14 @@ from dagster._time import create_datetime, get_current_datetime, get_current_tim
 from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import do_run
-from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
     multipartitioned_self_dependency,
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
 )
-from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.partition_scenarios import (
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.partition_scenarios import (
     hourly_to_daily_partitions,
     non_partitioned_after_partitioned,
     one_asset_one_partition,
@@ -87,6 +86,9 @@ from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.partition_
     two_assets_in_sequence_two_partitions,
     two_dynamic_assets,
     unpartitioned_after_dynamic_asset,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    do_run,
 )
 
 
@@ -1432,15 +1434,15 @@ def test_connected_assets_disconnected_partitions():
         backfill_start_datetime.timestamp(),
         [
             PartitionsByAssetSelector(
-                foo.key, PartitionsSelector(PartitionRangeSelector("2023-10-01", "2023-10-05"))
+                foo.key, PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")])
             ),
             PartitionsByAssetSelector(
                 foo_child.key,
-                PartitionsSelector(PartitionRangeSelector("2023-10-01", "2023-10-03")),
+                PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
             ),
             PartitionsByAssetSelector(
                 foo_grandchild.key,
-                PartitionsSelector(PartitionRangeSelector("2023-10-10", "2023-10-13")),
+                PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
             ),
         ],
     )
@@ -1727,3 +1729,52 @@ def test_run_request_partition_order():
         "2023-10-02",
         "2023-10-03",
     ]
+
+
+def test_asset_backfill_multiple_partition_ranges():
+    instance = DagsterInstance.ephemeral()
+    partitions_def = DailyPartitionsDefinition("2023-10-01")
+
+    @asset(partitions_def=partitions_def)
+    def foo():
+        pass
+
+    @asset(partitions_def=partitions_def, deps=[foo])
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {"repo": [foo, foo_child]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    target_partitions_subset = (
+        partitions_def.empty_subset()
+        .with_partition_key_range(partitions_def, PartitionKeyRange("2023-11-01", "2023-11-03"))
+        .with_partition_key_range(partitions_def, PartitionKeyRange("2023-11-06", "2023-11-07"))
+    )
+    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=AssetGraphSubset(
+            partitions_subsets_by_asset_key={
+                foo.key: target_partitions_subset,
+                foo_child.key: target_partitions_subset,
+            }
+        ),
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_timestamp=create_datetime(2023, 12, 5, 0, 0, 0).timestamp(),
+    )
+    assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(foo.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo.key, "2023-11-03"),
+        AssetKeyPartitionKey(foo.key, "2023-11-06"),
+        AssetKeyPartitionKey(foo.key, "2023-11-07"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-03"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-06"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-07"),
+    }
+
+    asset_backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+    assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset

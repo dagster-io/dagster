@@ -4,11 +4,10 @@ from typing import List, Tuple
 import click
 from tqdm import tqdm
 
+from dagster._cli.utils import get_instance_for_cli
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._serdes import deserialize_value
-
-from .utils import get_instance_for_cli
 
 
 def _recent_failed_runs_text(instance):

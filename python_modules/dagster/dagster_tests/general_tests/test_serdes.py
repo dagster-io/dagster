@@ -570,6 +570,37 @@ def test_set_to_sequence_field_serializer() -> None:
     assert deserialized == val
 
 
+def test_named_tuple_invalid_ignored_values() -> None:
+    def get_serialized_future() -> str:
+        future_map = WhitelistMap.create()
+
+        @_whitelist_for_serdes(whitelist_map=future_map)
+        class A(NamedTuple):
+            x: int
+            future_field: "Future1"
+
+        @_whitelist_for_serdes(whitelist_map=future_map)
+        class Future1(NamedTuple):
+            val: int
+            inner1: Optional["Future1"]
+            inner2: "Future2"
+
+        @_whitelist_for_serdes(whitelist_map=future_map)
+        class Future2(NamedTuple):
+            val: str
+
+        future_object = A(0, Future1(1, Future1(2, None, Future2("b")), Future2("a")))
+        return serialize_value(future_object, whitelist_map=future_map)
+
+    current_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=current_map)
+    class A(NamedTuple):
+        x: int
+
+    assert deserialize_value(get_serialized_future(), as_type=A, whitelist_map=current_map) == A(0)
+
+
 def test_named_tuple_skip_when_empty_fields() -> None:
     test_map = WhitelistMap.create()
 

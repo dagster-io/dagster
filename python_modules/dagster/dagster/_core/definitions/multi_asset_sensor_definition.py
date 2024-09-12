@@ -21,10 +21,23 @@ import dagster._check as check
 from dagster._annotations import deprecated_param, experimental, public
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.run_request import RunRequest, SensorResult, SkipReason
 from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SensorType,
+    get_context_param_name,
+    get_sensor_context_from_args_or_kwargs,
+    validate_and_get_resource_dict,
+)
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -34,20 +47,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._utils import normalize_to_repository
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
-
-from .events import AssetKey
-from .run_request import RunRequest, SensorResult, SkipReason
-from .sensor_definition import (
-    DefaultSensorStatus,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SensorType,
-    get_context_param_name,
-    get_sensor_context_from_args_or_kwargs,
-    validate_and_get_resource_dict,
-)
-from .target import ExecutableDefinition
-from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -872,8 +871,7 @@ class MultiAssetSensorCursorAdvances:
         context: MultiAssetSensorEvaluationContext,
         initial_cursor: MultiAssetSensorContextCursor,
     ) -> MultiAssetSensorAssetCursorComponent:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.event_api import AssetRecordsFilter
 
         advanced_records: Set[int] = self._advanced_record_ids_by_key.get(asset_key, set())
         if len(advanced_records) == 0:
@@ -894,20 +892,30 @@ class MultiAssetSensorCursorAdvances:
             latest_unconsumed_record_by_partition = (
                 initial_asset_cursor.trailing_unconsumed_partitioned_event_ids
             )
-            unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
-                context.instance.get_event_records(
-                    EventRecordsFilter(
-                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        asset_key=asset_key,
-                        after_cursor=latest_consumed_event_id_at_tick_start,
-                        before_cursor=greatest_consumed_event_id_in_tick,
-                    ),
-                    ascending=True,
+
+            if greatest_consumed_event_id_in_tick > (latest_consumed_event_id_at_tick_start or 0):
+                materialization_events = []
+                has_more = True
+                cursor = None
+                while has_more:
+                    result = context.instance.fetch_materializations(
+                        AssetRecordsFilter(
+                            asset_key=asset_key,
+                            after_storage_id=latest_consumed_event_id_at_tick_start,
+                            before_storage_id=greatest_consumed_event_id_in_tick,
+                        ),
+                        ascending=True,
+                        limit=FETCH_MATERIALIZATION_BATCH_SIZE,
+                        cursor=cursor,
+                    )
+                    cursor = result.cursor
+                    has_more = result.has_more
+                    materialization_events.extend(result.records)
+                unconsumed_events = list(context.get_trailing_unconsumed_events(asset_key)) + list(
+                    materialization_events
                 )
-                if greatest_consumed_event_id_in_tick
-                > (latest_consumed_event_id_at_tick_start or 0)
-                else []
-            )
+            else:
+                unconsumed_events = []
 
             # Iterate through events in ascending order, storing the latest unconsumed
             # event for each partition. If an advanced event exists for a partition, clear

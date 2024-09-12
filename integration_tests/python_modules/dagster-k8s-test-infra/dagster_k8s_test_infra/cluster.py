@@ -23,7 +23,7 @@ from dagster_k8s.client import DagsterKubernetesClient
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from .integration_utils import IS_BUILDKITE, check_output
+from dagster_k8s_test_infra.integration_utils import IS_BUILDKITE, check_output
 
 # How long to wait before giving up on trying to establish postgres port forwarding
 PG_PORT_FORWARDING_TIMEOUT = 60  # 1 minute
@@ -43,7 +43,7 @@ class ClusterConfig(namedtuple("_ClusterConfig", "name kubeconfig_file")):
 def define_cluster_provider_fixture(additional_kind_images=None):
     @pytest.fixture(scope="session")
     def _cluster_provider(request):
-        from .kind import kind_cluster, kind_load_images
+        from dagster_k8s_test_infra.kind import kind_cluster, kind_load_images
 
         if IS_BUILDKITE:
             print("Installing ECR credentials...")

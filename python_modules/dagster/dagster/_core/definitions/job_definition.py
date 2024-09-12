@@ -25,21 +25,50 @@ from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
-from dagster._core.definitions.dependency import Node, NodeHandle, NodeInputHandle, NodeInvocation
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.dependency import (
+    DependencyMapping,
+    DependencyStructure,
+    Node,
+    NodeHandle,
+    NodeInputHandle,
+    NodeInvocation,
+    OpNode,
+)
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.executor_definition import (
+    ExecutorDefinition,
+    multi_or_in_process_executor,
+)
+from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    PartitionedConfig,
+    PartitionsDefinition,
+)
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import (
     ResourceKeyRequirement,
     ResourceRequirement,
     ensure_requirements_satisfied,
 )
-from dagster._core.definitions.utils import check_valid_name
+from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    NormalizedTags,
+    check_valid_name,
+    normalize_tags,
+)
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -56,32 +85,19 @@ from dagster._core.storage.io_manager import (
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
-
-from .asset_layer import AssetLayer
-from .config import ConfigMapping
-from .dependency import DependencyMapping, DependencyStructure, OpNode
-from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
-from .graph_definition import GraphDefinition, SubselectedGraphDefinition
-from .hook_definition import HookDefinition
-from .logger_definition import LoggerDefinition
-from .metadata import MetadataValue, RawMetadataValue, normalize_metadata
-from .partition import PartitionedConfig, PartitionsDefinition
-from .resource_definition import ResourceDefinition
-from .run_request import RunRequest
-from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
+    from dagster._core.definitions.run_config_schema import RunConfigSchema
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._core.remote_representation.job_index import JobIndex
     from dagster._core.snap import JobSnapshot
-
-    from .run_config_schema import RunConfigSchema
 
 DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
 
@@ -488,7 +504,7 @@ class JobDefinition(IHasInternalInit):
         }
 
     def _get_required_resource_keys(self, validate_requirements: bool = False) -> AbstractSet[str]:
-        from ..execution.resources_init import get_transitive_required_resource_keys
+        from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
         requirements = self._get_resource_requirements()
         if validate_requirements:
@@ -685,10 +701,14 @@ class JobDefinition(IHasInternalInit):
 
         merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
-            tags_for_partition_key = ephemeral_job.get_tags_for_partition_key(
+            ephemeral_job.validate_partition_key(
                 partition_key,
                 selected_asset_keys=asset_selection,
                 dynamic_partitions_store=instance,
+            )
+            tags_for_partition_key = ephemeral_job.get_tags_for_partition_key(
+                partition_key,
+                selected_asset_keys=asset_selection,
             )
 
             if not run_config and self.partitioned_config:
@@ -714,18 +734,11 @@ class JobDefinition(IHasInternalInit):
             asset_selection=frozenset(asset_selection),
         )
 
-    def get_tags_for_partition_key(
-        self,
-        partition_key: str,
-        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
-        selected_asset_keys: Optional[Iterable[AssetKey]],
-    ) -> Mapping[str, str]:
-        """Gets tags for the given partition key and ensures that it's a member of the PartitionsDefinition
-        corresponding to every asset in the selection.
-        """
-        partitions_def = None
+    def _get_partitions_def(
+        self, selected_asset_keys: Optional[Iterable[AssetKey]]
+    ) -> PartitionsDefinition:
         if self.partitions_def:
-            partitions_def = self.partitions_def
+            return self.partitions_def
         elif self.asset_layer:
             if selected_asset_keys:
                 resolved_selected_asset_keys = selected_asset_keys
@@ -736,21 +749,48 @@ class JobDefinition(IHasInternalInit):
                     key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
                 ]
 
-            unique_partitions_defs = {
-                self.asset_layer.get(asset_key).partitions_def
-                for asset_key in resolved_selected_asset_keys
-            } - {None}
+            unique_partitions_defs: Set[PartitionsDefinition] = set()
+            for asset_key in resolved_selected_asset_keys:
+                partitions_def = self.asset_layer.get(asset_key).partitions_def
+                if partitions_def is not None:
+                    unique_partitions_defs.add(partitions_def)
+
             if len(unique_partitions_defs) == 1:
-                partitions_def = next(iter(unique_partitions_defs))
-            elif len(unique_partitions_defs) > 1:
-                check.failed("Attempted to execute a run for assets with different partitions")
+                return check.not_none(next(iter(unique_partitions_defs)))
 
-        if partitions_def is None:
-            check.failed("Attempted to execute a partitioned run for a non-partitioned job")
+        if selected_asset_keys is not None:
+            check.failed("There is no PartitionsDefinition shared by all the provided assets")
+        else:
+            check.failed("Job has no PartitionsDefinition")
 
+    def get_partition_keys(
+        self, selected_asset_keys: Optional[Iterable[AssetKey]]
+    ) -> Sequence[str]:
+        partitions_def = self._get_partitions_def(selected_asset_keys)
+        return partitions_def.get_partition_keys()
+
+    def validate_partition_key(
+        self,
+        partition_key: str,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"],
+        selected_asset_keys: Optional[Iterable[AssetKey]],
+    ) -> None:
+        """Ensures that the given partition_key is a member of the PartitionsDefinition
+        corresponding to every asset in the selection.
+        """
+        partitions_def = self._get_partitions_def(selected_asset_keys)
         partitions_def.validate_partition_key(
             partition_key, dynamic_partitions_store=dynamic_partitions_store
         )
+
+    def get_tags_for_partition_key(
+        self, partition_key: str, selected_asset_keys: Optional[Iterable[AssetKey]]
+    ) -> Mapping[str, str]:
+        """Gets tags for the given partition key."""
+        if self._partitioned_config is not None:
+            return self._partitioned_config.get_tags_for_partition_key(partition_key, self.name)
+
+        partitions_def = self._get_partitions_def(selected_asset_keys)
         return partitions_def.get_tags_for_partition_key(partition_key)
 
     def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:
@@ -955,6 +995,7 @@ class JobDefinition(IHasInternalInit):
     def get_job_snapshot(self) -> "JobSnapshot":
         return self.get_job_index().job_snapshot
 
+    @cached_method
     def get_job_index(self) -> "JobIndex":
         from dagster._core.remote_representation import JobIndex
         from dagster._core.snap import JobSnapshot
@@ -1278,12 +1319,12 @@ def _create_run_config_schema(
     job_def: JobDefinition,
     required_resources: AbstractSet[str],
 ) -> "RunConfigSchema":
-    from .run_config import (
+    from dagster._core.definitions.run_config import (
         RunConfigSchemaCreationData,
         construct_config_type_dictionary,
         define_run_config_schema_type,
     )
-    from .run_config_schema import RunConfigSchema
+    from dagster._core.definitions.run_config_schema import RunConfigSchema
 
     # When executing with a subset job, include the missing nodes
     # from the original job as ignored to allow execution with

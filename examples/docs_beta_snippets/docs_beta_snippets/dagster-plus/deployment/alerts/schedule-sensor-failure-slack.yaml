@@ -1,0 +1,10 @@
+# alert_policies.yaml
+
+alert_policies:
+  description: Sends a Slack message when a schedule or sensor tick fails.
+  event_types:
+  - TICK_FAILURE
+  name: schedule-sensor-failure-slack
+  notification_service:
+    slack_channel_name: notifications
+    slack_workspace_name: hooli

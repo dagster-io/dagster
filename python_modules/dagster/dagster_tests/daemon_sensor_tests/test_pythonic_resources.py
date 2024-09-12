@@ -51,7 +51,11 @@ from dagster._core.workspace.load_target import ModuleTarget
 from dagster._time import create_datetime, get_timezone
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
+from dagster_tests.daemon_sensor_tests.test_sensor_run import (
+    evaluate_sensors,
+    validate_tick,
+    wait_for_all_runs_to_start,
+)
 
 
 @op(out={})
@@ -360,7 +364,7 @@ def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessCo
     repo_loc = next(
         iter(
             workspace_context_struct_resources.create_request_context()
-            .get_workspace_snapshot()
+            .get_code_location_entries()
             .values()
         )
     ).code_location

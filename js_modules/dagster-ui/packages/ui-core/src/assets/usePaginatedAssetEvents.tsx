@@ -1,4 +1,3 @@
-import {useApolloClient} from '@apollo/client';
 import min from 'lodash/min';
 import uniq from 'lodash/uniq';
 import uniqBy from 'lodash/uniqBy';
@@ -12,6 +11,7 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 import {ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
+import {useApolloClient} from '../apollo-client';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 /** Note: This hook paginates through an asset's events, optionally beginning at ?asOf=.

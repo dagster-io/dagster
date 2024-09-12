@@ -9,7 +9,11 @@ from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.test_utils import instance_for_test
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 
-from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
+from dagster_celery_tests.utils import (
+    execute_eagerly_on_celery,
+    execute_on_thread,
+    start_celery_worker,
+)
 
 
 def test_eager_priority_job():

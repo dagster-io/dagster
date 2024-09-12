@@ -1,10 +1,10 @@
-from .builder import (
+from dagster._check.builder import (
     EvalContext as EvalContext,
     ImportFrom as ImportFrom,
     NoneType as NoneType,
     build_check_call_str as build_check_call_str,
 )
-from .functions import (
+from dagster._check.functions import (
     CheckError as CheckError,
     ElementCheckError as ElementCheckError,
     NotImplementedCheckError as NotImplementedCheckError,

@@ -323,12 +323,13 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     )
 
     # Construct Dagster run tags with user defined k8s config.
+    expected_image = "different_image:tag"
     expected_resources = {
         "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
     }
     user_defined_k8s_config = UserDefinedDagsterK8sConfig(
-        container_config={"resources": expected_resources},
+        container_config={"image": expected_image, "resources": expected_resources},
     )
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
     tags = {"dagster-k8s/config": user_defined_k8s_config_json}
@@ -367,7 +368,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
             updated_run = instance.get_run_by_id(run.run_id)
-            assert updated_run.tags[DOCKER_IMAGE_TAG] == "fake-image-name"
+            assert updated_run.tags[DOCKER_IMAGE_TAG] == expected_image
 
             # Check that user defined k8s config was passed down to the k8s job.
             mock_method_calls = mock_k8s_client_batch_api.method_calls

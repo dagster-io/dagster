@@ -3,7 +3,9 @@ from typing import AbstractSet, Any, Mapping
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_job_selector
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 SCHEMA_OR_ERROR_SUBSET_QUERY = """
 query EnvironmentQuery($selector: PipelineSelector!){

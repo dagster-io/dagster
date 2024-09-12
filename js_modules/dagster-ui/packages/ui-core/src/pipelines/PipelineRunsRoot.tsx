@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -19,6 +18,7 @@ import {
   PipelineRunsRootQueryVariables,
 } from './types/PipelineRunsRoot.types';
 import {useJobTitle} from './useJobTitle';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
@@ -26,7 +26,6 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunTable} from '../runs/RunTable';
 import {RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTableRunFragment';
 import {DagsterTag} from '../runs/RunTag';
@@ -42,7 +41,11 @@ import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {AnchorButton} from '../ui/AnchorButton';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
-import {isThisThingAJob, isThisThingAnAssetJob, useRepository} from '../workspace/WorkspaceContext';
+import {
+  isThisThingAJob,
+  isThisThingAnAssetJob,
+  useRepository,
+} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -112,8 +115,6 @@ export const PipelineRunsRoot = (props: Props) => {
       return data.pipelineRunsOrError.results;
     },
   });
-
-  useBlockTraceOnQueryResult(queryResult, 'PipelineRunsRootQuery');
 
   const onAddTag = useCallback(
     (token: RunFilterToken) => {

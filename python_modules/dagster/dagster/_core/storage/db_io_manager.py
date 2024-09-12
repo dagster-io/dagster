@@ -19,6 +19,7 @@ from typing import (
 import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -27,7 +28,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
@@ -75,6 +76,17 @@ class DbClient(Generic[T]):
     @staticmethod
     @abstractmethod
     def get_select_statement(table_slice: TableSlice) -> str: ...
+
+    @staticmethod
+    def get_relation_identifier(table_slice: TableSlice) -> Optional[str]:
+        """Returns a string which is set as the dagster/relation_identifier metadata value for an
+        emitted asset. This value should be the fully qualified name of the table, including the
+        schema and database, if applicable.
+        """
+        if not table_slice.database:
+            return f"{table_slice.schema}.{table_slice.table}"
+
+        return f"{table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
     @staticmethod
     @abstractmethod
@@ -154,6 +166,19 @@ class DbIOManager(IOManager):
                 "Query": self._db_client.get_select_statement(table_slice),
             }
         )
+
+        # Try to attach relation identifier metadata to the output asset, but
+        # don't fail if it errors because the user has already attached it.
+        try:
+            context.add_output_metadata(
+                dict(
+                    TableMetadataSet(
+                        relation_identifier=self._db_client.get_relation_identifier(table_slice)
+                    )
+                )
+            )
+        except DagsterInvalidMetadata:
+            pass
 
     def load_input(self, context: InputContext) -> object:
         obj_type = context.dagster_type.typing_type

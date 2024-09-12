@@ -3,21 +3,20 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional,
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
-
-from ..config import ConfigMapping
-from ..graph_definition import GraphDefinition
-from ..hook_definition import HookDefinition
-from ..job_definition import JobDefinition
-from ..logger_definition import LoggerDefinition
-from ..metadata import RawMetadataValue
-from ..policy import RetryPolicy
-from ..resource_definition import ResourceDefinition
-from ..utils import normalize_tags
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.utils import normalize_tags
 
 if TYPE_CHECKING:
-    from ..executor_definition import ExecutorDefinition
-    from ..partition import PartitionedConfig, PartitionsDefinition
-    from ..run_config import RunConfig
+    from dagster._core.definitions.executor_definition import ExecutorDefinition
+    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+    from dagster._core.definitions.run_config import RunConfig
 
 
 class _Job:

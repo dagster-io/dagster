@@ -20,7 +20,7 @@ from google.cloud import storage
 from pydantic import Field
 from upath import UPath
 
-from .resources import GCSResource
+from dagster_gcp.gcs.resources import GCSResource
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 

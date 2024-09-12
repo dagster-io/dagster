@@ -4,19 +4,18 @@ from typing import Any, Callable, NamedTuple, Optional, Sequence, Set
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.resource_annotation import get_resource_args
-
-from .events import AssetKey
-from .run_request import RunRequest, SkipReason
-from .sensor_definition import (
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     RawSensorEvaluationFunctionReturn,
     SensorDefinition,
     SensorType,
     validate_and_get_resource_dict,
 )
-from .target import ExecutableDefinition
-from .utils import check_valid_name
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.utils import check_valid_name
 
 
 class AssetSensorParamNames(NamedTuple):

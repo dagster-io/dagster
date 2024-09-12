@@ -5,7 +5,7 @@ import pytest
 from dagster_sdf.constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT
 from dagster_sdf.resource import SdfCliResource
 
-from .sdf_workspaces import (
+from dagster_sdf_tests.sdf_workspaces import (
     lineage_asset_checks_path,
     lineage_upstream_path,
     moms_flower_shop_path,
@@ -18,9 +18,7 @@ def _create_sdf_invocation(
     run_workspace: bool = False,
     environment: str = DEFAULT_SDF_WORKSPACE_ENVIRONMENT,
 ):
-    sdf = SdfCliResource(
-        workspace_dir=os.fspath(workspace_dir), global_config_flags=["--log-form=nested"]
-    )
+    sdf = SdfCliResource(workspace_dir=os.fspath(workspace_dir))
 
     sdf_invocation = sdf.cli(
         ["compile", "--save", "table-deps"], environment=environment, raise_on_error=False

@@ -23,9 +23,8 @@ from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
 from dagster._utils.merger import merge_dicts
 
+from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
-from .container_context import DockerContainerContext
 
 
 @executor(
@@ -117,7 +116,7 @@ class DockerStepHandler(StepHandler):
         )
 
     def _get_image(self, step_handler_context: StepHandlerContext):
-        from . import DockerRunLauncher
+        from dagster_docker import DockerRunLauncher
 
         image = cast(
             JobPythonOrigin, step_handler_context.dagster_run.job_code_origin
@@ -139,7 +138,7 @@ class DockerStepHandler(StepHandler):
         # This doesn't vary per step: would be good to have a hook where it can be set once
         # for the whole StepHandler but we need access to the DagsterRun for that
 
-        from .docker_run_launcher import DockerRunLauncher
+        from dagster_docker.docker_run_launcher import DockerRunLauncher
 
         run_launcher = step_handler_context.instance.run_launcher
         run_target = DockerContainerContext.create_for_run(

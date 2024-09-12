@@ -1,4 +1,4 @@
-import {GraphQLRequest} from '@apollo/client';
+import {GraphQLRequest} from '../apollo-client';
 
 export interface CachedGraphQLRequest extends GraphQLRequest {
   name: string;

@@ -5,11 +5,13 @@ from typing_extensions import Annotated
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import ImportFrom, copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
-
-from ..automation_condition import AutomationCondition, AutomationResult
-from ..automation_context import AutomationContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
@@ -42,9 +44,7 @@ class DepConditionWrapperCondition(AutomationCondition):
 
         # find all children of the true dep slice
         true_slice = dep_result.true_slice.compute_child_slice(context.asset_key)
-        return AutomationResult.create_from_children(
-            context=context, true_slice=true_slice, child_results=[dep_result]
-        )
+        return AutomationResult(context=context, true_slice=true_slice, child_results=[dep_result])
 
 
 @record
@@ -70,6 +70,10 @@ class DepCondition(AutomationCondition):
         if self.ignore_selection is not None:
             description += f" except for {self.ignore_selection}"
         return description
+
+    @property
+    def requires_cursor(self) -> bool:
+        return False
 
     def allow(self, selection: "AssetSelection") -> "DepCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
@@ -112,7 +116,7 @@ class AnyDepsCondition(DepCondition):
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         dep_results = []
-        true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
+        true_slice = context.get_empty_slice()
 
         for i, dep_key in enumerate(
             sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
@@ -129,9 +133,7 @@ class AnyDepsCondition(DepCondition):
             true_slice = true_slice.compute_union(dep_result.true_slice)
 
         true_slice = context.candidate_slice.compute_intersection(true_slice)
-        return AutomationResult.create_from_children(
-            context, true_slice=true_slice, child_results=dep_results
-        )
+        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)
 
 
 @whitelist_for_serdes
@@ -162,6 +164,4 @@ class AllDepsCondition(DepCondition):
             dep_results.append(dep_result)
             true_slice = true_slice.compute_intersection(dep_result.true_slice)
 
-        return AutomationResult.create_from_children(
-            context, true_slice=true_slice, child_results=dep_results
-        )
+        return AutomationResult(context, true_slice=true_slice, child_results=dep_results)

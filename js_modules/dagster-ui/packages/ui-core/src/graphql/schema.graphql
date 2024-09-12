@@ -661,6 +661,7 @@ type AssetNode {
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   tags: [DefinitionTag!]!
+  kinds: [String!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
@@ -1076,6 +1077,24 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
+  partitionKeysOrError(
+    cursor: String
+    limit: Int
+    reverse: Boolean
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeys!
+  partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
+}
+
+type PartitionKeys {
+  partitionKeys: [String!]!
+}
+
+type PartitionTagsAndConfig {
+  name: String!
+  jobName: String!
+  runConfigOrError: PartitionRunConfigOrError!
+  tagsOrError: PartitionTagsOrError!
 }
 
 interface PipelineConfigValidationError {
@@ -2125,6 +2144,13 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
+  partitionKeysOrError(
+    cursor: String
+    limit: Int
+    reverse: Boolean
+    selectedAssetKeys: [AssetKeyInput!]
+  ): PartitionKeys!
+  partition(partitionName: String!, selectedAssetKeys: [AssetKeyInput!]): PartitionTagsAndConfig
 }
 
 enum SensorType {
@@ -2290,7 +2316,8 @@ input PartitionsByAssetSelector {
 }
 
 input PartitionsSelector {
-  range: PartitionRangeSelector!
+  range: PartitionRangeSelector
+  ranges: [PartitionRangeSelector!]
 }
 
 input PartitionRangeSelector {
@@ -2369,6 +2396,20 @@ input ReportRunlessAssetEventsParams {
 enum AssetEventType {
   ASSET_MATERIALIZATION
   ASSET_OBSERVATION
+}
+
+input BulkActionsFilter {
+  statuses: [BulkActionStatus!]
+  createdBefore: Float
+  createdAfter: Float
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
+  CANCELING
 }
 
 type DaemonHealth {
@@ -2805,14 +2846,6 @@ type PartitionBackfill implements RunsFeedEntry {
   title: String
   description: String
   logEvents(cursor: String): InstigationEventConnection!
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-  CANCELED
-  CANCELING
 }
 
 type AssetBackfillTargetPartitions {
@@ -3269,6 +3302,7 @@ type Query {
     status: BulkActionStatus
     cursor: String
     limit: Int
+    filters: BulkActionsFilter
   ): PartitionBackfillsOrError!
   permissions: [Permission!]!
   canBulkTerminate: Boolean!
@@ -3507,10 +3541,6 @@ type AutoMaterializeRuleEvaluation {
 }
 
 union PartitionKeysOrError = PartitionKeys | PartitionSubsetDeserializationError
-
-type PartitionKeys {
-  partitionKeys: [String!]!
-}
 
 type PartitionSubsetDeserializationError implements Error {
   message: String!

@@ -4,21 +4,28 @@ import {
   FontFamily,
   MiddleTruncate,
   Mono,
+  SpinnerWithText,
   StyledRawCodeMirror,
-  Subheading,
   Table,
 } from '@dagster-io/ui-components';
-import {ComponentProps, ReactNode, useMemo} from 'react';
+import {useContext, useMemo} from 'react';
+import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
+import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
+import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
-import {CodeLocationPageHeader} from './CodeLocationPageHeader';
-import {CodeLocationTabs} from './CodeLocationTabs';
+import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
 import {TimeFromNow} from '../ui/TimeFromNow';
+import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
-import {WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext';
+import {
+  WorkspaceContext,
+  WorkspaceRepositoryLocationNode,
+} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {LocationStatusEntryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {LocationStatusEntryFragment} from '../workspace/types/WorkspaceQueries.types';
 
 const RIGHT_COLUMN_WIDTH = '280px';
 
@@ -57,7 +64,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
       <Box padding={{horizontal: 24}} border="bottom">
         <CodeLocationTabs selectedTab="overview" repoAddress={repoAddress} />
       </Box>
-      <SectionHeader label="Details" />
+      <CodeLocationOverviewSectionHeader label="Details" />
       {/* Fixed table layout to contain overflowing strings in right column */}
       <Table style={{width: '100%', tableLayout: 'fixed'}}>
         <tbody>
@@ -93,9 +100,10 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           ) : null}
         </tbody>
       </Table>
+      <CodeLocationServerSection locationName={repoAddress.location} />
       {libraryVersions?.length ? (
         <>
-          <SectionHeader label="Libraries" />
+          <CodeLocationOverviewSectionHeader label="Libraries" />
           <Table>
             <tbody>
               {libraryVersions.map((version) => (
@@ -112,36 +120,57 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           </Table>
         </>
       ) : null}
-      <SectionHeader label="Metadata" border="bottom" />
+      <CodeLocationOverviewSectionHeader label="Metadata" border="bottom" />
       <CodeLocationMetadataStyle />
-      <StyledRawCodeMirror
-        options={{readOnly: true, lineNumbers: false}}
-        theme={['code-location-metadata']}
-        value={metadataAsYaml}
-      />
+      <div style={{height: '320px'}}>
+        <StyledRawCodeMirror
+          options={{readOnly: true, lineNumbers: false}}
+          theme={['code-location-metadata']}
+          value={metadataAsYaml}
+        />
+      </div>
     </>
   );
 };
+
+const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  const {locationEntries, locationStatuses, loading} = useContext(WorkspaceContext);
+  const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
+  const locationStatus = locationStatuses[repoAddress.location];
+
+  if (!locationEntry || !locationStatus) {
+    const displayName = repoAddressAsHumanString(repoAddress);
+    if (loading) {
+      return (
+        <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
+          <SpinnerWithText label={`Loading ${displayName}…`} />
+        </Box>
+      );
+    }
+
+    return (
+      <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
+        <CodeLocationNotFound repoAddress={repoAddress} />
+      </Box>
+    );
+  }
+
+  return (
+    <CodeLocationOverviewRoot
+      repoAddress={repoAddress}
+      locationEntry={locationEntry}
+      locationStatus={locationStatus}
+    />
+  );
+};
+
+// eslint-disable-next-line import/no-default-export
+export default QueryfulCodeLocationOverviewRoot;
 
 const CodeLocationMetadataStyle = createGlobalStyle`
   .CodeMirror.cm-s-code-location-metadata.cm-s-code-location-metadata {
     background-color: ${Colors.backgroundDefault()};
     padding: 12px 20px;
+    height: 300px;
   }
 `;
-
-const SectionHeader = ({
-  label,
-  border = null,
-}: {
-  label: ReactNode;
-  border?: ComponentProps<typeof Box>['border'];
-}) => (
-  <Box
-    background={Colors.backgroundLight()}
-    border={border}
-    padding={{horizontal: 24, vertical: 8}}
-  >
-    <Subheading>{label}</Subheading>
-  </Box>
-);

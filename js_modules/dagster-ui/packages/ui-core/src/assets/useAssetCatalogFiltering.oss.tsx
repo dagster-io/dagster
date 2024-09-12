@@ -7,7 +7,6 @@ import {
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
@@ -16,12 +15,8 @@ import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAss
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
 import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
-import {
-  useAssetKindTagsForAssets,
-  useComputeKindTagFilter,
-} from '../ui/Filters/useComputeKindTagFilter';
-import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {useAssetKindsForAssets, useKindFilter} from '../ui/Filters/useKindFilter';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const EMPTY_ARRAY: any[] = [];
@@ -37,26 +32,26 @@ export function useAssetCatalogFiltering<
   assets = EMPTY_ARRAY,
   includeRepos = true,
   loading = false,
+  isEnabled = true,
 }: {
   assets: T[] | undefined;
   includeRepos?: boolean;
   loading?: boolean;
+  isEnabled?: boolean;
 }) {
   const {
     filters,
     filterFn,
     setAssetTags,
     setChangedInBranch,
-    setComputeKindTags,
+    setKinds,
     setGroups,
     setOwners,
     setCodeLocations,
-    setStorageKindTags,
     setSelectAllFilters,
-  } = useAssetDefinitionFilterState();
+  } = useAssetDefinitionFilterState({isEnabled});
 
   const allAssetGroupOptions = useAssetGroupSelectorsForAssets(assets);
-  const allComputeKindTags = useAssetKindTagsForAssets(assets);
   const allAssetOwners = useAssetOwnersForAssets(assets);
 
   const groupsFilter = useAssetGroupFilter({
@@ -72,37 +67,26 @@ export function useAssetCatalogFiltering<
       : filters.changedInBranch,
     setChangedInBranch,
   });
-  const computeKindFilter = useComputeKindTagFilter({
-    allComputeKindTags,
-    computeKindTags: filters.selectAllFilters.includes('computeKindTags')
-      ? allComputeKindTags
-      : filters.computeKindTags,
-    setComputeKindTags,
-  });
+
   const ownersFilter = useAssetOwnerFilter({
     allAssetOwners,
     owners: filters.selectAllFilters.includes('owners') ? allAssetOwners : filters.owners,
     setOwners,
   });
 
+  const allKinds = useAssetKindsForAssets(assets);
+  const kindFilter = useKindFilter({
+    allAssetKinds: allKinds,
+    kinds: filters.selectAllFilters.includes('kinds') ? allKinds : filters.kinds,
+    setKinds,
+  });
+
   const tags = useAssetTagsForAssets(assets);
-  const storageKindTags = useMemo(() => tags.filter(isCanonicalStorageKindTag), [tags]);
-  const nonStorageKindTags = useMemo(
-    () => tags.filter((tag) => !isCanonicalStorageKindTag(tag)),
-    [tags],
-  );
 
   const tagsFilter = useAssetTagFilter({
-    allAssetTags: nonStorageKindTags,
-    tags: filters.selectAllFilters.includes('tags') ? nonStorageKindTags : filters.tags,
+    allAssetTags: tags,
+    tags: filters.selectAllFilters.includes('tags') ? tags : filters.tags,
     setTags: setAssetTags,
-  });
-  const storageKindFilter = useStorageKindFilter({
-    allAssetStorageKindTags: storageKindTags,
-    storageKindTags: filters.selectAllFilters.includes('storageKindTags')
-      ? storageKindTags
-      : filters.storageKindTags,
-    setStorageKindTags,
   });
 
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
@@ -122,13 +106,7 @@ export function useAssetCatalogFiltering<
   });
 
   const uiFilters = React.useMemo(() => {
-    const uiFilters: FilterObject[] = [
-      groupsFilter,
-      computeKindFilter,
-      storageKindFilter,
-      ownersFilter,
-      tagsFilter,
-    ];
+    const uiFilters: FilterObject[] = [groupsFilter, kindFilter, ownersFilter, tagsFilter];
     if (isBranchDeployment) {
       uiFilters.push(changedInBranchFilter);
     }
@@ -139,13 +117,12 @@ export function useAssetCatalogFiltering<
   }, [
     allRepos.length,
     changedInBranchFilter,
-    computeKindFilter,
+    kindFilter,
     groupsFilter,
     includeRepos,
     isBranchDeployment,
     ownersFilter,
     reposFilter,
-    storageKindFilter,
     tagsFilter,
   ]);
   const components = useFilters({filters: uiFilters});
@@ -161,7 +138,7 @@ export function useAssetCatalogFiltering<
      * This effect handles syncing the `selectAllFilters` query param state with the actual filtering state.
      * eg: If all of the items are selected then we include that key, otherwise we remove it.
      */
-    if (loading) {
+    if (loading || !isEnabled) {
       return;
     }
     if (!didWaitAfterLoading) {
@@ -174,9 +151,8 @@ export function useAssetCatalogFiltering<
 
     [
       ['owners', filters.owners, allAssetOwners] as const,
-      ['tags', filters.tags, nonStorageKindTags] as const,
-      ['computeKindTags', filters.computeKindTags, allComputeKindTags] as const,
-      ['storageKindTags', filters.storageKindTags, storageKindTags] as const,
+      ['tags', filters.tags, tags] as const,
+      ['kinds', filters.kinds, allKinds] as const,
       ['groups', filters.groups, allAssetGroupOptions] as const,
       ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
       ['codeLocations', filters.codeLocations, allRepos] as const,
@@ -203,17 +179,17 @@ export function useAssetCatalogFiltering<
   }, [
     allAssetGroupOptions,
     allAssetOwners,
-    allComputeKindTags,
+    allKinds,
     allRepos,
     didWaitAfterLoading,
     filters,
     loading,
-    nonStorageKindTags,
+    tags,
     setSelectAllFilters,
-    storageKindTags,
+    isEnabled,
   ]);
 
-  const filtered = React.useMemo(
+  const filteredAssets = React.useMemo(
     () => assets.filter((a) => filterFn(a.definition ?? {})),
     [filterFn, assets],
   ) as T[];
@@ -223,9 +199,10 @@ export function useAssetCatalogFiltering<
     filterButton: components.button,
     isFiltered,
     filterFn,
-    filtered,
-    computeKindFilter,
-    storageKindFilter,
+    filteredAssets,
+    filteredAssetsLoading: false,
+    kindFilter,
+    groupsFilter,
     renderFilterButton: components.renderButton,
   };
 }

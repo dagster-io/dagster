@@ -13,6 +13,7 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.tags import build_kind_tag
 from dagster_embedded_elt.sling import SlingReplicationParam, sling_assets
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
@@ -232,7 +233,10 @@ def test_base_with_custom_tags_translator() -> None:
     def my_sling_assets(): ...
 
     for asset_key in my_sling_assets.keys:
-        assert my_sling_assets.tags_by_key[asset_key] == {"custom_tag": "custom_value"}
+        assert my_sling_assets.tags_by_key[asset_key] == {
+            "custom_tag": "custom_value",
+            **build_kind_tag("sling"),
+        }
 
 
 def test_base_with_default_meta_translator():

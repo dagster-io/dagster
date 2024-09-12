@@ -12,14 +12,13 @@ from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
 from pydantic import Field
 
-from dagster_aws.utils import ResourceWithBoto3Configuration
-
-from .parameters import (
+from dagster_aws.ssm.parameters import (
     construct_ssm_client,
     get_parameters_by_name,
     get_parameters_by_paths,
     get_parameters_by_tags,
 )
+from dagster_aws.utils import ResourceWithBoto3Configuration
 
 if TYPE_CHECKING:
     import botocore
@@ -63,7 +62,7 @@ class SSMResource(ResourceWithBoto3Configuration):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def get_client(self) -> "botocore.client.ssm":
+    def get_client(self) -> "botocore.client.ssm":  # pyright: ignore (reportAttributeAccessIssue)
         return construct_ssm_client(
             max_attempts=self.max_attempts,
             region_name=self.region_name,
@@ -79,7 +78,7 @@ class SSMResource(ResourceWithBoto3Configuration):
 
 @dagster_maintained_resource
 @resource(config_schema=SSMResource.to_config_schema())
-def ssm_resource(context) -> "botocore.client.ssm":
+def ssm_resource(context) -> "botocore.client.ssm":  # pyright: ignore (reportAttributeAccessIssue)
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
     The underlying Parameter Store session is created by calling

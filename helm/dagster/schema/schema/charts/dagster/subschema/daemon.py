@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Extra
 
-from ...utils import kubernetes
-from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
-from .config import IntSource
+from schema.charts.dagster.subschema.config import IntSource
+from schema.charts.utils import kubernetes
+from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class RunCoordinatorType(str, Enum):
@@ -80,6 +80,12 @@ class Schedules(BaseModel):
     numSubmitWorkers: Optional[int]
 
 
+class RunRetries(BaseModel):
+    enabled: bool
+    maxRetries: Optional[int]
+    retryOnAssetOrOpFailure: Optional[bool]
+
+
 class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
@@ -101,7 +107,7 @@ class Daemon(BaseModel):
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     runMonitoring: Dict[str, Any]
-    runRetries: Dict[str, Any]
+    runRetries: RunRetries
     sensors: Sensors
     schedules: Schedules
     schedulerName: Optional[str]

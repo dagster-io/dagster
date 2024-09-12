@@ -8,8 +8,8 @@ Spark deployment contexts and configuration.
 
 from dagster import Field, StringSource
 
-from .configs_spark import spark_config
-from .types import SparkDeployMode
+from dagster_spark.configs_spark import spark_config
+from dagster_spark.types import SparkDeployMode
 
 
 def define_spark_config():

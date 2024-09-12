@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Body,
   Box,
@@ -25,6 +24,7 @@ import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {UnderlyingOpsOrGraph} from './UnderlyingOpsOrGraph';
 import {Version} from './Version';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {gql} from '../apollo-client';
 import {COMMON_COLLATOR} from '../app/Util';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';

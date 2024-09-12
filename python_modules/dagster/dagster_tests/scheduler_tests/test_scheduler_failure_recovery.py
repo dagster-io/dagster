@@ -22,8 +22,8 @@ from dagster._time import create_datetime, get_current_datetime
 from dagster._utils import DebugCrashFlags, get_terminate_signal
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .conftest import workspace_load_target
-from .test_scheduler_run import (
+from dagster_tests.scheduler_tests.conftest import workspace_load_target
+from dagster_tests.scheduler_tests.test_scheduler_run import (
     evaluate_schedules,
     feb_27_2019_start_of_day,
     validate_run_exists,

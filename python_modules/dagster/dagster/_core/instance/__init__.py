@@ -47,6 +47,13 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster._core.instance.config import (
+    DAGSTER_CONFIG_YAML_FILENAME,
+    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    get_default_tick_retention_settings,
+    get_tick_retention_settings,
+)
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
@@ -75,14 +82,6 @@ from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import experimental_warning
-
-from .config import (
-    DAGSTER_CONFIG_YAML_FILENAME,
-    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
-    get_default_tick_retention_settings,
-    get_tick_retention_settings,
-)
-from .ref import InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -123,7 +122,11 @@ if TYPE_CHECKING:
         JobFailureData,
     )
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionsFilter,
+        BulkActionStatus,
+        PartitionBackfill,
+    )
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
@@ -409,7 +412,7 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.run_coordinator import RunCoordinator
         from dagster._core.scheduler import Scheduler
         from dagster._core.secrets import SecretsLoader
-        from dagster._core.storage.captured_log_manager import CapturedLogManager
+        from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
@@ -427,7 +430,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         if compute_log_manager:
             self._compute_log_manager = check.inst_param(
-                compute_log_manager, "compute_log_manager", CapturedLogManager
+                compute_log_manager, "compute_log_manager", ComputeLogManager
             )
             self._compute_log_manager.register_instance(self)
         else:
@@ -1248,7 +1251,9 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         if execution_plan_snapshot:
-            from ..op_concurrency_limits_counter import compute_run_op_concurrency_info_for_snapshot
+            from dagster._core.op_concurrency_limits_counter import (
+                compute_run_op_concurrency_info_for_snapshot,
+            )
 
             run_op_concurrency = compute_run_op_concurrency_info_for_snapshot(
                 execution_plan_snapshot
@@ -2428,7 +2433,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
         for event in events:
             run_id = event.run_id
-            if event.is_dagster_event and event.get_dagster_event().is_job_event:
+            if (
+                not self._event_storage.handles_run_events_in_store_event
+                and event.is_dagster_event
+                and event.get_dagster_event().is_job_event
+            ):
                 self._run_storage.handle_run_event(run_id, event.get_dagster_event())
 
             for sub in self._subscribers[run_id]:
@@ -3073,11 +3082,14 @@ class DagsterInstance(DynamicPartitionsStore):
     # backfill
     def get_backfills(
         self,
-        status: Optional["BulkActionStatus"] = None,
+        filters: Optional["BulkActionsFilter"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
+        status: Optional["BulkActionStatus"] = None,
     ) -> Sequence["PartitionBackfill"]:
-        return self._run_storage.get_backfills(status=status, cursor=cursor, limit=limit)
+        return self._run_storage.get_backfills(
+            status=status, cursor=cursor, limit=limit, filters=filters
+        )
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._run_storage.get_backfill(backfill_id)

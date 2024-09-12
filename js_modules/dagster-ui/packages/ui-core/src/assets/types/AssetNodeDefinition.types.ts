@@ -18,6 +18,7 @@ export type AssetNodeDefinitionFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  kinds: Array<string>;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}

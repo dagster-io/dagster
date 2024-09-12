@@ -16,20 +16,19 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, experimental_param
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.inference import InferredInputProps
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
 )
+from dagster._core.definitions.utils import NoValueSentinel, check_valid_name
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
-
-from .inference import InferredInputProps
-from .utils import NoValueSentinel, check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext

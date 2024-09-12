@@ -63,7 +63,9 @@ class AutoMaterializeRule(ABC):
 
     def to_asset_condition(self) -> "RuleCondition":
         """Converts this AutoMaterializeRule into an AssetCondition."""
-        from .declarative_automation.legacy.rule_condition import RuleCondition
+        from dagster._core.definitions.declarative_automation.legacy.rule_condition import (
+            RuleCondition,
+        )
 
         return RuleCondition(rule=self)
 

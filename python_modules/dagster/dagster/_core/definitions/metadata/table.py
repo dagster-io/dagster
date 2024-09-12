@@ -32,6 +32,136 @@ class TableRecord(
 
 
 # ########################
+# ##### TABLE CONSTRAINTS
+# ########################
+
+
+@whitelist_for_serdes
+class TableConstraints(
+    NamedTuple(
+        "TableConstraints",
+        [
+            ("other", PublicAttr[Sequence[str]]),
+        ],
+    )
+):
+    """Descriptor for "table-level" constraints. Presently only one property,
+    `other` is supported. This contains strings describing arbitrary
+    table-level constraints. A table-level constraint is a constraint defined
+    in terms of multiple columns (e.g. col_A > col_B) or in terms of rows.
+
+    Args:
+        other (List[str]): Descriptions of arbitrary table-level constraints.
+    """
+
+    def __new__(
+        cls,
+        other: Sequence[str],
+    ):
+        return super(TableConstraints, cls).__new__(
+            cls,
+            other=check.sequence_param(other, "other", of_type=str),
+        )
+
+
+_DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
+
+# ########################
+# ##### TABLE COLUMN CONSTRAINTS
+# ########################
+
+
+@whitelist_for_serdes
+class TableColumnConstraints(
+    NamedTuple(
+        "TableColumnConstraints",
+        [
+            ("nullable", PublicAttr[bool]),
+            ("unique", PublicAttr[bool]),
+            ("other", PublicAttr[Optional[Sequence[str]]]),
+        ],
+    )
+):
+    """Descriptor for a table column's constraints. Nullability and uniqueness are specified with
+    boolean properties. All other constraints are described using arbitrary strings under the
+    `other` property.
+
+    Args:
+        nullable (Optional[bool]): If true, this column can hold null values.
+        unique (Optional[bool]): If true, all values in this column must be unique.
+        other (List[str]): Descriptions of arbitrary column-level constraints
+            not expressible by the predefined properties.
+    """
+
+    def __new__(
+        cls,
+        nullable: bool = True,
+        unique: bool = False,
+        other: Optional[Sequence[str]] = None,
+    ):
+        return super(TableColumnConstraints, cls).__new__(
+            cls,
+            nullable=check.bool_param(nullable, "nullable"),
+            unique=check.bool_param(unique, "unique"),
+            other=check.opt_sequence_param(other, "other"),
+        )
+
+
+_DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
+
+# ########################
+# ##### TABLE COLUMN
+# ########################
+
+
+@whitelist_for_serdes
+class TableColumn(
+    NamedTuple(
+        "TableColumn",
+        [
+            ("name", PublicAttr[str]),
+            ("type", PublicAttr[str]),
+            ("description", PublicAttr[Optional[str]]),
+            ("constraints", PublicAttr[TableColumnConstraints]),
+        ],
+    )
+):
+    """Descriptor for a table column. The only property that must be specified
+    by the user is `name`. If no `type` is specified, `string` is assumed. If
+    no `constraints` are specified, the column is assumed to be nullable
+    (i.e. `required = False`) and have no other constraints beyond the data type.
+
+    Args:
+        name (List[str]): Descriptions of arbitrary table-level constraints.
+        type (Optional[str]): The type of the column. Can be an arbitrary
+            string. Defaults to `"string"`.
+        description (Optional[str]): Description of this column. Defaults to `None`.
+        constraints (Optional[TableColumnConstraints]): Column-level constraints.
+            If unspecified, column is nullable with no constraints.
+    """
+
+    def __new__(
+        cls,
+        name: str,
+        type: str = "string",  # noqa: A002
+        description: Optional[str] = None,
+        constraints: Optional[TableColumnConstraints] = None,
+    ):
+        return super(TableColumn, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            type=check.str_param(type, "type"),
+            description=check.opt_str_param(description, "description"),
+            constraints=check.opt_inst_param(
+                constraints,
+                "constraints",
+                TableColumnConstraints,
+                default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
+            ),
+        )
+
+
+# ########################
 # ##### TABLE SCHEMA
 # ########################
 
@@ -41,8 +171,8 @@ class TableSchema(
     NamedTuple(
         "TableSchema",
         [
-            ("columns", PublicAttr[Sequence["TableColumn"]]),
-            ("constraints", PublicAttr["TableConstraints"]),
+            ("columns", PublicAttr[Sequence[TableColumn]]),
+            ("constraints", PublicAttr[TableConstraints]),
         ],
     )
 ):
@@ -104,8 +234,8 @@ class TableSchema(
 
     def __new__(
         cls,
-        columns: Sequence["TableColumn"],
-        constraints: Optional["TableConstraints"] = None,
+        columns: Sequence[TableColumn],
+        constraints: Optional[TableConstraints] = None,
     ):
         return super(TableSchema, cls).__new__(
             cls,
@@ -126,137 +256,6 @@ class TableSchema(
                 TableColumn(name=name, type=type_str) for name, type_str in name_type_dict.items()
             ]
         )
-
-
-# ########################
-# ##### TABLE CONSTRAINTS
-# ########################
-
-
-@whitelist_for_serdes
-class TableConstraints(
-    NamedTuple(
-        "TableConstraints",
-        [
-            ("other", PublicAttr[Sequence[str]]),
-        ],
-    )
-):
-    """Descriptor for "table-level" constraints. Presently only one property,
-    `other` is supported. This contains strings describing arbitrary
-    table-level constraints. A table-level constraint is a constraint defined
-    in terms of multiple columns (e.g. col_A > col_B) or in terms of rows.
-
-    Args:
-        other (List[str]): Descriptions of arbitrary table-level constraints.
-    """
-
-    def __new__(
-        cls,
-        other: Sequence[str],
-    ):
-        return super(TableConstraints, cls).__new__(
-            cls,
-            other=check.sequence_param(other, "other", of_type=str),
-        )
-
-
-_DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
-
-# ########################
-# ##### TABLE COLUMN
-# ########################
-
-
-@whitelist_for_serdes
-class TableColumn(
-    NamedTuple(
-        "TableColumn",
-        [
-            ("name", PublicAttr[str]),
-            ("type", PublicAttr[str]),
-            ("description", PublicAttr[Optional[str]]),
-            ("constraints", PublicAttr["TableColumnConstraints"]),
-        ],
-    )
-):
-    """Descriptor for a table column. The only property that must be specified
-    by the user is `name`. If no `type` is specified, `string` is assumed. If
-    no `constraints` are specified, the column is assumed to be nullable
-    (i.e. `required = False`) and have no other constraints beyond the data type.
-
-    Args:
-        name (List[str]): Descriptions of arbitrary table-level constraints.
-        type (Optional[str]): The type of the column. Can be an arbitrary
-            string. Defaults to `"string"`.
-        description (Optional[str]): Description of this column. Defaults to `None`.
-        constraints (Optional[TableColumnConstraints]): Column-level constraints.
-            If unspecified, column is nullable with no constraints.
-    """
-
-    def __new__(
-        cls,
-        name: str,
-        type: str = "string",  # noqa: A002
-        description: Optional[str] = None,
-        constraints: Optional["TableColumnConstraints"] = None,
-    ):
-        return super(TableColumn, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            type=check.str_param(type, "type"),
-            description=check.opt_str_param(description, "description"),
-            constraints=check.opt_inst_param(
-                constraints,
-                "constraints",
-                TableColumnConstraints,
-                default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
-            ),
-        )
-
-
-# ########################
-# ##### TABLE COLUMN CONSTRAINTS
-# ########################
-
-
-@whitelist_for_serdes
-class TableColumnConstraints(
-    NamedTuple(
-        "TableColumnConstraints",
-        [
-            ("nullable", PublicAttr[bool]),
-            ("unique", PublicAttr[bool]),
-            ("other", PublicAttr[Optional[Sequence[str]]]),
-        ],
-    )
-):
-    """Descriptor for a table column's constraints. Nullability and uniqueness are specified with
-    boolean properties. All other constraints are described using arbitrary strings under the
-    `other` property.
-
-    Args:
-        nullable (Optional[bool]): If true, this column can hold null values.
-        unique (Optional[bool]): If true, all values in this column must be unique.
-        other (List[str]): Descriptions of arbitrary column-level constraints
-            not expressible by the predefined properties.
-    """
-
-    def __new__(
-        cls,
-        nullable: bool = True,
-        unique: bool = False,
-        other: Optional[Sequence[str]] = None,
-    ):
-        return super(TableColumnConstraints, cls).__new__(
-            cls,
-            nullable=check.bool_param(nullable, "nullable"),
-            unique=check.bool_param(unique, "unique"),
-            other=check.opt_sequence_param(other, "other"),
-        )
-
-
-_DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
 
 
 # ###########################

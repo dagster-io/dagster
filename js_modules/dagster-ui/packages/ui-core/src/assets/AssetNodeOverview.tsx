@@ -58,12 +58,9 @@ import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {
-  AssetComputeKindTag,
-  AssetStorageKindTag,
-  isCanonicalStorageKindTag,
-} from '../graph/KindTags';
+import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../graph/KindTags';
 import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
 import {
@@ -82,6 +79,41 @@ import {numberFormatter} from '../ui/formatters';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) => {
+  const [shown, setShown] = useStateWithStorage('show-asset-definition-system-tags', Boolean);
+
+  if (!shown) {
+    return (
+      <Caption>
+        <ButtonLink onClick={() => setShown(true)}>
+          <Box flex={{alignItems: 'center'}}>
+            <span>Show system tags ({tags.length || 0})</span>
+            <Icon name="arrow_drop_down" style={{transform: 'rotate(0deg)'}} />
+          </Box>
+        </ButtonLink>
+      </Caption>
+    );
+  } else {
+    return (
+      <Box flex={{direction: 'column', gap: 8}}>
+        <Box>
+          {tags.map((tag, idx) => (
+            <Tag key={idx}>{buildTagString(tag)}</Tag>
+          ))}
+        </Box>
+        <Caption>
+          <ButtonLink onClick={() => setShown(false)}>
+            <Box flex={{alignItems: 'center'}}>
+              <span>Hide system tags</span>
+              <Icon name="arrow_drop_down" style={{transform: 'rotate(180deg)'}} />
+            </Box>
+          </ButtonLink>
+        </Caption>
+      </Box>
+    );
+  }
+};
 
 export const AssetNodeOverview = ({
   assetKey,
@@ -267,6 +299,10 @@ export const AssetNodeOverview = ({
 
   const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+
+  const nonSystemTags = filteredTags?.filter((tag) => !isSystemTag(tag));
+  const systemTags = filteredTags?.filter(isSystemTag);
+
   const relationIdentifierMetadata = assetNode.metadataEntries?.find(
     isCanonicalRelationIdentifierEntry,
   );
@@ -317,13 +353,25 @@ export const AssetNodeOverview = ({
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
-          <AssetComputeKindTag
+          <AssetKind
             style={{position: 'relative'}}
-            definition={assetNode}
+            kind={assetNode.computeKind}
             reduceColor
             linkToFilteredAssetsTable
           />
         )}
+      </AttributeAndValue>
+      <AttributeAndValue label="Kinds">
+        {(assetNode.kinds.length > 1 || !assetNode.computeKind) &&
+          assetNode.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              style={{position: 'relative'}}
+              kind={kind}
+              reduceColor
+              linkToFilteredAssetsTable
+            />
+          ))}
       </AttributeAndValue>
       <AttributeAndValue label="Storage">
         {(relationIdentifierMetadata || uriMetadata || storageKindTag) && (
@@ -353,9 +401,9 @@ export const AssetNodeOverview = ({
               </Box>
             )}
             {storageKindTag && (
-              <AssetStorageKindTag
+              <AssetKind
                 style={{position: 'relative'}}
-                storageKind={storageKindTag.value}
+                kind={storageKindTag.value}
                 reduceColor
                 linkToFilteredAssetsTable
               />
@@ -364,9 +412,16 @@ export const AssetNodeOverview = ({
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Tags">
-        {filteredTags &&
-          filteredTags.length > 0 &&
-          filteredTags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
+        {filteredTags && filteredTags.length > 0 && (
+          <Box flex={{direction: 'column', gap: 8}}>
+            <Box>
+              {nonSystemTags.map((tag, idx) => (
+                <Tag key={idx}>{buildTagString(tag)}</Tag>
+              ))}
+            </Box>
+            {systemTags.length > 0 && <SystemTagsToggle tags={systemTags} />}
+          </Box>
+        )}
       </AttributeAndValue>
       <AttributeAndValue label="Source code">
         {codeSource &&

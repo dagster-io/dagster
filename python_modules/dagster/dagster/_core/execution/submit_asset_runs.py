@@ -4,7 +4,7 @@ import time
 from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_job import is_base_asset_job_name
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
@@ -32,7 +32,9 @@ def _get_implicit_job_name_for_assets(
     for asset_key in asset_keys[1:]:
         job_names &= set(asset_graph.get_materialization_job_names(asset_key))
 
-    return next((job_name for job_name in job_names if is_base_asset_job_name(job_name)), None)
+    return next(
+        (job_name for job_name in job_names if job_name.startswith(IMPLICIT_ASSET_JOB_NAME)), None
+    )
 
 
 def _get_execution_plan_asset_keys(
@@ -108,7 +110,6 @@ def _create_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
-    asset_graph: RemoteAssetGraph,
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -131,6 +132,7 @@ def _create_asset_run(
             # create a new request context for each run in case the code location server
             # is swapped out in the middle of the submission process
             workspace = workspace_process_context.create_request_context()
+            asset_graph = workspace.asset_graph
             execution_data = _get_job_execution_data_from_run_request(
                 asset_graph,
                 run_request,
@@ -139,7 +141,14 @@ def _create_asset_run(
                 run_request_execution_data_cache=run_request_execution_data_cache,
             )
 
-        except (DagsterInvalidSubsetError, DagsterUserCodeProcessError):
+        except (DagsterInvalidSubsetError, DagsterUserCodeProcessError) as e:
+            # Only retry on DagsterInvalidSubsetErrors raised within the code server
+            if isinstance(e, DagsterUserCodeProcessError) and not any(
+                error_info.cls_name == "DagsterInvalidSubsetError"
+                for error_info in e.user_code_process_error_infos
+            ):
+                raise
+
             logger.warning(
                 "Error while generating the execution plan, possibly because the code server is "
                 "out of sync with the daemon. The daemon periodically refreshes its representation "
@@ -223,7 +232,6 @@ def submit_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
-    asset_graph: RemoteAssetGraph,
     run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -261,7 +269,6 @@ def submit_asset_run(
             run_request_index,
             instance,
             run_request_execution_data_cache,
-            asset_graph,
             workspace_process_context,
             debug_crash_flags,
             logger,

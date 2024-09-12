@@ -34,7 +34,16 @@ export type AssetViewDefinitionQuery = {
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
-          partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+          kinds: Array<string>;
+          partitionDefinition: {
+            __typename: 'PartitionDefinition';
+            description: string;
+            dimensionTypes: Array<{
+              __typename: 'DimensionDefinitionType';
+              type: Types.PartitionDefinitionType;
+              dynamicPartitionsDefinitionName: string | null;
+            }>;
+          } | null;
           partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
           repository: {
             __typename: 'Repository';
@@ -16305,7 +16314,16 @@ export type AssetViewDefinitionNodeFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
-  partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  kinds: Array<string>;
+  partitionDefinition: {
+    __typename: 'PartitionDefinition';
+    description: string;
+    dimensionTypes: Array<{
+      __typename: 'DimensionDefinitionType';
+      type: Types.PartitionDefinitionType;
+      dynamicPartitionsDefinitionName: string | null;
+    }>;
+  } | null;
   partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
   repository: {
     __typename: 'Repository';

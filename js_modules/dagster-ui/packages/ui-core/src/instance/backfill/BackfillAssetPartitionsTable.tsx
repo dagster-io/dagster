@@ -1,4 +1,3 @@
-import {gql, useApolloClient} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -13,6 +12,7 @@ import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {BackfillDetailsBackfillFragment} from './types/BackfillPage.types';
+import {gql, useApolloClient} from '../../apollo-client';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';

@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
@@ -19,6 +18,7 @@ import * as React from 'react';
 import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
 import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
+import {useMutation} from '../apollo-client';
 import {getSharedToaster} from '../app/DomUtils';
 import {TerminateRunPolicy} from '../graphql/types';
 import {testId} from '../testing/testId';

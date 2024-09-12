@@ -48,7 +48,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.captured_log_manager import CapturedLogContext
+from dagster._core.storage.compute_log_manager import CapturedLogContext
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
@@ -272,6 +272,7 @@ class RunFailureReason(Enum):
     STEP_FAILURE = "STEP_FAILURE"
     JOB_INITIALIZATION_FAILURE = "JOB_INITIALIZATION_FAILURE"
     START_TIMEOUT = "START_TIMEOUT"
+    RUN_WORKER_RESTART = "RUN_WORKER_RESTART"
     UNKNOWN = "UNKNOWN"
 
 

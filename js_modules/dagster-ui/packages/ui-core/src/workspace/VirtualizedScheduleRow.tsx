@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -16,20 +15,20 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from './WorkspaceContext';
+import {isThisThingAJob, useRepository} from './WorkspaceContext/util';
 import {RepoAddress} from './types';
 import {
   SingleScheduleQuery,
   SingleScheduleQueryVariables,
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {CronTag} from '../schedules/CronTag';
 import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
@@ -86,8 +85,6 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  useBlockTraceOnQueryResult(scheduleQueryResult, 'SingleScheduleQuery');
-
   const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
     ScheduleAssetSelectionQuery,
     ScheduleAssetSelectionQueryVariables
@@ -100,8 +97,6 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
       },
     },
   });
-
-  useBlockTraceOnQueryResult(scheduleAssetSelectionQueryResult, 'ScheduleAssetSelectionQuery');
 
   useDelayedRowQuery(
     React.useCallback(() => {

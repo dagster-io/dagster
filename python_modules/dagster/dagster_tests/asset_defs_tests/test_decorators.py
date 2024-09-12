@@ -36,6 +36,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import AssetIn, AssetsDefinition, asset, multi_asset
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -671,6 +672,37 @@ def test_multi_asset_resource_defs():
             "key1": AssetOut(key=AssetKey("key1"), io_manager_key="foo"),
             "key2": AssetOut(key=AssetKey("key2"), io_manager_key="bar"),
         },
+        resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.required_resource_keys == {"foo", "bar", "baz"}
+
+    ensure_requirements_satisfied(
+        my_asset.resource_defs, list(my_asset.get_resource_requirements())
+    )
+
+
+@ignore_warning("Parameter `resource_defs` .* is experimental")
+def test_multi_asset_resource_defs_specs() -> None:
+    @resource
+    def baz_resource():
+        pass
+
+    @io_manager(required_resource_keys={"baz"})
+    def foo_manager():
+        pass
+
+    @io_manager
+    def bar_manager():
+        pass
+
+    @multi_asset(
+        specs=[
+            AssetSpec("key1", metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo"}),
+            AssetSpec("key2", metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
+        ],
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
     def my_asset():

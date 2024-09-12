@@ -1,4 +1,3 @@
-import {gql, useMutation} from '@apollo/client';
 import {
   Button,
   Group,
@@ -23,6 +22,7 @@ import {
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
 import {BackfillActionsBackfillFragment} from './types/BackfillActionsMenu.types';
 import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
+import {useMutation} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {showSharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
@@ -187,7 +187,7 @@ export const BackfillActionsMenu = ({
   );
 };
 
-export const BACKFILL_ACTIONS_BACKFILL_FRAGMENT = gql`
+export const BACKFILL_ACTIONS_BACKFI'../../apollo-client'l`
   fragment BackfillActionsBackfillFragment on PartitionBackfill {
     id
     hasCancelPermission

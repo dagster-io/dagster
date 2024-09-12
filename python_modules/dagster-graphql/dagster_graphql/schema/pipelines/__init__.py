@@ -1,5 +1,5 @@
 def types():
-    from .config import (
+    from dagster_graphql.schema.pipelines.config import (
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,
         GrapheneEvaluationStackEntry,
@@ -18,10 +18,12 @@ def types():
         GrapheneRuntimeMismatchConfigError,
         GrapheneSelectorTypeConfigError,
     )
-    from .config_result import GraphenePipelineConfigValidationResult
-    from .logger import GrapheneLogger
-    from .mode import GrapheneMode
-    from .pipeline import (
+    from dagster_graphql.schema.pipelines.config_result import (
+        GraphenePipelineConfigValidationResult,
+    )
+    from dagster_graphql.schema.pipelines.logger import GrapheneLogger
+    from dagster_graphql.schema.pipelines.mode import GrapheneMode
+    from dagster_graphql.schema.pipelines.pipeline import (
         GrapheneAsset,
         GrapheneIPipelineSnapshot,
         GraphenePipeline,
@@ -30,16 +32,22 @@ def types():
         GrapheneRun,
         GrapheneRunOrError,
     )
-    from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
-    from .pipeline_run_stats import (
+    from dagster_graphql.schema.pipelines.pipeline_ref import (
+        GraphenePipelineReference,
+        GrapheneUnknownPipeline,
+    )
+    from dagster_graphql.schema.pipelines.pipeline_run_stats import (
         GraphenePipelineRunStatsSnapshot,
         GrapheneRunStatsSnapshot,
         GrapheneRunStatsSnapshotOrError,
     )
-    from .resource import GrapheneResource
-    from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError
-    from .status import GrapheneRunStatus
-    from .subscription import (
+    from dagster_graphql.schema.pipelines.resource import GrapheneResource
+    from dagster_graphql.schema.pipelines.snapshot import (
+        GraphenePipelineSnapshot,
+        GraphenePipelineSnapshotOrError,
+    )
+    from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+    from dagster_graphql.schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionPayload,
         GraphenePipelineRunLogsSubscriptionSuccess,

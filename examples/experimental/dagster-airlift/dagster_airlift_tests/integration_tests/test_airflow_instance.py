@@ -6,7 +6,7 @@ from .conftest import assert_link_exists
 
 
 def test_airflow_instance(airflow_instance: None) -> None:
-    """Test AirflowInstance APIs against live-running airflow.
+    """Test AirflowInstance APIs against live-running airflow. Ensure that links result in 200s.
 
     Airflow is loaded with one dag (print_dag) which contains two tasks (print_task, downstream_print_task).
     """

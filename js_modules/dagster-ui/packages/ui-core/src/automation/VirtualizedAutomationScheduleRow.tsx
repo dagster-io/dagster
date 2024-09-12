@@ -1,14 +1,13 @@
-import {useLazyQuery} from '@apollo/client';
 import {Box, Caption, Checkbox, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
 import {forwardRef, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {AutomationTargetList} from './AutomationTargetList';
 import {AutomationRowGrid} from './VirtualizedAutomationRow';
+import {useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {InstigationStatus} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {CronTag} from '../schedules/CronTag';
 import {SCHEDULE_ASSET_SELECTIONS_QUERY} from '../schedules/ScheduleAssetSelectionsQuery';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
@@ -54,7 +53,6 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
       },
       notifyOnNetworkStatusChange: true,
     });
-    useBlockTraceOnQueryResult(queryResult, 'SingleScheduleQuery');
 
     const [queryScheduleAssetSelection, scheduleAssetSelectionQueryResult] = useLazyQuery<
       ScheduleAssetSelectionQuery,
@@ -68,8 +66,6 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
         },
       },
     });
-
-    useBlockTraceOnQueryResult(scheduleAssetSelectionQueryResult, 'ScheduleAssetSelectionQuery');
 
     useDelayedRowQuery(
       useCallback(() => {

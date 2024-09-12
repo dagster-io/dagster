@@ -16,9 +16,9 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.log import get_stack_trace_array
 
-from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from .schema import create_schema
-from .version import __version__
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
+from dagster_graphql.schema import create_schema
+from dagster_graphql.version import __version__
 
 
 def create_dagster_graphql_cli():

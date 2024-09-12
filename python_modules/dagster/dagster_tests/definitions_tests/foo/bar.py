@@ -1,6 +1,6 @@
 from dagster import job
 
-from .baz import baz_op
+from dagster_tests.definitions_tests.foo.baz import baz_op
 
 
 @job

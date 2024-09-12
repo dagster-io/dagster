@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generic, Iterator, Optional, Sequen
 
 from dagster import (
     AssetMaterialization,
+    MaterializeResult,
     _check as check,
 )
 from dagster._annotations import experimental, public
@@ -19,10 +20,10 @@ from dagster._core.execution.context.op_execution_context import OpExecutionCont
 from typing_extensions import TypeVar
 
 if TYPE_CHECKING:
-    from .resources import SlingResource
+    from dagster_embedded_elt.sling.resources import SlingResource
 
 
-SlingEventType = AssetMaterialization
+SlingEventType = Union[AssetMaterialization, MaterializeResult]
 
 # We define SlingEventIterator as a generic type for the sake of type hinting.
 # This is so that users who inspect the type of the return value of `SlingResource.replicate()`
@@ -73,17 +74,22 @@ SLING_COLUMN_PREFIX = "_sling_"
 
 
 def fetch_column_metadata(
-    materialization: AssetMaterialization,
+    materialization: SlingEventType,
     sling_cli: "SlingResource",
     replication_config: Dict[str, Any],
     context: Union[OpExecutionContext, AssetExecutionContext],
 ) -> Dict[str, Any]:
     target_name = replication_config["target"]
-    stream_name = cast(str, materialization.metadata["stream_name"].value)
+
+    if not materialization.metadata:
+        raise Exception("Missing required metadata to retrieve stream_name")
+
+    stream_name = cast(str, materialization.metadata["stream_name"])
 
     upstream_assets = set()
     if isinstance(context, AssetExecutionContext):
-        upstream_assets = context.assets_def.asset_deps[materialization.asset_key]
+        if materialization.asset_key:
+            upstream_assets = context.assets_def.asset_deps[materialization.asset_key]
 
     target_table_name = _get_target_table_name(stream_name, sling_cli)
 
@@ -103,10 +109,10 @@ def fetch_column_metadata(
                 upstream_asset_key = next(iter(upstream_assets))
                 column_lineage = TableColumnLineage(
                     deps_by_column={
-                        column_name: [
+                        column_name.lower(): [
                             TableColumnDep(
                                 asset_key=upstream_asset_key,
-                                column_name=column_name,
+                                column_name=column_name.lower(),
                             )
                         ]
                         for column_name in column_type_map.keys()
@@ -118,7 +124,7 @@ def fetch_column_metadata(
                 TableMetadataSet(
                     column_schema=TableSchema(
                         columns=[
-                            TableColumn(name=column_name, type=column_type)
+                            TableColumn(name=column_name.lower(), type=column_type)
                             for column_name, column_type in column_type_map.items()
                         ]
                     ),
@@ -172,7 +178,8 @@ class SlingEventIterator(Generic[T], abc.Iterator):
                 col_metadata = fetch_column_metadata(
                     event, self._sling_cli, self._replication_config, self._context
                 )
-                yield event.with_metadata({**col_metadata, **event.metadata})
+                if event.metadata:
+                    yield event._replace(metadata={**col_metadata, **event.metadata})
 
         return SlingEventIterator[T](
             _fetch_column_metadata(), self._sling_cli, self._replication_config, self._context

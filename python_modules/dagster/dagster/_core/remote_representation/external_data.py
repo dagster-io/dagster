@@ -50,12 +50,15 @@ from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_sensor_definition import (
+from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
+)
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionSnapshot,
 )
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
@@ -1011,6 +1014,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
     storage_field_names={
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
+        "description": "op_description",
     },
     field_serializers={
         "metadata": MetadataFieldSerializer,
@@ -1035,13 +1039,10 @@ class ExternalAssetNode(IHaveNew):
     code_version: Optional[str]
     node_definition_name: Optional[str]
     graph_name: Optional[str]
-    # op_description is a misleading name - this is the description for the asset, not for
-    # the op
-    op_description: Optional[str]
+    description: Optional[str]
     job_names: Sequence[str]
     partitions_def_data: Optional[ExternalPartitionsDefinitionData]
     output_name: Optional[str]
-    output_description: Optional[str]
     metadata: Mapping[str, MetadataValue]
     tags: Optional[Mapping[str, str]]
     group_name: str
@@ -1054,6 +1055,7 @@ class ExternalAssetNode(IHaveNew):
     execution_set_identifier: Optional[str]
     required_top_level_resources: Optional[Sequence[str]]
     auto_materialize_policy: Optional[AutoMaterializePolicy]
+    automation_condition_snapshot: Optional[AutomationConditionSnapshot]
     backfill_policy: Optional[BackfillPolicy]
     auto_observe_interval_minutes: Optional[Union[float, int]]
     owners: Optional[Sequence[str]]
@@ -1070,11 +1072,10 @@ class ExternalAssetNode(IHaveNew):
         code_version: Optional[str] = None,
         node_definition_name: Optional[str] = None,
         graph_name: Optional[str] = None,
-        op_description: Optional[str] = None,
+        description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
-        output_description: Optional[str] = None,
         metadata: Optional[Mapping[str, MetadataValue]] = None,
         tags: Optional[Mapping[str, str]] = None,
         group_name: Optional[str] = None,
@@ -1084,6 +1085,7 @@ class ExternalAssetNode(IHaveNew):
         execution_set_identifier: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[Union[float, int]] = None,
         owners: Optional[Sequence[str]] = None,
@@ -1133,6 +1135,11 @@ class ExternalAssetNode(IHaveNew):
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
 
+        if auto_materialize_policy and auto_materialize_policy.asset_condition:
+            # do not include automation conditions containing user-defined info on the ExternalAssetNode
+            if not auto_materialize_policy.asset_condition.is_serializable:
+                auto_materialize_policy = None
+
         return super().__new__(
             cls,
             asset_key=asset_key,
@@ -1144,11 +1151,10 @@ class ExternalAssetNode(IHaveNew):
             code_version=code_version,
             node_definition_name=node_definition_name,
             graph_name=graph_name,
-            op_description=op_description or output_description,
+            description=description,
             job_names=job_names or [],
             partitions_def_data=partitions_def_data,
             output_name=output_name,
-            output_description=output_description,
             metadata=metadata,
             tags=tags or {},
             # Newer code always passes a string group name when constructing these, but we assign
@@ -1160,6 +1166,7 @@ class ExternalAssetNode(IHaveNew):
             execution_set_identifier=execution_set_identifier,
             required_top_level_resources=required_top_level_resources or [],
             auto_materialize_policy=auto_materialize_policy,
+            automation_condition_snapshot=None,
             backfill_policy=backfill_policy,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
@@ -1473,7 +1480,7 @@ def external_asset_nodes_from_defs(
                 code_version=asset_node.code_version,
                 node_definition_name=node_definition_name,
                 graph_name=graph_name,
-                op_description=asset_node.description,
+                description=asset_node.description,
                 job_names=job_names,
                 partitions_def_data=(
                     external_partitions_definition_from_def(asset_node.partitions_def)

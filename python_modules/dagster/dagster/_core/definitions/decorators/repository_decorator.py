@@ -17,16 +17,15 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
-
-from ..executor_definition import ExecutorDefinition
-from ..graph_definition import GraphDefinition
-from ..job_definition import JobDefinition
-from ..logger_definition import LoggerDefinition
-from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
-from ..repository_definition import (
+from dagster._core.definitions.partitioned_schedule import (
+    UnresolvedPartitionedAssetScheduleDefinition,
+)
+from dagster._core.definitions.repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
     PendingRepositoryDefinition,
@@ -35,9 +34,11 @@ from ..repository_definition import (
     RepositoryDefinition,
     RepositoryListDefinition,
 )
-from ..schedule_definition import ScheduleDefinition
-from ..sensor_definition import SensorDefinition
-from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 T = TypeVar("T")
 

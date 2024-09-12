@@ -42,7 +42,7 @@ from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -711,6 +711,55 @@ def test_multi_asset_resources_execution():
     assert bar_list == [2]
 
 
+def test_multi_asset_io_manager_execution_specs() -> None:
+    class MyIOManager(IOManager):
+        def __init__(self, the_list):
+            self._the_list = the_list
+
+        def handle_output(self, _context, obj):
+            self._the_list.append(obj)
+
+        def load_input(self, _context):
+            pass
+
+    foo_list = []
+
+    @resource
+    def baz_resource():
+        return "baz"
+
+    @io_manager(required_resource_keys={"baz"})
+    def foo_manager(context):
+        assert context.resources.baz == "baz"
+        return MyIOManager(foo_list)
+
+    bar_list = []
+
+    @io_manager
+    def bar_manager():
+        return MyIOManager(bar_list)
+
+    @multi_asset(
+        specs=[
+            AssetSpec(key=AssetKey("key1"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo"}),
+            AssetSpec(key=AssetKey("key2"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
+        ],
+        resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
+    )
+    def my_asset(context):
+        # Required io manager keys are available on the context, same behavoir as ops
+        assert hasattr(context.resources, "foo")
+        assert hasattr(context.resources, "bar")
+        yield Output(1, "key1")
+        yield Output(2, "key2")
+
+    with instance_for_test() as instance:
+        materialize([my_asset], instance=instance)
+
+    assert foo_list == [1]
+    assert bar_list == [2]
+
+
 def test_graph_backed_asset_resources():
     @op(required_resource_keys={"foo"})
     def the_op(context):
@@ -830,7 +879,7 @@ def test_group_name_requirements():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "Empty asset group name was provided, which is not permitted."
+            "Empty asset group name was provided, which is not permitted. "
             "Set group_name=None to use the default group_name or set non-empty string"
         ),
     ):
@@ -2239,6 +2288,43 @@ def test_asset_spec_with_tags():
 
         @multi_asset(specs=[AssetSpec("asset1", tags={"a%": "b"})])  # key has illegal character
         def assets(): ...
+
+
+def test_asset_spec_with_kinds() -> None:
+    @multi_asset(specs=[AssetSpec("asset1", tags={"dagster/kind/python": ""})])
+    def assets(): ...
+
+    assert assets.specs_by_key[AssetKey("asset1")].kinds == {"python"}
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
+    ):
+
+        @multi_asset(
+            specs=[
+                AssetSpec(
+                    "asset1",
+                    tags={
+                        "dagster/kind/python": "",
+                        "dagster/kind/snowflake": "",
+                        "dagster/kind/bigquery": "",
+                        "dagster/kind/airflow": "",
+                    },
+                )
+            ]
+        )
+        def assets2(): ...
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Can not specify compute_kind on both the @multi_asset and kinds on AssetSpecs.",
+    ):
+
+        @multi_asset(
+            compute_kind="my_compute_kind",
+            specs=[AssetSpec("asset1", tags={"dagster/kind/python": ""})],
+        )
+        def assets3(): ...
 
 
 def test_asset_out_with_tags():

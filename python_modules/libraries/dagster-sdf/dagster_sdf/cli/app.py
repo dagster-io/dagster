@@ -11,9 +11,9 @@ from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
 
-from ..include import STARTER_PROJECT_PATH
-from ..sdf_version import SDF_VERSION_UPPER_BOUND
-from ..version import __version__ as dagster_sdf_version
+from dagster_sdf.include import STARTER_PROJECT_PATH
+from dagster_sdf.sdf_version import SDF_VERSION_UPPER_BOUND
+from dagster_sdf.version import __version__ as dagster_sdf_version
 
 app = typer.Typer(
     no_args_is_help=True,

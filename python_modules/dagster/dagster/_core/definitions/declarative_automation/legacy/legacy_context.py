@@ -18,8 +18,12 @@ from typing import (
     TypeVar,
 )
 
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AssetSubsetWithMetadata,
+    AutomationConditionCursor,
+    AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -27,20 +31,14 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._time import get_current_timestamp
 
-from ...asset_subset import AssetSubset, ValidAssetSubset
-from ..serialized_objects import (
-    AssetSubsetWithMetadata,
-    AutomationConditionCursor,
-    AutomationConditionNodeCursor,
-)
-
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.data_time import CachingDataTimeResolver
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-
-    from ...asset_daemon_context import AssetDaemonContext
-    from ...base_asset_graph import BaseAssetGraph
-    from ..automation_condition import AutomationCondition
 
 T = TypeVar("T")
 
@@ -250,9 +248,15 @@ class LegacyRuleEvaluationContext:
         """Fetches the unique id corresponding to the DiscardOnMaxMaterializationsExceededRule, if
         that rule is part of the broader condition.
         """
-        from ...auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
-        from ..operators import NotAutomationCondition
-        from .rule_condition import RuleCondition
+        from dagster._core.definitions.auto_materialize_rule_impls import (
+            DiscardOnMaxMaterializationsExceededRule,
+        )
+        from dagster._core.definitions.declarative_automation.legacy.rule_condition import (
+            RuleCondition,
+        )
+        from dagster._core.definitions.declarative_automation.operators import (
+            NotAutomationCondition,
+        )
 
         # if you have a discard condition, it'll be part of a structure of the form
         # Or(MaterializeCond, Not(SkipCond), Not(DiscardCond))
@@ -355,7 +359,9 @@ class LegacyRuleEvaluationContext:
         """Returns the set of candidates for this tick which were not candidates on the previous
         tick.
         """
-        from ..serialized_objects import HistoricalAllPartitionsSubsetSentinel
+        from dagster._core.definitions.declarative_automation.serialized_objects import (
+            HistoricalAllPartitionsSubsetSentinel,
+        )
 
         if not self.node_cursor:
             return self.candidate_subset
@@ -412,7 +418,9 @@ class LegacyRuleEvaluationContext:
             ignore_subset: An AssetSubset which represents information that we should *not* carry
                 forward from the previous tick.
         """
-        from ..serialized_objects import AssetSubsetWithMetadata
+        from dagster._core.definitions.declarative_automation.serialized_objects import (
+            AssetSubsetWithMetadata,
+        )
 
         mapping = defaultdict(lambda: self.empty_subset())
         has_new_metadata_subset = self.empty_subset()

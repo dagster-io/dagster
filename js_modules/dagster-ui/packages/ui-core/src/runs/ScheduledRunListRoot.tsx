@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -15,6 +14,7 @@ import {
   ScheduledRunsListQuery,
   ScheduledRunsListQueryVariables,
 } from './types/ScheduledRunListRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
@@ -26,7 +26,6 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {
   REPOSITORY_FOR_NEXT_TICKS_FRAGMENT,
@@ -44,7 +43,6 @@ export const ScheduledRunListRoot = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'ScheduledRunsListQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 

@@ -1,10 +1,11 @@
 import {Box, Icon, Tag} from '@dagster-io/ui-components';
+import {useLocation} from 'react-router-dom';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {SideNavItem, SideNavItemConfig} from '../ui/SideNavItem';
 import {numberFormatter} from '../ui/formatters';
+import {WorkspaceRepositoryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../workspace/types';
-import {WorkspaceRepositoryFragment} from '../workspace/types/WorkspaceQueries.types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
 
 export const CodeLocationDefinitionsNav = (props: Props) => {
   const {repoAddress, repository} = props;
+  const {pathname} = useLocation();
+  const assetGroupCount = repository.assetGroups.length;
   const jobCount = repository.pipelines.filter(({name}) => !isHiddenAssetGroupJob(name)).length;
   const scheduleCount = repository.schedules.length;
   const sensorCount = repository.sensors.length;
@@ -26,6 +29,9 @@ export const CodeLocationDefinitionsNav = (props: Props) => {
       icon: <Icon name="asset" />,
       label: 'Assets',
       path: workspacePathFromAddress(repoAddress, '/assets'),
+      rightElement: assetGroupCount ? (
+        <Tag icon="asset_group">{numberFormatter.format(assetGroupCount)}</Tag>
+      ) : null,
     },
     {
       key: 'jobs',
@@ -79,7 +85,13 @@ export const CodeLocationDefinitionsNav = (props: Props) => {
     <>
       <Box padding={{bottom: 12}}>
         {items.map((item) => {
-          return <SideNavItem key={item.key} item={item} active={false} />;
+          return (
+            <SideNavItem
+              key={item.key}
+              item={item}
+              active={item.type === 'link' && pathname === item.path}
+            />
+          );
         })}
       </Box>
     </>

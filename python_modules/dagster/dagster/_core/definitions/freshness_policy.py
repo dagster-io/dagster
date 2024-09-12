@@ -3,12 +3,11 @@ from typing import AbstractSet, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import deprecated
+from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import get_timezone
 from dagster._utils.schedules import is_valid_cron_schedule, reverse_cron_string_iterator
-
-from .events import AssetKey
 
 
 class FreshnessConstraint(NamedTuple):

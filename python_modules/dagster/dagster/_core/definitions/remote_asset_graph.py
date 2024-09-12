@@ -18,23 +18,26 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.base_asset_graph import (
+    AssetKeyOrCheckKey,
+    BaseAssetGraph,
+    BaseAssetNode,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.handle import RepositoryHandle
-
-from .backfill_policy import BackfillPolicy
-from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph, BaseAssetNode
-from .events import AssetKey
-from .freshness_policy import FreshnessPolicy
-from .partition import PartitionsDefinition
-from .partition_mapping import PartitionMapping
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external_data import (
@@ -66,7 +69,7 @@ class RemoteAssetNode(BaseAssetNode):
 
     @property
     def description(self) -> Optional[str]:
-        return self._priority_node.op_description
+        return self._priority_node.description
 
     @property
     def group_name(self) -> str:
@@ -367,52 +370,7 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
 
         Note: all asset_keys should be in the same repository.
         """
-        if all(self.get(asset_key).is_observable for asset_key in asset_keys):
-            if external_repo is None:
-                check.failed(
-                    "external_repo must be passed in when getting job names for observable assets"
-                )
-            # for observable assets, we need to select the job based on the partitions def
-            target_partitions_defs = {
-                self.get(asset_key).partitions_def for asset_key in asset_keys
-            }
-            check.invariant(len(target_partitions_defs) == 1, "Expected exactly one partitions def")
-            target_partitions_def = next(iter(target_partitions_defs))
-
-            # create a mapping from job name to the partitions def of that job
-            partitions_def_by_job_name = {}
-            for (
-                external_partition_set_data
-            ) in external_repo.external_repository_data.external_partition_set_datas:
-                if external_partition_set_data.external_partitions_data is None:
-                    partitions_def = None
-                else:
-                    partitions_def = external_partition_set_data.external_partitions_data.get_partitions_definition()
-                partitions_def_by_job_name[external_partition_set_data.job_name] = partitions_def
-            # add any jobs that don't have a partitions def
-            for external_job in external_repo.get_all_external_jobs():
-                job_name = external_job.external_job_data.name
-                if job_name not in partitions_def_by_job_name:
-                    partitions_def_by_job_name[job_name] = None
-            # find the job that matches the expected partitions definition
-            for job_name, external_partitions_def in partitions_def_by_job_name.items():
-                asset_keys_for_job = self.asset_keys_for_job(job_name)
-                if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
-                    continue
-                if (
-                    # unpartitioned observable assets may be materialized in any job
-                    target_partitions_def is None
-                    or external_partitions_def == target_partitions_def
-                ) and all(asset_key in asset_keys_for_job for asset_key in asset_keys):
-                    return job_name
-        else:
-            for job_name in self.all_job_names:
-                asset_keys_for_job = self.asset_keys_for_job(job_name)
-                if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
-                    continue
-                if all(asset_key in self.asset_keys_for_job(job_name) for asset_key in asset_keys):
-                    return job_name
-        return None
+        return IMPLICIT_ASSET_JOB_NAME
 
     def split_asset_keys_by_repository(
         self, asset_keys: AbstractSet[AssetKey]
