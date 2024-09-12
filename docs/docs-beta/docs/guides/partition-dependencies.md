@@ -15,7 +15,7 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 ---
 
 <details>
-  <summary>Prerequisites</summary>
+<summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 
@@ -26,7 +26,14 @@ To follow the steps in this guide, you'll need:
 
 ## Dependencies between different time-based partitions \{#different-time-dependencies}
 
-The [time-partitioned asset example](#time-based) created two partitions: `daily_sales_data` and `daily_sales_summary`, which can be executed at the same time in a single schedule.
+The following example creates two partitions: `daily_sales_data` and `daily_sales_summary`, which can be executed at the same time in a single schedule.
+
+<details>
+<summary>Show example</summary>
+
+<CodeExample filePath="guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
+
+</details>
 
 However, sometimes you might want to define dependencies between different time-based partitions. For example, you might want to aggregate daily data into a weekly report.
 
@@ -46,7 +53,7 @@ In this example:
   - First, we specify `automation_condition=AutomationCondition.eager()` to the `weekly_sales_summary` asset. This ensures it runs weekly after all seven daily partitions of `daily_sales_data` are up-to-date.
   - Second, we specify `automation_condition=AutomationCondition.cron(cron_schedule="0 1 * * *")` to the `daily_sales_data` asset. This ensures it runs daily.
 
-Note: In [a simpler example](#define-time-partitioned-assets) above, we manually set up a daily schedule for asset execution. For more complex dependency logic, it's recommended to use automation conditions instead of schedules. Automation conditions specify when an asset should run, which allows you to define execution criteria without custom scheduling logic. For more details, see [Declarative Automation](/concepts/automation/declarative-automation).
+Note: In a simpler example above, we manually set up a daily schedule for asset execution. For more complex dependency logic, it's recommended to use automation conditions instead of schedules. Automation conditions specify when an asset should run, which allows you to define execution criteria without custom scheduling logic. For more details, see [Declarative Automation](/concepts/automation/declarative-automation).
 
 ## Dependencies between time-based partitions and un-partitioned assets
 
