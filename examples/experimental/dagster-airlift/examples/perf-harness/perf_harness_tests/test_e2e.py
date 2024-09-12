@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from typing import List
 
 import pytest
 from dagster import AssetKey, DagsterInstance
@@ -12,18 +13,18 @@ def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
-@pytest.fixture(name="dagster_defs_path")
-def dagster_defs_path_fixture(request) -> str:
+@pytest.fixture(name="dagster_dev_module")
+def dagster_dev_module_fixture(request) -> str:
     return request.param
 
 
-@pytest.fixture(name="dagster_defs_type")
-def dagster_defs_type_fixture() -> str:
-    return "-m"
+@pytest.fixture(name="dagster_dev_cmd")
+def dagster_dev_cmd_fixture(dagster_dev_module: str) -> List[str]:
+    return ["dagster", "dev", "-m", dagster_dev_module, "-p", "3333"]
 
 
 @pytest.mark.parametrize(
-    "dagster_defs_path",
+    "dagster_dev_module",
     [
         "perf_harness.dagster_defs.peer",
         "perf_harness.dagster_defs.observe",
@@ -33,7 +34,7 @@ def dagster_defs_type_fixture() -> str:
     indirect=True,
 )
 def test_dagster_materializes(
-    airflow_instance: None, dagster_dev: None, dagster_home: str, dagster_defs_path: str
+    airflow_instance: None, dagster_dev: None, dagster_home: str, dagster_dev_module: str
 ) -> None:
     """Test that assets can load properly, and that materializations register."""
     run_id = af_instance.trigger_dag("dag_0")
@@ -49,7 +50,7 @@ def test_dagster_materializes(
 
     assert asset_materialization
 
-    if dagster_defs_path.endswith("observe") or dagster_defs_path.endswith("migrate"):
+    if dagster_dev_module.endswith("observe") or dagster_dev_module.endswith("migrate"):
         asset_materialization = dagster_instance.get_latest_materialization_event(
             asset_key=AssetKey(["asset_0_0"])
         )

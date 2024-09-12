@@ -36,13 +36,20 @@ class LoadToLakehouseOperator(BaseOperator):
 
 DBT_DIR = os.getenv("DBT_PROJECT_DIR")
 # Create the DAG with the specified schedule interval
-dbt_dag = DAG("dbt_dag", default_args=default_args, schedule_interval=None)
+dbt_dag = DAG(
+    "dbt_dag", default_args=default_args, schedule_interval=None, is_paused_upon_creation=False
+)
 args = f"--project-dir {DBT_DIR} --profiles-dir {DBT_DIR}"
 run_dbt_model = BashOperator(
     task_id="build_dbt_models", bash_command=f"dbt build {args}", dag=dbt_dag
 )
 
-dag = DAG("load_lakehouse", default_args=default_args, schedule_interval=None)
+dag = DAG(
+    "load_lakehouse",
+    default_args=default_args,
+    schedule_interval=None,
+    is_paused_upon_creation=False,
+)
 load_iris = LoadToLakehouseOperator(
     task_id="load_iris",
     dag=dag,
