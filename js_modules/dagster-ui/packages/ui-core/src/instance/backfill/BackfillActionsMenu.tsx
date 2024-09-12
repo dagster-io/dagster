@@ -9,7 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useHistory} from 'react-router-dom';
-
+import {gql} from '../../apollo-client';
 import {
   BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT,
   BackfillStepStatusDialog,
@@ -187,7 +187,7 @@ export const BackfillActionsMenu = ({
   );
 };
 
-export const BACKFILL_ACTIONS_BACKFI'../../apollo-client'l`
+export const BACKFILL_ACTIONS_BACKFILL_FRAGMENT = gql`
   fragment BackfillActionsBackfillFragment on PartitionBackfill {
     id
     hasCancelPermission
