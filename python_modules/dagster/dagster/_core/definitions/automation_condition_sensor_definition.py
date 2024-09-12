@@ -2,9 +2,7 @@ from typing import Any, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -16,7 +14,6 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.definitions.utils import check_valid_name, normalize_tags
-from dagster._time import get_current_datetime
 
 
 def evaluate_automation_conditions(context: SensorEvaluationContext):
@@ -27,19 +24,6 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
     )
 
     asset_graph = check.not_none(context.repository_def).asset_graph
-
-    asset_graph_view = AssetGraphView(
-        temporal_context=TemporalContext(
-            effective_dt=get_current_datetime(),
-            last_event_id=None,
-        ),
-        instance=context.instance,
-        asset_graph=asset_graph,
-    )
-
-    data_time_resolver = CachingDataTimeResolver(
-        asset_graph_view.get_inner_queryer_for_back_compat()
-    )
     cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
         context.cursor,
         asset_graph,
@@ -47,19 +31,15 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
 
     evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
+        instance=context.instance,
         entity_keys=asset_graph.all_asset_keys,
-        asset_graph_view=asset_graph_view,
         logger=context.log,
-        data_time_resolver=data_time_resolver,
         cursor=cursor,
-        respect_materialization_data_versions=True,
-        auto_materialize_run_tags={},
-        request_backfills=context.instance.da_request_backfills(),
     )
     results, entity_subsets = evaluator.evaluate()
     new_cursor = cursor.with_updates(
         evaluation_id=cursor.evaluation_id,
-        evaluation_timestamp=asset_graph_view.effective_dt.timestamp(),
+        evaluation_timestamp=evaluator.evaluation_time.timestamp(),
         newly_observe_requested_asset_keys=[],  # skip for now, hopefully forever
         condition_cursors=[result.get_new_cursor() for result in results],
     )

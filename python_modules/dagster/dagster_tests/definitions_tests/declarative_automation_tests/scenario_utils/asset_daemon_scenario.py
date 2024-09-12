@@ -159,9 +159,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 for key in self.asset_graph.external_asset_keys
                 if self.asset_graph.get(key).auto_observe_interval_minutes is not None
             },
-            respect_materialization_data_versions=False,
             logger=self.logger,
-            request_backfills=self.request_backfills,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)

@@ -101,7 +101,7 @@ def test_single_observable_source_asset_prior_recent_observe_requests(
     assert len(run_requests) == 0
 
 
-def test_reconcile():
+def test_reconcile() -> None:
     @observable_source_asset(auto_observe_interval_minutes=30)
     def asset1(): ...
 
@@ -115,11 +115,9 @@ def test_reconcile():
         auto_materialize_asset_keys=set(),
         instance=instance,
         cursor=AssetDaemonCursor.empty(),
-        materialize_run_tags=None,
+        materialize_run_tags={},
         observe_run_tags={"tag1": "tag_value"},
-        respect_materialization_data_versions=False,
         logger=logging.getLogger("dagster.amp"),
-        request_backfills=False,
     ).evaluate()
     assert len(run_requests) == 1
     assert run_requests[0].tags.get("tag1") == "tag_value"

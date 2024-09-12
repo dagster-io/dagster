@@ -1,6 +1,7 @@
+import datetime
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -13,7 +14,7 @@ from typing import (
     Tuple,
 )
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -23,67 +24,65 @@ from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey
+from dagster._core.instance import DagsterInstance
+from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
-    import datetime
-
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
-@dataclass
 class AutomationConditionEvaluator:
     def __init__(
         self,
         *,
-        asset_graph: BaseAssetGraph,
         entity_keys: AbstractSet[EntityKey],
-        asset_graph_view: AssetGraphView,
-        logger: logging.Logger,
+        instance: DagsterInstance,
+        asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
-        data_time_resolver: CachingDataTimeResolver,
-        respect_materialization_data_versions: bool,
-        # Mapping from run tags to values that should be automatically added run emitted by
-        # the declarative scheduling system. This ends up getting sources from places such
-        # as https://docs.dagster.io/deployment/dagster-instance#auto-materialize
-        # Should this be a supported feature in DS?
-        auto_materialize_run_tags: Mapping[str, str],
-        request_backfills: bool,
+        evaluation_time: Optional[datetime.datetime] = None,
+        logger: logging.Logger = logging.getLogger("dagster.automation"),
     ):
-        self.asset_graph = asset_graph
         self.entity_keys = entity_keys
-        self.asset_graph_view = asset_graph_view
+        self.asset_graph_view = AssetGraphView(
+            temporal_context=TemporalContext(
+                effective_dt=evaluation_time or get_current_datetime(),
+                last_event_id=instance.event_log_storage.get_maximum_record_id(),
+            ),
+            instance=instance,
+            asset_graph=asset_graph,
+        )
         self.logger = logger
         self.cursor = cursor
-        self.data_time_resolver = data_time_resolver
-        self.respect_materialization_data_versions = respect_materialization_data_versions
-        self.auto_materialize_run_tags = auto_materialize_run_tags
 
-        self.current_results_by_key = {}
+        self.current_results_by_key: Dict[EntityKey, AutomationResult] = {}
         self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
-        self.num_checked_assets = 0
-        self.num_asset_keys = len(entity_keys)
-        self.request_backfills = request_backfills
+
+        _instance = self.asset_graph_view.instance
+        self.legacy_auto_materialize_run_tags: Mapping[str, str] = (
+            _instance.auto_materialize_run_tags
+        )
+        self.legacy_respect_materialization_data_versions = (
+            _instance.auto_materialize_respect_materialization_data_versions
+        )
+        self.request_backfills = _instance.da_request_backfills()
 
         self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
-        self._execution_set_extras: Dict[AssetKey, List[EntitySubset[AssetKey]]] = defaultdict(list)
+        self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
-    asset_graph: BaseAssetGraph[BaseAssetNode]
-    entity_keys: AbstractSet[EntityKey]
-    asset_graph_view: AssetGraphView
-    current_results_by_key: Dict[EntityKey, AutomationResult]
-    num_checked_assets: int
-    num_asset_keys: int
-    logger: logging.Logger
-    cursor: AssetDaemonCursor
-    data_time_resolver: CachingDataTimeResolver
-    respect_materialization_data_versions: bool
-    auto_materialize_run_tags: Mapping[str, str]
-    request_backfills: bool
+        self._execution_set_extras: Dict[AssetKey, List[EntitySubset[AssetKey]]] = defaultdict(list)
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
         return self.asset_graph_view.get_inner_queryer_for_back_compat()
+
+    @property
+    def evaluation_time(self) -> datetime.datetime:
+        return self.asset_graph_view.effective_dt
+
+    @property
+    def asset_graph(self) -> "BaseAssetGraph[BaseAssetNode]":
+        return self.asset_graph_view.asset_graph
 
     @property
     def evaluated_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
@@ -110,13 +109,14 @@ class AutomationConditionEvaluator:
 
     def evaluate(self) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[EntityKey]]]:
         self.prefetch()
+        num_conditions = len(self.entity_keys)
+        num_evaluated = 0
         for entity_key in self.asset_graph.toposorted_entity_keys:
             if entity_key not in self.entity_keys:
                 continue
 
-            self.num_checked_assets += 1
             self.logger.debug(
-                f"Evaluating {entity_key.to_user_string()} ({self.num_checked_assets}/{self.num_asset_keys})"
+                f"Evaluating {entity_key.to_user_string()} ({num_evaluated+1}/{num_conditions})"
             )
 
             try:
@@ -140,6 +140,7 @@ class AutomationConditionEvaluator:
                 f"requested ({requested_str}) "
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
+            num_evaluated += 1
         return self.current_results_by_key.values(), self._get_entity_subsets()
 
     def evaluate_entity(self, key: EntityKey) -> None:
@@ -190,7 +191,9 @@ class AutomationConditionEvaluator:
 
     def _get_entity_subsets(self) -> Iterable[EntitySubset[EntityKey]]:
         subsets_by_key = {
-            key: result.true_subset for key, result in self.current_results_by_key.items()
+            key: result.true_subset
+            for key, result in self.current_results_by_key.items()
+            if not result.true_subset.is_empty
         }
         # add in any additional asset partitions we need to request to abide by execution
         # set rules

@@ -109,13 +109,13 @@ class LegacyRuleEvaluationContext:
                 instance_queryer,
                 instance_queryer.evaluation_time,
             ),
-            data_time_resolver=evaluator.data_time_resolver,
+            data_time_resolver=evaluator.legacy_data_time_resolver,
             instance_queryer=instance_queryer,
             current_results_by_key=evaluator.current_results_by_key,
             expected_data_time_mapping=evaluator.legacy_expected_data_time_by_key,
             start_timestamp=get_current_timestamp(),
-            respect_materialization_data_versions=evaluator.respect_materialization_data_versions,
-            auto_materialize_run_tags=evaluator.auto_materialize_run_tags,
+            respect_materialization_data_versions=evaluator.legacy_respect_materialization_data_versions,
+            auto_materialize_run_tags=evaluator.legacy_auto_materialize_run_tags,
             logger=evaluator.logger,
         )
 
