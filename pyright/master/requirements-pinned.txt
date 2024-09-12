@@ -160,6 +160,7 @@ daff==1.3.46
 -e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/libraries/dagster-ssh
 -e python_modules/dagster-test
+-e python_modules/libraries/dagster-tableau
 -e python_modules/libraries/dagster-twilio
 -e docs/dagster-ui-screenshot
 -e python_modules/libraries/dagster-wandb

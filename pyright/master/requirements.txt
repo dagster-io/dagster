@@ -87,6 +87,7 @@
 -e python_modules/libraries/dagster-snowflake-pyspark/
 -e python_modules/libraries/dagster-spark/
 -e python_modules/libraries/dagster-ssh/
+-e python_modules/libraries/dagster-tableau
 -e python_modules/libraries/dagster-twilio/
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
