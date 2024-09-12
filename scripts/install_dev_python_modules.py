@@ -58,7 +58,7 @@ def main(
         "python_modules/automation",
         "python_modules/libraries/dagster-managed-elements",
         "python_modules/libraries/dagster-airbyte",
-        "python_modules/libraries/dagster-aws[test]",
+        "python_modules/libraries/dagster-aws[stubs,test]",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-celery-docker",
         "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
