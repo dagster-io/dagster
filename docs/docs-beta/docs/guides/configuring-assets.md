@@ -8,13 +8,6 @@ You will commonly want to manually materialize assets using the Dagster UI to ba
 
 Often, you will want to be able to tweak some parameters when materializing these assets. This can be accomplished through the asset configuration system.
 
-## What you'll learn
-
-- How to make your assets configurable
-- How to provide configuration when launching a run
-
----
-
 <details>
   <summary>Prerequisites</summary>
 
