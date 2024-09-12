@@ -8,12 +8,6 @@ last_update:
 
 Automation is key to building reliable, efficient data pipelines. This guide provides a simplified overview of the main ways to automate processes in Dagster, helping you choose the right method for your needs. You will find links to more detailed guides for each method below.
 
-## What you'll learn
-
-- The different automation options available in Dagster
-- How to implement basic scheduling and event-based triggers
-- Best practices for selecting and using automation methods
-
 <details>
   <summary>Prerequisites</summary>
 

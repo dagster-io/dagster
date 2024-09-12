@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import timedelta
-from typing import Dict, List, Sequence, Set, Tuple
+from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple
 
 from dagster import (
     AssetCheckKey,
@@ -22,20 +22,38 @@ from dagster._core.definitions.repository_definition.repository_definition impor
     RepositoryDefinition,
 )
 from dagster._core.utils import toposort_flatten
+from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 
 from dagster_airlift.constants import MIGRATED_TAG
-from dagster_airlift.core.airflow_instance import AirflowInstance, TaskInstance
+from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.utils import get_dag_id_from_asset, get_task_id_from_asset
+
+MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
+DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
+START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setting of the cursor.
+
+
+@whitelist_for_serdes
+@record
+class AirflowPollingSensorCursor:
+    """A cursor that stores the last effective timestamp and the last polled dag id."""
+
+    end_date_gte: Optional[float] = None
+    end_date_lte: Optional[float] = None
+    dag_query_offset: Optional[int] = None
 
 
 def build_airflow_polling_sensor(
     airflow_instance: AirflowInstance,
+    minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
 ) -> SensorDefinition:
     @sensor(
         name="airflow_dag_status_sensor",
-        minimum_interval_seconds=1,
+        minimum_interval_seconds=minimum_interval_seconds,
         default_status=DefaultSensorStatus.RUNNING,
         # This sensor will only ever execute asset checks and not asset materializations.
         asset_selection=AssetSelection.all_asset_checks(),
@@ -43,83 +61,66 @@ def build_airflow_polling_sensor(
     def airflow_dag_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
         repository_def = check.not_none(context.repository_def)
-        last_effective_date = (
-            datetime_from_timestamp(float(context.cursor))
-            if context.cursor
-            else get_current_datetime() - timedelta(days=1)
-        )
+        try:
+            cursor = (
+                deserialize_value(context.cursor, AirflowPollingSensorCursor)
+                if context.cursor
+                else AirflowPollingSensorCursor()
+            )
+        except Exception as e:
+            context.log.info(f"Failed to interpret cursor. Starting from scratch. Error: {e}")
+            cursor = AirflowPollingSensorCursor()
         current_date = get_current_datetime()
-        materializations_to_report: List[Tuple[float, AssetMaterialization]] = []
         toposorted_keys = toposorted_asset_keys(repository_def)
-        asset_check_keys_to_request = set()
         unmigrated_info = get_unmigrated_info(repository_def)
-        for dag_id, peered_dag_asset_info in unmigrated_info.asset_info_by_dag_id.items():
-            dag_key = peered_dag_asset_info.dag_asset_key
-            task_keys = peered_dag_asset_info.task_asset_keys
-            # For now, we materialize assets representing tasks only when the whole dag completes.
-            # With a more robust cursor that can let us know when we've seen a particular task run already, then we can relax this constraint.
-            for dag_run in airflow_instance.get_dag_runs(dag_id, last_effective_date, current_date):
-                if not dag_run.success:
-                    raise Exception("Should only see successful dag runs at this point.")
+        current_dag_offset = cursor.dag_query_offset or 0
+        end_date_gte = (
+            cursor.end_date_gte
+            or (current_date - timedelta(seconds=START_LOOKBACK_SECONDS)).timestamp()
+        )
+        end_date_lte = cursor.end_date_lte or current_date.timestamp()
+        sensor_iter = materializations_and_requests_from_batch_iter(
+            end_date_gte=end_date_gte,
+            end_date_lte=end_date_lte,
+            offset=current_dag_offset,
+            airflow_instance=airflow_instance,
+            unmigrated_info=unmigrated_info,
+        )
+        all_materializations: List[Tuple[float, AssetMaterialization]] = []
+        all_check_keys: Set[AssetCheckKey] = set()
+        latest_offset = current_dag_offset
+        while get_current_datetime() - current_date < timedelta(seconds=MAIN_LOOP_TIMEOUT_SECONDS):
+            batch_result = next(sensor_iter, None)
+            if batch_result is None:
+                break
+            all_materializations.extend(batch_result.materializations_and_timestamps)
 
-                metadata = {
-                    "Airflow Run ID": dag_run.run_id,
-                    "Run Metadata (raw)": JsonMetadataValue(dag_run.metadata),
-                    "Run Type": dag_run.run_type,
-                    "Airflow Config": JsonMetadataValue(dag_run.config),
-                    "Creation Timestamp": TimestampMetadataValue(get_current_timestamp()),
-                }
-                # Add dag materialization
-                dag_metadata = {
-                    **metadata,
-                    "Run Details": MarkdownMetadataValue(f"[View Run]({dag_run.url})"),
-                    "Start Date": TimestampMetadataValue(dag_run.start_date),
-                    "End Date": TimestampMetadataValue(dag_run.end_date),
-                }
-                materializations_to_report.append(
-                    (
-                        dag_run.end_date,
-                        AssetMaterialization(
-                            asset_key=dag_key,
-                            description=dag_run.note,
-                            metadata=dag_metadata,
-                        ),
-                    )
-                )
-                asset_check_keys_to_request.update(unmigrated_info.checks_per_key[dag_key])
-                task_runs = {}
-                for task_id, asset_key in task_keys:
-                    task_run: TaskInstance = task_runs.get(
-                        task_id, airflow_instance.get_task_instance(dag_id, task_id, dag_run.run_id)
-                    )
-                    task_runs[task_id] = task_run
-                    task_metadata = {
-                        **metadata,
-                        "Run Details": MarkdownMetadataValue(f"[View Run]({task_run.details_url})"),
-                        "Task Logs": MarkdownMetadataValue(f"[View Logs]({task_run.log_url})"),
-                        "Start Date": TimestampMetadataValue(task_run.start_date),
-                        "End Date": TimestampMetadataValue(task_run.end_date),
-                    }
-                    materializations_to_report.append(
-                        (
-                            task_run.end_date,
-                            AssetMaterialization(
-                                asset_key=asset_key,
-                                description=task_run.note,
-                                metadata=task_metadata,
-                            ),
-                        )
-                    )
-                    asset_check_keys_to_request.update(unmigrated_info.checks_per_key[asset_key])
+            for asset_key in batch_result.all_asset_keys_materialized:
+                all_check_keys.update(unmigrated_info.checks_per_key[asset_key])
+            latest_offset = batch_result.idx
+
         # Sort materializations by end date and toposort order
         sorted_mats = sorted(
-            materializations_to_report, key=lambda x: (x[0], toposorted_keys.index(x[1].asset_key))
+            all_materializations, key=lambda x: (x[0], toposorted_keys.index(x[1].asset_key))
         )
-        context.update_cursor(str(current_date.timestamp()))
+        if batch_result is not None:
+            new_cursor = AirflowPollingSensorCursor(
+                end_date_gte=end_date_gte,
+                end_date_lte=end_date_lte,
+                dag_query_offset=latest_offset + 1,
+            )
+        else:
+            # We have completed iteration for this range
+            new_cursor = AirflowPollingSensorCursor(
+                end_date_gte=end_date_lte,
+                end_date_lte=None,
+                dag_query_offset=0,
+            )
+        context.update_cursor(serialize_value(new_cursor))
         return SensorResult(
             asset_events=[sorted_mat[1] for sorted_mat in sorted_mats],
-            run_requests=[RunRequest(asset_check_keys=list(asset_check_keys_to_request))]
-            if asset_check_keys_to_request
+            run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]
+            if all_check_keys
             else None,
         )
 
@@ -131,11 +132,22 @@ class PeeredDagAssetInfo:
     dag_asset_key: AssetKey
     task_asset_keys: Set[Tuple[str, AssetKey]]
 
+    @property
+    def task_ids(self) -> Sequence[str]:
+        return [task_id for task_id, _ in self.task_asset_keys]
+
+    def asset_keys_for_task(self, task_id: str) -> Sequence[AssetKey]:
+        return [asset_key for task_id_, asset_key in self.task_asset_keys if task_id_ == task_id]
+
 
 @record
 class UnmigratedInfo:
     asset_info_by_dag_id: Dict[str, PeeredDagAssetInfo]
     checks_per_key: Dict[AssetKey, Set[AssetCheckKey]]
+
+    @property
+    def dag_ids(self) -> Sequence[str]:
+        return list(self.asset_info_by_dag_id.keys())
 
 
 def get_unmigrated_info(
@@ -190,3 +202,89 @@ def toposorted_asset_keys(
             asset_dep_graph[spec.key].update(dep.asset_key for dep in spec.deps)
 
     return toposort_flatten(asset_dep_graph)
+
+
+@record
+class BatchResult:
+    idx: int
+    materializations_and_timestamps: List[Tuple[float, AssetMaterialization]]
+    all_asset_keys_materialized: Set[AssetKey]
+
+
+def materializations_and_requests_from_batch_iter(
+    end_date_gte: float,
+    end_date_lte: float,
+    offset: int,
+    airflow_instance: AirflowInstance,
+    unmigrated_info: UnmigratedInfo,
+) -> Iterator[Optional[BatchResult]]:
+    runs = airflow_instance.get_dag_runs_batch(
+        dag_ids=unmigrated_info.dag_ids,
+        end_date_gte=datetime_from_timestamp(end_date_gte),
+        end_date_lte=datetime_from_timestamp(end_date_lte),
+        offset=offset,
+    )
+    for i, dag_run in enumerate(runs):
+        peered_dag_asset_info = unmigrated_info.asset_info_by_dag_id[dag_run.dag_id]
+        materializations_for_run = []
+        all_asset_keys_materialized = set()
+        metadata = {
+            "Airflow Run ID": dag_run.run_id,
+            "Run Metadata (raw)": JsonMetadataValue(dag_run.metadata),
+            "Run Type": dag_run.run_type,
+            "Airflow Config": JsonMetadataValue(dag_run.config),
+            "Creation Timestamp": TimestampMetadataValue(get_current_timestamp()),
+        }
+        # Add dag materialization
+        dag_metadata = {
+            **metadata,
+            "Run Details": MarkdownMetadataValue(f"[View Run]({dag_run.url})"),
+            "Start Date": TimestampMetadataValue(dag_run.start_date),
+            "End Date": TimestampMetadataValue(dag_run.end_date),
+        }
+        materializations_for_run.append(
+            (
+                dag_run.end_date,
+                AssetMaterialization(
+                    asset_key=unmigrated_info.asset_info_by_dag_id[dag_run.dag_id].dag_asset_key,
+                    description=dag_run.note,
+                    metadata=dag_metadata,
+                ),
+            )
+        )
+        all_asset_keys_materialized.add(peered_dag_asset_info.dag_asset_key)
+        for task_run in airflow_instance.get_task_instance_batch(
+            run_id=dag_run.run_id,
+            dag_id=dag_run.dag_id,
+            task_ids=peered_dag_asset_info.task_ids,
+            states=["success"],
+        ):
+            asset_keys = peered_dag_asset_info.asset_keys_for_task(task_run.task_id)
+            task_metadata = {
+                **metadata,
+                "Run Details": MarkdownMetadataValue(f"[View Run]({task_run.details_url})"),
+                "Task Logs": MarkdownMetadataValue(f"[View Logs]({task_run.log_url})"),
+                "Start Date": TimestampMetadataValue(task_run.start_date),
+                "End Date": TimestampMetadataValue(task_run.end_date),
+            }
+            for asset_key in asset_keys:
+                materializations_for_run.append(
+                    (
+                        task_run.end_date,
+                        AssetMaterialization(
+                            asset_key=asset_key,
+                            description=task_run.note,
+                            metadata=task_metadata,
+                        ),
+                    )
+                )
+                all_asset_keys_materialized.add(asset_key)
+        yield (
+            BatchResult(
+                idx=i + offset,
+                materializations_and_timestamps=materializations_for_run,
+                all_asset_keys_materialized=all_asset_keys_materialized,
+            )
+            if materializations_for_run
+            else None
+        )

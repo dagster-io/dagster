@@ -1,4 +1,12 @@
-import {Box, Colors, Icon, IconName, MiddleTruncate, TextInput} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  Icon,
+  IconName,
+  MiddleTruncate,
+  NonIdealState,
+  TextInput,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {ChangeEvent, ReactNode, useCallback, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -53,16 +61,31 @@ export const CodeLocationSearchableList = <T,>(props: Props<T>) => {
           <HeaderRow templateColumns="1fr" sticky>
             <HeaderCell>Name</HeaderCell>
           </HeaderRow>
-          <Inner $totalHeight={totalHeight}>
-            {virtualItems.map(({index, key, size, start}) => {
-              const item = filteredItems[index]!;
-              return (
-                <Row key={key} $height={size} $start={start}>
-                  {renderRow(item)}
-                </Row>
-              );
-            })}
-          </Inner>
+          {virtualItems.length > 0 ? (
+            <Inner $totalHeight={totalHeight}>
+              {virtualItems.map(({index, key, size, start}) => {
+                const item = filteredItems[index]!;
+                return (
+                  <Row key={key} $height={size} $start={start}>
+                    {renderRow(item)}
+                  </Row>
+                );
+              })}
+            </Inner>
+          ) : (
+            <Box flex={{direction: 'row', justifyContent: 'center'}} padding={{top: 32}}>
+              <NonIdealState
+                icon="search"
+                title="No matching results"
+                description={
+                  <>
+                    No matching results for query <strong>{searchValue}</strong> found in this code
+                    location.
+                  </>
+                }
+              />
+            </Box>
+          )}
         </Container>
       </div>
     </Box>

@@ -58,6 +58,7 @@ spec:
                   number: {{ $_.Values.dagsterWebserver.service.port | default 80 }}
           {{- range $_.Values.ingress.dagsterWebserver.succeedingPaths }}
           - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
               service:
                 name: {{ .serviceName }}

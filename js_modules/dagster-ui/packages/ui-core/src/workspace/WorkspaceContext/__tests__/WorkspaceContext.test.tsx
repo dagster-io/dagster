@@ -6,28 +6,27 @@ import {cache} from 'idb-lru-cache';
 import {useContext} from 'react';
 import {RecoilRoot} from 'recoil';
 
-import {AppContext} from '../../app/AppContext';
+import {AppContext} from '../../../app/AppContext';
 import {
   buildRepository,
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
-} from '../../graphql/types';
+} from '../../../graphql/types';
 import {
   IndexedDBCacheContext,
   KEY_PREFIX,
   createIndexedDBCacheContextValue,
-} from '../../search/useIndexedDBCachedQuery';
-import {getMockResultFn} from '../../testing/mocking';
+} from '../../../search/useIndexedDBCachedQuery';
+import {getMockResultFn} from '../../../testing/mocking';
 import {
   CODE_LOCATION_STATUS_QUERY_KEY,
   CODE_LOCATION_STATUS_QUERY_VERSION,
   LOCATION_WORKSPACE_QUERY_VERSION,
   WorkspaceContext,
   WorkspaceProvider,
-  locationWorkspaceKey,
-  repoLocationToRepos,
 } from '../WorkspaceContext';
 import {buildWorkspaceMocks} from '../__fixtures__/Workspace.fixtures';
+import {locationWorkspaceKey, repoLocationToRepos} from '../util';
 
 const mockCache = cache as any;
 

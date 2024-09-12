@@ -156,8 +156,8 @@ class AssetSpec(
             validate_asset_owner(owner, key)
 
         kind_tags = {tag_key for tag_key in (tags or {}).keys() if tag_key.startswith(KIND_PREFIX)}
-        if kind_tags is not None and len(kind_tags) > 2:
-            raise DagsterInvalidDefinitionError("Assets can have at most two kinds currently.")
+        if kind_tags is not None and len(kind_tags) > 3:
+            raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
 
         return super().__new__(
             cls,

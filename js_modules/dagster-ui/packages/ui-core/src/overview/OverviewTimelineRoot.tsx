@@ -13,7 +13,7 @@ import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {RunTimeline} from '../runs/RunTimeline';
 import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {useRunsForTimeline} from '../runs/useRunsForTimeline';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 

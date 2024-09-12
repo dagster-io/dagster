@@ -12,8 +12,7 @@ const config: Config = {
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
-  // TODO - reintroduce when API doc anchors are fixed
-  onBrokenAnchors: 'warn',
+  onBrokenAnchors: 'throw',
   organizationName: 'dagster',
   projectName: 'dagster',
   markdown: {

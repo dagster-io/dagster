@@ -1,5 +1,6 @@
 ---
-title: "Integrations"
+title: 'Integrations'
+displayed_sidebar: 'integrations'
 ---
 
 # Integrations

@@ -27,7 +27,7 @@ from dagster_polars import (
     StorageMetadata,
 )
 
-from dagster_polars_tests.utils import get_saved_path
+from dagster_polars_tests.utils import DEPRECATED_STORAGE_METADATA_STRING, get_saved_path
 
 
 def test_polars_upath_io_manager_stats_metadata(
@@ -286,9 +286,10 @@ def test_upath_io_manager_storage_metadata_lazy(
         assert upstream_metadata == metadata
         pl_testing.assert_frame_equal(loaded_df.collect(), df.collect())
 
-    materialize(
-        [upstream, downstream],
-    )
+    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
+        materialize(
+            [upstream, downstream],
+        )
 
 
 def test_upath_io_manager_storage_metadata_optional_lazy_exists(
@@ -307,9 +308,10 @@ def test_upath_io_manager_storage_metadata_optional_lazy_exists(
         df, upstream_metadata = upstream
         assert upstream_metadata == metadata
 
-    materialize(
-        [upstream, downstream],
-    )
+    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
+        materialize(
+            [upstream, downstream],
+        )
 
 
 def test_upath_io_manager_storage_metadata_optional_lazy_missing(
@@ -326,9 +328,10 @@ def test_upath_io_manager_storage_metadata_optional_lazy_missing(
     def downstream(upstream: Optional[Tuple[pl.LazyFrame, StorageMetadata]]) -> None:
         assert upstream is None
 
-    materialize(
-        [upstream, downstream],
-    )
+    with pytest.warns(match=DEPRECATED_STORAGE_METADATA_STRING):
+        materialize(
+            [upstream, downstream],
+        )
 
 
 def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(

@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import {LeftNavItemType} from './LeftNavItemType';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

@@ -5,8 +5,8 @@ import {
   WorkspaceLocationStatusEntry,
   buildWorkspaceLocationStatusEntries,
   buildWorkspaceLocationStatusEntry,
-} from '../../graphql/types';
-import {buildQueryMock} from '../../testing/mocking';
+} from '../../../graphql/types';
+import {buildQueryMock} from '../../../testing/mocking';
 import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from '../WorkspaceQueries';
 import {
   CodeLocationStatusQuery,
