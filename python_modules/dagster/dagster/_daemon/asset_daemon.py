@@ -946,9 +946,7 @@ class AssetDaemon(DagsterDaemon):
                 },
                 observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
                 auto_observe_asset_keys=auto_observe_asset_keys,
-                respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
                 logger=self._logger,
-                request_backfills=request_backfills,
             ).evaluate()
 
             check.invariant(new_cursor.evaluation_id == evaluation_id)

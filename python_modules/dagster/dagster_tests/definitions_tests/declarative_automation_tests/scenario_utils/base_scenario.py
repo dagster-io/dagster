@@ -44,10 +44,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_daemon_context import (
-    AssetDaemonContext,
-    get_implicit_auto_materialize_policy,
-)
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -63,7 +60,8 @@ from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition import PartitionsSubset, ScheduleType
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -398,22 +396,26 @@ class AssetReconciliationScenario(
                 else asset_graph.materializable_asset_keys
             )
 
-            run_requests, cursor, evaluations = AssetDaemonContext(
-                evaluation_id=cursor.evaluation_id + 1,
-                asset_graph=asset_graph,
-                auto_materialize_asset_keys=auto_materialize_asset_keys,
-                instance=instance,
-                materialize_run_tags={},
-                observe_run_tags={},
-                cursor=cursor,
-                auto_observe_asset_keys={
-                    key
-                    for key in asset_graph.observable_asset_keys
-                    if asset_graph.get(key).auto_observe_interval_minutes is not None
-                },
-                respect_materialization_data_versions=respect_materialization_data_versions,
-                logger=logging.getLogger("dagster.amp"),
-            ).evaluate()
+            with mock.patch.object(
+                DagsterInstance,
+                "auto_materialize_respect_materialization_data_versions",
+                new=lambda: self.respect_materialization_data_versions,
+            ):
+                run_requests, cursor, evaluations = AssetDaemonContext(
+                    evaluation_id=cursor.evaluation_id + 1,
+                    asset_graph=asset_graph,
+                    auto_materialize_asset_keys=auto_materialize_asset_keys,
+                    instance=instance,
+                    materialize_run_tags={},
+                    observe_run_tags={},
+                    cursor=cursor,
+                    auto_observe_asset_keys={
+                        key
+                        for key in asset_graph.observable_asset_keys
+                        if asset_graph.get(key).auto_observe_interval_minutes is not None
+                    },
+                    logger=logging.getLogger("dagster.amp"),
+                ).evaluate()
 
         for run_request in run_requests:
             base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
@@ -719,6 +721,36 @@ def with_auto_materialize_policy(
             )
         )
     return ret
+
+
+def get_implicit_auto_materialize_policy(
+    asset_key: AssetKey, asset_graph: BaseAssetGraph
+) -> Optional[AutoMaterializePolicy]:
+    """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
+    auto_materialize_policy = asset_graph.get(asset_key).auto_materialize_policy
+    if auto_materialize_policy is None:
+        time_partitions_def = get_time_partitions_def(asset_graph.get(asset_key).partitions_def)
+        if time_partitions_def is None:
+            max_materializations_per_minute = None
+        elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
+            max_materializations_per_minute = 24
+        else:
+            max_materializations_per_minute = 1
+        rules = {
+            AutoMaterializeRule.materialize_on_missing(),
+            AutoMaterializeRule.materialize_on_required_for_freshness(),
+            AutoMaterializeRule.skip_on_parent_outdated(),
+            AutoMaterializeRule.skip_on_parent_missing(),
+            AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
+            AutoMaterializeRule.skip_on_backfill_in_progress(),
+        }
+        if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
+            rules.add(AutoMaterializeRule.materialize_on_parent_updated())
+        return AutoMaterializePolicy(
+            rules=rules,
+            max_materializations_per_minute=max_materializations_per_minute,
+        )
+    return auto_materialize_policy
 
 
 def with_implicit_auto_materialize_policies(

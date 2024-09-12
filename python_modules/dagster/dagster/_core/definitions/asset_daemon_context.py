@@ -19,64 +19,30 @@ from typing import (
 
 import dagster._check as check
 from dagster import PartitionKeyRange
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+    AutomationConditionEvaluator,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition, ScheduleType
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._time import get_current_datetime, get_current_timestamp
+from dagster._time import get_current_timestamp
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
-    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
-
-
-def get_implicit_auto_materialize_policy(
-    asset_key: AssetKey, asset_graph: BaseAssetGraph
-) -> Optional[AutoMaterializePolicy]:
-    """For backcompat with pre-auto materialize policy graphs, assume a default scope of 1 day."""
-    auto_materialize_policy = asset_graph.get(asset_key).auto_materialize_policy
-    if auto_materialize_policy is None:
-        time_partitions_def = get_time_partitions_def(asset_graph.get(asset_key).partitions_def)
-        if time_partitions_def is None:
-            max_materializations_per_minute = None
-        elif time_partitions_def.schedule_type == ScheduleType.HOURLY:
-            max_materializations_per_minute = 24
-        else:
-            max_materializations_per_minute = 1
-        rules = {
-            AutoMaterializeRule.materialize_on_missing(),
-            AutoMaterializeRule.materialize_on_required_for_freshness(),
-            AutoMaterializeRule.skip_on_parent_outdated(),
-            AutoMaterializeRule.skip_on_parent_missing(),
-            AutoMaterializeRule.skip_on_required_but_nonexistent_parents(),
-            AutoMaterializeRule.skip_on_backfill_in_progress(),
-        }
-        if not bool(asset_graph.get_downstream_freshness_policies(asset_key=asset_key)):
-            rules.add(AutoMaterializeRule.materialize_on_parent_updated())
-        return AutoMaterializePolicy(
-            rules=rules,
-            max_materializations_per_minute=max_materializations_per_minute,
-        )
-    return auto_materialize_policy
 
 
 class AssetDaemonContext:
@@ -86,103 +52,33 @@ class AssetDaemonContext:
         instance: "DagsterInstance",
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
-        materialize_run_tags: Optional[Mapping[str, str]],
-        observe_run_tags: Optional[Mapping[str, str]],
-        auto_observe_asset_keys: Optional[AbstractSet[AssetKey]],
-        auto_materialize_asset_keys: Optional[AbstractSet[AssetKey]],
-        respect_materialization_data_versions: bool,
+        materialize_run_tags: Mapping[str, str],
+        observe_run_tags: Mapping[str, str],
+        auto_observe_asset_keys: AbstractSet[AssetKey],
+        auto_materialize_asset_keys: AbstractSet[AssetKey],
         logger: logging.Logger,
         evaluation_time: Optional[datetime.datetime] = None,
-        request_backfills: bool = False,
     ):
-        from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
-
         self._evaluation_id = evaluation_id
-
-        self._asset_graph_view = AssetGraphView(
-            temporal_context=TemporalContext(
-                effective_dt=evaluation_time or get_current_datetime(),
-                last_event_id=instance.event_log_storage.get_maximum_record_id(),
-            ),
+        self._evaluator = AutomationConditionEvaluator(
+            entity_keys=auto_materialize_asset_keys,
             instance=instance,
             asset_graph=asset_graph,
-        )
-        self._instance_queryer = CachingInstanceQueryer(
-            instance,
-            asset_graph,
+            cursor=cursor,
             evaluation_time=evaluation_time,
-            loading_context=self._asset_graph_view,
             logger=logger,
         )
-        self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
-        self._cursor = cursor
-        self._auto_materialize_asset_keys = auto_materialize_asset_keys or set()
         self._materialize_run_tags = materialize_run_tags
         self._observe_run_tags = observe_run_tags
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
-        self._respect_materialization_data_versions = respect_materialization_data_versions
-        self._logger = logger
-        self._request_backfills = request_backfills
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def instance_queryer(self) -> "CachingInstanceQueryer":
-        return self._instance_queryer
-
-    @property
-    def data_time_resolver(self) -> CachingDataTimeResolver:
-        return self._data_time_resolver
-
-    @property
-    def asset_graph_view(self) -> AssetGraphView:
-        return self._asset_graph_view
 
     @property
     def cursor(self) -> AssetDaemonCursor:
-        return self._cursor
+        return self._evaluator.cursor
 
     @property
     def asset_graph(self) -> BaseAssetGraph:
-        return self.instance_queryer.asset_graph
-
-    @property
-    def auto_materialize_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._auto_materialize_asset_keys
-
-    @property
-    def respect_materialization_data_versions(self) -> bool:
-        return self._respect_materialization_data_versions
-
-    @property
-    def auto_materialize_run_tags(self) -> Mapping[str, str]:
-        return self._materialize_run_tags or {}
-
-    def get_asset_condition_evaluations(
-        self,
-    ) -> Tuple[Iterable[AutomationResult[EntityKey]], Iterable[EntitySubset[EntityKey]]]:
-        """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
-        sequence of new per-asset cursors, and the set of all asset partitions that should be
-        materialized or discarded this tick.
-        """
-        from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
-            AutomationConditionEvaluator,
-        )
-
-        evaluator = AutomationConditionEvaluator(
-            asset_graph=self.asset_graph,
-            entity_keys=self.auto_materialize_asset_keys,
-            asset_graph_view=self.asset_graph_view,
-            logger=self._logger,
-            cursor=self.cursor,
-            data_time_resolver=self.data_time_resolver,
-            respect_materialization_data_versions=self.respect_materialization_data_versions,
-            auto_materialize_run_tags=self.auto_materialize_run_tags,
-            request_backfills=self._request_backfills,
-        )
-        return evaluator.evaluate()
+        return self._evaluator.asset_graph
 
     def evaluate(
         self,
@@ -200,9 +96,9 @@ class AssetDaemonContext:
             else []
         )
 
-        results, entity_subsets = self.get_asset_condition_evaluations()
+        results, entity_subsets = self._evaluator.evaluate()
 
-        if self._request_backfills:
+        if self._evaluator.request_backfills:
             asset_subsets = cast(
                 Iterable[EntitySubset[AssetKey]],
                 [subset for subset in entity_subsets if isinstance(subset.key, AssetKey)],
@@ -212,17 +108,17 @@ class AssetDaemonContext:
                 [
                     RunRequest.for_asset_graph_subset(
                         asset_graph_subset=AssetGraphSubset.from_entity_subsets(asset_subsets),
-                        tags=self.auto_materialize_run_tags,
+                        tags=self._materialize_run_tags,
                     )
                 ]
-                if entity_subsets
+                if asset_subsets
                 else []
             )
         else:
             run_requests = build_run_requests(
                 entity_subsets=entity_subsets,
                 asset_graph=self.asset_graph,
-                run_tags=self.auto_materialize_run_tags,
+                run_tags=self._materialize_run_tags,
             )
 
         run_requests = [*run_requests, *auto_observe_run_requests]
@@ -251,7 +147,7 @@ class AssetDaemonContext:
                         run_request.asset_selection,  # auto-observe run requests always have asset_selection
                     )
                 ],
-                evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
+                evaluation_timestamp=self._evaluator.evaluation_time.timestamp(),
             ),
             updated_evaluations,
         )
