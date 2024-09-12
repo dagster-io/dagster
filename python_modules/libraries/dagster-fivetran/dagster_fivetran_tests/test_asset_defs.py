@@ -12,6 +12,7 @@ from dagster_fivetran.resources import (
 
 from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
+    get_sample_columns_response,
     get_sample_connector_response,
     get_sample_connector_schema_config,
     get_sample_sync_response,
@@ -106,6 +107,17 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
             final_json["data"]["config"]["schema_prefix"] = schema_prefix
         # final state will be updated
         rsps.add(rsps.GET, api_prefix, json=final_json)
+
+        for schema, table in [
+            ("schema1", "tracked"),
+            ("schema1", "untracked"),
+            ("schema2", "tracked"),
+        ]:
+            rsps.add(
+                rsps.GET,
+                f"{api_prefix}/schemas/{schema}/tables/{table}/columns",
+                json=get_sample_columns_response(),
+            )
 
         if should_error:
             with pytest.raises(DagsterStepOutputNotFoundError):

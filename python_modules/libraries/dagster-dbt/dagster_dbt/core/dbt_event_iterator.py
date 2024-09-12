@@ -13,11 +13,11 @@ from dagster import (
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterInvalidPropertyError
+from dagster._core.utils import exhaust_iterator_and_yield_results_with_exception, imap
 from typing_extensions import TypeVar
 
 from dagster_dbt.asset_utils import default_metadata_from_dbt_resource_props
 from dagster_dbt.core.dbt_cli_event import EventHistoryMetadata, _build_column_lineage_metadata
-from dagster_dbt.core.utils import exhaust_iterator_and_yield_results_with_exception, imap
 
 if TYPE_CHECKING:
     from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation
