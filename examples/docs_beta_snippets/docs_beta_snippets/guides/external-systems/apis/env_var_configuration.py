@@ -23,6 +23,8 @@ class SunResource(dg.ConfigurableResource):
 def home_sunrise(context: dg.AssetExecutionContext, sun_resource: SunResource) -> None:
     sunrise = sun_resource.sunrise()
     context.log.info(f"Sunrise at home is at {sunrise}.")
+
+
 # highlight-end
 
 defs = dg.Definitions(

@@ -4,20 +4,21 @@ import dagster as dg
 
 
 class SunResource(dg.ConfigurableResource):
-# highlight-start
+    # highlight-start
     # Define the configuration and
     # remove previously hard-coded parameters
     latitude: str
     longitude: str
     time_zone: str
-# highlight-end
+    # highlight-end
 
     @property
-# highlight-start
+    # highlight-start
     # Update the query string to use the configuration
     def query_string(self) -> str:
         return f"https://api.sunrise-sunset.org/json?lat={self.latittude}&lng={self.longitude}&date=today&tzid={self.time_zone}"
-# highlight-end
+
+    # highlight-end
 
     def sunrise(self) -> str:
         data = requests.get(self.query_string, timeout=5).json()
