@@ -11,7 +11,7 @@ import { Card, CardGroup } from '@site/src/components/Cards';
 This guide focuses on batch data ingestion, as streaming data ingestion doesn't typically rely on an orchestrator to kick off or coordinate computations. However, streaming data assets can still be represented in Dagster for lineage purposes.
 :::
 
-Dagster is often used to orchestrate the ingestion of data into a data warehouse or data lake, where it can be queried and transformed. Dagster integrates with several tools that are purpose-built for data ingestion, and it also enables writing custom code for ingesting data.
+Dagster is often used to orchestrate the ingestion of data into a data warehouse or data lake, where it can be queried and transformed. To ingest data with Dagster, you can use pre-built connectors or write your own custom code.
 
 <details>
 <summary>Prerequisites</summary>
@@ -26,12 +26,12 @@ To follow this guide, you'll need:
 As a data orchestrator, Dagster helps with data ingestion as it can:
 
 - **Automatically kick off computations that ingest data**, thus removing the need for manual intervention
-- **Coordinate data ingestion with downstream data transformation,** such as rebuilding a set of dbt models after the upstream data they depend on is updated
+- **Coordinate data ingestion with downstream data transformation,** such as rebuilding a set of dbt models after upstream data is updated
 - **Represent ingested data assets in an asset graph**, which enables understanding what ingested data exists, how ingested data is used, and where data is ingested from
 
 ## Orchestrating data ingestion tools
 
-Dagster integrates with a variety of data ingestion tools, enabling you to sync diverse data sources into data warehouse tables using pre-built connectors. With these integrations, Dagster allows you to:
+Dagster integrates with a number of data ingestion tools, enabling you to sync diverse data sources into data warehouse tables using pre-built connectors. With these integrations, Dagster allows you to:
 
 - Represent ingested tables as assets within the Dagster asset graph
 - Trigger asset materializations that automatically invoke these tools to initiate data syncs
