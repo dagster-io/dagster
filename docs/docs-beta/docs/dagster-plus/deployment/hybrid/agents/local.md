@@ -14,12 +14,6 @@ Local agents aren't well suited for most production use cases. If you're running
 - You're alerted if the VM or container dies, or to automatically restart it
 :::
 
-## What you'll learn
-
-- How to generate an agent token
-- How to configure the local agent
-- How to run the agent and confirm the setup was successful
-
 <details>
   <summary>Prerequisites</summary>
 

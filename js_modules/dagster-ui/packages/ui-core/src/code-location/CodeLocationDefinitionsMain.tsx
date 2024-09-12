@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, NonIdealState} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Switch} from 'react-router-dom';
 
@@ -10,6 +10,7 @@ import {Route} from '../app/Route';
 import {COMMON_COLLATOR} from '../app/Util';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {WorkspaceRepositoryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -58,6 +59,20 @@ const CodeLocationJobsList = (props: Props) => {
     [repository],
   );
 
+  if (!jobs.length) {
+    return (
+      <Box padding={64}>
+        <NonIdealState
+          icon="job"
+          title="No jobs found"
+          description={`The repository ${repoAddressAsHumanString(
+            repoAddress,
+          )} does not contain any jobs.`}
+        />
+      </Box>
+    );
+  }
+
   return (
     <CodeLocationSearchableList
       items={jobs}
@@ -81,6 +96,20 @@ const CodeLocationSensorsList = (props: Props) => {
     [repository],
   );
 
+  if (!sensors.length) {
+    return (
+      <Box padding={64}>
+        <NonIdealState
+          icon="sensors"
+          title="No sensors found"
+          description={`The repository ${repoAddressAsHumanString(
+            repoAddress,
+          )} does not contain any sensors.`}
+        />
+      </Box>
+    );
+  }
+
   return (
     <CodeLocationSearchableList
       items={sensors}
@@ -103,6 +132,20 @@ const CodeLocationSchedulesList = (props: Props) => {
     () => [...repository.schedules].sort((a, b) => COMMON_COLLATOR.compare(a.name, b.name)),
     [repository],
   );
+
+  if (!schedules.length) {
+    return (
+      <Box padding={64}>
+        <NonIdealState
+          icon="schedule"
+          title="No schedules found"
+          description={`The repository ${repoAddressAsHumanString(
+            repoAddress,
+          )} does not contain any schedules.`}
+        />
+      </Box>
+    );
+  }
 
   return (
     <CodeLocationSearchableList
@@ -130,10 +173,24 @@ const CodeLocationResourcesList = (props: Props) => {
     [repository],
   );
 
+  if (!resources.length) {
+    return (
+      <Box padding={64}>
+        <NonIdealState
+          icon="resource"
+          title="No resources found"
+          description={`The repository ${repoAddressAsHumanString(
+            repoAddress,
+          )} does not contain any resources.`}
+        />
+      </Box>
+    );
+  }
+
   return (
     <CodeLocationSearchableList
       items={resources}
-      placeholder="Search resoruces by name…"
+      placeholder="Search resources by name…"
       nameFilter={(resource, value) => resource.name.toLowerCase().includes(value)}
       renderRow={(resource) => (
         <SearchableListRow

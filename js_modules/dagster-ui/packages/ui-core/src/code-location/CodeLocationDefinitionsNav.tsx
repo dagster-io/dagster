@@ -16,6 +16,7 @@ interface Props {
 export const CodeLocationDefinitionsNav = (props: Props) => {
   const {repoAddress, repository} = props;
   const {pathname} = useLocation();
+  const assetGroupCount = repository.assetGroups.length;
   const jobCount = repository.pipelines.filter(({name}) => !isHiddenAssetGroupJob(name)).length;
   const scheduleCount = repository.schedules.length;
   const sensorCount = repository.sensors.length;
@@ -28,6 +29,9 @@ export const CodeLocationDefinitionsNav = (props: Props) => {
       icon: <Icon name="asset" />,
       label: 'Assets',
       path: workspacePathFromAddress(repoAddress, '/assets'),
+      rightElement: assetGroupCount ? (
+        <Tag icon="asset_group">{numberFormatter.format(assetGroupCount)}</Tag>
+      ) : null,
     },
     {
       key: 'jobs',

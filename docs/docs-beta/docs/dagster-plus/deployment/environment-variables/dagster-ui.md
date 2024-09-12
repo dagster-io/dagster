@@ -9,13 +9,6 @@ Environment variable are key-value pairs that are set outside of your source cod
 
 Dagster supports several approaches for [accessing environment variable in your code](/todo). You can also set environment variables in several ways, but this guide will focus on the Dagster+ UI.
 
-## What you'll learn
-
-- How to add, edit, and delete environment variables in the Dagster+ UI
-- How to view the values of environment variables in the Dagster+ UI
-- How to export environment variables for local use
-- How to modify the value of environment variables based on the deployment environment
-
 <details>
   <summary>Prerequisites</summary>
 

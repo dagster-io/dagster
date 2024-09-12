@@ -8,13 +8,21 @@ import {Timestamp} from '../app/time/Timestamp';
 dayjs.extend(relativeTime);
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
-export const TimeFromNow = memo(({unixTimestamp}: {unixTimestamp: number}) => {
-  return (
+interface Props {
+  unixTimestamp: number;
+  showTooltip?: boolean;
+}
+
+export const TimeFromNow = memo(({unixTimestamp, showTooltip = true}: Props) => {
+  const value = dayjs(unixTimestamp * 1000).fromNow();
+  return showTooltip ? (
     <Tooltip
       placement="top"
       content={<Timestamp timestamp={{unix: unixTimestamp}} timeFormat={TIME_FORMAT} />}
     >
-      {dayjs(unixTimestamp * 1000).fromNow()}
+      {value}
     </Tooltip>
+  ) : (
+    <span>{value}</span>
   );
 });

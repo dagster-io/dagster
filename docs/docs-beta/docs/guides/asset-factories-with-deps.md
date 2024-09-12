@@ -10,13 +10,6 @@ Additionally, you may be serving stakeholders who aren't familiar with Python or
 
 Using an asset factory reduces complexity and creates a pluggable entry point to define additional assets.
 
-## What you'll learn
-
-- Programmatically defining dependencies using an asset factory
-- How to define dependencies between factory assets and regular assets
-
----
-
 <details>
   <summary>Prerequisites</summary>
 
