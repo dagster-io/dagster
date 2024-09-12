@@ -470,6 +470,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = '58140198e643d07c92d272b5eb521271149e048ae111762cfd9cef728e618a8f';
+export const LocationWorkspaceQueryVersion = '611c0706fbdde2c2159648e1a0d70a2ab23f79b7ef4e8bfc9a3ee4e50ff6dad2';
 
-export const CodeLocationStatusQueryVersion = 'eed7ef3f101620565b5893d9ccb83719bd0e1db5c6d66116d2027822bc2593a7';
+export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';
