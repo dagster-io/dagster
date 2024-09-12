@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -548,8 +549,50 @@ def _bulk_action_statuses_from_run_statuses(
     return full_list
 
 
-def _get_runs_feed_entries(
-    instance: DagsterInstance,
+def _filters_apply_to_backfills(filters: RunsFilter) -> bool:
+    # the following filters do not apply to backfills, so skip fetching backfills if they are set
+    if (
+        len(filters.run_ids) > 0
+        or filters.updated_after is not None
+        or filters.updated_before is not None
+        or filters.snapshot_id is not None
+    ):
+        return False
+    # if filtering by statuses that are not valid backfill statuses, skip fetching backfills
+    if filters.statuses and len(_bulk_action_statuses_from_run_statuses(filters.statuses)) == 0:
+        return False
+
+    return True
+
+
+def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFilter:
+    converted_statuses = (
+        _bulk_action_statuses_from_run_statuses(filters.statuses) if filters.statuses else None
+    )
+    return BulkActionsFilter(
+        created_before=filters.created_before,
+        created_after=filters.created_after,
+        statuses=converted_statuses,
+    )
+
+
+def _replace_created_before_with_cursor(
+    filters: Union[RunsFilter, BulkActionsFilter], created_before_cursor: datetime
+):
+    if filters.created_before and created_before_cursor:
+        created_before = min(created_before_cursor, filters.created_before)
+    elif created_before_cursor:
+        created_before = created_before_cursor
+    elif filters.created_before:
+        created_before = filters.created_before
+    else:
+        created_before = None
+
+    return filters._replace(created_before=created_before)
+
+
+def get_runs_feed_entries(
+    graphene_info: "ResolveInfo",
     limit: int,
     filters: Optional[RunsFilter],
     cursor: Optional[str] = None,
@@ -570,6 +613,8 @@ def _get_runs_feed_entries(
     check.opt_str_param(cursor, "cursor")
     check.int_param(limit, "limit")
 
+    instance = graphene_info.context.instance
+
     runs_feed_cursor = RunsFeedCursor.from_string(cursor)
 
     # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
@@ -582,42 +627,13 @@ def _get_runs_feed_entries(
 
     # filtering by job_name and tags must be done by filtering runs and then pulling backfill ids from the runs
     if filters is None or (filters.job_name is None and len(filters.tags) == 0):
-        skip_fetching_backfills = False
-        if filters is not None:
-            # the following filters do not apply to backfills, so skip fetching backfills if they are set
-            if (
-                len(filters.run_ids) > 0
-                or filters.updated_after is not None
-                or filters.updated_before is not None
-                or filters.snapshot_id is not None
-            ):
-                skip_fetching_backfills = True
-            # if filtering by statuses that are not valid backfill statuses, skip fetching backfills
-            if (
-                filters.statuses
-                and len(_bulk_action_statuses_from_run_statuses(filters.statuses)) == 0
-            ):
-                skip_fetching_backfills = True
-
-        if not skip_fetching_backfills:
-            if filters is not None:
-                converted_statuses = (
-                    _bulk_action_statuses_from_run_statuses(filters.statuses)
-                    if filters.statuses
-                    else None
-                )
-                if filters.created_before and created_before_cursor:
-                    created_before = min(created_before_cursor, filters.created_before)
-                elif created_before_cursor:
-                    created_before = created_before_cursor
-                elif filters.created_before:
-                    created_before = filters.created_before
-                else:
-                    created_before = None
-                backfill_filters = BulkActionsFilter(
-                    created_before=created_before,
-                    created_after=filters.created_after,
-                    statuses=converted_statuses,
+        # some filters disqualify fetching backfills. If there are no filters, then we always want to fetch backfills
+        should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
+        if should_fetch_backfills:
+            if filters:
+                backfill_filters = _bulk_action_filters_from_run_filters(filters)
+                backfill_filters = _replace_created_before_with_cursor(
+                    backfill_filters, created_before_cursor
                 )
             else:
                 backfill_filters = BulkActionsFilter(
@@ -633,16 +649,8 @@ def _get_runs_feed_entries(
             ]
         else:
             backfills = []
-        if filters is not None:
-            if filters.created_before and created_before_cursor:
-                created_before = min(created_before_cursor, filters.created_before)
-            elif created_before_cursor:
-                created_before = created_before_cursor
-            elif filters.created_before:
-                created_before = filters.created_before
-            else:
-                created_before = None
-            run_filters = filters._replace(created_before=created_before)
+        if filters:
+            run_filters = _replace_created_before_with_cursor(filters, created_before_cursor)
         else:
             run_filters = RunsFilter(created_before=created_before_cursor)
         runs = [
@@ -655,15 +663,7 @@ def _get_runs_feed_entries(
             )
         ]
     else:
-        if filters.created_before and created_before_cursor:
-            created_before = min(created_before_cursor, filters.created_before)
-        elif created_before_cursor:
-            created_before = created_before_cursor
-        elif filters.created_before:
-            created_before = filters.created_before
-        else:
-            created_before = None
-        run_filters = filters._replace(created_before=created_before)
+        run_filters = _replace_created_before_with_cursor(filters, created_before_cursor)
         runs, backfills = _slow_fetch_entries_for_filter(
             instance=instance,
             cursor=runs_feed_cursor.run_cursor,
@@ -672,7 +672,6 @@ def _get_runs_feed_entries(
         )
 
         runs = [GrapheneRun(run) for run in runs]
-
         backfills = [GraphenePartitionBackfill(backfill) for backfill in backfills]
 
     # if we fetched limit+1 of either runs or backfills, we know there must be more results
@@ -694,10 +693,7 @@ def _get_runs_feed_entries(
         reverse=True,
     )
 
-    if limit:
-        to_return = all_entries[:limit]
-    else:
-        to_return = all_entries
+    to_return = all_entries[:limit]
 
     new_run_cursor = None
     new_backfill_cursor = None
@@ -723,24 +719,4 @@ def _get_runs_feed_entries(
 
     return GrapheneRunsFeedConnection(
         results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
-    )
-
-
-def get_runs_feed_entries(
-    graphene_info: "ResolveInfo",
-    limit: int,
-    cursor: Optional[str] = None,
-    filters: Optional[RunsFilter] = None,
-) -> "GrapheneRunsFeedConnection":
-    """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
-    single runs (runs that are not part of a backfill), the cursor to fetch the next page,
-    and a boolean indicating if there are more results to fetch.
-
-    Args:
-        limit (int): max number of results to return
-        cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
-            that querying should start at the beginning of the table for both runs and backfills.
-    """
-    return _get_runs_feed_entries(
-        instance=graphene_info.context.instance, limit=limit, cursor=cursor, filters=filters
     )
