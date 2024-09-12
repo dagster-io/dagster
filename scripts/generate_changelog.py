@@ -11,6 +11,7 @@ import git
 GITHUB_URL = "https://github.com/dagster-io/dagster"
 OSS_REPO = git.Repo(Path(__file__).parent.parent)
 INTERNAL_REPO = git.Repo(os.environ["DAGSTER_INTERNAL_GIT_REPO_DIR"])
+INTERNAL_DEFAULT_STR = "If a changelog entry is required"
 
 CHANGELOG_HEADER = "## Changelog"
 CHANGELOG_HEADER_PATTERN = re.compile(rf"{CHANGELOG_HEADER}.*\[\s*(.*?)\s*\]")
@@ -50,7 +51,7 @@ def _get_previous_version(new_version: str) -> str:
 def _get_libraries_version(new_version: str) -> str:
     split = new_version.split(".")
     new_minor = int(split[1]) + 16
-    return ".".join([split[0], str(new_minor), split[2]])
+    return ".".join(["0", str(new_minor), split[2]])
 
 
 def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
@@ -68,6 +69,10 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     raw_changelog_entry = ""
     for line in str(commit.message).split("\n"):
         if found and line.strip():
+            if INTERNAL_DEFAULT_STR in line:
+                # ignore changelog entry if it has not been updated
+                raw_changelog_entry = ""
+                break
             raw_changelog_entry += " " + line.strip()
             continue
         is_header = line.startswith(CHANGELOG_HEADER)
@@ -87,10 +92,6 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     )
 
 
-def _normalize(name: str) -> str:
-    return name.replace(" ", "").lower()
-
-
 def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
     grouped_commits: Mapping[str, List[ParsedCommit]] = defaultdict(list)
     for commit in documented:
@@ -98,7 +99,7 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
 
     documented_text = ""
     for category in CATEGORIES.values():
-        documented_text += f"### {category}\n"
+        documented_text += f"\n\n### {category}\n"
         for commit in grouped_commits.get(category, []):
             documented_text += f"\n* {commit.issue_link} {commit.raw_changelog_entry}"
     return documented_text
@@ -138,12 +139,13 @@ def _generate_changelog(new_version: str, prev_version: str) -> None:
     for commit in _get_commits([OSS_REPO, INTERNAL_REPO], new_version, prev_version):
         if commit.documented:
             documented.append(commit)
-        else:
+        elif commit.repo_name != str(INTERNAL_REPO.git_dir).split("/")[-2]:
+            # default to ignoring undocumented internal commits
             undocumented.append(commit)
 
-    header = f"# Changelog {new_version}\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)\n\n"
+    header = f"# Changelog {new_version}\n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
     sys.stdout.write(
-        f"{header}\n{_get_documented_section(documented)}\n{_get_undocumented_section(undocumented)}"
+        f"{header}\n{_get_documented_section(documented)}\n\n{_get_undocumented_section(undocumented)}"
     )
 
 
