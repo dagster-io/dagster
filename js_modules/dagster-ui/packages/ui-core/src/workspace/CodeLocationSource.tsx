@@ -28,13 +28,15 @@ export const CodeLocationSource = ({metadata}: {metadata: Metadata[]}) => {
   const {type, url} = urlValue;
 
   return (
-    <ExternalAnchorButton
-      href={url.toString()}
-      icon={<Icon name={type === 'github-url' ? 'github' : 'gitlab'} />}
-      rightIcon={<Icon name="open_in_new" />}
-    >
-      View repo
-    </ExternalAnchorButton>
+    <div>
+      <ExternalAnchorButton
+        href={url.toString()}
+        icon={<Icon name={type === 'github-url' ? 'github' : 'gitlab'} />}
+        rightIcon={<Icon name="open_in_new" />}
+      >
+        View repo
+      </ExternalAnchorButton>
+    </div>
   );
 };
 

@@ -2,7 +2,6 @@ import pytest
 import responses
 from dagster import AssetKey, DagsterStepOutputNotFoundError
 from dagster._core.definitions.materialize import materialize
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster_fivetran import fivetran_resource
 from dagster_fivetran.asset_defs import build_fivetran_assets
 from dagster_fivetran.resources import (
@@ -78,7 +77,7 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
     assert fivetran_assets[0].keys == {AssetKey(table.split(".")) for table in tables}
     assert len(fivetran_assets[0].op.output_defs) == len(tables)
 
-    assert fivetran_assets[0].op.tags == {**{COMPUTE_KIND_TAG: "fivetran"}, **(op_tags or {})}
+    assert fivetran_assets[0].op.tags == (op_tags or {})
 
     with responses.RequestsMock() as rsps:
         rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())

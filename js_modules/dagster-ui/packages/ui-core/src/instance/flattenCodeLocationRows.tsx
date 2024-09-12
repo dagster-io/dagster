@@ -5,7 +5,7 @@ import {
 import {
   LocationStatusEntryFragment,
   WorkspaceLocationNodeFragment,
-} from '../workspace/types/WorkspaceQueries.types';
+} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 const flatten = (
   locationStatuses: LocationStatusEntryFragment[],

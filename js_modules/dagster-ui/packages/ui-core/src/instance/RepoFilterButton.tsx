@@ -2,7 +2,7 @@ import {Box, Button, Dialog, DialogFooter, DialogHeader, Icon} from '@dagster-io
 import {useContext, useState} from 'react';
 
 import {RepoSelector} from '../nav/RepoSelector';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 export const RepoFilterButton = () => {
   const {allRepos, visibleRepos, toggleVisible} = useContext(WorkspaceContext);

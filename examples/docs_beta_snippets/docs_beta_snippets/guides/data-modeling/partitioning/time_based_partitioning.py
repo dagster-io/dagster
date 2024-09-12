@@ -5,7 +5,9 @@ import pandas as pd
 
 import dagster as dg
 
-# Create the PartitionDefinition
+# Create the PartitionDefinition,
+# which will create a range of partitions from
+# 2024-01-01 to the day before the current time
 daily_partitions = dg.DailyPartitionsDefinition(start_date="2024-01-01")
 
 
@@ -29,8 +31,8 @@ def daily_sales_data(context: dg.AssetExecutionContext) -> None:
 
 
 @dg.asset(
-    partitions_def=daily_partitions,
-    deps=[daily_sales_data],
+    partitions_def=daily_partitions,  # Use the daily partitioning scheme
+    deps=[daily_sales_data],  # Define dependency on `daily_sales_data` asset
 )
 def daily_sales_summary(context):
     partition_date_str = context.partition_key

@@ -19,10 +19,13 @@ import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
-import {WorkspaceContext, WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext';
+import {
+  WorkspaceContext,
+  WorkspaceRepositoryLocationNode,
+} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {LocationStatusEntryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {LocationStatusEntryFragment} from '../workspace/types/WorkspaceQueries.types';
 
 const RIGHT_COLUMN_WIDTH = '280px';
 

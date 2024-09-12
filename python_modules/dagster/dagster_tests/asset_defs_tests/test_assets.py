@@ -2297,7 +2297,7 @@ def test_asset_spec_with_kinds() -> None:
     assert assets.specs_by_key[AssetKey("asset1")].kinds == {"python"}
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Assets can have at most two kinds currently."
+        DagsterInvalidDefinitionError, match="Assets can have at most three kinds currently."
     ):
 
         @multi_asset(
@@ -2308,6 +2308,7 @@ def test_asset_spec_with_kinds() -> None:
                         "dagster/kind/python": "",
                         "dagster/kind/snowflake": "",
                         "dagster/kind/bigquery": "",
+                        "dagster/kind/airflow": "",
                     },
                 )
             ]
