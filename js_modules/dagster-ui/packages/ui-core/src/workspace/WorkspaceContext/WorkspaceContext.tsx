@@ -198,15 +198,10 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     if (isRefetching) {
       return [];
     }
-    const toFetch = Object.values(locationStatuses).filter((loc) => {
-      const prev = prevLocationStatuses.current?.[loc.name];
-      const d = locationEntriesData[loc.name];
-      const entry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
-      return (
-        prev?.versionKey !== loc.versionKey ||
-        prev?.loadStatus !== loc.loadStatus ||
-        entry?.loadStatus !== loc.loadStatus
-      );
+    const toFetch = Object.values(locationStatuses).filter((statusEntry) => {
+      const d = locationEntriesData[statusEntry.name];
+      const locationEntry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
+      return locationEntry?.versionKey !== statusEntry?.versionKey;
     });
     prevLocationStatuses.current = locationStatuses;
     return toFetch;
