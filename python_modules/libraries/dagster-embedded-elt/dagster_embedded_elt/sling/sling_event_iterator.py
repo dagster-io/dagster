@@ -73,6 +73,31 @@ COLUMN_TYPE_COL = "General Type"
 SLING_COLUMN_PREFIX = "_sling_"
 
 
+def fetch_row_count_metadata(
+    materialization: SlingEventType,
+    sling_cli: "SlingResource",
+    replication_config: Dict[str, Any],
+    context: Union[OpExecutionContext, AssetExecutionContext],
+) -> Dict[str, Any]:
+    target_name = replication_config["target"]
+    if not materialization.metadata:
+        raise Exception("Missing required metadata to retrieve stream_name")
+
+    stream_name = cast(str, materialization.metadata["stream_name"])
+    target_table_name = _get_target_table_name(stream_name, sling_cli)
+
+    if target_table_name:
+        try:
+            row_count = sling_cli.get_row_count_for_table(target_name, target_table_name)
+            return dict(TableMetadataSet(row_count=row_count))
+        except Exception:
+            context.log.warning(
+                "Failed to fetch row count for stream %s", stream_name, exc_info=True
+            )
+
+    return {}
+
+
 def fetch_column_metadata(
     materialization: SlingEventType,
     sling_cli: "SlingResource",
@@ -183,4 +208,27 @@ class SlingEventIterator(Generic[T], abc.Iterator):
 
         return SlingEventIterator[T](
             _fetch_column_metadata(), self._sling_cli, self._replication_config, self._context
+        )
+
+    @experimental
+    @public
+    def fetch_row_count(self) -> "SlingEventIterator":
+        """Fetches row count metadata for each table synced by the Sling CLI.
+
+        Retrieves the row count for each target table.
+
+        Returns:
+            SlingEventIterator: An iterator of Dagster events with row count metadata attached.
+        """
+
+        def _fetch_row_count() -> Iterator[T]:
+            for event in self:
+                row_count_metadata = fetch_row_count_metadata(
+                    event, self._sling_cli, self._replication_config, self._context
+                )
+                if event.metadata:
+                    yield event._replace(metadata={**row_count_metadata, **event.metadata})
+
+        return SlingEventIterator[T](
+            _fetch_row_count(), self._sling_cli, self._replication_config, self._context
         )
