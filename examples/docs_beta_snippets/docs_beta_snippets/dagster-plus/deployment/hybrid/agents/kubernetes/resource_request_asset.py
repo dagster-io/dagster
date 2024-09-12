@@ -1,4 +1,7 @@
+from dagster_k8s import k8s_job_executor
+
 import dagster as dg
+
 
 @dg.asset(
     op_tags={
@@ -17,5 +20,5 @@ def train_model():
 training_job = dg.define_asset_job(
     name="training_job",
     selection=dg.AssetSelection.assets(train_model), 
-    executor_def=dg.k8s_job_executor
+    executor_def=k8s_job_executor
 )

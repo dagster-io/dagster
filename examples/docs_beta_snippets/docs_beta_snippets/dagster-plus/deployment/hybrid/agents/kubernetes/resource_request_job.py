@@ -1,5 +1,6 @@
 import dagster as dg
 
+
 @dg.asset
 def prepare_model():
     ...
