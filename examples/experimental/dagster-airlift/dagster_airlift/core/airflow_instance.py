@@ -1,9 +1,7 @@
 import datetime
 import json
-import os
 from abc import ABC
 from functools import cached_property
-from pathlib import Path
 from typing import Any, Dict, List, Sequence
 
 import requests
@@ -17,6 +15,7 @@ from dagster_airlift.migration_state import (
     DagMigrationState,
     load_migration_state_from_yaml,
 )
+from dagster_airlift.utils import get_local_migration_state_dir
 
 from .utils import convert_to_valid_dagster_name
 
@@ -86,39 +85,10 @@ class AirflowInstance:
                 "Failed to fetch variables. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def configuration(self) -> Dict[str, Any]:
-        response = self.auth_backend.get_session().get(
-            f"{self.get_api_url()}/config", headers={"Accept": "application/json"}
-        )
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise DagsterError(
-                "Failed to fetch configuration. Status code: {response.status_code}, Message: {response.text}"
-            )
-
-    def is_using_sqlite_backend(self) -> bool:
-        config = self.configuration()
-        database_section = next(
-            iter(section for section in config["sections"] if section["name"] == "database")
-        )
-        sql_alchemy_conn = next(
-            iter(
-                section
-                for section in database_section["options"]
-                if section["key"] == "sql_alchemy_conn"
-            )
-        )
-        return sql_alchemy_conn["value"].startswith("sqlite")
-
     def get_migration_state(self) -> AirflowMigrationState:
-        if self.is_using_sqlite_backend():
-            local_migration_dir = os.getenv("DAGSTER_AIRLIFT_MIGRATION_STATE_DIR")
-            if local_migration_dir is None:
-                raise DagsterError(
-                    "Using sqlite backend, but missing DAGSTER_AIRLIFT_MIGRATION_STATE_DIR env var. When using sqlite backend, you must set this env var to point to the directory containing the migration state."
-                )
-            return load_migration_state_from_yaml(Path(local_migration_dir))
+        local_migration_dir = get_local_migration_state_dir()
+        if local_migration_dir is not None:
+            return load_migration_state_from_yaml(local_migration_dir)
         variables = self.list_variables()
         dag_dict = {}
         for var_dict in variables:

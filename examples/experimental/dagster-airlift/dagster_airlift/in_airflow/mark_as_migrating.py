@@ -3,7 +3,6 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Type
 
 from airflow import DAG
-from airflow.configuration import conf
 from airflow.models import BaseOperator, Variable
 from airflow.utils.session import create_session
 
@@ -13,6 +12,7 @@ from dagster_airlift.in_airflow.base_proxy_operator import (
     build_dagster_task,
 )
 from dagster_airlift.migration_state import AirflowMigrationState, DagMigrationState
+from dagster_airlift.utils import get_local_migration_state_dir
 
 
 def mark_as_dagster_migrating(
@@ -115,9 +115,9 @@ def mark_as_dagster_migrating(
 def set_migration_state_for_dag_if_changed(
     dag_id: str, migration_state: DagMigrationState, logger: logging.Logger
 ) -> None:
-    if is_using_sqlite_backend():
+    if get_local_migration_state_dir():
         logger.info(
-            "Using sqlite backend, indicating local execution. Not setting migration state in airflow metadata database, and instead expect dagster to be pointed at migration state via DAGSTER_AIRLIFT_MIGRATION_STATE_DIR env var."
+            "Executing in local mode. Not setting migration state in airflow metadata database, and instead expect dagster to be pointed at migration state via DAGSTER_AIRLIFT_MIGRATION_STATE_DIR env var."
         )
         return
     else:
@@ -127,11 +127,6 @@ def set_migration_state_for_dag_if_changed(
                 f"Migration state for dag {dag_id} has changed. Setting migration state in airflow metadata database via Variable."
             )
             set_migration_var_for_dag(dag_id, migration_state)
-
-
-def is_using_sqlite_backend() -> bool:
-    """Sqlite backends can only support one concurrent write to airflow's metadata database. So when sqlite is used, we instead write to local file."""
-    return conf.get("database", "sql_alchemy_conn").startswith("sqlite")
 
 
 def get_migration_var_for_dag(dag_id: str) -> Optional[DagMigrationState]:

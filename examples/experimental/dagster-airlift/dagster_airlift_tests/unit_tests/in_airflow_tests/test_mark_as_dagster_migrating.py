@@ -3,40 +3,41 @@ import json
 
 import pytest
 from airflow.operators.python import PythonOperator
+from dagster._core.test_utils import environ
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.in_airflow.base_proxy_operator import BaseProxyToDagsterOperator
 from dagster_airlift.migration_state import AirflowMigrationState
 from dagster_airlift.test.shared_fixtures import VAR_DICT
+from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
 from dagster_airlift_tests.unit_tests.in_airflow_tests.conftest import (
     build_dags_dict_given_structure,
 )
 
 
-def test_mark_as_dagster_migrating_sqlite_backend(
-    mock_airflow_variable: None, sqlite_backend: None, caplog
-) -> None:
-    """Test that when using sqlite backend, we dont attempt to set the variable."""
-    globals_fake = build_dags_dict_given_structure(
-        {
-            "dag": {"task": []},
-        }
-    )
-
-    mark_as_dagster_migrating(
-        global_vars=globals_fake,
-        migration_state=AirflowMigrationState.from_dict(
+def test_mark_as_dagster_migrating_local_dir_set(mock_airflow_variable: None, caplog) -> None:
+    """Test that when a local directory variable is set, we don't use the variable."""
+    with environ({DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR: "/tmp"}):
+        globals_fake = build_dags_dict_given_structure(
             {
-                "dag": {"tasks": [{"id": "task", "migrated": True}]},
+                "dag": {"task": []},
             }
-        ),
-    )
-    assert any(
-        "Using sqlite backend" in record.message and record.levelname == "INFO"
-        for record in caplog.records
-    )
+        )
 
-    assert VAR_DICT == {}
+        mark_as_dagster_migrating(
+            global_vars=globals_fake,
+            migration_state=AirflowMigrationState.from_dict(
+                {
+                    "dag": {"tasks": [{"id": "task", "migrated": True}]},
+                }
+            ),
+        )
+        assert any(
+            "Executing in local mode" in record.message and record.levelname == "INFO"
+            for record in caplog.records
+        )
+
+        assert VAR_DICT == {}
 
 
 def test_mark_as_dagster_migrating(mock_airflow_variable: None) -> None:

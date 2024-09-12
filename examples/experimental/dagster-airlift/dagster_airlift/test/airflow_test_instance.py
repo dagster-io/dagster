@@ -8,12 +8,6 @@ from dagster_airlift.core import AirflowInstance
 from dagster_airlift.core.airflow_instance import DagInfo, DagRun, TaskInfo, TaskInstance
 from dagster_airlift.core.basic_auth import AirflowAuthBackend
 
-DEFAULT_TEST_CONFIG = {
-    "sections": [
-        {"name": "database", "options": [{"key": "sql_alchemy_conn", "value": "postgres://"}]},
-    ],
-}
-
 
 class DummyAuthBackend(AirflowAuthBackend):
     def get_session(self) -> requests.Session:
@@ -33,7 +27,6 @@ class AirflowInstanceFake(AirflowInstance):
         task_instances: List[TaskInstance],
         dag_runs: List[DagRun],
         variables: List[Dict[str, Any]] = [],
-        config: Dict[str, Any] = {},
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
         self._task_infos_by_dag_and_task_id = {
@@ -51,7 +44,6 @@ class AirflowInstanceFake(AirflowInstance):
             self._dag_runs_by_dag_id[dag_run.dag_id].append(dag_run)
         self._dag_infos_by_file_token = {dag_info.file_token: dag_info for dag_info in dag_infos}
         self._variables = variables
-        self._config = config
         super().__init__(
             auth_backend=DummyAuthBackend(),
             name="test_instance",
@@ -62,9 +54,6 @@ class AirflowInstanceFake(AirflowInstance):
 
     def list_variables(self) -> List[Dict[str, Any]]:
         return self._variables
-
-    def configuration(self) -> Dict[str, Any]:
-        return self._config
 
     def get_dag_runs(self, dag_id: str, start_date: datetime, end_date: datetime) -> List[DagRun]:
         if dag_id not in self._dag_runs_by_dag_id:
@@ -195,7 +184,6 @@ def make_dag_run(dag_id: str, run_id: str, start_date: datetime, end_date: datet
 def make_instance(
     dag_and_task_structure: Dict[str, List[str]],
     dag_runs: List[DagRun] = [],
-    config: Dict[str, Any] = DEFAULT_TEST_CONFIG,
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
 
@@ -232,5 +220,4 @@ def make_instance(
         task_infos=task_infos,
         task_instances=task_instances,
         dag_runs=dag_runs,
-        config=config,
     )

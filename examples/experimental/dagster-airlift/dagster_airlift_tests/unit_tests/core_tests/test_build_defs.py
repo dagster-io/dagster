@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -14,10 +13,10 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster._core.errors import DagsterError
 from dagster._core.test_utils import environ
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.test import make_instance
+from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
@@ -275,30 +274,24 @@ def test_observed_assets() -> None:
     )
 
 
-def test_sqlite_backed_airflow_instance() -> None:
-    """Test that a sqlite-backed airflow instance can be correctly peered, and errors when the correct info can't be found."""
+def test_local_airflow_instance() -> None:
+    """Test that a local-backed airflow instance can be correctly peered, and errors when the correct info can't be found."""
     defs = build_definitions_airflow_asset_graph(
         assets_per_task={
-            "dag": {"task": []},
+            "dag": {"task": [("a", [])]},
         },
-        config={
-            "sections": [
-                {
-                    "name": "database",
-                    "options": [{"key": "sql_alchemy_conn", "value": "sqlite://"}],
-                },
-            ],
-        },
+        create_assets_defs=True,
     )
 
     assert defs.assets
     assert len(list(defs.assets)) == 1
-    with pytest.raises(DagsterError, match="missing DAGSTER_AIRLIFT_MIGRATION_STATE_DIR"):
-        defs.get_repository_def()
+    repo_def = defs.get_repository_def()
+    a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
+    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") == "False"
 
     with environ(
         {
-            "DAGSTER_AIRLIFT_MIGRATION_STATE_DIR": str(
+            DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR: str(
                 Path(__file__).parent / "migration_state_for_sqlite_test"
             ),
         }
@@ -307,20 +300,12 @@ def test_sqlite_backed_airflow_instance() -> None:
             assets_per_task={
                 "dag": {"task": [("a", [])]},
             },
-            config={
-                "sections": [
-                    {
-                        "name": "database",
-                        "options": [{"key": "sql_alchemy_conn", "value": "postgres://"}],
-                    },
-                ],
-            },
+            create_assets_defs=True,
         )
-
+        repo_def = defs.get_repository_def()
         assert defs.assets
         assert len(list(defs.assets)) == 1
         repo_def = defs.get_repository_def()
         assert len(repo_def.assets_defs_by_key) == 2
         task_asset = repo_def.assets_defs_by_key[AssetKey("a")]
-        assert not task_asset.is_executable
-        assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "False"
+        assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "True"
