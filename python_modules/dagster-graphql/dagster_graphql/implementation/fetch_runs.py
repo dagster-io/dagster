@@ -24,7 +24,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
-from dagster._record import record
+from dagster._record import copy, record
 from dagster._time import datetime_from_timestamp
 
 from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
@@ -588,7 +588,7 @@ def _replace_created_before_with_cursor(
     else:
         created_before = None
 
-    return filters._replace(created_before=created_before)
+    return copy(filters, created_before=created_before)
 
 
 def get_runs_feed_entries(
