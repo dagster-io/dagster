@@ -556,7 +556,7 @@ class RunsFilter(IHaveNew):
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
-        return super(RunsFilter, cls).__new__(
+        return super().__new__(
             cls,
             run_ids=check.opt_sequence_param(run_ids, "run_ids", of_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
