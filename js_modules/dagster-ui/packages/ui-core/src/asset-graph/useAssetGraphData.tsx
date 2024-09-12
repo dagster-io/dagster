@@ -84,7 +84,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         groupSelector: options.groupSelector,
       })}`,
     ),
-    version: 1,
+    version: 2,
   });
 
   const nodes = fetchResult.data?.assetNodes;
