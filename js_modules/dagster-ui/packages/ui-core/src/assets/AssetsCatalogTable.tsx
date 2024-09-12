@@ -204,7 +204,6 @@ export const AssetsCatalogTable = ({
 
   const {
     filteredAssets: partiallyFiltered,
-    filteredAssetsLoading,
     isFiltered,
     filterButton,
     activeFiltersJsx,
@@ -221,8 +220,8 @@ export const AssetsCatalogTable = ({
   const {displayPathForAsset, displayed} = useMemo(
     () =>
       view === 'flat'
-        ? buildFlatProps(filtered as AssetTableFragment[], prefixPath)
-        : buildNamespaceProps(filtered as AssetTableFragment[], prefixPath),
+        ? buildFlatProps(filtered, prefixPath)
+        : buildNamespaceProps(filtered, prefixPath),
     [filtered, prefixPath, view],
   );
 
@@ -258,7 +257,6 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
-      isLoading={filteredAssetsLoading}
       isFiltered={isFiltered}
       actionBarComponents={
         <>
