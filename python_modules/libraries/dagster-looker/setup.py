@@ -39,6 +39,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "lkml",
+        "looker_sdk",
         "sqlglot",
     ],
     zip_safe=False,
