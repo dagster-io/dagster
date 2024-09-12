@@ -23,7 +23,6 @@ from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (
@@ -491,14 +490,11 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             for evaluation in asset_evaluations:
-                # for now, ignore check keys
-                if not isinstance(evaluation.key, AssetKey):
-                    continue
                 insert_stmt = AssetDaemonAssetEvaluationsTable.insert().values(
                     [
                         {
                             "evaluation_id": evaluation_id,
-                            "asset_key": evaluation.key.to_string(),
+                            "asset_key": evaluation.key.to_db_string(),
                             "asset_evaluation_body": serialize_value(evaluation),
                             "num_requested": evaluation.num_requested,
                         }
@@ -513,7 +509,7 @@ class SqlScheduleStorage(ScheduleStorage):
                             db.and_(
                                 AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id,
                                 AssetDaemonAssetEvaluationsTable.c.asset_key
-                                == evaluation.key.to_string(),
+                                == evaluation.key.to_db_string(),
                             )
                         )
                         .values(
@@ -525,9 +521,6 @@ class SqlScheduleStorage(ScheduleStorage):
     def get_auto_materialize_asset_evaluations(
         self, key: EntityKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
-        # to remove
-        if not isinstance(key, AssetKey):
-            return []
         with self.connect() as conn:
             query = (
                 db_select(
@@ -539,7 +532,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         AssetDaemonAssetEvaluationsTable.c.asset_key,
                     ]
                 )
-                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == key.to_string())
+                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == key.to_db_string())
                 .order_by(AssetDaemonAssetEvaluationsTable.c.evaluation_id.desc())
             ).limit(limit)
 
