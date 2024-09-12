@@ -6,6 +6,9 @@ import csv from './kindtag-images/csv.svg';
 import dag from './kindtag-images/dag.svg';
 import dashboard from './kindtag-images/dashboard.svg';
 import file from './kindtag-images/file.svg';
+import medallion_bronze from './kindtag-images/medallion-bronze-color.svg';
+import medallion_gold from './kindtag-images/medallion-gold-color.svg';
+import medallion_silver from './kindtag-images/medallion-silver-color.svg';
 import notebook from './kindtag-images/notebook.svg';
 import pdf from './kindtag-images/pdf.svg';
 import seed from './kindtag-images/seed.svg';
@@ -852,6 +855,18 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     icon: yaml,
     content: ' ',
     blackAndWhite: true,
+  },
+  gold: {
+    icon: medallion_gold,
+    content: 'Gold',
+  },
+  silver: {
+    icon: medallion_silver,
+    content: 'Silver',
+  },
+  bronze: {
+    icon: medallion_bronze,
+    content: 'Bronze',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
