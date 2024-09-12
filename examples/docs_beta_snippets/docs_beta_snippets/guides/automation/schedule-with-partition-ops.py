@@ -2,7 +2,7 @@ import dagster as dg
 
 
 # Define the job
-@dg.job(config=partitioned_config)
+@dg.job(config=partitioned_config)  # noqa: F821
 def partitioned_op_job(): ...
 
 
