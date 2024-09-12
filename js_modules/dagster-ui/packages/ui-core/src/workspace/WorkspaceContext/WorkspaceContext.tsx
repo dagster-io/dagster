@@ -203,7 +203,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       const d = locationEntriesData[loc.name];
       const entry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
       return (
-        prev?.updateTimestamp !== loc.updateTimestamp ||
+        prev?.versionKey !== loc.versionKey ||
         prev?.loadStatus !== loc.loadStatus ||
         entry?.loadStatus !== loc.loadStatus
       );
