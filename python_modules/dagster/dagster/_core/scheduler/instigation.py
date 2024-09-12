@@ -17,7 +17,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import RunRequest
-from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.asset_key import T_EntityKey, entity_key_from_db_string
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
@@ -788,8 +788,7 @@ class AutoMaterializeAssetEvaluationRecord(Generic[T_EntityKey]):
             serialized_evaluation_body=row["asset_evaluation_body"],
             evaluation_id=row["evaluation_id"],
             timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
-            # for now, only AssetKeys are stored in these rows
-            key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
+            key=entity_key_from_db_string(row["asset_key"]),
         )
 
     def get_evaluation_with_run_ids(self) -> AutomationConditionEvaluationWithRunIds[T_EntityKey]:
