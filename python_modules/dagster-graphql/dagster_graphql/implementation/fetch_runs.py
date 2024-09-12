@@ -465,17 +465,18 @@ def _backfill_matches_filters(backfill: PartitionBackfill, filters: RunsFilter) 
         return False
 
     # for the remaining filters, ensure that the backfill matches all of them, otehrwise return False
-    if filters.statues and backfill.status not in _bulk_action_statuses_from_run_statuses(
+    if filters.statuses and backfill.status not in _bulk_action_statuses_from_run_statuses(
         filters.statuses
     ):
         return False
 
-    if filters.job_name and backfill.job_name != filters.job_name:
+    if filters.job_name and filters.job_name not in backfill.partition_set_name:
+        # partition_set_name is <job_name>_partition_set
         return False
 
     # maybe need to remove backfill_id tag from tags?
-    for tag in filters.tags:
-        if backfill.tags.get(tag.key) != tag.value:
+    for tag_key, tag_value in filters.tags.items():
+        if backfill.tags.get(tag_key) != tag_value:
             return False
 
     if filters.created_before and backfill.timestamp >= filters.created_before:
@@ -524,9 +525,9 @@ def _slow_fetch_entries_for_filter(
 def _bulk_action_status_from_run_status(status: DagsterRunStatus) -> Sequence[BulkActionStatus]:
     """Converts a DagsterRunStatus to the set of BulkActionStatus that display as that DagsterRunStatus in the UI."""
     if status == DagsterRunStatus.SUCCESS:
-        return [BulkActionStatus.COMPLETED]  # will include COMPLETED_SUCCESS
+        return [BulkActionStatus.COMPLETED, BulkActionStatus.COMPLETED_SUCCESS]
     if status == DagsterRunStatus.FAILURE:
-        return [BulkActionStatus.FAILED]  # will include COMPLETE_FAILED
+        return [BulkActionStatus.FAILED, BulkActionStatus.COMPLETED_FAILED]
     if status == DagsterRunStatus.CANCELED:
         return [BulkActionStatus.CANCELED]
     if status == DagsterRunStatus.CANCELING:
@@ -582,31 +583,46 @@ def _get_runs_feed_entries(
     # filtering by job_name and tags must be done by filtering runs and then pulling backfill ids from the runs
     if filters is None or (filters.job_name is None and len(filters.tags) == 0):
         skip_fetching_backfills = False
-        # the following filters do not apply to backfills, so skip fetching backfills if they are set
-        if (
-            len(filters.run_ids) > 0
-            or filters.updated_after is not None
-            or filters.updated_before is not None
-            or filters.snapshot_id is not None
-        ):
-            skip_fetching_backfills = True
-        # if filtering by statuses that are not valid backfill statuses, skip fetching backfills
-        if filters.statuses and len(_bulk_action_statuses_from_run_statuses(filters.statuses)) == 0:
-            skip_fetching_backfills = True
+        if filters is not None:
+            # the following filters do not apply to backfills, so skip fetching backfills if they are set
+            if (
+                len(filters.run_ids) > 0
+                or filters.updated_after is not None
+                or filters.updated_before is not None
+                or filters.snapshot_id is not None
+            ):
+                skip_fetching_backfills = True
+            # if filtering by statuses that are not valid backfill statuses, skip fetching backfills
+            if (
+                filters.statuses
+                and len(_bulk_action_statuses_from_run_statuses(filters.statuses)) == 0
+            ):
+                skip_fetching_backfills = True
 
         if not skip_fetching_backfills:
-            converted_statuses = (
-                _bulk_action_statuses_from_run_statuses(filters.statuses)
-                if filters.statuses
-                else None
-            )
-            backfill_filters = BulkActionsFilter(
-                created_before=min(created_before_cursor, filters.created_before)
-                if filters.created_before
-                else created_before_cursor,
-                created_after=filters.created_after,
-                statuses=converted_statuses,
-            )
+            if filters is not None:
+                converted_statuses = (
+                    _bulk_action_statuses_from_run_statuses(filters.statuses)
+                    if filters.statuses
+                    else None
+                )
+                if filters.created_before and created_before_cursor:
+                    created_before = min(created_before_cursor, filters.created_before)
+                elif created_before_cursor:
+                    created_before = created_before_cursor
+                elif filters.created_before:
+                    created_before = filters.created_before
+                else:
+                    created_before = None
+                backfill_filters = BulkActionsFilter(
+                    created_before=created_before,
+                    created_after=filters.created_after,
+                    statuses=converted_statuses,
+                )
+            else:
+                backfill_filters = BulkActionsFilter(
+                    created_before=created_before_cursor,
+                )
             backfills = [
                 GraphenePartitionBackfill(backfill)
                 for backfill in instance.get_backfills(
@@ -617,11 +633,18 @@ def _get_runs_feed_entries(
             ]
         else:
             backfills = []
-        run_filters = filters._replace(
-            created_before=min(created_before_cursor, filters.created_before)
-            if filters.created_before
-            else created_before_cursor
-        )
+        if filters is not None:
+            if filters.created_before and created_before_cursor:
+                created_before = min(created_before_cursor, filters.created_before)
+            elif created_before_cursor:
+                created_before = created_before_cursor
+            elif filters.created_before:
+                created_before = filters.created_before
+            else:
+                created_before = None
+            run_filters = filters._replace(created_before=created_before)
+        else:
+            run_filters = RunsFilter(created_before=created_before_cursor)
         runs = [
             GrapheneRun(run)
             for run in _fetch_runs_not_in_backfill(
@@ -632,13 +655,25 @@ def _get_runs_feed_entries(
             )
         ]
     else:
+        if filters.created_before and created_before_cursor:
+            created_before = min(created_before_cursor, filters.created_before)
+        elif created_before_cursor:
+            created_before = created_before_cursor
+        elif filters.created_before:
+            created_before = filters.created_before
+        else:
+            created_before = None
+        run_filters = filters._replace(created_before=created_before)
         runs, backfills = _slow_fetch_entries_for_filter(
             instance=instance,
             cursor=runs_feed_cursor.run_cursor,
             limit=fetch_limit,
-            created_before=created_before_cursor,
             filters=filters,
         )
+
+        runs = [GrapheneRun(run) for run in runs]
+
+        backfills = [GraphenePartitionBackfill(backfill) for backfill in backfills]
 
     # if we fetched limit+1 of either runs or backfills, we know there must be more results
     # to fetch on the next call since we will return limit results for this call. Additionally,
@@ -695,6 +730,7 @@ def get_runs_feed_entries(
     graphene_info: "ResolveInfo",
     limit: int,
     cursor: Optional[str] = None,
+    filters: Optional[RunsFilter] = None,
 ) -> "GrapheneRunsFeedConnection":
     """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
     single runs (runs that are not part of a backfill), the cursor to fetch the next page,
@@ -705,4 +741,6 @@ def get_runs_feed_entries(
         cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
             that querying should start at the beginning of the table for both runs and backfills.
     """
-    return _get_runs_feed_entries(graphene_info.context.instance, limit, cursor, filters=None)
+    return _get_runs_feed_entries(
+        instance=graphene_info.context.instance, limit=limit, cursor=cursor, filters=filters
+    )
