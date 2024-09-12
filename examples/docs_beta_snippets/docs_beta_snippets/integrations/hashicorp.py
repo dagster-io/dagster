@@ -19,7 +19,7 @@ defs = dg.Definitions(
         "vault": vault_resource.configured(
             {
                 "url": "vault-host:8200",
-                "auth_type": {"token": {"token": os.environ["VAULT_AUTH_TOKEN"]}},
+                "auth_type": {"token": {"token": dg.EnvVar("VAULT_AUTH_TOKEN")}},
             }
         )
     },

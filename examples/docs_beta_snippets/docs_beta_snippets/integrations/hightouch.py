@@ -12,13 +12,7 @@ run_ht_sync_orgs = hightouch_sync_op.configured(
 )
 
 
-@dg.job(
-    resource_defs={
-        "hightouch": ht_resource.configured(
-            {"api_key": os.environ["HIGHTOUCH_API_KEY"]},
-        ),
-    }
-)
+@dg.job
 def ht_sfdc_job():
     ht_orgs = run_ht_sync_orgs()
 
@@ -27,7 +21,7 @@ defs = dg.Definitions(
     jobs=[ht_sfdc_job],
     resources={
         "hightouch": ht_resource.configured(
-            {"api_key": os.environ["HIGHTOUCH_API_KEY"]},
+            {"api_key": dg.EnvVar("HIGHTOUCH_API_KEY")},
         ),
     },
 )

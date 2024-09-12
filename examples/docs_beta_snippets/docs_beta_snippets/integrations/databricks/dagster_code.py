@@ -5,12 +5,12 @@ from dagster_databricks import PipesDatabricksClient
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
-from dagster import AssetExecutionContext, Definitions, EnvVar, asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def databricks_asset(
-    context: AssetExecutionContext, pipes_databricks: PipesDatabricksClient
+    context: dg.AssetExecutionContext, pipes_databricks: PipesDatabricksClient
 ):
     task = jobs.SubmitTask.from_dict(
         {
@@ -52,11 +52,11 @@ def databricks_asset(
 
 pipes_databricks_resource = PipesDatabricksClient(
     client=WorkspaceClient(
-        host=os.environ["DATABRICKS_HOST"],
-        token=os.environ["DATABRICKS_TOKEN"],
+        host="https://<workspace-id>.cloud.databricks.com",
+        token="<token>",
     )
 )
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[databricks_asset], resources={"pipes_databricks": pipes_databricks_resource}
 )

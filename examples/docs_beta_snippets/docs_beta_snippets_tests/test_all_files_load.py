@@ -19,9 +19,18 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dagster-plus/deployment/serverless/runtime-environment/example_setup.py",
 }
 
+EXCLUDED_DIRS = {
+    # integrations are excluded because they have external dependencies that
+    # are easier to manage in a separate tox environment
+    f"{snippets_folder}/integrations",
+}
+
 
 def get_python_files(directory):
-    for root, _, files in os.walk(directory):
+    for root, dirs, files in os.walk(directory):
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if os.path.join(root, d) not in EXCLUDED_DIRS]
+
         for file in files:
             if file.endswith(".py"):
                 yield os.path.join(root, file)
