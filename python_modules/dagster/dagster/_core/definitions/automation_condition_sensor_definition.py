@@ -3,9 +3,6 @@ from typing import Any, Mapping, Optional, cast
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
-from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
-    AutomationConditionEvaluator,
-)
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
@@ -17,7 +14,9 @@ from dagster._core.definitions.utils import check_valid_name, normalize_tags
 
 
 def evaluate_automation_conditions(context: SensorEvaluationContext):
-    from dagster._core.definitions.asset_daemon_context import build_run_requests
+    from dagster._core.definitions.automation_tick_evaluation_context import (
+        AutomationTickEvaluationContext,
+    )
     from dagster._daemon.asset_daemon import (
         asset_daemon_cursor_from_instigator_serialized_cursor,
         asset_daemon_cursor_to_instigator_serialized_cursor,
@@ -28,37 +27,17 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
         context.cursor,
         asset_graph,
     )
-
-    evaluator = AutomationConditionEvaluator(
-        asset_graph=asset_graph,
-        instance=context.instance,
-        entity_keys=asset_graph.all_asset_keys,
-        logger=context.log,
-        cursor=cursor,
-    )
-    results, entity_subsets = evaluator.evaluate()
-    new_cursor = cursor.with_updates(
+    run_requests, new_cursor, updated_evaluations = AutomationTickEvaluationContext(
         evaluation_id=cursor.evaluation_id,
-        evaluation_timestamp=evaluator.evaluation_time.timestamp(),
-        newly_observe_requested_asset_keys=[],  # skip for now, hopefully forever
-        condition_cursors=[result.get_new_cursor() for result in results],
-    )
-    run_requests = build_run_requests(
-        entity_subsets=entity_subsets,
+        instance=context.instance,
         asset_graph=asset_graph,
-        # tick_id and sensor tags should get set in daemon
-        run_tags=context.instance.auto_materialize_run_tags,
-    )
-    # only record evaluation results where something changed
-    updated_evaluations = []
-    for result in results:
-        previous_cursor = cursor.get_previous_condition_cursor(result.key)
-        if (
-            previous_cursor is None
-            or previous_cursor.result_value_hash != result.value_hash
-            or not result.true_subset.is_empty
-        ):
-            updated_evaluations.append(result.serializable_evaluation)
+        cursor=cursor,
+        materialize_run_tags=context.instance.auto_materialize_run_tags,
+        observe_run_tags={},
+        auto_observe_asset_keys=set(),
+        auto_materialize_asset_keys=asset_graph.all_asset_keys,
+        logger=context.log,
+    ).evaluate()
 
     return SensorResult(
         run_requests=run_requests,

@@ -11,11 +11,13 @@ from types import TracebackType
 from typing import Any, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
+)
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    AutomationTickEvaluationContext,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
@@ -931,7 +933,7 @@ class AssetDaemon(DagsterDaemon):
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
-            run_requests, new_cursor, evaluations = AssetDaemonContext(
+            run_requests, new_cursor, evaluations = AutomationTickEvaluationContext(
                 evaluation_id=evaluation_id,
                 asset_graph=asset_graph,
                 auto_materialize_asset_keys=auto_materialize_asset_keys,

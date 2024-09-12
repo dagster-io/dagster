@@ -44,7 +44,6 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -54,6 +53,9 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
+)
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    AutomationTickEvaluationContext,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import DataVersionsByPartition
@@ -401,7 +403,7 @@ class AssetReconciliationScenario(
                 "auto_materialize_respect_materialization_data_versions",
                 new=lambda: self.respect_materialization_data_versions,
             ):
-                run_requests, cursor, evaluations = AssetDaemonContext(
+                run_requests, cursor, evaluations = AutomationTickEvaluationContext(
                     evaluation_id=cursor.evaluation_id + 1,
                     asset_graph=asset_graph,
                     auto_materialize_asset_keys=auto_materialize_asset_keys,
