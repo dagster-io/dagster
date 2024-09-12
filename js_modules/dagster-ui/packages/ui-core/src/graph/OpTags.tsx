@@ -111,6 +111,7 @@ import reddit from './kindtag-images/tool-reddit-color.svg';
 import redshift from './kindtag-images/tool-redshift-color.svg';
 import rockset from './kindtag-images/tool-rockset-color.svg';
 import rust from './kindtag-images/tool-rust-color.svg';
+import s3 from './kindtag-images/tool-s3-color.svg';
 import sagemaker from './kindtag-images/tool-sagemaker-color.svg';
 import salesforce from './kindtag-images/tool-salesforce-color.svg';
 import scala from './kindtag-images/tool-scala-color.svg';
@@ -357,7 +358,7 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     content: 'Athena',
   },
   s3: {
-    icon: aws,
+    icon: s3,
     content: 'S3',
   },
   aws: {
