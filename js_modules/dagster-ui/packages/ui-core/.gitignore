@@ -23,5 +23,3 @@ yarn-debug.log*
 yarn-error.log*
 
 src/tsconfig.json
-
-client.json
