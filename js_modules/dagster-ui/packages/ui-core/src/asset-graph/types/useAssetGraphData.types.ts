@@ -73,3 +73,5 @@ export type AssetNodeForGraphQueryFragment = {
   dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
+
+export const AssetGraphQueryVersion = '26030b5c565bdc4d84b54b2c9a7e8172562cf7434912511768bde20875d47b44';

@@ -351,3 +351,5 @@ export type AssetCheckDetailsQuery = {
     } | null;
   }>;
 };
+
+export const AssetCheckDetailsQueryVersion = '371e01d6e3718d0ef48652ec614938af424d77ce9bc4e459f0f43c21309aedda';

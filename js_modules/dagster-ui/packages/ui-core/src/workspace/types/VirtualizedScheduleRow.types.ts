@@ -60,3 +60,5 @@ export type SingleScheduleQuery = {
       }
     | {__typename: 'ScheduleNotFoundError'};
 };
+
+export const SingleScheduleQueryVersion = '508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897';

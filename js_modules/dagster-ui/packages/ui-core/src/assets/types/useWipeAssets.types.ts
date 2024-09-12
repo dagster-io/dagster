@@ -31,3 +31,5 @@ export type AssetWipeMutation = {
     | {__typename: 'UnauthorizedError'}
     | {__typename: 'UnsupportedOperationError'};
 };
+
+export const AssetWipeMutationVersion = 'accefb0c47b3d4a980d16965e8af565afed787a8a987a03570df876bd734dc8f';

@@ -12,3 +12,5 @@ export type AssetsOverviewRootQuery = {
     | {__typename: 'Asset'; id: string; key: {__typename: 'AssetKey'; path: Array<string>}}
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const AssetsOverviewRootQueryVersion = '77ab0417c979b92c9ec01cd76a0f49b59f5b8ce7af775cab7e9b3e57b7871f7d';

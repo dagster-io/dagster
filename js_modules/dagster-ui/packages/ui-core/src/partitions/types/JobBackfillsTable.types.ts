@@ -59,3 +59,5 @@ export type JobBackfillsQuery = {
     | {__typename: 'PartitionSetNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const JobBackfillsQueryVersion = '9faca72d06cc7e1fb5423ea3b7f71d6ade5645bcbbe03322e092811de3ba36bd';

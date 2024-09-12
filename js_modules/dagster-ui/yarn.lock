@@ -3812,6 +3812,7 @@ __metadata:
     faker: "npm:5.5.3"
     fuse.js: "npm:^6.4.2"
     graphql: "npm:^16.8.1"
+    graphql-codegen-persisted-query-ids: "npm:^0.2.0"
     graphql-codegen-typescript-mock-data: "npm:^3.7.1"
     graphql-config: "npm:^5.0.3"
     graphql-tag: "npm:^2.10.1"
@@ -4306,6 +4307,22 @@ __metadata:
   peerDependencies:
     graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
   checksum: 10/184736c4e212db508752e418965c18c8ab8dee1b491dd819d69994b654978234cd44028b37eff1aa99638a92bc33b5138316272ddc9654ecc8e5a00d9fada620
+  languageName: node
+  linkType: hard
+
+"@graphql-codegen/plugin-helpers@npm:^5.0.0":
+  version: 5.0.4
+  resolution: "@graphql-codegen/plugin-helpers@npm:5.0.4"
+  dependencies:
+    "@graphql-tools/utils": "npm:^10.0.0"
+    change-case-all: "npm:1.0.15"
+    common-tags: "npm:1.8.2"
+    import-from: "npm:4.0.0"
+    lodash: "npm:~4.17.0"
+    tslib: "npm:~2.6.0"
+  peerDependencies:
+    graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+  checksum: 10/8162bffc76bf0d6cd9ff83c98b8a5e5eadbb1bc0de2d273480af937a27ca8fbf74aae72a617303a9d4121b9914eb9af065858f07c0ac13cd169b53a9bcead799
   languageName: node
   linkType: hard
 
@@ -14089,6 +14106,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"graphql-codegen-persisted-query-ids@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "graphql-codegen-persisted-query-ids@npm:0.2.0"
+  dependencies:
+    "@graphql-codegen/plugin-helpers": "npm:^5.0.0"
+    "@graphql-tools/apollo-engine-loader": "npm:^8.0.0"
+    graphql: "npm:^16.7.1"
+  checksum: 10/5be470334fda5fbdddc1e609e7c4ed5d961992f14922d41233ae35e20298f9a3e5a54081aa6e811a1eca17c666e0d9dd03791f477eea82abd0df386bcd8fffe0
+  languageName: node
+  linkType: hard
+
 "graphql-codegen-typescript-mock-data@npm:^3.7.1":
   version: 3.7.1
   resolution: "graphql-codegen-typescript-mock-data@npm:3.7.1"
@@ -14192,6 +14220,13 @@ __metadata:
   version: 16.8.1
   resolution: "graphql@npm:16.8.1"
   checksum: 10/7a09d3ec5f75061afe2bd2421a2d53cf37273d2ecaad8f34febea1f1ac205dfec2834aec3419fa0a10fcc9fb345863b2f893562fb07ea825da2ae82f6392893c
+  languageName: node
+  linkType: hard
+
+"graphql@npm:^16.7.1":
+  version: 16.9.0
+  resolution: "graphql@npm:16.9.0"
+  checksum: 10/5833f82bb6c31bec120bbf9cd400eda873e1bb7ef5c17974fa262cd82dc68728fda5d4cb859dc8aaa4c4fe4f6fe1103a9c47efc01a12c02ae5cb581d8e4029e2
   languageName: node
   linkType: hard
 

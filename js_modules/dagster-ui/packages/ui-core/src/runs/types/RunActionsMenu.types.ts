@@ -26,3 +26,5 @@ export type PipelineEnvironmentQuery = {
       }
     | {__typename: 'RunNotFoundError'};
 };
+
+export const PipelineEnvironmentQueryVersion = '762f0cd2639e98c470cecdb3d2f7ca4609bd77be7f916e0134021bd0b589da59';
