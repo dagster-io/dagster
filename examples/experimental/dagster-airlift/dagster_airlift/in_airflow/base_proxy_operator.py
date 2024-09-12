@@ -46,7 +46,6 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
 
     def launch_runs_for_task(self, context: Context, dag_id: str, task_id: str) -> None:
         """Launches runs for the given task in Dagster."""
-        expected_op_name = f"{dag_id}__{task_id}"
         session = self._get_validated_session(context)
 
         dagster_url = self.get_dagster_url(context)
@@ -64,8 +63,7 @@ class BaseProxyToDagsterOperator(BaseOperator, ABC):
                 for entry in asset_node["metadataEntries"]
                 if entry["__typename"] == "TextMetadataEntry"
             }
-            # match assets based on conventional dag_id__task_id naming or based on explicit tags
-            if asset_node["opName"] == expected_op_name or (
+            if (
                 text_metadata_entries.get(DAG_ID_METADATA_KEY) == dag_id
                 and text_metadata_entries.get(TASK_ID_METADATA_KEY) == task_id
             ):

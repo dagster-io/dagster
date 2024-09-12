@@ -10,6 +10,7 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     build_sensor_context,
+    multi_asset,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetMaterialization
@@ -42,20 +43,28 @@ def build_definitions_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
+    create_assets_defs: bool = True,
 ) -> Definitions:
-    specs = []
+    assets = []
     dag_and_task_structure = defaultdict(list)
     for dag_id, task_structure in assets_per_task.items():
         for task_id, asset_structure in task_structure.items():
             dag_and_task_structure[dag_id].append(task_id)
             for asset_key, deps in asset_structure:
-                specs.append(
-                    AssetSpec(
-                        asset_key,
-                        deps=deps,
-                        metadata={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
-                    )
+                spec = AssetSpec(
+                    asset_key,
+                    deps=deps,
+                    metadata={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
                 )
+                if create_assets_defs:
+
+                    @multi_asset(specs=[spec])
+                    def _asset():
+                        return None
+
+                    assets.append(_asset)
+                else:
+                    assets.append(spec)
     runs = (
         [
             make_dag_run(
@@ -75,7 +84,7 @@ def build_definitions_airflow_asset_graph(
     )
     defs = Definitions.merge(
         additional_defs,
-        Definitions(assets=specs),
+        Definitions(assets=assets),
     )
     return build_defs_from_airflow_instance(instance, defs=defs)
 
