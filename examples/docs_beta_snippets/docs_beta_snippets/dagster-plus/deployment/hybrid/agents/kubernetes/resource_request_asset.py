@@ -8,17 +8,21 @@ import dagster as dg
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "limits": {"cpu": "500m", "memory": "2560Mi", "nvidia.com/gpu": "1"},
+                    "limits": {
+                        "cpu": "500m",
+                        "memory": "2560Mi",
+                        "nvidia.com/gpu": "1",
+                    },
                 },
             },
         }
     }
 )
-def train_model():
-    ...
+def train_model(): ...
+
 
 training_job = dg.define_asset_job(
     name="training_job",
-    selection=dg.AssetSelection.assets(train_model), 
-    executor_def=k8s_job_executor
+    selection=dg.AssetSelection.assets(train_model),
+    executor_def=k8s_job_executor,
 )
