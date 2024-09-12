@@ -52,6 +52,7 @@
     "graphql": "^16.8.1",
     "highlight.js": "11.6.0",
     "idb-lru-cache": "^0.1.0",
+    "js-sha256": "^0.11.0",
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
     "moment": "^2.29.4",

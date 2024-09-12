@@ -1,7 +1,6 @@
-import crypto from 'crypto';
-
 import {print} from 'graphql';
 import {cache} from 'idb-lru-cache';
+import {sha256} from 'js-sha256';
 import memoize from 'lodash/memoize';
 import React, {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
 
@@ -24,7 +23,7 @@ export const KEY_PREFIX = 'indexdbQueryCache:';
 
 export function getQueryVersion(query: DocumentNode) {
   const printedQuery = print(query);
-  return crypto.createHash('sha256').update(printedQuery).digest('hex');
+  return sha256.create().update(printedQuery).hex();
 }
 
 export class CacheManager<TQuery> {
