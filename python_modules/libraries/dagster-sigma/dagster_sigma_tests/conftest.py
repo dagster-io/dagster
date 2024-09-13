@@ -29,48 +29,46 @@ def _build_paginated_response(items: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+SAMPLE_WORKBOOK_DATA = {
+    "workbookId": "4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e",
+    "workbookUrlId": "2opi6VLEne4BaPyj00US50",
+    "createdBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+    "updatedBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+    "createdAt": "2024-09-12T21:22:49.072Z",
+    "updatedAt": "2024-09-12T22:20:39.848Z",
+    "name": "Sample Workbook",
+    "url": "https://app.sigmacomputing.com/dagster-labs/workbook/2opi6VLEne4BaPyj00US50",
+    "path": "My Documents",
+    "latestVersion": 5,
+    "ownerId": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+}
+
+SAMPLE_DATASET_INODE = "inode-Iq557kfHN8KRu76HdGSWi"
+SAMPLE_DATASET_DATA = {
+    "datasetId": "178a6bb5-c0e7-4bef-a739-f12710492f16",
+    "createdBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+    "updatedBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
+    "createdAt": "2024-09-12T21:16:17.830Z",
+    "updatedAt": "2024-09-12T21:19:31.000Z",
+    "name": "Orders Dataset",
+    "description": "Wow, cool orders dataset",
+    "url": "https://app.sigmacomputing.com/dagster-labs/b/Iq557kfHN8KRu76HdGSWi",
+}
+
+
 @pytest.fixture(name="sigma_sample_data")
 def sigma_sample_data_fixture() -> None:
     # Single workbook, dataset
     responses.add(
         method=responses.GET,
         url="https://aws-api.sigmacomputing.com/v2/workbooks",
-        json=_build_paginated_response(
-            [
-                {
-                    "workbookId": "4ea60fe9-f487-43b0-aa7a-3ef43ca3a90e",
-                    "workbookUrlId": "2opi6VLEne4BaPyj00US50",
-                    "createdBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                    "updatedBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                    "createdAt": "2024-09-12T21:22:49.072Z",
-                    "updatedAt": "2024-09-12T22:20:39.848Z",
-                    "name": "Sample Workbook",
-                    "url": "https://app.sigmacomputing.com/dagster-labs/workbook/2opi6VLEne4BaPyj00US50",
-                    "path": "My Documents",
-                    "latestVersion": 5,
-                    "ownerId": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                }
-            ]
-        ),
+        json=_build_paginated_response([SAMPLE_WORKBOOK_DATA]),
         status=200,
     )
     responses.add(
         method=responses.GET,
         url="https://aws-api.sigmacomputing.com/v2/datasets",
-        json=_build_paginated_response(
-            [
-                {
-                    "datasetId": "178a6bb5-c0e7-4bef-a739-f12710492f16",
-                    "createdBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                    "updatedBy": "8TUQL5YbOwebkUGS0SAdqxlU5R0gD",
-                    "createdAt": "2024-09-12T21:16:17.830Z",
-                    "updatedAt": "2024-09-12T21:19:31.000Z",
-                    "name": "Orders Dataset",
-                    "description": "",
-                    "url": "https://app.sigmacomputing.com/dagster-labs/b/Iq557kfHN8KRu76HdGSWi",
-                }
-            ]
-        ),
+        json=_build_paginated_response([SAMPLE_DATASET_DATA]),
         status=200,
     )
 
