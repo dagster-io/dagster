@@ -60,7 +60,6 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 
   return (
     <>
-      <CodeLocationPageHeader repoAddress={repoAddress} />
       <Box padding={{horizontal: 24}} border="bottom">
         <CodeLocationTabs selectedTab="overview" repoAddress={repoAddress} />
       </Box>
@@ -138,29 +137,38 @@ const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddre
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
   const locationStatus = locationStatuses[repoAddress.location];
 
-  if (!locationEntry || !locationStatus) {
-    const displayName = repoAddressAsHumanString(repoAddress);
-    if (loading) {
+  const content = () => {
+    if (!locationEntry || !locationStatus) {
+      const displayName = repoAddressAsHumanString(repoAddress);
+      if (loading) {
+        return (
+          <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
+            <SpinnerWithText label={`Loading ${displayName}…`} />
+          </Box>
+        );
+      }
+
       return (
         <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
-          <SpinnerWithText label={`Loading ${displayName}…`} />
+          <CodeLocationNotFound repoAddress={repoAddress} locationEntry={locationEntry || null} />
         </Box>
       );
     }
 
     return (
-      <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
-        <CodeLocationNotFound repoAddress={repoAddress} />
-      </Box>
+      <CodeLocationOverviewRoot
+        repoAddress={repoAddress}
+        locationEntry={locationEntry}
+        locationStatus={locationStatus}
+      />
     );
-  }
+  };
 
   return (
-    <CodeLocationOverviewRoot
-      repoAddress={repoAddress}
-      locationEntry={locationEntry}
-      locationStatus={locationStatus}
-    />
+    <>
+      <CodeLocationPageHeader repoAddress={repoAddress} />
+      {content()}
+    </>
   );
 };
 
