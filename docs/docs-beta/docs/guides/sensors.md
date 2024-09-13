@@ -30,4 +30,20 @@ Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won'
 By default, sensors aren't enabled when first deployed to a Dagster instance.
 Click "Automation" in the top navigation to find and enable a sensor.
 
+## Cursors and high volume events
+
+TODO: SOMETHING ABOUT RUN KEYS?
+
+When dealing with a large number of events, you may want to implement a cursor to optimize sensor performance. A cursor allows you to track the state of sensor and ensure that data is only processed once.
+
+The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
+
+<CodeExample filePath="guides/automation/sensor-cursor.py" language="python" />
+
+For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
+
+:::note
+The preceding example uses both a `run_key` and a cursor, which means that if the cursor is reset but the files don't change, new runs won't be launched. This is because the run keys associated with the files won't change.
+
+If you want to be able to reset a sensor's cursor, don't set `run_key`s on `RunRequest`s.
 :::
