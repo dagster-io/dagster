@@ -5,7 +5,7 @@ import pytest
 import responses
 from dagster import materialize
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition.repository_definition import (
     PendingRepositoryDefinition,
@@ -201,7 +201,9 @@ def test_using_cached_source_metadata(workspace_data_api_mocks: responses.Reques
 
         pending_repo = cast(
             PendingRepositoryDefinition,
-            source_metadata_defs(DefinitionsLoadContext()).get_inner_repository(),
+            source_metadata_defs(
+                DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION)
+            ).get_inner_repository(),
         )
 
         # first, we resolve the repository to generate our cached metadata

@@ -19,7 +19,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.events import Failure
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
@@ -430,8 +430,11 @@ def load_powerbi_defs(
 ) -> Definitions:
     cache_key = f"{POWER_BI_SOURCE_METADATA_KEY_PREFIX}/{workspace_id}"
     workspace = PowerBIWorkspace(api_token=api_token, workspace_id=workspace_id)
-    if cache_key in context.cached_source_metadata:
-        payload = context.cached_source_metadata[cache_key]
+    if (
+        context.load_type == DefinitionsLoadType.RECONSTRUCTION
+        and cache_key in context.reconstruction_metadata
+    ):
+        payload = context.reconstruction_metadata[cache_key]
         workspace_data = PowerBIWorkspaceData.from_content_data(
             workspace_id,
             [PowerBIContentData.from_cached_data(entry) for entry in payload],
@@ -445,6 +448,6 @@ def load_powerbi_defs(
         DagsterPowerBITranslator,
         enable_refresh_semantic_models,
     )
-    return Definitions(assets=assets_defs).with_source_metadata(
+    return Definitions(assets=assets_defs).with_reconstruction_metadata(
         {cache_key: _workspace_data_to_cacheable_data(workspace_data)}
     )
