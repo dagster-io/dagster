@@ -79,7 +79,8 @@ interface LoadCachedLocationDataParams
   previousLocationVersionsRef: React.MutableRefObject<Record<string, string>>;
 }
 
-interface RefreshLocationsIfNeededParams extends BaseLocationParams {
+interface RefreshLocationsIfNeededParams
+  extends Omit<BaseLocationParams, 'getCachedData' | 'clearCachedData'> {
   locationStatuses: Record<string, LocationStatusEntryFragment>;
   locationEntryData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>;
   setLocationEntryData: React.Dispatch<
