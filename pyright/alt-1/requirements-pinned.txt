@@ -171,7 +171,8 @@ multidict==6.1.0
 multimethod==1.10
 mypy==1.11.2
 mypy-boto3-ecs==1.35.2
-mypy-boto3-glue==1.35.3
+mypy-boto3-emr-serverless==1.35.0
+mypy-boto3-glue==1.35.18
 mypy-extensions==1.0.0
 mypy-protobuf==3.6.0
 nbclient==0.10.0
@@ -201,7 +202,7 @@ pillow==10.4.0
 pip==24.2
 platformdirs==4.3.2
 pluggy==1.5.0
-polars==1.7.0
+polars==1.7.1
 -e examples/project_fully_featured
 prometheus-client==0.20.0
 prompt-toolkit==3.0.47
@@ -269,7 +270,7 @@ snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
 soupsieve==2.6
 sqlalchemy==1.4.54
-sqlglot==25.20.1
+sqlglot==25.21.0
 sqlglotrs==0.2.12
 sqlparse==0.5.1
 stack-data==0.6.3

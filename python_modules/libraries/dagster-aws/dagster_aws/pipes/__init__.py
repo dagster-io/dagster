@@ -1,4 +1,9 @@
-from dagster_aws.pipes.clients import PipesECSClient, PipesGlueClient, PipesLambdaClient
+from dagster_aws.pipes.clients import (
+    PipesECSClient,
+    PipesEMRServerlessClient,
+    PipesGlueClient,
+    PipesLambdaClient,
+)
 from dagster_aws.pipes.context_injectors import (
     PipesLambdaEventContextInjector,
     PipesS3ContextInjector,
@@ -18,4 +23,5 @@ __all__ = [
     "PipesS3MessageReader",
     "PipesLambdaLogsMessageReader",
     "PipesCloudWatchMessageReader",
+    "PipesEMRServerlessClient",
 ]
