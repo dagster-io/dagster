@@ -30,7 +30,7 @@ from dagster._time import datetime_from_timestamp, get_current_datetime, get_cur
 
 from dagster_airlift.constants import MIGRATED_TAG
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.utils import get_couplings_from_asset
+from dagster_airlift.core.utils import get_couplings_from_assets_def
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
@@ -164,7 +164,7 @@ def get_unmigrated_info(
     for assets_def in repository_def.assets_defs_by_key.values():
         # We could be more specific about the checks here to ensure that there's only one asset key
         # specifying the dag, and that all others have a task id.
-        couplings = get_couplings_from_asset(assets_def)
+        couplings = get_couplings_from_assets_def(assets_def)
         dag_id: Optional[str] = next(
             iter({spec.metadata.get("Dag ID") for spec in assets_def.specs})
         )

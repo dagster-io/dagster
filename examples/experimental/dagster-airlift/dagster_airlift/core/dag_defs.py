@@ -5,8 +5,11 @@ from dagster import (
     AssetSpec,
     Definitions,
     JsonMetadataValue,
+    SourceAsset,
     _check as check,
+    external_asset_from_spec,
 )
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
 
@@ -151,9 +154,37 @@ def resolve_defs(
             )
         )
 
-    return Definitions.merge(
-        *list(
-            dag_def.to_defs() if isinstance(dag_def, DagDefs) else dag_def for dag_def in dag_defs
-        ),
-        *transformed_defs,
+    return coerce_specs_in_defs(
+        Definitions.merge(
+            *list(
+                dag_def.to_defs() if isinstance(dag_def, DagDefs) else dag_def
+                for dag_def in dag_defs
+            ),
+            *transformed_defs,
+        )
+    )
+
+
+def coerce_specs_in_defs(defs: Definitions) -> Definitions:
+    new_assets = []
+    for asset in defs.assets or []:
+        if isinstance(asset, AssetsDefinition):
+            new_assets.append(asset)
+        elif isinstance(asset, SourceAsset):
+            check.failed("SourceAsset not supported in this context")
+        elif isinstance(asset, CacheableAssetsDefinition):
+            check.failed("CacheableAssetsDefinition not supported in this context")
+        elif isinstance(asset, AssetSpec):
+            new_assets.append(external_asset_from_spec(asset))
+        else:
+            check.failed(f"Unsupported asset type {type(asset)}")
+    return Definitions(
+        assets=new_assets,
+        resources=defs.resources,
+        sensors=defs.sensors,
+        schedules=defs.schedules,
+        jobs=defs.jobs,
+        loggers=defs.loggers,
+        executor=defs.executor,
+        asset_checks=defs.asset_checks,
     )
