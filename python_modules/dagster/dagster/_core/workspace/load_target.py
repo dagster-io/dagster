@@ -45,9 +45,7 @@ def validate_dagster_block_for_module_name_or_modules(dagster_block):
     module_name_present = "module_name" in dagster_block and isinstance(
         dagster_block.get("module_name"), str
     )
-    modules_present = "modules" in dagster_block and isinstance(
-        dagster_block.get("modules"), list
-    )
+    modules_present = "modules" in dagster_block and isinstance(dagster_block.get("modules"), list)
 
     if module_name_present and modules_present:
         # Here we have the check only for list; to be a bit more forgiving in comparison to 'is_valid_modules_list' in case it's an empty list next to 'module_name' existance
@@ -71,21 +69,13 @@ def is_valid_modules_list(modules: List[Dict[str, str]]) -> bool:
         if not isinstance(item, dict):
             raise ValueError(f"Item at index {index} is not a dictionary.")
         if "type" not in item:
-            raise ValueError(
-                f"Dictionary at index {index} does not contain the key 'type'."
-            )
+            raise ValueError(f"Dictionary at index {index} does not contain the key 'type'.")
         if not isinstance(item["type"], str):
-            raise ValueError(
-                f"The 'type' value in dictionary at index {index} is not a string."
-            )
+            raise ValueError(f"The 'type' value in dictionary at index {index} is not a string.")
         if "name" not in item:
-            raise ValueError(
-                f"Dictionary at index {index} does not contain the key 'name'."
-            )
+            raise ValueError(f"Dictionary at index {index} does not contain the key 'name'.")
         if not isinstance(item["name"], str):
-            raise ValueError(
-                f"The 'name' value in dictionary at index {index} is not a string."
-            )
+            raise ValueError(f"The 'name' value in dictionary at index {index} is not a string.")
 
     return True
 
@@ -110,26 +100,24 @@ def get_origins_from_toml(
                 working_directory=os.getcwd(),
                 location_name=dagster_block.get("code_location_name"),
             ).create_origins()
-        elif "modules" in dagster_block and is_valid_modules_list(
-            dagster_block.get("modules")
-        ):
+        elif "modules" in dagster_block and is_valid_modules_list(dagster_block.get("modules")):
             origins = []
             for module in dagster_block.get("modules"):
                 if module.get("type") == "module":
-                    origins.extend(ModuleTarget(
-                        module_name=module.get("name"),
-                        attribute=None,
-                        working_directory=os.getcwd(),
-                        location_name=dagster_block.get("code_location_name"),
-                    ).create_origins())
+                    origins.extend(
+                        ModuleTarget(
+                            module_name=module.get("name"),
+                            attribute=None,
+                            working_directory=os.getcwd(),
+                            location_name=dagster_block.get("code_location_name"),
+                        ).create_origins()
+                    )
             return origins
         else:
             return []
 
 
-class PyProjectFileTarget(
-    NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget
-):
+class PyProjectFileTarget(NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget):
     def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return get_origins_from_toml(self.path)
 
