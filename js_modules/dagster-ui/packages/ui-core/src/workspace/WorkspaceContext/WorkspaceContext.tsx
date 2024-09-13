@@ -101,7 +101,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     refreshLocationsIfNeeded(
       locationStatuses,
       locationEntryData,
-      previousLocationVersionsRef.current,
       client,
       localCacheIdPrefix,
       getData,
@@ -116,7 +115,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     }
 
     handleDeletedLocations(
-      previousLocationVersionsRef.current,
       locationStatuses,
       clearCachedData,
       localCacheIdPrefix,
@@ -244,7 +242,6 @@ async function loadCachedLocationData(
 async function refreshLocationsIfNeeded(
   locationStatuses: Record<string, LocationStatusEntryFragment>,
   locationEntryData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
-  previousLocationVersions: Record<string, string>,
   client: ApolloClient<any>,
   localCacheIdPrefix: string | undefined,
   getData: ReturnType<typeof useGetData>,
@@ -256,7 +253,7 @@ async function refreshLocationsIfNeeded(
   const locationsToFetch = identifyStaleLocations(
     locationStatuses,
     locationEntryData,
-    previousLocationVersions,
+    previousLocationVersionsRef.current,
   );
 
   if (locationsToFetch.length === 0) {
@@ -273,7 +270,6 @@ async function refreshLocationsIfNeeded(
 }
 
 function handleDeletedLocations(
-  previousLocationVersions: Record<string, string>,
   locationStatuses: Record<string, LocationStatusEntryFragment>,
   clearCachedData: ReturnType<typeof useClearCachedData>,
   localCacheIdPrefix: string | undefined,
@@ -282,7 +278,10 @@ function handleDeletedLocations(
   >,
   previousLocationVersionsRef: React.MutableRefObject<Record<string, string>>,
 ) {
-  const removedLocations = identifyRemovedLocations(previousLocationVersions, locationStatuses);
+  const removedLocations = identifyRemovedLocations(
+    previousLocationVersionsRef.current,
+    locationStatuses,
+  );
 
   if (removedLocations.length === 0) {
     return;
@@ -302,11 +301,7 @@ function handleDeletedLocations(
     return updatedData;
   });
 
-  const updatedPrevVersions = {...previousLocationVersionsRef.current};
-  removedLocations.forEach((name) => {
-    delete updatedPrevVersions[name];
-  });
-  previousLocationVersionsRef.current = updatedPrevVersions;
+  previousLocationVersionsRef.current = mapLocationVersions(locationStatuses);
 }
 
 async function fetchLocationData(
