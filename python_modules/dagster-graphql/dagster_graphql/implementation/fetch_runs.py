@@ -653,6 +653,15 @@ def get_runs_feed_entries(
             run_filters = _replace_created_before_with_cursor(filters, created_before_cursor)
         else:
             run_filters = RunsFilter(created_before=created_before_cursor)
+
+        if len(backfills) >= fetch_limit:
+            # if we fetched limit+1 backfills, we know that any run older than the oldest backfill will
+            # not be included in the final list. So we can make the following function return a bit sooner by
+            # setting the created_after filter to the timestamp of the oldest backfill
+            created_after = datetime_from_timestamp(backfills[-1].startTime)
+            if run_filters.created_after:
+                created_after = max(run_filters.created_after, created_after)
+            run_filters = copy(run_filters, created_after=created_after)
         runs = [
             GrapheneRun(run)
             for run in _fetch_runs_not_in_backfill(
