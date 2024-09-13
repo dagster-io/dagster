@@ -6,6 +6,7 @@ from typing import Mapping, Optional, Union
 
 import jwt
 import requests
+from dagster._annotations import experimental
 from dagster import ConfigurableResource, InitResourceContext
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
@@ -13,6 +14,7 @@ from pydantic import Field, PrivateAttr
 TABLEAU_REST_API_VERSION = "3.23"
 
 
+@experimental
 class BaseTableauClient:
     def __init__(
         self,
@@ -169,6 +171,7 @@ class BaseTableauClient:
         """
 
 
+@experimental
 class TableauCloudClient(BaseTableauClient):
     """Represents a client for Tableau Cloud and provides utilities
     to interact with the Tableau API.
@@ -203,6 +206,7 @@ class TableauCloudClient(BaseTableauClient):
         return f"https://{self.pod_name}.online.tableau.com/api/metadata/graphql"
 
 
+@experimental
 class TableauServerClient(BaseTableauClient):
     """Represents a client for Tableau Server and provides utilities
     to interact with Tableau APIs.
@@ -237,6 +241,7 @@ class TableauServerClient(BaseTableauClient):
         return f"https://{self.server_name}/api/metadata/graphql"
 
 
+@experimental
 class BaseTableauWorkspace(ConfigurableResource):
     """Base class to represent a workspace in Tableau and provides utilities
     to interact with Tableau APIs.
@@ -273,6 +278,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         self._client.sign_out()
 
 
+@experimental
 class TableauCloudWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Cloud and provides utilities
     to interact with Tableau APIs.
@@ -291,6 +297,7 @@ class TableauCloudWorkspace(BaseTableauWorkspace):
         )
 
 
+@experimental
 class TableauServerWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Server and provides utilities
     to interact with Tableau APIs.
