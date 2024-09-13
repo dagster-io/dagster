@@ -37,6 +37,7 @@ setup(
     packages=find_packages(exclude=["dagster_sigma_tests*"]),
     install_requires=[
         f"dagster{pin}",
+        "sqlglot",
     ],
     include_package_data=True,
     python_requires=">=3.8,<3.13",
