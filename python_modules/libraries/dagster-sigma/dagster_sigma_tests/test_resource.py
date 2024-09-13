@@ -53,3 +53,32 @@ def test_basic_fetch(sigma_auth_token: str) -> None:
 
     assert len(responses.calls) == 2
     assert responses.calls[1].request.headers["Authorization"] == f"Bearer {sigma_auth_token}"
+
+
+@responses.activate
+def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None) -> None:
+    fake_client_id = uuid.uuid4().hex
+    fake_client_secret = uuid.uuid4().hex
+
+    resource = SigmaOrganization(
+        cloud_type=SigmaCloudType.AWS_US,
+        client_id=fake_client_id,
+        client_secret=fake_client_secret,
+    )
+
+    data = resource.get_organization_data()
+
+    assert len(data.workbooks) == 1
+    assert data.workbooks[0].properties["name"] == "Sample Workbook"
+    assert data.workbooks[0].datasets == {"Orders Dataset"}
+
+    assert len(data.datasets) == 1
+    assert data.datasets[0].properties["name"] == "Orders Dataset"
+    assert data.datasets[0].columns == {
+        "Customer Id",
+        "Order Date",
+        "Order Id",
+        "Modified Date",
+        "Status",
+    }
+    assert data.datasets[0].inputs == {"TESTDB.JAFFLE_SHOP.STG_ORDERS"}
