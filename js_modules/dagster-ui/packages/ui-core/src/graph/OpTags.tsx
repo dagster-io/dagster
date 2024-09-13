@@ -174,7 +174,177 @@ type KnownTag = {
   blackAndWhite?: boolean;
 };
 
-export const KNOWN_TAGS: Record<string, KnownTag> = {
+export type KnownTagType =
+  | 'jupyter'
+  | 'ipynb'
+  | 'noteable'
+  | 'airbyte'
+  | 'sling'
+  | 'snowflake'
+  | 'snowpark'
+  | 'python'
+  | 'fivetran'
+  | 'dbt'
+  | 'slack'
+  | 'pytorch'
+  | 'pyspark'
+  | 'spark'
+  | 'duckdb'
+  | 'tensorflow'
+  | 'pandas'
+  | 'googlesheets'
+  | 'sql'
+  | 'wandb'
+  | 'databricks'
+  | 'airflow'
+  | 'airtable'
+  | 'omni'
+  | 'datadog'
+  | 'postgres'
+  | 'postgresql'
+  | 'stripe'
+  | 'hightouch'
+  | 'census'
+  | 'hex'
+  | 'azure'
+  | 'azureml'
+  | 'sagemaker'
+  | 'bigquery'
+  | 'teams'
+  | 'mlflow'
+  | 'mysql'
+  | 'greatexpectations'
+  | 'powerbi'
+  | 'gcp'
+  | 'googlecloud'
+  | 'looker'
+  | 'tableau'
+  | 'segment'
+  | 'athena'
+  | 's3'
+  | 'aws'
+  | 'stitch'
+  | 'openai'
+  | 'vercel'
+  | 'github'
+  | 'gitlab'
+  | 'plotly'
+  | 'modal'
+  | 'meltano'
+  | 'matplotlib'
+  | 'numpy'
+  | 'scipy'
+  | 'scikitlearn'
+  | 'kubernetes'
+  | 'k8s'
+  | 'polars'
+  | 'catboost'
+  | 'rust'
+  | 'pytorchlightning'
+  | 'deltalake'
+  | 'parquet'
+  | 'lightgbm'
+  | 'xgboost'
+  | 'rockset'
+  | 'optuna'
+  | 'chalk'
+  | 'excel'
+  | 'ray'
+  | 'axioma'
+  | 'cube'
+  | 'metabase'
+  | 'linear'
+  | 'notion'
+  | 'hackernewsapi'
+  | 'hackernews'
+  | 'tecton'
+  | 'dask'
+  | 'dlt'
+  | 'dlthub'
+  | 'huggingface'
+  | 'huggingfaceapi'
+  | 'sqlserver'
+  | 'mongodb'
+  | 'atlan'
+  | 'celery'
+  | 'claude'
+  | 'collibra'
+  | 'datahub'
+  | 'discord'
+  | 'docker'
+  | 'facebook'
+  | 'gemini'
+  | 'google'
+  | 'graphql'
+  | 'hashicorp'
+  | 'hudi'
+  | 'iceberg'
+  | 'instagram'
+  | 'lakefs'
+  | 'linkedin'
+  | 'llama'
+  | 'meta'
+  | 'microsoft'
+  | 'minstral'
+  | 'montecarlo'
+  | 'openmetadata'
+  | 'oracle'
+  | 'pagerduty'
+  | 'pandera'
+  | 'papermill'
+  | 'papertrail'
+  | 'plural'
+  | 'prefect'
+  | 'react'
+  | 'reddit'
+  | 'redshift'
+  | 'salesforce'
+  | 'sdf'
+  | 'secoda'
+  | 'shell'
+  | 'shopify'
+  | 'soda'
+  | 'sqlite'
+  | 'sqlmesh'
+  | 'stepfuncitons'
+  | 'awsstepfuncitons'
+  | 'awssetepfunciton'
+  | 'setepfunciton'
+  | 'thoughtspot'
+  | 'trino'
+  | 'twilio'
+  | 'twitter'
+  | 'x'
+  | 'youtube'
+  | 'typescript'
+  | 'javascript'
+  | 'scala'
+  | 'csharp'
+  | 'cplus'
+  | 'cplusplus'
+  | 'java'
+  | 'go'
+  | 'r'
+  | 'net'
+  | 'sharepoint'
+  | 'table'
+  | 'view'
+  | 'dag'
+  | 'task'
+  | 'source'
+  | 'seed'
+  | 'file'
+  | 'dashboard'
+  | 'notebook'
+  | 'csv'
+  | 'pdf'
+  | 'yaml'
+  | 'gold'
+  | 'silver'
+  | 'bronze'
+  | 'expand';
+
+export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   jupyter: {
     icon: jupyter,
     content: 'jupyter',
@@ -889,7 +1059,8 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
-        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as keyof typeof KNOWN_TAGS];
+        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label) as KnownTagType];
+        const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
         const text = known?.content || tag.label;
 
         return (
@@ -908,7 +1079,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
                 role="img"
                 $size={16}
                 $img={extractIconSrc(known)}
-                $color={known.blackAndWhite ? Colors.accentPrimary() : null}
+                $color={blackAndWhite ? Colors.accentPrimary() : null}
                 $rotation={null}
                 aria-label={tag.label}
               />
@@ -922,14 +1093,15 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
 });
 
 export const TagIcon = React.memo(({label}: {label: string}) => {
-  const known = KNOWN_TAGS[coerceToStandardLabel(label) as keyof typeof KNOWN_TAGS];
+  const known = KNOWN_TAGS[coerceToStandardLabel(label) as KnownTagType];
+  const blackAndWhite = known && 'blackAndWhite' in known && known.blackAndWhite;
   if (known && 'icon' in known) {
     return (
       <OpTagIconWrapper
         role="img"
         $size={16}
         $img={extractIconSrc(known)}
-        $color={known.blackAndWhite ? Colors.accentPrimary() : null}
+        $color={blackAndWhite ? Colors.accentPrimary() : null}
         $rotation={null}
         aria-label={label}
       />
