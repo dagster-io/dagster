@@ -67,7 +67,7 @@ def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None)
         client_secret=fake_client_secret,
     )
 
-    data = resource.get_organization_data()
+    data = resource.build_organization_data()
 
     assert len(data.workbooks) == 1
     assert data.workbooks[0].properties["name"] == "Sample Workbook"
