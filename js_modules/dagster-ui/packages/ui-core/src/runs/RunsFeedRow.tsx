@@ -175,7 +175,7 @@ export const RunsFeedRow = ({
   );
 };
 
-const TEMPLATE_COLUMNS = '60px 2fr 1fr 1fr 140px 150px 120px 132px';
+const TEMPLATE_COLUMNS = '60px 2fr 2fr 1fr 140px 150px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
