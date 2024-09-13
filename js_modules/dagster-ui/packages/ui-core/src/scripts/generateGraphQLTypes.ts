@@ -92,7 +92,6 @@ function exportHashesAsVersionVariables() {
           if (!content.includes(`${operationName}Version`)) {
             content += versionConstant;
             writeFileSync(filePath, content);
-            console.log(`Updated ${filePath} with ${operationName}Version`);
           }
         }
       });
