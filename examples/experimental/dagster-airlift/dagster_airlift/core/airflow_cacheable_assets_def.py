@@ -1,6 +1,6 @@
 import hashlib
 from collections import defaultdict
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set
 
 from dagster import (
     AssetDep,
@@ -35,9 +35,10 @@ from dagster_airlift.constants import (
     AIRFLOW_COUPLING_METADATA_KEY,
     DAG_ID_METADATA_KEY,
     MIGRATED_TAG,
+    AirflowCoupling,
 )
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo, TaskInfo
-from dagster_airlift.core.utils import airflow_kind_dict, get_couplings_from_assets_def
+from dagster_airlift.core.utils import airflow_kind_dict, get_couplings_from_spec
 from dagster_airlift.migration_state import AirflowMigrationState
 
 
@@ -245,13 +246,9 @@ class _CacheableData:
     downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]] = {}
 
 
-def _get_migration_status_from_state_across_specs(
-    asset: AssetsDefinition, migration_state: AirflowMigrationState
+def _get_migration_status_across_tasks(
+    couplings: List[AirflowCoupling], migration_state: AirflowMigrationState
 ) -> Optional[bool]:
-    # We do this to keep things simple for now, but we should be able to relax this constraint.
-    couplings = check.not_none(
-        get_couplings_from_assets_def(asset), "Expected asset to have a task and dag ID."
-    )
     migration_states_across_tasks = {
         migration_state.get_migration_state_for_task(dag_id=dag_id, task_id=task_id)
         for (dag_id, task_id) in couplings
@@ -279,18 +276,17 @@ def construct_cacheable_assets_and_infer_dependencies(
             AssetsDefinition,
             "Expected orchestrated defs to all be AssetsDefinitions.",
         )
-        couplings = get_couplings_from_assets_def(assets_def)
-        if not couplings:
-            continue
-        migration_state_for_asset = _get_migration_status_from_state_across_specs(
-            assets_def, migration_state
-        )
-        task_infos = get_task_infos_for_asset(airflow_instance, assets_def)
-        if not task_infos:
-            continue
-        metadata = build_metadata_for_asset(task_infos, migration_state_for_asset)
-        specs = assets_def.specs if isinstance(assets_def, AssetsDefinition) else [assets_def]
-        for spec in specs:
+        for spec in assets_def.specs:
+            couplings = get_couplings_from_spec(spec)
+            if not couplings:
+                continue
+            migration_state_for_asset = _get_migration_status_across_tasks(
+                couplings, migration_state
+            )
+            task_infos = get_task_infos_for_spec(airflow_instance, spec)
+            if not task_infos:
+                continue
+            metadata = build_metadata_for_spec(task_infos, migration_state_for_asset)
             spec_deps = []
             for dep in spec.deps:
                 spec_deps.append(CacheableAssetDep.from_asset_dep(dep))
@@ -326,31 +322,29 @@ def construct_assets_with_task_migration_info_applied(
         return []
 
     new_assets_defs = []
-    for asset in definitions.assets:
-        asset = check.inst(  # noqa: PLW2901
-            asset,
+    for assets_def in definitions.assets:
+        assets_def = check.inst(  # noqa: PLW2901
+            assets_def,
             AssetsDefinition,
             "Expected fully qualified AssetsDefinitions to be passed to cacheable airflow assets.",
         )
-        dag_and_task_id_list = get_couplings_from_assets_def(asset)
-        if dag_and_task_id_list is None:
-            new_assets_defs.append(asset)
-            continue
-        new_specs = _verify_cacheable_and_build_spec(
-            cacheable_specs.task_asset_specs,
-            asset.specs if isinstance(asset, AssetsDefinition) else [asset],
-        )
-        new_assets_defs.append(asset.map_asset_specs(lambda cur_spec: new_specs[cur_spec.key]))
+        new_specs = {}
+        for spec in assets_def.specs:
+            dag_and_task_id_list = get_couplings_from_spec(spec)
+            new_specs[spec.key] = (
+                spec
+                if dag_and_task_id_list is None
+                else _verify_cacheable_and_build_spec(cacheable_specs.task_asset_specs, spec)
+            )
+        new_assets_defs.append(assets_def.map_asset_specs(lambda cur_spec: new_specs[cur_spec.key]))
     return new_assets_defs
 
 
 # We expect that every asset which is passed to this function has all relevant specs mapped to a task.
-def get_task_infos_for_asset(
-    airflow_instance: AirflowInstance, asset: AssetsDefinition
-) -> List[TaskInfo]:
+def get_task_infos_for_spec(airflow_instance: AirflowInstance, spec: AssetSpec) -> List[TaskInfo]:
     return [
         airflow_instance.get_task_info(dag_id, task_id)
-        for (dag_id, task_id) in get_couplings_from_assets_def(asset) or []
+        for (dag_id, task_id) in get_couplings_from_spec(spec) or []
     ]
 
 
@@ -391,46 +385,30 @@ def get_transitive_dependencies_for_asset(
 
 
 def _verify_cacheable_and_build_spec(
-    task_asset_specs: Dict[AssetKey, CacheableAssetSpec], specs: Iterable[AssetSpec]
-) -> Dict[AssetKey, AssetSpec]:
-    overall_migration_status = None
-    overall_dag_and_task_list = None
-    new_specs = {}
-    for spec in specs:
-        cacheable_spec = check.not_none(
-            task_asset_specs.get(spec.key),
-            f"Could not find cacheable spec for asset key {spec.key.to_user_string()}",
-        )
+    task_asset_specs: Dict[AssetKey, CacheableAssetSpec], spec: AssetSpec
+) -> AssetSpec:
+    cacheable_spec = check.not_none(
+        task_asset_specs.get(spec.key),
+        f"Could not find cacheable spec for asset key {spec.key.to_user_string()}",
+    )
 
-        check.invariant(
-            MIGRATED_TAG in cacheable_spec.tags,
-            f"Could not find migrated status for asset key {spec.key.to_user_string()}",
-        )
-        check.invariant(
-            overall_migration_status is None
-            or overall_migration_status == cacheable_spec.tags[MIGRATED_TAG],
-            "Expected all assets in an AssetsDefinition (and therefore the same task) to have the same migration status.",
-        )
-        overall_migration_status = cacheable_spec.tags[MIGRATED_TAG]
-        dag_and_task_list = cacheable_spec.metadata[AIRFLOW_COUPLING_METADATA_KEY]
-        check.invariant(
-            overall_dag_and_task_list is None or overall_dag_and_task_list == dag_and_task_list,
-            "Expected all assets in an AssetsDefinition to have the same dag ID.",
-        )
-        tags = {
-            **spec.tags,
-            MIGRATED_TAG: cacheable_spec.tags[MIGRATED_TAG],
-            **(airflow_kind_dict() if overall_migration_status != "True" else {}),
-        }
-        overall_dag_and_task_list = dag_and_task_list
-        new_specs[spec.key] = cacheable_spec.to_asset_spec(
-            additional_metadata=spec.metadata,
-            additional_tags=tags,
-        )
-    return new_specs
+    check.invariant(
+        MIGRATED_TAG in cacheable_spec.tags,
+        f"Could not find migrated status for asset key {spec.key.to_user_string()}",
+    )
+    overall_migration_status = cacheable_spec.tags[MIGRATED_TAG]
+    tags = {
+        **spec.tags,
+        MIGRATED_TAG: cacheable_spec.tags[MIGRATED_TAG],
+        **(airflow_kind_dict() if overall_migration_status != "True" else {}),
+    }
+    return cacheable_spec.to_asset_spec(
+        additional_metadata=spec.metadata,
+        additional_tags=tags,
+    )
 
 
-def build_metadata_for_asset(
+def build_metadata_for_spec(
     task_infos: Sequence[TaskInfo], migration_state: Optional[bool]
 ) -> Dict[str, Any]:
     if len(task_infos) == 1:

@@ -30,7 +30,7 @@ from dagster._time import datetime_from_timestamp, get_current_datetime, get_cur
 
 from dagster_airlift.constants import MIGRATED_TAG
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.core.utils import get_couplings_from_assets_def
+from dagster_airlift.core.utils import get_couplings_from_spec
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
@@ -164,27 +164,21 @@ def get_unmigrated_info(
     for assets_def in repository_def.assets_defs_by_key.values():
         # We could be more specific about the checks here to ensure that there's only one asset key
         # specifying the dag, and that all others have a task id.
-        couplings = get_couplings_from_assets_def(assets_def)
-        dag_id: Optional[str] = next(
-            iter({spec.metadata.get("Dag ID") for spec in assets_def.specs})
-        )
-        if couplings is None and dag_id is None:
-            continue
-        if couplings is None:
-            key_per_dag[cast(str, dag_id)] = (
-                assets_def.key
-            )  # There should only be one key in the case of a "dag" asset
-        else:
-            migration_state = {spec.tags.get(MIGRATED_TAG) for spec in assets_def.specs}
-            check.invariant(
-                len(migration_state) == 1,
-                "Migration state should match across all specs for a given asset",
-            )
-            if migration_state.pop() == "True":
+        for spec in assets_def.specs:
+            dag_and_task_id_list = get_couplings_from_spec(spec)
+            dag_id: Optional[str] = spec.metadata.get("Dag ID")
+            if dag_and_task_id_list is None and dag_id is None:
                 continue
+            if dag_and_task_id_list is None:
+                key_per_dag[cast(str, dag_id)] = (
+                    assets_def.key
+                )  # There should only be one key in the case of a "dag" asset
+            else:
+                migration_state = spec.tags.get(MIGRATED_TAG)
+                if migration_state == "True":
+                    continue
 
-            for dag_id, task_id in couplings:
-                for spec in assets_def.specs:
+                for dag_id, task_id in dag_and_task_id_list:
                     task_keys_per_dag[dag_id].add((task_id, spec.key))
 
     for asset_check_key in repository_def.asset_checks_defs_by_key.keys():
