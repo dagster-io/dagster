@@ -122,7 +122,7 @@ class SigmaOrganization(ConfigurableResource):
         return self.fetch_json(f"workbooks/{workbook_id}/queries")["entries"]
 
     @cached_method
-    def get_organization_data(self) -> SigmaOrganizationData:
+    def build_organization_data(self) -> SigmaOrganizationData:
         raw_workbooks = self.fetch_workbooks()
 
         dataset_inode_to_name: Mapping[str, str] = {}
