@@ -29,8 +29,12 @@ class DepConditionWrapperCondition(AutomationCondition):
     label: Optional[str] = None
 
     @property
+    def name(self) -> str:
+        return self.dep_key.to_user_string()
+
+    @property
     def description(self) -> str:
-        return f"{self.dep_key.to_user_string()}"
+        return self.dep_key.to_user_string()
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         # only evaluate parents of the current candidates
