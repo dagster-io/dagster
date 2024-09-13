@@ -116,7 +116,7 @@ def execute_job_backfill_iteration(
             )
             if (
                 len(
-                    instance.get_run_records(
+                    instance.get_run_ids(
                         filters=RunsFilter(
                             tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
                             statuses=[DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED],
