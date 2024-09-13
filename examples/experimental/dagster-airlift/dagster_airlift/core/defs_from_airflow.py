@@ -1,6 +1,7 @@
 from typing import Optional
 
 from dagster import Definitions
+from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.sensor import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
@@ -12,6 +13,7 @@ from .airflow_cacheable_assets_def import DEFAULT_POLL_INTERVAL, AirflowCacheabl
 from .airflow_instance import AirflowInstance
 
 
+@suppress_dagster_warnings
 def build_defs_from_airflow_instance(
     airflow_instance: AirflowInstance,
     cache_polling_interval: int = DEFAULT_POLL_INTERVAL,

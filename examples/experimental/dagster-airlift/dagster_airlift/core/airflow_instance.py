@@ -1,5 +1,6 @@
 import datetime
 import json
+import time
 from abc import ABC
 from functools import cached_property
 from typing import Any, Dict, List, Sequence
@@ -28,6 +29,7 @@ DEFAULT_BATCH_TASK_RETRIEVAL_LIMIT = 100
 # This corresponds directly to the page_limit parameter on airflow's batch dag runs rest API.
 # Airflow dag run batch API: https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dag_runs_batch
 DEFAULT_BATCH_DAG_RUNS_LIMIT = 100
+SLEEP_SECONDS = 1
 
 
 class AirflowAuthBackend(ABC):
@@ -278,7 +280,13 @@ class AirflowInstance:
             dag_run = self.get_dag_run(dag_id, run_id)
             if dag_run.finished:
                 return
+            time.sleep(
+                SLEEP_SECONDS
+            )  # Sleep for a second before checking again. This way we don't flood the rest API with requests.
         raise DagsterError(f"Timed out waiting for airflow run {run_id} to finish.")
+
+    def get_run_state(self, dag_id: str, run_id: str) -> str:
+        return self.get_dag_run(dag_id, run_id).state
 
     @staticmethod
     def timestamp_from_airflow_date(airflow_date: str) -> float:
@@ -292,6 +300,16 @@ class AirflowInstance:
     @staticmethod
     def airflow_date_from_datetime(datetime: datetime.datetime) -> str:
         return datetime.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    def delete_run(self, dag_id: str, run_id: str) -> None:
+        response = self.auth_backend.get_session().delete(
+            f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}"
+        )
+        if response.status_code != 204:
+            raise DagsterError(
+                f"Failed to delete run for {dag_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+        return None
 
 
 @record
@@ -385,7 +403,11 @@ class DagRun:
 
     @property
     def finished(self) -> bool:
-        return self.metadata["state"] in TERMINAL_STATES
+        return self.state in TERMINAL_STATES
+
+    @property
+    def state(self) -> str:
+        return self.metadata["state"]
 
     @property
     def run_type(self) -> str:

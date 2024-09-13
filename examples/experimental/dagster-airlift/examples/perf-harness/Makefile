@@ -1,0 +1,67 @@
+.PHONY: help dev_install run_airflow wipe run_peer rm_migration_state scaffold_observe run_observe scaffold_migrate run_migrate setup_local_env run_perf_scenarios_test run_perf_10_10 run_perf_150_1 run_perf_150_5
+
+define GET_MAKEFILE_DIR
+$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))) | sed 's:/*$$::')
+endef
+
+MAKEFILE_DIR := $(GET_MAKEFILE_DIR)
+export DAGSTER_HOME := $(MAKEFILE_DIR)/.dagster_home
+export DAGSTER_AIRLIFT_MIGRATION_STATE_DIR := $(MAKEFILE_DIR)/perf_harness/airflow_dags/migration_state
+export AIRFLOW_HOME := $(MAKEFILE_DIR)/.airflow_home
+export DAGSTER_URL := http://localhost:3333
+
+help:
+	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+dev_install:
+	pip install uv && \
+	uv pip install -e ../../../dagster-airlift
+	uv pip install -e .
+
+run_airflow: 
+	airflow standalone
+
+wipe: ## Wipe out all the files created by the Makefile
+	rm -rf $$AIRFLOW_HOME $$DAGSTER_HOME
+
+wipe_dagster: ## Wipe out all the files created by the Makefile
+	rm -rf $$DAGSTER_HOME
+
+run_peer:
+	dagster dev -m perf_harness.dagster_defs.peer
+
+rm_migration_state:
+	rm -rf $(MAKEFILE_DIR)/perf_harness/airflow_dags/migration_state
+
+scaffold_observe: rm_migration_state
+	python $(MAKEFILE_DIR)/scripts/generate_yaml_files.py False
+
+run_observe: scaffold_observe
+	dagster dev -m perf_harness.dagster_defs.observe
+
+scaffold_migrate: rm_migration_state
+	python $(MAKEFILE_DIR)/scripts/generate_yaml_files.py True
+
+run_migrate: scaffold_migrate
+	dagster dev -m perf_harness.dagster_defs.migrate
+
+# make airflow home and dagster home directories within current directory, set up env vars, and then
+# set up airflow environment.
+setup_local_env: scaffold_observe
+	make wipe && \
+	mkdir -p $$AIRFLOW_HOME && \
+	mkdir -p $$DAGSTER_HOME && \
+	chmod +x ../../scripts/airflow_setup.sh && \
+	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/perf_harness/airflow_dags
+
+run_perf_scenarios_test:
+	perf-harness 1 1
+
+run_perf_10_10:
+	perf-harness 10 10
+
+run_perf_150_1:
+	perf-harness 150 1
+
+run_perf_150_5:
+	perf-harness 150 5
