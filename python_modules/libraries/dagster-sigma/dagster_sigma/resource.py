@@ -1,14 +1,26 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Type
 
 import requests
-from dagster import ConfigurableResource
+from dagster import (
+    ConfigurableResource,
+    _check as check,
+)
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.external_asset import external_assets_from_specs
+from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
 from dagster_sigma.translator import (
+    DagsterSigmaTranslator,
     SigmaDataset,
     SigmaOrganizationData,
     SigmaWorkbook,
@@ -26,8 +38,8 @@ class SigmaCloudType(Enum):
 
 
 class SigmaOrganization(ConfigurableResource):
-    """Represents a workspace in PowerBI and provides utilities
-    to interact with the PowerBI API.
+    """Represents a workspace in Sigma and provides utilities
+    to interact with the Sigma API.
     """
 
     cloud_type: SigmaCloudType = Field(
@@ -173,3 +185,92 @@ class SigmaOrganization(ConfigurableResource):
             )
 
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+
+    def build_assets(
+        self,
+        dagster_sigma_translator: Type[DagsterSigmaTranslator],
+    ) -> Sequence[CacheableAssetsDefinition]:
+        """Returns a set of CacheableAssetsDefinition which will load Sigma content from
+        the organization and translates it into AssetSpecs, using the provided translator.
+
+        Args:
+            dagster_sigma_translator (Type[DagsterSigmaTranslator]): The translator to use
+                to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
+
+        Returns:
+            Sequence[CacheableAssetsDefinition]: A list of CacheableAssetsDefinitions which
+                will load the Sigma content.
+        """
+        return [
+            SigmaCacheableAssetsDefinition(
+                self,
+                dagster_sigma_translator,
+            )
+        ]
+
+    def build_defs(
+        self, dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator
+    ) -> Definitions:
+        """Returns a Definitions object which will load Power BI content from
+        the organization and translates it into AssetSpecs, using the provided translator.
+
+        Args:
+            dagster_sigma_translator (Type[DagsterSigmaTranslator]): The translator to use
+                to conver Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
+
+        Returns:
+            Definitions: A Definitions object which will load the Sigma content.
+        """
+        return Definitions(
+            assets=self.build_assets(dagster_sigma_translator=dagster_sigma_translator)
+        )
+
+
+class SigmaCacheableAssetsDefinition(CacheableAssetsDefinition):
+    def __init__(
+        self,
+        organization: SigmaOrganization,
+        translator: Type[DagsterSigmaTranslator],
+    ):
+        self._organization = organization
+        self._translator_cls = translator
+        super().__init__(unique_id=f"sigma_{self._organization.client_id}")
+
+    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+        organization_data = self._organization.get_organization_data()
+        return [
+            AssetsDefinitionCacheableData(
+                extra_metadata={
+                    "workbooks": [
+                        serialize_value(workbook) for workbook in organization_data.workbooks
+                    ],
+                    "datasets": [
+                        serialize_value(dataset) for dataset in organization_data.datasets
+                    ],
+                }
+            )
+        ]
+
+    def build_definitions(
+        self,
+        data: Sequence[AssetsDefinitionCacheableData],
+    ) -> Sequence[AssetsDefinition]:
+        cached_data = check.not_none(data[0].extra_metadata)
+        workbooks = [
+            deserialize_value(workbook, as_type=SigmaWorkbook)
+            for workbook in cached_data["workbooks"]
+        ]
+        datasets = [
+            deserialize_value(dataset, as_type=SigmaDataset) for dataset in cached_data["datasets"]
+        ]
+
+        org_data = SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+
+        translator = self._translator_cls(context=org_data)
+
+        asset_specs = [
+            *[translator.get_workbook_spec(workbook) for workbook in org_data.workbooks],
+            *[translator.get_dataset_spec(dataset) for dataset in org_data.datasets],
+        ]
+
+        return [*external_assets_from_specs(asset_specs)]
