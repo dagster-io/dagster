@@ -237,7 +237,7 @@ class SigmaCacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=f"sigma_{self._organization.client_id}")
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        organization_data = self._organization.get_organization_data()
+        organization_data = self._organization.build_organization_data()
         return [
             AssetsDefinitionCacheableData(
                 extra_metadata={
