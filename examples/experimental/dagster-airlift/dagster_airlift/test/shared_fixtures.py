@@ -118,21 +118,19 @@ def setup_dagster_home() -> Generator[str, None, None]:
             yield tmpdir
 
 
-@pytest.fixture(name="dagster_defs_type")
-def dagster_defs_file_type() -> str:
-    """Return the type of file that contains the dagster definitions."""
-    return "-f"
+@pytest.fixture(name="dagster_dev_cmd")
+def dagster_dev_cmd(dagster_defs_path: str) -> List[str]:
+    """Return the command used to stand up dagster dev."""
+    return ["dagster", "dev", "-f", dagster_defs_path, "-p", "3333"]
 
 
 @pytest.fixture(name="dagster_dev")
-def setup_dagster(
-    dagster_home: str, dagster_defs_path: str, dagster_defs_type: str
-) -> Generator[Any, None, None]:
+def setup_dagster(dagster_home: str, dagster_dev_cmd: List[str]) -> Generator[Any, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.
     """
     process = subprocess.Popen(
-        ["dagster", "dev", dagster_defs_type, dagster_defs_path, "-p", "3333"],
+        dagster_dev_cmd,
         env=os.environ.copy(),
         shell=False,
         preexec_fn=os.setsid,  # noqa
