@@ -84,3 +84,6 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
             return item.asset_key == self.key and item.partition_key is None and self.bool_value
         else:
             return item.asset_key == self.key and item.partition_key in self.subset_value
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}<{self.key}>({self.value})"

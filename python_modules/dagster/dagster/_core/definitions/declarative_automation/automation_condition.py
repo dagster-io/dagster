@@ -728,6 +728,16 @@ class AutomationResult(Generic[T_EntityKey]):
             )
         return None
 
+    def pprint(self, indent=0) -> str:
+        ret = f"AutomationResult(label={self.condition.name}, description={self.condition.description}, true={self.true_subset})"
+        for child in self.child_results:
+            nindent = indent + 4
+            ret += f"\n{' '*nindent}{child.pprint(indent=nindent)}"
+        return ret
+
+    def __repr__(self) -> str:
+        return self.pprint()
+
 
 def _compute_subset_value_str(subset: SerializableEntitySubset) -> str:
     """Computes a unique string representing a given AssetSubsets. This string will be equal for
