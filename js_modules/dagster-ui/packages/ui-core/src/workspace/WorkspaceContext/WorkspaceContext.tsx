@@ -1,5 +1,13 @@
 import sortBy from 'lodash/sortBy';
-import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {useSetRecoilState} from 'recoil';
 
 import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from './WorkspaceQueries';
@@ -26,7 +34,6 @@ import {useApolloClient} from '../../apollo-client';
 import {AppContext} from '../../app/AppContext';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
-import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {codeLocationStatusAtom} from '../../nav/useCodeLocationsStatus';
 import {
   useClearCachedData,
@@ -36,271 +43,119 @@ import {
 } from '../../search/useIndexedDBCachedQuery';
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
+export const HIDDEN_REPO_KEYS = 'dagster.hidden-repo-keys';
 
 export type WorkspaceRepositorySensor = WorkspaceSensorFragment;
 export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
 export type WorkspaceRepositoryLocationNode = WorkspaceLocationNodeFragment;
 
-type WorkspaceState = {
+interface WorkspaceState {
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
   locationStatuses: Record<string, LocationStatusEntryFragment>;
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
   data: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>;
-  refetch: () => Promise<LocationWorkspaceQuery[]>;
-
+  refetch: () => Promise<void>;
   toggleVisible: SetVisibleOrHiddenFn;
   setVisible: SetVisibleOrHiddenFn;
   setHidden: SetVisibleOrHiddenFn;
-};
+}
 
-export const WorkspaceContext = React.createContext<WorkspaceState>(
-  new Error('WorkspaceContext should never be uninitialized') as any,
-);
-
-export const HIDDEN_REPO_KEYS = 'dagster.hidden-repo-keys';
+export const WorkspaceContext = React.createContext<WorkspaceState>({} as WorkspaceState);
 
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const {localCacheIdPrefix} = useContext(AppContext);
-  const codeLocationStatusQueryResult = useIndexedDBCachedQuery<
-    CodeLocationStatusQuery,
-    CodeLocationStatusQueryVariables
-  >({
-    query: CODE_LOCATION_STATUS_QUERY,
-    version: CodeLocationStatusQueryVersion,
-    key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
-  });
-  if (typeof jest === 'undefined') {
-    // Only do this outside of jest for now so that we don't need to add RecoilRoot around everything...
-    // we will switch to jotai at some point instead... which doesnt require a
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useLayoutEffect(() => {
-      if (codeLocationStatusQueryResult.data) {
-        setCodeLocationStatusAtom(codeLocationStatusQueryResult.data);
-      }
-    }, [codeLocationStatusQueryResult.data, setCodeLocationStatusAtom]);
-  }
-  indexedDB.deleteDatabase('indexdbQueryCache:RootWorkspace');
+  const client = useApolloClient();
+  const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
+  const getCachedData = useGetCachedData();
+  const clearCachedData = useClearCachedData();
+  const getData = useGetData();
 
-  const fetch = codeLocationStatusQueryResult.fetch;
-  useRefreshAtInterval({
-    refresh: useCallback(async () => {
-      return await fetch();
-    }, [fetch]),
-    intervalMs: 5000,
-    leading: true,
-  });
-
-  const {data: codeLocationStatusData} = codeLocationStatusQueryResult;
-
-  const locationStatuses = useMemo(
-    () => getLocations(codeLocationStatusData),
-    [codeLocationStatusData],
-  );
-  const prevLocationStatuses = useRef<typeof locationStatuses>({});
-
-  const didInitiateFetchFromCache = useRef(false);
-  const [didLoadStatusData, setDidLoadStatusData] = useState(false);
-
-  const [locationEntriesData, setLocationEntriesData] = React.useState<
+  // State for location entries data
+  const [locationEntriesData, setLocationEntriesData] = useState<
     Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
   >({});
 
-  const getCachedData = useGetCachedData();
-  const getData = useGetData();
-  const clearCachedData = useClearCachedData();
+  // Use useRef to store previous location versions
+  const prevLocationVersionsRef = useRef<Record<string, string>>({});
 
+  // Fetch and manage code location statuses
+  const {locationStatuses, loading: loadingStatusData} = useCodeLocationStatuses(
+    localCacheIdPrefix,
+    setCodeLocationStatusAtom,
+  );
+
+  const loading =
+    loadingStatusData ||
+    !Object.keys(locationStatuses).every((locationName) => locationEntriesData[locationName]);
+
+  // Load initial data from cache
   useLayoutEffect(() => {
-    // Load data from the cache
-    if (didInitiateFetchFromCache.current) {
-      return;
-    }
-    didInitiateFetchFromCache.current = true;
-    const allData: typeof locationEntriesData = {};
-    new Promise(async (res) => {
-      /**
-       * 1. Load the cached code location status query
-       * 2. Load the cached data for those locations
-       * 3. Set the cached data to `locationsData` state
-       * 4. Set prevLocations equal to these cached locations so that we can check if they
-       *  have changed after the next call to codeLocationStatusQuery
-       * 5. set didLoadCachedData to true to unblock the `locationsToFetch` memo so that it can compare
-       *  the latest codeLocationStatusQuery result to what was in the cache.
-       */
-      const data = await getCachedData<CodeLocationStatusQuery>({
-        key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
-        version: CodeLocationStatusQueryVersion,
-      });
-      const cachedLocations = getLocations(data);
-      const prevCachedLocations: typeof locationStatuses = {};
-
-      await Promise.all([
-        ...Object.values(cachedLocations).map(async (location) => {
-          const locationData = await getCachedData<LocationWorkspaceQuery>({
-            key: `${localCacheIdPrefix}${locationWorkspaceKey(location.name)}`,
-            version: LocationWorkspaceQueryVersion,
-          });
-          const entry = locationData?.workspaceLocationEntryOrError;
-          if (!entry) {
-            return;
-          }
-          allData[location.name] = entry;
-
-          if (entry.__typename === 'WorkspaceLocationEntry') {
-            prevCachedLocations[location.name] = location;
-          }
-        }),
-      ]);
-      prevLocationStatuses.current = prevCachedLocations;
-      res(void 0);
-    }).then(() => {
-      setDidLoadStatusData(true);
+    (async () => {
+      const allData = await loadInitialDataFromCache(
+        localCacheIdPrefix,
+        getCachedData,
+        prevLocationVersionsRef,
+      );
       setLocationEntriesData(allData);
-    });
-  }, [getCachedData, localCacheIdPrefix, locationStatuses]);
+    })();
+  }, [localCacheIdPrefix, getCachedData]);
 
-  const client = useApolloClient();
-
-  const refetchLocation = useCallback(
-    async (name: string) => {
-      const locationData = await getData<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
-        client,
-        query: LOCATION_WORKSPACE_QUERY,
-        key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
-        version: LocationWorkspaceQueryVersion,
-        variables: {
-          name,
-        },
-        bypassCache: true,
-      });
-      const entry = locationData.data?.workspaceLocationEntryOrError;
-      if (entry) {
-        setLocationEntriesData((locationsData) =>
-          Object.assign({}, locationsData, {
-            [name]: entry,
-          }),
-        );
-      }
-      return locationData;
-    },
-    [client, getData, localCacheIdPrefix],
-  );
-
-  const [isRefetching, setIsRefetching] = useState(false);
-
-  const locationsToFetch = useMemo(() => {
-    if (!didLoadStatusData) {
-      return [];
-    }
-    if (isRefetching) {
-      return [];
-    }
-    const toFetch = Object.values(locationStatuses).filter((statusEntry) => {
-      const d = locationEntriesData[statusEntry.name];
-      const locationEntry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
-      return locationEntry?.versionKey !== statusEntry?.versionKey;
-    });
-    prevLocationStatuses.current = locationStatuses;
-    return toFetch;
-  }, [didLoadStatusData, isRefetching, locationStatuses, locationEntriesData]);
-
-  useLayoutEffect(() => {
-    if (!locationsToFetch.length) {
-      return;
-    }
-    setIsRefetching(true);
-    Promise.all(
-      locationsToFetch.map(async (location) => {
-        return await refetchLocation(location.name);
-      }),
-    ).then(() => {
-      setIsRefetching(false);
-    });
-  }, [refetchLocation, locationsToFetch]);
-
-  const locationsRemoved = useMemo(
-    () =>
-      Array.from(
-        new Set([
-          ...Object.values(prevLocationStatuses.current).filter(
-            (loc) => loc && !locationStatuses[loc.name],
-          ),
-          ...Object.values(locationEntriesData).filter(
-            (loc): loc is WorkspaceLocationNodeFragment =>
-              loc && loc?.__typename === 'WorkspaceLocationEntry' && !locationStatuses[loc.name],
-          ),
-        ]),
-      ),
-    [locationStatuses, locationEntriesData],
-  );
-
-  useLayoutEffect(() => {
-    if (!locationsRemoved.length) {
-      return;
-    }
-    const copy = {...locationEntriesData};
-    locationsRemoved.forEach((loc) => {
-      delete copy[loc.name];
-      clearCachedData({key: `${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`});
-    });
-    if (Object.keys(copy).length !== Object.keys(locationEntriesData).length) {
-      setLocationEntriesData(copy);
-    }
-  }, [clearCachedData, localCacheIdPrefix, locationEntriesData, locationsRemoved]);
-
-  const locationEntries = useMemo(
-    () =>
-      Object.values(locationEntriesData).filter(
-        (entry): entry is WorkspaceLocationNodeFragment =>
-          !!entry && entry.__typename === 'WorkspaceLocationEntry',
-      ),
-    [locationEntriesData],
-  );
-
-  const allRepos = React.useMemo(() => {
-    let allRepos: DagsterRepoOption[] = [];
-
-    allRepos = sortBy(
-      locationEntries.reduce((accum, locationEntry) => {
-        if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
-          return accum;
-        }
-        const repositoryLocation = locationEntry.locationOrLoadError;
-        const reposForLocation = repoLocationToRepos(repositoryLocation);
-        accum.push(...reposForLocation);
-        return accum;
-      }, [] as DagsterRepoOption[]),
-
-      // Sort by repo location, then by repo
-      (r) => `${r.repositoryLocation.name}:${r.repository.name}`,
+  useEffect(() => {
+    refetchLocationsIfNeeded(
+      locationStatuses,
+      locationEntriesData,
+      prevLocationVersionsRef.current,
+      client,
+      localCacheIdPrefix,
+      getData,
+      setLocationEntriesData,
+      prevLocationVersionsRef,
     );
+  }, [locationStatuses, locationEntriesData, client, localCacheIdPrefix, getData, loading]);
 
-    return allRepos;
-  }, [locationEntries]);
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
 
+    handleRemovedLocations(
+      prevLocationVersionsRef.current,
+      locationStatuses,
+      clearCachedData,
+      localCacheIdPrefix,
+      setLocationEntriesData,
+      prevLocationVersionsRef,
+    );
+  }, [locationStatuses, clearCachedData, localCacheIdPrefix, setLocationEntriesData, loading]);
+
+  // Compute location entries and all repositories
+  const locationEntries = useLocationEntries(locationEntriesData);
+  const allRepos = useAllRepos(locationEntries);
+
+  // Manage repository visibility
   const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
 
-  const locationsRef = useUpdatingRef(locationStatuses);
-
-  const refetch = useCallback(async () => {
-    return await Promise.all(
-      Object.values(locationsRef.current).map(async (location) => {
-        const result = await refetchLocation(location.name);
-        return result.data;
+  // Provide refetch function
+  const refetchAllLocations = useCallback(async () => {
+    await Promise.all(
+      Object.values(locationStatuses).map(async (location) => {
+        await refetchLocation(
+          location.name,
+          client,
+          localCacheIdPrefix,
+          getData,
+          setLocationEntriesData,
+        );
       }),
     );
-  }, [locationsRef, refetchLocation]);
+  }, [locationStatuses, client, localCacheIdPrefix, getData]);
 
   return (
     <WorkspaceContext.Provider
       value={{
-        loading: !(
-          didLoadStatusData &&
-          Object.keys(locationStatuses).every((locationName) => locationEntriesData[locationName])
-        ),
+        loading,
         locationEntries,
         locationStatuses,
         allRepos,
@@ -308,9 +163,8 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         toggleVisible,
         setVisible,
         setHidden,
-
         data: locationEntriesData,
-        refetch,
+        refetch: refetchAllLocations,
       }}
     >
       {children}
@@ -318,17 +172,261 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   );
 };
 
-function getLocations(d: CodeLocationStatusQuery | undefined | null) {
-  const locations =
-    d?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
-      ? d?.locationStatusesOrError.entries
-      : [];
+// Custom hook to fetch and manage code location statuses
+function useCodeLocationStatuses(
+  localCacheIdPrefix: string | undefined,
+  setCodeLocationStatusAtom: any,
+) {
+  const {data: codeLocationStatusData, fetch} = useIndexedDBCachedQuery<
+    CodeLocationStatusQuery,
+    CodeLocationStatusQueryVariables
+  >({
+    query: CODE_LOCATION_STATUS_QUERY,
+    version: CodeLocationStatusQueryVersion,
+    key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
+  });
 
-  return locations.reduce(
-    (accum, loc) => {
-      accum[loc.name] = loc;
-      return accum;
-    },
-    {} as Record<string, (typeof locations)[0]>,
+  useEffect(() => {
+    if (codeLocationStatusData) {
+      setCodeLocationStatusAtom(codeLocationStatusData);
+    }
+  }, [codeLocationStatusData, setCodeLocationStatusAtom]);
+
+  useEffect(() => {
+    // Cleanup old cache
+    indexedDB.deleteDatabase('indexdbQueryCache:RootWorkspace');
+  }, []);
+
+  const refresh = useCallback(async () => {
+    await fetch();
+  }, [fetch]);
+
+  useRefreshAtInterval({
+    refresh,
+    intervalMs: 5000,
+    leading: true,
+  });
+
+  const locationStatuses = useMemo(
+    () => extractLocations(codeLocationStatusData),
+    [codeLocationStatusData],
   );
+
+  return {locationStatuses, loading: !codeLocationStatusData};
+}
+
+// Function to load initial data from cache
+async function loadInitialDataFromCache(
+  localCacheIdPrefix: string | undefined,
+  getCachedData: ReturnType<typeof useGetCachedData>,
+  prevLocationVersionsRef: React.MutableRefObject<Record<string, string>>,
+) {
+  const allData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment> = {};
+  const cachedStatusData = await getCachedData<CodeLocationStatusQuery>({
+    key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
+    version: CodeLocationStatusQueryVersion,
+  });
+  const cachedLocations = extractLocations(cachedStatusData);
+
+  await Promise.all(
+    Object.values(cachedLocations).map(async (location) => {
+      const locationData = await getCachedData<LocationWorkspaceQuery>({
+        key: `${localCacheIdPrefix}${locationWorkspaceKey(location.name)}`,
+        version: LocationWorkspaceQueryVersion,
+      });
+      const entry = locationData?.workspaceLocationEntryOrError;
+      if (entry) {
+        allData[location.name] = entry;
+      }
+    }),
+  );
+
+  prevLocationVersionsRef.current = getLocationVersionMap(cachedLocations);
+  return allData;
+}
+
+// Function to refetch locations if needed
+async function refetchLocationsIfNeeded(
+  locationStatuses: Record<string, LocationStatusEntryFragment>,
+  locationEntriesData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
+  prevLocationVersions: Record<string, string>,
+  client: any,
+  localCacheIdPrefix: string | undefined,
+  getData: ReturnType<typeof useGetData>,
+  setLocationEntriesData: React.Dispatch<
+    React.SetStateAction<Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>>
+  >,
+  prevLocationVersionsRef: React.MutableRefObject<Record<string, string>>,
+) {
+  const locationsToFetch = getLocationsToFetch(
+    locationStatuses,
+    locationEntriesData,
+    prevLocationVersions,
+  );
+
+  if (locationsToFetch.length === 0) {
+    return;
+  }
+
+  await Promise.all(
+    locationsToFetch.map((location) =>
+      refetchLocation(location.name, client, localCacheIdPrefix, getData, setLocationEntriesData),
+    ),
+  );
+
+  prevLocationVersionsRef.current = getLocationVersionMap(locationStatuses);
+}
+
+// Function to handle removed locations
+function handleRemovedLocations(
+  prevLocationVersions: Record<string, string>,
+  locationStatuses: Record<string, LocationStatusEntryFragment>,
+  clearCachedData: ReturnType<typeof useClearCachedData>,
+  localCacheIdPrefix: string | undefined,
+  setLocationEntriesData: React.Dispatch<
+    React.SetStateAction<Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>>
+  >,
+  prevLocationVersionsRef: React.MutableRefObject<Record<string, string>>,
+) {
+  const removedLocations = getRemovedLocations(prevLocationVersions, locationStatuses);
+
+  if (removedLocations.length === 0) {
+    return;
+  }
+
+  removedLocations.forEach((name) => {
+    clearCachedData({
+      key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
+    });
+  });
+
+  setLocationEntriesData((prevData) => {
+    const updatedData = {...prevData};
+    removedLocations.forEach((name) => {
+      delete updatedData[name];
+    });
+    return updatedData;
+  });
+
+  // Update prevLocationVersionsRef to reflect removed locations
+  const updatedPrevVersions = {...prevLocationVersionsRef.current};
+  removedLocations.forEach((name) => {
+    delete updatedPrevVersions[name];
+  });
+  prevLocationVersionsRef.current = updatedPrevVersions;
+}
+
+// Function to refetch a single location
+async function refetchLocation(
+  name: string,
+  client: any,
+  localCacheIdPrefix: string | undefined,
+  getData: ReturnType<typeof useGetData>,
+  setLocationEntriesData: React.Dispatch<
+    React.SetStateAction<Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>>
+  >,
+) {
+  try {
+    const {data} = await getData<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
+      client,
+      query: LOCATION_WORKSPACE_QUERY,
+      key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
+      version: LocationWorkspaceQueryVersion,
+      variables: {name},
+      bypassCache: true,
+    });
+
+    const entry = data?.workspaceLocationEntryOrError;
+    if (entry) {
+      setLocationEntriesData((prevData) => ({
+        ...prevData,
+        [name]: entry,
+      }));
+    }
+  } catch (error) {
+    console.error(`Error refetching location ${name}:`, error);
+  }
+}
+
+// Helper to extract locations from query data
+function extractLocations(
+  data: CodeLocationStatusQuery | undefined | null,
+): Record<string, LocationStatusEntryFragment> {
+  if (data?.locationStatusesOrError?.__typename !== 'WorkspaceLocationStatusEntries') {
+    return {};
+  }
+  return data.locationStatusesOrError.entries.reduce(
+    (acc, loc) => {
+      acc[loc.name] = loc;
+      return acc;
+    },
+    {} as Record<string, LocationStatusEntryFragment>,
+  );
+}
+
+// Helper to get a map of location names to their version keys
+function getLocationVersionMap(
+  locationStatuses: Record<string, LocationStatusEntryFragment>,
+): Record<string, string> {
+  return Object.entries(locationStatuses).reduce(
+    (acc, [name, status]) => {
+      acc[name] = status.versionKey || '';
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
+}
+
+// Helper to determine locations that need refetching
+function getLocationsToFetch(
+  locationStatuses: Record<string, LocationStatusEntryFragment>,
+  locationEntriesData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
+  prevLocationVersions: Record<string, string>,
+): LocationStatusEntryFragment[] {
+  return Object.values(locationStatuses).filter((statusEntry) => {
+    const prevVersion = prevLocationVersions[statusEntry.name];
+    const currentVersion = statusEntry.versionKey || '';
+    const entry = locationEntriesData[statusEntry.name];
+    const locationEntry = entry?.__typename === 'WorkspaceLocationEntry' ? entry : null;
+    const dataVersion = locationEntry?.versionKey || '';
+    return currentVersion !== prevVersion || currentVersion !== dataVersion;
+  });
+}
+
+// Helper to get removed locations
+function getRemovedLocations(
+  prevStatuses: Record<string, string>,
+  currentStatuses: Record<string, LocationStatusEntryFragment>,
+): string[] {
+  return Object.keys(prevStatuses).filter((name) => !currentStatuses[name]);
+}
+
+// Custom hook to compute location entries
+function useLocationEntries(
+  locationEntriesData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
+) {
+  return useMemo(
+    () =>
+      Object.values(locationEntriesData).filter(
+        (entry): entry is WorkspaceLocationNodeFragment =>
+          entry?.__typename === 'WorkspaceLocationEntry',
+      ),
+    [locationEntriesData],
+  );
+}
+
+// Custom hook to compute all repositories
+function useAllRepos(locationEntries: WorkspaceRepositoryLocationNode[]) {
+  return useMemo(() => {
+    const repos = locationEntries.reduce((accum, locationEntry) => {
+      if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
+        return accum;
+      }
+      const repositoryLocation = locationEntry.locationOrLoadError;
+      accum.push(...repoLocationToRepos(repositoryLocation));
+      return accum;
+    }, [] as DagsterRepoOption[]);
+
+    return sortBy(repos, (r) => `${r.repositoryLocation.name}:${r.repository.name}`);
+  }, [locationEntries]);
 }
