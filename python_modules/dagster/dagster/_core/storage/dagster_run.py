@@ -558,15 +558,15 @@ class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
 
         return super().__new__(
             cls,
-            run_ids=check.opt_sequence_param(run_ids, "run_ids", of_type=str),
-            job_name=check.opt_str_param(job_name, "job_name"),
-            statuses=check.opt_sequence_param(statuses, "statuses", of_type=DagsterRunStatus),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str),
-            snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
-            updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
-            updated_before=check.opt_inst_param(updated_before, "updated_before", datetime),
-            created_after=check.opt_inst_param(created_after, "created_after", datetime),
-            created_before=check.opt_inst_param(created_before, "created_before", datetime),
+            run_ids=run_ids or [],
+            job_name=job_name,
+            statuses=statuses or [],
+            tags=tags or {},
+            snapshot_id=snapshot_id,
+            updated_after=updated_after,
+            updated_before=updated_before,
+            created_after=created_after,
+            created_before=created_before,
         )
 
     @staticmethod
