@@ -27,14 +27,19 @@ If the sensor finds new files, it starts a run of `my_job`. If not, it skips the
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
 :::
 
-By default, sensors aren't enabled when first deployed to a Dagster instance.
-Click "Automation" in the top navigation to find and enable a sensor.
+## Preventing duplicate runs
+
+To prevent duplicate runs, you can use run keys to uniquely identify each `RunRequest`. In the [previous example](#basic-sensor), the `RunRequest` was constructed with a `run_key`:
+
+```
+yield dg.RunRequest(run_key=filename)
+```
+
+For a given sensor, a single run is created for each `RunRequest` with a unique `run_key`. Dagster will skip processing requests with previously used run keys, ensuring that duplicate runs won't be created.
 
 ## Cursors and high volume events
 
-TODO: SOMETHING ABOUT RUN KEYS?
-
-When dealing with a large number of events, you may want to implement a cursor to optimize sensor performance. A cursor allows you to track the state of sensor and ensure that data is only processed once.
+When dealing with a large number of events, you may want to implement a cursor to optimize sensor performance. Unlike run keys, cursors allow you to implement custom logic that manages state.
 
 The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
 
