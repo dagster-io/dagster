@@ -72,15 +72,12 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const clearCachedData = useClearCachedData();
   const getData = useGetData();
 
-  // State for location entries data
   const [locationEntryData, setLocationEntryData] = useState<
     Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
   >({});
 
-  // Use useRef to store previous location versions
   const previousLocationVersionsRef = useRef<Record<string, string>>({});
 
-  // Fetch and manage code location statuses
   const {locationStatuses, loading: loadingLocationStatuses} = useCodeLocationStatuses(
     localCacheIdPrefix,
     setCodeLocationStatusAtom,
@@ -90,7 +87,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     loadingLocationStatuses ||
     !Object.keys(locationStatuses).every((locationName) => locationEntryData[locationName]);
 
-  // Load initial data from cache
   useLayoutEffect(() => {
     (async () => {
       const cachedData = await loadCachedLocationData(
@@ -130,17 +126,14 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     );
   }, [locationStatuses, clearCachedData, localCacheIdPrefix, setLocationEntryData, loading]);
 
-  // Compute location entries and all repositories
   const locationEntries = useMemo(
     () => extractLocationEntries(locationEntryData),
     [locationEntryData],
   );
   const allRepos = useAllRepos(locationEntries);
 
-  // Manage repository visibility
   const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
 
-  // Provide refetch function
   const refetch = useCallback(async () => {
     const results = (
       await Promise.all(
@@ -178,7 +171,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   );
 };
 
-// Custom hook to fetch and manage code location statuses
 function useCodeLocationStatuses(
   localCacheIdPrefix: string | undefined,
   setCodeLocationStatusAtom: any,
@@ -216,7 +208,6 @@ function useCodeLocationStatuses(
   return {locationStatuses, loading: !codeLocationStatusData};
 }
 
-// Function to load initial data from cache
 async function loadCachedLocationData(
   localCacheIdPrefix: string | undefined,
   getCachedData: ReturnType<typeof useGetCachedData>,
@@ -246,7 +237,6 @@ async function loadCachedLocationData(
   return cachedData;
 }
 
-// Function to refresh locations if needed
 async function refreshLocationsIfNeeded(
   locationStatuses: Record<string, LocationStatusEntryFragment>,
   locationEntryData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
@@ -278,7 +268,6 @@ async function refreshLocationsIfNeeded(
   previousLocationVersionsRef.current = mapLocationVersions(locationStatuses);
 }
 
-// Function to handle deleted locations
 function handleDeletedLocations(
   previousLocationVersions: Record<string, string>,
   locationStatuses: Record<string, LocationStatusEntryFragment>,
@@ -309,7 +298,6 @@ function handleDeletedLocations(
     return updatedData;
   });
 
-  // Update previousLocationVersionsRef to reflect removed locations
   const updatedPrevVersions = {...previousLocationVersionsRef.current};
   removedLocations.forEach((name) => {
     delete updatedPrevVersions[name];
@@ -317,7 +305,6 @@ function handleDeletedLocations(
   previousLocationVersionsRef.current = updatedPrevVersions;
 }
 
-// Function to fetch a single location's data
 async function fetchLocationData(
   name: string,
   client: any,
@@ -380,7 +367,6 @@ function mapLocationVersions(
   );
 }
 
-// Helper to identify locations that need to be refetched
 function identifyStaleLocations(
   locationStatuses: Record<string, LocationStatusEntryFragment>,
   locationEntryData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
@@ -396,7 +382,6 @@ function identifyStaleLocations(
   });
 }
 
-// Helper to identify removed locations
 function identifyRemovedLocations(
   previousStatuses: Record<string, string>,
   currentStatuses: Record<string, LocationStatusEntryFragment>,
@@ -404,7 +389,6 @@ function identifyRemovedLocations(
   return Object.keys(previousStatuses).filter((name) => !currentStatuses[name]);
 }
 
-// Custom hook to extract location entries
 function extractLocationEntries(
   locationEntryData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
 ) {
@@ -414,7 +398,6 @@ function extractLocationEntries(
   );
 }
 
-// Custom hook to compute all repositories
 function useAllRepos(locationEntries: WorkspaceRepositoryLocationNode[]) {
   return useMemo(() => {
     const repos = locationEntries.reduce((accum, locationEntry) => {
