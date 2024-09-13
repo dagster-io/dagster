@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
@@ -147,11 +148,7 @@ class AssetDaemonScenarioState(ScenarioState):
         new_run_requests, new_cursor, new_evaluations = AutomationTickEvaluationContext(
             evaluation_id=cursor.evaluation_id + 1,
             asset_graph=self.asset_graph,
-            auto_materialize_asset_keys={
-                key
-                for key in self.asset_graph.materializable_asset_keys
-                if self.asset_graph.get(key).auto_materialize_policy is not None
-            },
+            asset_selection=AssetSelection.all(),
             instance=self.instance,
             materialize_run_tags={},
             observe_run_tags={},

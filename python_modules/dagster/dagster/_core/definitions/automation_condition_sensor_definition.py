@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any, Mapping, Optional, cast
 
 import dagster._check as check
@@ -13,7 +14,9 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.definitions.utils import check_valid_name, normalize_tags
 
 
-def evaluate_automation_conditions(context: SensorEvaluationContext):
+def evaluate_automation_conditions(
+    sensor_def: "AutomationConditionSensorDefinition", context: SensorEvaluationContext
+):
     from dagster._core.definitions.automation_tick_evaluation_context import (
         AutomationTickEvaluationContext,
     )
@@ -35,7 +38,7 @@ def evaluate_automation_conditions(context: SensorEvaluationContext):
         materialize_run_tags=context.instance.auto_materialize_run_tags,
         observe_run_tags={},
         auto_observe_asset_keys=set(),
-        auto_materialize_asset_keys=asset_graph.all_asset_keys,
+        asset_selection=AssetSelection.all(),
         logger=context.log,
     ).evaluate()
 
@@ -87,7 +90,9 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         super().__init__(
             name=check_valid_name(name),
             job_name=None,
-            evaluation_fn=evaluate_automation_conditions if self._user_code else not_supported,
+            evaluation_fn=partial(evaluate_automation_conditions, sensor_def=self)
+            if self._user_code
+            else not_supported,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=None,
