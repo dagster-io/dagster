@@ -30,7 +30,7 @@ import {
   repoLocationToRepos,
   useVisibleRepos,
 } from './util';
-import {useApolloClient} from '../../apollo-client';
+import {ApolloClient, useApolloClient} from '../../apollo-client';
 import {AppContext} from '../../app/AppContext';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
@@ -243,7 +243,7 @@ async function refreshLocationsIfNeeded(
   locationStatuses: Record<string, LocationStatusEntryFragment>,
   locationEntryData: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>,
   previousLocationVersions: Record<string, string>,
-  client: any,
+  client: ApolloClient<any>,
   localCacheIdPrefix: string | undefined,
   getData: ReturnType<typeof useGetData>,
   setLocationEntryData: React.Dispatch<
@@ -309,7 +309,7 @@ function handleDeletedLocations(
 
 async function fetchLocationData(
   name: string,
-  client: any,
+  client: ApolloClient<any>,
   localCacheIdPrefix: string | undefined,
   getData: ReturnType<typeof useGetData>,
   setLocationEntryData: React.Dispatch<
@@ -340,7 +340,6 @@ async function fetchLocationData(
   return undefined;
 }
 
-// Helper to extract location statuses from query data
 function extractLocationStatuses(
   data: CodeLocationStatusQuery | undefined | null,
 ): Record<string, LocationStatusEntryFragment> {
@@ -356,7 +355,6 @@ function extractLocationStatuses(
   );
 }
 
-// Helper to map location names to their version keys
 function mapLocationVersions(
   locationStatuses: Record<string, LocationStatusEntryFragment>,
 ): Record<string, string> {
