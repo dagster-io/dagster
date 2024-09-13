@@ -10,7 +10,7 @@ from dagster import ConfigurableResource, InitResourceContext
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 
-TABLEAU_API_VERSION = "3.23"
+TABLEAU_REST_API_VERSION = "3.23"
 
 
 class BaseTableauClient:
@@ -195,7 +195,7 @@ class TableauCloudClient(BaseTableauClient):
     @property
     def rest_api_base_url(self) -> str:
         """REST API base URL for Tableau Cloud."""
-        return f"https://{self.pod_name}.online.tableau.com/api/{TABLEAU_API_VERSION}"
+        return f"https://{self.pod_name}.online.tableau.com/api/{TABLEAU_REST_API_VERSION}"
 
     @property
     def metadata_api_base_url(self) -> str:
@@ -229,7 +229,7 @@ class TableauServerClient(BaseTableauClient):
     @property
     def rest_api_base_url(self) -> str:
         """REST API base URL for Tableau Server."""
-        return f"https://{self.server_name}/api/{TABLEAU_API_VERSION}"
+        return f"https://{self.server_name}/api/{TABLEAU_REST_API_VERSION}"
 
     @property
     def metadata_api_base_url(self) -> str:
