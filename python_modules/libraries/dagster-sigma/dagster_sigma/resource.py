@@ -1,13 +1,19 @@
 from collections import defaultdict
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import requests
 from dagster import ConfigurableResource
-from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
+
+from dagster_sigma.translator import (
+    SigmaDataset,
+    SigmaOrganizationData,
+    SigmaWorkbook,
+    _inode_from_url,
+)
 
 SIGMA_PARTNER_ID_TAG = {"X-Sigma-Partner-Id": "dagster"}
 
@@ -24,42 +30,6 @@ class SigmaBaseUrl(str, Enum):
     AWS_UK = "https://api.uk.aws.sigmacomputing.com"
     AZURE_US = "https://api.us.azure.sigmacomputing.com"
     GCP = "https://api.sigmacomputing.com"
-
-
-@record
-class SigmaWorkbook:
-    """Represents a Sigma workbook, a collection of visualizations and queries
-    for data exploration and analysis.
-
-    https://help.sigmacomputing.com/docs/workbooks
-    """
-
-    properties: Dict[str, Any]
-    datasets: AbstractSet[str]
-
-
-@record
-class SigmaDataset:
-    """Represents a Sigma dataset, a centralized data definition which can
-    contain aggregations or other manipulations.
-
-    https://help.sigmacomputing.com/docs/datasets
-    """
-
-    properties: Dict[str, Any]
-    columns: AbstractSet[str]
-    inputs: AbstractSet[str]
-
-
-def _inode_from_url(url: str) -> str:
-    """Builds a Sigma internal inode value from a Sigma URL."""
-    return f'inode-{url.split("/")[-1]}'
-
-
-@record
-class SigmaOrganizationData:
-    workbooks: List[SigmaWorkbook]
-    datasets: List[SigmaDataset]
 
 
 class SigmaOrganization(ConfigurableResource):
@@ -114,7 +84,6 @@ class SigmaOrganization(ConfigurableResource):
             },
         )
         response.raise_for_status()
-
         return response.json()
 
     @cached_method
