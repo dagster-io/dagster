@@ -32,6 +32,11 @@ class SigmaDataset:
     inputs: AbstractSet[str]
 
 
+def _inode_from_url(url: str) -> str:
+    """Builds a Sigma internal inode value from a Sigma URL."""
+    return f'inode-{url.split("/")[-1]}'
+
+
 @record
 class SigmaOrganizationData:
     workbooks: List[SigmaWorkbook]
@@ -121,9 +126,9 @@ class SigmaOrganization(ConfigurableResource):
         raw_workbooks = self.fetch_workbooks()
 
         dataset_inode_to_name: Mapping[str, str] = {}
-        columns_by_dataset = defaultdict(set)
-        deps_by_dataset = defaultdict(set)
-        dataset_element_to_name: Mapping[str, str] = {}
+        columns_by_dataset_inode = defaultdict(set)
+        deps_by_dataset_inode = defaultdict(set)
+        dataset_element_to_inode: Mapping[str, str] = {}
 
         workbooks: List[SigmaWorkbook] = []
 
@@ -141,9 +146,9 @@ class SigmaOrganization(ConfigurableResource):
                     )
                     for inode, item in lineage["dependencies"].items():
                         if item.get("type") == "dataset":
-                            workbook_deps.add(item["name"])
+                            workbook_deps.add(item["nodeId"])
                             dataset_inode_to_name[inode] = item["name"]
-                            dataset_element_to_name[element["elementId"]] = item["name"]
+                            dataset_element_to_inode[element["elementId"]] = item["nodeId"]
 
                     # We can't query the list of columns in a dataset directly, so we have to build a partial
                     # list from the columns which appear in any workbook.
@@ -154,7 +159,7 @@ class SigmaOrganization(ConfigurableResource):
                         split = column["columnId"].split("/")
                         if len(split) == 2:
                             inode, column_name = split
-                            columns_by_dataset[dataset_inode_to_name[inode]].add(column_name)
+                            columns_by_dataset_inode[inode].add(column_name)
 
             # Finally, we extract the list of tables used in each query in the workbook with
             # the help of sqlglot. Each query is associated with an "element", or section of the
@@ -172,20 +177,20 @@ class SigmaOrganization(ConfigurableResource):
                     ]
                 )
 
-                deps_by_dataset[dataset_element_to_name[element_id]] = deps_by_dataset[
-                    dataset_element_to_name[element_id]
+                deps_by_dataset_inode[dataset_element_to_inode[element_id]] = deps_by_dataset_inode[
+                    dataset_element_to_inode[element_id]
                 ].union(table_deps)
 
             workbooks.append(SigmaWorkbook(properties=workbook, datasets=workbook_deps))
 
         datasets: List[SigmaDataset] = []
         for dataset in self.fetch_datasets():
-            name = dataset["name"]
+            inode = _inode_from_url(dataset["url"])
             datasets.append(
                 SigmaDataset(
                     properties=dataset,
-                    columns=columns_by_dataset.get(name, set()),
-                    inputs=deps_by_dataset[name],
+                    columns=columns_by_dataset_inode.get(inode, set()),
+                    inputs=deps_by_dataset_inode[inode],
                 )
             )
 

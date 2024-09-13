@@ -2,6 +2,7 @@ import uuid
 
 import responses
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
+from dagster_sigma.resource import _inode_from_url
 
 
 @responses.activate
@@ -61,7 +62,7 @@ def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None)
     fake_client_secret = uuid.uuid4().hex
 
     resource = SigmaOrganization(
-        cloud_type=SigmaCloudType.AWS_US,
+        base_url=SigmaBaseUrl.AWS_US,
         client_id=fake_client_id,
         client_secret=fake_client_secret,
     )
@@ -70,9 +71,10 @@ def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None)
 
     assert len(data.workbooks) == 1
     assert data.workbooks[0].properties["name"] == "Sample Workbook"
-    assert data.workbooks[0].datasets == {"Orders Dataset"}
 
     assert len(data.datasets) == 1
+    assert data.workbooks[0].datasets == {_inode_from_url(data.datasets[0].properties["url"])}
+
     assert data.datasets[0].properties["name"] == "Orders Dataset"
     assert data.datasets[0].columns == {
         "Customer Id",
