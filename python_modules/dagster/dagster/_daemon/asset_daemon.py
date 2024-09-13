@@ -944,7 +944,6 @@ class AssetDaemon(DagsterDaemon):
                 *{
                     key if isinstance(key, AssetKey) else key.asset_key
                     for key in auto_materialize_entity_keys
-                    if isinstance(key, AssetKey)
                 }
             )
             run_requests, new_cursor, evaluations = AutomationTickEvaluationContext(

@@ -63,8 +63,9 @@ class AutomationTickEvaluationContext:
         resolved_entity_keys = {
             entity_key
             # for now, all checks of a given asset will be evaluated at the same time as it
-            for entity_key in asset_selection.resolve(asset_graph)
-            | asset_selection.resolve_checks(asset_graph)
+            for entity_key in (
+                asset_selection.resolve(asset_graph) | asset_selection.resolve_checks(asset_graph)
+            )
             if asset_graph.get(entity_key).automation_condition is not None
         }
         self._evaluation_id = evaluation_id

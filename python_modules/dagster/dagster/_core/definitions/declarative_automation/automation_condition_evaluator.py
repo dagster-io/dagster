@@ -128,12 +128,10 @@ class AutomationConditionEvaluator:
 
             result = self.current_results_by_key[entity_key]
             num_requested = result.true_subset.size
-            requested_str = ",".join(
-                [
-                    (ap.partition_key or "No partition")
-                    for ap in result.true_subset.expensively_compute_asset_partitions()
-                ]
-            )
+            if result.true_subset.is_partitioned:
+                requested_str = ",".join(result.true_subset.expensively_compute_partition_keys())
+            else:
+                requested_str = "(no partition)"
             log_fn = self.logger.info if num_requested > 0 else self.logger.debug
             log_fn(
                 f"{entity_key.to_user_string()} evaluation result: {num_requested} "

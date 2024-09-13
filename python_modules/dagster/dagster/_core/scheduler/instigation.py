@@ -455,6 +455,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
         asset_partitions_from_single_runs = set()
         num_assets_requested_from_backfill_runs = 0
+        num_requested_checks = 0
         for run_request in self.tick_data.run_requests or []:
             if run_request.requires_backfill_daemon():
                 asset_graph_subset = check.not_none(run_request.asset_graph_subset)
@@ -466,7 +467,13 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
                     asset_partitions_from_single_runs.add(
                         AssetKeyPartitionKey(asset_key, run_request.partition_key)
                     )
-        return len(asset_partitions_from_single_runs) + num_assets_requested_from_backfill_runs
+                for asset_check_key in run_request.asset_check_keys or []:
+                    num_requested_checks += 1
+        return (
+            len(asset_partitions_from_single_runs)
+            + num_assets_requested_from_backfill_runs
+            + num_requested_checks
+        )
 
     @property
     def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
@@ -491,6 +498,12 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
                     if run_request.partition_key:
                         partitions_by_asset_key[asset_key].add(run_request.partition_key)
+                for asset_check_key in run_request.asset_check_keys or []:
+                    asset_key = asset_check_key.asset_key
+                    if asset_key not in partitions_by_asset_key:
+                        partitions_by_asset_key[asset_key] = set()
+
+                    partitions_by_asset_key[asset_key].add(asset_check_key.name)
 
         return partitions_by_asset_key
 
