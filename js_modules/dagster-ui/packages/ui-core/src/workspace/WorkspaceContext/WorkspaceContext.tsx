@@ -67,7 +67,6 @@ export const WorkspaceContext = React.createContext<WorkspaceState>({} as Worksp
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const {localCacheIdPrefix} = useContext(AppContext);
   const client = useApolloClient();
-  const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
   const getCachedData = useGetCachedData();
   const clearCachedData = useClearCachedData();
   const getData = useGetData();
@@ -78,10 +77,8 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
 
   const previousLocationVersionsRef = useRef<Record<string, string>>({});
 
-  const {locationStatuses, loading: loadingLocationStatuses} = useCodeLocationStatuses(
-    localCacheIdPrefix,
-    setCodeLocationStatusAtom,
-  );
+  const {locationStatuses, loading: loadingLocationStatuses} =
+    useCodeLocationStatuses(localCacheIdPrefix);
 
   const loading =
     loadingLocationStatuses ||
@@ -171,10 +168,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   );
 };
 
-function useCodeLocationStatuses(
-  localCacheIdPrefix: string | undefined,
-  setCodeLocationStatusAtom: any,
-) {
+function useCodeLocationStatuses(localCacheIdPrefix: string | undefined) {
   const {data: codeLocationStatusData, fetch} = useIndexedDBCachedQuery<
     CodeLocationStatusQuery,
     CodeLocationStatusQueryVariables
@@ -184,11 +178,19 @@ function useCodeLocationStatuses(
     key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
   });
 
-  useEffect(() => {
-    if (codeLocationStatusData) {
-      setCodeLocationStatusAtom(codeLocationStatusData);
-    }
-  }, [codeLocationStatusData, setCodeLocationStatusAtom]);
+  if (typeof jest === 'undefined') {
+    // Only do this outside of jest for now so that we don't need to add RecoilRoot around everything...
+    // we will switch to jotai at some point instead... which doesnt require a
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useLayoutEffect(() => {
+      if (codeLocationStatusData) {
+        setCodeLocationStatusAtom(codeLocationStatusData);
+      }
+    }, [codeLocationStatusData, setCodeLocationStatusAtom]);
+  }
 
   const refresh = useCallback(async () => {
     await fetch();
