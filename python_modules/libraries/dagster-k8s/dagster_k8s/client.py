@@ -570,7 +570,7 @@ class DagsterKubernetesClient:
 
         # A set of container names that have exited.
         exited_containers = set()
-        ready_initcontainers = set()
+        ready_containers = set()
         ignore_containers = ignore_containers or set()
         error_logs = []
 
@@ -614,7 +614,7 @@ class DagsterKubernetesClient:
             all_statuses = []
             all_statuses.extend(pod.status.init_container_statuses or [])
             all_statuses.extend(pod.status.container_statuses or [])
-            initcontainer_count = len(pod.status.init_container_statuses or [])
+            initcontainers = set(s.name for s in (pod.status.init_container_statuses or []))
 
             # Filter out ignored containers
             all_statuses = [s for s in all_statuses if s.name not in ignore_containers]
@@ -626,7 +626,7 @@ class DagsterKubernetesClient:
             # In case we are waiting for the pod to be ready, we will exit after
             # the first container in this list is ready.
             container_status = next(
-                s for s in all_statuses if s.name not in exited_containers | ready_initcontainers
+                s for s in all_statuses if s.name not in exited_containers | ready_containers
             )
 
             # State checks below, see:
@@ -642,12 +642,8 @@ class DagsterKubernetesClient:
                         self.sleeper(wait_time_between_attempts)
                         continue
                     else:
-                        if (
-                            initcontainer_count > 0
-                            and len(ready_initcontainers) < initcontainer_count
-                        ):
-                            ready_initcontainers.add(container_status.name)
-                        if len(ready_initcontainers) == initcontainer_count:
+                        ready_containers.add(container_status.name)
+                        if initcontainers.issubset(exited_containers | ready_containers):
                             self.logger(f'Pod "{pod_name}" is ready, done waiting')
                             break
 
@@ -710,6 +706,10 @@ class DagsterKubernetesClient:
 
                     self.logger(msg)
                     error_logs.append(msg)
+                elif container_name in initcontainers:
+                    self.logger(
+                        f"Init container {container_name} in {pod_name} has exited successfully"
+                    )
                 else:
                     self.logger(f"Container {container_name} in {pod_name} has exited successfully")
 
