@@ -1,7 +1,10 @@
+import datetime
+import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Mapping, Optional, Union
 
+import jwt
 import requests
 from dagster import ConfigurableResource, InitResourceContext
 from dagster._utils.cached_method import cached_method
@@ -12,10 +15,17 @@ TABLEAU_API_VERSION = "3.23"
 
 class BaseTableauClient:
     def __init__(
-        self, personal_access_token_name: str, personal_access_token_value: str, site_name: str
+        self,
+        connected_app_client_id: str,
+        connected_app_secret_id: str,
+        connected_app_secret_value: str,
+        username: str,
+        site_name: str,
     ):
-        self.personal_access_token_name = personal_access_token_name
-        self.personal_access_token_value = personal_access_token_value
+        self.connected_app_client_id = connected_app_client_id
+        self.connected_app_secret_id = connected_app_secret_id
+        self.connected_app_secret_value = connected_app_secret_value
+        self.username = username
         self.site_name = site_name
         self._api_token = None
         self._site_id = None
@@ -32,15 +42,15 @@ class BaseTableauClient:
 
     def _fetch_json(
         self,
-        endpoint: str,
+        url: str,
         data: Optional[Mapping[str, object]] = None,
         method: str = "GET",
         with_auth_header: bool = True,
     ) -> Mapping[str, object]:
-        """Fetch JSON data from the Tableau API. Raises an exception if the request fails.
+        """Fetch JSON data from the Tableau APIs given the URL. Raises an exception if the request fails.
 
         Args:
-            endpoint (str): The API endpoint to fetch data from.
+            url (str): The url to fetch data from.
             data (Optional[Dict[str, Any]]): JSON-formatted data string to be included in the request.
             method (str): The HTTP method to use for the request.
             with_auth_header (bool): Whether to add X-Tableau-Auth header to the request. Enabled by default.
@@ -49,13 +59,13 @@ class BaseTableauClient:
             Dict[str, Any]: The JSON data returned from the API.
         """
         response = self._make_request(
-            endpoint=endpoint, data=data, method=method, with_auth_header=with_auth_header
+            url=url, data=data, method=method, with_auth_header=with_auth_header
         )
         return response.json()
 
     def _make_request(
         self,
-        endpoint: str,
+        url: str,
         data: Optional[Mapping[str, object]] = None,
         method: str = "GET",
         with_auth_header: bool = True,
@@ -68,7 +78,7 @@ class BaseTableauClient:
             headers["X-tableau-auth"] = self._api_token
         request_args = dict(
             method=method,
-            url=f"{self.rest_api_base_url}/{endpoint}",
+            url=url,
             headers=headers,
         )
         if data:
@@ -80,32 +90,41 @@ class BaseTableauClient:
     @cached_method
     def get_workbooks(self) -> Mapping[str, object]:
         """Fetches a list of all Tableau workbooks in the workspace."""
-        return self._fetch_json(self._with_site_id("workbooks"))
+        endpoint = self._with_site_id("workbooks")
+        return self._fetch_json(url=f"{self.rest_api_base_url}/{endpoint}")
 
     @cached_method
     def get_workbook(self, workbook_id) -> Mapping[str, object]:
-        """Fetches information, including views and tags, for a given workbook."""
-        return self._fetch_json(self._with_site_id(f"workbooks/{workbook_id}"))
-
-    @cached_method
-    def get_workbook_data_sources(
-        self,
-        workbook_id: str,
-    ) -> Mapping[str, object]:
-        """Fetches a list of all Tableau data sources in the workspace."""
-        return self._fetch_json(self._with_site_id(f"workbooks/{workbook_id}/connections"))
+        """Fetches information, including sheets, dashboards and data sources, for a given workbook."""
+        data = {"query": self.workbook_graphql_query, "variables": {"luid": workbook_id}}
+        return self._fetch_json(url=self.metadata_api_base_url, data=data, method="POST")
 
     def sign_in(self) -> Mapping[str, object]:
         """Sign in to the site in Tableau."""
+        jwt_token = jwt.encode(
+            {
+                "iss": self.connected_app_client_id,
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
+                "jti": str(uuid.uuid4()),
+                "aud": "tableau",
+                "sub": self.username,
+                "scp": ["tableau:content:read"],
+            },
+            self.connected_app_secret_value,
+            algorithm="HS256",
+            headers={"kid": self.connected_app_secret_id, "iss": self.connected_app_client_id},
+        )
         data = {
             "credentials": {
-                "personalAccessTokenName": self.personal_access_token_name,
-                "personalAccessTokenSecret": self.personal_access_token_value,
+                "jwt": jwt_token,
                 "site": {"contentUrl": self.site_name},
             }
         }
         response = self._fetch_json(
-            endpoint="auth/signin", data=data, method="POST", with_auth_header=False
+            url=f"{self.rest_api_base_url}/auth/signin",
+            data=data,
+            method="POST",
+            with_auth_header=False,
         )
         self._api_token = response["credentials"]["token"]
         self._site_id = response["credentials"]["site"]["id"]
@@ -113,12 +132,41 @@ class BaseTableauClient:
 
     def sign_out(self) -> None:
         """Sign out from the site in Tableau."""
-        self._make_request(endpoint="auth/signout", method="POST")
+        self._make_request(url=f"{self.rest_api_base_url}/auth/signout", method="POST")
         self._api_token = None
         self._site_id = None
 
     def _with_site_id(self, endpoint: str) -> str:
         return f"sites/{self._site_id}/{endpoint}"
+
+    @property
+    def workbook_graphql_query(self) -> str:
+        return """
+            query workbooks($luid: String!) { 
+              workbooks(filter: {luid: $luid}) {
+                id
+                luid
+                name
+                sheets {
+                  id
+                  luid
+                  name
+                  parentEmbeddedDatasources {
+                    id
+                    name
+                  }
+                }
+                dashboards {
+                  id
+                  luid
+                  name
+                  sheets {
+                    luid
+                  }
+                }
+              }
+            }
+        """
 
 
 class TableauCloudClient(BaseTableauClient):
@@ -128,15 +176,19 @@ class TableauCloudClient(BaseTableauClient):
 
     def __init__(
         self,
-        personal_access_token_name: str,
-        personal_access_token_value: str,
+        connected_app_client_id: str,
+        connected_app_secret_id: str,
+        connected_app_secret_value: str,
+        username: str,
         site_name: str,
         pod_name: str,
     ):
         self.pod_name = pod_name
         super().__init__(
-            personal_access_token_name=personal_access_token_name,
-            personal_access_token_value=personal_access_token_value,
+            connected_app_client_id=connected_app_client_id,
+            connected_app_secret_id=connected_app_secret_id,
+            connected_app_secret_value=connected_app_secret_value,
+            username=username,
             site_name=site_name,
         )
 
@@ -158,15 +210,19 @@ class TableauServerClient(BaseTableauClient):
 
     def __init__(
         self,
-        personal_access_token_name: str,
-        personal_access_token_value: str,
+        connected_app_client_id: str,
+        connected_app_secret_id: str,
+        connected_app_secret_value: str,
+        username: str,
         site_name: str,
         server_name: str,
     ):
         self.server_name = server_name
         super().__init__(
-            personal_access_token_name=personal_access_token_name,
-            personal_access_token_value=personal_access_token_value,
+            connected_app_client_id=connected_app_client_id,
+            connected_app_secret_id=connected_app_secret_id,
+            connected_app_secret_value=connected_app_secret_value,
+            username=username,
             site_name=site_name,
         )
 
@@ -186,12 +242,17 @@ class BaseTableauWorkspace(ConfigurableResource):
     to interact with Tableau APIs.
     """
 
-    personal_access_token_name: str = Field(
-        ..., description="The name of the personal access token used to connect to Tableau APIs."
+    connected_app_client_id: str = Field(
+        ..., description="The client id of the connected app used to connect to Tableau Workspace."
     )
-    personal_access_token_value: str = Field(
-        ..., description="The value of the personal access token used to connect to Tableau APIs."
+    connected_app_secret_id: str = Field(
+        ..., description="The secret id of the connected app used to connect to Tableau Workspace."
     )
+    connected_app_secret_value: str = Field(
+        ...,
+        description="The secret value of the connected app used to connect to Tableau Workspace.",
+    )
+    username: str = Field(..., description="The username to authenticate to Tableau Workspace.")
     site_name: str = Field(..., description="The name of the Tableau site to use.")
 
     _client: Union[TableauCloudClient, TableauServerClient] = PrivateAttr(default=None)
@@ -221,8 +282,10 @@ class TableauCloudWorkspace(BaseTableauWorkspace):
 
     def build_client(self) -> None:
         self._client = TableauCloudClient(
-            personal_access_token_name=self.personal_access_token_name,
-            personal_access_token_value=self.personal_access_token_value,
+            connected_app_client_id=self.connected_app_client_id,
+            connected_app_secret_id=self.connected_app_secret_id,
+            connected_app_secret_value=self.connected_app_secret_value,
+            username=self.username,
             site_name=self.site_name,
             pod_name=self.pod_name,
         )
@@ -237,8 +300,10 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 
     def build_client(self) -> None:
         self._client = TableauServerClient(
-            personal_access_token_name=self.personal_access_token_name,
-            personal_access_token_value=self.personal_access_token_value,
+            connected_app_client_id=self.connected_app_client_id,
+            connected_app_secret_id=self.connected_app_secret_id,
+            connected_app_secret_value=self.connected_app_secret_value,
+            username=self.username,
             site_name=self.site_name,
             server_name=self.server_name,
         )
