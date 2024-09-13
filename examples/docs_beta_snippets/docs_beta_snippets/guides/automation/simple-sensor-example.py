@@ -23,7 +23,11 @@ def check_for_new_files() -> List[str]:
 
 
 # Define the sensor
-@dg.sensor(job=my_job, minimum_interval_seconds=5)
+@dg.sensor(
+    job=my_job,
+    minimum_interval_seconds=5,
+    default_status=dg.DefaultSensorStatus.RUNNING,  # Sensor is turned on by default
+)
 def new_file_sensor():
     new_files = check_for_new_files()
     # New files, run `my_job`

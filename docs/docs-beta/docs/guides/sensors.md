@@ -24,7 +24,7 @@ If the sensor finds new files, it starts a run of `my_job`. If not, it skips the
 <CodeExample filePath="guides/automation/simple-sensor-example.py" language="python" />
 
 :::tip
-By default, sensors aren't enabled when first deployed to a Dagster instance. In the Dagster UI, click **Automation > Sensors**  to find and enable a sensor.
+Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
 :::
 
 By default, sensors aren't enabled when first deployed to a Dagster instance.
