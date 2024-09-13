@@ -62,7 +62,9 @@ interface WorkspaceState {
   setHidden: SetVisibleOrHiddenFn;
 }
 
-export const WorkspaceContext = React.createContext<WorkspaceState>({} as WorkspaceState);
+export const WorkspaceContext = React.createContext<WorkspaceState>(
+  new Error('WorkspaceContext should never be uninitialized') as any,
+);
 
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const {localCacheIdPrefix} = useContext(AppContext);
