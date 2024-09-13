@@ -392,12 +392,6 @@ class AssetReconciliationScenario(
                     ), workspace.get_code_location_error("test_location")
                     asset_graph = workspace.asset_graph
 
-            auto_materialize_asset_keys = (
-                self.asset_selection.resolve(asset_graph)
-                if self.asset_selection
-                else asset_graph.materializable_asset_keys
-            )
-
             with mock.patch.object(
                 DagsterInstance,
                 "auto_materialize_respect_materialization_data_versions",
@@ -406,7 +400,7 @@ class AssetReconciliationScenario(
                 run_requests, cursor, evaluations = AutomationTickEvaluationContext(
                     evaluation_id=cursor.evaluation_id + 1,
                     asset_graph=asset_graph,
-                    auto_materialize_asset_keys=auto_materialize_asset_keys,
+                    asset_selection=self.asset_selection or AssetSelection.all(),
                     instance=instance,
                     materialize_run_tags={},
                     observe_run_tags={},

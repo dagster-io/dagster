@@ -5,6 +5,7 @@ from typing import AbstractSet, Mapping, Sequence
 from dagster import AssetKey, DagsterInstance, observable_source_asset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
 )
@@ -29,7 +30,7 @@ def get_auto_observe_run_requests(
         {},
         run_tags,
         auto_observe_asset_keys,
-        set(),
+        AssetSelection.all(),
         logging.getLogger(),
         datetime.datetime.fromtimestamp(current_timestamp),
     ).evaluate()[0]
@@ -136,7 +137,7 @@ def test_reconcile() -> None:
         evaluation_id=1,
         auto_observe_asset_keys={AssetKey(["asset1"])},
         asset_graph=asset_graph,
-        auto_materialize_asset_keys=set(),
+        asset_selection=AssetSelection.all(),
         instance=instance,
         cursor=AssetDaemonCursor.empty(),
         materialize_run_tags={},
