@@ -24,6 +24,9 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+)
 from dagster._core.definitions.repository_definition.repository_data import (
     CachingRepositoryData,
     RepositoryData,
@@ -56,14 +59,16 @@ class RepositoryLoadData(
         "_RepositoryLoadData",
         [
             ("cacheable_asset_data", Mapping[str, Sequence[AssetsDefinitionCacheableData]]),
-            ("cached_source_metadata", Mapping[str, Any]),
+            ("reconstruction_metadata", Mapping[str, Any]),
         ],
     )
 ):
     def __new__(
         cls,
         cacheable_asset_data: Mapping[str, Sequence[AssetsDefinitionCacheableData]],
-        cached_source_metadata: Optional[Mapping[str, Any]] = None,
+        reconstruction_metadata: Optional[
+            Mapping[str, CodeLocationReconstructionMetadataValue]
+        ] = None,
     ):
         return super(RepositoryLoadData, cls).__new__(
             cls,
@@ -75,8 +80,8 @@ class RepositoryLoadData(
                     value_type=list,
                 )
             ),
-            cached_source_metadata=check.opt_mapping_param(
-                cached_source_metadata, "cached_source_metadata", key_type=str
+            reconstruction_metadata=check.opt_mapping_param(
+                reconstruction_metadata, "reconstruction_metadata", key_type=str
             ),
         )
 
@@ -424,16 +429,6 @@ class PendingRepositoryDefinition:
     def name(self) -> str:
         return self._name
 
-    @property
-    def source_metadata(self) -> Mapping[str, Any]:
-        from dagster._core.definitions.definitions_class import DEFINITIONS_SOURCE_METADATA_KEY
-
-        return (
-            check.inst(self._metadata[DEFINITIONS_SOURCE_METADATA_KEY].value, dict)
-            if DEFINITIONS_SOURCE_METADATA_KEY in self._metadata
-            else {}
-        )
-
     def _compute_repository_load_data(self) -> RepositoryLoadData:
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
@@ -445,7 +440,12 @@ class PendingRepositoryDefinition:
 
         return RepositoryLoadData(
             cacheable_asset_data=cacheable_asset_data,
-            cached_source_metadata=self.source_metadata,
+            # Extract all CodeLocationReconstructionMetadataValue to make available for reconstruction
+            reconstruction_metadata={
+                k: v
+                for k, v in self._metadata.items()
+                if isinstance(v, CodeLocationReconstructionMetadataValue)
+            },
         )
 
     def _get_repository_definition(

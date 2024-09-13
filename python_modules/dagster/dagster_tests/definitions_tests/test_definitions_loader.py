@@ -2,24 +2,18 @@ from unittest.mock import patch
 
 import pytest
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.decorators.definitions_decorator import definitions
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
-from dagster._core.definitions.reconstruct import (
-    ReconstructableJob,
-    ReconstructableRepository,
-    repository_def_from_pointer,
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.decorators.definitions_decorator import definitions
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.reconstruct import (
+    ReconstructableJob,
     ReconstructableRepository,
+    repository_def_from_pointer,
     repository_def_from_target_def,
 )
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -47,18 +41,22 @@ def _fetch_foo_integration_asset_info(workspace_id: str):
 # This function would be provided by integration lib dagster-foo
 def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str) -> Definitions:
     cache_key = f"{FOO_INTEGRATION_SOURCE_KEY}/{workspace_id}"
-    payload = context.cached_source_metadata.get(cache_key) or _fetch_foo_integration_asset_info(
-        workspace_id
-    )
+    if (
+        context.load_type == DefinitionsLoadType.RECONSTRUCTION
+        and cache_key in context.reconstruction_metadata
+    ):
+        payload = context.reconstruction_metadata[cache_key]
+    else:
+        payload = _fetch_foo_integration_asset_info(workspace_id)
     asset_specs = [AssetSpec(item["id"]) for item in payload]
     assets = external_assets_from_specs(asset_specs)
     return Definitions(
         assets=assets,
-    ).with_source_metadata({cache_key: payload})
+    ).with_reconstruction_metadata({cache_key: payload})
 
 
 @definitions
-def source_metadata_defs(context: DefinitionsLoadContext):
+def metadata_defs(context: DefinitionsLoadContext):
     @asset
     def regular_asset(): ...
 
@@ -75,8 +73,8 @@ def source_metadata_defs(context: DefinitionsLoadContext):
 # ########################
 
 
-def test_defs_source_metadata():
-    repo = repository_def_from_target_def(source_metadata_defs)
+def test_reconstruction_metadata():
+    repo = repository_def_from_target_def(metadata_defs, DefinitionsLoadType.INITIALIZATION)
     assert repo
     assert repo.assets_defs_by_key.keys() == {
         AssetKey("regular_asset"),
@@ -84,16 +82,16 @@ def test_defs_source_metadata():
         AssetKey("beta"),
     }
 
-    defs = source_metadata_defs(context=DefinitionsLoadContext())
+    defs = metadata_defs(context=DefinitionsLoadContext(DefinitionsLoadType.INITIALIZATION))
     inner_repo = defs.get_inner_repository()
     assert isinstance(inner_repo, PendingRepositoryDefinition)
 
-    recon_repo = ReconstructableRepository.for_file(__file__, "source_metadata_defs")
+    recon_repo = ReconstructableRepository.for_file(__file__, "metadata_defs")
     assert isinstance(recon_repo.get_definition(), RepositoryDefinition)
 
     repo_load_data = RepositoryLoadData(
         cacheable_asset_data={},
-        cached_source_metadata={
+        reconstruction_metadata={
             f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": _fetch_foo_integration_asset_info(
                 WORKSPACE_ID
             )
@@ -154,7 +152,7 @@ def test_definitions_load_type():
         job_name="foo_job",
     )
 
-    # Executing a job should cause the definitions to be loaded with a non-ROOT load type
+    # Executing a job should cause the definitions to be loaded with a non-INITIALIZATION load type
     with instance_for_test() as instance:
         with pytest.raises(Exception, match="Unexpected load type"):
             execute_job(recon_job, instance=instance)

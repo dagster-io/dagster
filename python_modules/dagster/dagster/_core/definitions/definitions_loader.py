@@ -1,9 +1,6 @@
-<<<<<<< HEAD
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Optional, Union
-=======
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Union
->>>>>>> c67676d21d ([lazy-defs] Add support for source metadata on Definitions)
 
 from typing_extensions import TypeAlias
 
@@ -61,13 +58,22 @@ class DefinitionsLoadContext:
         """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
         return self._load_type
 
-    @property
-    def cached_source_metadata(self) -> Mapping[str, Any]:
-        """Mapping[str, Any]: A dictionary containing the cached payloads from external sources of
-        definition metadata.
+    @cached_property
+    def reconstruction_metadata(self) -> Mapping[str, Any]:
+        """Mapping[str, Any]: A dictionary containing metadata from the returned Definitions object
+        at initial code location construction. This will be empty in the code server process, but in
+        child processes contain the metadata returned in the code server process.
         """
+        if self._load_type == DefinitionsLoadType.INITIALIZATION:
+            raise DagsterInvariantViolationError(
+                "Attempted to access code location metadata during code location initialization."
+                " Code location metadata is only available during reconstruction of a code location."
+            )
+        # Expose the wrapped metadata values so that users access exactly what they put in.
         return (
-            self._repository_load_data.cached_source_metadata if self._repository_load_data else {}
+            {k: v.data for k, v in self._repository_load_data.reconstruction_metadata.items()}
+            if self._repository_load_data
+            else {}
         )
 
 
