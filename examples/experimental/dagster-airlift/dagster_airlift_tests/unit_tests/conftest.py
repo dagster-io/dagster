@@ -63,7 +63,7 @@ def build_definitions_airflow_asset_graph(
                 )
                 if create_assets_defs:
 
-                    @multi_asset(specs=[spec])
+                    @multi_asset(specs=[spec], name=f"{task_id}_{asset_key}")
                     def _asset():
                         return None
 

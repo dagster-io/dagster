@@ -2,7 +2,7 @@ import pytest
 from dagster import AssetKey, AssetSpec, JsonMetadataValue, asset, multi_asset
 from dagster._check.functions import CheckError
 from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
-from dagster_airlift.core.utils import get_couplings_from_asset
+from dagster_airlift.core.utils import get_couplings_from_assets_def
 
 
 def test_no_convention() -> None:
@@ -12,7 +12,7 @@ def test_no_convention() -> None:
     def no_op():
         pass
 
-    assert get_couplings_from_asset(no_op) is None
+    assert get_couplings_from_assets_def(no_op) is None
 
 
 def test_retrieve_by_asset_metadata() -> None:
@@ -25,7 +25,7 @@ def test_retrieve_by_asset_metadata() -> None:
     def one_spec():
         pass
 
-    assert get_couplings_from_asset(one_spec) == [("print_dag", "print_task")]
+    assert get_couplings_from_assets_def(one_spec) == [("print_dag", "print_task")]
 
     # 2. Multiple spec retrieval, all specs match
     @multi_asset(
@@ -47,7 +47,7 @@ def test_retrieve_by_asset_metadata() -> None:
     def multi_spec_pass():
         pass
 
-    assert get_couplings_from_asset(multi_spec_pass) == [("print_dag", "print_task")]
+    assert get_couplings_from_assets_def(multi_spec_pass) == [("print_dag", "print_task")]
 
     # 3. Multiple spec retrieval but with different tasks/dags
     @multi_asset(
@@ -70,7 +70,7 @@ def test_retrieve_by_asset_metadata() -> None:
         pass
 
     with pytest.raises(CheckError):
-        get_couplings_from_asset(multi_spec_mismatch)
+        get_couplings_from_assets_def(multi_spec_mismatch)
 
     # 5. Multiple spec retrieval, not all have tags set
     @multi_asset(
@@ -88,4 +88,4 @@ def test_retrieve_by_asset_metadata() -> None:
         pass
 
     with pytest.raises(CheckError):
-        get_couplings_from_asset(multi_spec_task_mismatch)
+        get_couplings_from_assets_def(multi_spec_task_mismatch)
