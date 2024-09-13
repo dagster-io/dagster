@@ -1,14 +1,18 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Type
 
 import requests
 from dagster import ConfigurableResource
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
 from dagster_sigma.translator import (
+    DagsterSigmaTranslator,
     SigmaDataset,
     SigmaOrganizationData,
     SigmaWorkbook,
@@ -33,8 +37,8 @@ class SigmaBaseUrl(str, Enum):
 
 
 class SigmaOrganization(ConfigurableResource):
-    """Represents a workspace in PowerBI and provides utilities
-    to interact with the PowerBI API.
+    """Represents a workspace in Sigma and provides utilities
+    to interact with the Sigma API.
     """
 
     base_url: str = Field(
@@ -191,3 +195,58 @@ class SigmaOrganization(ConfigurableResource):
             )
 
         return SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+
+    @property
+    def reconstruction_metadata_key(self) -> str:
+        return f"sigma_{self.client_id}"
+
+    def build_defs(
+        self,
+        context: DefinitionsLoadContext,
+        dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
+    ) -> Definitions:
+        """Returns a Definitions object representing the Sigma content in the organization.
+
+        Args:
+            context (DefinitionsLoadContext): The context in which the definitions are being loaded.
+            dagster_sigma_translator (Type[DagsterSigmaTranslator]): The translator to use
+                to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
+
+        Returns:
+            Definitions: The set of assets representing the Sigma content in the organization.
+        """
+        # Attempt to load cached data from the context.
+        if (
+            context.load_type == DefinitionsLoadType.RECONSTRUCTION
+            and self.reconstruction_metadata_key in context.reconstruction_metadata
+        ):
+            cached_data = context.reconstruction_metadata[self.reconstruction_metadata_key]
+            workbooks = [
+                deserialize_value(workbook, as_type=SigmaWorkbook)
+                for workbook in cached_data["workbooks"]
+            ]
+            datasets = [
+                deserialize_value(dataset, as_type=SigmaDataset)
+                for dataset in cached_data["datasets"]
+            ]
+        else:
+            organization_data = self.build_organization_data()
+            workbooks = organization_data.workbooks
+            datasets = organization_data.datasets
+            cached_data = {
+                "workbooks": [serialize_value(workbook) for workbook in workbooks],
+                "datasets": [serialize_value(dataset) for dataset in datasets],
+            }
+
+        org_data = SigmaOrganizationData(workbooks=workbooks, datasets=datasets)
+
+        translator = dagster_sigma_translator(context=org_data)
+
+        asset_specs = [
+            *[translator.get_workbook_spec(workbook) for workbook in org_data.workbooks],
+            *[translator.get_dataset_spec(dataset) for dataset in org_data.datasets],
+        ]
+
+        return Definitions(assets=asset_specs).with_reconstruction_metadata(
+            {self.reconstruction_metadata_key: cached_data}
+        )
