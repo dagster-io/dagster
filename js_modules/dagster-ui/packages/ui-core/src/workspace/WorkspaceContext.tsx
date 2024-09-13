@@ -207,14 +207,12 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     if (isRefetching) {
       return [];
     }
-    const toFetch = Object.values(locationStatuses).filter((loc) => {
-      const prev = prevLocationStatuses.current?.[loc.name];
-      const d = locationEntriesData[loc.name];
-      const entry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
+    const toFetch = Object.values(locationStatuses).filter((statusEntry) => {
+      const d = locationEntriesData[statusEntry.name];
+      const locationEntry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
       return (
-        prev?.updateTimestamp !== loc.updateTimestamp ||
-        prev?.loadStatus !== loc.loadStatus ||
-        entry?.loadStatus !== loc.loadStatus
+        locationEntry?.updatedTimestamp !== statusEntry?.updateTimestamp ||
+        locationEntry?.loadStatus !== statusEntry?.loadStatus
       );
     });
     prevLocationStatuses.current = locationStatuses;
