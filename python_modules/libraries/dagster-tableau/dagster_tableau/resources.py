@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Mapping, Optional
+from contextlib import contextmanager
+from typing import Mapping, Optional, Union
 
 import requests
 from dagster import ConfigurableResource, InitResourceContext
@@ -9,33 +10,24 @@ from pydantic import Field, PrivateAttr
 TABLEAU_API_VERSION = "3.23"
 
 
-class BaseTableauWorkspace(ConfigurableResource):
-    """Base class to represent a workspace in Tableau and provides utilities
-    to interact with the Tableau API.
-    """
-
-    personal_access_token_name: str = Field(
-        ..., description="The name of the personal access token used to connect to Tableau API."
-    )
-    personal_access_token_value: str = Field(
-        ..., description="The value of the personal access token used to connect to Tableau API."
-    )
-    site_name: str = Field(..., description="The name of the Tableau site to use.")
-
-    _api_token: Optional[str] = PrivateAttr(default=None)
-    _site_id: Optional[str] = PrivateAttr(default=None)
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        # Sign in and refresh access token when the resource is initialized
-        self.sign_in()
-
-    def teardown_after_execution(self, context: InitResourceContext) -> None:
-        # Sign out after execution
-        self.sign_out()
+class BaseTableauClient:
+    def __init__(
+        self, personal_access_token_name: str, personal_access_token_value: str, site_name: str
+    ):
+        self.personal_access_token_name = personal_access_token_name
+        self.personal_access_token_value = personal_access_token_value
+        self.site_name = site_name
+        self._api_token = None
+        self._site_id = None
 
     @property
     @abstractmethod
-    def api_base_url(self) -> str:
+    def rest_api_base_url(self) -> str:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def metadata_api_base_url(self) -> str:
         raise NotImplementedError()
 
     def _fetch_json(
@@ -76,7 +68,7 @@ class BaseTableauWorkspace(ConfigurableResource):
             headers["X-tableau-auth"] = self._api_token
         request_args = dict(
             method=method,
-            url=f"{self.api_base_url}/{endpoint}",
+            url=f"{self.rest_api_base_url}/{endpoint}",
             headers=headers,
         )
         if data:
@@ -100,7 +92,7 @@ class BaseTableauWorkspace(ConfigurableResource):
         self,
         workbook_id: str,
     ) -> Mapping[str, object]:
-        """Fetches a list of all data sources for a given workbook."""
+        """Fetches a list of all Tableau data sources in the workspace."""
         return self._fetch_json(self._with_site_id(f"workbooks/{workbook_id}/connections"))
 
     def sign_in(self) -> Mapping[str, object]:
@@ -129,27 +121,124 @@ class BaseTableauWorkspace(ConfigurableResource):
         return f"sites/{self._site_id}/{endpoint}"
 
 
+class TableauCloudClient(BaseTableauClient):
+    """Represents a client for Tableau Cloud and provides utilities
+    to interact with the Tableau API.
+    """
+
+    def __init__(
+        self,
+        personal_access_token_name: str,
+        personal_access_token_value: str,
+        site_name: str,
+        pod_name: str,
+    ):
+        self.pod_name = pod_name
+        super().__init__(
+            personal_access_token_name=personal_access_token_name,
+            personal_access_token_value=personal_access_token_value,
+            site_name=site_name,
+        )
+
+    @property
+    def rest_api_base_url(self) -> str:
+        """REST API base URL for Tableau Cloud."""
+        return f"https://{self.pod_name}.online.tableau.com/api/{TABLEAU_API_VERSION}"
+
+    @property
+    def metadata_api_base_url(self) -> str:
+        """Metadata API base URL for Tableau Cloud."""
+        return f"https://{self.pod_name}.online.tableau.com/api/metadata/graphql"
+
+
+class TableauServerClient(BaseTableauClient):
+    """Represents a client for Tableau Server and provides utilities
+    to interact with Tableau APIs.
+    """
+
+    def __init__(
+        self,
+        personal_access_token_name: str,
+        personal_access_token_value: str,
+        site_name: str,
+        server_name: str,
+    ):
+        self.server_name = server_name
+        super().__init__(
+            personal_access_token_name=personal_access_token_name,
+            personal_access_token_value=personal_access_token_value,
+            site_name=site_name,
+        )
+
+    @property
+    def rest_api_base_url(self) -> str:
+        """REST API base URL for Tableau Server."""
+        return f"https://{self.server_name}/api/{TABLEAU_API_VERSION}"
+
+    @property
+    def metadata_api_base_url(self) -> str:
+        """Metadata API base URL for Tableau Server."""
+        return f"https://{self.server_name}/api/metadata/graphql"
+
+
+class BaseTableauWorkspace(ConfigurableResource):
+    """Base class to represent a workspace in Tableau and provides utilities
+    to interact with Tableau APIs.
+    """
+
+    personal_access_token_name: str = Field(
+        ..., description="The name of the personal access token used to connect to Tableau APIs."
+    )
+    personal_access_token_value: str = Field(
+        ..., description="The value of the personal access token used to connect to Tableau APIs."
+    )
+    site_name: str = Field(..., description="The name of the Tableau site to use.")
+
+    _client: Union[TableauCloudClient, TableauServerClient] = PrivateAttr(default=None)
+
+    def setup_for_execution(self, context: InitResourceContext) -> None:
+        self.build_client()
+
+    @abstractmethod
+    def build_client(self) -> None:
+        raise NotImplementedError()
+
+    @contextmanager
+    def get_client(self):
+        if not self._client:
+            self.build_client()
+        self._client.sign_in()
+        yield self._client
+        self._client.sign_out()
+
+
 class TableauCloudWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Cloud and provides utilities
-    to interact with the Tableau API.
+    to interact with Tableau APIs.
     """
 
     pod_name: str = Field(..., description="The pod name of the Tableau Cloud workspace.")
 
-    @property
-    def api_base_url(self) -> str:
-        """API base URL for Tableau Cloud."""
-        return f"https://{self.pod_name}.online.tableau.com/api/{TABLEAU_API_VERSION}"
+    def build_client(self) -> None:
+        self._client = TableauCloudClient(
+            personal_access_token_name=self.personal_access_token_name,
+            personal_access_token_value=self.personal_access_token_value,
+            site_name=self.site_name,
+            pod_name=self.pod_name,
+        )
 
 
 class TableauServerWorkspace(BaseTableauWorkspace):
     """Represents a workspace in Tableau Server and provides utilities
-    to interact with the Tableau API.
+    to interact with Tableau APIs.
     """
 
     server_name: str = Field(..., description="The server name of the Tableau Server workspace.")
 
-    @property
-    def api_base_url(self) -> str:
-        """API base URL for Tableau Server."""
-        return f"https://{self.server_name}/api/{TABLEAU_API_VERSION}"
+    def build_client(self) -> None:
+        self._client = TableauServerClient(
+            personal_access_token_name=self.personal_access_token_name,
+            personal_access_token_value=self.personal_access_token_value,
+            site_name=self.site_name,
+            server_name=self.server_name,
+        )
