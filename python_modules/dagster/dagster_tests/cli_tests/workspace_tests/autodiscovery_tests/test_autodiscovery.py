@@ -4,6 +4,7 @@ import sys
 import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_loader import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -52,7 +53,8 @@ def test_single_job():
     assert symbol == "a_job"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(single_job_path, symbol, None)
+        CodePointer.from_python_file(single_job_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
@@ -81,7 +83,8 @@ def test_single_graph():
     assert symbol == "graph_one"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(single_graph_path, symbol, None)
+        CodePointer.from_python_file(single_graph_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
@@ -109,7 +112,10 @@ def test_multiple_assets():
     symbol = loadable_targets[0].attribute
     assert symbol == LOAD_ALL_ASSETS
 
-    repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
+    )
 
     assert isinstance(repo_def, RepositoryDefinition)
     the_job = repo_def.get_implicit_global_asset_job_def()
@@ -180,7 +186,8 @@ def test_single_defs_in_file():
     assert symbol == "defs"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(dagster_defs_path, symbol, None)
+        CodePointer.from_python_file(dagster_defs_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
@@ -272,7 +279,9 @@ def test_definitions_loader(filename):
     assert symbol == "defs"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(module_path, symbol, None), None
+        CodePointer.from_python_file(module_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
+        None,
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
