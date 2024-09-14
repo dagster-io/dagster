@@ -34,7 +34,7 @@ pending_repo_from_cached_asset_metadata = cast(
 
 
 @definitions
-def source_metadata_defs(context: DefinitionsLoadContext) -> Definitions:
+def reconstruction_metadata_defs(context: DefinitionsLoadContext) -> Definitions:
     pbi_defs = load_powerbi_defs(
         context,
         api_token=fake_token,

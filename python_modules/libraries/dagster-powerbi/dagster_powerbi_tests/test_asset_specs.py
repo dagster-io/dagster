@@ -122,7 +122,7 @@ def test_refreshable_semantic_model(
     assert result.success is success
 
 
-def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMock) -> None:
+def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.RequestsMock) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
@@ -193,15 +193,16 @@ def test_two_workspaces(
         # 3 PowerBI external assets from first workspace, 1 from second
         assert len(repository_def.assets_defs_by_key) == 3 + 1
 
-def test_using_cached_source_metadata(workspace_data_api_mocks: responses.RequestsMock) -> None:
+
+def test_using_reconstruction_metadata(workspace_data_api_mocks: responses.RequestsMock) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
-        from dagster_powerbi_tests.pending_repo import source_metadata_defs
+        from dagster_powerbi_tests.pending_repo import reconstruction_metadata_defs
 
         pending_repo = cast(
             PendingRepositoryDefinition,
-            source_metadata_defs(
+            reconstruction_metadata_defs(
                 DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION)
             ).get_inner_repository(),
         )
@@ -211,14 +212,14 @@ def test_using_cached_source_metadata(workspace_data_api_mocks: responses.Reques
         assert len(workspace_data_api_mocks.calls) == 5
 
         # 5 PowerBI external assets, one materializable asset
-        assert len(repository_def.assets_defs_by_key) == 5 + 1
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
 
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data
 
         recon_repo = ReconstructableRepository.for_file(
             file_relative_path(__file__, "pending_repo.py"),
-            fn_name="source_metadata_defs",
+            fn_name="reconstruction_metadata_defs",
         )
         recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
@@ -239,4 +240,3 @@ def test_using_cached_source_metadata(workspace_data_api_mocks: responses.Reques
         ), "Expected two successful steps"
 
         assert len(workspace_data_api_mocks.calls) == 5
->>>>>>> 966419961d ([lazy-defs] Add source metadata to PowerBI integration)

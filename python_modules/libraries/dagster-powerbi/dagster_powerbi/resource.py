@@ -303,20 +303,6 @@ class PowerBIWorkspace(ConfigurableResource):
         )
 
 
-def _workspace_data_to_cacheable_data(
-    workspace_data: PowerBIWorkspaceData,
-) -> Sequence[Mapping[str, Any]]:
-    return [
-        data.to_cached_data()
-        for data in [
-            *workspace_data.dashboards_by_id.values(),
-            *workspace_data.reports_by_id.values(),
-            *workspace_data.semantic_models_by_id.values(),
-            *workspace_data.data_sources_by_id.values(),
-        ]
-    ]
-
-
 def _build_assets_defs_from_workspace_data(
     workspace_data: PowerBIWorkspaceData,
     workspace: PowerBIWorkspace,
@@ -329,14 +315,12 @@ def _build_assets_defs_from_workspace_data(
         all_external_data = [
             *workspace_data.dashboards_by_id.values(),
             *workspace_data.reports_by_id.values(),
-            *workspace_data.data_sources_by_id.values(),
         ]
         all_executable_data = [*workspace_data.semantic_models_by_id.values()]
     else:
         all_external_data = [
             *workspace_data.dashboards_by_id.values(),
             *workspace_data.reports_by_id.values(),
-            *workspace_data.data_sources_by_id.values(),
             *workspace_data.semantic_models_by_id.values(),
         ]
         all_executable_data = []
@@ -349,13 +333,15 @@ def _build_assets_defs_from_workspace_data(
     executable_assets = []
     for content, spec in zip(all_executable_data, all_executable_asset_specs):
         dataset_id = content.properties["id"]
+        resource_key = f"power_bi_{workspace.workspace_id.replace('-','_')}"
 
         @multi_asset(
             specs=[spec],
             name="_".join(spec.key.path),
-            resource_defs={"power_bi": workspace.get_resource_definition()},
+            resource_defs={resource_key: workspace.get_resource_definition()},
         )
-        def asset_fn(context: AssetExecutionContext, power_bi: PowerBIWorkspace) -> None:
+        def asset_fn(context: AssetExecutionContext) -> None:
+            power_bi = cast(PowerBIWorkspace, getattr(context.resources, resource_key))
             power_bi.trigger_refresh(dataset_id)
             power_bi.poll_refresh(dataset_id)
             context.log.info("Refresh completed.")
@@ -396,8 +382,13 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
 
         workspace_data: PowerBIWorkspaceData = workspace.fetch_powerbi_workspace_data()
         return [
-            AssetsDefinitionCacheableData(extra_metadata=data)
-            for data in _workspace_data_to_cacheable_data(workspace_data)
+            AssetsDefinitionCacheableData(extra_metadata={"content_data": data})
+            for data in [
+                *workspace_data.dashboards_by_id.values(),
+                *workspace_data.reports_by_id.values(),
+                *workspace_data.semantic_models_by_id.values(),
+                *workspace_data.data_sources_by_id.values(),
+            ]
         ]
 
     def build_definitions(
@@ -406,10 +397,7 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> Sequence[AssetsDefinition]:
         workspace_data = PowerBIWorkspaceData.from_content_data(
             self._workspace.workspace_id,
-            [
-                PowerBIContentData.from_cached_data(check.not_none(entry.extra_metadata))
-                for entry in data
-            ],
+            [check.not_none(entry.extra_metadata)["content_data"] for entry in data],
         )
         return _build_assets_defs_from_workspace_data(
             workspace_data,
@@ -419,7 +407,7 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         )
 
 
-POWER_BI_SOURCE_METADATA_KEY_PREFIX = "__power_bi"
+POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX = "__power_bi"
 
 
 def load_powerbi_defs(
@@ -428,17 +416,14 @@ def load_powerbi_defs(
     workspace_id: str,
     enable_refresh_semantic_models: bool,
 ) -> Definitions:
-    cache_key = f"{POWER_BI_SOURCE_METADATA_KEY_PREFIX}/{workspace_id}"
-    workspace = PowerBIWorkspace(api_token=api_token, workspace_id=workspace_id)
+    metadata_key = f"{POWER_BI_RECONSTRUCTION_METADATA_KEY_PREFIX}/{workspace_id}"
+    credentials = PowerBIToken(api_token=api_token)
+    workspace = PowerBIWorkspace(credentials=credentials, workspace_id=workspace_id)
     if (
         context.load_type == DefinitionsLoadType.RECONSTRUCTION
-        and cache_key in context.reconstruction_metadata
+        and metadata_key in context.reconstruction_metadata
     ):
-        payload = context.reconstruction_metadata[cache_key]
-        workspace_data = PowerBIWorkspaceData.from_content_data(
-            workspace_id,
-            [PowerBIContentData.from_cached_data(entry) for entry in payload],
-        )
+        workspace_data = context.reconstruction_metadata[metadata_key]
     else:
         workspace_data = workspace.fetch_powerbi_workspace_data()
 
@@ -449,5 +434,5 @@ def load_powerbi_defs(
         enable_refresh_semantic_models,
     )
     return Definitions(assets=assets_defs).with_reconstruction_metadata(
-        {cache_key: _workspace_data_to_cacheable_data(workspace_data)}
+        {metadata_key: workspace_data}
     )
