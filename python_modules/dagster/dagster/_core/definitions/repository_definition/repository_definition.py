@@ -91,7 +91,8 @@ class RepositoryDefinition:
         name (str): The name of the repository.
         repository_data (RepositoryData): Contains the definitions making up the repository.
         description (Optional[str]): A string description of the repository.
-        metadata (Optional[MetadataMapping]): A map of arbitrary metadata for the repository.
+        metadata (Optional[MetadataMapping]): Arbitrary metadata for the repository. Not
+            displayed in the UI but accessible on RepositoryDefinition at runtime.
     """
 
     def __init__(

@@ -45,6 +45,7 @@ from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
@@ -815,6 +816,7 @@ def test_merge():
         resources={"resource1": resource1},
         loggers={"logger1": logger1},
         executor=in_process_executor,
+        metadata={"foo": 1},
     )
     defs2 = Definitions(
         assets=[asset2],
@@ -823,6 +825,7 @@ def test_merge():
         sensors=[sensor2],
         resources={"resource2": resource2},
         loggers={"logger2": logger2},
+        metadata={"bar": 2},
     )
 
     merged = Definitions.merge(defs1, defs2)
@@ -835,6 +838,7 @@ def test_merge():
         loggers={"logger1": logger1, "logger2": logger2},
         executor=in_process_executor,
         asset_checks=[],
+        metadata={"foo": MetadataValue.int(1), "bar": MetadataValue.int(2)},
     )
 
 
@@ -1085,3 +1089,9 @@ def test_definitions_dedupe_reference_equality():
     assert len(defs.jobs) == 2
     assert len(defs.sensors) == 2
     assert len(defs.schedules) == 2
+
+
+def test_definitions_class_metadata():
+    defs = Definitions(metadata={"foo": "bar"})
+    assert defs.metadata == {"foo": MetadataValue.text("bar")}
+    assert defs.get_repository_def().metadata == {"foo": MetadataValue.text("bar")}
