@@ -13,6 +13,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -26,7 +28,10 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition, default_job_io_manager
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
-from dagster._core.definitions.metadata.metadata_value import MetadataValue
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+    MetadataValue,
+)
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -44,7 +49,7 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._record import IHaveNew, record_custom
+from dagster._record import IHaveNew, copy, record_custom
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -731,3 +736,22 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @experimental
+    def with_reconstruction_metadata(self, state_metadata: Mapping[str, Any]) -> Self:
+        """Add metadata to the Definitions object. This is typically used to cache data
+        loaded from some external API that is computed during execution of a DefinitionsLoader in a
+        code server. The cached data is then made available on the DefinitionsLoadContext during
+        reconstruction of the same code location context (such as a run worker), allowing use of the
+        cached data to avoid additional external API queries. Values must be JSON-serializable.
+        """
+        state_metadata = {
+            k: CodeLocationReconstructionMetadataValue(v) for k, v in state_metadata.items()
+        }
+        return copy(
+            self,
+            metadata={
+                **(self.metadata or {}),
+                **state_metadata,
+            },
+        )

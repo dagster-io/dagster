@@ -22,6 +22,9 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+)
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -118,7 +121,17 @@ class _Repository:
         if isinstance(repository_definitions, list):
             bad_defns = []
             repository_defns = []
-            defer_repository_data = False
+            # If any CodeLocationReconstructionMetadataValue is present, then it was set during code location
+            # construction and needs to be injected on reconstruction via RepositoryLoadData, so
+            # defer.
+            #
+            # This will be removed when we cut PendingRepositoryDefinition out of the loop for
+            # reconstruction metadata, tracking here:
+            #   https://linear.app/dagster-labs/issue/FOU-401/cut-pendingrepositorydefinition-out-of-the-loop-for-reconstruction
+            defer_repository_data = any(
+                isinstance(value, CodeLocationReconstructionMetadataValue)
+                for value in self.metadata.values()
+            )
             for i, definition in enumerate(_flatten(repository_definitions)):
                 if isinstance(definition, CacheableAssetsDefinition):
                     defer_repository_data = True
