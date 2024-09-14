@@ -10,6 +10,7 @@ from dagster import (
     external_asset_from_spec,
 )
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
 from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
 
@@ -26,14 +27,7 @@ def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> 
             # Right now we make assumptions that we only support AssetSpec and AssetsDefinition
             # in orchesrated_defs.
             # https://linear.app/dagster-labs/issue/FOU-369/support-cacheableassetsdefinition-and-sourceasset-in-airlift
-            assets_def_with_af_metadata(
-                check.inst(
-                    asset,
-                    (AssetSpec, AssetsDefinition, CacheableAssetsDefinition),
-                    "Only supports AssetSpec, AssetsDefinition, and CacheableAssetsDefinition right now",
-                ),
-                metadata,
-            )
+            assets_def_with_af_metadata(asset, metadata)
             for asset in (defs.assets or [])
         ],
         resources=defs.resources,
@@ -51,22 +45,24 @@ def spec_with_metadata(spec: AssetSpec, metadata: Mapping[str, str]) -> "AssetSp
 
 
 def assets_def_with_af_metadata(
-    assets_def: Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition],
+    asset: Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition, SourceAsset],
     metadata: Mapping[str, str],
 ) -> Union[AssetsDefinition, AssetSpec, CacheableAssetsDefinition]:
-    if isinstance(assets_def, CacheableAssetsDefinition):
-        return assets_def.with_attributes_for_all(
+    if isinstance(asset, CacheableAssetsDefinition):
+        return asset.with_attributes_for_all(
             group_name=None,
             freshness_policy=None,
             auto_materialize_policy=None,
             backfill_policy=None,
             metadata=metadata,
         )
+    elif isinstance(asset, SourceAsset):
+        asset = create_external_asset_from_source_asset(asset)
 
     return (
-        assets_def.map_asset_specs(lambda spec: spec_with_metadata(spec, metadata))
-        if isinstance(assets_def, AssetsDefinition)
-        else spec_with_metadata(assets_def, metadata)
+        asset.map_asset_specs(lambda spec: spec_with_metadata(spec, metadata))
+        if isinstance(asset, AssetsDefinition)
+        else spec_with_metadata(asset, metadata)
     )
 
 
@@ -178,10 +174,8 @@ def resolve_defs(
 def coerce_specs_in_defs(defs: Definitions) -> Definitions:
     new_assets = []
     for asset in defs.assets or []:
-        if isinstance(asset, (AssetsDefinition, CacheableAssetsDefinition)):
+        if isinstance(asset, (AssetsDefinition, CacheableAssetsDefinition, SourceAsset)):
             new_assets.append(asset)
-        elif isinstance(asset, SourceAsset):
-            check.failed("SourceAsset not supported in this context")
         elif isinstance(asset, AssetSpec):
             new_assets.append(external_asset_from_spec(asset))
         else:

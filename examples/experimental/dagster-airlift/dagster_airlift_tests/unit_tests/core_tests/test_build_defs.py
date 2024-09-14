@@ -7,6 +7,7 @@ from dagster import (
     AssetSpec,
     Definitions,
     JsonMetadataValue,
+    SourceAsset,
     asset,
     asset_check,
     executor,
@@ -411,3 +412,54 @@ def test_provide_cacheable_asset_to_build_defs() -> None:
     assert len(list(dag_asset.specs)) == 1
     dag_spec = next(iter(dag_asset.specs))
     assert [dep.asset_key for dep in dag_spec.deps] == [AssetKey("a")]
+
+
+def test_provide_source_assets_to_build_defs() -> None:
+    source1 = SourceAsset(key="source1")
+    source2 = SourceAsset(key="source2")
+    my_spec_with_deps = AssetSpec(key="has_sources", deps=[source1.key, source2.key])
+
+    # First, test sources not mapped to a task.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance({"dag": ["task"]}),
+        dag_defs_list=[
+            dag_defs(
+                "dag",
+                task_defs("task", Definitions(assets=[my_spec_with_deps])),
+            ),
+            Definitions(assets=[source1, source2]),
+        ],
+    )
+    repo_def = defs.get_repository_def()
+    has_sources_asset = repo_def.assets_defs_by_key[AssetKey("has_sources")]
+    assert len(list(has_sources_asset.specs)) == 1
+    spec = next(iter(has_sources_asset.specs))
+    assert [dep.asset_key for dep in spec.deps] == [source1.key, source2.key]
+
+    # Now, test sources mapped to a task.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance({"dag": ["task"]}),
+        dag_defs_list=[
+            dag_defs(
+                "dag",
+                task_defs("task", Definitions(assets=[my_spec_with_deps, source1, source2])),
+            ),
+        ],
+    )
+
+    repo_def = defs.get_repository_def()
+    source1_asset = repo_def.assets_defs_by_key[source1.key]
+    assert len(list(source1_asset.specs)) == 1
+    assert next(iter(source1_asset.specs)).deps == []
+    assert next(iter(source1_asset.specs)).metadata[
+        DAG_AND_TASK_ID_METADATA_KEY
+    ] == JsonMetadataValue([["dag", "task"]])
+    source2_asset = repo_def.assets_defs_by_key[source2.key]
+    assert len(list(source2_asset.specs)) == 1
+    assert next(iter(source2_asset.specs)).deps == []
+    assert next(iter(source2_asset.specs)).metadata[
+        DAG_AND_TASK_ID_METADATA_KEY
+    ] == JsonMetadataValue([["dag", "task"]])
+    dag_asset = repo_def.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag"])]
+    assert len(list(dag_asset.specs)) == 1
+    assert [dep.asset_key for dep in next(iter(dag_asset.specs)).deps] == [has_sources_asset.key]
