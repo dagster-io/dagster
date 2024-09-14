@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from typing_extensions import TypeAlias
@@ -17,14 +18,44 @@ DefinitionsLoadFn: TypeAlias = Union[
 ]
 
 
+class DefinitionsLoadType(Enum):
+    """An enum that defines the different scenarios in which a Definitions object may be
+    instantiated.
+
+    When booting a Dagster process that contains definitions, one of two things are happening.
+
+    1. `INITIALIZATION`: You are defining a set of definitions for Dagster to ingest, effectively updating Dagster's
+        understanding of the world at a point in time.
+    2. `RECONSTRUCTION`: You are reconstructing a set of definitions that were previously defined.
+
+    This distinction is important when the source of truth for a Dagster definition is state
+    (for example in a hosted ingestion or BI tool accessable via an API). The state should
+    only be accessed when defining definitions, whereas when reconstructing definitions that
+    state should be retrieved from Dagster's metastore.
+    """
+
+    INITIALIZATION = "INITIALIZATION"
+    RECONSTRUCTION = "RECONSTRUCTION"
+
+
 class DefinitionsLoadContext:
     """Holds data that's made available to Definitions-loading code when a DefinitionsLoader is
     invoked.
     User construction of this object is not supported.
     """
 
-    def __init__(self, repository_load_data: Optional["RepositoryLoadData"] = None):
+    def __init__(
+        self,
+        load_type: DefinitionsLoadType,
+        repository_load_data: Optional["RepositoryLoadData"] = None,
+    ):
+        self._load_type = load_type
         self._repository_load_data = repository_load_data
+
+    @property
+    def load_type(self) -> DefinitionsLoadType:
+        """DefinitionsLoadType: Classifier for scenario in which Definitions are being loaded."""
+        return self._load_type
 
 
 @record
