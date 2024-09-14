@@ -18,6 +18,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._serdes.serdes import (
@@ -190,18 +191,21 @@ class AirflowCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
         cacheable_specs = deserialize_value(metadata["cacheable_specs"], CacheableSpecs)
 
-        new_assets_defs = []
-
+        new_assets_defs = filter_assets_and_apply_task_info(
+            definitions=self.defs,
+            cacheable_specs=cacheable_specs,
+        )
+        mapped_keys = {key for assets_def in new_assets_defs for key in assets_def.keys}
         new_assets_defs.extend(
             external_asset_from_spec(
                 dag_spec.to_asset_spec(additional_metadata={}),
             )
             for dag_spec in cacheable_specs.dag_asset_specs.values()
+            # We may have already splatted in the dag asset in the previous step.
+            if dag_spec.asset_key not in mapped_keys
         )
-        return new_assets_defs + construct_assets_with_task_migration_info_applied(
-            definitions=self.defs,
-            cacheable_specs=cacheable_specs,
-        )
+
+        return new_assets_defs
 
 
 def get_cached_spec_for_dag(
@@ -270,12 +274,9 @@ def construct_cacheable_assets_and_infer_dependencies(
     all_asset_keys_per_dag_id: Dict[str, Set[AssetKey]] = defaultdict(set)
     if not definitions or not definitions.assets:
         return _CacheableData()
-    for assets_def in definitions.assets:
-        assets_def = check.inst(  # noqa: PLW2901
-            assets_def,
-            AssetsDefinition,
-            "Expected orchestrated defs to all be AssetsDefinitions.",
-        )
+    for assets_def in definitions.get_asset_graph().assets_defs:
+        if not assets_def.keys:
+            continue
         for spec in assets_def.specs:
             couplings = get_couplings_from_spec(spec)
             if not couplings:
@@ -305,7 +306,7 @@ def construct_cacheable_assets_and_infer_dependencies(
                 deps=spec_deps,
                 group_name=spec.group_name,
             )
-            for dag_id, task_id in couplings:
+            for dag_id, _ in couplings:
                 all_asset_keys_per_dag_id[dag_id].add(spec.key)
     return _CacheableData(
         cacheable_specs_per_asset_key=cacheable_specs_per_asset_key,
@@ -314,20 +315,39 @@ def construct_cacheable_assets_and_infer_dependencies(
     )
 
 
-def construct_assets_with_task_migration_info_applied(
+def filter_assets_and_apply_task_info(
     definitions: Optional[Definitions],
     cacheable_specs: CacheableSpecs,
 ) -> List[AssetsDefinition]:
     if not definitions or not definitions.assets:
         return []
-
     new_assets_defs = []
-    for assets_def in definitions.assets:
-        assets_def = check.inst(  # noqa: PLW2901
-            assets_def,
-            AssetsDefinition,
-            "Expected fully qualified AssetsDefinitions to be passed to cacheable airflow assets.",
+    for assets_def in definitions.get_asset_graph().assets_defs:
+        # At the moment we only allow AssetsDefinitions AKA computations which target asset keys, skip.
+        # We also skip auto-created stubs for now, since we don't have access to the entire set of assets yet (dag assets might not be constructed).
+        if not assets_def.keys:
+            continue
+        key_maps_to_dag_asset = any(
+            key in cacheable_specs.dag_asset_specs for key in assets_def.keys
         )
+        if key_maps_to_dag_asset and not assets_def.is_auto_created_stub:
+            raise DagsterInvariantViolationError(
+                f"An asset was explicitly provided conflicting with the key for a peered DAG: {assets_def.keys}."
+            )
+        # If this is an auto generated stub containing a dag asset, we should map the dag asset to the corresponding asset spec.
+        elif key_maps_to_dag_asset:
+            # Map the dag's cacheable spec to the asset, and continue
+            new_assets_defs.append(
+                assets_def.map_asset_specs(
+                    lambda spec: spec
+                    if spec.key not in cacheable_specs.dag_asset_specs
+                    else cacheable_specs.dag_asset_specs[spec.key].to_asset_spec(
+                        additional_metadata={}
+                    )
+                )
+            )
+            continue
+
         new_specs = {}
         for spec in assets_def.specs:
             dag_and_task_id_list = get_couplings_from_spec(spec)
@@ -336,7 +356,7 @@ def construct_assets_with_task_migration_info_applied(
                 if dag_and_task_id_list is None
                 else _verify_cacheable_and_build_spec(cacheable_specs.task_asset_specs, spec)
             )
-        new_assets_defs.append(assets_def.map_asset_specs(lambda cur_spec: new_specs[cur_spec.key]))
+        new_assets_defs.append(assets_def.map_asset_specs(lambda spec: new_specs[spec.key]))
     return new_assets_defs
 
 
