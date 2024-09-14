@@ -223,7 +223,12 @@ def test_peered_dags() -> None:
         },
         additional_defs=Definitions(
             assets=[
-                AssetSpec(key="a", deps=[AssetKey.from_user_string("airflow_instance/dag/dag1")])
+                # We actually rely on b and airflow_instance/dag/dag1 are initially loaded as separate definitions objects. If
+                # they were loaded as part of the same definitions object, we would not correctly disregard the stub asset for the dag.
+                AssetSpec(
+                    key="a",
+                    deps=[AssetKey.from_user_string("airflow_instance/dag/dag1"), AssetKey("b")],
+                ),
             ]
         ),
     )
@@ -232,14 +237,15 @@ def test_peered_dags() -> None:
     assert len(list(defs.assets)) == 1
     repo_def = defs.get_repository_def()
     repo_def.load_all_definitions()
-    assert len(repo_def.assets_defs_by_key) == 4
+    assert len(repo_def.assets_defs_by_key) == 5
     assert_dependency_structure_in_assets(
         repo_def=repo_def,
         expected_deps={
             "airflow_instance/dag/dag1": [],
             "airflow_instance/dag/dag2": [],
             "airflow_instance/dag/dag3": [],
-            "a": ["airflow_instance/dag/dag1"],
+            "a": ["airflow_instance/dag/dag1", "b"],
+            "b": [],
         },
     )
 
