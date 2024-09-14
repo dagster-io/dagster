@@ -1,6 +1,6 @@
 import re
 import time
-from typing import Any, Dict, Mapping, Sequence, Type
+from typing import Any, Dict, Sequence, Type
 
 import requests
 from dagster import (
@@ -234,20 +234,6 @@ class PowerBIWorkspace(ConfigurableResource):
         )
 
 
-def _workspace_data_to_cacheable_data(
-    workspace_data: PowerBIWorkspaceData,
-) -> Sequence[Mapping[str, Any]]:
-    return [
-        data.to_cached_data()
-        for data in [
-            *workspace_data.dashboards_by_id.values(),
-            *workspace_data.reports_by_id.values(),
-            *workspace_data.semantic_models_by_id.values(),
-            *workspace_data.data_sources_by_id.values(),
-        ]
-    ]
-
-
 def _build_assets_defs_from_workspace_data(
     workspace_data: PowerBIWorkspaceData,
     workspace: PowerBIWorkspace,
@@ -309,10 +295,15 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=self._workspace.workspace_id)
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        workspace_data: PowerBIWorkspaceData = self._workspace.fetch_powerbi_workspace_data()
+        workspace_data = self._workspace.fetch_powerbi_workspace_data()
         return [
-            AssetsDefinitionCacheableData(extra_metadata=data)
-            for data in _workspace_data_to_cacheable_data(workspace_data)
+            AssetsDefinitionCacheableData(extra_metadata={"content_data": data})
+            for data in [
+                *workspace_data.dashboards_by_id.values(),
+                *workspace_data.reports_by_id.values(),
+                *workspace_data.semantic_models_by_id.values(),
+                *workspace_data.data_sources_by_id.values(),
+            ]
         ]
 
     def build_definitions(
@@ -321,10 +312,7 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> Sequence[AssetsDefinition]:
         workspace_data = PowerBIWorkspaceData.from_content_data(
             self._workspace.workspace_id,
-            [
-                PowerBIContentData.from_cached_data(check.not_none(entry.extra_metadata))
-                for entry in data
-            ],
+            [check.not_none(entry.extra_metadata)["content_data"] for entry in data],
         )
         return _build_assets_defs_from_workspace_data(
             workspace_data,
@@ -343,17 +331,13 @@ def load_powerbi_defs(
     workspace_id: str,
     enable_refresh_semantic_models: bool,
 ) -> Definitions:
-    cache_key = f"{POWER_BI_SOURCE_METADATA_KEY_PREFIX}/{workspace_id}"
+    metadata_key = f"{POWER_BI_SOURCE_METADATA_KEY_PREFIX}/{workspace_id}"
     workspace = PowerBIWorkspace(api_token=api_token, workspace_id=workspace_id)
     if (
         context.load_type == DefinitionsLoadType.RECONSTRUCTION
-        and cache_key in context.reconstruction_metadata
+        and metadata_key in context.reconstruction_metadata
     ):
-        payload = context.reconstruction_metadata[cache_key]
-        workspace_data = PowerBIWorkspaceData.from_content_data(
-            workspace_id,
-            [PowerBIContentData.from_cached_data(entry) for entry in payload],
-        )
+        workspace_data = context.reconstruction_metadata[metadata_key]
     else:
         workspace_data = workspace.fetch_powerbi_workspace_data()
 
@@ -364,5 +348,5 @@ def load_powerbi_defs(
         enable_refresh_semantic_models,
     )
     return Definitions(assets=assets_defs).with_reconstruction_metadata(
-        {cache_key: _workspace_data_to_cacheable_data(workspace_data)}
+        {metadata_key: workspace_data}
     )

@@ -120,7 +120,7 @@ def test_refreshable_semantic_model(
     assert result.success is success
 
 
-def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMock) -> None:
+def test_using_cacheable_assets_defs(workspace_data_api_mocks: responses.RequestsMock) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
@@ -161,7 +161,7 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         assert len(workspace_data_api_mocks.calls) == 5
 
 
-def test_using_cached_source_metadata(workspace_data_api_mocks: responses.RequestsMock) -> None:
+def test_using_reconstruction_metadata(workspace_data_api_mocks: responses.RequestsMock) -> None:
     with instance_for_test() as instance:
         assert len(workspace_data_api_mocks.calls) == 0
 
