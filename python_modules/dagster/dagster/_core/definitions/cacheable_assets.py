@@ -183,6 +183,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
         freshness_policy: Optional[FreshnessPolicy],
         auto_materialize_policy: Optional[AutoMaterializePolicy],
         backfill_policy: Optional[BackfillPolicy],
+        metadata: Optional[RawMetadataMapping] = None,
     ) -> "CacheableAssetsDefinition":
         """Utility method which allows setting attributes for all assets in this
         CacheableAssetsDefinition, since the keys may not be known at the time of
@@ -194,6 +195,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
             freshness_policy=freshness_policy,
             auto_materialize_policy=auto_materialize_policy,
             backfill_policy=backfill_policy,
+            metadata_for_all_assets=metadata,
         )
 
 
@@ -258,6 +260,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
+        metadata_for_all_assets: Optional[RawMetadataMapping] = None,
     ):
         self._output_asset_key_replacements = output_asset_key_replacements or {}
         self._input_asset_key_replacements = input_asset_key_replacements or {}
@@ -267,6 +270,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         self._freshness_policy = freshness_policy
         self._auto_materialize_policy = auto_materialize_policy
         self._backfill_policy = backfill_policy
+        self._metadata_for_all_assets = metadata_for_all_assets
 
         check.invariant(
             not (group_name_for_all_assets and group_names_by_key),
@@ -317,6 +321,8 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             contents.update(self._group_name_for_all_assets.encode("utf-8"))
         if self._prefix_for_all_assets:
             contents.update(json.dumps(self._prefix_for_all_assets).encode("utf-8"))
+        if self._metadata_for_all_assets:
+            contents.update(json.dumps(self._metadata_for_all_assets).encode("utf-8"))
         return contents.hexdigest()
 
     def transformed_assets_def(self, assets_def: AssetsDefinition) -> AssetsDefinition:
@@ -357,6 +363,15 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             if self._prefix_for_all_assets
             else self._input_asset_key_replacements
         )
+        metadata_by_key = (
+            {
+                k: self._metadata_for_all_assets
+                for k in assets_def.keys
+                if self._metadata_for_all_assets
+            }
+            if self._metadata_for_all_assets
+            else {}
+        )
         if isinstance(self._auto_materialize_policy, dict):
             automation_condition = {
                 k: v.to_automation_condition() for k, v in self._auto_materialize_policy.items()
@@ -372,6 +387,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             freshness_policy=self._freshness_policy,
             automation_condition=automation_condition,
             backfill_policy=self._backfill_policy,
+            metadata_by_key=metadata_by_key,
         )
 
 

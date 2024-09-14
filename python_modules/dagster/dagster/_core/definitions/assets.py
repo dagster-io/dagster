@@ -1175,6 +1175,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         input_asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
         group_names_by_key: Mapping[AssetKey, str] = {},
         tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
+        metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping] = {},
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -1193,15 +1194,32 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 new_value: Union[Mapping[AssetKey, object], object],
                 attr_name: str,
                 default_value: object = None,
+                merge: bool = False,
             ) -> None:
+                if not isinstance(new_value, Mapping) and merge:
+                    raise DagsterInvalidDefinitionError(
+                        f"Cannot merge {attr_name} with a non-dict value"
+                    )
+                old_value = getattr(spec, attr_name)
                 if isinstance(new_value, Mapping):
                     if key in new_value:
-                        replace_dict[attr_name] = new_value[key]
+                        if merge and not isinstance(new_value[key], Mapping):
+                            raise DagsterInvalidDefinitionError(
+                                f"Cannot merge {attr_name} with a non-dict value"
+                            )
+                        replace_dict[attr_name] = (
+                            new_value[key]
+                            if not merge
+                            else merge_dicts(old_value or {}, cast(Mapping, new_value[key]))
+                        )
                 elif new_value:
                     replace_dict[attr_name] = new_value
-
-                old_value = getattr(spec, attr_name)
-                if old_value and old_value != default_value and attr_name in replace_dict:
+                if (
+                    not merge
+                    and old_value
+                    and old_value != default_value
+                    and attr_name in replace_dict
+                ):
                     conflicts_by_attr_name[attr_name].add(key)
 
             update_replace_dict_and_conflicts(
@@ -1211,6 +1229,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 new_value=freshness_policy, attr_name="freshness_policy"
             )
             update_replace_dict_and_conflicts(new_value=tags_by_key, attr_name="tags")
+            update_replace_dict_and_conflicts(
+                new_value=metadata_by_key, attr_name="metadata", merge=True
+            )
             update_replace_dict_and_conflicts(
                 new_value=group_names_by_key,
                 attr_name="group_name",

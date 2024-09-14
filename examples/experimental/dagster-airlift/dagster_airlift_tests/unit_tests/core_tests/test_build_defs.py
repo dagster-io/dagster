@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Sequence
 
 from dagster import (
     AssetKey,
@@ -11,8 +12,13 @@ from dagster import (
     executor,
     job,
     logger,
+    multi_asset,
     schedule,
     sensor,
+)
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
 )
 from dagster._core.test_utils import environ
 from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
@@ -350,3 +356,58 @@ def test_multi_task_mapping() -> None:
         AssetKey(["airflow_instance", "dag", "dag2"]),
         AssetKey("a"),
     }
+
+
+def test_provide_cacheable_asset_to_build_defs() -> None:
+    """Tests that a cacheable asset can be successfully provided to build_defs."""
+    compute_count = [0]
+    build_count = [0]
+
+    class MyCacheableAsset(CacheableAssetsDefinition):
+        def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+            compute_count[0] += 1
+            return []
+
+        def build_definitions(
+            self, data: Sequence[AssetsDefinitionCacheableData]
+        ) -> Sequence[AssetsDefinition]:
+            build_count[0] += 1
+
+            @multi_asset(
+                specs=[
+                    AssetSpec(
+                        key="a",
+                        metadata={"unrelated": "value"},
+                    )
+                ]
+            )
+            def my_asset():
+                pass
+
+            return [my_asset]
+
+    my_cacheable = MyCacheableAsset("blah")
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance({"dag": ["task"]}),
+        dag_defs_list=[
+            dag_defs(
+                "dag",
+                task_defs("task", Definitions(assets=[my_cacheable])),
+            ),
+        ],
+    )
+    repo_def = defs.get_repository_def()
+    # Ensure that we didn't somehow re-trigger computation of the underlying cacheable asset multiple times.
+    assert compute_count[0] == 1
+    assert build_count[0] == 1
+    assert len(repo_def.assets_defs_by_key) == 2
+    a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
+    assert len(list(a_asset.specs)) == 1
+    a_metadata = next(iter(a_asset.specs)).metadata
+    assert a_metadata["unrelated"] == "value"
+    assert a_metadata[AIRFLOW_COUPLING_METADATA_KEY] == JsonMetadataValue([["dag", "task"]])
+    assert a_metadata["Computed in Task ID"] == "task"
+    dag_asset = repo_def.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag"])]
+    assert len(list(dag_asset.specs)) == 1
+    dag_spec = next(iter(dag_asset.specs))
+    assert [dep.asset_key for dep in dag_spec.deps] == [AssetKey("a")]
