@@ -344,8 +344,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
 
 
-def materializable_in_same_run(
-    asset_graph: BaseAssetGraph, child_key: AssetKey, parent_key: AssetKey
+def executable_in_same_run(
+    asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
 ):
     """Returns whether a child asset can be materialized in the same run as a parent asset."""
     from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
@@ -354,24 +354,23 @@ def materializable_in_same_run(
 
     child_node = asset_graph.get(child_key)
     parent_node = asset_graph.get(parent_key)
-    return (
-        # both assets must be materializable
-        child_node.is_materializable
-        and parent_node.is_materializable
-        # the parent must have the same partitioning
-        and child_node.partitions_def == parent_node.partitions_def
-        # the parent must have a simple partition mapping to the child
-        and (
-            not parent_node.is_partitioned
-            or isinstance(
-                asset_graph.get_partition_mapping(child_node.key, parent_node.key),
-                (TimeWindowPartitionMapping, IdentityPartitionMapping),
-            )
-        )
-        # the parent must be in the same repository to be materialized alongside the candidate
-        and (
-            not isinstance(asset_graph, RemoteAssetGraph)
-            or asset_graph.get_repository_handle(child_key)
-            == asset_graph.get_repository_handle(parent_key)
-        )
+
+    # if operating on a RemoteAssetGraph, must share a repository handle
+    if isinstance(asset_graph, RemoteAssetGraph):
+        child_handle = asset_graph.get_repository_handle(child_key)
+        parent_handle = asset_graph.get_repository_handle(parent_key)
+        if child_handle != parent_handle:
+            return False
+
+    # partitions definitions must match
+    if child_node.partitions_def != parent_node.partitions_def:
+        return False
+
+    # unpartitioned assets can always execute together
+    if child_node.partitions_def is None:
+        return True
+
+    return isinstance(
+        asset_graph.get_partition_mapping(child_node.key, parent_node.key),
+        (TimeWindowPartitionMapping, IdentityPartitionMapping),
     )

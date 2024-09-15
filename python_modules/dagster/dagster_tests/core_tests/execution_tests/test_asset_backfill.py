@@ -738,7 +738,7 @@ def external_asset_graph_from_assets_by_repo_name(
         )
 
     return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-        from_repository_handles_and_external_asset_nodes, external_asset_checks=[]
+        from_repository_handles_and_external_asset_nodes, []
     )
 
 

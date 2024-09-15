@@ -428,10 +428,13 @@ class ExternalRepository:
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
         return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=[
+            repo_handle_assets=[
                 (self.handle, asset_node) for asset_node in self.get_external_asset_nodes()
             ],
-            external_asset_checks=self.get_external_asset_checks(),
+            repo_handle_asset_checks=[
+                (self.handle, asset_check_node)
+                for asset_check_node in self.get_external_asset_checks()
+            ],
         )
 
     def get_partition_names_for_asset_job(

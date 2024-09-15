@@ -95,10 +95,10 @@ class WillBeRequestedCondition(SubsetAutomationCondition[AssetKey]):
 
     def _executable_with_root_context_key(self, context: AutomationContext) -> bool:
         # TODO: once we can launch backfills via the asset daemon, this can be removed
-        from dagster._core.definitions.asset_graph import materializable_in_same_run
+        from dagster._core.definitions.asset_graph import executable_in_same_run
 
         root_key = context.root_context.key
-        return materializable_in_same_run(
+        return executable_in_same_run(
             asset_graph=context.asset_graph_view.asset_graph,
             child_key=root_key,
             parent_key=context.key,

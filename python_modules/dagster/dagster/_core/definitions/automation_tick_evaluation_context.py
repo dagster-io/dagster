@@ -287,7 +287,7 @@ def _build_run_requests_from_partitions_def_mapping(
             asset_check_keys = set()
             for ak in asset_keys_in_repo:
                 if ak in check_keys_to_execute_by_key:
-                    asset_check_keys.union(check_keys_to_execute_by_key[ak])
+                    asset_check_keys.update(check_keys_to_execute_by_key[ak])
                     del check_keys_to_execute_by_key[ak]
 
             run_requests.append(

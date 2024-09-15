@@ -67,20 +67,18 @@ class WorkspaceSnapshot:
             for code_location in code_locations
             for repo in code_location.get_repositories().values()
         )
-        repo_handle_external_asset_nodes: Sequence[
-            Tuple["RepositoryHandle", "ExternalAssetNode"]
-        ] = []
-        asset_checks: Sequence["ExternalAssetCheck"] = []
+        repo_handle_assets: Sequence[Tuple["RepositoryHandle", "ExternalAssetNode"]] = []
+        repo_handle_asset_checks: Sequence[Tuple["RepositoryHandle", "ExternalAssetCheck"]] = []
 
         for repo in repos:
             for external_asset_node in repo.get_external_asset_nodes():
-                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
-
-            asset_checks.extend(repo.get_external_asset_checks())
+                repo_handle_assets.append((repo.handle, external_asset_node))
+            for external_asset_check in repo.get_external_asset_checks():
+                repo_handle_asset_checks.append((repo.handle, external_asset_check))
 
         return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
-            external_asset_checks=asset_checks,
+            repo_handle_assets=repo_handle_assets,
+            repo_handle_asset_checks=repo_handle_asset_checks,
         )
 
     def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
