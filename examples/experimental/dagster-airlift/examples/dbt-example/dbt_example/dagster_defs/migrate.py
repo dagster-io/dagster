@@ -31,31 +31,34 @@ airflow_instance = AirflowInstance(
     name=AIRFLOW_INSTANCE_NAME,
 )
 
-
 defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     dag_defs_list=[
         dag_defs(
             "load_lakehouse",
-            task_defs(
-                "load_iris",
-                defs_from_lakehouse(
-                    specs=specs_from_lakehouse(csv_path=CSV_PATH),
-                    csv_path=CSV_PATH,
-                    duckdb_path=DB_PATH,
-                    columns=IRIS_COLUMNS,
+            [
+                task_defs(
+                    "load_iris",
+                    defs_from_lakehouse(
+                        specs=specs_from_lakehouse(csv_path=CSV_PATH),
+                        csv_path=CSV_PATH,
+                        duckdb_path=DB_PATH,
+                        columns=IRIS_COLUMNS,
+                    ),
                 ),
-            ),
+            ],
         ),
         dag_defs(
             "dbt_dag",
-            task_defs(
-                "build_dbt_models",
-                dbt_defs(
-                    manifest=dbt_manifest_path(),
-                    project=DbtProject(dbt_project_path()),
+            [
+                task_defs(
+                    "build_dbt_models",
+                    dbt_defs(
+                        manifest=dbt_manifest_path(),
+                        project=DbtProject(dbt_project_path()),
+                    ),
                 ),
-            ),
+            ],
         ),
         lakehouse_existence_check_defs(
             csv_path=CSV_PATH,

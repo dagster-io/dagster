@@ -33,7 +33,7 @@ defs = build_defs_from_airflow_instance(
         *[
             dag_defs(
                 f"dag_{i}",
-                *[
+                [
                     task_defs(f"task_{i}_{j}", Definitions(assets=[build_asset(f"asset_{i}_{j}")]))
                     for j in range(get_num_tasks())
                 ],

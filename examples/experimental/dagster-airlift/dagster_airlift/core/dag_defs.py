@@ -110,7 +110,7 @@ class DagDefs:
         ]
 
 
-def dag_defs(dag_id: str, *defs: Union[TaskDefs, RefToDefs]) -> DagDefs:
+def dag_defs(dag_id: str, defs: Sequence[Union[TaskDefs, RefToDefs]]) -> DagDefs:
     """Construct a Dagster :py:class:`Definitions` object with definitions
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
 
@@ -124,8 +124,10 @@ def dag_defs(dag_id: str, *defs: Union[TaskDefs, RefToDefs]) -> DagDefs:
     .. code-block:: python
         defs = dag_defs(
             "dag_one",
-            task_defs("task_one", Definitions(assets=[AssetSpec(key="asset_one"]))),
-            task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
+            [
+                task_defs("task_one", Definitions(assets=[AssetSpec(key="asset_one"]))),
+                task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
+            ],
         )
     """
     return DagDefs(dag_id, {task_def.task_id: task_def for task_def in defs})

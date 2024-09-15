@@ -35,7 +35,7 @@ def freshness_defs() -> Definitions:
     dbt_freshness_checks = build_last_update_freshness_checks(
         assets=[DBT_DAG_ASSET_KEY],
         lower_bound_delta=timedelta(hours=1),
-        deadline_cron="0 9 * * *",
+        deadline_cron="0 9 * **",
     )
     return Definitions(
         asset_checks=dbt_freshness_checks,
@@ -52,14 +52,18 @@ defs = build_defs_from_airflow_instance(
     dag_defs_list=[
         dag_defs(
             "load_lakehouse",
-            task_defs("load_iris", Definitions(assets=specs_from_lakehouse(csv_path=CSV_PATH))),
+            [
+                task_defs("load_iris", Definitions(assets=specs_from_lakehouse(csv_path=CSV_PATH))),
+            ],
         ),
         dag_defs(
             "dbt_dag",
-            task_defs(
-                "build_dbt_models",
-                Definitions(assets=build_dbt_asset_specs(manifest=dbt_manifest_path())),
-            ),
+            [
+                task_defs(
+                    "build_dbt_models",
+                    Definitions(assets=build_dbt_asset_specs(manifest=dbt_manifest_path())),
+                ),
+            ],
         ),
         lakehouse_existence_check_defs(
             csv_path=CSV_PATH,

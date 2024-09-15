@@ -71,7 +71,7 @@ def build_definitions_airflow_asset_graph(
                 else:
                     assets.append(spec)
             task_defs_list.append(task_defs(task_id, Definitions(assets=assets)))
-        dag_defs_list.append(dag_defs(dag_id, *task_defs_list))
+        dag_defs_list.append(dag_defs(dag_id, task_defs_list))
     runs = (
         [
             make_dag_run(
