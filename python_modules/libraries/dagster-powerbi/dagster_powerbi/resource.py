@@ -7,20 +7,20 @@ from dagster import (
     AssetsDefinition,
     ConfigurableResource,
     Definitions,
-    _check as check,
     external_assets_from_specs,
     multi_asset,
 )
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
-from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext
 from dagster._core.definitions.events import Failure
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
+from dagster_powerbi.state_backed_loader import (
+    StateBackedDefinitionsLoader,
+    cacheable_assets_def_from_loader,
+)
 from dagster_powerbi.translator import (
     DagsterPowerBITranslator,
     PowerBIContentData,
@@ -204,10 +204,11 @@ class PowerBIWorkspace(ConfigurableResource):
                 will load the Power BI content.
         """
         return [
-            PowerBICacheableAssetsDefinition(
-                self,
-                dagster_powerbi_translator,
-                enable_refresh_semantic_models=enable_refresh_semantic_models,
+            cacheable_assets_def_from_loader(
+                PowerBIDefinitionsLoader(
+                    self, enable_refresh_semantic_models, dagster_powerbi_translator
+                ),
+                PowerBIWorkspaceData,
             )
         ]
 
@@ -282,47 +283,33 @@ def _build_assets_defs_from_workspace_data(
     return [*external_assets_from_specs(all_external_asset_specs), *executable_assets]
 
 
-class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
+POWER_BI_SOURCE_METADATA_KEY_PREFIX = "__power_bi"
+
+
+class PowerBIDefinitionsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceData]):
     def __init__(
         self,
         workspace: PowerBIWorkspace,
-        translator: Type[DagsterPowerBITranslator],
         enable_refresh_semantic_models: bool,
+        translator_cls: Type[DagsterPowerBITranslator],
     ):
         self._workspace = workspace
-        self._translator_cls = translator
         self._enable_refresh_semantic_models = enable_refresh_semantic_models
-        super().__init__(unique_id=self._workspace.workspace_id)
+        self._translator_cls = translator_cls
+        super().__init__(f"{POWER_BI_SOURCE_METADATA_KEY_PREFIX}/{workspace.workspace_id}")
 
-    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        workspace_data = self._workspace.fetch_powerbi_workspace_data()
-        return [
-            AssetsDefinitionCacheableData(extra_metadata={"content_data": data})
-            for data in [
-                *workspace_data.dashboards_by_id.values(),
-                *workspace_data.reports_by_id.values(),
-                *workspace_data.semantic_models_by_id.values(),
-                *workspace_data.data_sources_by_id.values(),
-            ]
-        ]
+    def fetch_backing_state(self) -> PowerBIWorkspaceData:
+        return self._workspace.fetch_powerbi_workspace_data()
 
-    def build_definitions(
-        self,
-        data: Sequence[AssetsDefinitionCacheableData],
-    ) -> Sequence[AssetsDefinition]:
-        workspace_data = PowerBIWorkspaceData.from_content_data(
-            self._workspace.workspace_id,
-            [check.not_none(entry.extra_metadata)["content_data"] for entry in data],
+    def defs_from_state(self, state: PowerBIWorkspaceData) -> Definitions:
+        return Definitions(
+            assets=_build_assets_defs_from_workspace_data(
+                state,
+                self._workspace,
+                self._translator_cls,
+                self._enable_refresh_semantic_models,
+            )
         )
-        return _build_assets_defs_from_workspace_data(
-            workspace_data,
-            self._workspace,
-            self._translator_cls,
-            self._enable_refresh_semantic_models,
-        )
-
-
-POWER_BI_SOURCE_METADATA_KEY_PREFIX = "__power_bi"
 
 
 def load_powerbi_defs(
@@ -331,22 +318,7 @@ def load_powerbi_defs(
     workspace_id: str,
     enable_refresh_semantic_models: bool,
 ) -> Definitions:
-    metadata_key = f"{POWER_BI_SOURCE_METADATA_KEY_PREFIX}/{workspace_id}"
     workspace = PowerBIWorkspace(api_token=api_token, workspace_id=workspace_id)
-    if (
-        context.load_type == DefinitionsLoadType.RECONSTRUCTION
-        and metadata_key in context.reconstruction_metadata
-    ):
-        workspace_data = context.reconstruction_metadata[metadata_key]
-    else:
-        workspace_data = workspace.fetch_powerbi_workspace_data()
-
-    assets_defs = _build_assets_defs_from_workspace_data(
-        workspace_data,
-        workspace,
-        DagsterPowerBITranslator,
-        enable_refresh_semantic_models,
-    )
-    return Definitions(assets=assets_defs).with_reconstruction_metadata(
-        {metadata_key: workspace_data}
-    )
+    return PowerBIDefinitionsLoader(
+        workspace, enable_refresh_semantic_models, DagsterPowerBITranslator
+    ).build_defs(context)
