@@ -37,41 +37,37 @@ def dbt_project(dbt_project_path: Path) -> None:
 def test_dbt_defs(dbt_project_path: Path, dbt_project_setup: None) -> None:
     """Test that a dbt project being orchestrated elsewhere can be loaded, and that downstreams from dbt models are correctly hooked up."""
     # Dag_one has a set of dbt models. Dag_two has an asset "downstream" which is downstream of "customers".
-
     dbt_defs_inst = dbt_defs(
         manifest=dbt_project_path / "target" / "manifest.json",
         project=DbtProject(dbt_project_path),
     )
-
     assert isinstance(dbt_defs_inst, Definitions)
-
     test_airflow_instance = make_instance(
         dag_and_task_structure={"dag_one": ["task_one"], "dag_two": ["task_two"]}
     )
-
     initial_defs: List[Union[Definitions, DagDefs]] = [
         dag_defs(
             "dag_one",
-            task_defs("task_one", dbt_defs_inst),
+            [
+                task_defs("task_one", dbt_defs_inst),
+            ],
         ),
         dag_defs(
             "dag_two",
-            task_defs(
-                "task_two", Definitions(assets=[AssetSpec("downstream", deps=["customers"])])
-            ),
+            [
+                task_defs(
+                    "task_two", Definitions(assets=[AssetSpec("downstream", deps=["customers"])])
+                ),
+            ],
         ),
     ]
-
     defs = build_defs_from_airflow_instance(
         airflow_instance=test_airflow_instance,
         dag_defs_list=initial_defs,
     )
     assert set((defs.resources or {}).keys()) == {"dbt"}
-
     assert isinstance(defs, Definitions)
-
     Definitions.validate_loadable(defs)
-
     # dbt resource should be present in the final definitions
     assert set(defs.get_repository_def().get_top_level_resources().keys()) == {"dbt"}
     repo_def = defs.get_repository_def()

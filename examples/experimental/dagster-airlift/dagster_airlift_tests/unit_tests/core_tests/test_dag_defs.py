@@ -22,7 +22,9 @@ def asset_spec_from_defs(definitions: Definitions, key: CoercibleToAssetKey) -> 
 def test_dag_def_spec() -> None:
     defs = dag_defs(
         "dag_one",
-        task_defs("task_one", from_specs(AssetSpec(key="asset_one"))),
+        [
+            task_defs("task_one", from_specs(AssetSpec(key="asset_one"))),
+        ],
     )
     assert asset_spec(defs, "asset_one").metadata[AIRFLOW_COUPLING_METADATA_KEY].value == [
         ("dag_one", "task_one")
@@ -32,8 +34,12 @@ def test_dag_def_spec() -> None:
 def test_dag_def_multi_tasks_multi_specs() -> None:
     defs = dag_defs(
         "dag_one",
-        task_defs("task_one", from_specs(AssetSpec(key="asset_one"))),
-        task_defs("task_two", from_specs(AssetSpec(key="asset_two"), AssetSpec(key="asset_three"))),
+        [
+            task_defs("task_one", from_specs(AssetSpec(key="asset_one"))),
+            task_defs(
+                "task_two", from_specs(AssetSpec(key="asset_two"), AssetSpec(key="asset_three"))
+            ),
+        ],
     )
     assert asset_spec(defs, "asset_one").metadata[AIRFLOW_COUPLING_METADATA_KEY].value == [
         ("dag_one", "task_one")
@@ -52,7 +58,9 @@ def test_dag_def_assets_def() -> None:
 
     defs = dag_defs(
         "dag_one",
-        task_defs("task_one", Definitions([an_asset])),
+        [
+            task_defs("task_one", Definitions([an_asset])),
+        ],
     )
     assert asset_spec(defs, "asset_one").metadata[AIRFLOW_COUPLING_METADATA_KEY].value == [
         ("dag_one", "task_one")
@@ -65,7 +73,9 @@ def test_dag_def_defs() -> None:
 
     defs = dag_defs(
         "dag_one",
-        task_defs("task_one", Definitions(assets=[an_asset])),
+        [
+            task_defs("task_one", Definitions(assets=[an_asset])),
+        ],
     )
     assert asset_spec(defs, "asset_one").metadata[AIRFLOW_COUPLING_METADATA_KEY].value == [
         ("dag_one", "task_one")
@@ -76,12 +86,16 @@ def test_dag_defs_task_refs() -> None:
     """Test that we can sub in a sentinel instead of task defs, and that they can be correctly resolved."""
     defs_one = dag_defs(
         "dag_one",
-        task_defs("shared", mark_as_shared("my_key")),
-        task_defs("not_shared", from_specs(AssetSpec(key="not_shared_key"))),
+        [
+            task_defs("shared", mark_as_shared("my_key")),
+            task_defs("not_shared", from_specs(AssetSpec(key="not_shared_key"))),
+        ],
     )
     defs_two = dag_defs(
         "dag_two",
-        task_defs("also_shared", mark_as_shared("my_key")),
+        [
+            task_defs("also_shared", mark_as_shared("my_key")),
+        ],
     )
     definitions = resolve_defs([defs_one, defs_two], {"my_key": from_specs(AssetSpec(key="foo"))})
     assert definitions.assets is not None

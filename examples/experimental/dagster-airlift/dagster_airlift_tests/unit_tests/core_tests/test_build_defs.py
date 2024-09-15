@@ -341,11 +341,11 @@ def test_multi_task_mapping() -> None:
         dag_defs_list=[
             dag_defs(
                 "dag1",
-                task_defs("task1", mark_as_shared("a")),
+                [task_defs("task1", mark_as_shared("a"))],
             ),
             dag_defs(
                 "dag2",
-                task_defs("task2", mark_as_shared("a")),
+                [task_defs("task2", mark_as_shared("a"))],
             ),
         ],
         shared_task_defs={"a": Definitions(assets=[AssetSpec(key="a")])},
@@ -393,7 +393,7 @@ def test_provide_cacheable_asset_to_build_defs() -> None:
         dag_defs_list=[
             dag_defs(
                 "dag",
-                task_defs("task", Definitions(assets=[my_cacheable])),
+                [task_defs("task", Definitions(assets=[my_cacheable]))],
             ),
         ],
     )
@@ -425,7 +425,7 @@ def test_provide_source_assets_to_build_defs() -> None:
         dag_defs_list=[
             dag_defs(
                 "dag",
-                task_defs("task", Definitions(assets=[my_spec_with_deps])),
+                [task_defs("task", Definitions(assets=[my_spec_with_deps]))],
             ),
             Definitions(assets=[source1, source2]),
         ],
@@ -442,7 +442,7 @@ def test_provide_source_assets_to_build_defs() -> None:
         dag_defs_list=[
             dag_defs(
                 "dag",
-                task_defs("task", Definitions(assets=[my_spec_with_deps, source1, source2])),
+                [task_defs("task", Definitions(assets=[my_spec_with_deps, source1, source2]))],
             ),
         ],
     )

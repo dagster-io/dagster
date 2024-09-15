@@ -23,31 +23,33 @@ def dbt_project_path() -> Path:
 def rebuild_customer_list_defs() -> DagDefs:
     return dag_defs(
         "rebuild_customers_list",
-        task_defs(
-            "load_raw_customers",
-            Definitions(
-                assets=[
-                    AssetSpec(key=["raw_data", "raw_customers"]),
-                ]
+        [
+            task_defs(
+                "load_raw_customers",
+                Definitions(
+                    assets=[
+                        AssetSpec(key=["raw_data", "raw_customers"]),
+                    ]
+                ),
             ),
-        ),
-        task_defs(
-            "build_dbt_models",
-            # load rich set of assets from dbt project
-            dbt_defs(
-                manifest=dbt_project_path() / "target" / "manifest.json",
-                project=DbtProject(dbt_project_path()),
+            task_defs(
+                "build_dbt_models",
+                # load rich set of assets from dbt project
+                dbt_defs(
+                    manifest=dbt_project_path() / "target" / "manifest.json",
+                    project=DbtProject(dbt_project_path()),
+                ),
             ),
-        ),
-        task_defs(
-            "export_customers",
-            # encode dependency on customers table
-            Definitions(
-                assets=[
-                    AssetSpec(key="customers_csv", deps=["customers"]),
-                ]
+            task_defs(
+                "export_customers",
+                # encode dependency on customers table
+                Definitions(
+                    assets=[
+                        AssetSpec(key="customers_csv", deps=["customers"]),
+                    ]
+                ),
             ),
-        ),
+        ],
     )
 
 
