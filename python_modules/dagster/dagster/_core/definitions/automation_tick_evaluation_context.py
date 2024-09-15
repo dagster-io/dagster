@@ -62,7 +62,6 @@ class AutomationTickEvaluationContext:
     ):
         resolved_entity_keys = {
             entity_key
-            # for now, all checks of a given asset will be evaluated at the same time as it
             for entity_key in (
                 asset_selection.resolve(asset_graph) | asset_selection.resolve_checks(asset_graph)
             )
@@ -111,7 +110,7 @@ class AutomationTickEvaluationContext:
 
         # create groups of asset keys that share the same repository AND the same partitions definition
         partitions_def_and_asset_key_groups: List[Sequence[AssetKey]] = []
-        for repository_asset_keys in self.asset_graph.split_asset_keys_by_repository(
+        for repository_asset_keys in self.asset_graph.split_entity_keys_by_repository(
             assets_to_auto_observe
         ):
             asset_keys_by_partitions_def = defaultdict(list)
@@ -199,43 +198,40 @@ class AutomationTickEvaluationContext:
         )
 
 
-_PartitionsDefKeyAssetKeyMapping = Dict[
-    Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
+_PartitionsDefKeyMapping = Dict[
+    Tuple[Optional[PartitionsDefinition], Optional[str]], Set[EntityKey]
 ]
-_AssetKeyCheckKeysMapping = Dict[AssetKey, Set[AssetCheckKey]]
 
 
-def _get_mappings_from_asset_partitions(
+def _get_mapping_from_asset_partitions(
     asset_partitions: AbstractSet[AssetKeyPartitionKey], asset_graph: BaseAssetGraph
-) -> Tuple[_PartitionsDefKeyAssetKeyMapping, _AssetKeyCheckKeysMapping]:
-    asset_mapping: _PartitionsDefKeyAssetKeyMapping = defaultdict(set)
+) -> _PartitionsDefKeyMapping:
+    mapping: _PartitionsDefKeyMapping = defaultdict(set)
 
     for asset_partition in asset_partitions:
-        asset_mapping[
+        mapping[
             asset_graph.get(asset_partition.asset_key).partitions_def, asset_partition.partition_key
         ].add(asset_partition.asset_key)
 
-    return asset_mapping, {}
+    return mapping
 
 
-def _get_mappings_from_entity_subsets(
+def _get_mapping_from_entity_subsets(
     entity_subsets: Iterable[EntitySubset], asset_graph: BaseAssetGraph
-) -> Tuple[_PartitionsDefKeyAssetKeyMapping, _AssetKeyCheckKeysMapping]:
-    asset_mapping: _PartitionsDefKeyAssetKeyMapping = defaultdict(set)
-    asset_check_mapping: _AssetKeyCheckKeysMapping = defaultdict(set)
+) -> _PartitionsDefKeyMapping:
+    mapping: _PartitionsDefKeyMapping = defaultdict(set)
 
     for subset in entity_subsets:
-        if isinstance(subset.key, AssetCheckKey):
-            if not subset.is_empty:
-                asset_check_mapping[subset.key.asset_key].add(subset.key)
-        elif isinstance(subset.key, AssetKey):
-            partitions_def = asset_graph.get(subset.key).partitions_def
+        partitions_def = asset_graph.get(subset.key).partitions_def
+        if partitions_def:
             for asset_partition in subset.expensively_compute_asset_partitions():
-                asset_mapping[partitions_def, asset_partition.partition_key].add(
+                mapping[partitions_def, asset_partition.partition_key].add(
                     asset_partition.asset_key
                 )
+        else:
+            mapping[partitions_def, None].add(subset.key)
 
-    return asset_mapping, asset_check_mapping
+    return mapping
 
 
 def build_run_requests_from_asset_partitions(
@@ -244,7 +240,7 @@ def build_run_requests_from_asset_partitions(
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     return _build_run_requests_from_partitions_def_mapping(
-        _get_mappings_from_asset_partitions(asset_partitions, asset_graph),
+        _get_mapping_from_asset_partitions(asset_partitions, asset_graph),
         asset_graph,
         run_tags,
     )
@@ -256,56 +252,41 @@ def build_run_requests(
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     return _build_run_requests_from_partitions_def_mapping(
-        _get_mappings_from_entity_subsets(entity_subsets, asset_graph),
+        _get_mapping_from_entity_subsets(entity_subsets, asset_graph),
         asset_graph,
         run_tags,
     )
 
 
 def _build_run_requests_from_partitions_def_mapping(
-    mappings: Tuple[_PartitionsDefKeyAssetKeyMapping, _AssetKeyCheckKeysMapping],
+    mapping: _PartitionsDefKeyMapping,
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
     run_requests = []
 
-    partitions_def_mapping, check_keys_to_execute_by_key = mappings
-
-    for (
-        partitions_def,
-        partition_key,
-    ), asset_keys in partitions_def_mapping.items():
+    for (partitions_def, partition_key), entity_keys in mapping.items():
         tags = {**(run_tags or {})}
         if partition_key is not None:
             if partitions_def is None:
-                check.failed("Partition key provided for unpartitioned asset")
+                check.failed("Partition key provided for unpartitioned entity")
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
-        for asset_keys_in_repo in asset_graph.split_asset_keys_by_repository(asset_keys):
-            # get all checks that are attached to a selected asset
-            asset_check_keys = set()
-            for ak in asset_keys_in_repo:
-                if ak in check_keys_to_execute_by_key:
-                    asset_check_keys.union(check_keys_to_execute_by_key[ak])
-                    del check_keys_to_execute_by_key[ak]
-
+        for entity_keys_for_repo in asset_graph.split_entity_keys_by_repository(entity_keys):
             run_requests.append(
                 # Do not call run_request.with_resolved_tags_and_config as the partition key is
                 # valid and there is no config.
                 # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
                 # checks for valid partition keys.
                 RunRequest(
-                    asset_selection=list(asset_keys_in_repo),
+                    asset_selection=[k for k in entity_keys_for_repo if isinstance(k, AssetKey)],
                     partition_key=partition_key,
                     tags=tags,
-                    asset_check_keys=list(asset_check_keys),
+                    asset_check_keys=[
+                        k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)
+                    ],
                 )
             )
-
-    # asset checks that are not being executed alongside any assets
-    remaining_check_keys = set().union(*check_keys_to_execute_by_key.values())
-    if remaining_check_keys:
-        run_requests.append(RunRequest(tags=run_tags, asset_check_keys=list(remaining_check_keys)))
 
     # We don't make public guarantees about sort order, but make an effort to provide a consistent
     # ordering that puts earlier time partitions before later time partitions. Note that, with dates

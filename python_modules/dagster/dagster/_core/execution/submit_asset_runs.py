@@ -60,22 +60,24 @@ def _get_job_execution_data_from_run_request(
     workspace: BaseWorkspaceRequestContext,
     run_request_execution_data_cache: Dict[int, RunRequestExecutionData],
 ) -> RunRequestExecutionData:
-    referenced_assets = list(
-        set(run_request.asset_selection or [])
-        | {asset_check_key.asset_key for asset_check_key in (run_request.asset_check_keys or [])}
+    check.invariant(
+        len(run_request.entity_keys) > 0,
+        "Expected RunRequest to have an asset selection or asset check keys",
     )
-    check.invariant(len(referenced_assets) > 0)
-    repo_handle = asset_graph.get_repository_handle(referenced_assets[0])
+    repo_handle = asset_graph.get_repository_handle(run_request.entity_keys[0])
     location_name = repo_handle.code_location_origin.location_name
-    job_name = _get_implicit_job_name_for_assets(asset_graph, referenced_assets)
+    job_name = (
+        _get_implicit_job_name_for_assets(asset_graph, run_request.asset_selection)
+        if run_request.asset_selection
+        # if we're only executing checks, then this must have been created after the single implicit
+        # asset job changes, so we don't need to do the more exhaustive check
+        else IMPLICIT_ASSET_JOB_NAME
+    )
     if job_name is None:
         check.failed(
             "Could not find an implicit asset job for the given assets:"
             f" {run_request.asset_selection}"
         )
-
-    if not referenced_assets:
-        check.failed("Expected RunRequest to have an asset selection or asset check keys")
 
     pipeline_selector = JobSubsetSelector(
         location_name=location_name,

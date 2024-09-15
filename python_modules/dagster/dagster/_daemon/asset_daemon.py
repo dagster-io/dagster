@@ -17,7 +17,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
@@ -938,13 +938,11 @@ class AssetDaemon(DagsterDaemon):
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
-            # for now, all asset checks are handled by a sensor that's targeted at their parent,
-            # so mold this into a shape AutomationTickEvaluationContext expects
+            # mold this into a shape AutomationTickEvaluationContext expects
             asset_selection = AssetSelection.keys(
-                *{
-                    key if isinstance(key, AssetKey) else key.asset_key
-                    for key in auto_materialize_entity_keys
-                }
+                *{key for key in auto_materialize_entity_keys if isinstance(key, AssetKey)}
+            ).without_checks() | AssetSelection.checks(
+                *{key for key in auto_materialize_entity_keys if isinstance(key, AssetCheckKey)}
             )
             run_requests, new_cursor, evaluations = AutomationTickEvaluationContext(
                 evaluation_id=evaluation_id,

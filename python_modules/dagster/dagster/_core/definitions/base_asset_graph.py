@@ -78,7 +78,7 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
 
     @property
     @abstractmethod
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]: ...
+    def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]: ...
 
     @property
     @abstractmethod
@@ -213,7 +213,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         return None
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]:
         return {}
 
     @property
@@ -364,7 +364,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return {a.group_name for a in self.asset_nodes if a.group_name is not None}
 
     def get_partition_mapping(
-        self, key: T_EntityKey, parent_asset_key: AssetKey
+        self, key: T_EntityKey, parent_asset_key: EntityKey
     ) -> PartitionMapping:
         node = self.get(key)
         return infer_partition_mapping(
@@ -800,10 +800,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
         return result, failed_reasons
 
-    def split_asset_keys_by_repository(
-        self, asset_keys: AbstractSet[AssetKey]
-    ) -> Sequence[AbstractSet[AssetKey]]:
-        return [asset_keys]
+    def split_entity_keys_by_repository(
+        self, keys: AbstractSet[EntityKey]
+    ) -> Sequence[AbstractSet[EntityKey]]:
+        return [keys]
 
     def __hash__(self) -> int:
         return id(self)
