@@ -22,7 +22,10 @@ class SigmaOrganization(ConfigurableResource):
 
     cloud_type: SigmaCloudType = Field(
         ...,
-        description="The cloud type for your Sigma organization, found under the Administration -> Account -> Site settings.",
+        description=(
+            "The cloud type for your Sigma organization, found under the Administration -> Account -> Site settings."
+            " See https://help.sigmacomputing.com/docs/region-warehouse-and-feature-support for more information."
+        ),
     )
     client_id: str = Field(..., description="A client ID with access to the Sigma API.")
     client_secret: str = Field(..., description="A client secret with access to the Sigma API.")
