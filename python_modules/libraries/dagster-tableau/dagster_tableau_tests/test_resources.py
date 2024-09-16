@@ -42,25 +42,25 @@ def test_basic_resource_request(
     # Must initialize the resource's client before passing it to the mock responses
     resource.build_client()
 
-    yield from workspace_data_api_mocks_fn(client=resource._client)
+    with workspace_data_api_mocks_fn(client=resource._client) as response:
 
-    # Remove the resource's client to properly test the resource
-    resource._client = None
+        # Remove the resource's client to properly test the resource
+        resource._client = None
 
-    @asset
-    def test_assets():
-        with resource.get_client() as client:
-            client.get_workbooks()
-            client.get_workbook(workbook_id=workbook_id)
+        @asset
+        def test_assets():
+            with resource.get_client() as client:
+                client.get_workbooks()
+                client.get_workbook(workbook_id=workbook_id)
 
-    with instance_for_test() as instance:
-        materialize(
-            [test_assets],
-            instance=instance,
-            resources={"tableau": resource},
-        )
+        with instance_for_test() as instance:
+            materialize(
+                [test_assets],
+                instance=instance,
+                resources={"tableau": resource},
+            )
 
-    assert len(responses.calls) == 4
-    assert "X-tableau-auth" not in responses.calls[0].request.headers
-    assert responses.calls[1].request.headers["X-tableau-auth"] == api_token
-    assert responses.calls[2].request.headers["X-tableau-auth"] == api_token
+        assert len(response.calls) == 4
+        assert "X-tableau-auth" not in response.calls[0].request.headers
+        assert response.calls[1].request.headers["X-tableau-auth"] == api_token
+        assert response.calls[2].request.headers["X-tableau-auth"] == api_token

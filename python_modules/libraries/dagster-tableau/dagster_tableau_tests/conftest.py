@@ -1,3 +1,4 @@
+import contextlib
 import uuid
 from typing import Callable, Iterator
 
@@ -5,19 +6,10 @@ import pytest
 import responses
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
-SAMPLE_WORKBOOK = {
-    "luid": "b75fc023-a7ca-4115-857b-4342028640d0",
-    "name": "Test Workbook",
-    "createdAt": "2024-09-05T21:33:26Z",
-    "updatedAt": "2024-09-13T00:15:27Z",
-    "uri": "sites/49445/workbooks/690496",
-    "sheets": [
-        {
-            "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
-        }
-    ],
+SAMPLE_DATA_SOURCE = {
+    "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
+    "name": "Superstore Datasource",
 }
-
 
 SAMPLE_VIEW = {
     "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
@@ -29,7 +21,7 @@ SAMPLE_VIEW = {
         {
             "parentPublishedDatasources": [
                 {
-                    "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
+                    **SAMPLE_DATA_SOURCE,
                 }
             ]
         }
@@ -37,11 +29,20 @@ SAMPLE_VIEW = {
     "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
 }
 
-
-SAMPLE_DATA_SOURCE = {
-    "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
-    "name": "Superstore Datasource",
+SAMPLE_WORKBOOK = {
+    "luid": "b75fc023-a7ca-4115-857b-4342028640d0",
+    "name": "Test Workbook",
+    "createdAt": "2024-09-05T21:33:26Z",
+    "updatedAt": "2024-09-13T00:15:27Z",
+    "uri": "sites/49445/workbooks/690496",
+    "sheets": [
+        {
+            **SAMPLE_VIEW,
+        }
+    ],
 }
+
+SAMPLE_WORKBOOKS = {"workbooks": {"workbook": [{"id": "b75fc023-a7ca-4115-857b-4342028640d0"}]}}
 
 
 @pytest.fixture(name="site_name")
@@ -92,6 +93,7 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
     name="workspace_data_api_mocks_fn",
 )
 def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: str) -> Callable:
+    @contextlib.contextmanager
     def _method(
         client,
         site_id: str = site_id,
@@ -108,16 +110,13 @@ def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: 
             response.add(
                 method=responses.GET,
                 url=f"{client.rest_api_base_url}/sites/{site_id}/workbooks",
-                json={},
+                json=SAMPLE_WORKBOOKS,
                 status=200,
             )
             response.add(
                 method=responses.POST,
                 url=f"{client.metadata_api_base_url}",
-                json={
-                    "query": client.workbook_graphql_query,
-                    "variables": {"luid": workbook_id},
-                },
+                json={"data": {"workbooks": [SAMPLE_WORKBOOK]}},
                 status=200,
             )
             response.add(
@@ -127,6 +126,6 @@ def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: 
                 status=200,
             )
 
-            yield
+            yield response
 
     return _method
