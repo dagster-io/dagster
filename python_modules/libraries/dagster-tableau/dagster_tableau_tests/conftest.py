@@ -4,13 +4,15 @@ from typing import Callable, Iterator
 
 import pytest
 import responses
-from dagster_tableau.resources import TABLEAU_REST_API_VERSION
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
-FAKE_PERSONAL_ACCESS_TOKEN_NAME = "fake_pat"
-FAKE_PERSONAL_ACCESS_TOKEN_VALUE = uuid.uuid4().hex
+FAKE_CONNECTED_APP_CLIENT_ID = uuid.uuid4().hex
+FAKE_CONNECTED_APP_SECRET_ID = uuid.uuid4().hex
+FAKE_CONNECTED_APP_SECRET_VALUE = uuid.uuid4().hex
+FAKE_USERNAME = "fake_username"
 FAKE_SITE_NAME = "fake_site_name"
 FAKE_POD_NAME = "fake_pod_name"
+
 
 SAMPLE_DATA_SOURCE = {
     "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
@@ -98,12 +100,11 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
 @pytest.fixture(
     name="workspace_data_api_mocks_fn",
 )
-def workspace_data_api_mocks_fn_fixture(site_id: str, workbook_id: str, api_token: str) -> Callable:
+def workspace_data_api_mocks_fn_fixture(site_id: str, api_token: str) -> Callable:
     @contextlib.contextmanager
     def _method(
         client,
         site_id: str = site_id,
-        workbook_id: str = workbook_id,
         api_token: str = api_token,
     ) -> Iterator[responses.RequestsMock]:
         with responses.RequestsMock() as response:
@@ -128,23 +129,9 @@ def workspace_data_api_mocks_fn_fixture(site_id: str, workbook_id: str, api_toke
             response.add(
                 method=responses.POST,
                 url=f"{client.rest_api_base_url}/auth/signout",
-                json={},
-                url=f"{api_base_url}/auth/signout",
                 status=200,
             )
 
             yield response
 
     return _method
-
-
-@pytest.fixture(
-    name="workspace_data_api_mocks_pending_repo",
-)
-def workspace_data_api_mocks_pending_repo_fixture(
-    workspace_data_api_mocks_fn: Callable,
-) -> Iterator[responses.RequestsMock]:
-    yield from workspace_data_api_mocks_fn(
-        api_base_url=f"https://{FAKE_POD_NAME}.online.tableau.com/api/{TABLEAU_API_VERSION}",
-        site_id="None",
-    )

@@ -61,17 +61,17 @@ class TableauWorkspaceData:
         return cls(
             site_name=site_name,
             workbooks_by_id={
-                workbook.properties["id"]: workbook
+                workbook.properties["luid"]: workbook
                 for workbook in content_data
                 if workbook.content_type == TableauContentType.WORKBOOK
             },
             views_by_id={
-                view.properties["id"]: view
+                view.properties["luid"]: view
                 for view in content_data
                 if view.content_type == TableauContentType.VIEW
             },
             data_sources_by_id={
-                data_source.properties["id"]: data_source
+                data_source.properties["luid"]: data_source
                 for data_source in content_data
                 if data_source.content_type == TableauContentType.DATA_SOURCE
             },

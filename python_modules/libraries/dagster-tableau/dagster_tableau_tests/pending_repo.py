@@ -8,22 +8,24 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster_tableau import TableauCloudWorkspace
 
 from dagster_tableau_tests.conftest import (
-    FAKE_PERSONAL_ACCESS_TOKEN_NAME,
-    FAKE_PERSONAL_ACCESS_TOKEN_VALUE,
+    FAKE_CONNECTED_APP_CLIENT_ID,
+    FAKE_CONNECTED_APP_SECRET_ID,
+    FAKE_CONNECTED_APP_SECRET_VALUE,
     FAKE_POD_NAME,
     FAKE_SITE_NAME,
+    FAKE_USERNAME,
 )
 
 resource = TableauCloudWorkspace(
-    personal_access_token_name=FAKE_PERSONAL_ACCESS_TOKEN_NAME,
-    personal_access_token_value=FAKE_PERSONAL_ACCESS_TOKEN_VALUE,
+    connected_app_client_id=FAKE_CONNECTED_APP_CLIENT_ID,
+    connected_app_secret_id=FAKE_CONNECTED_APP_SECRET_ID,
+    connected_app_secret_value=FAKE_CONNECTED_APP_SECRET_VALUE,
+    username=FAKE_USERNAME,
     site_name=FAKE_SITE_NAME,
     pod_name=FAKE_POD_NAME,
 )
 
-resource.sign_in()
 pbi_defs = resource.build_defs()
-resource.sign_out()
 
 
 @asset
