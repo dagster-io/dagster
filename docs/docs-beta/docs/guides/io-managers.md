@@ -6,8 +6,17 @@ sidebar_label: "I/O managers"
 
 I/O managers in Dagster provide a way to separate the code that's responsible for logical data transformation from the code that's responsible for reading and writing the results.  This can help reduce boiler plate code and make it easy to swap out where your data is stored.
 
+In many Dagster pipelines, assets can be broken down as the following steps:
+
+1. Reading data from some data store into memory
+2. Applying some in-memory transform
+3. Writing the transformed data to some data store
+
+Using an I/O manager can help simplify the code responsible for reading and writing the data to and from a data source for assets that follow this pattern.
+
 <details>
 <summary>Prerequisites</summary>
+To follow the steps in this guide, you'll need:
 
 - Familiarity with [Assets](/concepts/assets)
 - Familiarity with [Resources](/concepts/resources)
@@ -15,16 +24,9 @@ I/O managers in Dagster provide a way to separate the code that's responsible fo
 
 ## Extract I/O logic from an asset into a reusable I/O manager
 
-In many Dagster pipelines, assets can be broken down as the following steps:
-1. reading data from some data store into memory
-2. applying some in-memory transform
-3. writing the transformed data to some data store
-
-Using an I/O manager can help simplify the code responsible for reading and writing the data to and from a data source for assets that follow this pattern.
-
 For example, both assets in the code below are constructing a DuckDB connection object, reading from an upstream table, applying some in-memory transform, and then writing the transformed result into a new table in DuckDB.
 
-<CodeExample filePath="guides/external-systems/assets-without-io-managers.py" language="python" title="Assets without I/O managers" />
+<CodeExample filePath="guides/external-systems/assets-without-io-managers.py" language="python" />
 
 To switch to using I/O managers, we can use the DuckDB / Pandas I/O manager provided by the  `dagster_duckdb_pandas` package.  The I/O manager will be used to read and write data instead of the `DuckDBResource`.
 
@@ -36,7 +38,6 @@ Refer to the individual I/O manager documentation for details on valid types and
 
 <CodeExample filePath="guides/external-systems/assets-with-io-managers.py" language="python" title="Assets with I/O managers" />
 
-
 ## Swapping data stores
 
 With I/O managers, swapping data stores consists of changing the implementation of the I/O manager resource. The asset definitions, which only contain transformational logic, won't need to change.
@@ -44,3 +45,5 @@ With I/O managers, swapping data stores consists of changing the implementation 
 <CodeExample filePath="guides/external-systems/assets-with-snowflake-io-manager.py" language="python" title="Assets with Snowflake I/O manager" />
 
 Dagster offers built-in [library implementations for I/O managers](/todo) for popular data stores and in-memory formats.
+
+## Next steps
