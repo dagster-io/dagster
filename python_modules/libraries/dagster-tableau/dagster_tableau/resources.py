@@ -6,8 +6,8 @@ from typing import Mapping, Optional, Union
 
 import jwt
 import requests
-from dagster._annotations import experimental
 from dagster import ConfigurableResource, InitResourceContext
+from dagster._annotations import experimental
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 
