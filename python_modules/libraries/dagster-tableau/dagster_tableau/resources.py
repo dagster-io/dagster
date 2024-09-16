@@ -299,8 +299,10 @@ class BaseTableauWorkspace(ConfigurableResource):
         if not self._client:
             self.build_client()
         self._client.sign_in()
-        yield self._client
-        self._client.sign_out()
+        try:
+            yield self._client
+        finally:
+            self._client.sign_out()
 
     def fetch_tableau_workspace_data(
         self,
@@ -483,7 +485,7 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
             ],
             resource_defs={"tableau": self._workspace.get_resource_definition()},
         )
-        def _assets(context, tableau: BaseTableauWorkspace):
+        def _assets(tableau: BaseTableauWorkspace):
             with tableau.get_client() as client:
                 for view_id in workspace_data.views_by_id.keys():
                     data = client.get_view(view_id)["view"]
