@@ -1,4 +1,4 @@
-import {Box, Button, Icon, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Skeleton, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -11,7 +11,7 @@ import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 import {AssetGroup} from '../AssetGraphExplorer';
-import {GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
+import {AssetGraphViewType, GraphData, GraphNode, groupIdForNode, tokenForAssetKey} from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
 const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
@@ -26,8 +26,9 @@ export const AssetGraphExplorerSidebar = React.memo(
     onChangeExplorerPath,
     allAssetKeys,
     hideSidebar,
-    isGlobalGraph,
+    viewType,
     onFilterToGroup,
+    loading,
   }: {
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
@@ -39,8 +40,9 @@ export const AssetGraphExplorerSidebar = React.memo(
     expandedGroups: string[];
     setExpandedGroups: (a: string[]) => void;
     hideSidebar: () => void;
-    isGlobalGraph: boolean;
+    viewType: AssetGraphViewType;
     onFilterToGroup: (group: AssetGroup) => void;
+    loading: boolean;
   }) => {
     const lastSelectedNode = selectedNodes[selectedNodes.length - 1];
     // In the empty stay when no query is typed use the full asset graph data to populate the sidebar
@@ -86,7 +88,7 @@ export const AssetGraphExplorerSidebar = React.memo(
     const [openNodes, setOpenNodes] = useQueryAndLocalStoragePersistedState<Set<string>>({
       // include pathname so that theres separate storage entries for graphs at different URLs
       // eg. independent group graph should persist open nodes separately
-      localStorageKey: `asset-graph-open-sidebar-nodes-${isGlobalGraph}-${explorerPath.pipelineName}`,
+      localStorageKey: `asset-graph-open-sidebar-nodes-${viewType}-${explorerPath.pipelineName}`,
       encode: (val) => {
         return {'open-nodes': Array.from(val)};
       },
@@ -210,11 +212,11 @@ export const AssetGraphExplorerSidebar = React.memo(
     const {nav} = React.useContext(LayoutContext);
 
     React.useEffect(() => {
-      if (isGlobalGraph) {
+      if (viewType === 'global') {
         nav.close();
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isGlobalGraph]);
+    }, [viewType]);
 
     const containerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -320,81 +322,91 @@ export const AssetGraphExplorerSidebar = React.memo(
           </Tooltip>
         </Box>
         <div>
-          <Container
-            ref={containerRef}
-            onKeyDown={(e) => {
-              let nextIndex = 0;
-              if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
-                nextIndex = indexOfLastSelectedNodeRef.current + (e.code === 'ArrowDown' ? 1 : -1);
-                indexOfLastSelectedNodeRef.current = nextIndex;
-                e.preventDefault();
-                const nextNode =
-                  renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
-                setSelectedNode(nextNode);
-                selectNode(e, nextNode.id);
-              } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
-                const open = e.code === 'ArrowRight';
-                const node = renderedNodes[indexOfLastSelectedNode];
-                if (!node || 'path' in node) {
-                  return;
-                }
-                setOpenNodes((nodes) => {
-                  const openNodes = new Set(nodes);
-                  if (open) {
-                    openNodes.add(nodePathKey(node));
-                  } else {
-                    openNodes.delete(nodePathKey(node));
+          {loading ? (
+            <Box flex={{direction: 'column', gap: 9}} padding={12}>
+              <Skeleton $height={21} $width="50%" />
+              <Skeleton $height={21} $width="80%" />
+              <Skeleton $height={21} $width="65%" />
+              <Skeleton $height={21} $width="90%" />
+            </Box>
+          ) : (
+            <Container
+              ref={containerRef}
+              onKeyDown={(e) => {
+                let nextIndex = 0;
+                if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+                  nextIndex =
+                    indexOfLastSelectedNodeRef.current + (e.code === 'ArrowDown' ? 1 : -1);
+                  indexOfLastSelectedNodeRef.current = nextIndex;
+                  e.preventDefault();
+                  const nextNode =
+                    renderedNodes[(nextIndex + renderedNodes.length) % renderedNodes.length]!;
+                  setSelectedNode(nextNode);
+                  selectNode(e, nextNode.id);
+                } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                  const open = e.code === 'ArrowRight';
+                  const node = renderedNodes[indexOfLastSelectedNode];
+                  if (!node || 'path' in node) {
+                    return;
                   }
-                  return openNodes;
-                });
-              }
-            }}
-          >
-            <Inner $totalHeight={totalHeight}>
-              {items.map(({index, key, size, start}) => {
-                const node = renderedNodes[index]!;
-                const isCodelocationNode = 'locationName' in node;
-                const isGroupNode = 'groupNode' in node;
-                const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
-                const isSelected =
-                  selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
-                return (
-                  <Row $height={size} $start={start} key={key} data-key={key}>
-                    <AssetSidebarNode
-                      isOpen={openNodes.has(nodePathKey(node))}
-                      fullAssetGraphData={fullAssetGraphData}
-                      node={row!}
-                      level={node.level}
-                      isLastSelected={lastSelectedNode?.id === node.id}
-                      isSelected={isSelected}
-                      toggleOpen={() => {
-                        setOpenNodes((nodes) => {
-                          const openNodes = new Set(nodes);
-                          const isOpen = openNodes.has(nodePathKey(node));
-                          if (isOpen) {
-                            openNodes.delete(nodePathKey(node));
-                          } else {
-                            openNodes.add(nodePathKey(node));
-                          }
-                          return openNodes;
-                        });
-                      }}
-                      selectNode={(e, id) => {
-                        selectNode(e, id);
-                      }}
-                      selectThisNode={(e) => {
-                        setSelectedNode(node);
-                        selectNode(e, node.id);
-                      }}
-                      explorerPath={explorerPath}
-                      onChangeExplorerPath={onChangeExplorerPath}
-                      onFilterToGroup={onFilterToGroup}
-                    />
-                  </Row>
-                );
-              })}
-            </Inner>
-          </Container>
+                  setOpenNodes((nodes) => {
+                    const openNodes = new Set(nodes);
+                    if (open) {
+                      openNodes.add(nodePathKey(node));
+                    } else {
+                      openNodes.delete(nodePathKey(node));
+                    }
+                    return openNodes;
+                  });
+                }
+              }}
+            >
+              <Inner $totalHeight={totalHeight}>
+                {items.map(({index, key, size, start}) => {
+                  const node = renderedNodes[index]!;
+                  const isCodelocationNode = 'locationName' in node;
+                  const isGroupNode = 'groupNode' in node;
+                  const row = !isCodelocationNode && !isGroupNode ? graphData.nodes[node.id] : node;
+                  const isSelected =
+                    selectedNode?.id === node.id || selectedNodes.includes(row as GraphNode);
+                  return (
+                    <Row $height={size} $start={start} key={key} data-key={key}>
+                      <AssetSidebarNode
+                        isOpen={openNodes.has(nodePathKey(node))}
+                        fullAssetGraphData={fullAssetGraphData}
+                        node={row!}
+                        level={node.level}
+                        isLastSelected={lastSelectedNode?.id === node.id}
+                        isSelected={isSelected}
+                        toggleOpen={() => {
+                          setOpenNodes((nodes) => {
+                            const openNodes = new Set(nodes);
+                            const isOpen = openNodes.has(nodePathKey(node));
+                            if (isOpen) {
+                              openNodes.delete(nodePathKey(node));
+                            } else {
+                              openNodes.add(nodePathKey(node));
+                            }
+                            return openNodes;
+                          });
+                        }}
+                        selectNode={(e, id) => {
+                          selectNode(e, id);
+                        }}
+                        selectThisNode={(e) => {
+                          setSelectedNode(node);
+                          selectNode(e, node.id);
+                        }}
+                        explorerPath={explorerPath}
+                        onChangeExplorerPath={onChangeExplorerPath}
+                        onFilterToGroup={onFilterToGroup}
+                      />
+                    </Row>
+                  );
+                })}
+              </Inner>
+            </Container>
+          )}
         </div>
       </div>
     );

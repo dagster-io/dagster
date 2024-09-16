@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -15,8 +15,11 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import (
     resolve_automation_condition,
     validate_asset_owner,
+    validate_group_name,
     validate_tags_strict,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.tags import KIND_PREFIX
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
 
@@ -146,9 +149,15 @@ class AssetSpec(
         key = AssetKey.from_coercible(key)
         asset_deps = coerce_to_deps_and_check_duplicates(deps, key)
 
+        validate_group_name(group_name)
+
         owners = check.opt_sequence_param(owners, "owners", of_type=str)
         for owner in owners:
             validate_asset_owner(owner, key)
+
+        kind_tags = {tag_key for tag_key in (tags or {}).keys() if tag_key.startswith(KIND_PREFIX)}
+        if kind_tags is not None and len(kind_tags) > 3:
+            raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
 
         return super().__new__(
             cls,
@@ -225,3 +234,7 @@ class AssetSpec(
             if self.automation_condition
             else None
         )
+
+    @cached_property
+    def kinds(self) -> Set[str]:
+        return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}

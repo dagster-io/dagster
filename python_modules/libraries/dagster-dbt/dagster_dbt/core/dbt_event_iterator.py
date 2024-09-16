@@ -13,11 +13,11 @@ from dagster import (
 from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterInvalidPropertyError
+from dagster._core.utils import exhaust_iterator_and_yield_results_with_exception, imap
 from typing_extensions import TypeVar
 
 from dagster_dbt.asset_utils import default_metadata_from_dbt_resource_props
 from dagster_dbt.core.dbt_cli_event import EventHistoryMetadata, _build_column_lineage_metadata
-from dagster_dbt.core.utils import exhaust_iterator_and_yield_results_with_exception, imap
 
 if TYPE_CHECKING:
     from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation
@@ -277,14 +277,14 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         # opening multiple connections to the same database when a write connection, such
         # as the one dbt uses, is open.
         event_stream = self
-        try:
+        if (
+            self._dbt_cli_invocation.adapter
+            and self._dbt_cli_invocation.adapter.__class__.__name__ == "DuckDBAdapter"
+        ):
             from dbt.adapters.duckdb import DuckDBAdapter
 
             if isinstance(self._dbt_cli_invocation.adapter, DuckDBAdapter):
                 event_stream = exhaust_iterator_and_yield_results_with_exception(self)
-
-        except ImportError:
-            pass
 
         def _threadpool_wrap_map_fn() -> (
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]

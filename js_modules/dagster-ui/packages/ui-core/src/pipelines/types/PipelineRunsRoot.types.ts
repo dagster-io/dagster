@@ -59,3 +59,5 @@ export type PipelineRunsRootQuery = {
         }>;
       };
 };
+
+export const PipelineRunsRootQueryVersion = '1bd4f2bf438e93ad548322f890922479027e7636517b360fd8910a12600c5f95';

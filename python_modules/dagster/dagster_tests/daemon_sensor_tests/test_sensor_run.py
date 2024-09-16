@@ -2632,7 +2632,7 @@ def test_status_in_code_sensor(executor, instance):
         instance=instance,
     ) as workspace_context:
         external_repo = next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location.get_repository("the_status_in_code_repo")
 
         with freeze_time(freeze_datetime):
@@ -2907,7 +2907,9 @@ def test_repository_namespacing(executor):
         )
 
         full_location = next(
-            iter(full_workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(
+                full_workspace_context.create_request_context().get_code_location_entries().values()
+            )
         ).code_location
         external_repo = full_location.get_repository("the_repo")
         other_repo = full_location.get_repository("the_other_repo")

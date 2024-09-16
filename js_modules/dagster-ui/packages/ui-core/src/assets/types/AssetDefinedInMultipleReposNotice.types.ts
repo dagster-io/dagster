@@ -19,3 +19,5 @@ export type AssetDefinitionCollisionQuery = {
     }>;
   }>;
 };
+
+export const AssetDefinitionCollisionQueryVersion = '84027ea05480797a69eb150ce07ac7dfd40d6007a8107f90a6c558cf3a2662f5';

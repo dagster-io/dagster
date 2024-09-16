@@ -661,6 +661,7 @@ type AssetNode {
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   tags: [DefinitionTag!]!
+  kinds: [String!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
@@ -1523,6 +1524,7 @@ type WorkspaceLocationEntry {
   loadStatus: RepositoryLocationLoadStatus!
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
 }
@@ -3367,6 +3369,7 @@ type WorkspaceLocationStatusEntry {
   name: String!
   loadStatus: RepositoryLocationLoadStatus!
   updateTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
 }
 

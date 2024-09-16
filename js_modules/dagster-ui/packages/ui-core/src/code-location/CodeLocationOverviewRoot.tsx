@@ -9,20 +9,23 @@ import {
   Table,
 } from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
+import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
 import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
 import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
-import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
-import {WorkspaceContext, WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext';
+import {
+  WorkspaceContext,
+  WorkspaceRepositoryLocationNode,
+} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {LocationStatusEntryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {LocationStatusEntryFragment} from '../workspace/types/WorkspaceQueries.types';
 
 const RIGHT_COLUMN_WIDTH = '280px';
 
@@ -97,7 +100,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           ) : null}
         </tbody>
       </Table>
-      <CodeLocationServerSection />
+      <CodeLocationServerSection locationName={repoAddress.location} />
       {libraryVersions?.length ? (
         <>
           <CodeLocationOverviewSectionHeader label="Libraries" />

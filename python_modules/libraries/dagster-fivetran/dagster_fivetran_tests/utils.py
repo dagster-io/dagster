@@ -249,3 +249,32 @@ def get_sample_destination_details_response():
             "config": {"database": "example_database"},
         }
     }
+
+
+def get_sample_columns_response():
+    return {
+        "columns": {
+            "column_1": {
+                "name_in_destination": "column_1",
+                "enabled": True,
+                "hashed": False,
+                "enabled_patch_settings": {
+                    "allowed": False,
+                    "reason_code": "SYSTEM_COLUMN",
+                    "reason": ("The column does not support exclusion as it is a" " Primary Key"),
+                },
+            },
+            "column_2": {
+                "name_in_destination": "column_2_renamed",
+                "enabled": True,
+                "hashed": False,
+                "enabled_patch_settings": {"allowed": True},
+            },
+            "column_3": {
+                "name_in_destination": "column_3",
+                "enabled": True,
+                "hashed": True,
+                "enabled_patch_settings": {"allowed": True},
+            },
+        },
+    }

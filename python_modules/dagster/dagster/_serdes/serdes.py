@@ -477,6 +477,7 @@ class UnpackContext:
     def clear_ignored_unknown_values(self, obj: T) -> T:
         if isinstance(obj, UnknownSerdesValue):
             self.observed_unknown_serdes_values.discard(obj)
+            self.clear_ignored_unknown_values(obj.value)
         elif isinstance(obj, (list, set, frozenset)):
             for inner in obj:
                 self.clear_ignored_unknown_values(inner)

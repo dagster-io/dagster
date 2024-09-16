@@ -760,3 +760,5 @@ export type AssetEventsQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const AssetEventsQueryVersion = 'e8ff6854e6cfcd19485a2c33aa4db5c3b12fc7d0696b76279ff777001bca18e0';

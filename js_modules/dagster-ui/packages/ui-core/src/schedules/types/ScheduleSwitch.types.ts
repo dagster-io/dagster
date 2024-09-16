@@ -36,3 +36,5 @@ export type ScheduleStateQuery = {
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const ScheduleStateQueryVersion = '75bc752d4f1df0fc2829736c14a4c2f707981571eb83a9139fa7048d202b3491';

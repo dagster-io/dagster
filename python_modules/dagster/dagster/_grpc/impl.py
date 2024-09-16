@@ -448,9 +448,7 @@ def get_partition_config(
 
 
 def get_partition_names(
-    repo_def: RepositoryDefinition,
-    job_name: str,
-    selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    repo_def: RepositoryDefinition, job_name: str
 ) -> Union[ExternalPartitionNamesData, ExternalPartitionExecutionErrorData]:
     try:
         job_def = repo_def.get_job(job_name)
@@ -463,7 +461,7 @@ def get_partition_names(
             ),
         ):
             return ExternalPartitionNamesData(
-                partition_names=job_def.get_partition_keys(selected_asset_keys)
+                partition_names=job_def.get_partition_keys(selected_asset_keys=None)
             )
     except Exception:
         return ExternalPartitionExecutionErrorData(
@@ -475,7 +473,6 @@ def get_partition_tags(
     repo_def: RepositoryDefinition,
     job_name: str,
     partition_name: str,
-    selected_asset_keys: Optional[AbstractSet[AssetKey]],
     instance_ref: Optional[InstanceRef] = None,
 ) -> Union[ExternalPartitionTagsData, ExternalPartitionExecutionErrorData]:
     try:
@@ -488,9 +485,7 @@ def get_partition_tags(
                 f" partitioned config on job '{job_def.name}'"
             ),
         ):
-            tags = job_def.get_tags_for_partition_key(
-                partition_name, selected_asset_keys=selected_asset_keys
-            )
+            tags = job_def.get_tags_for_partition_key(partition_name, selected_asset_keys=None)
             return ExternalPartitionTagsData(name=partition_name, tags=tags)
 
     except Exception:

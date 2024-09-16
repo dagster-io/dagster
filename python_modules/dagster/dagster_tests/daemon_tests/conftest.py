@@ -63,7 +63,7 @@ def external_repo_fixture(
     yield cast(
         CodeLocation,
         next(
-            iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location,
     ).get_repository("the_repo")
 

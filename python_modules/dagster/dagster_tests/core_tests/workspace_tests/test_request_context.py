@@ -4,50 +4,60 @@ from unittest import mock
 
 import pytest
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
+from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.feature_flags import (
     CodeLocationFeatureFlags,
     get_feature_flags_for_location,
 )
 from dagster._core.remote_representation.origin import RegisteredCodeLocationOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
+    WorkspaceSnapshot,
+)
 from dagster._utils.error import SerializableErrorInfo
 
 
 @pytest.fixture
-def workspace_request_context():
-    mock_loc = mock.MagicMock()
+def workspace_request_context() -> WorkspaceRequestContext:
+    mock_loc = mock.MagicMock(spec=CodeLocation)
 
     error_info = SerializableErrorInfo(message="oopsie", stack=[], cls_name="Exception")
-
+    now = time.time()
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
-        workspace_snapshot={
-            "loading_loc": CodeLocationEntry(
-                origin=RegisteredCodeLocationOrigin("loading_loc"),
-                code_location=None,
-                load_error=None,
-                load_status=CodeLocationLoadStatus.LOADING,
-                display_metadata={},
-                update_timestamp=time.time(),
-            ),
-            "loaded_loc": CodeLocationEntry(
-                origin=RegisteredCodeLocationOrigin("loaded_loc"),
-                code_location=mock_loc,
-                load_error=None,
-                load_status=CodeLocationLoadStatus.LOADED,
-                display_metadata={},
-                update_timestamp=time.time(),
-            ),
-            "error_loc": CodeLocationEntry(
-                origin=RegisteredCodeLocationOrigin("error_loc"),
-                code_location=None,
-                load_error=error_info,
-                load_status=CodeLocationLoadStatus.LOADED,
-                display_metadata={},
-                update_timestamp=time.time(),
-            ),
-        },
+        workspace_snapshot=WorkspaceSnapshot(
+            code_location_entries={
+                "loading_loc": CodeLocationEntry(
+                    origin=RegisteredCodeLocationOrigin("loading_loc"),
+                    code_location=None,
+                    load_error=None,
+                    load_status=CodeLocationLoadStatus.LOADING,
+                    display_metadata={},
+                    update_timestamp=now,
+                    version_key=str(now),
+                ),
+                "loaded_loc": CodeLocationEntry(
+                    origin=RegisteredCodeLocationOrigin("loaded_loc"),
+                    code_location=mock_loc,
+                    load_error=None,
+                    load_status=CodeLocationLoadStatus.LOADED,
+                    display_metadata={},
+                    update_timestamp=now,
+                    version_key=str(now),
+                ),
+                "error_loc": CodeLocationEntry(
+                    origin=RegisteredCodeLocationOrigin("error_loc"),
+                    code_location=None,
+                    load_error=error_info,
+                    load_status=CodeLocationLoadStatus.LOADED,
+                    display_metadata={},
+                    update_timestamp=now,
+                    version_key=str(now),
+                ),
+            }
+        ),
         process_context=mock.MagicMock(),
         version=None,
         source=None,
@@ -74,7 +84,7 @@ def test_get_code_location(workspace_request_context):
 
 
 def _location_with_mocked_versions(dagster_library_versions: Mapping[str, str]):
-    code_location = mock.MagicMock()
+    code_location = mock.MagicMock(spec=CodeLocation)
     code_location.get_dagster_library_versions = mock.MagicMock(
         return_value=dagster_library_versions
     )
@@ -86,11 +96,12 @@ def _location_with_mocked_versions(dagster_library_versions: Mapping[str, str]):
         load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},
         update_timestamp=time.time(),
+        version_key="test",
     )
 
 
 def test_feature_flags(workspace_request_context):
-    workspace_snapshot = workspace_request_context.get_workspace_snapshot()
+    workspace_snapshot = workspace_request_context.get_code_location_entries()
 
     error_loc = workspace_snapshot["error_loc"]
     assert get_feature_flags_for_location(error_loc) == {

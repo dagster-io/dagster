@@ -7,8 +7,10 @@ from dagster import (
     AssetObservation,
     AssetSpec,
     Definitions,
+    SensorEvaluationContext,
     SensorResult,
     build_sensor_context,
+    multi_asset,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetMaterialization
@@ -27,8 +29,11 @@ def strip_to_first_of_month(dt: datetime) -> datetime:
 def fully_loaded_repo_from_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
+    create_runs: bool = True,
 ) -> RepositoryDefinition:
-    defs = build_definitions_airflow_asset_graph(assets_per_task, additional_defs=additional_defs)
+    defs = build_definitions_airflow_asset_graph(
+        assets_per_task, additional_defs=additional_defs, create_runs=create_runs
+    )
     repo_def = defs.get_repository_def()
     repo_def.load_all_definitions()
     return repo_def
@@ -37,23 +42,31 @@ def fully_loaded_repo_from_airflow_asset_graph(
 def build_definitions_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
+    create_runs: bool = True,
+    create_assets_defs: bool = True,
 ) -> Definitions:
-    specs = []
+    assets = []
     dag_and_task_structure = defaultdict(list)
     for dag_id, task_structure in assets_per_task.items():
         for task_id, asset_structure in task_structure.items():
             dag_and_task_structure[dag_id].append(task_id)
             for asset_key, deps in asset_structure:
-                specs.append(
-                    AssetSpec(
-                        asset_key,
-                        deps=deps,
-                        tags={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
-                    )
+                spec = AssetSpec(
+                    asset_key,
+                    deps=deps,
+                    metadata={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
                 )
-    instance = make_instance(
-        dag_and_task_structure=dag_and_task_structure,
-        dag_runs=[
+                if create_assets_defs:
+
+                    @multi_asset(specs=[spec])
+                    def _asset():
+                        return None
+
+                    assets.append(_asset)
+                else:
+                    assets.append(spec)
+    runs = (
+        [
             make_dag_run(
                 dag_id=dag_id,
                 run_id=f"run-{dag_id}",
@@ -61,11 +74,17 @@ def build_definitions_airflow_asset_graph(
                 end_date=get_current_datetime(),
             )
             for dag_id in dag_and_task_structure.keys()
-        ],
+        ]
+        if create_runs
+        else []
+    )
+    instance = make_instance(
+        dag_and_task_structure=dag_and_task_structure,
+        dag_runs=runs,
     )
     defs = Definitions.merge(
         additional_defs,
-        Definitions(assets=specs),
+        Definitions(assets=assets),
     )
     return build_defs_from_airflow_instance(instance, defs=defs)
 
@@ -73,7 +92,7 @@ def build_definitions_airflow_asset_graph(
 def build_and_invoke_sensor(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
-) -> SensorResult:
+) -> Tuple[SensorResult, SensorEvaluationContext]:
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
         assets_per_task, additional_defs=additional_defs
     )
@@ -81,7 +100,7 @@ def build_and_invoke_sensor(
     context = build_sensor_context(repository_def=repo_def)
     result = sensor(context)
     assert isinstance(result, SensorResult)
-    return result
+    return result, context
 
 
 def assert_expected_key_order(

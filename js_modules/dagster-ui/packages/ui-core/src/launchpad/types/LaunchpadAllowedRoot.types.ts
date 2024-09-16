@@ -98,3 +98,5 @@ export type LaunchpadSessionPipelineFragment = {
   }>;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
+
+export const LaunchpadRootQueryVersion = '0ce31bd283202c8126b2d0a64ceda9eceeb212f56f0fd3a0af255026121b4f6e';

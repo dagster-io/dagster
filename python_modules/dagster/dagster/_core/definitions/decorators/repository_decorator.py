@@ -22,6 +22,9 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
+from dagster._core.definitions.metadata.metadata_value import (
+    CodeLocationReconstructionMetadataValue,
+)
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -59,7 +62,7 @@ class _Repository:
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -118,7 +121,17 @@ class _Repository:
         if isinstance(repository_definitions, list):
             bad_defns = []
             repository_defns = []
-            defer_repository_data = False
+            # If any CodeLocationReconstructionMetadataValue is present, then it was set during code location
+            # construction and needs to be injected on reconstruction via RepositoryLoadData, so
+            # defer.
+            #
+            # This will be removed when we cut PendingRepositoryDefinition out of the loop for
+            # reconstruction metadata, tracking here:
+            #   https://linear.app/dagster-labs/issue/FOU-401/cut-pendingrepositorydefinition-out-of-the-loop-for-reconstruction
+            defer_repository_data = any(
+                isinstance(value, CodeLocationReconstructionMetadataValue)
+                for value in self.metadata.values()
+            )
             for i, definition in enumerate(_flatten(repository_definitions)):
                 if isinstance(definition, CacheableAssetsDefinition):
                     defer_repository_data = True
@@ -228,7 +241,7 @@ def repository(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    metadata: Optional[Dict[str, RawMetadataValue]] = ...,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
@@ -245,7 +258,7 @@ def repository(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    metadata: Optional[Dict[str, RawMetadataValue]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -280,7 +293,8 @@ def repository(
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
             function.
         description (Optional[str]): A string description of the repository.
-        metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository.
+        metadata (Optional[Dict[str, RawMetadataValue]]): Arbitrary metadata for the repository. Not
+            displayed in the UI but accessible on RepositoryDefinition at runtime.
         top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
             resource keys to defintions, for resources which should be displayed in the UI.
 

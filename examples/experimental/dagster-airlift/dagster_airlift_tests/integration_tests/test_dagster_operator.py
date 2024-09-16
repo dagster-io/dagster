@@ -14,8 +14,8 @@ def dags_dir() -> Path:
 
 
 @pytest.fixture(name="dagster_defs_path")
-def dagster_defs_path() -> Path:
-    return Path(__file__).parent / "operator_test_project" / "dagster_defs.py"
+def dagster_defs_path_fixture() -> str:
+    return str(Path(__file__).parent / "operator_test_project" / "dagster_defs.py")
 
 
 def test_dagster_operator(airflow_instance: None, dagster_dev: None, dagster_home: str) -> None:

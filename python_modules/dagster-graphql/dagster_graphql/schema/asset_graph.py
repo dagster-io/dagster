@@ -33,6 +33,7 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -300,6 +301,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     tags = non_null_list(GrapheneDefinitionTag)
+    kinds = non_null_list(graphene.String)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
     opNames = non_null_list(graphene.String)
@@ -1212,6 +1214,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [
             GrapheneDefinitionTag(key, value)
             for key, value in (self._external_asset_node.tags or {}).items()
+        ]
+
+    def resolve_kinds(self, _graphene_info: ResolveInfo) -> Sequence[str]:
+        if self._external_asset_node.compute_kind:
+            return [self._external_asset_node.compute_kind]
+
+        return [
+            key[len(KIND_PREFIX) :]
+            for key in (self._external_asset_node.tags or {}).keys()
+            if key.startswith(KIND_PREFIX)
         ]
 
     def resolve_op(

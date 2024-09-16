@@ -15,13 +15,13 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import open_pipes_session
-from mypy_boto3_glue.type_defs import StartJobRunRequestRequestTypeDef
 
 from dagster_aws.pipes.context_injectors import PipesS3ContextInjector
 from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:
     from mypy_boto3_glue.client import GlueClient
+    from mypy_boto3_glue.type_defs import StartJobRunRequestRequestTypeDef
 
 RUN_PARAMS_BREAKING_VERSION = "1.9.0"
 
@@ -87,7 +87,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: OpExecutionContext,
-        start_job_run_params: Optional[StartJobRunRequestRequestTypeDef] = None,
+        start_job_run_params: Optional["StartJobRunRequestRequestTypeDef"] = None,
         extras: Optional[Dict[str, Any]] = None,
         job_name: Optional[str] = None,
         arguments: Optional[Mapping[str, Any]] = None,
@@ -137,7 +137,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                     "JobName": job_name,
                 }
 
-        params = cast(StartJobRunRequestRequestTypeDef, params)
+        params = cast("StartJobRunRequestRequestTypeDef", params)
 
         params["Arguments"] = arguments
 

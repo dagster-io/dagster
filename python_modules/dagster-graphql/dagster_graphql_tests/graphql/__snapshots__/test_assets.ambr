@@ -198,6 +198,14 @@
           }),
         }),
         dict({
+          'id': 'test.test_repo.["first_kinds_key"]',
+          'key': dict({
+            'path': list([
+              'first_kinds_key',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test.test_repo.["foo"]',
           'key': dict({
             'path': list([
@@ -210,6 +218,14 @@
           'key': dict({
             'path': list([
               'foo_bar',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test.test_repo.["fourth_kinds_key"]',
+          'key': dict({
+            'path': list([
+              'fourth_kinds_key',
             ]),
           }),
         }),
@@ -390,6 +406,14 @@
           }),
         }),
         dict({
+          'id': 'test.test_repo.["second_kinds_key"]',
+          'key': dict({
+            'path': list([
+              'second_kinds_key',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test.test_repo.["single_run_backfill_policy_asset"]',
           'key': dict({
             'path': list([
@@ -402,6 +426,14 @@
           'key': dict({
             'path': list([
               'str_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test.test_repo.["third_kinds_key"]',
+          'key': dict({
+            'path': list([
+              'third_kinds_key',
             ]),
           }),
         }),
@@ -646,12 +678,22 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test.test_repo.["first_kinds_key"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test.test_repo.["foo"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["foo_bar"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["fourth_kinds_key"]',
       }),
       dict({
         'freshnessInfo': dict({
@@ -772,12 +814,22 @@
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
+        'id': 'test.test_repo.["second_kinds_key"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
         'id': 'test.test_repo.["single_run_backfill_policy_asset"]',
       }),
       dict({
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["str_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test.test_repo.["third_kinds_key"]',
       }),
       dict({
         'freshnessInfo': None,

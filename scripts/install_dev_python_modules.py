@@ -58,7 +58,7 @@ def main(
         "python_modules/automation",
         "python_modules/libraries/dagster-managed-elements",
         "python_modules/libraries/dagster-airbyte",
-        "python_modules/libraries/dagster-aws[test]",
+        "python_modules/libraries/dagster-aws[stubs,test]",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-celery-docker",
         "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
@@ -154,6 +154,12 @@ def main(
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
     cmd = ["uv", "pip", "install"] + (["--system"] if system else []) + install_targets
+
+    # Force compat mode for editable installs to avoid
+    # polluting uv cache for pyright install
+    # See https://github.com/dagster-io/dagster/pull/24212
+    # and https://github.com/astral-sh/uv/issues/7028
+    cmd += ["--config-settings", "editable-mode=compat"]
 
     if quiet is not None:
         cmd.append(f'-{"q" * quiet}')

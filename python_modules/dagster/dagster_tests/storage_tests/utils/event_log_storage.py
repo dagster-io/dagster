@@ -5193,22 +5193,23 @@ class TestEventLogStorage:
         check_key_1 = AssetCheckKey(AssetKey(["my_asset"]), "my_check")
         check_key_2 = AssetCheckKey(AssetKey(["my_asset"]), "my_check_2")
 
-        storage.store_event(
-            EventLogEntry(
-                error_info=None,
-                user_message="",
-                level="debug",
-                run_id=run_id_1,
-                timestamp=time.time(),
-                dagster_event=DagsterEvent(
-                    DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
-                    "nonce",
-                    event_specific_data=AssetCheckEvaluationPlanned(
-                        asset_key=AssetKey(["my_asset"]), check_name="my_check"
+        for asset_key in {AssetKey(["my_asset"]), AssetKey(["my_other_asset"])}:
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluationPlanned(
+                            asset_key=asset_key, check_name="my_check"
+                        ),
                     ),
-                ),
+                )
             )
-        )
 
         checks = storage.get_asset_check_execution_history(check_key_1, limit=10)
         assert len(checks) == 1

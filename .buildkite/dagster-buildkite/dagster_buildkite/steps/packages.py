@@ -367,6 +367,12 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "examples/experimental/dagster-airlift/examples/perf-harness",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
         "examples/experimental/dagster-airlift/examples/tutorial-example",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,

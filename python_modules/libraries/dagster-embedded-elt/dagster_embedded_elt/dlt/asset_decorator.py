@@ -8,6 +8,7 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import deprecated_param
+from dagster._core.definitions.tags import build_kind_tag
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
@@ -55,7 +56,8 @@ def build_dlt_asset_specs(
             },
             owners=dagster_dlt_translator.get_owners(dlt_source_resource),
             tags={
-                "dagster/storage_kind": destination_type,
+                **build_kind_tag("dlt"),
+                **build_kind_tag(destination_type),
                 **dagster_dlt_translator.get_tags(dlt_source_resource),
             },
         )
@@ -144,7 +146,6 @@ def dlt_assets(
     return multi_asset(
         name=name,
         group_name=group_name,
-        compute_kind="dlt",
         can_subset=True,
         partitions_def=partitions_def,
         specs=build_dlt_asset_specs(

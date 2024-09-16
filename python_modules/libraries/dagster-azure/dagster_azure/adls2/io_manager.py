@@ -179,6 +179,10 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
     adls2_prefix: str = Field(
         default="dagster", description="ADLS Gen2 file system prefix to write to."
     )
+    lease_duration: int = Field(
+        default=60,
+        description="Lease duration in seconds. Must be between 15 and 60 seconds or -1 for infinite.",
+    )
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -193,6 +197,7 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
             self.adls2.blob_client,
             self.adls2.lease_client_constructor,
             self.adls2_prefix,
+            self.lease_duration,
         )
 
     def load_input(self, context: "InputContext") -> Any:
@@ -204,7 +209,7 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
 
 @deprecated(
     breaking_version="2.0",
-    additional_warn_text="Please use GCSPickleIOManager instead.",
+    additional_warn_text="Please use ADLS2PickleIOManager instead.",
 )
 class ConfigurablePickledObjectADLS2IOManager(ADLS2PickleIOManager):
     """Renamed to ADLS2PickleIOManager. See ADLS2PickleIOManager for documentation."""
@@ -291,5 +296,6 @@ def adls2_pickle_io_manager(init_context):
         blob_client,
         lease_client,
         init_context.resource_config.get("adls2_prefix"),
+        init_context.resource_config.get("lease_duration"),
     )
     return pickled_io_manager

@@ -77,9 +77,9 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'References',
+          label: 'API Docs',
           type: 'doc',
-          docId: 'api',
+          docId: 'api/index',
           position: 'left',
         },
         {

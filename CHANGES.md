@@ -1,5 +1,83 @@
 # Changelog
 
+## 1.8.7 (core) / 0.24.7 (libraries)
+
+### New
+
+- The `AssetSpec` constructor now raises an error if an invalid group name is provided, instead of an error being raised when constructing the `Definitions` object.
+- `dagster/relation_identifier` metadata is now automatically attached to assets which are stored using a DbIOManager.
+- [ui] Streamlined the code location list view.
+- [ui] The “group by” selection on the Timeline Overview page is now part of the query parameters, meaning it will be retained when linked to directly or when navigating between pages.
+- [dagster-dbt] When instantiating `DbtCliResource`, the `project_dir` argument will now override the `DBT_PROJECT_DIR` environment variable if it exists in the local environment (thanks, [@marijncv](https://github.com/marijncv)!).
+- [dagster-embedded-elt] dlt assets now generate `rows_loaded` metadata (thanks, [@kristianandre](https://github.com/kristianandre)!).
+- Added support for pydantic version 1.9.0.
+
+### Bugfixes
+
+- Fixed a bug where setting `asset_selection=[]` on `RunRequest` objects yielded from sensors using `asset_selection` would select all assets instead of none.
+- Fixed bug where the tick status filter for batch-fetched graphql sensors was not being respected.
+- [examples] Fixed missing assets in `assets_dbt_python` example.
+- [dagster-airbyte] Updated the op names generated for Airbyte assets to include the full connection ID, avoiding name collisions.
+- [dagster-dbt] Fixed issue causing dagster-dbt to be unable to load dbt projects where the adapter did not have a `database` field set (thanks, [@dargmuesli](https://github.com/dargmuesli)!)
+- [dagster-dbt] Removed a warning about not being able to load the `dbt.adapters.duckdb` module when loading dbt assets without that package installed.
+
+### Documentation
+
+- Fixed typo on the automation concepts page (thanks, [@oedokumaci](https://github.com/oedokumaci)!)
+
+### Dagster Plus
+
+- You may now wipe specific asset partitions directly from the execution context in user code by calling `DagsterInstance.wipe_asset_partitions`.
+- Dagster+ users with a "Viewer" role can now create private catalog views.
+- Fixed an issue where the default IOManager used by Dagster+ Serverless did not respect setting `allow_missing_partitions` as metadata on a downstream asset.
+
+## 1.8.6 (core) / 0.24.6 (libraries)
+
+### Bugfixes
+
+- Fixed an issue where runs in Dagster+ Serverless that materialized partitioned assets would sometimes fail with an `object has no attribute '_base_path'` error.
+- [dagster-graphql] Fixed an issue where the `statuses` filter argument to the `sensorsOrError` GraphQL field was sometimes ignored when querying GraphQL for multiple sensors at the same time.
+
+## 1.8.5 (core) / 0.24.5 (libraries)
+
+### New
+
+- Updated multi-asset sensor definition to be less likely to timeout queries against the asset history storage.
+- Consolidated the `CapturedLogManager` and `ComputeLogManager` APIs into a single base class.
+- [ui] Added an option under user settings to clear client side indexeddb caches as an escape hatch for caching related bugs.
+- [dagster-aws, dagster-pipes] Added a new `PipesECSClient` to allow Dagster to interface with ECS tasks.
+- [dagster-dbt] Increased the default timeout when terminating a run that is running a `dbt` subprocess to wait 25 seconds for the subprocess to cleanly terminate. Previously, it would only wait 2 seconds.
+- [dagster-sdf] Increased the default timeout when terminating a run that is running an `sdf` subprocess to wait 25 seconds for the subprocess to cleanly terminate. Previously, it would only wait 2 seconds.
+- [dagster-sdf] Added support for caching and asset selection (Thanks, [akbog](https://github.com/akbog)!)
+- [dagster-dlt] Added support for `AutomationCondition` using `DagsterDltTranslator.get_automation_condition()` (Thanks, [aksestok](https://github.com/aksestok)!)
+- [dagster-k8s] Added support for setting `dagsterDaemon.runRetries.retryOnAssetOrOpFailure` to False in the Dagster Helm chart to [prevent op retries and run retries from simultaneously firing on the same failure.](https://docs.dagster.io/deployment/run-retries#combining-op-and-run-retries)
+- [dagster-wandb] Removed usage of deprecated `recursive` parameter (Thanks, [chrishiste](https://github.com/chrishiste)!)
+
+### Bugfixes
+
+- [ui] Fixed a bug where in-progress runs from a backfill could not be terminated from the backfill UI.
+- [ui] Fixed a bug that caused an "Asset must be part of at least one job" error when clicking on an external asset in the asset graph UI
+- Fixed an issue where viewing run logs with the latest 5.0 release of the watchdog package raised an exception.
+- [ui] Fixed issue causing the “filter to group” action in the lineage graph to have no effect.
+- [ui] Fixed case sensitivity when searching for partitions in the launchpad.
+- [ui] Fixed a bug which would redirect to the events tab for an asset if you loaded the partitions tab directly.
+- [ui] Fixed issue causing runs to get skipped when paging through the runs list (Thanks, [@HynekBlaha](https://github.com/HynekBlaha)!)
+- [ui] Fixed a bug where the asset catalog list view for a particular group would show all assets.
+- [dagster-dbt] fix bug where empty newlines in raw dbt logs were not being handled correctly.
+- [dagster-k8s, dagster-celery-k8s] Correctly set `dagster/image` label when image is provided from `user_defined_k8s_config`. (Thanks, [@HynekBlaha](https://github.com/HynekBlaha)!)
+- [dagster-duckdb] Fixed an issue for DuckDB versions older than 1.0.0 where an unsupported configuration option, `custom_user_agent`, was provided by default
+- [dagster-k8s] Fixed an issue where Kubernetes Pipes failed to create a pod if the op name contained capital or non-alphanumeric containers.
+- [dagster-embedded-elt] Fixed an issue where dbt assets downstream of Sling were skipped
+
+### Deprecations
+
+- [dagser-aws]: Direct AWS API arguments in `PipesGlueClient.run` have been deprecated and will be removed in `1.9.0`. The new `params` argument should be used instead.
+
+### Dagster Plus
+
+- Fixed a bug that caused an error when loading the launchpad for a partition, when using Dagster+ with an agent with version below 1.8.2.
+- Fixed an issue where terminating a Dagster+ Serverless run wouldn’t forward the termination signal to the job to allow it to cleanly terminate.
+
 ## 1.8.4 (core) / 0.24.4 (libraries)
 
 ### Bugfixes

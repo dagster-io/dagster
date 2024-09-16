@@ -30,3 +30,5 @@ export type CancelBackfillMutation = {
       }
     | {__typename: 'UnauthorizedError'};
 };
+
+export const CancelBackfillVersion = '138f5ba5d38b0d939a6a0bf34769cf36c16bb99225204e28e5ab5fcd8baf3194';

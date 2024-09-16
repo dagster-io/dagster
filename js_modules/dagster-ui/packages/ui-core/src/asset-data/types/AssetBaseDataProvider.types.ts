@@ -166,3 +166,5 @@ export type AssetGraphLiveQuery = {
     } | null;
   }>;
 };
+
+export const AssetGraphLiveQueryVersion = 'cf42c8b34b97b7bb696ba56e0b363eaa15b58df4bbb384e58ca49811da7ccc01';

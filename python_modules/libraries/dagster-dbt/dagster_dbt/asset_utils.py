@@ -50,7 +50,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
-from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.tags import build_kind_tag
 from dagster._utils.merger import merge_dicts
 
 from dagster_dbt.utils import (
@@ -451,20 +451,16 @@ def default_metadata_from_dbt_resource_props(
             ]
         )
 
-    relation_name: Optional[str] = None
-
-    if (
-        "database" in dbt_resource_props
-        and "schema" in dbt_resource_props
-        and "alias" in dbt_resource_props
-    ):
-        relation_name = ".".join(
-            [
-                dbt_resource_props["database"],
-                dbt_resource_props["schema"],
-                dbt_resource_props["alias"],
-            ]
-        )
+    relation_parts = [
+        relation_part
+        for relation_part in [
+            dbt_resource_props.get("database"),
+            dbt_resource_props.get("schema"),
+            dbt_resource_props.get("alias"),
+        ]
+        if relation_part
+    ]
+    relation_name = ".".join(relation_parts) if relation_parts else None
 
     return {
         **TableMetadataSet(
@@ -820,7 +816,8 @@ def build_dbt_multi_asset_args(
                 }
             ),
             tags={
-                **(StorageKindTagSet(storage_kind=dbt_adapter_type) if dbt_adapter_type else {}),
+                **build_kind_tag("dbt"),
+                **(build_kind_tag(dbt_adapter_type) if dbt_adapter_type else {}),
                 **dagster_dbt_translator.get_tags(dbt_resource_props),
             },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),

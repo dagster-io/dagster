@@ -4,7 +4,8 @@ import {Redirect, useLocation, useParams} from 'react-router-dom';
 import {explorerPathFromString} from './PipelinePathUtils';
 import {PermissionsContext} from '../app/Permissions';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {WorkspaceContext, isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 interface Props {

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import requests
 
@@ -26,6 +26,7 @@ class AirflowInstanceFake(AirflowInstance):
         task_infos: List[TaskInfo],
         task_instances: List[TaskInstance],
         dag_runs: List[DagRun],
+        variables: List[Dict[str, Any]] = [],
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
         self._task_infos_by_dag_and_task_id = {
@@ -42,6 +43,7 @@ class AirflowInstanceFake(AirflowInstance):
         for dag_run in dag_runs:
             self._dag_runs_by_dag_id[dag_run.dag_id].append(dag_run)
         self._dag_infos_by_file_token = {dag_info.file_token: dag_info for dag_info in dag_infos}
+        self._variables = variables
         super().__init__(
             auth_backend=DummyAuthBackend(),
             name="test_instance",
@@ -49,6 +51,9 @@ class AirflowInstanceFake(AirflowInstance):
 
     def list_dags(self) -> List[DagInfo]:
         return list(self._dag_infos_by_dag_id.values())
+
+    def list_variables(self) -> List[Dict[str, Any]]:
+        return self._variables
 
     def get_dag_runs(self, dag_id: str, start_date: datetime, end_date: datetime) -> List[DagRun]:
         if dag_id not in self._dag_runs_by_dag_id:
@@ -59,6 +64,39 @@ class AirflowInstanceFake(AirflowInstance):
             if start_date.timestamp() <= run.start_date <= end_date.timestamp()
             and start_date.timestamp() <= run.end_date <= end_date.timestamp()
         ]
+
+    def get_dag_runs_batch(
+        self,
+        dag_ids: Sequence[str],
+        end_date_gte: datetime,
+        end_date_lte: datetime,
+        offset: int = 0,
+    ) -> List[DagRun]:
+        runs = [
+            (run.end_date, run)
+            for runs in self._dag_runs_by_dag_id.values()
+            for run in runs
+            if end_date_gte.timestamp() <= run.end_date <= end_date_lte.timestamp()
+            and run.dag_id in dag_ids
+        ]
+        sorted_by_end_date = [run for _, run in sorted(runs, key=lambda x: x[0])]
+        return sorted_by_end_date[offset:]
+
+    def get_task_instance_batch(
+        self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
+    ) -> List[TaskInstance]:
+        task_instances = []
+        for task_id in set(task_ids):
+            if (dag_id, task_id) not in self._task_instances_by_dag_and_task_id:
+                continue
+            task_instances.extend(
+                [
+                    task_instance
+                    for task_instance in self._task_instances_by_dag_and_task_id[(dag_id, task_id)]
+                    if task_instance.run_id == run_id and task_instance.state in states
+                ]
+            )
+        return task_instances
 
     def get_task_instance(self, dag_id: str, task_id: str, run_id: str) -> TaskInstance:
         if (dag_id, task_id) not in self._task_instances_by_dag_and_task_id:

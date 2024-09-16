@@ -110,7 +110,7 @@ setup(
         "universal_pathlib; python_version<'3.12'",
         "universal_pathlib>=0.2.0; python_version>='3.12'",
         # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic>1.10.0,!= 1.10.7,<3",
+        "pydantic>1.10.0,!=1.10.7,<2.10",
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
@@ -139,7 +139,7 @@ setup(
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
-            "pyright==1.1.370",
+            "pyright==1.1.379",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports

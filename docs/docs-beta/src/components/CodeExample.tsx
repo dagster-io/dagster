@@ -11,6 +11,8 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
   const [content, setContent] = React.useState<string>('');
   const [error, setError] = React.useState<string | null>(null);
 
+  language = language || 'python';
+
   React.useEffect(() => {
     // Adjust the import path to start from the docs directory
     import(`!!raw-loader!/../../examples/docs_beta_snippets/docs_beta_snippets/${filePath}`)

@@ -96,3 +96,5 @@ export type AssetColumnLineageQuery = {
     }>;
   }>;
 };
+
+export const AssetColumnLineageVersion = 'c88c38558eb5d45b3c51b125853bc0df120213c4b8f5933a264525c3689bcef1';

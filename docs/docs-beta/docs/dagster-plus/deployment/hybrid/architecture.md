@@ -8,20 +8,13 @@ sidebar_position: 10
 
 The Hybrid architecture is the most flexible and secure way to deploy Dagster+. It allows you to run your user code in your environment while leveraging Dagster+'s infrastructure for orchestration and metadata management
 
-## What you'll learn
-
-- Overall architecture of a Hybrid deployment
-- The security implications of a Hybrid deployment
-
----
-
 <details>
   <summary>Pre-requisites</summary>
 
 Before you begin, you should have:
 
 - A [Dagster+ account](/dagster-plus/getting-started)
-- [Basic familiarity with Dagster](/tutorial/quick-start)
+- [Basic familiarity with Dagster](/getting-started/quickstart)
 
 </details>
 

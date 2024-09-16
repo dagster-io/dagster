@@ -155,7 +155,7 @@ def _build_freshness_multi_check(
                 deadline.timestamp(), tz=partitions_def.timezone
             )
             last_completed_time_window = check.not_none(
-                partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)
+                partitions_def.get_last_partition_window(current_time=deadline_in_partitions_def_tz)
             )
             expected_partition_key = partitions_def.get_partition_key_range_for_time_window(
                 last_completed_time_window

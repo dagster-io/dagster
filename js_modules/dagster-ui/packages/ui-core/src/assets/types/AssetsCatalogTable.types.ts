@@ -29,6 +29,7 @@ export type AssetCatalogTableQuery = {
             computeKind: string | null;
             hasMaterializePermission: boolean;
             description: string | null;
+            kinds: Array<string>;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
               description: string;
@@ -82,6 +83,7 @@ export type AssetCatalogGroupTableQuery = {
     computeKind: string | null;
     hasMaterializePermission: boolean;
     description: string | null;
+    kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionDefinition: {
       __typename: 'PartitionDefinition';
@@ -117,6 +119,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
+  kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {
     __typename: 'PartitionDefinition';
@@ -138,3 +141,7 @@ export type AssetCatalogGroupTableNodeFragment = {
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
 };
+
+export const AssetCatalogTableQueryVersion = 'cfd5521d8ee27fcedd151411a6e6956f60508098660ca1661ad13abef69b112c';
+
+export const AssetCatalogGroupTableQueryVersion = 'e55e65bc1c234fbd28895642deebe9bb45c68de4c31aa2c31b9b6a4d306d90e0';

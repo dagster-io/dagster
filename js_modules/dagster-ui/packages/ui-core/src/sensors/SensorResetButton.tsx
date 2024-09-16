@@ -42,7 +42,10 @@ export const SensorResetButton = ({repoAddress, sensor}: Props) => {
     : DEFAULT_DISABLED_REASON;
 
   return (
-    <Tooltip content={tooltipContent} display="flex">
+    <Tooltip
+      content={<div style={{maxWidth: '500px', wordBreak: 'break-word'}}>{tooltipContent}</div>}
+      display="flex"
+    >
       <Button disabled={disabled} onClick={onClick}>
         Reset sensor status
       </Button>

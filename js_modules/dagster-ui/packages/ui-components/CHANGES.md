@@ -1,3 +1,7 @@
+## 1.1.0 (September 10, 2024)
+
+- Add `VirtualizedTable` export
+
 ## 1.0.9 (June 12, 2023)
 
 - Upgrade to Storybook 7

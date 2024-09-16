@@ -3,20 +3,22 @@ import {
   Button,
   ButtonLink,
   Colors,
+  FontFamily,
   Icon,
   MiddleTruncate,
   Tag,
   Tooltip,
+  UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {
   LocationStatusEntryFragment,
   WorkspaceDisplayMetadataFragment,
-} from './types/WorkspaceQueries.types';
+} from './WorkspaceContext/types/WorkspaceQueries.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -47,9 +49,9 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
       <ImageNameBox flex={{direction: 'row', gap: 4}}>
         <span style={{fontWeight: 500}}>image:</span>
         <Tooltip content="Click to copy" placement="top" display="block">
-          <button onClick={onClick}>
+          <UnstyledButton onClick={onClick} style={MetadataValueButtonStyle}>
             <MiddleTruncate text={imageKV.value} />
-          </button>
+          </UnstyledButton>
         </Tooltip>
       </ImageNameBox>
     );
@@ -64,22 +66,6 @@ const ImageNameBox = styled(Box)`
 
   .bp4-popover2-target {
     overflow: hidden;
-  }
-
-  button {
-    background: ${Colors.backgroundDefault()};
-    border: none;
-    color: ${Colors.textLight()};
-    cursor: pointer;
-    font-size: 12px;
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-    width: 100%;
-
-    :focus {
-      outline: none;
-    }
   }
 `;
 
@@ -98,7 +84,9 @@ export const ModuleOrPackageOrFile = ({
         style={{width: '100%', color: Colors.textLight(), fontSize: 12}}
       >
         <span style={{fontWeight: 500}}>{imageKV.key}:</span>
-        <MiddleTruncate text={imageKV.value} />
+        <div style={MetadataValueButtonStyle}>
+          <MiddleTruncate text={imageKV.value} />
+        </div>
       </Box>
     );
   }
@@ -124,15 +112,15 @@ export const LocationStatus = (props: {
   if (locationStatus.loadStatus === 'LOADING') {
     return (
       <Tag minimal intent="primary">
-        Updating...
+        Updating…
       </Tag>
     );
   }
 
-  if (locationOrError?.updatedTimestamp !== locationStatus.updateTimestamp) {
+  if (locationOrError?.versionKey !== locationStatus.versionKey) {
     return (
       <Tag minimal intent="primary">
-        Loading...
+        Loading…
       </Tag>
     );
   }
@@ -180,7 +168,7 @@ export const ReloadButton = ({location}: {location: string}) => {
               useDisabledButtonTooltipFix
             >
               <Button
-                icon={<Icon name="refresh" />}
+                icon={<Icon name="code_location_reload" />}
                 disabled={!hasReloadPermission}
                 loading={reloading}
                 onClick={() => tryReload()}
@@ -193,4 +181,12 @@ export const ReloadButton = ({location}: {location: string}) => {
       }}
     />
   );
+};
+
+const MetadataValueButtonStyle = {
+  width: '100%',
+  display: 'block',
+  fontFamily: FontFamily.monospace,
+  fontSize: '12px',
+  color: Colors.textLight(),
 };

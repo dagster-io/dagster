@@ -34,12 +34,14 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
     destination_tables = ["foo", "bar"]
     if schema_prefix:
         destination_tables = [schema_prefix + t for t in destination_tables]
+    connection_id = "12345"
     ab_assets = build_airbyte_assets(
-        "12345",
+        connection_id=connection_id,
         destination_tables=destination_tables,
         asset_key_prefix=["some", "prefix"],
         auto_materialize_policy=auto_materialize_policy,
     )
+    ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
     assert len(ab_assets[0].op.output_defs) == 2
@@ -82,7 +84,7 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
 
     materializations = [
         event.event_specific_data.materialization
-        for event in res.events_for_node("airbyte_sync_12345")
+        for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 3
@@ -125,8 +127,9 @@ def test_assets_with_normalization(
         destination_tables = [schema_prefix + t for t in destination_tables]
 
     bar_normalization_tables = {schema_prefix + "bar_baz", schema_prefix + "bar_qux"}
+    connection_id = "12345"
     ab_assets = build_airbyte_assets(
-        "12345",
+        connection_id=connection_id,
         destination_tables=destination_tables,
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
@@ -134,6 +137,7 @@ def test_assets_with_normalization(
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
     )
+    ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
     assert all(spec.freshness_policy == freshness_policy for spec in ab_assets[0].specs)
 
@@ -182,7 +186,7 @@ def test_assets_with_normalization(
 
     materializations = [
         event.event_specific_data.materialization
-        for event in res.events_for_node("airbyte_sync_12345")
+        for event in res.events_for_node(ab_assets_name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 5
@@ -213,13 +217,15 @@ def test_assets_cloud() -> None:
     )
     ab_url = ab_resource.api_base_url
 
+    connection_id = "12345"
     ab_assets = build_airbyte_assets(
-        "12345",
+        connection_id=connection_id,
         destination_tables=["foo", "bar"],
         normalization_tables={"bar": {"bar_baz", "bar_qux"}},
         asset_key_prefix=["some", "prefix"],
         group_name="foo",
     )
+    ab_assets_name = f"airbyte_sync_{connection_id.replace('-', '_')}"
 
     with responses.RequestsMock() as rsps:
         rsps.add(
@@ -251,7 +257,7 @@ def test_assets_cloud() -> None:
 
         materializations = [
             event.event_specific_data.materialization
-            for event in res.events_for_node("airbyte_sync_12345")
+            for event in res.events_for_node(ab_assets_name)
             if event.event_type_value == "ASSET_MATERIALIZATION"
             and isinstance(event.event_specific_data, StepMaterializationData)
         ]

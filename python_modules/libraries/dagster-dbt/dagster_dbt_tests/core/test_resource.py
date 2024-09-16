@@ -144,6 +144,11 @@ def test_dbt_cli_subprocess_cleanup(
         dbt_cli_invocation_1.wait()
 
     assert "Forwarding interrupt signal to dbt command" in caplog.text
+    assert (
+        f"dbt process terminated with exit code `{dbt_cli_invocation_1.process.returncode}`."
+        in caplog.text
+    )
+
     assert dbt_cli_invocation_1.process.returncode < 0
 
 
@@ -251,6 +256,17 @@ def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
             project_dir=os.fspath(test_jaffle_shop_path),
             profiles_dir=f"{os.fspath(test_jaffle_shop_path)}/models",
         )
+
+
+def test_dbt_project_dir_conflicting_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DBT_PROJECT_DIR", "nonexistent")
+    assert (
+        DbtCliResource(
+            project_dir=os.fspath(test_jaffle_shop_path),
+        )
+        .cli(["parse"])
+        .is_successful()
+    )
 
 
 def test_dbt_partial_parse(dbt: DbtCliResource) -> None:

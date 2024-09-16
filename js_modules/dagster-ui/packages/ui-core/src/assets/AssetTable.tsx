@@ -39,7 +39,8 @@ interface Props {
   displayPathForAsset: (asset: Asset) => string[];
   searchPath: string;
   isFiltered: boolean;
-  computeKindFilter?: StaticSetFilter<string>;
+  kindFilter?: StaticSetFilter<string>;
+  isLoading: boolean;
 }
 
 export const AssetTable = ({
@@ -52,7 +53,8 @@ export const AssetTable = ({
   searchPath,
   isFiltered,
   view,
-  computeKindFilter,
+  kindFilter,
+  isLoading,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -137,7 +139,8 @@ export const AssetTable = ({
         onRefresh={() => refreshState.refetch()}
         showRepoColumn
         view={view}
-        computeKindFilter={computeKindFilter}
+        kindFilter={kindFilter}
+        isLoading={isLoading}
       />
     );
   };

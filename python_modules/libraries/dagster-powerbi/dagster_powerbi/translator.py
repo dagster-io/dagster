@@ -8,8 +8,6 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._record import record
 
-POWERBI_PREFIX = "powerbi/"
-
 
 def _get_last_filepath_component(path: str) -> str:
     """Returns the last component of a file path."""
@@ -23,7 +21,7 @@ def _remove_file_ext(name: str) -> str:
 
 def _clean_asset_name(name: str) -> str:
     """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9A-Z.]+", "_", name)
+    return re.sub(r"[^A-Za-z0-9_]+", "_", name)
 
 
 class PowerBIContentType(Enum):

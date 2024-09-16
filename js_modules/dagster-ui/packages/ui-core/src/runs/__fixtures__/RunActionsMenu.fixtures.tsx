@@ -9,7 +9,7 @@ import {
   buildRun,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {PIPELINE_ENVIRONMENT_QUERY} from '../RunActionsMenu';
 import {
   PipelineEnvironmentQuery,

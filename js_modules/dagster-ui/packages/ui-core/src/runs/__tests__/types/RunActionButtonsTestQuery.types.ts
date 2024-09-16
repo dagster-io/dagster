@@ -75,3 +75,5 @@ export type RunActionButtonsTestQuery = {
       }
     | {__typename: 'RunNotFoundError'};
 };
+
+export const RunActionButtonsTestQueryVersion = 'a10ee12da7843c87453578a2723bd3f9db19215ad9f50ac897d0979ac6187365';

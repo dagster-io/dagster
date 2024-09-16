@@ -14,6 +14,7 @@ from dagster._core.errors import (
     DagsterSnapshotDoesNotExist,
 )
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -79,6 +80,10 @@ class TestRunStorage:
     def run_storage(self, request):
         with request.param() as s:
             yield s
+
+    @pytest.fixture(name="instance")
+    def instance(self, request) -> Optional[DagsterInstance]:
+        return None
 
     # Override for storages that are not allowed to delete runs
     def can_delete_runs(self):
@@ -714,7 +719,7 @@ class TestRunStorage:
             run.run_id for run in storage.get_runs(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
         } == set()
 
-    def test_failure_event_updates_tags(self, storage):
+    def test_failure_event_updates_tags(self, storage, instance):
         assert storage
         one = make_new_run_id()
         storage.add_run(
@@ -722,22 +727,34 @@ class TestRunStorage:
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
-        storage.handle_run_event(
-            one,  # fail one after two has fails and three has succeeded
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                job_name="some_pipeline",
-                event_specific_data=JobFailureData(
-                    error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                    job_name="some_pipeline",
+                    event_specific_data=JobFailureData(
+                        error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+                    ),
                 ),
-            ),
+                one,  # fail one after two has fails and three has succeeded
+            )
         )
 
         run = _get_run_by_id(storage, one)
         assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
 
-    def test_get_run_records(self, storage):
+    def _get_run_event_entry(self, dagster_event: DagsterEvent, run_id: str):
+        return EventLogEntry(
+            error_info=None,
+            level="debug",
+            user_message="",
+            run_id=run_id,
+            timestamp=time.time(),
+            dagster_event=dagster_event,
+        )
+
+    def test_get_run_records(self, storage, instance):
         assert storage
         [one, two, three] = [make_new_run_id() for _ in range(3)]
         storage.add_run(
@@ -755,29 +772,35 @@ class TestRunStorage:
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
-        storage.handle_run_event(
-            three,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                three,
+            )
         )
-        storage.handle_run_event(
-            two,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                two,
+            )
         )
-        storage.handle_run_event(
-            one,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                one,
+            )
         )
 
         def _run_ids(records):
@@ -791,7 +814,7 @@ class TestRunStorage:
         assert _run_ids(storage.get_run_records(cursor=three, limit=1)) == [two]
         assert _run_ids(storage.get_run_records(cursor=one, limit=1, ascending=True)) == [two]
 
-    def test_fetch_records_by_update_timestamp(self, storage):
+    def test_fetch_records_by_update_timestamp(self, storage, instance):
         assert storage
         self._skip_in_memory(storage)
 
@@ -813,21 +836,25 @@ class TestRunStorage:
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
-        storage.handle_run_event(
-            three,  # three succeeds
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                three,  # three succeeds
             ),
         )
-        storage.handle_run_event(
-            one,  # fail one after two has fails and three has succeeded
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                    job_name="some_pipeline",
+                ),
+                one,  # fail one after two has fails and three has succeeded
+            )
         )
 
         record_two = storage.get_run_records(
@@ -1469,7 +1496,7 @@ class TestRunStorage:
         for name in REQUIRED_DATA_MIGRATIONS.keys():
             assert storage.has_built_index(name)
 
-    def test_handle_run_event_job_success_test(self, storage):
+    def test_handle_run_event_job_success_test(self, storage, instance):
         run_id = make_new_run_id()
         run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
@@ -1484,36 +1511,40 @@ class TestRunStorage:
             logging_tags=None,
         )
 
-        storage.handle_run_event(run_id, dagster_job_start_event)
+        instance.handle_new_event(self._get_run_event_entry(dagster_job_start_event, run_id))
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
-        storage.handle_run_event(
-            make_new_run_id(),  # diff run
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="pipeline_name",
-                step_key=None,
-                node_handle=None,
-                step_kind_value=None,
-                logging_tags=None,
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="pipeline_name",
+                    step_key=None,
+                    node_handle=None,
+                    step_kind_value=None,
+                    logging_tags=None,
+                ),
+                make_new_run_id(),  # diff run
+            )
         )
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
-        storage.handle_run_event(
-            run_id,  # correct run
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="pipeline_name",
-                step_key=None,
-                node_handle=None,
-                step_kind_value=None,
-                logging_tags=None,
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="pipeline_name",
+                    step_key=None,
+                    node_handle=None,
+                    step_kind_value=None,
+                    logging_tags=None,
+                ),
+                run_id,  # correct run
+            )
         )
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS
@@ -1548,7 +1579,7 @@ class TestRunStorage:
         assert not storage.has_snapshot(ep_snapshot_id)
         assert storage.has_snapshot(new_ep_snapshot_id)
 
-    def test_run_record_stats(self, storage):
+    def test_run_record_stats(self, storage, instance):
         assert storage
 
         self._skip_in_memory(storage)
@@ -1563,13 +1594,15 @@ class TestRunStorage:
         assert run_record.start_time is None
         assert run_record.end_time is None
 
-        storage.handle_run_event(
-            run_id,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_START.value,
-                job_name="pipeline_name",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_START.value,
+                    job_name="pipeline_name",
+                ),
+                run_id,
+            )
         )
 
         run_record = storage.get_run_records(RunsFilter(run_ids=[run_id]))[0]
@@ -1577,13 +1610,15 @@ class TestRunStorage:
         assert run_record.start_time is not None
         assert run_record.end_time is None
 
-        storage.handle_run_event(
-            run_id,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="pipeline_name",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="pipeline_name",
+                ),
+                run_id,
+            )
         )
 
         run_record = storage.get_run_records(RunsFilter(run_ids=[run_id]))[0]

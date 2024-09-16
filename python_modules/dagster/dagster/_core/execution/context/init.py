@@ -149,6 +149,7 @@ class UnboundInitResourceContext(InitResourceContext):
 
         if isinstance(resources, Resources):
             check.failed("Should not have a Resources object directly from this initialization")
+        self._raw_resources = resources
 
         self._resource_defs = wrap_resources_for_execution(
             check.opt_mapping_param(resources, "resources")
@@ -221,6 +222,13 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def run_id(self) -> Optional[str]:
         return None
+
+    def replace_config(self, config: Any) -> "UnboundInitResourceContext":
+        return UnboundInitResourceContext(
+            resource_config=config,
+            resources=self._raw_resources,
+            instance=self.instance,
+        )
 
 
 def build_init_resource_context(

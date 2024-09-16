@@ -1,5 +1,6 @@
 import {COMMON_COLLATOR} from '../app/Util';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
+import {isKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -12,8 +13,8 @@ type CountByOwner = {
   assetCount: number;
 };
 
-type CountByComputeKind = {
-  computeKind: string;
+type CountByKind = {
+  kind: string;
   assetCount: number;
 };
 
@@ -34,7 +35,7 @@ type CountPerCodeLocation = {
 
 type AssetCountsResult = {
   countsByOwner: CountByOwner[];
-  countsByComputeKind: CountByComputeKind[];
+  countsByKind: CountByKind[];
   countPerTag: CountPerTag[];
   countPerAssetGroup: CountPerGroupName[];
   countPerCodeLocation: CountPerCodeLocation[];
@@ -49,7 +50,7 @@ export type GroupMetadata = {
 type AssetDefinitionMetadata = {
   definition: Pick<
     AssetTableDefinitionFragment,
-    'owners' | 'computeKind' | 'groupName' | 'repository' | 'tags'
+    'owners' | 'groupName' | 'repository' | 'tags' | 'kinds'
   > | null;
 };
 
@@ -74,7 +75,7 @@ class CaseInsensitiveCounters {
 
 export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): AssetCountsResult {
   const assetCountByOwner = new CaseInsensitiveCounters();
-  const assetCountByComputeKind = new CaseInsensitiveCounters();
+  const assetCountByKind = new CaseInsensitiveCounters();
   const assetCountByGroup = new CaseInsensitiveCounters();
   const assetCountByCodeLocation = new CaseInsensitiveCounters();
   const assetCountByTag = new CaseInsensitiveCounters();
@@ -88,12 +89,18 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
         assetCountByOwner.increment(ownerKey);
       });
 
-      const computeKind = assetDefinition.computeKind;
-      if (computeKind) {
-        assetCountByComputeKind.increment(computeKind);
+      const kinds = assetDefinition.kinds;
+      if (kinds) {
+        kinds.forEach((kind) => {
+          assetCountByKind.increment(kind);
+        });
       }
 
       assetDefinition.tags.forEach((tag) => {
+        // Skip kind tags
+        if (isKindTag(tag)) {
+          return;
+        }
         const stringifiedTag = JSON.stringify(tag);
         assetCountByTag.increment(stringifiedTag);
       });
@@ -123,15 +130,14 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
       assetCount: count,
     }))
     .sort(({owner: ownerA}, {owner: ownerB}) => COMMON_COLLATOR.compare(ownerA, ownerB));
-  const countsByComputeKind = assetCountByComputeKind
+
+  const countsByKind = assetCountByKind
     .entries()
-    .map(([computeKind, count]) => ({
-      computeKind,
+    .map(([kind, count]) => ({
+      kind,
       assetCount: count,
     }))
-    .sort(({computeKind: computeKindA}, {computeKind: computeKindB}) =>
-      COMMON_COLLATOR.compare(computeKindA, computeKindB),
-    );
+    .sort(({kind: kindA}, {kind: kindB}) => COMMON_COLLATOR.compare(kindA, kindB));
 
   const countPerTag = assetCountByTag
     .entries()
@@ -186,7 +192,7 @@ export function buildAssetCountBySection(assets: AssetDefinitionMetadata[]): Ass
 
   return {
     countsByOwner,
-    countsByComputeKind,
+    countsByKind,
     countPerTag,
     countPerAssetGroup,
     countPerCodeLocation,

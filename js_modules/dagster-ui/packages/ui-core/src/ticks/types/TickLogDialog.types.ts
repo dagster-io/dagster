@@ -33,3 +33,5 @@ export type TickLogEventsQuery = {
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const TickLogEventsQueryVersion = '6936bcc874ba79150ed1164ccd1afabdab836920b9c98b07cc22b0775443d1b7';

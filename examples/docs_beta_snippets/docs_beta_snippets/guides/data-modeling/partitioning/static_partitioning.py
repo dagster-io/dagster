@@ -9,7 +9,7 @@ region_partitions = dg.StaticPartitionsDefinition(["us", "eu", "jp"])
 
 
 # Define the partitioned asset
-@dg.asset(partitions_def=region_partitions)
+@dg.asset(partitions_def=region_partitions)  # Use the region partitioning scheme
 def regional_sales_data(context: dg.AssetExecutionContext) -> None:
     region = context.partition_key
 
@@ -21,21 +21,21 @@ def regional_sales_data(context: dg.AssetExecutionContext) -> None:
         }
     )
 
-    os.makedirs("regional_sales", exist_ok=True)
-    filename = f"regional_sales/sales_{region}.csv"
+    os.makedirs("data/regional_sales", exist_ok=True)
+    filename = f"data/regional_sales/sales_{region}.csv"
     df.to_csv(filename, index=False)
 
     context.log.info(f"Regional sales data written to {filename}")
 
 
 @dg.asset(
-    partitions_def=region_partitions,
+    partitions_def=region_partitions,  # Use the region partitioning scheme
     deps=[regional_sales_data],
 )
 def daily_sales_summary(context):
     region = context.partition_key
     # Read the CSV file for the given partition date
-    filename = f"regional_sales/sales_{region}.csv"
+    filename = f"data/regional_sales/sales_{region}.csv"
     df = pd.read_csv(filename)
 
     # Summarize daily sales
@@ -51,7 +51,6 @@ def daily_sales_summary(context):
 regional_sales_job = dg.define_asset_job(
     name="regional_sales_job",
     selection=[regional_sales_data, daily_sales_summary],
-    partitions_def=region_partitions,
 )
 
 
