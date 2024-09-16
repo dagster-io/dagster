@@ -1,7 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_sigma.resource import (
-    SigmaCloudType as SigmaCloudType,
+    SigmaBaseUrl as SigmaBaseUrl,
     SigmaOrganization as SigmaOrganization,
 )
 

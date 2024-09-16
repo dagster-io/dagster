@@ -6,7 +6,7 @@ from dagster import ConfigurableResource
 from pydantic import Field, PrivateAttr
 
 
-class SigmaCloudType(Enum):
+class SigmaBaseUrl(str, Enum):
     AWS_US = "https://aws-api.sigmacomputing.com"
     AWS_CANADA = "https://api.ca.aws.sigmacomputing.com"
     AWS_EUROPE = "https://api.eu.aws.sigmacomputing.com"
@@ -20,11 +20,11 @@ class SigmaOrganization(ConfigurableResource):
     to interact with the PowerBI API.
     """
 
-    cloud_type: SigmaCloudType = Field(
+    base_url: str = Field(
         ...,
         description=(
-            "The cloud type for your Sigma organization, found under the Administration -> Account -> Site settings."
-            " See https://help.sigmacomputing.com/docs/region-warehouse-and-feature-support for more information."
+            "Base URL for the cloud type of your Sigma organization, found under the Administration -> Account -> Site settings."
+            " See https://help.sigmacomputing.com/reference/get-started-sigma-api#identify-your-api-request-url for more information."
         ),
     )
     client_id: str = Field(..., description="A client ID with access to the Sigma API.")
@@ -34,7 +34,7 @@ class SigmaOrganization(ConfigurableResource):
 
     def _fetch_api_token(self) -> str:
         response = requests.post(
-            url=f"{self.cloud_type.value}/v2/auth/token",
+            url=f"{self.base_url}/v2/auth/token",
             headers={
                 "Accept": "application/json",
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -58,7 +58,7 @@ class SigmaOrganization(ConfigurableResource):
     def fetch_json(self, endpoint: str, method: str = "GET") -> Dict[str, Any]:
         response = requests.request(
             method=method,
-            url=f"{self.cloud_type.value}/v2/{endpoint}",
+            url=f"{self.base_url}/v2/{endpoint}",
             headers={"Accept": "application/json", "Authorization": f"Bearer {self.api_token}"},
         )
         response.raise_for_status()

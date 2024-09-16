@@ -1,7 +1,7 @@
 import uuid
 
 import responses
-from dagster_sigma import SigmaCloudType, SigmaOrganization
+from dagster_sigma import SigmaBaseUrl, SigmaOrganization
 
 
 @responses.activate
@@ -10,7 +10,7 @@ def test_authorization(sigma_auth_token: str) -> None:
     fake_client_secret = uuid.uuid4().hex
 
     resource = SigmaOrganization(
-        cloud_type=SigmaCloudType.AWS_US,
+        base_url=SigmaBaseUrl.AWS_US,
         client_id=fake_client_id,
         client_secret=fake_client_secret,
     )
@@ -37,14 +37,14 @@ def test_basic_fetch(sigma_auth_token: str) -> None:
     fake_client_secret = uuid.uuid4().hex
 
     resource = SigmaOrganization(
-        cloud_type=SigmaCloudType.AWS_US,
+        base_url=SigmaBaseUrl.AWS_US,
         client_id=fake_client_id,
         client_secret=fake_client_secret,
     )
 
     responses.add(
         method=responses.GET,
-        url=f"{SigmaCloudType.AWS_US.value}/v2/datasets",
+        url=f"{SigmaBaseUrl.AWS_US.value}/v2/datasets",
         json={},
         status=200,
     )
