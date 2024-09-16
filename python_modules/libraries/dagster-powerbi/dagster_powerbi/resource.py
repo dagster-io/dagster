@@ -1,6 +1,8 @@
+import abc
 import re
 import time
-from typing import Any, Dict, Sequence, Type, cast
+from functools import cached_property
+from typing import Any, Dict, Mapping, Optional, Sequence, Type, cast
 
 import requests
 from dagster import (
@@ -11,6 +13,8 @@ from dagster import (
     external_assets_from_specs,
     multi_asset,
 )
+from dagster._config.post_process import post_process_config
+from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -18,7 +22,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.events import Failure
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.cached_method import cached_method
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from dagster_powerbi.translator import (
     DagsterPowerBITranslator,
@@ -35,22 +39,83 @@ def _clean_op_name(name: str) -> str:
     return re.sub(r"[^a-z0-9A-Z]+", "_", name)
 
 
+class PowerBICredentials(ConfigurableResource, abc.ABC):
+    @property
+    def api_token(self) -> str: ...
+
+
+class PowerBIToken(ConfigurableResource):
+    """Authenticates with PowerBI directly using an API access token."""
+
+    api_token: str = Field(..., description="An API access token used to connect to PowerBI.")
+
+
+MICROSOFT_LOGIN_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/token"
+
+
+class PowerBIServicePrincipal(ConfigurableResource):
+    """Authenticates with PowerBI using a service principal."""
+
+    client_id: str = Field(..., description="The application client ID for the service principal.")
+    client_secret: str = Field(
+        ..., description="A client secret created for the service principal."
+    )
+    tenant_id: str = Field(
+        ..., description="The Entra tenant ID where service principal was created."
+    )
+    _api_token: Optional[str] = PrivateAttr(default=None)
+
+    def get_api_token(self) -> str:
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        login_url = MICROSOFT_LOGIN_URL.format(tenant_id=self.tenant_id)
+        response = requests.post(
+            url=login_url,
+            headers=headers,
+            data=(
+                "grant_type=client_credentials"
+                "&resource=https://analysis.windows.net/powerbi/api"
+                f"&client_id={self.client_id}"
+                f"&client_secret={self.client_secret}"
+            ),
+            allow_redirects=True,
+        )
+        response.raise_for_status()
+        out = response.json()
+        self._api_token = out["access_token"]
+        return out["access_token"]
+
+    @property
+    def api_token(self) -> str:
+        if not self._api_token:
+            return self.get_api_token()
+        return self._api_token
+
+
 class PowerBIWorkspace(ConfigurableResource):
     """Represents a workspace in PowerBI and provides utilities
     to interact with the PowerBI API.
     """
 
-    api_token: str = Field(..., description="An API token used to connect to PowerBI.")
+    credentials: ResourceDependency[PowerBICredentials]
     workspace_id: str = Field(..., description="The ID of the PowerBI group to use.")
     refresh_poll_interval: int = Field(
         default=5, description="The interval in seconds to poll for refresh status."
     )
     refresh_timeout: int = Field(
-        default=300, description="The maximum time in seconds to wait for a refresh to complete."
+        default=300,
+        description="The maximum time in seconds to wait for a refresh to complete.",
     )
 
+    @cached_property
+    def api_token(self) -> str:
+        return self.credentials.api_token
+
     def fetch(
-        self, endpoint: str, method: str = "GET", json: Any = None, group_scoped: bool = True
+        self,
+        endpoint: str,
+        method: str = "GET",
+        json: Any = None,
+        group_scoped: bool = True,
     ) -> requests.Response:
         """Fetch JSON data from the PowerBI API. Raises an exception if the request fails.
 
@@ -76,7 +141,11 @@ class PowerBIWorkspace(ConfigurableResource):
         return response
 
     def fetch_json(
-        self, endpoint: str, method: str = "GET", json: Any = None, group_scoped: bool = True
+        self,
+        endpoint: str,
+        method: str = "GET",
+        json: Any = None,
+        group_scoped: bool = True,
     ) -> Dict[str, Any]:
         return self.fetch(endpoint, method, json, group_scoped=group_scoped).json()
 
@@ -246,8 +315,23 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=self._workspace.workspace_id)
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        resolved_workspace = self._workspace.process_config_and_initialize()
-        workspace_data: PowerBIWorkspaceData = resolved_workspace.fetch_powerbi_workspace_data()
+        # This is gross, but will be fixed by https://github.com/dagster-io/dagster/pull/24367/
+        workspace = self._workspace.__class__(
+            **{
+                **cast(
+                    Mapping,
+                    (
+                        post_process_config(
+                            self._workspace._config_schema.config_type,  # noqa: SLF001
+                            self._workspace._convert_to_config_dictionary(),  # noqa: SLF001
+                        ).value
+                    ),
+                ),
+                "credentials": self._workspace.credentials,
+            }
+        )
+
+        workspace_data: PowerBIWorkspaceData = workspace.fetch_powerbi_workspace_data()
         return [
             AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
             for data in [
@@ -312,4 +396,7 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
 
             executable_assets.append(asset_fn)
 
-        return [*external_assets_from_specs(all_external_asset_specs), *executable_assets]
+        return [
+            *external_assets_from_specs(all_external_asset_specs),
+            *executable_assets,
+        ]
