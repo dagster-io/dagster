@@ -156,7 +156,7 @@ class PowerBIWorkspace(ConfigurableResource):
         """
         dashboard_data = self.get_dashboards()["value"]
         augmented_dashboard_data = [
-            {**dashboard, "tiles": self.get_dashboard_tiles(dashboard["id"])}
+            {**dashboard, "tiles": self.get_dashboard_tiles(dashboard["id"])["value"]}
             for dashboard in dashboard_data
         ]
         dashboards = [
@@ -246,7 +246,8 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=self._workspace.workspace_id)
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        workspace_data: PowerBIWorkspaceData = self._workspace.fetch_powerbi_workspace_data()
+        resolved_workspace = self._workspace.process_config_and_initialize()
+        workspace_data: PowerBIWorkspaceData = resolved_workspace.fetch_powerbi_workspace_data()
         return [
             AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
             for data in [
@@ -275,14 +276,12 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
             all_external_data = [
                 *workspace_data.dashboards_by_id.values(),
                 *workspace_data.reports_by_id.values(),
-                *workspace_data.data_sources_by_id.values(),
             ]
             all_executable_data = [*workspace_data.semantic_models_by_id.values()]
         else:
             all_external_data = [
                 *workspace_data.dashboards_by_id.values(),
                 *workspace_data.reports_by_id.values(),
-                *workspace_data.data_sources_by_id.values(),
                 *workspace_data.semantic_models_by_id.values(),
             ]
             all_executable_data = []
