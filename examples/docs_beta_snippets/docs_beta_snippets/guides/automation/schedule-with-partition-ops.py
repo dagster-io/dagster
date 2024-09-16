@@ -1,9 +1,26 @@
 import dagster as dg
+from datetime import datetime
+
+
+class ProcessDateConfig(dg.Config):
+    date: str
+
+
+@dg.daily_partitioned_config(start_date=datetime(2024, 1, 1))
+def partitioned_config(start: datetime, _end: datetime):
+    ...
+
+
+@dg.op
+def process_data_for_date(context: dg.OpExecutionContext, config: ProcessDateConfig):
+    date = config.date
+    context.log.info(f"processing data for {date}")
 
 
 # Define the job
 @dg.job(config=partitioned_config)  # noqa: F821
-def partitioned_op_job(): ...
+def partitioned_op_job():
+    ...
 
 
 # highlight-start
