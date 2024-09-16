@@ -2,6 +2,7 @@ import os
 import time
 from contextlib import contextmanager
 
+import pytest
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._daemon.controller import all_daemons_healthy
@@ -9,6 +10,7 @@ from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster._utils.yaml_utils import load_yaml_from_path
+from dagster_aws.utils import ensure_dagster_aws_tests_import
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
     find_local_test_image,
@@ -18,6 +20,9 @@ from dagster_test.test_project import (
     get_test_project_recon_job,
     get_test_project_workspace_and_external_job,
 )
+
+ensure_dagster_aws_tests_import()
+from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -73,14 +78,11 @@ def test_monitoring():
             assert all_daemons_healthy(instance)
 
 
-def test_docker_monitoring():
+def test_docker_monitoring(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             # "auto_remove": True,
@@ -156,14 +158,20 @@ def test_docker_monitoring():
                     assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
 
-def test_docker_monitoring_run_out_of_attempts():
+@pytest.fixture
+def aws_env():
+    aws_creds = get_aws_creds()
+    return [
+        f"AWS_ACCESS_KEY_ID={aws_creds['aws_access_key_id']}",
+        f"AWS_SECRET_ACCESS_KEY={aws_creds['aws_secret_access_key']}",
+    ]
+
+
+def test_docker_monitoring_run_out_of_attempts(aws_env):
     docker_image = get_test_project_docker_image()
 
     launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
+        "env_vars": aws_env,
         "networks": ["container:test-postgres-db-docker"],
         "container_kwargs": {
             # "auto_remove": True,
