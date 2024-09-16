@@ -851,15 +851,19 @@ class SqlRunStorage(RunStorage):
             # then select from run tags table the value where the key is the backfill tag key and the run id is in the list of run ids where the tags matched
             # then get the rows in the backfill table that correspond to the backfill id for those runs
 
-            runs_table = RunsTable
+            run_tags_table = (
+                db_select([RunTagsTable.c.run_id, RunTagsTable.c.key, RunTagsTable.c.value])
+                .select_from(RunTagsTable)
+                .where(RunTagsTable.c.key == BACKFILL_ID_TAG)
+            )
 
             for i, (key, value) in enumerate(filters.tags.items()):
                 run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
 
-                runs_table = runs_table.join(
+                run_tags_table = run_tags_table.join(
                     run_tags_alias,
                     db.and_(
-                        RunsTable.c.run_id == run_tags_alias.c.run_id,
+                        RunTagsTable.c.run_id == run_tags_alias.c.run_id,
                         run_tags_alias.c.key == key,
                         (run_tags_alias.c.value == value)
                         if isinstance(value, str)
@@ -867,15 +871,7 @@ class SqlRunStorage(RunStorage):
                     ),
                 )
 
-            runs_table = runs_table.join(
-                RunTagsTable,
-                db.and_(
-                    RunsTable.c.run_id == RunTagsTable.c.run_id,
-                    RunTagsTable.c.key == BACKFILL_ID_TAG,
-                ),
-            )
-
-            run_ids_query = db_select([RunsTable.c.run_id]).select_from(runs_table)
+            run_ids_query = db_select([RunsTable.c.run_id]).select_from(run_tags_table)
             rows = self.fetchall(run_ids_query)
             run_ids = [row["run_id"] for row in rows]
 
