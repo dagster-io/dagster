@@ -99,7 +99,6 @@ def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: 
         api_token: str = api_token,
     ) -> Iterator[None]:
         with responses.RequestsMock() as response:
-
             response.add(
                 method=responses.POST,
                 url=f"{client.rest_api_base_url}/auth/signin",

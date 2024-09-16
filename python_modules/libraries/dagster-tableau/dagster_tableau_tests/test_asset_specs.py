@@ -48,7 +48,9 @@ def test_fetch_tableau_workspace_data(
 )
 @pytest.mark.usefixtures("site_name")
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
-def test_translator_spec(clazz, host_key, host_value, site_name, workspace_data_api_mocks_fn) -> None:
+def test_translator_spec(
+    clazz, host_key, host_value, site_name, workspace_data_api_mocks_fn
+) -> None:
     fake_personal_access_token_name = "fake_personal_access_token_name"
     fake_personal_access_token_value = uuid.uuid4().hex
 

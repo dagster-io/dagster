@@ -23,7 +23,6 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
 def test_basic_resource_request(
     clazz, host_key, host_value, site_name, api_token, workbook_id, workspace_data_api_mocks_fn
 ) -> None:
-
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
     connected_app_secret_value = uuid.uuid4().hex
