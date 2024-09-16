@@ -2,11 +2,11 @@ import datetime
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Mapping, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Union, cast
 
 import jwt
 import requests
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource
 from dagster._annotations import experimental
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
@@ -72,19 +72,19 @@ class BaseTableauClient:
         method: str = "GET",
         with_auth_header: bool = True,
     ) -> requests.Response:
-        headers = {
+        headers: Mapping[str, object] = {
             "accept": "application/json",
             "content-type": "application/json",
         }
         if with_auth_header:
-            headers["X-tableau-auth"] = self._api_token
-        request_args = dict(
+            headers = {**headers, "X-tableau-auth": self._api_token}
+        request_args: Dict[str, Any] = dict(
             method=method,
             url=url,
             headers=headers,
         )
         if data:
-            request_args["json"] = data
+            request_args = {**request_args, "json": data}
         response = requests.request(**request_args)
         response.raise_for_status()
         return response
@@ -128,6 +128,8 @@ class BaseTableauClient:
             method="POST",
             with_auth_header=False,
         )
+
+        response = cast(Dict[str, Any], response)
         self._api_token = response["credentials"]["token"]
         self._site_id = response["credentials"]["site"]["id"]
         return response
