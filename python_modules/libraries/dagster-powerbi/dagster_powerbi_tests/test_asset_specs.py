@@ -131,7 +131,7 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         # Assert that all Power BI assets have upstreams, which are resolved
         for asset_def in repository_def.assets_defs_by_key.values():
             for key, deps in asset_def.asset_deps.items():
-                if "dagster/kind/powerbi" not in asset_def.tags_by_key[key]:
+                if key.path[-1] == "my_materializable_asset":
                     continue
                 if key.path[0] == "semantic_model":
                     continue
@@ -166,3 +166,22 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         ), "Expected two successful steps"
 
         assert len(workspace_data_api_mocks.calls) == 5
+
+
+def test_two_workspaces(
+    workspace_data_api_mocks: responses.RequestsMock,
+    second_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with instance_for_test():
+        assert len(workspace_data_api_mocks.calls) == 0
+
+        from dagster_powerbi_tests.pending_repo_two_workspaces import (
+            pending_repo_from_cached_asset_metadata,
+        )
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        assert len(workspace_data_api_mocks.calls) == 9
+
+        # 3 PowerBI external assets from first workspace, 1 from second
+        assert len(repository_def.assets_defs_by_key) == 3 + 1

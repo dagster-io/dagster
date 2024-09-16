@@ -12,7 +12,6 @@ def test_translator_dashboard_spec(workspace_data: PowerBIWorkspaceData) -> None
     asset_spec = translator.get_asset_spec(dashboard)
 
     assert asset_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
-    assert asset_spec.tags == {"dagster/kind/powerbi": ""}
     deps = list(asset_spec.deps)
     assert len(deps) == 1
     assert deps[0].asset_key == AssetKey(["report", "Sales_Returns_Sample_v201912"])
@@ -30,7 +29,6 @@ def test_translator_report_spec(workspace_data: PowerBIWorkspaceData) -> None:
     asset_spec = translator.get_asset_spec(report)
 
     assert asset_spec.key.path == ["report", "Sales_Returns_Sample_v201912"]
-    assert asset_spec.tags == {"dagster/kind/powerbi": ""}
     deps = list(asset_spec.deps)
     assert len(deps) == 1
     assert deps[0].asset_key == AssetKey(["semantic_model", "Sales_Returns_Sample_v201912"])
@@ -48,7 +46,6 @@ def test_translator_semantic_model(workspace_data: PowerBIWorkspaceData) -> None
     asset_spec = translator.get_asset_spec(semantic_model)
 
     assert asset_spec.key.path == ["semantic_model", "Sales_Returns_Sample_v201912"]
-    assert asset_spec.tags == {"dagster/kind/powerbi": ""}
     deps = list(asset_spec.deps)
     assert len(deps) == 2
     assert deps[0].asset_key == AssetKey(["data_27_09_2019_xlsx"])
@@ -73,4 +70,3 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
 
     assert asset_spec.metadata == {"custom": "metadata"}
     assert asset_spec.key.path == ["dashboard", "Sales_Returns_Sample_v201912"]
-    assert asset_spec.tags == {"dagster/kind/powerbi": ""}

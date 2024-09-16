@@ -1,6 +1,6 @@
 import re
 import time
-from typing import Any, Dict, Sequence, Type
+from typing import Any, Dict, Sequence, Type, cast
 
 import requests
 from dagster import (
@@ -297,12 +297,15 @@ class PowerBICacheableAssetsDefinition(CacheableAssetsDefinition):
         for content, spec in zip(all_executable_data, all_executable_asset_specs):
             dataset_id = content.properties["id"]
 
+            resource_key = f"power_bi_{self._workspace.workspace_id.replace('-','_')}"
+
             @multi_asset(
                 specs=[spec],
                 name="_".join(spec.key.path),
-                resource_defs={"power_bi": self._workspace.get_resource_definition()},
+                resource_defs={resource_key: self._workspace.get_resource_definition()},
             )
-            def asset_fn(context: AssetExecutionContext, power_bi: PowerBIWorkspace) -> None:
+            def asset_fn(context: AssetExecutionContext) -> None:
+                power_bi = cast(PowerBIWorkspace, getattr(context.resources, resource_key))
                 power_bi.trigger_refresh(dataset_id)
                 power_bi.poll_refresh(dataset_id)
                 context.log.info("Refresh completed.")

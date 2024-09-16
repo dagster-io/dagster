@@ -138,7 +138,6 @@ class DagsterPowerBITranslator:
 
         return AssetSpec(
             key=self.get_dashboard_asset_key(data),
-            tags={"dagster/kind/powerbi": ""},
             deps=report_keys,
             metadata=metadata,
         )
@@ -156,7 +155,6 @@ class DagsterPowerBITranslator:
         return AssetSpec(
             key=self.get_report_asset_key(data),
             deps=[dataset_key] if dataset_key else None,
-            tags={"dagster/kind/powerbi": ""},
             metadata=metadata,
         )
 
@@ -174,7 +172,6 @@ class DagsterPowerBITranslator:
 
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
-            tags={"dagster/kind/powerbi": ""},
             deps=source_keys,
             metadata=metadata,
         )
@@ -194,5 +191,4 @@ class DagsterPowerBITranslator:
     def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
         return AssetSpec(
             key=self.get_data_source_asset_key(data),
-            tags={"dagster/kind/powerbi": ""},
         )
