@@ -99,7 +99,7 @@ def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: 
         site_id: str = site_id,
         workbook_id: str = workbook_id,
         api_token: str = api_token,
-    ) -> Iterator[None]:
+    ) -> Iterator[responses.RequestsMock]:
         with responses.RequestsMock() as response:
             response.add(
                 method=responses.POST,
