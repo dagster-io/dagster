@@ -48,7 +48,6 @@ from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
@@ -579,17 +578,7 @@ class JobDefinition(IHasInternalInit):
         return frozenset(hook_defs)
 
     def get_retry_policy_for_handle(self, handle: NodeHandle) -> Optional[RetryPolicy]:
-        node = self.get_node(handle)
-        definition = node.definition
-
-        if node.retry_policy:
-            return node.retry_policy
-        elif isinstance(definition, OpDefinition) and definition.retry_policy:
-            return definition.retry_policy
-
-        # could be expanded to look in graph containers
-        else:
-            return self._op_retry_policy
+        return self.get_job_snapshot().get_retry_policy_for_node(handle.name)
 
     # make Callable for decorator reference updates
     def __call__(self, *args, **kwargs):

@@ -16,6 +16,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.snap.dep_snapshot import (
     DependencyStructureSnapshot,
     build_dep_structure_snapshot_from_graph_def,
@@ -252,6 +253,7 @@ class OpDefSnap(
             ("tags", Mapping[str, object]),
             ("required_resource_keys", Sequence[str]),
             ("config_field_snap", Optional[ConfigFieldSnap]),
+            ("retry_policy", Optional[RetryPolicy]),
         ],
     )
 ):
@@ -264,6 +266,7 @@ class OpDefSnap(
         tags: Mapping[str, str],
         required_resource_keys: Sequence[str],
         config_field_snap: Optional[ConfigFieldSnap],
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         return super(OpDefSnap, cls).__new__(
             cls,
@@ -280,6 +283,7 @@ class OpDefSnap(
             config_field_snap=check.opt_inst_param(
                 config_field_snap, "config_field_snap", ConfigFieldSnap
             ),
+            retry_policy=check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy),
         )
 
     def get_input_snap(self, name: str) -> InputDefSnap:
@@ -381,6 +385,7 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
             if op_def.has_config_field
             else None
         ),
+        retry_policy=op_def.retry_policy,
     )
 
 

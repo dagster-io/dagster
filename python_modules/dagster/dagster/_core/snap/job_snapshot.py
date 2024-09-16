@@ -30,6 +30,7 @@ from dagster._core.definitions.metadata import (
     RawMetadataValue,
     normalize_metadata,
 )
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.snap.config_types import build_config_schema_snapshot
 from dagster._core.snap.dagster_types import (
     DagsterTypeNamespaceSnapshot,
@@ -37,6 +38,7 @@ from dagster._core.snap.dagster_types import (
 )
 from dagster._core.snap.dep_snapshot import (
     DependencyStructureSnapshot,
+    NodeInvocationSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._core.snap.mode import ModeDefSnap, build_mode_def_snap
@@ -107,6 +109,7 @@ class JobSnapshot(
             ("lineage_snapshot", Optional["JobLineageSnapshot"]),
             ("graph_def_name", str),
             ("metadata", Mapping[str, MetadataValue]),
+            ("op_retry_policy", Optional[RetryPolicy]),
         ],
     )
 ):
@@ -123,6 +126,7 @@ class JobSnapshot(
         lineage_snapshot: Optional["JobLineageSnapshot"],
         graph_def_name: str,
         metadata: Optional[Mapping[str, RawMetadataValue]],
+        op_retry_policy: Optional[RetryPolicy] = None,
     ):
         return super(JobSnapshot, cls).__new__(
             cls,
@@ -153,6 +157,7 @@ class JobSnapshot(
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
+            op_retry_policy=check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy),
         )
 
     @classmethod
@@ -202,12 +207,26 @@ class JobSnapshot(
 
         check.failed("not found")
 
-    def has_node_name(self, node_name: str) -> bool:
-        check.str_param(node_name, "node_name")
+    def get_retry_policy_for_node(self, node_name: str):
+        node = check.not_none(self.get_node_invocation(node_name))
+        definition = self.get_node_def_snap(node.node_def_name)
+
+        if node.retry_policy:
+            return node.retry_policy
+        elif isinstance(definition, OpDefSnap) and definition.retry_policy:
+            return definition.retry_policy
+        else:
+            return self.op_retry_policy
+
+    def get_node_invocation(self, node_name: str) -> Optional[NodeInvocationSnap]:
         for node_invocation_snap in self.dep_structure_snapshot.node_invocation_snaps:
             if node_invocation_snap.node_name == node_name:
-                return True
-        return False
+                return node_invocation_snap
+        return None
+
+    def has_node_name(self, node_name: str) -> bool:
+        check.str_param(node_name, "node_name")
+        return self.get_node_invocation(node_name) is not None
 
     def get_config_type_from_node_def_snap(
         self,

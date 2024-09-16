@@ -1,9 +1,10 @@
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Mapping, NamedTuple, Sequence
+from typing import DefaultDict, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import GraphDefinition
 from dagster._core.definitions.dependency import DependencyType, Node, NodeInput
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -36,6 +37,7 @@ def build_node_invocation_snap(graph_def: GraphDefinition, node: Node) -> "NodeI
         tags=node.tags,
         input_dep_snaps=input_def_snaps,
         is_dynamic_mapped=dep_structure.is_dynamic_mapped(node.name),
+        retry_policy=node.retry_policy,
     )
 
 
@@ -213,6 +215,7 @@ class NodeInvocationSnap(
             ("tags", Mapping[str, str]),
             ("input_dep_snaps", Sequence[InputDependencySnap]),
             ("is_dynamic_mapped", bool),
+            ("retry_policy", Optional[RetryPolicy]),
         ],
     )
 ):
@@ -223,6 +226,7 @@ class NodeInvocationSnap(
         tags: Mapping[str, str],
         input_dep_snaps: Sequence[InputDependencySnap],
         is_dynamic_mapped: bool = False,
+        retry_policy: Optional[RetryPolicy] = None,
     ):
         return super(NodeInvocationSnap, cls).__new__(
             cls,
@@ -233,6 +237,7 @@ class NodeInvocationSnap(
                 input_dep_snaps, "input_dep_snaps", of_type=InputDependencySnap
             ),
             is_dynamic_mapped=check.bool_param(is_dynamic_mapped, "is_dynamic_mapped"),
+            retry_policy=check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy),
         )
 
     def input_dep_snap(self, input_name: str) -> InputDependencySnap:
