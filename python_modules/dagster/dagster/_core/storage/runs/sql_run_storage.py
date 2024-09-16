@@ -80,6 +80,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -844,6 +845,70 @@ class SqlRunStorage(RunStorage):
             raise DagsterInvariantViolationError(
                 "Cannot provide status and filters to get_backfills. Please use filters rather than status."
             )
+
+        if filters and filters.tags:
+            # select from run tags table the run ids where the filter tags match
+            # then select from run tags table the value where the key is the backfill tag key and the run id is in the list of run ids where the tags matched
+            # then get the rows in the backfill table that correspond to the backfill id for those runs
+
+            runs_table = RunsTable
+
+            for i, (key, value) in enumerate(filters.tags.items()):
+                run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
+
+                runs_table = runs_table.join(
+                    run_tags_alias,
+                    db.and_(
+                        RunsTable.c.run_id == run_tags_alias.c.run_id,
+                        run_tags_alias.c.key == key,
+                        (run_tags_alias.c.value == value)
+                        if isinstance(value, str)
+                        else run_tags_alias.c.value.in_(value),
+                    ),
+                )
+
+            runs_table = runs_table.join(
+                run_tags_alias,
+                db.and_(
+                    RunsTable.c.run_id == run_tags_alias.c.run_id,
+                    run_tags_alias.c.key == BACKFILL_ID_TAG,
+                ),
+            )
+
+            run_tags_table = RunTagsTable
+            run_tags_table.join(
+                runs_table,
+                db.and_(
+                    RunTagsTable.c.run_id == runs_table.c.run_id,
+                    RunTagsTable.c.key == BACKFILL_ID_TAG,
+                ),
+            )
+
+            backfill_ids_query = db_select(run_tags_table.c.value).select_from(run_tags_table)
+            rows = self.fetchall(backfill_ids_query)
+            backfill_ids = [row["value"] for row in rows]
+
+            query.where(BulkActionsTable.c.key.in_(backfill_ids))
+
+        if filters and filters.job_name:
+            run_tags_table = RunTagsTable
+            runs_table_alias = db.alias(RunsTable, "runs_table_alias")
+
+            run_tags_table = run_tags_table.join(
+                runs_table_alias,
+                db.and_(
+                    RunTagsTable.c.run_id == runs_table_alias.c.run_id,
+                    RunTagsTable.c.key == BACKFILL_ID_TAG,
+                    runs_table_alias.c.pipeline_name == filters.job_name,
+                ),
+            )
+
+            backfill_ids_query = db_select(run_tags_table.c.value).select_from(run_tags_table)
+            rows = self.fetchall(backfill_ids_query)
+            backfill_ids = [row["value"] for row in rows]
+
+            query.where(BulkActionsTable.c.key.in_(backfill_ids))
+
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
             assert statuses

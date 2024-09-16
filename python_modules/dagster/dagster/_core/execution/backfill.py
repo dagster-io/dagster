@@ -55,12 +55,15 @@ class BulkActionsFilter:
         created_before (Optional[DateTime]): Filter by bulk actions that were created before this datetime. Note that the
             create_time for each bulk action is stored in UTC.
         created_after (Optional[DateTime]): Filter by bulk actions that were created after this datetime. Note that the
-            create_time for each bulk action is stored in UTC.
+            create_time for each bulk action is stored in UTC.t
+        tags (Optional[Dict[str, Union[str, List[str]]]]):
+            A dictionary of tags to query by. All tags specified here must be present for a given bulk action to pass the filter.
     """
 
     statuses: Optional[Sequence[BulkActionStatus]] = None
     created_before: Optional[datetime] = None
     created_after: Optional[datetime] = None
+    tags: Mapping[str, Union[str, Sequence[str]]]
 
 
 @whitelist_for_serdes
