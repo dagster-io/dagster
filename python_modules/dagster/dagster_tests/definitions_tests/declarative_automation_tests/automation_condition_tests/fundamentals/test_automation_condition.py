@@ -1,4 +1,8 @@
+import datetime
+
+import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
+from dagster._check.functions import CheckError
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.remote_representation.external_data import (
@@ -137,3 +141,39 @@ def test_label_automation_condition() -> None:
     assert not_missing_and_not_in_progress.get_node_snapshot("").label == "Blah"
     assert not_missing_and_not_in_progress.children[0].label == "Not missing"
     assert not_missing_and_not_in_progress.children[1].label == "Not in progress"
+
+
+def test_without_automation_condition() -> None:
+    a = AutomationCondition.in_latest_time_window()
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = ~AutomationCondition.any_deps_in_progress()
+
+    orig = a & b & c
+
+    # simple cases
+    assert orig.without(a) == b & c
+    assert orig.without(b) == a & c
+    assert orig.without(c) == a & b
+
+    # ensure works if using different instances of the same operands
+    assert orig.without(AutomationCondition.in_latest_time_window()) == b & c
+    assert orig.without(~AutomationCondition.any_deps_in_progress()) == a & b
+
+    # make sure it errors if an invalid condition is passed
+    with pytest.raises(CheckError, match="Condition not found"):
+        orig.without(AutomationCondition.in_progress())
+
+    with pytest.raises(CheckError, match="Condition not found"):
+        orig.without(
+            AutomationCondition.any_deps_match(
+                AutomationCondition.in_progress() | AutomationCondition.missing()
+            )
+        )
+
+    with pytest.raises(CheckError, match="Condition not found"):
+        orig.without(
+            AutomationCondition.in_latest_time_window(lookback_delta=datetime.timedelta(hours=3))
+        )
+
+    with pytest.raises(CheckError, match="fewer than 2 operands"):
+        orig.without(a).without(b)
