@@ -305,21 +305,22 @@ class BaseTableauWorkspace(ConfigurableResource):
                 )
 
                 for view_data in workbook_data["sheets"]:
-                    augmented_view_data = {**view_data, "workbook": {"luid": workbook_id}}
-                    views_by_id[view_data["luid"]] = TableauContentData(
-                        content_type=TableauContentType.VIEW, properties=augmented_view_data
-                    )
+                    view_id = view_data["luid"]
+                    if view_id:
+                        augmented_view_data = {**view_data, "workbook": {"luid": workbook_id}}
+                        views_by_id[view_id] = TableauContentData(
+                            content_type=TableauContentType.VIEW, properties=augmented_view_data
+                        )
 
                     for embedded_data_source_data in view_data.get("parentEmbeddedDatasources", []):
                         for published_data_source_data in embedded_data_source_data.get(
                             "parentPublishedDatasources", []
                         ):
-                            if published_data_source_data["luid"] not in data_sources_by_id:
-                                data_sources_by_id[published_data_source_data["luid"]] = (
-                                    TableauContentData(
-                                        content_type=TableauContentType.DATA_SOURCE,
-                                        properties=published_data_source_data,
-                                    )
+                            data_source_id = published_data_source_data["luid"]
+                            if data_source_id and data_source_id not in data_sources_by_id:
+                                data_sources_by_id[data_source_id] = TableauContentData(
+                                    content_type=TableauContentType.DATA_SOURCE,
+                                    properties=published_data_source_data,
                                 )
 
         return TableauWorkspaceData(
