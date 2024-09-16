@@ -22,7 +22,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.test_utils import environ
-from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
+from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY, DAG_ID_METADATA_KEY
 from dagster_airlift.core import (
     build_defs_from_airflow_instance,
     dag_defs,
@@ -35,6 +35,7 @@ from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
     build_definitions_airflow_asset_graph,
+    dag_defs_with_override,
     fully_loaded_repo_from_airflow_asset_graph,
 )
 
@@ -309,7 +310,8 @@ def test_local_airflow_instance() -> None:
     assert len(list(defs.assets)) == 1
     repo_def = defs.get_repository_def()
     a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
-    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") == "False"
+    # With no task migration info, the asset shouldn't even have the tag set.
+    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") is None
 
     with environ(
         {
@@ -452,14 +454,38 @@ def test_provide_source_assets_to_build_defs() -> None:
     assert len(list(source1_asset.specs)) == 1
     assert next(iter(source1_asset.specs)).deps == []
     assert next(iter(source1_asset.specs)).metadata[
-        DAG_AND_TASK_ID_METADATA_KEY
+        AIRFLOW_COUPLING_METADATA_KEY
     ] == JsonMetadataValue([["dag", "task"]])
     source2_asset = repo_def.assets_defs_by_key[source2.key]
     assert len(list(source2_asset.specs)) == 1
     assert next(iter(source2_asset.specs)).deps == []
     assert next(iter(source2_asset.specs)).metadata[
-        DAG_AND_TASK_ID_METADATA_KEY
+        AIRFLOW_COUPLING_METADATA_KEY
     ] == JsonMetadataValue([["dag", "task"]])
     dag_asset = repo_def.assets_defs_by_key[AssetKey(["airflow_instance", "dag", "dag"])]
     assert len(list(dag_asset.specs)) == 1
     assert [dep.asset_key for dep in next(iter(dag_asset.specs)).deps] == [has_sources_asset.key]
+
+
+def test_dag_override() -> None:
+    """Test that if assets are provided which map to a dag, that additional dag assets are not created."""
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=make_instance({"dag_one": ["task_one"]}),
+        dag_defs_list=[dag_defs_with_override()],
+    )
+    repo_def = defs.get_repository_def()
+    assert len(repo_def.assets_defs_by_key) == 3
+    a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
+    assert len(list(a_asset.specs)) == 1
+    a_asset_spec = next(iter(a_asset.specs))
+    assert a_asset_spec.metadata[DAG_ID_METADATA_KEY] == "dag_one"
+
+    b_asset = repo_def.assets_defs_by_key[AssetKey("b")]
+    assert len(list(b_asset.specs)) == 1
+    b_asset_spec = next(iter(b_asset.specs))
+    assert b_asset_spec.metadata[DAG_ID_METADATA_KEY] == "dag_one"
+
+    c_asset = repo_def.assets_defs_by_key[AssetKey("c")]
+    assert len(list(c_asset.specs)) == 1
+    c_asset_spec = next(iter(c_asset.specs))
+    assert c_asset_spec.metadata[DAG_ID_METADATA_KEY] == "dag_one"

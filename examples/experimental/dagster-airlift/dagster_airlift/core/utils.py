@@ -4,7 +4,11 @@ from dagster import AssetSpec
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.storage.tags import KIND_PREFIX
 
-from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY, AirflowCoupling
+from dagster_airlift.constants import (
+    AIRFLOW_COUPLING_METADATA_KEY,
+    DAG_ID_METADATA_KEY,
+    AirflowCoupling,
+)
 
 
 def convert_to_valid_dagster_name(name: str) -> str:
@@ -16,6 +20,10 @@ def get_couplings_from_spec(spec: AssetSpec) -> Optional[List[Tuple[str, str]]]:
     if AIRFLOW_COUPLING_METADATA_KEY in spec.metadata:
         return cast(List[AirflowCoupling], spec.metadata[AIRFLOW_COUPLING_METADATA_KEY].value)
     return None
+
+
+def get_dag_id_from_spec(spec: AssetSpec) -> Optional[str]:
+    return spec.metadata.get(DAG_ID_METADATA_KEY)
 
 
 def airflow_kind_dict() -> dict:

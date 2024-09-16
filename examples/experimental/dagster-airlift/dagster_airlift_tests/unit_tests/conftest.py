@@ -9,16 +9,22 @@ from dagster import (
     Definitions,
     SensorEvaluationContext,
     SensorResult,
+    SourceAsset,
     build_sensor_context,
     multi_asset,
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
 from dagster._time import get_current_datetime
-from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster_airlift.core import DagDefs, build_defs_from_airflow_instance, dag_defs, task_defs
 from dagster_airlift.test import make_dag_run, make_instance
 
 if TYPE_CHECKING:
@@ -125,3 +131,34 @@ def assert_dependency_structure_in_assets(
         assert {dep.asset_key for dep in spec.deps} == {
             AssetKey.from_user_string(dep) for dep in deps_list
         }
+
+
+def dag_defs_with_override() -> "DagDefs":
+    """A test dag_defs call with an override applied."""
+
+    class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+        def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+            return []
+
+        def build_definitions(
+            self, data: Sequence[AssetsDefinitionCacheableData]
+        ) -> Sequence[AssetsDefinition]:
+            @multi_asset(specs=[AssetSpec(key="c", metadata={"airlift/dag_id": "dag_one"})])
+            def _asset():
+                return None
+
+            return [_asset]
+
+    return dag_defs(
+        "dag_one",
+        [
+            task_defs("task_one", Definitions(assets=[])),
+        ],
+        override=Definitions(
+            assets=[
+                AssetSpec(key="a"),
+                SourceAsset(key="b"),
+                MyCacheableAssetsDefinition(unique_id="c"),
+            ]
+        ),
+    )
