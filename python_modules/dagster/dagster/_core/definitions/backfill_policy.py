@@ -22,21 +22,22 @@ class BackfillPolicy(
         ],
     )
 ):
-    """A BackfillPolicy specifies how Dagster should attempt to backfill a partitioned asset.
+    """A BackfillPolicy specifies how Dagster should attempt to execute runs that target multiple
+    partitions of an asset.
 
     There are two main kinds of backfill policies: single-run and multi-run.
 
     An asset with a single-run backfill policy will take a single run to backfill all of its
     partitions at once.
 
-    An asset with a multi-run backfill policy will take multiple runs to backfill all of its
-    partitions. Each run will backfill a subset of the partitions. The number of partitions to
-    backfill in each run is controlled by the `max_partitions_per_run` parameter.
+    An asset with a multi-run backfill policy will take multiple sub-runs to backfill all of its
+    partitions. Each sub-run will backfill a subset of the partitions. The number of partitions to
+    backfill in each sub-run is controlled by the `max_partitions_per_run` parameter.
 
     For example:
 
     - If an asset has 100 partitions, and the `max_partitions_per_run` is set to 10, then it will
-      be backfilled in 10 runs; each run will backfill 10 partitions.
+      be backfilled with 10 sub-runs; each run will backfill 10 partitions.
 
     - If an asset has 100 partitions, and the `max_partitions_per_run` is set to 11, then it will
       be backfilled in 10 runs; the first 9 runs will backfill 11 partitions, and the last one run
@@ -64,7 +65,7 @@ class BackfillPolicy(
     @public
     @staticmethod
     def multi_run(max_partitions_per_run: int = 1) -> "BackfillPolicy":
-        """Creates a BackfillPolicy that executes the entire backfill in multiple runs.
+        """Creates a BackfillPolicy that executes the entire backfill in multiple sub-runs.
         Each run will backfill [max_partitions_per_run] number of partitions.
 
         Args:
