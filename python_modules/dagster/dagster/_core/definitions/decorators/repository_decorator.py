@@ -265,6 +265,8 @@ def repository(
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
+    In most cases, :py:class:`Definitions` should be used instead.
+
     The decorated function should take no arguments and its return value should one of:
 
     1. ``List[Union[JobDefinition, ScheduleDefinition, SensorDefinition]]``.
