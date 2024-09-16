@@ -10,7 +10,7 @@ def test_translator_view_spec(workspace_data: TableauWorkspaceData) -> None:
     translator = DagsterTableauTranslator(workspace_data)
     asset_spec = translator.get_asset_spec(view)
 
-    assert asset_spec.key.path == ["view", "sales"]
+    assert asset_spec.key.path == ["test_workbook", "view", "sales"]
     assert asset_spec.tags == {"dagster/storage_kind": "tableau"}
     deps = list(asset_spec.deps)
     assert len(deps) == 1
@@ -41,5 +41,5 @@ def test_translator_custom_metadata(workspace_data: TableauWorkspaceData) -> Non
     asset_spec = translator.get_asset_spec(view)
 
     assert asset_spec.metadata == {"custom": "metadata"}
-    assert asset_spec.key.path == ["view", "sales"]
+    assert asset_spec.key.path == ["test_workbook", "view", "sales"]
     assert asset_spec.tags == {"dagster/storage_kind": "tableau"}

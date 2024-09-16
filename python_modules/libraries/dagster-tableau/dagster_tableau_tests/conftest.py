@@ -2,57 +2,40 @@ import pytest
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
 SAMPLE_WORKBOOK = {
-    "location": {
-        "id": "7239fbb5-f0a3-426f-b9c0-05f829c6cd64",
-    },
-    "owner": {
-        "id": "2a59b27f-a842-4c7a-a6ed-8c9f814e6119",
-    },
-    "views": {
-        "view": [
-            {
-                "id": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
-            },
-        ]
-    },
-    "connections": {
-        "connection": [
-            {
-                "datasource": {
-                    "id": "a15ca565-fb62-4a95-bc71-2a7667f9a3ef",
-                },
-                "id": "436cb989-74fb-47d4-a209-edd5510d1239",
-                "type": "sqlproxy",
-                "embedPassword": False,
-                "serverAddress": "localhost",
-                "serverPort": "8080",
-                "userName": "",
-                "queryTaggingEnabled": False,
-            }
-        ]
-    },
-    "id": "b75fc023-a7ca-4115-857b-4342028640d0",
+    "luid": "b75fc023-a7ca-4115-857b-4342028640d0",
     "name": "Test Workbook",
-    "contentUrl": "TestWorkbook",
-    "webpageUrl": "https://prod-ca-a.online.tableau.com/#/site/info-5a38291c26/workbooks/690496",
     "createdAt": "2024-09-05T21:33:26Z",
-    "updatedAt": "2024-09-06T14:38:42Z",
+    "updatedAt": "2024-09-13T00:15:27Z",
+    "uri": "sites/49445/workbooks/690496",
+    "sheets": [
+        {
+            "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
+        }
+    ],
 }
 
 
 SAMPLE_VIEW = {
-    "id": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
+    "luid": "ae8a5f27-8b2f-44e9-aec3-94fe6c638f4f",
     "name": "Sales",
-    "contentUrl": "TestWorkbook/sheets/Sales",
     "createdAt": "2024-09-05T21:33:26Z",
-    "updatedAt": "2024-09-06T14:38:42Z",
-    "viewUrlName": "Sales",
-    "workbook": {"id": "b75fc023-a7ca-4115-857b-4342028640d0"},
+    "updatedAt": "2024-09-13T00:15:23Z",
+    "path": "TestWorkbook/Sales",
+    "parentEmbeddedDatasources": [
+        {
+            "parentPublishedDatasources": [
+                {
+                    "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
+                }
+            ]
+        }
+    ],
+    "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
 }
 
 
 SAMPLE_DATA_SOURCE = {
-    "id": "a15ca565-fb62-4a95-bc71-2a7667f9a3ef",
+    "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
     "name": "Superstore Datasource",
 }
 
@@ -69,17 +52,17 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
     return TableauWorkspaceData(
         site_name=site_name,
         workbooks_by_id={
-            SAMPLE_WORKBOOK["id"]: TableauContentData(
+            SAMPLE_WORKBOOK["luid"]: TableauContentData(
                 content_type=TableauContentType.WORKBOOK, properties=SAMPLE_WORKBOOK
             )
         },
         views_by_id={
-            SAMPLE_VIEW["id"]: TableauContentData(
+            SAMPLE_VIEW["luid"]: TableauContentData(
                 content_type=TableauContentType.VIEW, properties=SAMPLE_VIEW
             )
         },
         data_sources_by_id={
-            SAMPLE_DATA_SOURCE["id"]: TableauContentData(
+            SAMPLE_DATA_SOURCE["luid"]: TableauContentData(
                 content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_DATA_SOURCE
             )
         },

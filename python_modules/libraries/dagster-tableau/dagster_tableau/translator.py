@@ -64,14 +64,23 @@ class DagsterTableauTranslator:
             check.assert_never(data.content_type)
 
     def get_view_asset_key(self, data: TableauContentData) -> AssetKey:
-        return AssetKey(["view", _clean_asset_name(data.properties["name"])])
+        workbook_id = data.properties["workbook"]["luid"]
+        workbook_data = self.workspace_data.workbooks_by_id.get(workbook_id)
+        return AssetKey(
+            [
+                _clean_asset_name(workbook_data.properties["name"]),
+                "view",
+                _clean_asset_name(data.properties["name"]),
+            ]
+        )
 
     def get_view_spec(self, data: TableauContentData) -> AssetSpec:
-        workbook_id = data.properties["workbook"]["id"]
-        workbook_data = self.workspace_data.workbooks_by_id.get(workbook_id)
-        workbook_connections = workbook_data.properties.get("connections", {}).get("connection", [])
-
-        data_source_ids = {connection["datasource"]["id"] for connection in workbook_connections}
+        view_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
+        data_source_ids = {
+            published_data_source["luid"]
+            for embedded_data_source in view_embedded_data_sources
+            for published_data_source in embedded_data_source.get("parentPublishedDatasources", [])
+        }
 
         data_source_keys = [
             self.get_data_source_asset_key(
