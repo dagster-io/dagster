@@ -133,7 +133,7 @@ export const LocationStatus = (props: {
             Failed
           </Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
-            <span style={{fontSize: '14px'}}>View error</span>
+            <span style={{fontSize: '12px'}}>View error</span>
           </ButtonLink>
         </Box>
         <RepositoryLocationNonBlockingErrorDialog
