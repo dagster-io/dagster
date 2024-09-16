@@ -1644,6 +1644,54 @@ class TestRunStorage:
         )
         assert len(backfill_with_tags) == 0
 
+    def test_backfill_simple_job_name_filtering(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+
+        # a run for a different job that is not part of a backfill
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=make_new_run_id(),
+                job_name="a_different_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+            )
+        )
+
+        backfills_for_job = storage.get_backfills(
+            filters=BulkActionsFilter(job_name="some_pipeline")
+        )
+        assert len(backfills_for_job) == 1
+        assert backfills_for_job[0].backfill_id == backfill.backfill_id
+
+        # test for a job_name that doesn't match
+
+        backfills_for_job = storage.get_backfills(
+            filters=BulkActionsFilter(job_name="a_different_pipeline")
+        )
+        assert len(backfills_for_job) == 0
+
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
 

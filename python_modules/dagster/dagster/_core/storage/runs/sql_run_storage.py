@@ -869,6 +869,27 @@ class SqlRunStorage(RunStorage):
 
             query = query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_tags_query)))
 
+        if filters and filters.job_name:
+            run_tags_table = RunTagsTable
+
+            run_tags_table = run_tags_table.join(
+                RunsTable,
+                db.and_(
+                    RunTagsTable.c.run_id == RunsTable.c.run_id,
+                    RunTagsTable.c.key == BACKFILL_ID_TAG,
+                    RunsTable.c.pipeline_name == filters.job_name,
+                ),
+            )
+
+            backfill_ids_query = db_select([RunTagsTable.c.value]).select_from(run_tags_table)
+            rows = self.fetchall(backfill_ids_query)
+            backfill_ids = [row["value"] for row in rows]
+
+            if len(backfill_ids) == 0:
+                return []
+
+            query.where(BulkActionsTable.c.key.in_(backfill_ids))
+
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
             assert statuses
