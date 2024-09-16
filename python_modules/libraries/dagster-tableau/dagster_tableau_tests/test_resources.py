@@ -43,7 +43,6 @@ def test_basic_resource_request(
     resource.build_client()
 
     with workspace_data_api_mocks_fn(client=resource._client) as response:
-
         # Remove the resource's client to properly test the resource
         resource._client = None
 
