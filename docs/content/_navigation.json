@@ -889,10 +889,6 @@
           {
             "title": "Airbyte Cloud & Dagster",
             "path": "/integrations/airbyte-cloud"
-          },
-          {
-            "title": "Ingestion as code",
-            "path": "/guides/dagster/airbyte-ingestion-as-code"
           }
         ]
       },
@@ -902,7 +898,7 @@
       },
       {
         "title": "Databricks",
-        "path": "/integrations/databricks"
+        "path": "/concepts/dagster-pipes/databricks"
       },
       {
         "title": "dbt",
@@ -1003,10 +999,6 @@
       {
         "title": "Fivetran",
         "path": "/integrations/fivetran"
-      },
-      {
-        "title": "Great Expectations",
-        "path": "/integrations/great-expectations"
       },
       {
         "title": "Google BigQuery",
