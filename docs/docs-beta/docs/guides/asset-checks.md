@@ -1,16 +1,16 @@
 ---
-title: "Testing assets with Asset Checks"
+title: "Testing assets with Asset checks"
 sidebar_position: 10
-sidebar_label: "Asset Checks"
+sidebar_label: "Asset checks"
 ---
 
-Asset checks in Dagster provide a way to define and execute different types of data quality checks on your data assets.
-
-Asset checks are tests that verify specific properties of your data assets. For example, you can create checks to:
+Asset checks are tests that verify specific properties of your data assets, allowing you to execute data quality checks on your data. For example, you can create checks to:
 
 - Ensure a particular column doesn't contain null values
 - Verify that a tabular asset adheres to a specified schema
 - Check if an asset's data needs refreshing
+
+Each asset check should test only a single asset property to keep tests simple, reusable, and easy to track over time.
 
 <details>
 <summary>Prerequisites</summary>
@@ -19,13 +19,14 @@ To follow this guide, you'll need:
 
 - Familiarity with [Assets](/concepts/assets)
 </details>
-## Getting Started with Asset Checks
 
-To get started with asset checks, you can follow these general steps, which are detailed below:
+## Getting started
+
+To get started with asset checks, follow these general steps:
 
 1. **Define an asset check:** Asset checks are typically defined using the `@asset_check` or `@multi_asset_check` decorator and run either within an asset or separate from the asset.
-2.** Pass the asset checks to the `Definitions` object:** Asset checks must be added to Definitions for Dagster to recognize them.
-3. **Choose how you wish to execute asset checks**: by default, all jobs targeting an asset will also run associated checks, although you can run asset checks through the UI.
+2. **Pass the asset checks to the `Definitions` object:** Asset checks must be added to `Definitions` for Dagster to recognize them.
+3. **Choose how to execute asset checks**: By default, all jobs targeting an asset will also run associated checks, although you can run asset checks through the Dagster UI.
 4. **View asset check results in the UI**: Asset check results will appear in the UI and can be customized through the use of metadata and severity levels
 5. **Alert on failed asset check results**: If you are using Dagster+, you can choose to alert on asset checks.
 
@@ -35,9 +36,9 @@ To get started with asset checks, you can follow these general steps, which are 
 Dagster's dbt integration can model existing dbt tests as asset checks. Refer to the [dagster-dbt documentaiton](/integrations/dbt) for more information.
 :::
 
-Single asset checks are defined using the `@asset_check` decorator.
+A asset check is defined using the `@asset_check` decorator.
 
-The following example defines an asset check on an asset that fails if the `order_id` column of the asset contains a null value. The asset check will run after the asset has been materialized, to ensure the quality of its data.
+The following example defines an asset check on an asset that fails if the `order_id` column of the asset contains a null value. The asset check will run after the asset has been materialized.
 
 <CodeExample filePath="guides/data-assets/quality-testing/asset-checks/single-asset-check.py" language="python" />
 
