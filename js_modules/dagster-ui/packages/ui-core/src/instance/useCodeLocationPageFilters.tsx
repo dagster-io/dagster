@@ -8,7 +8,7 @@ import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
 import {useFilters} from '../ui/BaseFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 export const useCodeLocationPageFilters = () => {
   const {loading, locationEntries} = useContext(WorkspaceContext);

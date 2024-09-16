@@ -18,7 +18,7 @@ import {CreatedByTagCell} from '../../runs/CreatedByTag';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {useDelayedRowQuery} from '../../workspace/VirtualizedWorkspaceTable';
-import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';

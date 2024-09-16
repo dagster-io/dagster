@@ -62,3 +62,5 @@ export type DynamicPartitionRequestFragment = {
   partitionsDefName: string;
   type: Types.DynamicPartitionsRequestType;
 };
+
+export const SensorDryRunMutationVersion = '018c498063838a146dbc76607bc84c92c235eaa73a3859b1c94b469bc76f5170';

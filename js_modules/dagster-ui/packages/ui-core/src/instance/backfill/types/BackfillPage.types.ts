@@ -159,3 +159,7 @@ export type BackfillPartitionsForAssetKeyQuery = {
       }
     | {__typename: 'PythonError'};
 };
+
+export const BackfillStatusesByAssetVersion = 'f785cda54d7032605fd180e1d1641151836651e3da314fcf8393cf3c43ab9bb4';
+
+export const BackfillPartitionsForAssetKeyVersion = '672b7141fd1dfb275a4ef6ae3e8fc1eaa0707270c1fd329ed6b66058e2376e55';

@@ -8,6 +8,7 @@ import {GraphData, buildGraphData, toGraphId, tokenForAssetKey} from './Utils';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
+  AssetGraphQueryVersion,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
 import {gql} from '../apollo-client';
@@ -46,7 +47,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         groupSelector: options.groupSelector,
       })}`,
     ),
-    version: 1,
+    version: AssetGraphQueryVersion,
   });
 
   const nodes = fetchResult.data?.assetNodes;
@@ -84,7 +85,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         groupSelector: options.groupSelector,
       })}`,
     ),
-    version: 1,
+    version: AssetGraphQueryVersion,
   });
 
   const nodes = fetchResult.data?.assetNodes;

@@ -132,7 +132,7 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
 
   if (item.type === SearchResultType.Asset) {
     const computeKindTag = item.tags?.find(isCanonicalComputeKindTag);
-    if (computeKindTag && KNOWN_TAGS[computeKindTag.value]) {
+    if (computeKindTag && KNOWN_TAGS.hasOwnProperty(computeKindTag.value)) {
       const computeKindSearchIcon = <TagIcon label={computeKindTag.value} />;
 
       icons.push(computeKindSearchIcon);
@@ -140,7 +140,7 @@ function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element
   }
 
   if (item.type === AssetFilterSearchResultType.Kind) {
-    if (KNOWN_TAGS[item.label]) {
+    if (KNOWN_TAGS.hasOwnProperty(item.label)) {
       const kindSearchIcon = <TagIcon label={item.label} />;
 
       icons.push(kindSearchIcon);

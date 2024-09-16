@@ -96,3 +96,5 @@ export type WorkspaceAssetsQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceAssetsQueryVersion = 'a81f51b53f9e7ba6152ccdc8756d8a723363a574893143c329d316c11c0a28ed';

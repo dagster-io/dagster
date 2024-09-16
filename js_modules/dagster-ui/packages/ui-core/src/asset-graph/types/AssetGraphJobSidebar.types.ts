@@ -1314,3 +1314,5 @@ export type AssetGraphSidebarQuery = {
         }>;
       };
 };
+
+export const AssetGraphSidebarQueryVersion = '326a86f91db2f640d45b58bc2d2e3dd23b4c7fd4aff3286ec1b9655791f75345';

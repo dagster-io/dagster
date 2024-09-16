@@ -41,3 +41,5 @@ export type PartitionStepLoaderQuery = {
         }>;
       };
 };
+
+export const PartitionStepLoaderQueryVersion = 'c81bb54e0d99fe562bdeab9ae126f737c827cb034601c62cd7a6962ac93a9e48';

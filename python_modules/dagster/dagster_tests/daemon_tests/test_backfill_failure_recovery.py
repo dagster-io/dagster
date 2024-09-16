@@ -69,7 +69,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
     launch_process.join(timeout=60)
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 @pytest.mark.skipif(
@@ -115,7 +115,7 @@ def test_before_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert instance.get_runs_count() == 3
 
 
@@ -162,5 +162,5 @@ def test_crash_after_submit(
 
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert instance.get_runs_count() == 3

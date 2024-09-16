@@ -118,6 +118,8 @@ class GrapheneBulkActionStatus(graphene.Enum):
     FAILED = "FAILED"
     CANCELED = "CANCELED"
     CANCELING = "CANCELING"
+    COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
+    COMPLETED_FAILED = "COMPLETED_FAILED"
 
     class Meta:
         name = "BulkActionStatus"
@@ -130,6 +132,10 @@ class GrapheneBulkActionStatus(graphene.Enum):
             return GrapheneRunStatus.STARTED  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_SUCCESS.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:  # pyright: ignore[reportAttributeAccessIssue]

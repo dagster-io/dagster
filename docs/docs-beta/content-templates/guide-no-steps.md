@@ -6,12 +6,6 @@ description: 'Description of the guide, useful for SEO and social media links'
 Provide a brief introduction to the how-to guide. View [this article](https://diataxis.fr/how-to-guides/) for more information on how to write effective how-to guides. The intro should be no more than a few sentences.
 The title from the frontmatter will be used as the first heading in the guide, you don't need to include it in the intro.
 
-## What you'll learn
-
-- A thing you'll learn, ex: "How to generate a token"
-- Another thing you'll learn, ex: "How to install this library"
-- One more thing you'll learn
-
 <details>
   <summary>Prerequisites</summary>
 

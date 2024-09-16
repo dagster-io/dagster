@@ -104,6 +104,7 @@ export const extractPermissions = (
     canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
     canEditConcurrencyLimit: permissionOrFallback('edit_concurrency_limit'),
     canEditWorkspace: permissionOrFallback('edit_workspace'),
+    canUpdateSensorCursor: permissionOrFallback('update_sensor_cursor'),
   };
 };
 

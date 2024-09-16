@@ -10,7 +10,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_powerbi import PowerBIWorkspace
-from dagster_powerbi.resource import BASE_API_URL
+from dagster_powerbi.resource import BASE_API_URL, PowerBIToken
 
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
@@ -18,7 +18,7 @@ from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_id: str) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token,
+        credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
 
@@ -32,7 +32,7 @@ def test_fetch_powerbi_workspace_data(workspace_data_api_mocks: None, workspace_
 def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id: str) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token,
+        credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
     all_assets = resource.build_defs().get_asset_graph().assets_defs
@@ -72,7 +72,9 @@ def test_refreshable_semantic_model(
 ) -> None:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(
-        api_token=fake_token, workspace_id=workspace_id, refresh_poll_interval=0
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+        refresh_poll_interval=0,
     )
     all_assets = (
         resource.build_defs(enable_refresh_semantic_models=True).get_asset_graph().assets_defs
@@ -125,8 +127,20 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
         assert len(workspace_data_api_mocks.calls) == 5
 
-        # 5 PowerBI external assets, one materializable asset
-        assert len(repository_def.assets_defs_by_key) == 5 + 1
+        # 3 PowerBI external assets, one materializable asset
+        assert len(repository_def.assets_defs_by_key) == 3 + 1
+
+        # Assert that all Power BI assets have upstreams, which are resolved
+        for asset_def in repository_def.assets_defs_by_key.values():
+            for key, deps in asset_def.asset_deps.items():
+                if key.path[-1] == "my_materializable_asset":
+                    continue
+                if key.path[0] == "semantic_model":
+                    continue
+                assert len(deps) > 0, f"Expected upstreams for {key}"
+                assert all(
+                    dep in repository_def.assets_defs_by_key for dep in deps
+                ), f"Asset {key} depends on {deps} which are not in the repository"
 
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data
@@ -154,3 +168,22 @@ def test_using_cached_asset_data(workspace_data_api_mocks: responses.RequestsMoc
         ), "Expected two successful steps"
 
         assert len(workspace_data_api_mocks.calls) == 5
+
+
+def test_two_workspaces(
+    workspace_data_api_mocks: responses.RequestsMock,
+    second_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with instance_for_test():
+        assert len(workspace_data_api_mocks.calls) == 0
+
+        from dagster_powerbi_tests.pending_repo_two_workspaces import (
+            pending_repo_from_cached_asset_metadata,
+        )
+
+        # first, we resolve the repository to generate our cached metadata
+        repository_def = pending_repo_from_cached_asset_metadata.compute_repository_definition()
+        assert len(workspace_data_api_mocks.calls) == 9
+
+        # 3 PowerBI external assets from first workspace, 1 from second
+        assert len(repository_def.assets_defs_by_key) == 3 + 1

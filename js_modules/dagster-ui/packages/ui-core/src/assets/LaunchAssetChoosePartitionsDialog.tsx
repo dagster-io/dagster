@@ -76,7 +76,7 @@ import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {ToggleableSection} from '../ui/ToggleableSection';
-import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext';
+import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];

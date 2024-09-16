@@ -15,6 +15,7 @@ from dagster import (
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
@@ -232,10 +233,7 @@ def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
 
         for key in example_pipeline_assets.asset_and_check_keys:
             if isinstance(key, AssetKey):
-                assert (
-                    example_pipeline_assets.tags_by_key[key].get("dagster/storage_kind")
-                    == destination_type
-                )
+                assert has_kind(example_pipeline_assets.tags_by_key[key], destination_type)
 
 
 def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
@@ -498,7 +496,7 @@ def test_with_owner_replacements(dlt_pipeline: Pipeline) -> None:
 
 
 def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
-    expected_tags = {"customized": "tag", "dagster/storage_kind": "duckdb"}
+    expected_tags = {"customized": "tag", **build_kind_tag("dlt"), **build_kind_tag("duckdb")}
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_tags(self, _) -> Optional[Mapping[str, str]]:

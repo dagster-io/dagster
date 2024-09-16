@@ -5,7 +5,7 @@ import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 import {gql, useQuery} from '../apollo-client';
 import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
-import {useActivePipelineForName} from '../workspace/WorkspaceContext';
+import {useActivePipelineForName} from '../workspace/WorkspaceContext/util';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 const SNAPSHOT_PARENT_QUERY = gql`

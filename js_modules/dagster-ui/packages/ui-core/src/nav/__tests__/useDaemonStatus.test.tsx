@@ -5,7 +5,7 @@ import * as React from 'react';
 import {InstigationStatus} from '../../graphql/types';
 import {useDaemonStatus} from '../../instance/useDaemonStatus';
 import {__resetForJest} from '../../search/useIndexedDBCachedQuery';
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {
   buildInstanceWarningQuery,
   buildWorkspaceQueryWithNoSchedulesOrSensors,

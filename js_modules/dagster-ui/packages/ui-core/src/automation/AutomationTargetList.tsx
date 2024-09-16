@@ -27,7 +27,7 @@ import {SensorType} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 type AutomationType = 'schedule' | SensorType;

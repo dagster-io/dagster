@@ -2,7 +2,7 @@ import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-com
 import {useMemo} from 'react';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
-import {useRepository} from './WorkspaceContext';
+import {useRepository} from './WorkspaceContext/util';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
