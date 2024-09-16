@@ -18,6 +18,14 @@ To follow this guide, you'll need:
 
 </details>
 
+## Getting started
+
+Asset sensors monitor an asset for new materialization events and target a job when a new materialization occurs.
+
+Typically, asset sensors return a `RunRequest` when a new job is to be triggered. However, they may provide a `SkipReason` if the asset materialization doesn't trigger a job.
+
+For example, you may wish to monitor an asset that's materialized daily, but don't want to trigger jobs on holidays.
+
 ## Cross-job and cross-code location dependencies
 
 Asset sensors enable dependencies across different jobs and different code locations. This flexibility allows for modular and decoupled workflows.
@@ -44,7 +52,7 @@ end
 
 This is an example of an asset sensor that triggers a job when an asset is materialized. The `daily_sales_data` asset is in the same code location as the job and other asset for this example, but the same pattern can be applied to assets in different code locations.
 
-<CodeExample filePath="guides/automation/simple-asset-sensor-example.py" language="python" title="Simple Asset Sensor Example" />
+<CodeExample filePath="guides/automation/simple-asset-sensor-example.py" language="python" />
 
 ## Customize evaluation logic
 
