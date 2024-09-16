@@ -149,21 +149,19 @@ class BaseTableauClient:
                 id
                 luid
                 name
+                createdAt
+                updatedAt
+                uri
                 sheets {
                   id
                   luid
                   name
+                  createdAt
+                  updatedAt
+                  path
                   parentEmbeddedDatasources {
                     id
                     name
-                  }
-                }
-                dashboards {
-                  id
-                  luid
-                  name
-                  sheets {
-                    luid
                   }
                 }
               }
