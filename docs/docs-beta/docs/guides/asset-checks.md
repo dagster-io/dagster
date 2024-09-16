@@ -6,7 +6,11 @@ sidebar_label: "Asset Checks"
 
 Asset checks in Dagster provide a way to define and execute different types of data quality checks on your data assets.
 
-This guide covers the most common use cases for testing assets with asset checks and taking action based on the result.
+Asset checks are tests that verify specific properties of your data assets. For example, you can create checks to:
+
+- Ensure a particular column doesn't contain null values
+- Verify that a tabular asset adheres to a specified schema
+- Check if an asset's data needs refreshing
 
 <details>
 <summary>Prerequisites</summary>
