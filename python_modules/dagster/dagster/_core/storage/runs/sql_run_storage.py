@@ -868,44 +868,49 @@ class SqlRunStorage(RunStorage):
                 )
 
             runs_table = runs_table.join(
-                run_tags_alias,
+                RunTagsTable,
                 db.and_(
-                    RunsTable.c.run_id == run_tags_alias.c.run_id,
-                    run_tags_alias.c.key == BACKFILL_ID_TAG,
-                ),
-            )
-
-            run_tags_table = RunTagsTable
-            run_tags_table.join(
-                runs_table,
-                db.and_(
-                    RunTagsTable.c.run_id == runs_table.c.run_id,
+                    RunsTable.c.run_id == RunTagsTable.c.run_id,
                     RunTagsTable.c.key == BACKFILL_ID_TAG,
                 ),
             )
 
-            backfill_ids_query = db_select(run_tags_table.c.value).select_from(run_tags_table)
+            run_ids_query = db_select([RunsTable.c.run_id]).select_from(runs_table)
+            rows = self.fetchall(run_ids_query)
+            run_ids = [row["run_id"] for row in rows]
+
+            backfill_ids_query = (
+                db_select(RunTagsTable.c.value)
+                .select_from(RunTagsTable)
+                .where(RunTagsTable.c.run_id.in_(run_ids))
+                .where(RunTagsTable.c.key == BACKFILL_ID_TAG)
+            )
             rows = self.fetchall(backfill_ids_query)
             backfill_ids = [row["value"] for row in rows]
+
+            if len(backfill_ids) == 0:
+                return []
 
             query.where(BulkActionsTable.c.key.in_(backfill_ids))
 
         if filters and filters.job_name:
             run_tags_table = RunTagsTable
-            runs_table_alias = db.alias(RunsTable, "runs_table_alias")
 
             run_tags_table = run_tags_table.join(
-                runs_table_alias,
+                RunsTable,
                 db.and_(
-                    RunTagsTable.c.run_id == runs_table_alias.c.run_id,
+                    RunTagsTable.c.run_id == RunsTable.c.run_id,
                     RunTagsTable.c.key == BACKFILL_ID_TAG,
-                    runs_table_alias.c.pipeline_name == filters.job_name,
+                    RunsTable.c.pipeline_name == filters.job_name,
                 ),
             )
 
-            backfill_ids_query = db_select(run_tags_table.c.value).select_from(run_tags_table)
+            backfill_ids_query = db_select([RunTagsTable.c.value]).select_from(run_tags_table)
             rows = self.fetchall(backfill_ids_query)
             backfill_ids = [row["value"] for row in rows]
+
+            if len(backfill_ids) == 0:
+                return []
 
             query.where(BulkActionsTable.c.key.in_(backfill_ids))
 
@@ -928,7 +933,25 @@ class SqlRunStorage(RunStorage):
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return deserialize_values((row["body"] for row in rows), PartitionBackfill)
+        backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
+
+        if filters and filters.tags:
+            results = []
+            # runs can have more tags than the backfill that launched them. Since we filtered tags by
+            # querying for runs with those tags, we need to do an additional check that the backfills
+            # also have the requested tags
+            for b in backfill_candidates:
+                for tag_key, tag_value in filters.tags.items():
+                    if isinstance(tag_value, str):
+                        if b.tags.get(tag_key) != tag_value:
+                            break
+                    else:
+                        if b.tags.get(tag_key) not in tag_value:
+                            break
+                    results.append(b)
+            return results
+        else:
+            return backfill_candidates
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")
