@@ -146,22 +146,22 @@ class BaseTableauClient:
         return """
             query workbooks($luid: String!) { 
               workbooks(filter: {luid: $luid}) {
-                id
                 luid
                 name
                 createdAt
                 updatedAt
                 uri
                 sheets {
-                  id
                   luid
                   name
                   createdAt
                   updatedAt
                   path
                   parentEmbeddedDatasources {
-                    id
-                    name
+                    parentPublishedDatasources {
+                      luid
+                      name
+                    }
                   }
                 }
               }
