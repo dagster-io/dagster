@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
@@ -99,7 +100,7 @@ export const SensorDetails = ({
       <PageHeader
         title={
           <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
-            <a href="/automation">Automation</a>
+            <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
           </Heading>
