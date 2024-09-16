@@ -485,20 +485,21 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
             resource_defs={"tableau": self._workspace.get_resource_definition()},
         )
         def _assets(context, tableau: BaseTableauWorkspace):
-            for view_id in workspace_data.views_by_id.keys():
-                data = tableau.get_view(view_id)["view"]
-                asset_key = translator.get_view_asset_key(workspace_data.views_by_id[view_id])
-                yield Output(
-                    value=None,
-                    output_name="__".join(asset_key.path),
-                    metadata={
-                        "workbook_id": data["workbook"]["id"],
-                        "owner_id": data["owner"]["id"],
-                        "name": data["name"],
-                        "contentUrl": data["contentUrl"],
-                        "createdAt": data["createdAt"],
-                        "updatedAt": data["updatedAt"],
-                    },
-                )
+            with tableau.get_client() as client:
+                for view_id in workspace_data.views_by_id.keys():
+                    data = client.get_view(view_id)["view"]
+                    asset_key = translator.get_view_asset_key(workspace_data.views_by_id[view_id])
+                    yield Output(
+                        value=None,
+                        output_name="__".join(asset_key.path),
+                        metadata={
+                            "workbook_id": data["workbook"]["id"],
+                            "owner_id": data["owner"]["id"],
+                            "name": data["name"],
+                            "contentUrl": data["contentUrl"],
+                            "createdAt": data["createdAt"],
+                            "updatedAt": data["updatedAt"],
+                        },
+                    )
 
         return [_assets]
