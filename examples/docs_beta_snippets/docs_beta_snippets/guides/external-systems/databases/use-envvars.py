@@ -10,7 +10,7 @@ import dagster as dg
 # Define `local` and `production` versions of the Snowflake resource
 resources = {
     "local": {
-        "iris_db": dg.SnowflakeResource(
+        "iris_db": SnowflakeResource(
             # Retrieve dev credentials with environment variables
             user=dg.EnvVar("DEV_SNOWFLAKE_USER"),
             password=dg.EnvVar("DEV_SNOWFLAKE_PASSWORD"),
@@ -21,7 +21,7 @@ resources = {
         ),
     },
     "production": {
-        "iris_db": dg.SnowflakeResource(
+        "iris_db": SnowflakeResource(
             # Retrieve production credentials with environment variables
             user=dg.EnvVar("PROD_SNOWFLAKE_USER"),
             password=dg.EnvVar("PROD_SNOWFLAKE_PASSWORD"),
