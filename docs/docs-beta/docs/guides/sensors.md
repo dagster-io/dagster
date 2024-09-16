@@ -27,6 +27,21 @@ If the sensor finds new files, it starts a run of `my_job`. If not, it skips the
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
 :::
 
+## Customizing intervals between evaluations
+
+The `minimum_interval_seconds` argument allows you to specify the minimum number of seconds that will elapse between sensor evaluations. This means that the sensor won't be evaluated more frequently than the specified interval.
+
+It's important to note that this interval represents a minimum interval between runs of the sensor and not the exact frequency the sensor runs. If a sensor takes longer to complete than the specified interval, the next evaluation will be delayed accordingly.
+
+```python
+# Sensor will be evaluated at least every 30 seconds
+@dg.sensor(job=my_job, minimum_interval_seconds=30)
+def new_file_sensor():
+  ...
+```
+
+In this example, if the `new_file_sensor`'s evaluation function takes less than a second to run, you can expect the sensor to run consistently around every 30 seconds. However, if the evaluation function takes longer, the interval between evaluations will be longer.
+
 ## Preventing duplicate runs
 
 To prevent duplicate runs, you can use run keys to uniquely identify each `RunRequest`. In the [previous example](#basic-sensor), the `RunRequest` was constructed with a `run_key`:
@@ -52,3 +67,11 @@ The preceding example uses both a `run_key` and a cursor, which means that if th
 
 If you want to be able to reset a sensor's cursor, don't set `run_key`s on `RunRequest`s.
 :::
+
+## Next steps
+
+By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.
+
+- Run pipelines on a [schedule](/guides/schedules)
+- Trigger cross-job dependencies with [asset sensors](/guides/asset-sensors)
+- Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to sensors
