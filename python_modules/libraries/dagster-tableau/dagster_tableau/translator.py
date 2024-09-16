@@ -65,7 +65,7 @@ class DagsterTableauTranslator:
 
     def get_view_asset_key(self, data: TableauContentData) -> AssetKey:
         workbook_id = data.properties["workbook"]["luid"]
-        workbook_data = self.workspace_data.workbooks_by_id.get(workbook_id)
+        workbook_data = self.workspace_data.workbooks_by_id[workbook_id]
         return AssetKey(
             [
                 _clean_asset_name(workbook_data.properties["name"]),
@@ -83,9 +83,7 @@ class DagsterTableauTranslator:
         }
 
         data_source_keys = [
-            self.get_data_source_asset_key(
-                self.workspace_data.data_sources_by_id.get(data_source_id)
-            )
+            self.get_data_source_asset_key(self.workspace_data.data_sources_by_id[data_source_id])
             for data_source_id in data_source_ids
         ]
 
