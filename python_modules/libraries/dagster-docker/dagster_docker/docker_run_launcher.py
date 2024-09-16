@@ -184,7 +184,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client(container_context).containers.get(container_id)
-        except Exception:
+        except docker.errors.NotFound:
             return None
 
     def terminate(self, run_id):
