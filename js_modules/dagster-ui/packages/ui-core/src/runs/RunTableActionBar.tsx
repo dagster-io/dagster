@@ -25,7 +25,7 @@ export function RunTableActionBar({
       {bottom ? (
         <Box
           margin={{top: 12}}
-          padding={{left: 24, right: 24, top: 8}}
+          padding={{horizontal: 24, top: 8}}
           border="top"
           flex={{gap: 8, wrap: 'wrap'}}
         >
