@@ -1361,7 +1361,7 @@ class TestRunStorage:
         backfill = storage.get_backfill(one.backfill_id)
         assert backfill == one
 
-        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
+        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
         assert len(storage.get_backfills()) == 1
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
 
@@ -1391,7 +1391,7 @@ class TestRunStorage:
         assert (
             len(
                 storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED])
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED_SUCCESS])
                 )
             )
             == 0
@@ -1400,7 +1400,7 @@ class TestRunStorage:
             len(
                 storage.get_backfills(
                     filters=BulkActionsFilter(
-                        statuses=[BulkActionStatus.COMPLETED, BulkActionStatus.REQUESTED]
+                        statuses=[BulkActionStatus.COMPLETED_SUCCESS, BulkActionStatus.REQUESTED]
                     )
                 )
             )
@@ -1411,7 +1411,7 @@ class TestRunStorage:
         )
         assert backfills[0] == one
 
-        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
+        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
         assert (
             len(
                 storage.get_backfills(
@@ -1423,7 +1423,7 @@ class TestRunStorage:
         assert (
             len(
                 storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED])
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED_SUCCESS])
                 )
             )
             == 1
@@ -1443,7 +1443,7 @@ class TestRunStorage:
             len(
                 storage.get_backfills(
                     filters=BulkActionsFilter(
-                        statuses=[BulkActionStatus.COMPLETED, BulkActionStatus.REQUESTED]
+                        statuses=[BulkActionStatus.COMPLETED_SUCCESS, BulkActionStatus.REQUESTED]
                     )
                 )
             )
