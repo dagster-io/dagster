@@ -10,7 +10,6 @@ from dagster import (
     AssetsDefinition,
     ConfigurableResource,
     Definitions,
-    InitResourceContext,
     Output,
     _check as check,
     external_assets_from_specs,
