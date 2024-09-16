@@ -482,6 +482,27 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
+    def on_missing() -> "AutomationCondition":
+        """Returns an AutomationCondition which will cause missing asset partitions to be materialized as soon as possible,
+        after all of their dependencies have been materialized.
+
+        For time partitioned assets, only the latest time partition will be considered.
+        """
+        with disable_dagster_warnings():
+            return (
+                AutomationCondition.in_latest_time_window()
+                & (
+                    AutomationCondition.missing()
+                    .newly_true()
+                    .since_last_handled()
+                    .with_label("missing_since_last_requested")
+                )
+                & ~AutomationCondition.any_deps_missing()
+            ).with_label("on_missing")
+
+    @public
+    @experimental
+    @staticmethod
     def any_downstream_conditions() -> "AnyDownstreamConditionsCondition":
         """Returns an AutomationCondition which represents the union of all distinct downstream conditions."""
         from dagster._core.definitions.declarative_automation.operators import (
