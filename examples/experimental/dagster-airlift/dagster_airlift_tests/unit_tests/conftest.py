@@ -62,11 +62,7 @@ def build_definitions_airflow_asset_graph(
             dag_and_task_structure[dag_id].append(task_id)
             assets = []
             for asset_key, deps in asset_structure:
-                spec = AssetSpec(
-                    asset_key,
-                    deps=deps,
-                    metadata={"airlift/dag_id": dag_id, "airlift/task_id": task_id},
-                )
+                spec = AssetSpec(asset_key, deps=deps)
                 if create_assets_defs:
 
                     @multi_asset(specs=[spec], name=f"{task_id}_{asset_key}")
