@@ -2,6 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
+DAGSTER_PIN = ">=1.8.7"
 airflow_dep_list = [
     "apache-airflow>=2.0.0,<2.8",
     # Flask-session 0.6 is incompatible with certain airflow-provided test
@@ -9,6 +10,7 @@ airflow_dep_list = [
     "flask-session<0.6.0",
     "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
     "pendulum>=2.0.0,<3.0.0",
+    f"dagster{DAGSTER_PIN}",
 ]
 
 setup(
@@ -35,8 +37,9 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_airlift_tests*", "examples*"]),
     extras_require={
+        "dev": ["dagster"],
         "core": [
-            "dagster",
+            f"dagster{DAGSTER_PIN}",
         ],
         "in-airflow": airflow_dep_list,
         "mwaa": ["boto3"],
