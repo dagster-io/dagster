@@ -40,6 +40,8 @@ def test_basic_resource_request(args) -> None:
     }
 
     resource = clazz(**resource_args)
+
+    # Must initialize the resource's client before passing it to the mock responses
     resource.build_client()
 
     responses.add(
@@ -70,9 +72,12 @@ def test_basic_resource_request(args) -> None:
         status=200,
     )
 
+    # Remove the resource's client to properly test the resource
+    resource._client = None
+
     @asset
-    def test_assets(tableau: clazz):
-        with tableau.get_client() as client:
+    def test_assets():
+        with resource.get_client() as client:
             client.get_workbooks()
             client.get_workbook(workbook_id=fake_workbook_id)
 
