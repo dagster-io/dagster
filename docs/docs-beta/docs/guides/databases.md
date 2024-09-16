@@ -2,9 +2,10 @@
 title: Connecting to databases
 description: How to configure resources to connect to databases
 sidebar_position: 10
+sidebar_label: Database connections
 ---
 
-In Dagster, *resources* are used to connect to databases by acting as a wrapper around database clients. The resource is registered along with connection details in the `Definitions` object, and can then be referenced from your asset definitions.
+In Dagster, resources are used to connect to databases by acting as a wrapper around database clients. Resources are registered with connection details in the `Definitions` object and can then be referenced from asset definitions.
 
 ## What you'll learn
 
@@ -17,25 +18,30 @@ In Dagster, *resources* are used to connect to databases by acting as a wrapper 
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Asset definitions](/concepts/assets)
+- Familiarity with [Assets](/guides/data-assets)
 
-If you want to run the examples in this guide, you'll need:
+To run the examples in this guide, you'll need:
+
 - Connection information for a Snowflake database
-- To `pip install` the `dagster-duckdb` and `dagster-snowflake` packages
+- To install the following:
+
+   ```bash
+   pip install dagster-duckdb dagster-snowflake
+   ```
 
 </details>
 
-## Define a DuckDB resource and use it in an asset definition
+## Using a resource in an asset
 
 Here is an example of a DuckDB resource definition that's used to create two tables in the DuckDB database.
 
-<CodeExample filePath="guides/external-systems/resource-duckdb-example.py" language="python" title="DuckDB Resource Example" />
+<CodeExample filePath="guides/external-systems/resource-duckdb-example.py" language="python" />
 
-## Define a resource that depends on an environment variable
+## Using environment variables with resources
 
 Resources can be configured using environment variables to connect to environment-specific databases. For example, a resource can connect to a test database in a development environment and a live database in the production environment. You can change the resource definition in the previous example to use an `EnvVar` as shown here:
 
-<CodeExample filePath="guides/external-systems/resource-duckdb-envvar-example.py" language="python" title="DuckDB Resource using EnvVar Example" />
+<CodeExample filePath="guides/external-systems/resource-duckdb-envvar-example.py" language="python" />
 
 When launching a run, the database path will be read from the `IRIS_DUCKDB_PATH` environment variable.
 

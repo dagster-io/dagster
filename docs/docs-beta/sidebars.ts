@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
           items: ['guides/configuring-assets', 
             'guides/asset-factories',
             'guides/resources',
+            'guides/databases',
             'guides/io-managers',
           ],
         },
