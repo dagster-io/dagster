@@ -64,7 +64,6 @@ class BulkActionsFilter:
     created_before: Optional[datetime] = None
     created_after: Optional[datetime] = None
     tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None
-    job_name: Optional[str] = None
 
 
 @whitelist_for_serdes
