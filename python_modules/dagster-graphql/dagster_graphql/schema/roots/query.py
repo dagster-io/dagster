@@ -844,7 +844,9 @@ class GrapheneQuery(graphene.ObjectType):
         limit: int,
         cursor: Optional[str] = None,
     ):
-        return get_runs_feed_entries(graphene_info=graphene_info, cursor=cursor, limit=limit)
+        return get_runs_feed_entries(
+            graphene_info=graphene_info, cursor=cursor, limit=limit, filters=None
+        )
 
     @capture_error
     def resolve_partitionSetsOrError(
