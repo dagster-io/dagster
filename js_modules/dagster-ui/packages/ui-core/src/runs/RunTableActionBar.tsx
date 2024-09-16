@@ -19,7 +19,7 @@ export function RunTableActionBar({
           : {}
       }
     >
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 24}}>
+      <Box flex={{alignItems: 'center', gap: 12}} padding={{horizontal: 24}}>
         {top}
       </Box>
       {bottom ? (
