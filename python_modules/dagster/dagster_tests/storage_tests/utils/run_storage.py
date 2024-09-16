@@ -1621,6 +1621,11 @@ class TestRunStorage:
         assert len(backfill_with_tags) == 2
 
         backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"iter": ["1", "2"], "even": "True"})
+        )
+        assert len(backfill_with_tags) == 1
+
+        backfill_with_tags = storage.get_backfills(
             filters=BulkActionsFilter(tags={"not": "present"})
         )
         assert len(backfill_with_tags) == 0

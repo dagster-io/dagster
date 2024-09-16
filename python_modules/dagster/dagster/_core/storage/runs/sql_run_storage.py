@@ -847,15 +847,13 @@ class SqlRunStorage(RunStorage):
             )
 
         if filters and filters.tags:
-            # select from run tags table the run ids where the filter tags match
-            # then select from run tags table the value where the key is the backfill tag key and the run id is in the list of run ids where the tags matched
-            # then get the rows in the backfill table that correspond to the backfill id for those runs
+            # Backfills do not have a corresponding tags table. However, all tags that are on a backfill are
+            # applied to the runs the backfill launches. So we can query for runs that match the tags and
+            # are also part of a backfill to find the backfills that match the tags.
 
-            run_tags_table = (
-                db_select([RunTagsTable.c.run_id, RunTagsTable.c.key, RunTagsTable.c.value])
-                .select_from(RunTagsTable)
-                .where(RunTagsTable.c.key == BACKFILL_ID_TAG)
-            )
+            run_tags_table = db_select(
+                [RunTagsTable.c.run_id, RunTagsTable.c.key, RunTagsTable.c.value]
+            ).where(RunTagsTable.c.key == BACKFILL_ID_TAG)
 
             for i, (key, value) in enumerate(filters.tags.items()):
                 run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
@@ -871,23 +869,13 @@ class SqlRunStorage(RunStorage):
                     ),
                 )
 
-            run_ids_query = db_select([RunsTable.c.run_id]).select_from(run_tags_table)
-            rows = self.fetchall(run_ids_query)
-            run_ids = [row["run_id"] for row in rows]
-
-            backfill_ids_query = (
-                db_select(RunTagsTable.c.value)
-                .select_from(RunTagsTable)
-                .where(RunTagsTable.c.run_id.in_(run_ids))
-                .where(RunTagsTable.c.key == BACKFILL_ID_TAG)
-            )
-            rows = self.fetchall(backfill_ids_query)
+            rows = self.fetchall(run_tags_table)
             backfill_ids = [row["value"] for row in rows]
 
             if len(backfill_ids) == 0:
                 return []
 
-            query.where(BulkActionsTable.c.key.in_(backfill_ids))
+            query = query.where(BulkActionsTable.c.key.in_(backfill_ids))
 
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
@@ -916,13 +904,15 @@ class SqlRunStorage(RunStorage):
             # querying for runs with those tags, we need to do an additional check that the backfills
             # also have the requested tags
             for b in backfill_candidates:
+                keep = True
                 for tag_key, tag_value in filters.tags.items():
                     if isinstance(tag_value, str):
                         if b.tags.get(tag_key) != tag_value:
-                            break
+                            keep = False
                     else:
                         if b.tags.get(tag_key) not in tag_value:
-                            break
+                            keep = False
+                if keep:
                     results.append(b)
             return results
         else:
