@@ -232,8 +232,8 @@ def get_cached_specs_for_dag(
     )
     metadata = {
         "Dag Info (raw)": JsonMetadataValue(dag_info.metadata),
-        DAG_ID_METADATA_KEY: dag_info.dag_id,
         "Link to DAG": UrlMetadataValue(dag_info.url),
+        "Dag ID": dag_info.dag_id,
     }
     # Attempt to retrieve source code from the DAG.
     metadata["Source Code"] = MarkdownMetadataValue(
@@ -430,6 +430,7 @@ def build_singular_task_metadata(
         DAG_ID_METADATA_KEY: task_info.dag_id,
         "Link to DAG": UrlMetadataValue(task_info.dag_url),
         "Task ID": task_info.task_id,
+        "Dag ID": task_info.dag_id,
     }
     task_level_metadata[
         "Computed in Task ID" if bool(migration_state) is False else "Triggered by Task ID"

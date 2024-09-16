@@ -204,21 +204,21 @@ def test_transitive_asset_deps() -> None:
     assert [dep.asset_key for dep in next(iter(dag2_asset.specs)).deps] == [c_key]
     a_asset = repo_def.assets_defs_by_key[a_key]
     assert [dep.asset_key for dep in next(iter(a_asset.specs)).deps] == []
-    assert "airlift/dag_id" in next(iter(a_asset.specs)).metadata
-    assert next(iter(a_asset.specs)).metadata["airlift/dag_id"] == "dag1"
-    assert "airlift/task_id" in next(iter(a_asset.specs)).metadata
-    assert next(iter(a_asset.specs)).metadata["airlift/task_id"] == "task"
+    assert "Dag ID" in next(iter(a_asset.specs)).metadata
+    assert next(iter(a_asset.specs)).metadata["Dag ID"] == "dag1"
+    assert "dagster-airlift/task_id" in next(iter(a_asset.specs)).metadata
+    assert next(iter(a_asset.specs)).metadata["dagster-airlift/task_id"] == "task"
 
     b_asset = repo_def.assets_defs_by_key[b_key]
     assert [dep.asset_key for dep in next(iter(b_asset.specs)).deps] == [a_key]
-    assert "airlift/dag_id" not in next(iter(b_asset.specs)).metadata
-    assert "airlift/task_id" not in next(iter(b_asset.specs)).metadata
+    assert "Dag ID" not in next(iter(b_asset.specs)).metadata
+    assert "Computed in Task ID" not in next(iter(b_asset.specs)).metadata
     c_asset = repo_def.assets_defs_by_key[c_key]
     assert [dep.asset_key for dep in next(iter(c_asset.specs)).deps] == [b_key]
-    assert "airlift/dag_id" in next(iter(c_asset.specs)).metadata
-    assert next(iter(c_asset.specs)).metadata["airlift/dag_id"] == "dag2"
-    assert "airlift/task_id" in next(iter(c_asset.specs)).metadata
-    assert next(iter(c_asset.specs)).metadata["airlift/task_id"] == "task"
+    assert "Dag ID" in next(iter(c_asset.specs)).metadata
+    assert next(iter(c_asset.specs)).metadata["Dag ID"] == "dag2"
+    assert "dagster-airlift/task_id" in next(iter(c_asset.specs)).metadata
+    assert next(iter(c_asset.specs)).metadata["dagster-airlift/task_id"] == "task"
 
 
 def test_peered_dags() -> None:
@@ -311,7 +311,7 @@ def test_local_airflow_instance() -> None:
     repo_def = defs.get_repository_def()
     a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
     # With no task migration info, the asset shouldn't even have the tag set.
-    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") is None
+    assert next(iter(a_asset.specs)).tags.get("dagster-airlift/task_migrated") is None
 
     with environ(
         {
@@ -332,7 +332,7 @@ def test_local_airflow_instance() -> None:
         repo_def = defs.get_repository_def()
         assert len(repo_def.assets_defs_by_key) == 2
         task_asset = repo_def.assets_defs_by_key[AssetKey("a")]
-        assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "True"
+        assert next(iter(task_asset.specs)).tags.get("dagster-airlift/task_migrated") == "True"
 
 
 def test_multi_task_mapping() -> None:

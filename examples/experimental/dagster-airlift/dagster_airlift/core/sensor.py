@@ -165,11 +165,11 @@ def get_unmigrated_info(
         # We could be more specific about the checks here to ensure that there's only one asset key
         # specifying the dag, and that all others have a task id.
         for spec in assets_def.specs:
-            dag_and_task_id_list = get_couplings_from_spec(spec)
-            dag_id: Optional[str] = spec.metadata.get("Dag ID")
-            if dag_and_task_id_list is None and dag_id is None:
+            couplings = get_couplings_from_spec(spec)
+            dag_id: Optional[str] = spec.metadata.get("dagster-airlift/dag_id")
+            if couplings is None and dag_id is None:
                 continue
-            if dag_and_task_id_list is None:
+            if couplings is None:
                 key_per_dag[cast(str, dag_id)] = (
                     assets_def.key
                 )  # There should only be one key in the case of a "dag" asset
@@ -178,7 +178,7 @@ def get_unmigrated_info(
                 if migration_state == "True":
                     continue
 
-                for dag_id, task_id in dag_and_task_id_list:
+                for dag_id, task_id in couplings:
                     task_keys_per_dag[dag_id].add((task_id, spec.key))
 
     for asset_check_key in repository_def.asset_checks_defs_by_key.keys():
