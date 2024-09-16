@@ -1,8 +1,14 @@
+# ruff: noqa: SLF001
+
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
-from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.cacheable_assets import PrefixOrGroupWrappedCacheableAssetsDefinition
+from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY, DAG_ID_METADATA_KEY
 from dagster_airlift.core import DagDefs, dag_defs, mark_as_shared, task_defs
 from dagster_airlift.core.dag_defs import resolve_defs
+
+from dagster_airlift_tests.unit_tests.conftest import dag_defs_with_override
 
 
 def from_specs(*specs: AssetSpec) -> Definitions:
@@ -107,3 +113,43 @@ def test_dag_defs_task_refs() -> None:
         ("dag_one", "shared"),
         ("dag_two", "also_shared"),
     ]
+
+
+def test_provide_override() -> None:
+    """Test that overridden assets are correctly tagged with the DAG ID."""
+    defs = dag_defs_with_override()
+    transformed_defs = defs.construct_dag_level_defs()
+    assert transformed_defs.assets is not None
+    assert len(list(transformed_defs.assets)) == 3
+    a_asset = next(
+        iter(
+            asset
+            for asset in transformed_defs.assets
+            if isinstance(asset, AssetSpec) and asset.key == AssetKey("a")
+        )
+    )
+    assert a_asset.metadata[DAG_ID_METADATA_KEY] == "dag_one"
+
+    # Expect that b_asset should be transformed to an AssetsDefinition, and that it should be tagged with the DAG ID.
+    b_asset = next(
+        iter(
+            asset
+            for asset in transformed_defs.assets
+            if isinstance(asset, AssetsDefinition) and asset.key == AssetKey("b")
+        )
+    )
+    assert len(list(b_asset.specs)) == 1
+    b_spec = next(iter(spec for spec in b_asset.specs if spec.key == AssetKey("b")))
+    assert b_spec.metadata[DAG_ID_METADATA_KEY] == "dag_one"
+
+    # Expect that the cacheable assets definition should be transformed to a PrefixOrGroupWrappedCacheableAssetsDefinition, and that it should be tagged with the DAG ID.
+    cache_asset = next(
+        iter(
+            asset
+            for asset in transformed_defs.assets
+            if isinstance(asset, PrefixOrGroupWrappedCacheableAssetsDefinition)
+            and asset._wrapped.unique_id == "c"
+        )
+    )
+    assert cache_asset._metadata_for_all_assets is not None
+    assert cache_asset._metadata_for_all_assets[DAG_ID_METADATA_KEY] == "dag_one"

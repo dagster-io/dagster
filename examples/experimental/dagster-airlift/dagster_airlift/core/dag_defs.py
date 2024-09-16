@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 from dagster import (
     AssetsDefinition,
@@ -12,7 +12,7 @@ from dagster import (
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 
-from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY
+from dagster_airlift.constants import AIRFLOW_COUPLING_METADATA_KEY, DAG_ID_METADATA_KEY
 
 
 class TaskDefs:
@@ -82,9 +82,15 @@ def mark_as_shared(key: str) -> SharedSentinel:
 
 
 class DagDefs:
-    def __init__(self, dag_id: str, task_defs: Dict[str, Union[TaskDefs, RefToDefs]]):
+    def __init__(
+        self,
+        dag_id: str,
+        task_defs: Dict[str, Union[TaskDefs, RefToDefs]],
+        override: Optional[Definitions] = None,
+    ):
         self.task_defs = task_defs
         self.dag_id = dag_id
+        self.override = override
 
     def to_defs(self) -> Definitions:
         return Definitions.merge(
@@ -99,7 +105,14 @@ class DagDefs:
                 )
                 for task_def_set in self.task_defs.values()
                 if isinstance(task_def_set, TaskDefs)
-            )
+            ),
+            self.construct_dag_level_defs(),
+        )
+
+    def construct_dag_level_defs(self) -> Definitions:
+        return apply_metadata_to_all_specs(
+            self.override or Definitions(),
+            {DAG_ID_METADATA_KEY: self.dag_id},
         )
 
     def get_tasks_referencing_key(self, key: str) -> Sequence[str]:
@@ -110,7 +123,9 @@ class DagDefs:
         ]
 
 
-def dag_defs(dag_id: str, defs: Sequence[Union[TaskDefs, RefToDefs]]) -> DagDefs:
+def dag_defs(
+    dag_id: str, defs: Sequence[Union[TaskDefs, RefToDefs]], override: Optional[Definitions] = None
+) -> DagDefs:
     """Construct a Dagster :py:class:`Definitions` object with definitions
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
 
@@ -120,17 +135,22 @@ def dag_defs(dag_id: str, defs: Sequence[Union[TaskDefs, RefToDefs]]) -> DagDefs
 
     Used in concert with :py:func:`task_defs`.
 
+    Args:
+        dag_id (str): The ID of the DAG.
+        defs (Sequence[Union[TaskDefs, RefToDefs]]): A sequence of task definitions.
+        override (Optional[Definitions], optional): Optional override definitions. Defaults to None.
+
     Example:
     .. code-block:: python
         defs = dag_defs(
             "dag_one",
             [
-                task_defs("task_one", Definitions(assets=[AssetSpec(key="asset_one"]))),
+                task_defs("task_one", Definitions(assets=[AssetSpec(key="asset_one")])),
                 task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
             ],
         )
     """
-    return DagDefs(dag_id, {task_def.task_id: task_def for task_def in defs})
+    return DagDefs(dag_id, {task_def.task_id: task_def for task_def in defs}, override)
 
 
 def task_defs(task_id, defs: Union[Definitions, SharedSentinel]) -> Union[TaskDefs, RefToDefs]:
