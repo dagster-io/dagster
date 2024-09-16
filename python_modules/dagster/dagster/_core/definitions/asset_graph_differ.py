@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import AbstractSet, Any, Callable, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -92,6 +92,12 @@ AssetDefinitionChangeDetail = Union[
     AssetDefinitionChangeDetailMetadata,
     AssetDefinitionChangeDetailRemoved,
 ]
+
+
+class MappedKeyDiff(NamedTuple):
+    added: Set[str]
+    changed: Set[str]
+    removed: Set[str]
 
 
 def _get_external_repo_from_context(
@@ -282,12 +288,12 @@ class AssetGraphDiffer:
 
     def _get_map_keys_diff(
         self, base: Mapping[str, Any], branch: Mapping[str, Any]
-    ) -> Tuple[Set[str], Set[str], Set[str]]:
+    ) -> MappedKeyDiff:
         """Returns the added, changed, and removed keys in the branch map compared to the base map."""
         added = set(branch.keys()) - set(base.keys())
         changed = {key for key in branch.keys() if key in base and branch[key] != base[key]}
         removed = set(base.keys()) - set(branch.keys())
-        return added, changed, removed
+        return MappedKeyDiff(added, changed, removed)
 
     def get_changes_for_asset(self, asset_key: "AssetKey") -> Sequence[AssetDefinitionChangeType]:
         """Returns list of AssetDefinitionChangeType for asset_key as compared to the base deployment."""
