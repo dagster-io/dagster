@@ -1,8 +1,8 @@
 import datetime
 import uuid
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Optional, Sequence, Type, Union, cast
 from contextlib import contextmanager
+from typing import Any, Dict, Mapping, Optional, Sequence, Type, Union, cast
 
 import jwt
 import requests
