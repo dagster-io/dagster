@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
 
-from dagster._record import record
+from typing_extensions import Annotated
+
+from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -22,16 +24,21 @@ class CodeLocationLoadStatus(Enum):
     LOADED = "LOADED"  # Finished loading (may be an error)
 
 
-class CodeLocationEntry(NamedTuple):
-    origin: "CodeLocationOrigin"
-    code_location: Optional["CodeLocation"]
+@record
+class CodeLocationEntry:
+    origin: Annotated["CodeLocationOrigin", ImportFrom("dagster._core.remote_representation")]
+    code_location: Optional[
+        Annotated["CodeLocation", ImportFrom("dagster._core.remote_representation")]
+    ]
     load_error: Optional[SerializableErrorInfo]
     load_status: CodeLocationLoadStatus
     display_metadata: Mapping[str, str]
     update_timestamp: float
+    version_key: str
 
 
-class CodeLocationStatusEntry(NamedTuple):
+@record
+class CodeLocationStatusEntry:
     """Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
     to know whether the workspace needs reloading.
     """
@@ -39,6 +46,7 @@ class CodeLocationStatusEntry(NamedTuple):
     location_name: str
     load_status: CodeLocationLoadStatus
     update_timestamp: float
+    version_key: str
 
 
 @record
@@ -107,4 +115,5 @@ def location_status_from_location_entry(
         location_name=entry.origin.location_name,
         load_status=entry.load_status,
         update_timestamp=entry.update_timestamp,
+        version_key=entry.version_key,
     )

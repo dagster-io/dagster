@@ -5,6 +5,7 @@ import botocore
 import pytest
 from botocore import exceptions
 from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, job, op
+
 from dagster_aws.s3 import (
     S3FileHandle,
     S3FileManager,

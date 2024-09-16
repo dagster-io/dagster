@@ -442,3 +442,7 @@ export type AssetPartitionStaleQuery = {
       }
     | {__typename: 'AssetNotFoundError'};
 };
+
+export const AssetPartitionDetailQueryVersion = 'b49c58aafc8743640c067d5897b931ad98adcc3584193afad7fb96424a1ee010';
+
+export const AssetPartitionStaleQueryVersion = '4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764';

@@ -50,7 +50,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
-from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.tags import build_kind_tag
 from dagster._utils.merger import merge_dicts
 
 from dagster_dbt.utils import (
@@ -816,7 +816,8 @@ def build_dbt_multi_asset_args(
                 }
             ),
             tags={
-                **(StorageKindTagSet(storage_kind=dbt_adapter_type) if dbt_adapter_type else {}),
+                **build_kind_tag("dbt"),
+                **(build_kind_tag(dbt_adapter_type) if dbt_adapter_type else {}),
                 **dagster_dbt_translator.get_tags(dbt_resource_props),
             },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),

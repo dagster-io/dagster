@@ -18,6 +18,7 @@ asn1crypto==1.5.1
 astroid==3.2.4
 asttokens==2.4.1
 async-lru==2.0.4
+async-timeout==4.0.3
 attrs==24.2.0
 babel==2.16.0
 backoff==2.2.1
@@ -25,9 +26,9 @@ backports-tarfile==1.2.0
 beautifulsoup4==4.12.3
 bleach==6.1.0
 boto3==1.35.16
-boto3-stubs-lite==1.35.16
+boto3-stubs-lite==1.35.17
 botocore==1.35.16
-botocore-stubs==1.35.16
+botocore-stubs==1.35.17
 buildkite-test-collector==0.1.9
 cachetools==5.5.0
 caio==0.9.17
@@ -84,6 +85,7 @@ distlib==0.3.8
 docker==7.1.0
 docstring-parser==0.16
 duckdb==1.1.0
+exceptiongroup==1.2.2
 execnet==2.1.1
 executing==2.1.0
 fastjsonschema==2.20.0
@@ -91,8 +93,8 @@ filelock==3.16.0
 fonttools==4.53.1
 fqdn==1.5.1
 frozenlist==1.4.1
-fsspec==2024.3.1
-gcsfs==2024.3.1
+fsspec==2024.3.0
+gcsfs==0.8.0
 google-api-core==2.19.2
 google-api-python-client==2.145.0
 google-auth==2.34.0
@@ -170,7 +172,8 @@ multidict==6.1.0
 multimethod==1.10
 mypy==1.11.2
 mypy-boto3-ecs==1.35.2
-mypy-boto3-glue==1.35.3
+mypy-boto3-emr-serverless==1.35.0
+mypy-boto3-glue==1.35.18
 mypy-extensions==1.0.0
 mypy-protobuf==3.6.0
 nbclient==0.10.0
@@ -200,7 +203,7 @@ pillow==10.4.0
 pip==24.2
 platformdirs==4.3.2
 pluggy==1.5.0
-polars==1.7.0
+polars==1.7.1
 -e examples/project_fully_featured
 prometheus-client==0.20.0
 prompt-toolkit==3.0.47
@@ -251,9 +254,9 @@ rfc3986-validator==0.1.1
 rich==13.8.1
 rpds-py==0.20.0
 rsa==4.9
-s3fs==2024.3.1
+s3fs==2024.3.0
 s3transfer==0.10.2
-scikit-learn==1.5.1
+scikit-learn==1.5.2
 scipy==1.14.1
 seaborn==0.13.2
 send2trash==1.8.3
@@ -262,12 +265,12 @@ shellingham==1.5.4
 six==1.16.0
 slack-sdk==3.32.0
 sniffio==1.3.1
-snowflake-connector-python==3.12.1
+snowflake-connector-python==3.12.2
 snowflake-sqlalchemy==1.5.1
 sortedcontainers==2.4.0
 soupsieve==2.6
 sqlalchemy==1.4.54
-sqlglot==25.20.1
+sqlglot==25.21.0
 sqlglotrs==0.2.12
 sqlparse==0.5.1
 stack-data==0.6.3
@@ -314,10 +317,11 @@ types-tzlocal==5.1.0.1
 typing-extensions==4.12.2
 typing-inspect==0.9.0
 tzdata==2024.1
-universal-pathlib==0.2.2
+ujson==5.10.0
+universal-pathlib==0.2.5
 uri-template==1.3.0
 uritemplate==4.1.1
-urllib3==2.2.2
+urllib3==2.2.3
 uvicorn==0.30.6
 uvloop==0.20.0
 virtualenv==20.26.4

@@ -136,14 +136,28 @@ class GrapheneWorkspaceLocationStatusEntry(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
     updateTimestamp = graphene.NonNull(graphene.Float)
+    versionKey = graphene.NonNull(graphene.String)
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
     class Meta:
         name = "WorkspaceLocationStatusEntry"
 
-    def __init__(self, id, name, load_status, update_timestamp):
-        super().__init__(id=id, name=name, loadStatus=load_status, updateTimestamp=update_timestamp)
+    def __init__(
+        self,
+        id,
+        name,
+        load_status,
+        update_timestamp,
+        version_key,
+    ):
+        super().__init__(
+            id=id,
+            name=name,
+            loadStatus=load_status,
+            updateTimestamp=update_timestamp,
+            versionKey=version_key,
+        )
 
     def resolve_permissions(self, graphene_info):
         permissions = graphene_info.context.permissions_for_location(location_name=self.name)
@@ -181,6 +195,7 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     updatedTimestamp = graphene.NonNull(graphene.Float)
+    versionKey = graphene.NonNull(graphene.String)
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
@@ -216,8 +231,11 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
             if value is not None
         ]
 
-    def resolve_updatedTimestamp(self, _):
+    def resolve_updatedTimestamp(self, _) -> float:
         return self._location_entry.update_timestamp
+
+    def resolve_versionKey(self, _) -> str:
+        return self._location_entry.version_key
 
     def resolve_permissions(self, graphene_info):
         permissions = graphene_info.context.permissions_for_location(location_name=self.name)
@@ -330,7 +348,8 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GraphenePipeline(pipeline)
             for pipeline in sorted(
-                self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
+                self._repository.get_all_external_jobs(),
+                key=lambda pipeline: pipeline.name,
             )
         ]
 
@@ -338,7 +357,8 @@ class GrapheneRepository(graphene.ObjectType):
         return [
             GrapheneJob(pipeline)
             for pipeline in sorted(
-                self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
+                self._repository.get_all_external_jobs(),
+                key=lambda pipeline: pipeline.name,
             )
         ]
 
@@ -406,7 +426,8 @@ class GrapheneRepository(graphene.ObjectType):
                 external_resource=resource,
             )
             for resource in sorted(
-                self._repository.get_external_resources(), key=lambda resource: resource.name
+                self._repository.get_external_resources(),
+                key=lambda resource: resource.name,
             )
             if resource.is_top_level
         ]
@@ -479,7 +500,11 @@ async def gen_location_state_changes(graphene_info: ResolveInfo):
 
 class GrapheneRepositoriesOrError(graphene.Union):
     class Meta:
-        types = (GrapheneRepositoryConnection, GrapheneRepositoryNotFoundError, GraphenePythonError)
+        types = (
+            GrapheneRepositoryConnection,
+            GrapheneRepositoryNotFoundError,
+            GraphenePythonError,
+        )
         name = "RepositoriesOrError"
 
 
@@ -491,7 +516,11 @@ class GrapheneWorkspaceOrError(graphene.Union):
 
 class GrapheneRepositoryOrError(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneRepository, GrapheneRepositoryNotFoundError)
+        types = (
+            GraphenePythonError,
+            GrapheneRepository,
+            GrapheneRepositoryNotFoundError,
+        )
         name = "RepositoryOrError"
 
 

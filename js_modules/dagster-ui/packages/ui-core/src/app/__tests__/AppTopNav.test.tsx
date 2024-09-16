@@ -2,7 +2,7 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {AppTopNav} from '../AppTopNav/AppTopNav';
 import {workspaceWithNoJobs} from '../__fixtures__/useJobStateForNav.fixtures';
 

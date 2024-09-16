@@ -3,6 +3,7 @@ from threading import Thread
 
 from dagster import DagsterEvent
 from dagster._core.events import EngineEventData
+
 from dagster_aws.emr.emr_step_main import DONE, event_writing_loop
 
 

@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping, Sequence
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
 
 
@@ -132,11 +133,13 @@ class DagsterPowerBITranslator:
             self.get_report_asset_key(self.workspace_data.reports_by_id[report_id])
             for report_id in tile_report_ids
         ]
+        url = data.properties.get("webUrl")
+        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_dashboard_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
             deps=report_keys,
+            metadata=metadata,
         )
 
     def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -146,11 +149,13 @@ class DagsterPowerBITranslator:
         dataset_id = data.properties["datasetId"]
         dataset_data = self.workspace_data.semantic_models_by_id.get(dataset_id)
         dataset_key = self.get_semantic_model_asset_key(dataset_data) if dataset_data else None
+        url = data.properties.get("webUrl")
+        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_report_asset_key(data),
             deps=[dataset_key] if dataset_key else None,
-            tags={"dagster/storage_kind": "powerbi"},
+            metadata=metadata,
         )
 
     def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -162,11 +167,13 @@ class DagsterPowerBITranslator:
             self.get_data_source_asset_key(self.workspace_data.data_sources_by_id[source_id])
             for source_id in source_ids
         ]
+        url = data.properties.get("webUrl")
+        metadata = {"dagster_powerbi/web_url": MetadataValue.url(url)} if url else {}
 
         return AssetSpec(
             key=self.get_semantic_model_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
             deps=source_keys,
+            metadata=metadata,
         )
 
     def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
@@ -184,5 +191,4 @@ class DagsterPowerBITranslator:
     def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
         return AssetSpec(
             key=self.get_data_source_asset_key(data),
-            tags={"dagster/storage_kind": "powerbi"},
         )

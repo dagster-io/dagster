@@ -7,12 +7,6 @@ sidebar_label: Database connections
 
 In Dagster, resources are used to connect to databases by acting as a wrapper around database clients. Resources are registered with connection details in the `Definitions` object and can then be referenced from asset definitions.
 
-## What you'll learn
-
-- How to connect to and query a local DuckDB database using the `DuckDBResource`
-- How to connect to different databases in different environments, such as development and production.
-- How to connect to a Snowflake database using the `SnowflakeResource`
-
 <details>
   <summary>Prerequisites</summary>
 

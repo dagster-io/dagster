@@ -5,12 +5,6 @@ description: A guide to deploying Dagster with Docker Compose.
 
 This guide provides instructions for deploying Dagster using Docker Compose. This is useful when you want to, for example, deploy Dagster on an AWS EC2 host. A typical Dagster Docker deployment includes a several long-running containers: one for the webserver, one for the daemon, and one for each code location. It also typically executes each run in its own container.
 
-## What you'll learn
-
-- The different Docker containers that run as part of a Dagster Docker deployment
-- How to define Docker images for each of these containers
-- How to write a Docker Compose file that stands up these containers
-
 <details>
   <summary>Prerequisites</summary>
 - Familiarity with Docker and Docker Compose

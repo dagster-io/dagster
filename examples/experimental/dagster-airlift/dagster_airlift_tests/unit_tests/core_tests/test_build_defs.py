@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -11,8 +13,10 @@ from dagster import (
     schedule,
     sensor,
 )
+from dagster._core.test_utils import environ
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.test import make_instance
+from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
@@ -42,11 +46,6 @@ def some_schedule():
 
 
 @asset
-def dag__task():
-    pass
-
-
-@asset
 def a():
     pass
 
@@ -56,11 +55,6 @@ b_spec = AssetSpec(key="b")
 
 @asset_check(asset=a)
 def a_check():
-    pass
-
-
-@asset_check(asset=dag__task)
-def other_check():
     pass
 
 
@@ -154,7 +148,7 @@ def test_invalid_dagster_named_tasks_and_dags() -> None:
 
 
 def test_transitive_asset_deps() -> None:
-    """Test that cross-dag transitive asset dependencies rae correctly generated."""
+    """Test that cross-dag transitive asset dependencies are correctly generated."""
     # Asset graph is a -> b -> c where a and c are in different dags, and b isn't in any dag.
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
         assets_per_task={
@@ -268,3 +262,40 @@ def test_observed_assets() -> None:
             "airflow_instance/dag/dag": ["e", "f"],
         },
     )
+
+
+def test_local_airflow_instance() -> None:
+    """Test that a local-backed airflow instance can be correctly peered, and errors when the correct info can't be found."""
+    defs = build_definitions_airflow_asset_graph(
+        assets_per_task={
+            "dag": {"task": [("a", [])]},
+        },
+        create_assets_defs=True,
+    )
+
+    assert defs.assets
+    assert len(list(defs.assets)) == 1
+    repo_def = defs.get_repository_def()
+    a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
+    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") == "False"
+
+    with environ(
+        {
+            DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR: str(
+                Path(__file__).parent / "migration_state_for_sqlite_test"
+            ),
+        }
+    ):
+        defs = build_definitions_airflow_asset_graph(
+            assets_per_task={
+                "dag": {"task": [("a", [])]},
+            },
+            create_assets_defs=True,
+        )
+        repo_def = defs.get_repository_def()
+        assert defs.assets
+        assert len(list(defs.assets)) == 1
+        repo_def = defs.get_repository_def()
+        assert len(repo_def.assets_defs_by_key) == 2
+        task_asset = repo_def.assets_defs_by_key[AssetKey("a")]
+        assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "True"

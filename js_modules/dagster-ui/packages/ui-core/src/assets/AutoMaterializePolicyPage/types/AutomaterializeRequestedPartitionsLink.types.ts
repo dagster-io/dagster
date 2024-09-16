@@ -37,3 +37,5 @@ export type RunStatusAndTagsFragment = {
   status: Types.RunStatus;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
+
+export const RunStatusAndPartitionKeyVersion = '4642abda7da52fb70cc0a47c19cd5bf2fd8b854bb104b6a73eb8545fcd0146b2';

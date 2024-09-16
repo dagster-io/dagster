@@ -130,6 +130,11 @@ def _namedtuple_record_transform(
         },
     )
 
+    # setting this in the dict above does not work for some reason,
+    # so set it directly after instantiation
+    if hasattr(cls, "__parameters__"):
+        setattr(new_type, "__parameters__", cls.__parameters__)
+
     return new_type  # type: ignore
 
 

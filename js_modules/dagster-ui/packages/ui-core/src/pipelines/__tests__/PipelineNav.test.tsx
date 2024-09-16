@@ -6,8 +6,8 @@ import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {JobFeatureProvider} from '../JobFeatureContext';
 
-jest.mock('../../workspace/WorkspaceContext', () => ({
-  ...jest.requireActual('../../workspace/WorkspaceContext'),
+jest.mock('../../workspace/WorkspaceContext/util', () => ({
+  ...jest.requireActual('../../workspace/WorkspaceContext/util'),
   useRepository: jest.fn(() => null),
 }));
 

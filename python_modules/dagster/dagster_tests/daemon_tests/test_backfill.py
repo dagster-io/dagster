@@ -728,7 +728,7 @@ def test_job_backfill_status(
     assert instance.get_runs_count() == 3
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
@@ -1250,7 +1250,7 @@ def test_pure_asset_backfill(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 def test_backfill_from_failure_for_subselection(
@@ -2044,7 +2044,7 @@ def test_asset_job_backfill_single_run_multiple_iterations(
     assert instance.get_runs_count() == 1
     backfill = instance.get_backfill("simple")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 def test_asset_job_backfill_multi_run(
@@ -2656,7 +2656,7 @@ def test_asset_backfill_logs(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
     # set num_lines high so we know we get all of the remaining logs
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
@@ -2726,7 +2726,7 @@ def test_asset_backfill_from_asset_graph_subset(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_from_asset_graph_subset")
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
 def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
@@ -2792,4 +2792,4 @@ def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
         "backfill_from_asset_graph_subset_with_static_and_time_partitions"
     )
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS

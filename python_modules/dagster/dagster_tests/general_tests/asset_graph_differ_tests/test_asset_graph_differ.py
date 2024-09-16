@@ -52,6 +52,7 @@ def _make_location_entry(scenario_name: str, definitions_file: str, instance: Da
         load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},
         update_timestamp=time.time(),
+        version_key="test",
     )
 
 

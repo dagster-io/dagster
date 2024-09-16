@@ -181,3 +181,7 @@ export type SensorAssetSelectionQuery = {
     | {__typename: 'SensorNotFoundError'}
     | {__typename: 'UnauthorizedError'};
 };
+
+export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
+
+export const SensorAssetSelectionQueryVersion = 'a3410d20906553473a54e9045ecb19e92d08defefc17c2d9f1802338147ed470';

@@ -27,3 +27,5 @@ export type WorkspaceJobsQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceJobsQueryVersion = '637f616d6d4eba194cf80bbb292f579f864d3b16aeb0b40cdf108d8100ba9b1c';

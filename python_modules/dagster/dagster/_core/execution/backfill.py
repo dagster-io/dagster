@@ -29,10 +29,12 @@ from dagster._utils.error import SerializableErrorInfo
 @whitelist_for_serdes
 class BulkActionStatus(Enum):
     REQUESTED = "REQUESTED"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
+    COMPLETED = "COMPLETED"  # deprecated. Use COMPLETED_SUCCESS or COMPLETED_FAILED instead
+    FAILED = "FAILED"  # denotes when there is a daemon failure, or some other issue processing the backfill
     CANCELING = "CANCELING"
     CANCELED = "CANCELED"
+    COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
+    COMPLETED_FAILED = "COMPLETED_FAILED"  # denotes that the backfill daemon completed successfully, but some runs failed
 
     @staticmethod
     def from_graphql_input(graphql_str):

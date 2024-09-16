@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const ReloadAllButton = (props: Props) => {
-  const {icon = <Icon name="code_location_reload" />, label = 'Reload all'} = props;
+  const {icon = <Icon name="reload_definitions" />, label = 'Reload all'} = props;
   const {
     permissions: {canReloadWorkspace},
     disabledReasons,
