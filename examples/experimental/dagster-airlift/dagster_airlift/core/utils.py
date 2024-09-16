@@ -28,3 +28,11 @@ def get_dag_id_from_spec(spec: AssetSpec) -> Optional[str]:
 
 def airflow_kind_dict() -> dict:
     return {f"{KIND_PREFIX}airflow": ""}
+
+
+def airflow_dag_kind_dict() -> dict:
+    return {f"{KIND_PREFIX}airflow": "", f"{KIND_PREFIX}dag": ""}
+
+
+def airflow_task_kind_dict() -> dict:
+    return {f"{KIND_PREFIX}airflow": "", f"{KIND_PREFIX}task": ""}

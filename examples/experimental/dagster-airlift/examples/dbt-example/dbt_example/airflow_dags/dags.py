@@ -6,6 +6,7 @@ from typing import List
 from airflow import DAG
 from airflow.models.operator import BaseOperator
 from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
 from dagster_airlift.in_airflow import mark_as_dagster_migrating
 from dagster_airlift.migration_state import load_migration_state_from_yaml
 from dbt_example.shared.lakehouse_utils import load_csv_to_duckdb
@@ -57,6 +58,20 @@ load_iris = LoadToLakehouseOperator(
     db_path=DB_PATH,
     columns=IRIS_COLUMNS,
 )
+
+print_dag = DAG(
+    dag_id="print_dag",
+    default_args=default_args,
+    schedule_interval=None,
+    is_paused_upon_creation=False,
+)
+# Give it a diamond structure.
+t1 = PythonOperator(python_callable=lambda: print("Hello, world!"), task_id="t1", dag=print_dag)
+t2 = PythonOperator(python_callable=lambda: print("Hello, world!"), task_id="t2", dag=print_dag)
+t3 = PythonOperator(python_callable=lambda: print("Hello, world!"), task_id="t3", dag=print_dag)
+t4 = PythonOperator(python_callable=lambda: print("Hello, world!"), task_id="t4", dag=print_dag)
+t1 >> [t2, t3] >> t4
+
 
 mark_as_dagster_migrating(
     global_vars=globals(),

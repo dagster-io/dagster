@@ -78,6 +78,24 @@ class AirflowInstance:
                 f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
             )
 
+    def list_tasks(self, dag_id: str) -> List["TaskInfo"]:
+        response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags/{dag_id}/tasks")
+        if response.status_code == 200:
+            webserver_url = self.auth_backend.get_webserver_url()
+            return [
+                TaskInfo(
+                    webserver_url=webserver_url,
+                    dag_id=dag_id,
+                    task_id=task["task_id"],
+                    metadata=task,
+                )
+                for task in response.json()["tasks"]
+            ]
+        else:
+            raise DagsterError(
+                f"Failed to fetch tasks for {dag_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+
     def list_variables(self) -> List[Dict[str, Any]]:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/variables")
         if response.status_code == 200:
@@ -347,6 +365,14 @@ class TaskInfo:
     @property
     def dag_url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
+
+    @property
+    def downstream_task_ids(self) -> List[str]:
+        return self.metadata["downstream_task_ids"]
+
+    @property
+    def task_asset_key(self) -> AssetKey:
+        return AssetKey(["airflow_instance", "dag", self.dag_id, "task", self.task_id])
 
 
 @record
