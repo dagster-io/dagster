@@ -20,7 +20,7 @@ export const PageHeader = (props: Props) => {
   return (
     <PageHeaderContainer
       background={Colors.backgroundLight()}
-      padding={{left: 24, right: 24}}
+      padding={{horizontal: 24}}
       border="bottom"
     >
       {title && (
