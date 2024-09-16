@@ -21,7 +21,7 @@ You'll need one or more assets that emit the same metadata key at run time. Insi
 are most valuable when you have multiple assets that emit the same kind of metadata, such as
 such as the number of rows processed or the size of a file uploaded to object storage.
 
-Follow [the metadata guide](/guides/metadata#attaching-metadata-to-an-asset-at-runtime) to add numeric metadata
+Follow [the metadata guide](/guides/metadata#runtime-metadata) to add numeric metadata
 to your asset materializations.
 
 ## Step 2: Enable viewing your metadata in Dagster+ Insights
