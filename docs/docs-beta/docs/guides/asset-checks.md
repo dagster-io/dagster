@@ -19,6 +19,15 @@ To follow this guide, you'll need:
 
 - Familiarity with [Assets](/concepts/assets)
 </details>
+## Getting Started with Asset Checks
+
+To get started with asset checks, you can follow these general steps, which are detailed below:
+
+1. **Define an asset check:** Asset checks are typically defined using the `@asset_check` or `@multi_asset_check` decorator and run either within an asset or separate from the asset.
+2.** Pass the asset checks to the `Definitions` object:** Asset checks must be added to Definitions for Dagster to recognize them.
+3. **Choose how you wish to execute asset checks**: by default, all jobs targeting an asset will also run associated checks, although you can run asset checks through the UI.
+4. **View asset check results in the UI**: Asset check results will appear in the UI and can be customized through the use of metadata and severity levels
+5. **Alert on failed asset check results**: If you are using Dagster+, you can choose to alert on asset checks.
 
 ## Defining a single asset check \{#single-check}
 
