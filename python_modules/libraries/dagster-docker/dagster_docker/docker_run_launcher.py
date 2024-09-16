@@ -1,3 +1,4 @@
+import json
 from typing import Any, Mapping, Optional
 
 import dagster._check as check
@@ -214,11 +215,22 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, run: DagsterRun):
+        container_id = run.tags.get(DOCKER_CONTAINER_ID_TAG)
+
+        if not container_id:
+            return CheckRunHealthResult(WorkerStatus.NOT_FOUND, msg="No container ID tag for run.")
+
         container = self._get_container(run)
         if container is None:
-            return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
+            return CheckRunHealthResult(
+                WorkerStatus.NOT_FOUND, msg=f"Could not find container with ID {container_id}."
+            )
         if container.status == "running":
             return CheckRunHealthResult(WorkerStatus.RUNNING)
-        return CheckRunHealthResult(
-            WorkerStatus.FAILED, msg=f"Container status is {container.status}"
+
+        container_state = container.attrs.get("State")
+        failure_string = f"Container status is {container.status}." + (
+            f" Container state: {json.dumps(container_state)}" if container_state else ""
         )
+
+        return CheckRunHealthResult(WorkerStatus.FAILED, msg=failure_string)
