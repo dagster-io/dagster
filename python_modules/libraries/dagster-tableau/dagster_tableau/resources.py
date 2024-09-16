@@ -260,9 +260,6 @@ class BaseTableauWorkspace(ConfigurableResource):
 
     _client: Union[TableauCloudClient, TableauServerClient] = PrivateAttr(default=None)
 
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self.build_client()
-
     @abstractmethod
     def build_client(self) -> None:
         raise NotImplementedError()
