@@ -18,18 +18,16 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
 )
 @pytest.mark.usefixtures("site_name")
 @pytest.mark.usefixtures("api_token")
+@pytest.mark.usefixtures("workbook_id")
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
 def test_basic_resource_request(
-    clazz, host_key, host_value, site_name, api_token, workspace_data_api_mocks_fn
+    clazz, host_key, host_value, site_name, api_token, workbook_id, workspace_data_api_mocks_fn
 ) -> None:
 
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
     connected_app_secret_value = uuid.uuid4().hex
     username = "fake_username"
-    fake_site_id = uuid.uuid4().hex
-    fake_api_token = uuid.uuid4().hex
-    fake_workbook_id = uuid.uuid4().hex
 
     resource_args = {
         "connected_app_client_id": connected_app_client_id,
@@ -45,35 +43,7 @@ def test_basic_resource_request(
     # Must initialize the resource's client before passing it to the mock responses
     resource.build_client()
 
-    yield from workspace_data_api_mocks_fn(api_base_url=resource.api_base_url)
-
-    responses.add(
-        method=responses.POST,
-        url=f"{resource._client.rest_api_base_url}/auth/signin",
-        json={"credentials": {"site": {"id": fake_site_id}, "token": fake_api_token}},
-        status=200,
-    )
-    responses.add(
-        method=responses.GET,
-        url=f"{resource._client.rest_api_base_url}/sites/{fake_site_id}/workbooks",
-        json={},
-        status=200,
-    )
-    responses.add(
-        method=responses.POST,
-        url=f"{resource._client.metadata_api_base_url}",
-        json={
-            "query": resource._client.workbook_graphql_query,
-            "variables": {"luid": fake_workbook_id},
-        },
-        status=200,
-    )
-    responses.add(
-        method=responses.POST,
-        url=f"{resource._client.rest_api_base_url}/auth/signout",
-        json={},
-        status=200,
-    )
+    yield from workspace_data_api_mocks_fn(client=resource._client)
 
     # Remove the resource's client to properly test the resource
     resource._client = None
@@ -82,7 +52,7 @@ def test_basic_resource_request(
     def test_assets():
         with resource.get_client() as client:
             client.get_workbooks()
-            client.get_workbook(workbook_id=fake_workbook_id)
+            client.get_workbook(workbook_id=workbook_id)
 
     with instance_for_test() as instance:
         materialize(

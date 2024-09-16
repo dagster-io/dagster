@@ -93,43 +93,37 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
 )
 def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: str) -> Callable:
     def _method(
-        api_base_url,
+        client,
         site_id: str = site_id,
         workbook_id: str = workbook_id,
         api_token: str = api_token,
     ) -> Iterator[None]:
         with responses.RequestsMock() as response:
-            response.add(
-                method=responses.GET,
-                url=f"{api_base_url}/sites/{site_id}/workbooks",
-                json={"workbooks": {"workbook": [{**SAMPLE_WORKBOOK}]}},
-                status=200,
-            )
-
-            response.add(
-                method=responses.GET,
-                url=f"{api_base_url}/sites/{site_id}/workbooks/{workbook_id}",
-                json={"workbook": {**SAMPLE_WORKBOOK}},
-                status=200,
-            )
-
-            response.add(
-                method=responses.GET,
-                url=f"{api_base_url}/sites/{site_id}/workbooks/{workbook_id}/connections",
-                json=SAMPLE_CONNECTIONS,
-                status=200,
-            )
 
             response.add(
                 method=responses.POST,
-                url=f"{api_base_url}/auth/signin",
+                url=f"{client.rest_api_base_url}/auth/signin",
                 json={"credentials": {"site": {"id": site_id}, "token": api_token}},
                 status=200,
             )
-
+            response.add(
+                method=responses.GET,
+                url=f"{client.rest_api_base_url}/sites/{site_id}/workbooks",
+                json={},
+                status=200,
+            )
             response.add(
                 method=responses.POST,
-                url=f"{api_base_url}/auth/signout",
+                url=f"{client.metadata_api_base_url}",
+                json={
+                    "query": client.workbook_graphql_query,
+                    "variables": {"luid": workbook_id},
+                },
+                status=200,
+            )
+            response.add(
+                method=responses.POST,
+                url=f"{client.rest_api_base_url}/auth/signout",
                 json={},
                 status=200,
             )
