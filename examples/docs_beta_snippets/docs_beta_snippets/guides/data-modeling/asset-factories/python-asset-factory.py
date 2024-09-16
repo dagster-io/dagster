@@ -13,7 +13,7 @@ def build_etl_job(
     target_object: str,
     sql: str,
 ) -> dg.Definitions:
-    # Asset keys cannot contain '.'
+    # asset keys cannot contain '.'
     asset_key = f"etl_{bucket}_{target_object}".replace(".", "_")
 
     @dg.asset(name=asset_key)
@@ -22,22 +22,21 @@ def build_etl_job(
             source_path = f"{root}/{source_object}"
             target_path = f"{root}/{target_object}"
 
-            # These steps could be split into separate assets, but
+            # these steps could be split into separate assets, but
             # for brevity we will keep them together.
-            # 1. Extract
+            # 1. extract
             context.resources.s3.download_file(bucket, source_object, source_path)
 
-            # 2. Transform
+            # 2. transform
             db = duckdb.connect(":memory:")
             db.execute(
                 f"CREATE TABLE source AS SELECT * FROM read_csv('{source_path}');"
             )
             db.query(sql).to_csv(target_path)
 
-            # 3. Load
+            # 3. load
             context.resources.s3.upload_file(bucket, target_object, target_path)
 
-    # Return a Defintions object
     return dg.Definitions(
         assets=[etl_asset],
         resources={"s3": s3_resource},
