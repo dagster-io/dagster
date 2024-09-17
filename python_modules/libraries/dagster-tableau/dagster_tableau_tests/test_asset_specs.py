@@ -1,7 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
-from typing import Callable, Type, Union
+from typing import Callable, Type, Union, Mapping
 
 import pytest
 import responses
@@ -35,7 +35,7 @@ def test_fetch_tableau_workspace_data(
     connected_app_secret_value = uuid.uuid4().hex
     username = "fake_username"
 
-    resource_args = {
+    resource_args: Mapping[str, object] = {
         "connected_app_client_id": connected_app_client_id,
         "connected_app_secret_id": connected_app_secret_id,
         "connected_app_secret_value": connected_app_secret_value,
@@ -76,7 +76,7 @@ def test_translator_spec(
     connected_app_secret_value = uuid.uuid4().hex
     username = "fake_username"
 
-    resource_args = {
+    resource_args: Mapping[str, object] = {
         "connected_app_client_id": connected_app_client_id,
         "connected_app_secret_id": connected_app_secret_id,
         "connected_app_secret_value": connected_app_secret_value,

@@ -35,7 +35,7 @@ def test_basic_resource_request(
     connected_app_secret_value = uuid.uuid4().hex
     username = "fake_username"
 
-    resource_args = {
+    resource_args: Mapping[str, object] = {
         "connected_app_client_id": connected_app_client_id,
         "connected_app_secret_id": connected_app_secret_id,
         "connected_app_secret_value": connected_app_secret_value,
