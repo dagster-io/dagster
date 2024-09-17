@@ -1645,6 +1645,8 @@ class TestRunStorage:
         assert len(backfill_with_tags) == 0
 
     def test_backfill_simple_job_name_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_job_name_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by job_name")
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
         assert len(backfills) == 0

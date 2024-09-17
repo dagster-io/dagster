@@ -890,7 +890,7 @@ class SqlRunStorage(RunStorage):
             # if len(backfill_ids) == 0:
             #     return []
 
-            query.where(BulkActionsTable.c.key.in_(backfills_with_job_name_query.subquery()))
+            query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query)))
 
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
