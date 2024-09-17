@@ -15,9 +15,10 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/meltano.py",
     f"{snippets_folder}/lakefs.py",
     # FIXME: need to enable the following once we have a way to run their init/compile script in CI
-    f"{snippets_folder}/dlt.py",
+    f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",
     f"{snippets_folder}/airbyte.py",
+    f"{snippets_folder}/dlt.py",
     f"{snippets_folder}/fivetran.py",
 }
 

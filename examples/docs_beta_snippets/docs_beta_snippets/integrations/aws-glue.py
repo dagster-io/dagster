@@ -23,7 +23,7 @@ defs = dg.Definitions(
     assets=[glue_pipes_asset],
     resources={
         "pipes_glue_client": PipesGlueClient(
-            client=boto3.client("glue"),
+            client=boto3.client("glue", region_name="us-east-1"),
             context_injector=PipesS3ContextInjector(
                 client=boto3.client("s3"),
                 bucket="my-bucket",
