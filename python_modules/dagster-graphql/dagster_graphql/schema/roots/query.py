@@ -43,7 +43,6 @@ from dagster_graphql.implementation.fetch_assets import (
     get_asset,
     get_asset_node,
     get_asset_node_definition_collisions,
-    get_asset_nodes,
     get_assets,
 )
 from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations import (
@@ -967,19 +966,9 @@ class GrapheneQuery(graphene.ObjectType):
 
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes()
-            asset_checks_loader = AssetChecksLoader(
-                context=graphene_info.context,
-                asset_keys=[node.asset_key for node in external_asset_nodes],
-            )
             results = (
                 [
-                    GrapheneAssetNode(
-                        repo_loc,
-                        repo,
-                        asset_node,
-                        asset_checks_loader=asset_checks_loader,
-                        dynamic_partitions_loader=dynamic_partitions_loader,
-                    )
+                    (repo_loc, repo, asset_node)
                     for asset_node in external_asset_nodes
                     if asset_node.group_name == group_name
                 ]
@@ -997,43 +986,47 @@ class GrapheneQuery(graphene.ObjectType):
             repo = repo_loc.get_repository(repo_sel.repository_name)
 
             external_asset_nodes = repo.get_external_asset_nodes(job_name)
-            asset_checks_loader = AssetChecksLoader(
-                context=graphene_info.context,
-                asset_keys=[node.asset_key for node in external_asset_nodes],
-            )
             results = (
-                [
-                    GrapheneAssetNode(
-                        repo_loc,
-                        repo,
-                        asset_node,
-                        asset_checks_loader=asset_checks_loader,
-                        dynamic_partitions_loader=dynamic_partitions_loader,
-                    )
-                    for asset_node in external_asset_nodes
-                ]
+                [(repo_loc, repo, asset_node) for asset_node in external_asset_nodes]
                 if external_asset_nodes
                 else []
             )
         else:
-            results = get_asset_nodes(
-                graphene_info, resolved_asset_keys if not use_all_asset_keys else None
-            )
+            if not use_all_asset_keys and resolved_asset_keys:
+                remote_nodes = [
+                    graphene_info.context.get_asset_node(asset_key)
+                    for asset_key in resolved_asset_keys
+                ]
+            else:
+                remote_nodes = [
+                    remote_node for remote_node in graphene_info.context.asset_graph.asset_nodes
+                ]
+
+            results = []
+            for remote_node in remote_nodes:
+                if remote_node:
+                    repo_handle = remote_node.priority_repository_handle
+                    code_loc = graphene_info.context.get_code_location(repo_handle.location_name)
+                    repo = code_loc.get_repository(repo_handle.repository_name)
+                    results.append((code_loc, repo, remote_node.priority_node))
 
         # Filter down to requested asset keys
         results = [
-            node
-            for node in results
-            if use_all_asset_keys or node.assetKey in check.not_none(resolved_asset_keys)
+            scoped_tuple
+            for scoped_tuple in results
+            if use_all_asset_keys
+            or scoped_tuple[2].asset_key in check.not_none(resolved_asset_keys)
         ]
 
         if not results:
             return []
 
-        AssetRecord.prepare(graphene_info.context, [node.assetKey for node in results])
+        final_keys = [scoped_tuple[2].asset_key for scoped_tuple in results]
+        AssetRecord.prepare(graphene_info.context, final_keys)
+
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[node.assetKey for node in results],
+            asset_keys=final_keys,
         )
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
@@ -1054,24 +1047,24 @@ class GrapheneQuery(graphene.ObjectType):
 
         nodes = [
             GrapheneAssetNode(
-                node.repository_location,
-                node.external_repository,
-                node.external_asset_node,
+                code_loc,
+                repo,
+                external_asset_node,
                 asset_checks_loader=asset_checks_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
                 # base_deployment_context will be None if we are not in a branch deployment
                 asset_graph_differ=AssetGraphDiffer.from_external_repositories(
-                    code_location_name=node.repository_location.name,
-                    repository_name=node.external_repository.name,
+                    code_location_name=code_loc.name,
+                    repository_name=repo.name,
                     branch_workspace=graphene_info.context,
                     base_workspace=base_deployment_context,
                 )
                 if base_deployment_context is not None
                 else None,
             )
-            for node in results
+            for (code_loc, repo, external_asset_node) in results
         ]
         return sorted(nodes, key=lambda node: node.id)
 
@@ -1151,18 +1144,19 @@ class GrapheneQuery(graphene.ObjectType):
         return graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
 
     def resolve_assetsLatestInfo(
-        self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]
+        self,
+        graphene_info: ResolveInfo,
+        assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        results = get_asset_nodes(graphene_info, asset_keys)
+        remote_nodes = {graphene_info.context.get_asset_node(asset_key) for asset_key in asset_keys}
 
-        # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            node.external_asset_node.asset_key: node.external_asset_node.op_names
-            for node in results
-            if node.assetKey in asset_keys
+            remote_node.key: remote_node.priority_node.op_names
+            for remote_node in remote_nodes
+            if remote_node
         }
 
         AssetRecord.prepare(graphene_info.context, asset_keys)

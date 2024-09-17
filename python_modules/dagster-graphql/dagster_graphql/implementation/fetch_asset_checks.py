@@ -1,28 +1,15 @@
-from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional
 
 from dagster import AssetKey
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.loader import LoadingContext
-from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.dagster_run import RunRecord
-from dagster._core.workspace.context import WorkspaceRequestContext
 
-from dagster_graphql.implementation.fetch_assets import repository_iter
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
-
-
-def asset_checks_iter(
-    context: WorkspaceRequestContext,
-) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetCheck]]:
-    for location, repository in repository_iter(context):
-        for external_check in repository.external_repository_data.external_asset_checks or []:
-            yield (location, repository, external_check)
 
 
 def has_asset_checks(
@@ -31,7 +18,7 @@ def has_asset_checks(
 ) -> bool:
     return any(
         external_check.asset_key == asset_key
-        for _, _, external_check in asset_checks_iter(graphene_info.context)
+        for external_check in graphene_info.context.asset_graph.asset_checks
     )
 
 
