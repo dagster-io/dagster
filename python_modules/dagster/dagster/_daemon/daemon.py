@@ -5,12 +5,12 @@ import random
 import sys
 import time
 import uuid
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from collections import deque
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
-from typing import Any, Generator, Generic, Mapping, Optional, TypeVar, Union
+from typing import Any, Dict, Generator, Generic, Mapping, Optional, TypeVar, Union
 
 from typing_extensions import TypeAlias
 
@@ -224,6 +224,16 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
         """
 
 
+class ThreadpoolContainerMixin(ABC):
+    @abstractproperty
+    def threadpool_executors(self) -> Dict[str, InheritContextThreadPoolExecutor]:
+        return {}
+
+    @abstractmethod
+    def get_threadpool_executor(self, name) -> Optional[InheritContextThreadPoolExecutor]:
+        pass
+
+
 class IntervalDaemon(DagsterDaemon[TContext], ABC):
     def __init__(
         self,
@@ -288,32 +298,39 @@ class SchedulerDaemon(DagsterDaemon):
         )
 
 
-class SensorDaemon(DagsterDaemon):
+class SensorDaemon(DagsterDaemon, ThreadpoolContainerMixin):
     def __init__(self, settings: Mapping[str, Any]) -> None:
         super().__init__()
-        self._exit_stack = ExitStack()
-        self._threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
-        self._submit_threadpool_executor: Optional[InheritContextThreadPoolExecutor] = None
-
         if settings.get("use_threads"):
-            self._threadpool_executor = self._exit_stack.enter_context(
-                InheritContextThreadPoolExecutor(
+            self._threadpool_executors = {
+                "evaluate_worker": InheritContextThreadPoolExecutor(
                     max_workers=settings.get("num_workers"),
                     thread_name_prefix="sensor_daemon_worker",
-                )
-            )
+                ),
+            }
             num_submit_workers = settings.get("num_submit_workers")
             if num_submit_workers:
-                self._submit_threadpool_executor = self._exit_stack.enter_context(
-                    InheritContextThreadPoolExecutor(
-                        max_workers=settings.get("num_submit_workers"),
-                        thread_name_prefix="sensor_submit_worker",
-                    )
+                self._threadpool_executors["submit_worker"] = InheritContextThreadPoolExecutor(
+                    max_workers=num_submit_workers,
+                    thread_name_prefix="sensor_submit_worker",
                 )
+        else:
+            self._threadpool_executors = {}
+
+        self._exit_stack = ExitStack()
+        for executor in self._threadpool_executors.values():
+            self._exit_stack.enter_context(executor)
 
     @classmethod
     def daemon_type(cls) -> str:
         return "SENSOR"
+
+    @property
+    def threadpool_executors(self) -> Dict[str, InheritContextThreadPoolExecutor]:
+        return self._threadpool_executors
+
+    def get_threadpool_executor(self, name: str) -> Optional[InheritContextThreadPoolExecutor]:
+        return self._threadpool_executors.get(name)
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
@@ -328,8 +345,8 @@ class SensorDaemon(DagsterDaemon):
             workspace_process_context,
             self._logger,
             shutdown_event,
-            threadpool_executor=self._threadpool_executor,
-            submit_threadpool_executor=self._submit_threadpool_executor,
+            evaluate_threadpool_executor=self.get_threadpool_executor("evaluate_worker"),
+            submit_threadpool_executor=self.get_threadpool_executor("submit_worker"),
         )
 
 

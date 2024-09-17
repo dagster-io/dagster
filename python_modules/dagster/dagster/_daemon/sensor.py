@@ -217,11 +217,16 @@ class SensorLaunchContext(AbstractContextManager):
         # because we want to minimize the window of clobbering the sensor state upon updating the
         # sensor state data.
         state = self._instance.get_instigator_state(
-            self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
+            self._external_sensor.get_external_origin_id(),
+            self._external_sensor.selector_id,
         )
-        last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
+        last_run_key = (
+            state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
+        )
         last_sensor_start_timestamp = (
-            state.instigator_data.last_sensor_start_timestamp if state.instigator_data else None  # type: ignore  # (possible none)
+            state.instigator_data.last_sensor_start_timestamp  # type: ignore  # (possible none)
+            if state and state.instigator_data
+            else None
         )
         if self._tick.run_keys and should_update_cursor_and_last_run_key:
             last_run_key = self._tick.run_keys[-1]
@@ -266,7 +271,8 @@ class SensorLaunchContext(AbstractContextManager):
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
         if exception_value and not isinstance(exception_value, GeneratorExit):
             if isinstance(
-                exception_value, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
+                exception_value,
+                (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError),
             ):
                 try:
                     raise DagsterSensorDaemonError(
@@ -284,7 +290,9 @@ class SensorLaunchContext(AbstractContextManager):
             else:
                 error_data = DaemonErrorCapture.on_exception(sys.exc_info())
                 self.update_state(
-                    TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
+                    TickStatus.FAILURE,
+                    error=error_data,
+                    failure_count=self._tick.failure_count + 1,
                 )
 
         self._write()
@@ -305,7 +313,7 @@ def execute_sensor_iteration_loop(
     logger: logging.Logger,
     shutdown_event: threading.Event,
     until: Optional[float] = None,
-    threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    evaluate_threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
 ) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -328,7 +336,7 @@ def execute_sensor_iteration_loop(
             yield from execute_sensor_iteration(
                 workspace_process_context,
                 logger,
-                threadpool_executor=threadpool_executor,
+                evaluate_threadpool_executor=evaluate_threadpool_executor,
                 submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
             )
@@ -355,7 +363,7 @@ def execute_sensor_iteration_loop(
 def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    threadpool_executor: Optional[ThreadPoolExecutor],
+    evaluate_threadpool_executor: Optional[ThreadPoolExecutor],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
@@ -420,7 +428,7 @@ def execute_sensor_iteration(
         elif is_under_min_interval(sensor_state, external_sensor):
             continue
 
-        if threadpool_executor:
+        if evaluate_threadpool_executor:
             if sensor_tick_futures is None:
                 check.failed("sensor_tick_futures dict must be passed with threadpool_executor")
 
@@ -431,7 +439,7 @@ def execute_sensor_iteration(
             ):
                 continue
 
-            future = threadpool_executor.submit(
+            future = evaluate_threadpool_executor.submit(
                 _process_tick,
                 workspace_process_context,
                 logger,
@@ -1095,7 +1103,9 @@ def _submit_run_requests(
         has_evaluations=len(automation_condition_evaluations) > 0,
     )
     existing_runs_by_key = _fetch_existing_runs(
-        instance, external_sensor, [request for _, request in resolved_run_ids_with_requests]
+        instance,
+        external_sensor,
+        [request for _, request in resolved_run_ids_with_requests],
     )
 
     def submit_run_request(
@@ -1286,7 +1296,13 @@ def _get_or_create_sensor_run(
     logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        instance, code_location, external_sensor, external_job, run_id, run_request, target_data
+        instance,
+        code_location,
+        external_sensor,
+        external_job,
+        run_id,
+        run_request,
+        target_data,
     )
 
 
@@ -1311,7 +1327,9 @@ def _create_sensor_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     job_tags = normalize_tags(
-        external_job.tags or {}, allow_reserved_tags=False, warn_on_deprecated_tags=False
+        external_job.tags or {},
+        allow_reserved_tags=False,
+        warn_on_deprecated_tags=False,
     ).tags
     tags = merge_dicts(
         merge_dicts(job_tags, run_request.tags),
