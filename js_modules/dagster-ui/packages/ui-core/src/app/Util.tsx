@@ -219,7 +219,7 @@ export function weakmapMemoize<T extends object, R>(
   };
 }
 
-export function assertUnreachable(value: never): never {
+export function assertUnreachable(value: any): any {
   throw new Error(`Didn't expect to get here with value: ${JSON.stringify(value)}`);
 }
 
