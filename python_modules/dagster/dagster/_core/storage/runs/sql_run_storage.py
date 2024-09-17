@@ -884,13 +884,9 @@ class SqlRunStorage(RunStorage):
             backfills_with_job_name_query = db_select([RunTagsTable.c.value]).select_from(
                 runs_in_backfill_with_job_name
             )
-            # rows = self.fetchall(backfill_ids_query)
-            # backfill_ids = [row["value"] for row in rows]
-
-            # if len(backfill_ids) == 0:
-            #     return []
-
-            query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query)))
+            query = query.where(
+                BulkActionsTable.c.key.in_(db_subquery(backfills_with_job_name_query))
+            )
 
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
