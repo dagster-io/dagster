@@ -31,17 +31,12 @@ As a data orchestrator, Dagster helps with data ingestion as it can:
 
 ## Orchestrating data ingestion tools
 
-Dagster integrates with a number of data ingestion tools, enabling you to sync diverse data sources into data warehouse tables using pre-built connectors. With these integrations, Dagster allows you to:
+Dagster currently integrates with the following data ingestion tools, enabling you to sync diverse data sources into data warehouse tables using pre-built connectors:
 
-- Represent ingested tables as assets within the Dagster asset graph
-- Trigger asset materializations that automatically invoke these tools to initiate data syncs
-
-Dagster currently integrates with the following data ingestion tools:
-
-- Airbyte
-- dlt
-- Fivetran
-- Sling
+- [Airbyte](/integrations/airbyte)
+- [dlt](/integrations/dlt)
+- [Fivetran](/integrations/fivetran)
+- [Sling](/integrations/sling)
 
 ## Writing custom data ingestion pipelines
 
@@ -54,4 +49,4 @@ For example, imagine there's a CSV file of counties on the internet and you want
 ## Next steps
 
 - Transform data using [Dagster's dbt integration](/guides/transform-dbt)
-- Run non-Python code with [Dagster Pipes](/guides/non-python)
+- Use asset checks [to test data quality](/guides/asset-checks) and [freshness](/guides/data-freshness-testing)
