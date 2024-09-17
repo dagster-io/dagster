@@ -52,6 +52,6 @@ defs = dg.Definitions(
     assets=[iris_dataset, iris_setosa],
     # highlight-start
     # Include the resource in the `Definitions` object
-    resources={"iris_db": SnowflakeResource()},
+    resources={"iris_db": iris_db},
     # highlight-end
 )
