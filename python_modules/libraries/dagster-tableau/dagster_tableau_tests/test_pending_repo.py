@@ -22,7 +22,7 @@ def test_using_cached_asset_data(
 
         # Must initialize the resource's client before passing it to the mock response function
         resource.build_client()
-        with workspace_data_api_mocks_fn(client=resource._client) as response:
+        with workspace_data_api_mocks_fn(client=resource._client, include_views=True) as response:
             # Remove the resource's client to properly test the pending repo
             resource._client = None
             assert len(response.calls) == 0

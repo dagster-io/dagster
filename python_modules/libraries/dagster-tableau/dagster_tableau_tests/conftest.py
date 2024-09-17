@@ -163,16 +163,16 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
     name="workspace_data_api_mocks_fn",
 )
 def workspace_data_api_mocks_fn_fixture(
-    site_id: str, api_token: str, workbook_id: str, sheet_id: str, dashboard_id: str
+    site_id: str, api_token: str, sheet_id: str, dashboard_id: str
 ) -> Callable:
     @contextlib.contextmanager
     def _method(
         client: Union[TableauCloudClient, TableauServerClient],
         site_id: str = site_id,
         api_token: str = api_token,
-        workbook_id: str = workbook_id,
         sheet_id: str = sheet_id,
         dashbord_id: str = dashboard_id,
+        include_views: bool = False,
     ) -> Iterator[responses.RequestsMock]:
         with responses.RequestsMock() as response:
             response.add(
@@ -188,18 +188,6 @@ def workspace_data_api_mocks_fn_fixture(
                 status=200,
             )
             response.add(
-                method=responses.GET,
-                url=f"{client.rest_api_base_url}/sites/{site_id}/views/{sheet_id}",
-                json=SAMPLE_VIEW_SHEET,
-                status=200,
-            )
-            response.add(
-                method=responses.GET,
-                url=f"{client.rest_api_base_url}/sites/{site_id}/views/{dashbord_id}",
-                json=SAMPLE_VIEW_DASHBOARD,
-                status=200,
-            )
-            response.add(
                 method=responses.POST,
                 url=f"{client.metadata_api_base_url}",
                 json={"data": {"workbooks": [SAMPLE_WORKBOOK]}},
@@ -210,6 +198,19 @@ def workspace_data_api_mocks_fn_fixture(
                 url=f"{client.rest_api_base_url}/auth/signout",
                 status=200,
             )
+            if include_views:
+                response.add(
+                    method=responses.GET,
+                    url=f"{client.rest_api_base_url}/sites/{site_id}/views/{sheet_id}",
+                    json=SAMPLE_VIEW_SHEET,
+                    status=200,
+                )
+                response.add(
+                    method=responses.GET,
+                    url=f"{client.rest_api_base_url}/sites/{site_id}/views/{dashbord_id}",
+                    json=SAMPLE_VIEW_DASHBOARD,
+                    status=200,
+                )
 
             yield response
 
