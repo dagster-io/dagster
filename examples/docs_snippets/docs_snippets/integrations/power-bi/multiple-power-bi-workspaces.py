@@ -1,10 +1,6 @@
-import uuid
-from http import client
-from typing import cast
+from dagster_powerbi import PowerBIServicePrincipal, PowerBIWorkspace
 
-from dagster_powerbi import PowerBIServicePrincipal, PowerBIToken, PowerBIWorkspace
-
-from dagster import Definitions, EnvVar, asset, define_asset_job
+from dagster import Definitions, EnvVar
 
 credentials = PowerBIServicePrincipal(
     client_id=EnvVar("POWER_BI_CLIENT_ID"),
@@ -22,6 +18,8 @@ marketing_team_workspace = PowerBIWorkspace(
     workspace_id="8b7f815d-4e64-40dd-993c-cfa4fb12edee",
 )
 
+# We use Definitions.merge to combine the definitions from both workspaces
+# into a single set of definitions to load
 defs = Definitions.merge(
     sales_team_workspace.build_defs(),
     marketing_team_workspace.build_defs(),
