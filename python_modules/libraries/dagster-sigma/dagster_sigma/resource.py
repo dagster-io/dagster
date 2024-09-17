@@ -11,6 +11,11 @@ from sqlglot import exp, parse_one
 
 
 class SigmaBaseUrl(str, Enum):
+    """Enumeration of Sigma API base URLs for different cloud providers.
+
+    https://help.sigmacomputing.com/reference/get-started-sigma-api#identify-your-api-request-url
+    """
+
     AWS_US = "https://aws-api.sigmacomputing.com"
     AWS_CANADA = "https://api.ca.aws.sigmacomputing.com"
     AWS_EUROPE = "https://api.eu.aws.sigmacomputing.com"
@@ -21,12 +26,24 @@ class SigmaBaseUrl(str, Enum):
 
 @record
 class SigmaWorkbook:
+    """Represents a Sigma workbook, a collection of visualizations and queries
+    for data exploration and analysis.
+
+    https://help.sigmacomputing.com/docs/workbooks
+    """
+
     properties: Dict[str, Any]
     datasets: AbstractSet[str]
 
 
 @record
 class SigmaDataset:
+    """Represents a Sigma dataset, a centralized data definition which can
+    contain aggregations or other manipulations.
+
+    https://help.sigmacomputing.com/docs/datasets
+    """
+
     properties: Dict[str, Any]
     columns: AbstractSet[str]
     inputs: AbstractSet[str]
@@ -123,6 +140,9 @@ class SigmaOrganization(ConfigurableResource):
 
     @cached_method
     def build_organization_data(self) -> SigmaOrganizationData:
+        """Retrieves all workbooks and datasets in the Sigma organization and builds a
+        SigmaOrganizationData object representing the organization's assets.
+        """
         raw_workbooks = self.fetch_workbooks()
 
         dataset_inode_to_name: Mapping[str, str] = {}
