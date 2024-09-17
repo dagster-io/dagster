@@ -1,10 +1,19 @@
 import contextlib
 import uuid
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Union
 
 import pytest
 import responses
+from dagster_tableau.resources import TableauCloudClient, TableauServerClient
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
+
+FAKE_CONNECTED_APP_CLIENT_ID = uuid.uuid4().hex
+FAKE_CONNECTED_APP_SECRET_ID = uuid.uuid4().hex
+FAKE_CONNECTED_APP_SECRET_VALUE = uuid.uuid4().hex
+FAKE_USERNAME = "fake_username"
+FAKE_SITE_NAME = "fake_site_name"
+FAKE_POD_NAME = "fake_pod_name"
+
 
 SAMPLE_DATA_SOURCE = {
     "luid": "0f5660c7-2b05-4ff0-90ce-3199226956c6",
@@ -92,12 +101,11 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
 @pytest.fixture(
     name="workspace_data_api_mocks_fn",
 )
-def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: str) -> Callable:
+def workspace_data_api_mocks_fn_fixture(site_id: str, api_token: str) -> Callable:
     @contextlib.contextmanager
     def _method(
-        client,
+        client: Union[TableauCloudClient, TableauServerClient],
         site_id: str = site_id,
-        workbook_id: str = workbook_id,
         api_token: str = api_token,
     ) -> Iterator[responses.RequestsMock]:
         with responses.RequestsMock() as response:
@@ -122,7 +130,6 @@ def workspace_data_api_mocks_fixture(site_id: str, workbook_id: str, api_token: 
             response.add(
                 method=responses.POST,
                 url=f"{client.rest_api_base_url}/auth/signout",
-                json={},
                 status=200,
             )
 

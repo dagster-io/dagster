@@ -1,6 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
+from typing import Callable, Type, Union
 
 import pytest
 import responses
@@ -21,7 +22,13 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
 @pytest.mark.usefixtures("workbook_id")
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
 def test_basic_resource_request(
-    clazz, host_key, host_value, site_name, api_token, workbook_id, workspace_data_api_mocks_fn
+    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    api_token: str,
+    workbook_id: str,
+    workspace_data_api_mocks_fn: Callable,
 ) -> None:
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
@@ -37,7 +44,7 @@ def test_basic_resource_request(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)
+    resource = clazz(**resource_args)  # type: ignore
 
     # Must initialize the resource's client before passing it to the mock responses
     resource.build_client()

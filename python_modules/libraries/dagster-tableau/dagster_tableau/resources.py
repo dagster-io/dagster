@@ -6,9 +6,18 @@ from typing import Any, Dict, Mapping, Optional, Sequence, Type, Union, cast
 
 import jwt
 import requests
-from dagster import ConfigurableResource
+from dagster import (
+    AssetsDefinition,
+    ConfigurableResource,
+    Definitions,
+    _check as check,
+    external_assets_from_specs,
+)
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.cacheable_assets import (
+    AssetsDefinitionCacheableData,
+    CacheableAssetsDefinition,
+)
 from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 
@@ -268,7 +277,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     username: str = Field(..., description="The username to authenticate to Tableau Workspace.")
     site_name: str = Field(..., description="The name of the Tableau site to use.")
 
-    _client: Union[TableauCloudClient, TableauServerClient] = PrivateAttr(default=None)
+    _client: Optional[Union[TableauCloudClient, TableauServerClient]] = PrivateAttr(default=None)
 
     @abstractmethod
     def build_client(self) -> None:
@@ -323,37 +332,47 @@ class BaseTableauWorkspace(ConfigurableResource):
                                     properties=published_data_source_data,
                                 )
 
-        return TableauWorkspaceData(
-            site_name=self.site_name,
-            workbooks_by_id=workbooks_by_id,
-            views_by_id=views_by_id,
-            data_sources_by_id=data_sources_by_id,
+        return TableauWorkspaceData.from_content_data(
+            self.site_name,
+            list(workbooks_by_id.values())
+            + list(views_by_id.values())
+            + list(data_sources_by_id.values()),
         )
 
-    def build_asset_specs(
+    def build_assets(
         self,
-        dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
-    ) -> Sequence[AssetSpec]:
-        """Fetches Tableau content from the workspace and translates it into AssetSpecs,
-        using the provided translator.
-        Future work will cache this data to avoid repeated calls to the Tableau API.
+        dagster_tableau_translator: Type[DagsterTableauTranslator],
+    ) -> Sequence[CacheableAssetsDefinition]:
+        """Returns a set of CacheableAssetsDefinition which will load Tableau content from
+        the workspace and translates it into AssetSpecs, using the provided translator.
 
         Args:
             dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
                 to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
 
         Returns:
-            Sequence[AssetSpec]: A list of AssetSpecs representing the Tableau content.
+            Sequence[CacheableAssetsDefinition]: A list of CacheableAssetsDefinitions which
+                will load the Tableau content.
         """
-        workspace_data = self.fetch_tableau_workspace_data()
-        translator = dagster_tableau_translator(context=workspace_data)
+        return [TableauCacheableAssetsDefinition(self, dagster_tableau_translator)]
 
-        all_content = [
-            *workspace_data.views_by_id.values(),
-            *workspace_data.data_sources_by_id.values(),
-        ]
+    def build_defs(
+        self, dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator
+    ) -> Definitions:
+        """Returns a Definitions object which will load Tableau content from
+        the workspace and translate it into assets, using the provided translator.
 
-        return [translator.get_asset_spec(content) for content in all_content]
+        Args:
+            dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
+                to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+
+        Returns:
+            Definitions: A Definitions object which will build and return the Power BI content.
+        """
+        defs = Definitions(
+            assets=self.build_assets(dagster_tableau_translator=dagster_tableau_translator)
+        )
+        return defs
 
 
 @experimental
@@ -391,4 +410,44 @@ class TableauServerWorkspace(BaseTableauWorkspace):
             username=self.username,
             site_name=self.site_name,
             server_name=self.server_name,
+        )
+
+
+class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
+    def __init__(self, workspace: BaseTableauWorkspace, translator: Type[DagsterTableauTranslator]):
+        self._workspace = workspace
+        self._translator_cls = translator
+        super().__init__(unique_id=self._workspace.site_name)
+
+    def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
+        workspace_data: TableauWorkspaceData = self._workspace.fetch_tableau_workspace_data()
+        return [
+            AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
+            for data in [
+                *workspace_data.workbooks_by_id.values(),
+                *workspace_data.views_by_id.values(),
+                *workspace_data.data_sources_by_id.values(),
+            ]
+        ]
+
+    def build_definitions(
+        self, data: Sequence[AssetsDefinitionCacheableData]
+    ) -> Sequence[AssetsDefinition]:
+        workspace_data = TableauWorkspaceData.from_content_data(
+            self._workspace.site_name,
+            [
+                TableauContentData.from_cached_data(check.not_none(entry.extra_metadata))
+                for entry in data
+            ],
+        )
+
+        translator = self._translator_cls(context=workspace_data)
+
+        all_content = [
+            *workspace_data.views_by_id.values(),
+            *workspace_data.data_sources_by_id.values(),
+        ]
+
+        return external_assets_from_specs(
+            [translator.get_asset_spec(content) for content in all_content]
         )
