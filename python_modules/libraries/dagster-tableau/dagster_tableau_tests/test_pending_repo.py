@@ -32,8 +32,8 @@ def test_using_cached_asset_data(
             # 4 calls to creates the defs
             assert len(response.calls) == 4
 
-            # 2 Tableau external assets, one materializable asset
-            assert len(repository_def.assets_defs_by_key) == 2 + 1
+            # 1 Tableau external assets, 2 Tableau materializable asset and 1 Dagster materializable asset
+            assert len(repository_def.assets_defs_by_key) == 1 + 2 + 1
 
             job_def = repository_def.get_job("all_asset_job")
             repository_load_data = repository_def.repository_load_data
@@ -61,8 +61,8 @@ def test_using_cached_asset_data(
                 len(
                     [event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS]
                 )
-                == 1
+                == 2
             ), "Expected two successful steps"
 
-            # 4 calls to create the defs + 3 calls to materialize the Tableau assets with 1 view
-            assert len(response.calls) == 4 + 3
+            # 4 calls to create the defs + 4 calls to materialize the Tableau assets with 1 sheet and 1 dashboard
+            assert len(response.calls) == 4 + 4

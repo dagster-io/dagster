@@ -194,6 +194,16 @@ class BaseTableauClient:
                     }
                   }
                 }
+                dashboards {
+                  luid
+                  name
+                  createdAt
+                  updatedAt
+                  path
+                  sheets {
+                    luid
+                  }
+                }
               }
             }
         """
@@ -318,7 +328,8 @@ class BaseTableauWorkspace(ConfigurableResource):
             workbook_ids = [workbook["id"] for workbook in workbooks_data["workbook"]]
 
             workbooks_by_id = {}
-            views_by_id = {}
+            sheets_by_id = {}
+            dashboards_by_id = {}
             data_sources_by_id = {}
             for workbook_id in workbook_ids:
                 workbook_data = client.get_workbook(workbook_id=workbook_id)["data"]["workbooks"][0]
@@ -326,15 +337,17 @@ class BaseTableauWorkspace(ConfigurableResource):
                     content_type=TableauContentType.WORKBOOK, properties=workbook_data
                 )
 
-                for view_data in workbook_data["sheets"]:
-                    view_id = view_data["luid"]
-                    if view_id:
-                        augmented_view_data = {**view_data, "workbook": {"luid": workbook_id}}
-                        views_by_id[view_id] = TableauContentData(
-                            content_type=TableauContentType.VIEW, properties=augmented_view_data
+                for sheet_data in workbook_data["sheets"]:
+                    sheet_id = sheet_data["luid"]
+                    if sheet_id:
+                        augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
+                        sheets_by_id[sheet_id] = TableauContentData(
+                            content_type=TableauContentType.SHEET, properties=augmented_sheet_data
                         )
 
-                    for embedded_data_source_data in view_data.get("parentEmbeddedDatasources", []):
+                    for embedded_data_source_data in sheet_data.get(
+                        "parentEmbeddedDatasources", []
+                    ):
                         for published_data_source_data in embedded_data_source_data.get(
                             "parentPublishedDatasources", []
                         ):
@@ -345,10 +358,23 @@ class BaseTableauWorkspace(ConfigurableResource):
                                     properties=published_data_source_data,
                                 )
 
+                for dashboard_data in workbook_data["dashboards"]:
+                    dashboard_id = dashboard_data["luid"]
+                    if dashboard_id:
+                        augmented_dashboard_data = {
+                            **dashboard_data,
+                            "workbook": {"luid": workbook_id},
+                        }
+                        dashboards_by_id[dashboard_id] = TableauContentData(
+                            content_type=TableauContentType.DASHBOARD,
+                            properties=augmented_dashboard_data,
+                        )
+
         return TableauWorkspaceData.from_content_data(
             self.site_name,
             list(workbooks_by_id.values())
-            + list(views_by_id.values())
+            + list(sheets_by_id.values())
+            + list(dashboards_by_id.values())
             + list(data_sources_by_id.values()),
         )
 
@@ -438,7 +464,8 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
             AssetsDefinitionCacheableData(extra_metadata=data.to_cached_data())
             for data in [
                 *workspace_data.workbooks_by_id.values(),
-                *workspace_data.views_by_id.values(),
+                *workspace_data.sheets_by_id.values(),
+                *workspace_data.dashboards_by_id.values(),
                 *workspace_data.data_sources_by_id.values(),
             ]
         ]
@@ -481,18 +508,28 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
             can_subset=False,
             specs=[
                 translator.get_asset_spec(content)
-                for content in workspace_data.views_by_id.values()
+                for content in [
+                    *workspace_data.sheets_by_id.values(),
+                    *workspace_data.dashboards_by_id.values(),
+                ]
             ],
             resource_defs={"tableau": self._workspace.get_resource_definition()},
         )
         def _assets(tableau: BaseTableauWorkspace):
             with tableau.get_client() as client:
-                for view_id in workspace_data.views_by_id.keys():
+                for view_id, view_content_data in [
+                    *workspace_data.sheets_by_id.items(),
+                    *workspace_data.dashboards_by_id.items(),
+                ]:
                     data = client.get_view(view_id)["view"]
+                    if view_content_data.content_type == TableauContentType.SHEET:
+                        asset_key = translator.get_sheet_asset_key(view_content_data)
+                    elif view_content_data.content_type == TableauContentType.DASHBOARD:
+                        asset_key = translator.get_dashboard_asset_key(view_content_data)
+                    else:
+                        check.assert_never(view_content_data.content_type)
                     yield ObserveResult(
-                        asset_key=translator.get_view_asset_key(
-                            workspace_data.views_by_id[view_id]
-                        ),
+                        asset_key=asset_key,
                         metadata={
                             "workbook_id": data["workbook"]["id"],
                             "owner_id": data["owner"]["id"],
