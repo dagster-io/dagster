@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, CursorHistoryControls, NonIdealState, Tabs} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
@@ -10,6 +9,7 @@ import {RUNS_FEED_TABLE_ENTRY_FRAGMENT, RunsFeedRow, RunsFeedTableHeader} from '
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/RunsFeedRoot.types';
 import {RunsFeedTableEntryFragment_Run} from './types/RunsFeedRow.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
+import {gql} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -23,6 +22,7 @@ import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedRow.types';
+import {gql} from '../apollo-client';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
@@ -56,7 +56,7 @@ export const RunsFeedRow = ({
 
   const isReexecution = entry.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
-  const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
+  const [_showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const runTime: RunTimeFragment = {
