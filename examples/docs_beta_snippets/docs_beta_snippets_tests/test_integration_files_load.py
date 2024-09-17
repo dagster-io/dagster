@@ -7,8 +7,13 @@ from dagster import file_relative_path
 
 snippets_folder = file_relative_path(__file__, "../docs_beta_snippets/integrations")
 
+# exclude community integrations
 EXCLUDED_FILES = {
-    # f"{snippets_folder}/guides/data-modeling/asset-factories/python-asset-factory.py",,
+    f"{snippets_folder}/cube.py",
+    f"{snippets_folder}/hightouch.py",
+    f"{snippets_folder}/hashicorp.py",
+    f"{snippets_folder}/meltano.py",
+    f"{snippets_folder}/lakefs.py",
 }
 
 
