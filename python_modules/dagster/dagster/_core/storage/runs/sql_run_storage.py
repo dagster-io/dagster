@@ -873,12 +873,6 @@ class SqlRunStorage(RunStorage):
                     ),
                 )
 
-            # rows = self.fetchall(backfills_with_tags_query)
-            # backfill_ids = [row["value"] for row in rows]
-
-            # if len(backfill_ids) == 0:
-            #     return []
-
             query = query.where(BulkActionsTable.c.key.in_(db_subquery(backfills_with_tags_query)))
 
         if status or (filters and filters.statuses):

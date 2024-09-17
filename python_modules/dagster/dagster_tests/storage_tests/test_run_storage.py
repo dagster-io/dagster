@@ -43,11 +43,6 @@ def create_legacy_run_storage():
 class TestSqliteRunStorage(TestRunStorage):
     __test__ = True
 
-    # TestSqliteRunStorage::test_backfill_simple_tags_filtering
-    # TestSqliteRunStorage::test_backfill_simple_job_name_filtering
-    # TestSqliteRunStorage::test_backfill_tags_on_runs_not_backfills_filtering
-    # TestSqliteRunStorage::test_backfill_tags_filtering_multiple_results
-
     def supports_backfill_tags_filtering_queries(self):
         return True
 
