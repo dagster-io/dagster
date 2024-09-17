@@ -861,9 +861,7 @@ class SqlRunStorage(RunStorage):
 
             for i, (key, value) in enumerate(filters.tags.items()):
                 run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
-
-                backfills_with_tags_query = backfills_with_tags_query.join(
-                    run_tags_alias,
+                backfills_with_tags_query = backfills_with_tags_query.where(
                     db.and_(
                         RunTagsTable.c.run_id == run_tags_alias.c.run_id,
                         run_tags_alias.c.key == key,

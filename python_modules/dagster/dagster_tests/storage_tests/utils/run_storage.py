@@ -90,6 +90,14 @@ class TestRunStorage:
     def can_delete_runs(self):
         return True
 
+    # Override for storages that support filtering backfills by tag
+    def supports_backfill_tags_filtering_queries(self):
+        return False
+
+    # Override for storages that support filtering backfills by job name
+    def supports_backfill_job_name_filtering_queries(self):
+        return False
+
     @staticmethod
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
