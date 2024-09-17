@@ -1,7 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
-from typing import Callable, Type, Union
+from typing import Callable, Mapping, Type, Union
 
 import pytest
 import responses
