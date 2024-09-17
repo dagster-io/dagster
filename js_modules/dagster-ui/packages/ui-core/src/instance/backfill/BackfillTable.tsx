@@ -1,7 +1,7 @@
 import {Table} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
-import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillActionsMenu';
+import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillFragments';
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
 import {BackfillRow} from './BackfillRow';
 import {BackfillTableFragment} from './types/BackfillTable.types';

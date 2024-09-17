@@ -1,4 +1,4 @@
-import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillActionsMenu';
+import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillFragments';
 import {
   BackfillStatusesByAssetQuery,
   BackfillStatusesByAssetQueryVariables,

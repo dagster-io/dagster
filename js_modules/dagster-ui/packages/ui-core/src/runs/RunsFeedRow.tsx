@@ -25,8 +25,8 @@ import {RunsFeedTableEntryFragment} from './types/RunsFeedRow.types';
 import {gql} from '../apollo-client';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
+import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillFragments';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
-import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillStepStatusDialog';
 import {PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 

@@ -10,19 +10,12 @@ import {
 import {useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {
-  BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT,
-  BackfillStepStatusDialog,
-  backfillCanShowStepStatus,
-} from './BackfillStepStatusDialog';
-import {
-  BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT,
-  BackfillTerminationDialog,
-} from './BackfillTerminationDialog';
+import {BackfillStepStatusDialog, backfillCanShowStepStatus} from './BackfillStepStatusDialog';
+import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
-import {BackfillActionsBackfillFragment} from './types/BackfillActionsMenu.types';
+import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
 import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
-import {gql, useMutation} from '../../apollo-client';
+import {useMutation} from '../../apollo-client';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {showSharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
@@ -186,20 +179,3 @@ export const BackfillActionsMenu = ({
     </>
   );
 };
-
-export const BACKFILL_ACTIONS_BACKFILL_FRAGMENT = gql`
-  fragment BackfillActionsBackfillFragment on PartitionBackfill {
-    id
-    hasCancelPermission
-    hasResumePermission
-    isAssetBackfill
-    status
-    numCancelable
-
-    ...BackfillStepStatusDialogBackfillFragment
-    ...BackfillTerminationDialogBackfillFragment
-  }
-
-  ${BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT}
-  ${BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT}
-`;
