@@ -6,7 +6,7 @@ def hello(context: dg.AssetExecutionContext):
     context.log.info("Hello!")
 
 
-@dg.asset
+@dg.asset(deps=[hello])
 def world(context: dg.AssetExecutionContext):
     context.log.info("World!")
 
