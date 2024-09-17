@@ -852,7 +852,11 @@ class SqlRunStorage(RunStorage):
             # are also part of a backfill to find the backfills that match the tags.
 
             backfills_with_tags_query = db_select(
-                [RunTagsTable.c.run_id, RunTagsTable.c.key, RunTagsTable.c.value]
+                [
+                    # RunTagsTable.c.run_id,
+                    # RunTagsTable.c.key,
+                    RunTagsTable.c.value
+                ]
             ).where(RunTagsTable.c.key == BACKFILL_ID_TAG)
 
             for i, (key, value) in enumerate(filters.tags.items()):
@@ -869,7 +873,13 @@ class SqlRunStorage(RunStorage):
                     ),
                 )
 
-            query = query.where(BulkActionsTable.c.key.in_(backfills_with_tags_query))
+            # rows = self.fetchall(backfills_with_tags_query)
+            # backfill_ids = [row["value"] for row in rows]
+
+            # if len(backfill_ids) == 0:
+            #     return []
+
+            query = query.where(BulkActionsTable.c.key.in_(backfills_with_tags_query.subquery()))
 
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
