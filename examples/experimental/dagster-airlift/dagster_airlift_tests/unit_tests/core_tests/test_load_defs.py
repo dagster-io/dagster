@@ -1,5 +1,7 @@
 from pathlib import Path
+from typing import cast
 
+import mock
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -13,8 +15,13 @@ from dagster import (
     schedule,
     sensor,
 )
+from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
+from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.test_utils import environ
-from dagster_airlift.core import build_defs_from_airflow_instance
+from dagster_airlift.core import (
+    build_defs_from_airflow_instance as build_defs_from_airflow_instance,
+)
+from dagster_airlift.core.load_defs import compute_cacheable_assets
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
@@ -209,8 +216,6 @@ def test_peered_dags() -> None:
         ),
     )
     assert defs.assets
-    # Assets are not loaded until repository is loaded
-    assert len(list(defs.assets)) == 1
     repo_def = defs.get_repository_def()
     repo_def.load_all_definitions()
     assert len(repo_def.assets_defs_by_key) == 4
@@ -244,7 +249,6 @@ def test_observed_assets() -> None:
         },
     )
     assert defs.assets
-    assert len(list(defs.assets)) == 1
     repo_def = defs.get_repository_def()
     repo_def.load_all_definitions()
     repo_def.load_all_definitions()
@@ -274,7 +278,6 @@ def test_local_airflow_instance() -> None:
     )
 
     assert defs.assets
-    assert len(list(defs.assets)) == 1
     repo_def = defs.get_repository_def()
     a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
     assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") == "False"
@@ -294,8 +297,63 @@ def test_local_airflow_instance() -> None:
         )
         repo_def = defs.get_repository_def()
         assert defs.assets
-        assert len(list(defs.assets)) == 1
         repo_def = defs.get_repository_def()
         assert len(repo_def.assets_defs_by_key) == 2
         task_asset = repo_def.assets_defs_by_key[AssetKey("a")]
         assert next(iter(task_asset.specs)).tags.get("airlift/task_migrated") == "True"
+
+
+def test_cached_loading() -> None:
+    """Test cached loading behavior."""
+    a = AssetKey("a")
+    spec = AssetSpec(
+        key=a,
+        metadata={"airlift/dag_id": "dag", "airlift/task_id": "task"},
+    )
+    instance = make_instance({"dag": ["task"]})
+    passed_in_defs = Definitions(assets=[spec])
+    # Initial load definitions_load_context has no cache
+    DefinitionsLoadContext.set(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
+    defs = build_defs_from_airflow_instance(airflow_instance=instance, defs=passed_in_defs)
+    assert defs.assets
+    assert len(list(defs.assets)) == 2
+    assert {
+        key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
+    } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
+    assert len(defs.metadata) == 1
+    assert "dagster-airlift/source/test_instance" in defs.metadata
+
+    # Create a load definitions_load_context with cache data
+    context_with_cache = DefinitionsLoadContext(
+        load_type=DefinitionsLoadType.RECONSTRUCTION,
+        repository_load_data=RepositoryLoadData(
+            cacheable_asset_data={},
+            reconstruction_metadata=defs.metadata,  # type: ignore # Expects a type-narrowed metadata dictionary.
+        ),
+    )
+    DefinitionsLoadContext.set(context_with_cache)
+    with mock.patch(
+        "dagster_airlift.core.load_defs.compute_cacheable_assets",
+        wraps=compute_cacheable_assets,
+    ) as mock_compute_cacheable_assets:
+        reloaded_defs = build_defs_from_airflow_instance(
+            airflow_instance=instance, defs=passed_in_defs
+        )
+        assert mock_compute_cacheable_assets.call_count == 0
+        reloaded_defs = build_defs_from_airflow_instance(
+            airflow_instance=instance, defs=passed_in_defs
+        )
+        assert reloaded_defs.assets
+        assert len(list(reloaded_defs.assets)) == 2
+        assert {
+            key
+            for assets_def in reloaded_defs.assets
+            for key in cast(AssetsDefinition, assets_def).keys
+        } == {a, AssetKey(["airflow_instance", "dag", "dag"])}
+        assert len(reloaded_defs.metadata) == 1
+        assert "dagster-airlift/source/test_instance" in reloaded_defs.metadata
+        # Reconstruction data should remain the same.
+        assert (
+            reloaded_defs.metadata["dagster-airlift/source/test_instance"].value
+            == defs.metadata["dagster-airlift/source/test_instance"].value
+        )
