@@ -19,6 +19,9 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_representation.external_data import (
+    job_name_for_external_partition_set_name,
+)
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
@@ -125,6 +128,21 @@ class PartitionBackfill(
             check.invariant(partition_names is None)
             check.invariant(last_submitted_partition_name is None)
             check.invariant(reexecution_steps is None)
+
+        if partition_set_origin is not None:
+            expected_job_name = job_name_for_external_partition_set_name(
+                partition_set_origin.partition_set_name
+            )
+            error_msg = f"Partition set {partition_set_origin.partition_set_name} should derive from job with name {expected_job_name}, but got {job_name}"
+        else:
+            expected_job_name = IMPLICIT_ASSET_JOB_NAME
+            error_msg = (
+                f"Expected job name {expected_job_name} for an asset backfill, but got {job_name}"
+            )
+        if job_name is not None:
+            check.invariant(job_name == expected_job_name, error_msg)
+        else:
+            job_name = expected_job_name
 
         return super(PartitionBackfill, cls).__new__(
             cls,
