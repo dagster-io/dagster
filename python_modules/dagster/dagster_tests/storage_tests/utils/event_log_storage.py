@@ -494,6 +494,9 @@ class TestEventLogStorage:
     def supports_offset_cursor_queries(self):
         return True
 
+    def supports_backfill_tags_filtering_queries(self):
+        return False
+
     def supports_multiple_event_type_queries(self):
         return True
 

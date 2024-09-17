@@ -1489,6 +1489,8 @@ class TestRunStorage:
             assert backfill.backfill_timestamp > all_backfills[2].backfill_timestamp
 
     def test_backfill_simple_tags_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
         assert len(backfills) == 0
@@ -1537,6 +1539,8 @@ class TestRunStorage:
         assert len(backfill_with_tags) == 0
 
     def test_backfill_tags_on_runs_not_backfills_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
         assert len(backfills) == 0
@@ -1576,6 +1580,8 @@ class TestRunStorage:
         assert len(backfill_with_tags) == 0
 
     def test_backfill_tags_filtering_multiple_results(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
         assert len(backfills) == 0

@@ -14,6 +14,9 @@ TestRunStorage.__test__ = False
 class TestMySQLRunStorage(TestRunStorage):
     __test__ = True
 
+    def supports_backfill_tags_filtering_queries(self):
+        return True
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self, conn_string):
         MySQLRunStorage.create_clean_storage(conn_string)
