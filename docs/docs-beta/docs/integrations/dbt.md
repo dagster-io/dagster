@@ -34,7 +34,7 @@ pip install dagster-dbt
 
 ### Example
 
-<CodeExample filePath="integrations/dbt.py" language="python" title="Dagster & dbt Example" />
+<CodeExample filePath="integrations/dbt/defs.py" language="python" title="Dagster & dbt Example" />
 
 ### About dbt
 

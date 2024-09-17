@@ -7,13 +7,18 @@ from dagster import file_relative_path
 
 snippets_folder = file_relative_path(__file__, "../docs_beta_snippets/integrations")
 
-# exclude community integrations
 EXCLUDED_FILES = {
+    # exclude community integrations because they require non-editable dagster depdendencies
     f"{snippets_folder}/cube.py",
     f"{snippets_folder}/hightouch.py",
     f"{snippets_folder}/hashicorp.py",
     f"{snippets_folder}/meltano.py",
     f"{snippets_folder}/lakefs.py",
+    # FIXME: need to enable the following once we have a way to run their init/compile script in CI
+    f"{snippets_folder}/dlt.py",
+    f"{snippets_folder}/sdf.py",
+    f"{snippets_folder}/airbyte.py",
+    f"{snippets_folder}/fivetran.py",
 }
 
 

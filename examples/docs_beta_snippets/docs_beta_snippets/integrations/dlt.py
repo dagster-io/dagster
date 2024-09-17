@@ -1,5 +1,5 @@
+import dlt
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
-from dlt import pipeline
 from dlt_sources.github import github_reactions
 
 import dagster as dg
@@ -7,7 +7,7 @@ import dagster as dg
 
 @dlt_assets(
     dlt_source=github_reactions("dagster-io", "dagster"),
-    dlt_pipeline=pipeline(
+    dlt_pipeline=dlt.pipeline(
         pipeline_name="github_issues",
         dataset_name="github",
         destination="snowflake",
