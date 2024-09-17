@@ -1,5 +1,7 @@
 # ruff: noqa: SLF001
 
+from typing import Callable
+
 import pytest
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.events import DagsterEventType
@@ -10,7 +12,7 @@ from dagster._utils import file_relative_path
 
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
 def test_using_cached_asset_data(
-    workspace_data_api_mocks_fn,
+    workspace_data_api_mocks_fn: Callable,
 ) -> None:
     with instance_for_test() as instance:
         from dagster_tableau_tests.pending_repo import (
