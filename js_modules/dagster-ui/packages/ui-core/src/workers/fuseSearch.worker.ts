@@ -24,7 +24,6 @@ self.addEventListener('message', (event) => {
     case 'query': {
       if (fuseObject) {
         const {queryString} = data;
-        console.log({allResults});
         const results = queryString ? fuseObject.search(queryString) : allResults;
         self.postMessage({type: 'results', queryString, results});
       }
