@@ -872,7 +872,7 @@ class SqlRunStorage(RunStorage):
         if filters and filters.job_name:
             run_tags_table = RunTagsTable
 
-            backfills_with_job_name = run_tags_table.join(
+            runs_in_backfill_with_job_name = run_tags_table.join(
                 RunsTable,
                 db.and_(
                     RunTagsTable.c.run_id == RunsTable.c.run_id,
@@ -881,14 +881,16 @@ class SqlRunStorage(RunStorage):
                 ),
             )
 
-            # backfill_ids_query = db_select([RunTagsTable.c.value]).select_from(backfills_with_job_name)
+            backfills_with_job_name_query = db_select([RunTagsTable.c.value]).select_from(
+                runs_in_backfill_with_job_name
+            )
             # rows = self.fetchall(backfill_ids_query)
             # backfill_ids = [row["value"] for row in rows]
 
             # if len(backfill_ids) == 0:
             #     return []
 
-            query.where(BulkActionsTable.c.key.in_(backfills_with_job_name))
+            query.where(BulkActionsTable.c.key.in_(backfills_with_job_name_query.subquery()))
 
         if status or (filters and filters.statuses):
             statuses = [status] if status else (filters.statuses if filters else None)
