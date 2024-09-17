@@ -11,7 +11,11 @@ import React, {useRef} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {BackfillDetailsBackfillFragment} from './types/BackfillPage.types';
+import {
+  BackfillPartitionsForAssetKeyQuery,
+  BackfillPartitionsForAssetKeyQueryVariables,
+} from './types/BackfillAssetPartitionsTable.types';
+import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {gql, useApolloClient} from '../../apollo-client';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {asAssetKeyInput} from '../../assets/asInput';
@@ -22,10 +26,6 @@ import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
-import {
-  BackfillPartitionsForAssetKeyQuery,
-  BackfillPartitionsForAssetKeyQueryVariables,
-} from '../backfill/types/BackfillPage.types';
 
 const TEMPLATE_COLUMNS = '60% repeat(4, 1fr)';
 
@@ -33,7 +33,11 @@ type AssetBackfillStatus = NonNullable<
   BackfillDetailsBackfillFragment['assetBackfillData']
 >['assetBackfillStatuses'][0];
 
-export const BackfillPartitionsTab = ({backfill}: {backfill: BackfillDetailsBackfillFragment}) => {
+export const BackfillAssetPartitionsTable = ({
+  backfill,
+}: {
+  backfill: BackfillDetailsBackfillFragment;
+}) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
 
   const assetStatuses: AssetBackfillStatus[] =

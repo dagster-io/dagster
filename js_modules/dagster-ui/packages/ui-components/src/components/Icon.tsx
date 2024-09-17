@@ -213,6 +213,7 @@ import run_failed from '../icon-svgs/run_failed.svg';
 import run_queued from '../icon-svgs/run_queued.svg';
 import run_started from '../icon-svgs/run_started.svg';
 import run_success from '../icon-svgs/run_success.svg';
+import run_with_subruns from '../icon-svgs/run_with_subruns.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import scim_provision from '../icon-svgs/scim_provision.svg';
@@ -511,6 +512,7 @@ export const Icons = {
   rss,
   rule,
   run,
+  run_with_subruns,
   run_canceled,
   run_failed,
   run_queued,

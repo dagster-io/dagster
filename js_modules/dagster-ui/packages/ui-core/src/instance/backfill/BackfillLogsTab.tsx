@@ -2,7 +2,7 @@ import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 
 import {BackfillLogsPageQuery, BackfillLogsPageQueryVariables} from './types/BackfillLogsTab.types';
-import {BackfillDetailsBackfillFragment} from './types/BackfillPage.types';
+import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {gql} from '../../apollo-client';
 import {QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {useCursorAccumulatedQuery} from '../../runs/useCursorAccumulatedQuery';

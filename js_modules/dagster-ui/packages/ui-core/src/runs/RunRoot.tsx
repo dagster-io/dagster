@@ -1,4 +1,12 @@
-import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  FontFamily,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Tag,
+} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
@@ -27,7 +35,7 @@ import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryF
 export const RunRoot = () => {
   useTrackPageView();
 
-  const {runId} = useParams<{runId: string}>();
+  const {runId, runFeedEntryId} = useParams<{runId: string; runFeedEntryId?: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
@@ -102,11 +110,28 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
-              <Link to="/runs">Runs</Link>
-              <span>/</span>
-              <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
-            </Heading>
+            runFeedEntryId ? (
+              <Heading>
+                <Link to="/runs-feed" style={{color: Colors.textLight()}}>
+                  All runs
+                </Link>
+                {' / '}
+                <Link
+                  to={`/runs-feed/b/${runFeedEntryId}?tab=runs&view=list`}
+                  style={{color: Colors.textLight()}}
+                >
+                  {runFeedEntryId}
+                </Link>
+                {' / '}
+                {runId.slice(0, 8)}
+              </Heading>
+            ) : (
+              <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+                <Link to="/runs">Runs</Link>
+                <span>/</span>
+                <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+              </Heading>
+            )
           }
           tags={
             run ? (

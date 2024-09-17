@@ -2,9 +2,9 @@ import {DocumentNode} from 'graphql';
 import {useEffect, useMemo, useState} from 'react';
 
 import {OperationVariables, useApolloClient} from '../apollo-client';
-import {useRefreshAtInterval} from '../app/QueryRefresh';
+import {QueryRefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 
-type FetchResult<DataType, CursorType, ErrorType> = {
+export type AccumulatingFetchResult<DataType, CursorType, ErrorType> = {
   data: DataType[];
   hasMore: boolean;
   cursor: CursorType | undefined;
@@ -13,7 +13,7 @@ type FetchResult<DataType, CursorType, ErrorType> = {
 
 type FetcherFunction<DataType, CursorType, ErrorType> = (
   cursor: CursorType | undefined,
-) => Promise<FetchResult<DataType, CursorType, ErrorType>>;
+) => Promise<AccumulatingFetchResult<DataType, CursorType, ErrorType>>;
 
 class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
   private fetchData: FetcherFunction<DataType, CursorType, ErrorType>;
@@ -91,17 +91,19 @@ export function useCursorAccumulatedQuery<
 }: {
   query: DocumentNode;
   variables: Omit<TVars, 'cursor'>;
-  getResult: (responseData: TQuery) => FetchResult<DataType, CursorType, ErrorType>;
+  // Important: getResult must be memoized!
+  getResult: (responseData: TQuery) => AccumulatingFetchResult<DataType, CursorType, ErrorType>;
 }) {
   const [fetched, setFetched] = useState<DataType[] | null>(null);
   const [error, setError] = useState<ErrorType | null>(null);
   const client = useApolloClient();
 
+  const variablesJSON = JSON.stringify(variables || {});
   const {stop, fetch} = useMemo(() => {
     return new AccumulatingDataFetcher({
       fetchData: async (cursor) => {
         const resp = await client.query<TQuery, TVars>({
-          variables: {...variables, cursor} as TVars,
+          variables: {...JSON.parse(variablesJSON), cursor} as TVars,
           query,
         });
         return getResult(resp.data);
@@ -109,7 +111,7 @@ export function useCursorAccumulatedQuery<
       onData: setFetched,
       onError: setError,
     });
-  }, [client, query, variables, getResult]);
+  }, [client, query, variablesJSON, getResult]);
 
   useEffect(() => {
     return stop;
@@ -119,7 +121,7 @@ export function useCursorAccumulatedQuery<
     refresh: fetch,
     intervalMs: 10000,
     leading: true,
-  });
+  }) as QueryRefreshState;
 
   return {fetched, error, refreshState};
 }

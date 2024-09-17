@@ -60,4 +60,4 @@ export type JobBackfillsQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const JobBackfillsQueryVersion = '9faca72d06cc7e1fb5423ea3b7f71d6ade5645bcbbe03322e092811de3ba36bd';
+export const JobBackfillsQueryVersion = '6e804c78aee886ce0b8cd8c8e1f9a004fa0bc6504dc411b5e32c290dd9ae923d';
