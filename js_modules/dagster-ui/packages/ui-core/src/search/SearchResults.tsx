@@ -234,7 +234,13 @@ export type SearchResultsProps<T extends ResultType> = {
 };
 
 export const SearchResults = <T extends ResultType>(props: SearchResultsProps<T>) => {
-  const {highlight, onClickResult, queryString, results, searching} = props;
+  const {highlight, onClickResult, queryString, results: _results, searching} = props;
+
+  // Our fuse worker returns all results if we put in an empty string.
+  // This is to support AssetSearch in Cloud which allows showing all results for a particular filter.
+  // For OSS we don't want any results if the queryString is null so lets make the results an empty list in that
+  // case here
+  const results = queryString ? _results : [];
 
   if (!results.length && queryString) {
     if (searching) {
