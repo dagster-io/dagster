@@ -1,10 +1,9 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT} from './BackfillActionsMenu';
 import {
   BackfillStatusesByAssetQuery,
   BackfillStatusesByAssetQueryVariables,
-} from './types/BackfillPage.types';
+} from './types/useBackfillDetailsQuery.types';
+import {gql, useQuery} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 

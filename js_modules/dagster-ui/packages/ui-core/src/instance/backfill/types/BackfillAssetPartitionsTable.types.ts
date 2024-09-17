@@ -23,4 +23,5 @@ export type BackfillPartitionsForAssetKeyQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const BackfillPartitionsForAssetKeyVersion = '672b7141fd1dfb275a4ef6ae3e8fc1eaa0707270c1fd329ed6b66058e2376e55';
+export const BackfillPartitionsForAssetKeyVersion =
+  '672b7141fd1dfb275a4ef6ae3e8fc1eaa0707270c1fd329ed6b66058e2376e55';

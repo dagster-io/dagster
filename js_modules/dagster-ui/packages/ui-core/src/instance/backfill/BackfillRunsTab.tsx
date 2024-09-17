@@ -11,7 +11,7 @@ import {
 import React, {useDeferredValue, useMemo} from 'react';
 
 import {ExecutionTimeline} from './ExecutionTimeline';
-import {BackfillDetailsBackfillFragment} from './types/BackfillPage.types';
+import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
