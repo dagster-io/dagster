@@ -36,6 +36,11 @@ from dagster._core.origin import (
     get_python_environment_entry_point,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import (
+    RUN_METRIC_TAGS,
+    RUN_METRICS_POLLING_INTERVAL_TAG,
+    RUN_METRICS_PYTHON_RUNTIME_TAG,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
@@ -87,11 +92,11 @@ def execute_run_command(input_json: str) -> None:
 
 
 def _should_start_metrics_thread(dagster_run: DagsterRun) -> bool:
-    return get_boolean_tag_value(dagster_run.tags.get("dagster/run_metrics"))
+    return any(get_boolean_tag_value(dagster_run.tags.get(tag)) for tag in RUN_METRIC_TAGS)
 
 
 def _enable_python_runtime_metrics(dagster_run: DagsterRun) -> bool:
-    return get_boolean_tag_value(dagster_run.tags.get("dagster/python_runtime_metrics"))
+    return get_boolean_tag_value(dagster_run.tags.get(RUN_METRICS_PYTHON_RUNTIME_TAG))
 
 
 def _metrics_polling_interval(
@@ -100,7 +105,7 @@ def _metrics_polling_interval(
     try:
         return float(
             dagster_run.tags.get(
-                "dagster/run_metrics_polling_interval_seconds",
+                RUN_METRICS_POLLING_INTERVAL_TAG,
                 DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
             )
         )
