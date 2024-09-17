@@ -5,6 +5,7 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
@@ -77,6 +78,7 @@ class PartitionBackfill(
             ("asset_selection", Optional[Sequence[AssetKey]]),
             ("title", Optional[str]),
             ("description", Optional[str]),
+            ("job_name", Optional[str]),
             # fields that are only used by job backfills
             ("partition_set_origin", Optional[RemotePartitionSetOrigin]),
             ("partition_names", Optional[Sequence[str]]),
@@ -102,6 +104,7 @@ class PartitionBackfill(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
+        job_name: Optional[str] = None,
         partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
         partition_names: Optional[Sequence[str]] = None,
         last_submitted_partition_name: Optional[str] = None,
@@ -136,6 +139,7 @@ class PartitionBackfill(
             ),
             title=check_valid_title(title),
             description=check.opt_str_param(description, "description"),
+            job_name=check.opt_str_param(job_name, "job_name"),
             partition_set_origin=check.opt_inst_param(
                 partition_set_origin, "partition_set_origin", RemotePartitionSetOrigin
             ),
@@ -417,6 +421,7 @@ class PartitionBackfill(
             asset_backfill_data=asset_backfill_data,
             title=title,
             description=description,
+            job_name=IMPLICIT_ASSET_JOB_NAME,
         )
 
     @classmethod
@@ -448,6 +453,7 @@ class PartitionBackfill(
             asset_selection=[selector.asset_key for selector in partitions_by_assets],
             title=title,
             description=description,
+            job_name=IMPLICIT_ASSET_JOB_NAME,
         )
 
     @classmethod
@@ -477,4 +483,5 @@ class PartitionBackfill(
             asset_selection=list(asset_graph_subset.asset_keys),
             title=title,
             description=description,
+            job_name=IMPLICIT_ASSET_JOB_NAME,
         )

@@ -171,6 +171,7 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             title=backfill_params.get("title"),
             description=backfill_params.get("description"),
+            job_name=external_partition_set.job_name,
         )
 
         if backfill_params.get("forceSynchronousSubmission"):
