@@ -151,7 +151,7 @@ export const AssetTable = ({
         <Box
           background={Colors.backgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
-          padding={{vertical: 8, left: 24, right: 12}}
+          padding={{vertical: 12, horizontal: 24}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
         >
           {actionBarComponents}

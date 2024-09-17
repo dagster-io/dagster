@@ -126,8 +126,10 @@ export const RunRoot = () => {
                 {runId.slice(0, 8)}
               </Heading>
             ) : (
-              <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-                {runId.slice(0, 8)}
+              <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+                <Link to="/runs">Runs</Link>
+                <span>/</span>
+                <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
               </Heading>
             )
           }

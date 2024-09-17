@@ -77,3 +77,5 @@ export type LaunchedRunListQuery = {
         }>;
       };
 };
+
+export const LaunchedRunListQueryVersion = 'e4ae437ebe25fa33cb6b3f658cf90b5c9ce035ae9c03ceb519129a61c585325a';

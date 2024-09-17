@@ -140,7 +140,7 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
     <>
       <Header refreshState={refreshState} />
       <Box
-        padding={{horizontal: 24, vertical: 16}}
+        padding={{horizontal: 24, vertical: 12}}
         flex={{alignItems: 'center', justifyContent: 'space-between', gap: 16}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>

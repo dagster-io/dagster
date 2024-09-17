@@ -8,6 +8,7 @@ import {RecoilRoot} from 'recoil';
 
 import {AppContext} from '../../../app/AppContext';
 import {
+  buildPythonError,
   buildRepository,
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
@@ -20,12 +21,14 @@ import {
 import {getMockResultFn} from '../../../testing/mocking';
 import {
   CODE_LOCATION_STATUS_QUERY_KEY,
-  CODE_LOCATION_STATUS_QUERY_VERSION,
-  LOCATION_WORKSPACE_QUERY_VERSION,
   WorkspaceContext,
   WorkspaceProvider,
 } from '../WorkspaceContext';
 import {buildWorkspaceMocks} from '../__fixtures__/Workspace.fixtures';
+import {
+  CodeLocationStatusQueryVersion,
+  LocationWorkspaceQueryVersion,
+} from '../types/WorkspaceQueries.types';
 import {locationWorkspaceKey, repoLocationToRepos} from '../util';
 
 const mockCache = cache as any;
@@ -92,17 +95,20 @@ function getLocationMocks(updatedTimestamp = 0) {
   const location1 = buildWorkspaceLocationEntry({
     name: 'location1',
     updatedTimestamp,
+    versionKey: String(updatedTimestamp),
     locationOrLoadError: repositoryLocation1,
   });
   const location2 = buildWorkspaceLocationEntry({
     name: 'location2',
     updatedTimestamp,
+    versionKey: String(updatedTimestamp),
     locationOrLoadError: repositoryLocation2,
   });
 
   const location3 = buildWorkspaceLocationEntry({
     name: 'location3',
     updatedTimestamp,
+    versionKey: String(updatedTimestamp),
     locationOrLoadError: repositoryLocation3,
   });
 
@@ -213,19 +219,19 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
-      value: {data: (mocks[0]! as any).result.data, version: CODE_LOCATION_STATUS_QUERY_VERSION},
+      value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
-      value: {data: (mocks[1]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
-      value: {data: (mocks[2]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
-      value: {data: (mocks[3]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
 
     const mockCbs = mocks.map(getMockResultFn);
@@ -287,19 +293,19 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
-      value: {data: (mocks[0]! as any).result.data, version: CODE_LOCATION_STATUS_QUERY_VERSION},
+      value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
-      value: {data: (mocks[1]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
-      value: {data: (mocks[2]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
-      value: {data: (mocks[3]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     const mockCbs = updatedMocks.map(getMockResultFn);
 
@@ -361,19 +367,19 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
-      value: {data: (mocks[0]! as any).result.data, version: CODE_LOCATION_STATUS_QUERY_VERSION},
+      value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
-      value: {data: (mocks[1]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
-      value: {data: (mocks[2]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
-      value: {data: (mocks[3]! as any).result.data, version: LOCATION_WORKSPACE_QUERY_VERSION},
+      value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
     });
     const mockCbs = updatedMocks.map(getMockResultFn);
 
@@ -431,5 +437,77 @@ describe('WorkspaceContext', () => {
       [location1.name]: updatedLocation1,
       [location2.name]: updatedLocation2,
     });
+  });
+
+  it('Handles code location load errors gracefully', async () => {
+    const errorMessage = 'Failed to load code location';
+    const error = buildPythonError({message: errorMessage});
+    const {location1, location2, location3, caches} = getLocationMocks(0);
+
+    // Set location2 to have an error
+    location2.locationOrLoadError = error;
+
+    const mocks = buildWorkspaceMocks([location1, location2, location3], {delay: 10});
+    const mockCbs = mocks.map(getMockResultFn);
+
+    caches.codeLocationStatusQuery.has.mockResolvedValue(false);
+    caches.location1.has.mockResolvedValue(false);
+    caches.location2.has.mockResolvedValue(false);
+    caches.location3.has.mockResolvedValue(false);
+
+    const {result} = renderWithMocks(mocks);
+
+    expect(result.current.loading).toEqual(true);
+
+    // Run the code location status query
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
+
+    // Run the individual location queries
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
+
+    expect(mockCbs[1]).toHaveBeenCalled();
+    expect(mockCbs[2]).toHaveBeenCalled();
+    expect(mockCbs[3]).toHaveBeenCalled();
+
+    await waitFor(() => {
+      expect(result.current.loading).toEqual(false);
+    });
+
+    expect(result.current.data).toEqual({
+      [location1.name]: location1,
+      [location2.name]: location2,
+      [location3.name]: location3,
+    });
+
+    // Verify that repositories from location2 are not included
+    expect(result.current.allRepos).toEqual([
+      ...repoLocationToRepos(location1.locationOrLoadError as any),
+      ...repoLocationToRepos(location3.locationOrLoadError as any),
+    ]);
+  });
+
+  it('Handles empty code location status gracefully', async () => {
+    const caches = getLocationMocks(0).caches;
+    caches.codeLocationStatusQuery.has.mockResolvedValue(false);
+
+    const mocks = buildWorkspaceMocks([], {delay: 10});
+
+    const {result} = renderWithMocks(mocks);
+
+    // Initial load
+    await act(async () => {
+      await jest.runOnlyPendingTimersAsync();
+    });
+
+    await waitFor(() => {
+      expect(result.current.loading).toEqual(false);
+    });
+
+    expect(result.current.allRepos).toEqual([]);
+    expect(result.current.data).toEqual({});
   });
 });

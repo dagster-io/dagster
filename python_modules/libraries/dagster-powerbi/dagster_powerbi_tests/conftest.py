@@ -60,6 +60,27 @@ SAMPLE_SEMANTIC_MODEL = {
     "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
 }
 
+
+OTHER_SAMPLE_SEMANTIC_MODEL = {
+    "id": "ae9c85a1-7b33-4223-9590-76bde70f9a20",
+    "name": "Second Workspace Sample",
+    "webUrl": "https://app.powerbi.com/groups/a2122b8f-d7e1-42e8-be2b-a5e636ca3221/datasets/8e9c85a1-7b33-4223-9590-76bde70f9a20",
+    "addRowsAPIEnabled": False,
+    "configuredBy": "ben@elementl.com",
+    "isRefreshable": True,
+    "isEffectiveIdentityRequired": False,
+    "isEffectiveIdentityRolesRequired": False,
+    "isOnPremGatewayRequired": True,
+    "targetStorageMode": "Abf",
+    "createdDate": "2024-07-23T23:44:55.707Z",
+    "createReportEmbedURL": "https://app.powerbi.com/reportEmbed?config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLVdFU1QtVVMtRS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+    "qnaEmbedURL": "https://app.powerbi.com/qnaEmbed?config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLVdFU1QtVVMtRS1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJ1c2FnZU1ldHJpY3NWTmV4dCI6dHJ1ZX19",
+    "upstreamDatasets": [],
+    "users": [],
+    "queryScaleOutSettings": {"autoSyncReadOnlyReplicas": True, "maxReadOnlyReplicas": 0},
+}
+
+
 SAMPLE_DATA_SOURCES = [
     {
         "datasourceType": "File",
@@ -79,6 +100,11 @@ SAMPLE_DATA_SOURCES = [
 @pytest.fixture(name="workspace_id")
 def workspace_id_fixture() -> str:
     return "a2122b8f-d7e1-42e8-be2b-a5e636ca3221"
+
+
+@pytest.fixture(name="second_workspace_id")
+def second_workspace_id_fixture() -> str:
+    return "c5322b8a-d7e1-42e8-be2b-a5e636ca3221"
 
 
 @pytest.fixture(
@@ -161,3 +187,40 @@ def workspace_data_api_mocks_fixture(workspace_id: str) -> Iterator[responses.Re
         )
 
         yield response
+
+
+@pytest.fixture(
+    name="second_workspace_data_api_mocks",
+)
+def second_workspace_data_api_mocks_fixture(
+    second_workspace_id: str, workspace_data_api_mocks: responses.RequestsMock
+) -> Iterator[responses.RequestsMock]:
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/dashboards",
+        json={"value": []},
+        status=200,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/reports",
+        json={"value": []},
+        status=200,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/datasets",
+        json={"value": [OTHER_SAMPLE_SEMANTIC_MODEL]},
+        status=200,
+    )
+
+    workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{BASE_API_URL}/groups/{second_workspace_id}/datasets/{OTHER_SAMPLE_SEMANTIC_MODEL['id']}/datasources",
+        json={"value": []},
+        status=200,
+    )
+
+    yield workspace_data_api_mocks

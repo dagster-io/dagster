@@ -138,3 +138,5 @@ export type BackfillDetailsBackfillFragment = {
     };
   } | null;
 };
+
+export const BackfillStatusesByAssetVersion = 'f785cda54d7032605fd180e1d1641151836651e3da314fcf8393cf3c43ab9bb4';

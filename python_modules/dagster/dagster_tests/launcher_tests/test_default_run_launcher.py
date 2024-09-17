@@ -13,6 +13,7 @@ from dagster import (
     DagsterEventType,
     DefaultRunLauncher,
     Output,
+    RetryPolicy,
     _check as check,
     _seven,
     file_relative_path,
@@ -51,7 +52,11 @@ def noop_job():
     pass
 
 
-@op
+@op(
+    retry_policy=RetryPolicy(
+        max_retries=2,
+    )
+)
 def crashy_op(_):
     os._exit(1)
 
@@ -408,6 +413,39 @@ def test_crashy_run(
         message = f"Run execution process for {run_id} unexpectedly exited"
 
     assert _message_exists(event_records, message)
+
+    if run_config is None:
+        # verify the step retried once before failing
+        run_logs = instance.all_logs(run_id)
+        _check_event_log_contains(
+            run_logs,
+            [
+                (
+                    "STEP_UP_FOR_RETRY",
+                    'Execution of step "crashy_op" failed and has requested a retry.',
+                ),
+                (
+                    "STEP_RESTARTED",
+                    'Started re-execution (attempt # 2) of step "crashy_op"',
+                ),
+                (
+                    "ENGINE_EVENT",
+                    "Multiprocess executor: child process for step crashy_op unexpectedly exited",
+                ),
+                (
+                    "STEP_UP_FOR_RETRY",
+                    'Execution of step "crashy_op" failed and has requested a retry.',
+                ),
+                (
+                    "STEP_RESTARTED",
+                    'Started re-execution (attempt # 3) of step "crashy_op"',
+                ),
+                (
+                    "STEP_FAILURE",
+                    'Execution of step "crashy_op" failed.',
+                ),
+            ],
+        )
 
 
 @pytest.mark.parametrize("run_config", run_configs())

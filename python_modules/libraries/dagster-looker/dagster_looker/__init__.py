@@ -5,6 +5,7 @@ from dagster_looker.dagster_looker_translator import (
     DagsterLookerTranslator as DagsterLookerTranslator,
     LookMLStructureType as LookMLStructureType,
 )
+from dagster_looker.resource import LookerResource as LookerResource
 from dagster_looker.version import __version__ as __version__
 
 DagsterLibraryRegistry.register("dagster-looker", __version__)

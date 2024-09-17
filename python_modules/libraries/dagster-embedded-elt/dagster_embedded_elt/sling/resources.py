@@ -276,6 +276,23 @@ class SlingResource(ConfigurableResource):
         )
         return self._parse_json_table_output(json.loads(output.strip()))
 
+    def get_row_count_for_table(self, target_name: str, table_name: str) -> int:
+        """Queries the target connection to get the row count for a given table.
+
+        Args:
+            target_name (str): The name of the target connection to use.
+            table_name (str): The name of the table to fetch the row count for.
+
+        Returns:
+            int: The number of rows in the table.
+        """
+        select_stmt: str = f"select count(*) as ct from {table_name}"
+        output = self.run_sling_cli(
+            ["conns", "exec", target_name, select_stmt],
+            force_json=True,
+        )
+        return int(self._parse_json_table_output(json.loads(output.strip()))[0]["ct"])
+
     def run_sling_cli(self, args: Sequence[str], force_json: bool = False) -> str:
         """Runs the Sling CLI with the given arguments and returns the output.
 

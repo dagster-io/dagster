@@ -1522,3 +1522,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
     >;
   } | null;
 };
+
+export const GetEvaluationsQueryVersion = '7245007702d5b47f77048aa7fb61a01c5b139974f96b562b89f06c42af68c924';
+
+export const GetEvaluationsSpecificPartitionQueryVersion = '12b4456c4cf6852a8dc9f7e2ec0a46b4272e10558de5512695c40cdc7de1ff0f';

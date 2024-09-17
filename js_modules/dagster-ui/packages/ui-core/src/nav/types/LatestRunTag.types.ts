@@ -24,3 +24,5 @@ export type LatestRunTagQuery = {
         }>;
       };
 };
+
+export const LatestRunTagQueryVersion = '6b18755e69bb01ee63d4ef02333c219a8c935b087e938b5da89ca99b95824e60';

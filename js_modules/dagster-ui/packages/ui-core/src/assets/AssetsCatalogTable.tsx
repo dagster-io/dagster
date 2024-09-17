@@ -16,6 +16,7 @@ import {
   AssetCatalogGroupTableQueryVariables,
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
+  AssetCatalogTableQueryVersion,
 } from './types/AssetsCatalogTable.types';
 import {AssetViewType, useAssetView} from './useAssetView';
 import {useBasicAssetSearchInput} from './useBasicAssetSearchInput';
@@ -38,7 +39,6 @@ type Asset = AssetTableFragment;
 const groupTableCache = new Map();
 const emptyArray: string[] = [];
 
-export const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
 const DEFAULT_BATCH_LIMIT = 10000;
 
 export function useCachedAssets({
@@ -53,7 +53,7 @@ export function useCachedAssets({
   );
 
   useLayoutEffect(() => {
-    cacheManager.get(ASSET_CATALOG_TABLE_QUERY_VERSION).then((data) => {
+    cacheManager.get(AssetCatalogTableQueryVersion).then((data) => {
       if (data) {
         onAssetsLoaded(data);
       }
@@ -127,7 +127,7 @@ export function useAllAssets({
           };
         },
       });
-      cacheManager.set(data, ASSET_CATALOG_TABLE_QUERY_VERSION);
+      cacheManager.set(data, AssetCatalogTableQueryVersion);
       setErrorAndAssets({error: undefined, assets: data});
     } catch (e: any) {
       if (e.__typename === 'PythonError') {

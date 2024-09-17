@@ -94,3 +94,5 @@ export type RunsFeedRootQuery = {
         >;
       };
 };
+
+export const RunsFeedRootQueryVersion = '3dc4ec68d0d42dff05c4d66bbe5490b2251268c8b68abe84de6e48d64365fb75';

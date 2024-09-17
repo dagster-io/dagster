@@ -1,6 +1,7 @@
 # pylint doesn't know about pytest fixtures
 
 
+import json
 import os
 import re
 import time
@@ -10,7 +11,11 @@ import pytest
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
 from dagster._utils.yaml_utils import merge_yamls
-from dagster_docker.docker_run_launcher import DOCKER_CONTAINER_ID_TAG, DOCKER_IMAGE_TAG
+from dagster_docker.docker_run_launcher import (
+    DOCKER_CONTAINER_ID_TAG,
+    DOCKER_IMAGE_TAG,
+    DockerRunLauncher,
+)
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
     find_local_test_image,
@@ -362,6 +367,66 @@ def test_cant_combine_network_and_networks(aws_env):
             }
         ) as instance:
             print(instance.run_launcher)  # noqa: T201
+
+
+from unittest import mock
+
+from dagster._core.launcher.base import WorkerStatus
+from dagster._core.test_utils import create_run_for_test, instance_for_test
+
+
+def test_check_run_health():
+    mock_container_state = {
+        "Status": "exited",
+        "Running": False,
+        "Paused": False,
+        "Restarting": False,
+        "OOMKilled": True,
+        "Dead": False,
+        "Pid": 0,
+        "ExitCode": 1,
+        "Error": "Out of memory",
+        "StartedAt": "2024-09-16T12:49:45.539998202Z",
+        "FinishedAt": "2024-09-16T13:00:00.000000000Z",
+    }
+
+    with instance_for_test(
+        {
+            "run_launcher": {
+                "class": "DockerRunLauncher",
+                "module": "dagster_docker",
+                "config": {},
+            },
+        }
+    ) as instance, mock.patch("docker.client.from_env") as mock_docker_client_from_env:
+        mock_docker_client = mock.MagicMock()
+        mock_docker_client_from_env.return_value = mock_docker_client
+
+        mock_container = mock.Mock()
+        mock_container.attrs = {"State": mock_container_state, "Status": "exited"}
+        mock_container.status = "exited"
+
+        run_launcher = DockerRunLauncher()
+
+        mock_containers = mock.MagicMock()
+        mock_containers.get.return_value = mock_container
+
+        # Mock containers.get to return the mock container
+        mock_docker_client.containers = mock_containers
+
+        run = create_run_for_test(
+            instance,
+            "test_job",
+            status=DagsterRunStatus.STARTED,
+            tags={DOCKER_CONTAINER_ID_TAG: "12345"},
+        )
+
+        health_check = run_launcher.check_run_worker_health(run)
+        assert health_check.status == WorkerStatus.FAILED
+        assert (
+            health_check.msg
+            == f"Container status is exited. Container state: {json.dumps(mock_container_state)}"
+        )
 
 
 @pytest.mark.integration

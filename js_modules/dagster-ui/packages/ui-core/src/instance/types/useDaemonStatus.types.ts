@@ -40,3 +40,5 @@ export type InstanceWarningQuery = {
       }
     | {__typename: 'PythonError'};
 };
+
+export const InstanceWarningQueryVersion = '7ead177b08f678cb85bfebac63b1b25fff6c60c50c862a3c3d20d8d701463823';

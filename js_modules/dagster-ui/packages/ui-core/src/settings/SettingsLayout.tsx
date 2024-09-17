@@ -11,7 +11,7 @@ export const SettingsLayout = ({left, main}: Props) => {
   return (
     <Box style={{height: '100%', overflow: 'hidden'}} flex={{direction: 'column'}}>
       <PageHeader
-        title={<Heading>Settings</Heading>}
+        title={<Heading>Deployment</Heading>}
         right={<ReloadAllButton label="Reload definitions" />}
       />
       <Box style={{overflow: 'hidden'}} flex={{direction: 'row', grow: 1}}>

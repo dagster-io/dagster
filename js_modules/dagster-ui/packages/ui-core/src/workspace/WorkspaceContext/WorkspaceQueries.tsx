@@ -21,6 +21,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       ...WorkspaceDisplayMetadata
     }
     updatedTimestamp
+    versionKey
     featureFlags {
       name
       enabled
@@ -146,5 +147,6 @@ export const CODE_LOCATION_STATUS_QUERY = gql`
     name
     loadStatus
     updateTimestamp
+    versionKey
   }
 `;

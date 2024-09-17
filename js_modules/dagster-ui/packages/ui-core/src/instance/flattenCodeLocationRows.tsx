@@ -28,7 +28,7 @@ const flatten = (
 
     if (locationStatus.loadStatus === 'LOADING') {
       status = 'Updating';
-    } else if (locationEntry?.updatedTimestamp !== locationStatus.updateTimestamp) {
+    } else if (locationEntry?.versionKey !== locationStatus.versionKey) {
       status = 'Loading';
     } else if (locationEntry?.locationOrLoadError?.__typename === 'PythonError') {
       status = 'Failed';

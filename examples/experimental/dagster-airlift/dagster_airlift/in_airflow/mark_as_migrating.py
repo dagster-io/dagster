@@ -130,7 +130,7 @@ def set_migration_state_for_dag_if_changed(
 
 
 def get_migration_var_for_dag(dag_id: str) -> Optional[DagMigrationState]:
-    migration_var = Variable.get(f"{dag_id}_dagster_migration_state")
+    migration_var = Variable.get(f"{dag_id}_dagster_migration_state", None)
     if not migration_var:
         return None
     return DagMigrationState.from_dict(json.loads(migration_var))

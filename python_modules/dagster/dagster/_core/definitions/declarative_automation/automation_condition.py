@@ -439,7 +439,7 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def eager() -> "AutomationCondition":
+    def eager() -> "AndAutomationCondition":
         """Returns an AutomationCondition which will cause missing asset partitions to be
         materialized, and will materialize asset partitions whenever their parents are updated.
 
@@ -463,7 +463,7 @@ class AutomationCondition(ABC):
     @public
     @experimental
     @staticmethod
-    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AndAutomationCondition":
         """Returns an AutomationCondition which will cause asset partitions to be materialized
         on a given cron schedule, after all of their dependencies have been updated since the latest
         tick of that cron schedule.
@@ -478,6 +478,27 @@ class AutomationCondition(ABC):
                 ).since_last_handled()
                 & AutomationCondition.all_deps_updated_since_cron(cron_schedule, cron_timezone)
             ).with_label(f"on_cron({cron_schedule}, {cron_timezone})")
+
+    @public
+    @experimental
+    @staticmethod
+    def on_missing() -> "AndAutomationCondition":
+        """Returns an AutomationCondition which will cause missing asset partitions to be materialized as soon as possible,
+        after all of their dependencies have been materialized.
+
+        For time partitioned assets, only the latest time partition will be considered.
+        """
+        with disable_dagster_warnings():
+            return (
+                AutomationCondition.in_latest_time_window()
+                & (
+                    AutomationCondition.missing()
+                    .newly_true()
+                    .since_last_handled()
+                    .with_label("missing_since_last_requested")
+                )
+                & ~AutomationCondition.any_deps_missing()
+            ).with_label("on_missing")
 
     @public
     @experimental

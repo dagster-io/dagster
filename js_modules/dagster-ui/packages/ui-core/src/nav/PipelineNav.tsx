@@ -1,6 +1,6 @@
 import {Box, Heading, PageHeader, Tag} from '@dagster-io/ui-components';
 import {useContext} from 'react';
-import {useRouteMatch} from 'react-router-dom';
+import {Link, useRouteMatch} from 'react-router-dom';
 
 import {JobMetadata} from './JobMetadata';
 import {RepositoryLink} from './RepositoryLink';
@@ -50,7 +50,13 @@ export const PipelineNav = (props: Props) => {
   return (
     <>
       <PageHeader
-        title={<Heading>{pipelineName}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <Link to="/jobs">Jobs</Link>
+            <span>/</span>
+            {pipelineName}
+          </Heading>
+        }
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
             <Tag icon="job">

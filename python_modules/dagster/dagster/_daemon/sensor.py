@@ -268,8 +268,8 @@ class SensorLaunchContext(AbstractContextManager):
             ):
                 try:
                     raise DagsterSensorDaemonError(
-                        f"Unable to reach the user code server for schedule {self._external_sensor.name}."
-                        " Schedule will resume execution once the server is available."
+                        f"Unable to reach the user code server for sensor {self._external_sensor.name}."
+                        " Sensor will resume execution once the server is available."
                     ) from exception_value
                 except:
                     error_data = DaemonErrorCapture.on_exception(sys.exc_info())

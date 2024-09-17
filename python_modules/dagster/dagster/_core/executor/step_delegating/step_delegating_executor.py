@@ -18,7 +18,7 @@ from dagster._core.executor.step_delegating.step_handler.base import StepHandler
 from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._time import get_current_datetime
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep
@@ -209,6 +209,7 @@ class StepDelegatingExecutor(Executor):
                                     step_handler_context.get_step_context(step.key),
                                     f"Including step {step.key} in the new run since it is not"
                                     f" currently running: {health_check.unhealthy_reason}",
+                                    EngineEventData(),
                                 )
                                 should_retry_step = True
 
@@ -312,17 +313,18 @@ class StepDelegatingExecutor(Executor):
                                         )
                                     )
                                     if not health_check_result.is_healthy:
-                                        DagsterEvent.step_failure_event(
-                                            step_context=step_context,
-                                            step_failure_data=StepFailureData(
-                                                error=None,
-                                                user_failure_data=None,
-                                            ),
-                                            message=(
-                                                f"Step {step.key} failed health check:"
-                                                f" {health_check_result.unhealthy_reason}"
-                                            ),
+                                        health_check_error = SerializableErrorInfo(
+                                            message=f"Step {step.key} failed health check: {health_check_result.unhealthy_reason}",
+                                            stack=[],
+                                            cls_name=None,
                                         )
+
+                                        self.get_failure_or_retry_event_after_crash(
+                                            step_context,
+                                            health_check_error,
+                                            active_execution.get_known_state(),
+                                        )
+
                                 except Exception:
                                     serializable_error = serializable_error_info_from_exc_info(
                                         sys.exc_info()
