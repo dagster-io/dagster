@@ -176,7 +176,7 @@ def test_new_asset_connected(instance):
         AssetDefinitionChangeDetailNew()
     ]
     assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailDependencies(added={AssetKey("new_asset")})
+        AssetDefinitionChangeDetailDependencies(added=[AssetKey("new_asset")])
     ]
     assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
 
@@ -219,7 +219,7 @@ def test_change_inputs(instance):
     ]
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
     assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailDependencies(removed={AssetKey("upstream")})
+        AssetDefinitionChangeDetailDependencies(removed=[AssetKey("upstream")])
     ]
     assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
 
@@ -244,7 +244,7 @@ def test_multiple_changes_for_one_asset(instance):
             base_value="1",
             branch_value="2",
         ),
-        AssetDefinitionChangeDetailDependencies(removed={AssetKey("upstream")}),
+        AssetDefinitionChangeDetailDependencies(removed=[AssetKey("upstream")]),
     ]
     assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
 
@@ -331,7 +331,7 @@ def test_multiple_code_locations(instance):
         AssetDefinitionChangeDetailNew()
     ]
     assert differ.get_changes_for_asset_with_details(AssetKey("downstream")) == [
-        AssetDefinitionChangeDetailDependencies(added={AssetKey("new_asset")})
+        AssetDefinitionChangeDetailDependencies(added=[AssetKey("new_asset")])
     ]
     assert len(differ.get_changes_for_asset_with_details(AssetKey("upstream"))) == 0
 
@@ -445,17 +445,17 @@ def test_change_partition_mapping(instance):
     ]
     assert len(differ.get_changes_for_asset_with_details(AssetKey("daily_upstream"))) == 0
     assert differ.get_changes_for_asset_with_details(AssetKey("daily_downstream")) == [
-        AssetDefinitionChangeDetailDependencies(changed={AssetKey("daily_upstream")})
+        AssetDefinitionChangeDetailDependencies(changed=[AssetKey("daily_upstream")])
     ]
     assert len(differ.get_changes_for_asset_with_details(AssetKey("static_upstream"))) == 0
     assert differ.get_changes_for_asset_with_details(AssetKey("static_downstream")) == [
-        AssetDefinitionChangeDetailDependencies(changed={AssetKey("static_upstream")})
+        AssetDefinitionChangeDetailDependencies(changed=[AssetKey("static_upstream")])
     ]
     assert (
         len(differ.get_changes_for_asset_with_details(AssetKey("multi_partitioned_upstream"))) == 0
     )
     assert differ.get_changes_for_asset_with_details(AssetKey("multi_partitioned_downstream")) == [
-        AssetDefinitionChangeDetailDependencies(changed={AssetKey("multi_partitioned_upstream")})
+        AssetDefinitionChangeDetailDependencies(changed=[AssetKey("multi_partitioned_upstream")])
     ]
 
 

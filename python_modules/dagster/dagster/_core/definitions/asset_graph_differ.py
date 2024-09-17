@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import AbstractSet, Any, Callable, Mapping, NamedTuple, Optional, Sequence, Set, Union
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -45,9 +45,9 @@ class AssetDefinitionChangeDetailCodeVersion:
 @record
 class AssetDefinitionChangeDetailDependencies:
     change_type: AssetDefinitionChangeType = AssetDefinitionChangeType.DEPENDENCIES
-    added: AbstractSet[AssetKey] = set()
-    changed: AbstractSet[AssetKey] = set()
-    removed: AbstractSet[AssetKey] = set()
+    added: Sequence[AssetKey] = []
+    changed: Sequence[AssetKey] = []
+    removed: Sequence[AssetKey] = []
 
 
 @whitelist_for_serdes
@@ -222,8 +222,8 @@ class AssetGraphDiffer:
             if include_details:
                 changes.append(
                     AssetDefinitionChangeDetailDependencies(
-                        added=branch_asset.parent_keys - base_asset.parent_keys,
-                        removed=base_asset.parent_keys - branch_asset.parent_keys,
+                        added=list(branch_asset.parent_keys - base_asset.parent_keys),
+                        removed=list(base_asset.parent_keys - branch_asset.parent_keys),
                     )
                 )
             else:
@@ -237,7 +237,7 @@ class AssetGraphDiffer:
                 ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
                     if include_details:
                         changes.append(
-                            AssetDefinitionChangeDetailDependencies(changed={upstream_asset})
+                            AssetDefinitionChangeDetailDependencies(changed=[upstream_asset])
                         )
                     else:
                         changes.append(AssetDefinitionChangeDetailDependencies())
