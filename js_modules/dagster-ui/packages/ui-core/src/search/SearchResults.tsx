@@ -190,26 +190,35 @@ export const SearchResultItem = <T extends ResultType>({
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>
-          <StyledTag
-            $fillColor={Colors.backgroundGray()}
-            $interactive={false}
-            $textColor={Colors.textDefault()}
-          >
-            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-              {buildSearchIcons(item, isHighlight)}
-              {isAssetFilterSearchResultType(item.type) && (
-                <Caption>{assetFilterPrefixString(item.type)}:</Caption>
-              )}
-              <div>{labelComponents}</div>
-              {item.repoPath && <Caption>in {item.repoPath}</Caption>}
-            </Box>
-          </StyledTag>
-          <div style={{marginLeft: '8px'}}>
-            <Description isHighlight={isHighlight}>
-              {item.numResults ? `${item.numResults} assets` : item.description}
-            </Description>
-          </div>
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12}}
+          style={{width: '100%'}}
+        >
+          <Box flex={{direction: 'row', alignItems: 'center', grow: 1}}>
+            <StyledTag
+              $fillColor={Colors.backgroundGray()}
+              $interactive={false}
+              $textColor={Colors.textDefault()}
+            >
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                {buildSearchIcons(item, isHighlight)}
+                {isAssetFilterSearchResultType(item.type) && (
+                  <Caption>{assetFilterPrefixString(item.type)}:</Caption>
+                )}
+                <div>{labelComponents}</div>
+                {item.repoPath && <Caption>in {item.repoPath}</Caption>}
+              </Box>
+            </StyledTag>
+            <div style={{marginLeft: '8px'}}>
+              <Description isHighlight={isHighlight}>
+                {item.numResults ? `${item.numResults} assets` : item.description}
+              </Description>
+            </div>
+          </Box>
+          <ResultEnterWrapper flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <div>Enter</div>
+            <Icon name="key_return" color={Colors.accentGray()} />
+          </ResultEnterWrapper>
         </Box>
       </ResultLink>
     </Item>
@@ -286,6 +295,14 @@ const Item = styled.li<HighlightableTextProps>`
   margin: 0;
   user-select: none;
 
+  ${({isHighlight}) =>
+    isHighlight
+      ? ``
+      : `
+  ${ResultEnterWrapper} {
+    display: none;
+  }
+  `}
   &:hover {
     background-color: ${Colors.backgroundLighter()};
   }
@@ -312,4 +329,12 @@ const Description = styled.div<HighlightableTextProps>`
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+`;
+
+const ResultEnterWrapper = styled(Box)`
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 16px;
+  color: ${Colors.textLight()};
 `;
