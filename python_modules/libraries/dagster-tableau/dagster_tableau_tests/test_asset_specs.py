@@ -1,6 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
+from typing import Callable, Type, Union
 
 import pytest
 import responses
@@ -23,7 +24,11 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
 @pytest.mark.usefixtures("site_name")
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
 def test_fetch_tableau_workspace_data(
-    clazz, host_key, host_value, site_name, workspace_data_api_mocks_fn
+    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    workspace_data_api_mocks_fn: Callable,
 ) -> None:
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
@@ -60,7 +65,11 @@ def test_fetch_tableau_workspace_data(
 @pytest.mark.usefixtures("site_name")
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
 def test_translator_spec(
-    clazz, host_key, host_value, site_name, workspace_data_api_mocks_fn
+    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    workspace_data_api_mocks_fn: Callable,
 ) -> None:
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
@@ -95,7 +104,7 @@ def test_translator_spec(
 
 @pytest.mark.usefixtures("workspace_data_api_mocks_fn")
 def test_using_cached_asset_data(
-    workspace_data_api_mocks_fn,
+    workspace_data_api_mocks_fn: Callable,
 ) -> None:
     with instance_for_test() as instance:
         from dagster_tableau_tests.pending_repo import (

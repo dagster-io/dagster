@@ -277,7 +277,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     username: str = Field(..., description="The username to authenticate to Tableau Workspace.")
     site_name: str = Field(..., description="The name of the Tableau site to use.")
 
-    _client: Union[TableauCloudClient, TableauServerClient] = PrivateAttr(default=None)
+    _client: Optional[Union[TableauCloudClient, TableauServerClient]] = PrivateAttr(default=None)
 
     @abstractmethod
     def build_client(self) -> None:

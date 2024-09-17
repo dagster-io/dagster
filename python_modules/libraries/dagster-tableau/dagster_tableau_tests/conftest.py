@@ -1,9 +1,10 @@
 import contextlib
 import uuid
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Union
 
 import pytest
 import responses
+from dagster_tableau.resources import TableauCloudClient, TableauServerClient
 from dagster_tableau.translator import TableauContentData, TableauContentType, TableauWorkspaceData
 
 FAKE_CONNECTED_APP_CLIENT_ID = uuid.uuid4().hex
@@ -103,7 +104,7 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
 def workspace_data_api_mocks_fn_fixture(site_id: str, api_token: str) -> Callable:
     @contextlib.contextmanager
     def _method(
-        client,
+        client: Union[TableauCloudClient, TableauServerClient],
         site_id: str = site_id,
         api_token: str = api_token,
     ) -> Iterator[responses.RequestsMock]:
