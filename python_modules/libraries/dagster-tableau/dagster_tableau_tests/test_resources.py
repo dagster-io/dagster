@@ -1,7 +1,7 @@
 # ruff: noqa: SLF001
 
 import uuid
-from typing import Callable, Mapping, Type, Union
+from typing import Callable, Type, Union
 
 import pytest
 import responses
@@ -35,7 +35,7 @@ def test_basic_resource_request(
     connected_app_secret_value = uuid.uuid4().hex
     username = "fake_username"
 
-    resource_args: Mapping[str, object] = {
+    resource_args = {
         "connected_app_client_id": connected_app_client_id,
         "connected_app_secret_id": connected_app_secret_id,
         "connected_app_secret_value": connected_app_secret_value,
@@ -44,7 +44,7 @@ def test_basic_resource_request(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)
+    resource = clazz(**resource_args)  # type: ignore
 
     # Must initialize the resource's client before passing it to the mock responses
     resource.build_client()
