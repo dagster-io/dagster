@@ -67,7 +67,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
         <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>
       {refreshState ? (
-        <Box padding={{bottom: 8}}>
+        <Box style={{alignSelf: 'center'}}>
           <QueryRefreshCountdown refreshState={refreshState} />
         </Box>
       ) : null}

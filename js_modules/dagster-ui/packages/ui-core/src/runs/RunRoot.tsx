@@ -1,6 +1,6 @@
 import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
@@ -102,8 +102,10 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-              {runId.slice(0, 8)}
+            <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+              <Link to="/runs">Runs</Link>
+              <span>/</span>
+              <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
             </Heading>
           }
           tags={

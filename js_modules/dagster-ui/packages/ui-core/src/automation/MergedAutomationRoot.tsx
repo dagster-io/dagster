@@ -1,4 +1,12 @@
-import {Box, NonIdealState, SpinnerWithText, TextInput, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  SpinnerWithText,
+  TextInput,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
@@ -282,8 +290,9 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
+      <PageHeader title={<Heading>Automation</Heading>} />
       <Box
-        padding={{horizontal: 24, vertical: 16}}
+        padding={{horizontal: 24, vertical: 12}}
         flex={{
           direction: 'row',
           alignItems: 'center',

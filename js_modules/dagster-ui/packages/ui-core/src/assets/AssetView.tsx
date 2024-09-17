@@ -325,7 +325,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
           </Box>
         }
         right={
-          <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
+          <Box flex={{direction: 'row'}}>
             {definition && definition.isObservable ? (
               <LaunchAssetObservationButton
                 primary

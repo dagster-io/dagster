@@ -150,7 +150,7 @@ export const JobsPageContent = () => {
   return (
     <>
       <Box
-        padding={{horizontal: 24, vertical: 16}}
+        padding={{horizontal: 24, vertical: 12}}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', grow: 0}}
       >
         <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
