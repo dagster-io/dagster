@@ -645,6 +645,7 @@ type AssetNode {
   freshnessInfo: AssetFreshnessInfo
   freshnessPolicy: FreshnessPolicy
   autoMaterializePolicy: AutoMaterializePolicy
+  automationCondition: AutomationCondition
   graphName: String
   groupName: String!
   owners: [AssetOwner!]!
@@ -756,6 +757,11 @@ enum AutoMaterializeDecisionType {
   MATERIALIZE
   SKIP
   DISCARD
+}
+
+type AutomationCondition {
+  label: String
+  expandedLabel: [String!]!
 }
 
 union AssetOwner = UserAssetOwner | TeamAssetOwner

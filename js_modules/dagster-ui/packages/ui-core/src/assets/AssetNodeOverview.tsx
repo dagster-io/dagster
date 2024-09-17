@@ -27,6 +27,7 @@ import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
 import {useCachedAssets} from './AssetsCatalogTable';
+import {EvaluationUserLabel} from './AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {LargeCollapsibleSection} from './LargeCollapsibleSection';
 import {MaterializationTag} from './MaterializationTag';
@@ -481,6 +482,15 @@ export const AssetNodeOverview = ({
           learnMoreLink="https://docs.dagster.io/concepts/automation#automation"
         />
       );
+    } else {
+      if (assetNode.automationCondition && assetNode.automationCondition.label) {
+        return (
+          <EvaluationUserLabel
+            userLabel={assetNode.automationCondition.label}
+            expandedLabel={assetNode.automationCondition.expandedLabel}
+          />
+        );
+      }
     }
 
     return (

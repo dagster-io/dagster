@@ -332,6 +332,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         decisionType
       }
     }
+    automationCondition {
+      label
+      expandedLabel
+    }
     freshnessPolicy {
       maximumLagMinutes
       cronSchedule
