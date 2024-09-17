@@ -286,8 +286,6 @@ const Item = styled.li<HighlightableTextProps>`
   align-items: center;
   background-color: ${({isHighlight}) =>
     isHighlight ? Colors.backgroundLightHover() : Colors.backgroundDefault()};
-  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.accentBlue() : 'transparent')} 4px 0 0
-    inset;
   color: ${Colors.textLight()};
   display: flex;
   flex-direction: row;
