@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import cast
 
 import mock
+import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -12,23 +13,25 @@ from dagster import (
     executor,
     job,
     logger,
+    multi_asset,
     schedule,
     sensor,
 )
+from dagster._check.functions import CheckError
 from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.test_utils import environ
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.load_defs import compute_cacheable_assets
+from dagster_airlift.core.load_defs import compute_serialized_data
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,
-    build_definitions_airflow_asset_graph,
     fully_loaded_repo_from_airflow_asset_graph,
+    load_definitions_airflow_asset_graph,
 )
 
 
@@ -203,7 +206,7 @@ def test_transitive_asset_deps() -> None:
 
 def test_peered_dags() -> None:
     """Test peered dags show up, and that linkage is preserved downstream of dags."""
-    defs = build_definitions_airflow_asset_graph(
+    defs = load_definitions_airflow_asset_graph(
         assets_per_task={
             "dag1": {"task": []},
             "dag2": {"task": []},
@@ -240,7 +243,7 @@ def test_observed_assets() -> None:
     #   d
     #  / \
     # e   f
-    defs = build_definitions_airflow_asset_graph(
+    defs = load_definitions_airflow_asset_graph(
         assets_per_task={
             "dag": {
                 "task1": [("a", []), ("b", ["a"]), ("c", ["a"])],
@@ -270,7 +273,7 @@ def test_observed_assets() -> None:
 
 def test_local_airflow_instance() -> None:
     """Test that a local-backed airflow instance can be correctly peered, and errors when the correct info can't be found."""
-    defs = build_definitions_airflow_asset_graph(
+    defs = load_definitions_airflow_asset_graph(
         assets_per_task={
             "dag": {"task": [("a", [])]},
         },
@@ -280,7 +283,7 @@ def test_local_airflow_instance() -> None:
     assert defs.assets
     repo_def = defs.get_repository_def()
     a_asset = repo_def.assets_defs_by_key[AssetKey("a")]
-    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") == "False"
+    assert next(iter(a_asset.specs)).tags.get("airlift/task_migrated") is None
 
     with environ(
         {
@@ -289,7 +292,7 @@ def test_local_airflow_instance() -> None:
             ),
         }
     ):
-        defs = build_definitions_airflow_asset_graph(
+        defs = load_definitions_airflow_asset_graph(
             assets_per_task={
                 "dag": {"task": [("a", [])]},
             },
@@ -333,13 +336,13 @@ def test_cached_loading() -> None:
     )
     DefinitionsLoadContext.set(context_with_cache)
     with mock.patch(
-        "dagster_airlift.core.load_defs.compute_cacheable_assets",
-        wraps=compute_cacheable_assets,
-    ) as mock_compute_cacheable_assets:
+        "dagster_airlift.core.load_defs.compute_serialized_data",
+        wraps=compute_serialized_data,
+    ) as mock_compute_serialized_data:
         reloaded_defs = build_defs_from_airflow_instance(
             airflow_instance=instance, defs=passed_in_defs
         )
-        assert mock_compute_cacheable_assets.call_count == 0
+        assert mock_compute_serialized_data.call_count == 0
         reloaded_defs = build_defs_from_airflow_instance(
             airflow_instance=instance, defs=passed_in_defs
         )
@@ -356,4 +359,26 @@ def test_cached_loading() -> None:
         assert (
             reloaded_defs.metadata["dagster-airlift/source/test_instance"].value
             == defs.metadata["dagster-airlift/source/test_instance"].value
+        )
+
+
+def test_multiple_tasks_per_asset(init_load_context: None) -> None:
+    """Test behavior for a single AssetsDefinition where different specs map to different airflow tasks/dags."""
+
+    @multi_asset(
+        specs=[
+            AssetSpec(key="a", metadata={"airlift/dag_id": "dag1", "airlift/task_id": "task1"}),
+            AssetSpec(key="b", metadata={"airlift/dag_id": "dag2", "airlift/task_id": "task2"}),
+        ],
+        name="multi_asset",
+    )
+    def my_asset():
+        pass
+
+    instance = make_instance({"dag1": ["task1"], "dag2": ["task2"]})
+    # Currently not possible.
+    with pytest.raises(CheckError, match="within same AssetsDefinition"):
+        build_defs_from_airflow_instance(
+            airflow_instance=instance,
+            defs=Definitions(assets=[my_asset]),
         )

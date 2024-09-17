@@ -5,6 +5,7 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
+from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.storage.tags import KIND_PREFIX
 
@@ -45,7 +46,7 @@ def prop_from_metadata(
                     )
                 check.invariant(
                     prop == spec.metadata[prop_metadata_key],
-                    f"Task ID mismatch within same AssetsDefinition: {prop} != {spec.metadata[prop_metadata_key]}",
+                    f"Metadata mismatch within same AssetsDefinition: {prop} != {spec.metadata[prop_metadata_key]}",
                 )
         return prop
     return None
@@ -53,3 +54,9 @@ def prop_from_metadata(
 
 def airflow_kind_dict() -> dict:
     return {f"{KIND_PREFIX}airflow": ""}
+
+
+def coerce_to_definition(asset: Union[AssetSpec, AssetsDefinition]) -> AssetsDefinition:
+    if isinstance(asset, AssetSpec):
+        return external_asset_from_spec(asset)
+    return asset

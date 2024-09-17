@@ -37,7 +37,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
 ) -> RepositoryDefinition:
-    defs = build_definitions_airflow_asset_graph(
+    defs = load_definitions_airflow_asset_graph(
         assets_per_task, additional_defs=additional_defs, create_runs=create_runs
     )
     repo_def = defs.get_repository_def()
@@ -45,7 +45,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
     return repo_def
 
 
-def build_definitions_airflow_asset_graph(
+def load_definitions_airflow_asset_graph(
     assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
@@ -64,7 +64,7 @@ def build_definitions_airflow_asset_graph(
                 )
                 if create_assets_defs:
 
-                    @multi_asset(specs=[spec])
+                    @multi_asset(specs=[spec], name=f"{spec.key.to_python_identifier()}_asset")
                     def _asset():
                         return None
 
