@@ -2,6 +2,7 @@ from pathlib import Path
 
 import responses
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_loader import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.instance_for_test import instance_for_test
@@ -21,6 +22,11 @@ def test_load_assets_organization_data(sigma_auth_token: str, sigma_sample_data:
 
         # 2 Sigma external assets, one materializable asset
         assert len(repository_def.assets_defs_by_key) == 2 + 1
+
+        workbook_key = AssetKey("Sample_Workbook")
+        assert repository_def.assets_defs_by_key[workbook_key].owners_by_key[workbook_key] == [
+            "ben@dagsterlabs.com"
+        ]
 
         calls = len(responses.calls)
 
