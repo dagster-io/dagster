@@ -1,9 +1,9 @@
 ---
 layout: Integration
 status: published
-name: AWS Athena
+name: Athena
 title: Dagster & AWS Athena
-sidebar_label: AWS Athena
+sidebar_label: Athena
 excerpt: This integration allows you to connect to AWS Athena and analyze data in Amazon S3 using standard SQL within your Dagster pipelines.
 date: 2024-06-21
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
