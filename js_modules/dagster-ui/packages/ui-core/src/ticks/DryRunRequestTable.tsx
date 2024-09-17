@@ -8,6 +8,7 @@ import {AnchorButton} from '../ui/AnchorButton';
 import {useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import { useStateWithStorage } from '../hooks/useStateWithStorage';
 
 type Props = {
   name: string;
@@ -18,8 +19,16 @@ type Props = {
   mode?: string;
 };
 
+const validateCachedConfigYamls = (x: any): {[key: string]: string} => {
+  return x ?? {};
+}
+
 export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}: Props) => {
   const repo = useRepository(repoAddress);
+  const [cachedConfigYamls, setCachedConfigYamls] = useStateWithStorage(
+    "cached-config-yamls",
+    validateCachedConfigYamls,
+  );
 
   const body = (
     <tbody data-testid={testId('table-body')}>
@@ -46,13 +55,16 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
             </td>
             <td>
               <AnchorButton
+                onClick={() => {
+                  setCachedConfigYamls({"x": request.runConfigYaml});
+                }}
                 icon={<Icon name="edit" />}
                 target="_blank"
                 to={workspacePathFromAddress(
                   repoAddress,
                   `/pipeline_or_job/${request.jobName ?? jobName}/playground/setup?${qs.stringify({
                     mode,
-                    config: request.runConfigYaml,
+                    configCachedId: "x",
                     tags: request.tags,
                     assetSelection: request.assetSelection?.map(({path}) => ({
                       assetKey: {path},

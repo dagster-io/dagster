@@ -14,6 +14,7 @@ import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import { useStateWithStorage } from '../hooks/useStateWithStorage';
 
 export const LaunchpadSetupRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
@@ -40,6 +41,10 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
+const validateCachedConfigYamls = (x: any): {[key: string]: string} => {
+  return x ?? {};
+}
+
 const LaunchpadSetupAllowedRoot = (props: Props) => {
   const {pipelinePath, repoAddress} = props;
 
@@ -48,6 +53,7 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
+  const [cachedConfigYamls] = useStateWithStorage("cached-config-yamls", validateCachedConfigYamls);
 
   useJobTitle(explorerPath, isJob);
 
@@ -57,6 +63,7 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
   useEffect(() => {
     if (
       queryString.config ||
+      queryString.configCachedId ||
       queryString.mode ||
       queryString.solidSelection ||
       queryString.tags ||
@@ -65,6 +72,8 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
       const newSession: Partial<IExecutionSession> = {};
       if (typeof queryString.config === 'string') {
         newSession.runConfigYaml = queryString.config;
+      } else if (typeof queryString.configCachedId === 'string') {
+        newSession.runConfigYaml = cachedConfigYamls[queryString.configCachedId];
       }
       if (typeof queryString.mode === 'string') {
         newSession.mode = queryString.mode;
