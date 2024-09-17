@@ -1,5 +1,4 @@
 import {
-  Body2,
   Box,
   Caption,
   CaptionBolded,
@@ -218,7 +217,7 @@ export const SearchResultItem = <T extends ResultType>({
           </Box>
           <ResultEnterWrapper flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
             <div>Enter</div>
-            <Icon name="key_return" color={Colors.accentGray()}/>
+            <Icon name="key_return" color={Colors.accentGray()} />
           </ResultEnterWrapper>
         </Box>
       </ResultLink>
