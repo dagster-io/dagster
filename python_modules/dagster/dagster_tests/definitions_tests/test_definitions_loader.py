@@ -10,6 +10,7 @@ from dagster._core.definitions.decorators.definitions_decorator import definitio
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.external_asset import external_assets_from_specs
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
@@ -25,13 +26,14 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance_for_test import instance_for_test
+from dagster._utils import file_relative_path
 
 FOO_INTEGRATION_SOURCE_KEY = "foo_integration"
 
 WORKSPACE_ID = "my_workspace"
 
 
-def _fetch_foo_integration_asset_info(workspace_id: str):
+def fetch_foo_integration_asset_info(workspace_id: str):
     if workspace_id == WORKSPACE_ID:
         return [{"id": "alpha"}, {"id": "beta"}]
     else:
@@ -47,7 +49,7 @@ def _get_foo_integration_defs(context: DefinitionsLoadContext, workspace_id: str
     ):
         payload = context.reconstruction_metadata[cache_key]
     else:
-        payload = _fetch_foo_integration_asset_info(workspace_id)
+        payload = fetch_foo_integration_asset_info(workspace_id)
     asset_specs = [AssetSpec(item["id"]) for item in payload]
     assets = external_assets_from_specs(asset_specs)
     return Definitions(
@@ -92,17 +94,42 @@ def test_reconstruction_metadata():
     repo_load_data = RepositoryLoadData(
         cacheable_asset_data={},
         reconstruction_metadata={
-            f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": _fetch_foo_integration_asset_info(
-                WORKSPACE_ID
+            f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": MetadataValue.code_location_reconstruction(
+                fetch_foo_integration_asset_info(WORKSPACE_ID)
             )
         },
     )
 
     # Ensure we don't call the expensive fetch function when we have the data cached
     with patch(
-        "dagster_tests.definitions_tests.test_definitions_loader._fetch_foo_integration_asset_info"
+        "dagster_tests.definitions_tests.test_definitions_loader.fetch_foo_integration_asset_info"
     ) as mock_fetch:
         inner_repo.reconstruct_repository_definition(repository_load_data=repo_load_data)
+        mock_fetch.assert_not_called()
+
+
+def test_reconstruction_metadata_with_global_context():
+    defs_path = file_relative_path(__file__, "metadata_defs_global_context.py")
+
+    recon_repo = ReconstructableRepository.for_file(defs_path, "defs")
+    assert isinstance(recon_repo.get_definition(), RepositoryDefinition)
+
+    recon_repo_with_cache = recon_repo.with_repository_load_data(
+        RepositoryLoadData(
+            cacheable_asset_data={},
+            reconstruction_metadata={
+                f"{FOO_INTEGRATION_SOURCE_KEY}/{WORKSPACE_ID}": MetadataValue.code_location_reconstruction(
+                    fetch_foo_integration_asset_info(WORKSPACE_ID)
+                )
+            },
+        )
+    )
+
+    # Ensure we don't call the expensive fetch function when we have the data cached
+    with patch(
+        "dagster_tests.definitions_tests.test_definitions_loader.fetch_foo_integration_asset_info"
+    ) as mock_fetch:
+        recon_repo_with_cache.get_definition()
         mock_fetch.assert_not_called()
 
 
