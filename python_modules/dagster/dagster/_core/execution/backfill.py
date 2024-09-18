@@ -58,12 +58,14 @@ class BulkActionsFilter:
             create_time for each bulk action is stored in UTC.t
         tags (Optional[Dict[str, Union[str, List[str]]]]):
             A dictionary of tags to query by. All tags specified here must be present for a given bulk action to pass the filter.
+        job_name (Optional[str]): Name of the job to query for. If blank, all job_names will be accepted.
     """
 
     statuses: Optional[Sequence[BulkActionStatus]] = None
     created_before: Optional[datetime] = None
     created_after: Optional[datetime] = None
     tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None
+    job_name: Optional[str] = None
 
 
 @whitelist_for_serdes

@@ -46,6 +46,9 @@ class TestSqliteRunStorage(TestRunStorage):
     def supports_backfill_tags_filtering_queries(self):
         return True
 
+    def supports_backfill_job_name_filtering_queries(self):
+        return True
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self):
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
@@ -65,6 +68,9 @@ class TestInMemoryRunStorage(TestRunStorage):
     def supports_backfill_tags_filtering_queries(self):
         return True
 
+    def supports_backfill_job_name_filtering_queries(self):
+        return True
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self):
         with DagsterInstance.ephemeral() as the_instance:
@@ -82,6 +88,9 @@ class TestLegacyRunStorage(TestRunStorage):
     __test__ = True
 
     def supports_backfill_tags_filtering_queries(self):
+        return True
+
+    def supports_backfill_job_name_filtering_queries(self):
         return True
 
     @pytest.fixture(name="instance", scope="function")
