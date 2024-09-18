@@ -1,7 +1,6 @@
 import {Box, Colors, CursorHistoryControls, NonIdealState, Tabs} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
-import {PYTHON_ERROR_FRAGMENT} from 'shared/app/PythonErrorFragment';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunsQueryRefetchContext} from './RunUtils';
@@ -10,6 +9,7 @@ import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/RunsFeedRoo
 import {RunsFeedTableEntryFragment_Run} from './types/RunsFeedRow.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 import {gql} from '../apollo-client';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
