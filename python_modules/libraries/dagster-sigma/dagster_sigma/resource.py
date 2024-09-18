@@ -9,6 +9,8 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
+SIGMA_PARTNER_ID_TAG = {"X-Sigma-Partner-Id": "dagster"}
+
 
 class SigmaBaseUrl(str, Enum):
     """Enumeration of Sigma API base URLs for different cloud providers.
@@ -83,6 +85,7 @@ class SigmaOrganization(ConfigurableResource):
             headers={
                 "Accept": "application/json",
                 "Content-Type": "application/x-www-form-urlencoded",
+                **SIGMA_PARTNER_ID_TAG,
             },
             data={
                 "grant_type": "client_credentials",
@@ -104,7 +107,11 @@ class SigmaOrganization(ConfigurableResource):
         response = requests.request(
             method=method,
             url=f"{self.base_url}/v2/{endpoint}",
-            headers={"Accept": "application/json", "Authorization": f"Bearer {self.api_token}"},
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {self.api_token}",
+                **SIGMA_PARTNER_ID_TAG,
+            },
         )
         response.raise_for_status()
 
