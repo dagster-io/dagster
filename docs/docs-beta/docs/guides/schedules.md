@@ -9,6 +9,8 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 <details>
 <summary>Prerequisites</summary>
 
+To follow the steps in this guide, you'll need:
+
 - Familiarity with [Assets](/concepts/assets)
 - Familiarity with [Ops and Jobs](/concepts/ops-jobs)
 </details>
@@ -17,49 +19,46 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
 
-<CodeExample filePath="guides/automation/simple-schedule-example.py" language="python" title="Simple Schedule Example" />
+<CodeExample filePath="guides/automation/simple-schedule-example.py" language="python" />
 
 ## Run schedules in a different timezone
 
-By default, schedules without a timezone will run in Coordinated Universal Time (UTC). If you want to run a schedule in a different timezone, you can set the `timezone` parameter.
+By default, schedules without a timezone will run in Coordinated Universal Time (UTC). To run a schedule in a different timezone, set the `timezone` parameter:
 
 ```python
 daily_schedule = ScheduleDefinition(
     job=daily_refresh_job,
     cron_schedule="0 0 * * *",
+    # highlight-next-line
     timezone="America/Los_Angeles",
 )
 ```
 
-## Run schedules on a partitioned asset
+## Create schedules from partitions
 
-If you have a partitioned asset and job, you can create a schedule using the partition with `build_schedule_from_partitioned_job`.
-The schedule will execute as the same cadence specified by the partition definition.
+If using partitions and jobs, you can create a schedule using the partition with `build_schedule_from_partitioned_job`. The schedule will execute at the same cadence specified by the partition definition.
 
-<CodeExample filePath="guides/automation/schedule-with-partition.py" language="python" title="Schedule with partition" />
+<Tabs>
+<TabItem value="assets" label="Assets">
 
-If you have a partitioned job, you can create a schedule from the partition using `build_schedule_from_partitioned_job`.
+If you have a [partitioned asset](/guides/partitioning) and job:
 
-```python
-from dagster import build_schedule_from_partitioned_job, job
+<CodeExample filePath="guides/automation/schedule-with-partition.py" language="python" />
 
+</TabItem>
+<TabItem value="ops" label="Ops">
 
-@job(config=partitioned_config)
-def partitioned_op_job(): ...
+If you have a partitioned op job:
 
-# highlight-start
-partitioned_op_schedule = build_schedule_from_partitioned_job(
-    partitioned_op_job,
-)
-# highlight-end
-```
+<CodeExample filePath="guides/automation/schedule-with-partition-ops.py" language="python" />
 
-
+</TabItem>
+</Tabs>
 
 ## Next steps
 
-- Learn more about schedules in [Understanding Automation](/concepts/automation)
+By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints:
+
+- Learn more about schedules in [Understanding automation](/concepts/automation)
 - React to events with [sensors](/guides/sensors)
 - Explore [Declarative Automation](/concepts/automation/declarative-automation) as an alternative to schedules
-
-By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.
