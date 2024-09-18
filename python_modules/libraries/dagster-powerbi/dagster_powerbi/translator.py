@@ -1,13 +1,14 @@
 import re
 import urllib.parse
 from enum import Enum
-from typing import Any, Dict, Mapping, Sequence
+from typing import Any, Dict, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
+from dagster._serdes.serdes import whitelist_for_serdes
 
 
 def _get_last_filepath_component(path: str) -> str:
@@ -25,6 +26,7 @@ def _clean_asset_name(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_]+", "_", name)
 
 
+@whitelist_for_serdes
 class PowerBIContentType(Enum):
     """Enum representing each object in PowerBI's ontology, generically referred to as "content" by the API."""
 
@@ -34,6 +36,7 @@ class PowerBIContentType(Enum):
     DATA_SOURCE = "data_source"
 
 
+@whitelist_for_serdes
 @record
 class PowerBIContentData:
     """A record representing a piece of content in PowerBI.
@@ -43,17 +46,8 @@ class PowerBIContentData:
     content_type: PowerBIContentType
     properties: Dict[str, Any]
 
-    def to_cached_data(self) -> Dict[str, Any]:
-        return {"content_type": self.content_type.value, "properties": self.properties}
 
-    @classmethod
-    def from_cached_data(cls, data: Mapping[Any, Any]) -> "PowerBIContentData":
-        return cls(
-            content_type=PowerBIContentType(data["content_type"]),
-            properties=data["properties"],
-        )
-
-
+@whitelist_for_serdes
 @record
 class PowerBIWorkspaceData:
     """A record representing all content in a PowerBI workspace.
