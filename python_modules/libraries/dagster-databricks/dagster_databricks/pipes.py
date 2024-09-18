@@ -384,7 +384,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
     Args:
         interval (float): interval in seconds between attempts to download a log chunk
         remote_log_name (Literal["stdout", "stderr"]): The name of the log file to read.
-        target_stream (TextIO): The stream to which to forward log chunk that have been read.
+        target_stream (TextIO): The stream to which to forward log chunks that have been read.
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
     """
 
