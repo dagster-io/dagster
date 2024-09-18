@@ -51,8 +51,6 @@ def build_integration_steps() -> List[BuildkiteStep]:
 
 def build_backcompat_suite_steps() -> List[BuildkiteTopLevelStep]:
     tox_factors = [
-        "webserver-latest-release",
-        "webserver-earliest-release",
         "user-code-latest-release",
         "user-code-earliest-release",
     ]
@@ -66,35 +64,18 @@ def build_backcompat_suite_steps() -> List[BuildkiteTopLevelStep]:
 
 def backcompat_extra_cmds(_, factor: str) -> List[str]:
     tox_factor_map = {
-        "webserver-latest-release": {
-            "webserver": LATEST_DAGSTER_RELEASE,
-            "user_code": DAGSTER_CURRENT_BRANCH,
-        },
-        "webserver-earliest-release": {
-            "webserver": EARLIEST_TESTED_RELEASE,
-            "user_code": DAGSTER_CURRENT_BRANCH,
-        },
-        "user-code-latest-release": {
-            "webserver": DAGSTER_CURRENT_BRANCH,
-            "user_code": LATEST_DAGSTER_RELEASE,
-        },
-        "user-code-earliest-release": {
-            "webserver": DAGSTER_CURRENT_BRANCH,
-            "user_code": EARLIEST_TESTED_RELEASE,
-        },
+        "user-code-latest-release": LATEST_DAGSTER_RELEASE,
+        "user-code-earliest-release": EARLIEST_TESTED_RELEASE,
     }
 
-    release_mapping = tox_factor_map[factor]
-    webserver_version = release_mapping["webserver"]
+    webserver_version = DAGSTER_CURRENT_BRANCH
     webserver_library_version = _get_library_version(webserver_version)
-    webserver_package = _infer_webserver_package(webserver_version)
-    user_code_version = release_mapping["user_code"]
+    user_code_version = tox_factor_map[factor]
     user_code_library_version = _get_library_version(user_code_version)
     user_code_definitions_file = _infer_user_code_definitions_files(user_code_version)
 
     return [
         f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}",
-        f"export WEBSERVER_PACKAGE={webserver_package}",
         f"export USER_CODE_DEFINITIONS_FILE={user_code_definitions_file}",
         "pushd integration_tests/test_suites/backcompat-test-suite/webserver_service",
         " ".join(
@@ -102,7 +83,6 @@ def backcompat_extra_cmds(_, factor: str) -> List[str]:
                 "./build.sh",
                 webserver_version,
                 webserver_library_version,
-                webserver_package,
                 user_code_version,
                 user_code_library_version,
                 user_code_definitions_file,
@@ -117,17 +97,6 @@ def backcompat_extra_cmds(_, factor: str) -> List[str]:
         ),
         "popd",
     ]
-
-
-def _infer_webserver_package(release: str) -> str:
-    """Returns `dagster-webserver` if on source or version >=1.3.14 (first dagster-webserver
-    release), `dagit` otherwise.
-    """
-    if release == "current_branch":
-        return "dagster-webserver"
-    else:
-        version = packaging.version.parse(release)
-        return "dagit" if version < packaging.version.Version("1.3.14") else "dagster-webserver"
 
 
 def _infer_user_code_definitions_files(release: str) -> str:
