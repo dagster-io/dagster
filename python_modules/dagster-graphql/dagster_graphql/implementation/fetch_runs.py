@@ -451,7 +451,7 @@ def _fetch_runs_not_in_backfill(
 def _bulk_action_status_from_run_status(status: DagsterRunStatus) -> Sequence[BulkActionStatus]:
     """Converts a DagsterRunStatus to the BulkActionStatuses that display as that DagsterRunStatus in the UI."""
     if status == DagsterRunStatus.SUCCESS:
-        return [BulkActionStatus.COMPLETED, BulkActionStatus.COMPLETED_SUCCESS]
+        return [BulkActionStatus.COMPLETED_SUCCESS]
     if status == DagsterRunStatus.FAILURE:
         return [BulkActionStatus.FAILED, BulkActionStatus.COMPLETED_FAILED]
     if status == DagsterRunStatus.CANCELED:
