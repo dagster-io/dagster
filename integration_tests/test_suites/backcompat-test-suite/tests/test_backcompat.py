@@ -250,22 +250,6 @@ def graphql_client(
             yield DagsterGraphQLClient(webserver_host, port_number=3000)
 
 
-def test_backcompat_deployed_pipeline(
-    graphql_client: DagsterGraphQLClient, release_test_map: Mapping[str, str]
-):
-    # Only run this test on legacy versions
-    if release_test_map["user_code"] == EARLIEST_TESTED_RELEASE:
-        assert_runs_and_exists(graphql_client, "the_pipeline")
-
-
-def test_backcompat_deployed_pipeline_subset(
-    graphql_client: DagsterGraphQLClient, release_test_map: Mapping[str, str]
-):
-    # Only run this test on legacy versions
-    if release_test_map["user_code"] == EARLIEST_TESTED_RELEASE:
-        assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
-
-
 def test_backcompat_deployed_job(graphql_client: DagsterGraphQLClient):
     assert_runs_and_exists(graphql_client, "the_job")
 
