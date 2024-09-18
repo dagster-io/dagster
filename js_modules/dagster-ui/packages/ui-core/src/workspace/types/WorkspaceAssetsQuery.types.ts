@@ -13,6 +13,7 @@ export type RepoAssetTableFragment = {
   isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -69,6 +70,7 @@ export type WorkspaceAssetsQuery = {
           isExecutable: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
           kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -97,4 +99,4 @@ export type WorkspaceAssetsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const WorkspaceAssetsQueryVersion = 'a81f51b53f9e7ba6152ccdc8756d8a723363a574893143c329d316c11c0a28ed';
+export const WorkspaceAssetsQueryVersion = '5f392a40e848c1adfc661f4f9db904cbab74d68900bf5632d92b44fdf2128228';
