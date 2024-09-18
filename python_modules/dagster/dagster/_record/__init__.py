@@ -38,21 +38,8 @@ _REMAPPING_FIELD = "__field_remap__"
 _ORIGINAL_CLASS_FIELD = "__original_class__"
 
 
-def _namedtuple_record_transform(
-    cls: TType,
-    *,
-    checked: bool,
-    with_new: bool,
-    decorator_frames: int,
-    field_to_new_mapping: Optional[Mapping[str, str]],
-) -> TType:
-    """Transforms the input class in to one that inherits a generated NamedTuple base class
-    and:
-        * bans tuple methods that don't make sense for a record object
-        * creates a run time checked __new__  (optional).
-    """
+def _get_field_set_and_defaults(cls: Type) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
     field_set = getattr(cls, "__annotations__", {})
-
     defaults = {}
     for name in field_set.keys():
         if hasattr(cls, name):
@@ -71,6 +58,31 @@ def _namedtuple_record_transform(
                     "you will have to override __new__.",
                 )
                 defaults[name] = attr_val
+
+    for base in cls.__bases__:
+        if is_record(base):
+            original_base = getattr(base, _ORIGINAL_CLASS_FIELD)
+            base_field_set, base_defaults = _get_field_set_and_defaults(original_base)
+            field_set = {**base_field_set, **field_set}
+            defaults = {**base_defaults, **defaults}
+
+    return field_set, defaults
+
+
+def _namedtuple_record_transform(
+    cls: TType,
+    *,
+    checked: bool,
+    with_new: bool,
+    decorator_frames: int,
+    field_to_new_mapping: Optional[Mapping[str, str]],
+) -> TType:
+    """Transforms the input class in to one that inherits a generated NamedTuple base class
+    and:
+        * bans tuple methods that don't make sense for a record object
+        * creates a run time checked __new__  (optional).
+    """
+    field_set, defaults = _get_field_set_and_defaults(cls)
 
     base = NamedTuple(f"_{cls.__name__}", field_set.items())
     nt_new = base.__new__
@@ -107,6 +119,10 @@ def _namedtuple_record_transform(
         # verify the alignment since it impacts frame capture
         check.failed(f"Expected __new__ on {cls}, add it or switch from the _with_new decorator.")
 
+    # the default namedtuple record cannot handle subclasses that have different fields from their
+    # parents if both are records
+    base.__repr__ = _repr
+
     new_type = type(
         cls.__name__,
         (cls, base),
@@ -129,6 +145,11 @@ def _namedtuple_record_transform(
             "__doc__": cls.__doc__,
         },
     )
+
+    # if the annotated class is a subclass of another record, ensure that we use the
+    # newly-generated __new__ method, instead of the __new__ of its superclass
+    if has_generated_new(cls):
+        setattr(new_type, "__new__", base.__new__)
 
     # setting this in the dict above does not work for some reason,
     # so set it directly after instantiation
@@ -463,3 +484,11 @@ def _from_reduce(cls, kwargs):
 def _reduce(self):
     # pickle support
     return _from_reduce, (self.__class__, as_dict_for_new(self))
+
+
+def _repr(self) -> str:
+    # the __repr__ method generated for namedtuples cannot handle subclasses that have different
+    # sets of fields
+    field_set = getattr(self, _RECORD_ANNOTATIONS_FIELD)
+    values = [f"{field_name}={getattr(self, field_name)!r}" for field_name in field_set]
+    return f"{self.__class__.__name__}({', '.join(values)})"
