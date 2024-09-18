@@ -392,9 +392,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         super().__init__(
             id=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
-            jobName=backfill_job.job_name
-            if backfill_job.job_name
-            else backfill_job.partition_set_name,
+            jobName=backfill_job.job_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,

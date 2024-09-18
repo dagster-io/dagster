@@ -81,7 +81,6 @@ class PartitionBackfill(
             ("asset_selection", Optional[Sequence[AssetKey]]),
             ("title", Optional[str]),
             ("description", Optional[str]),
-            ("job_name", Optional[str]),
             # fields that are only used by job backfills
             ("partition_set_origin", Optional[RemotePartitionSetOrigin]),
             ("partition_names", Optional[Sequence[str]]),
@@ -107,7 +106,6 @@ class PartitionBackfill(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        job_name: Optional[str] = None,
         partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
         partition_names: Optional[Sequence[str]] = None,
         last_submitted_partition_name: Optional[str] = None,
@@ -129,21 +127,6 @@ class PartitionBackfill(
             check.invariant(last_submitted_partition_name is None)
             check.invariant(reexecution_steps is None)
 
-        if partition_set_origin is not None:
-            expected_job_name = job_name_for_external_partition_set_name(
-                partition_set_origin.partition_set_name
-            )
-            error_msg = f"Partition set {partition_set_origin.partition_set_name} should derive from job with name {expected_job_name}, but got {job_name}"
-        else:
-            expected_job_name = IMPLICIT_ASSET_JOB_NAME
-            error_msg = (
-                f"Expected job name {expected_job_name} for an asset backfill, but got {job_name}"
-            )
-        if job_name is not None:
-            check.invariant(job_name == expected_job_name, error_msg)
-        else:
-            job_name = expected_job_name
-
         return super(PartitionBackfill, cls).__new__(
             cls,
             backfill_id=check.str_param(backfill_id, "backfill_id"),
@@ -157,7 +140,6 @@ class PartitionBackfill(
             ),
             title=check_valid_title(title),
             description=check.opt_str_param(description, "description"),
-            job_name=check.opt_str_param(job_name, "job_name"),
             partition_set_origin=check.opt_inst_param(
                 partition_set_origin, "partition_set_origin", RemotePartitionSetOrigin
             ),
@@ -220,6 +202,16 @@ class PartitionBackfill(
             return None
 
         return self.partition_set_origin.partition_set_name
+
+    @property
+    def job_name(self) -> Optional[str]:
+        if self.is_asset_backfill:
+            return IMPLICIT_ASSET_JOB_NAME
+        return (
+            job_name_for_external_partition_set_name(self.partition_set_name)
+            if self.partition_set_name
+            else None
+        )
 
     @property
     def log_storage_prefix(self) -> Sequence[str]:
@@ -439,7 +431,6 @@ class PartitionBackfill(
             asset_backfill_data=asset_backfill_data,
             title=title,
             description=description,
-            job_name=IMPLICIT_ASSET_JOB_NAME,
         )
 
     @classmethod
@@ -471,7 +462,6 @@ class PartitionBackfill(
             asset_selection=[selector.asset_key for selector in partitions_by_assets],
             title=title,
             description=description,
-            job_name=IMPLICIT_ASSET_JOB_NAME,
         )
 
     @classmethod
@@ -501,5 +491,4 @@ class PartitionBackfill(
             asset_selection=list(asset_graph_subset.asset_keys),
             title=title,
             description=description,
-            job_name=IMPLICIT_ASSET_JOB_NAME,
         )
