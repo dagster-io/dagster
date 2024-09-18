@@ -40,7 +40,7 @@
     "lodash": "^4.17.21",
     "mdast-util-toc": "^5.1.0",
     "new-github-issue-url": "^0.2.1",
-    "next": "^14.1.1",
+    "next": "^14.2.10",
     "next-mdx-remote": "^2.1.4",
     "next-remote-watch": "^2.0.0",
     "next-seo": "^4.17.0",
