@@ -28,7 +28,7 @@ pip install dagster-snowflake
 
 ### Example
 
-<CodeExample filePath="integrations/snowflake.py" language="python" title="Dagster & Snowflake Example" />
+<CodeExample filePath="integrations/snowflake.py" language="python" />
 
 ### About Snowflake
 

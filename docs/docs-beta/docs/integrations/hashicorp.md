@@ -6,7 +6,7 @@ title: Dagster & HashiCorp Vault
 sidebar_label: HashiCorp Vault
 excerpt: Centrally manage credentials and certificates, then use them in your pipelines.
 date: 2022-11-07
-apireflink: 
+apireflink:
 docslink: https://github.com/silentsokolov/dagster-hashicorp
 partnerlink: https://www.vaultproject.io/
 communityIntegration: true
@@ -29,7 +29,7 @@ pip install dagster-hashicorp
 
 ### Example
 
-<CodeExample filePath="integrations/hashicorp.py" language="python" title="Dagster & HashiCorp Vault Example" />
+<CodeExample filePath="integrations/hashicorp.py" language="python" />
 
 ### About HashiCorp Vault
 

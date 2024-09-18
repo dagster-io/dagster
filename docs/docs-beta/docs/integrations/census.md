@@ -28,7 +28,7 @@ pip install dagster-census
 
 ### Example
 
-<CodeExample filePath="integrations/census.py" language="python" title="Dagster & Census Example" />
+<CodeExample filePath="integrations/census.py" language="python" />
 
 ### About Census
 

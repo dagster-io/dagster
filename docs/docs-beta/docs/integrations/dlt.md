@@ -28,7 +28,7 @@ pip install dagster-embedded-elt
 
 ### Example
 
-<CodeExample filePath="integrations/dlt.py" language="python" title="Dagster & dlt Example" />
+<CodeExample filePath="integrations/dlt.py" language="python" />
 
 ### About dlt
 

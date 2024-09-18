@@ -7,7 +7,7 @@ sidebar_label: GitHub
 excerpt: Integrate with GitHub Apps and automate operations within your github repositories.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-github
-docslink: 
+docslink:
 partnerlink: https://github.com/
 logo: /integrations/Github.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-github
 
 ### Example
 
-<CodeExample filePath="integrations/github.py" language="python" title="Dagster & GitHub Example" />
+<CodeExample filePath="integrations/github.py" language="python" />
 
 ### About GitHub
 

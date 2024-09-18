@@ -6,7 +6,7 @@ title: Dagster & Open Metadata
 sidebar_label: Open Metadata
 excerpt: Configure and schedule Dagster metadata and profiler workflows from the OpenMetadata UI.
 date: 2022-11-07
-apireflink: 
+apireflink:
 docslink: https://docs.open-metadata.org/connectors/pipeline/dagster
 partnerlink: https://open-metadata.org/
 communityIntegration: true

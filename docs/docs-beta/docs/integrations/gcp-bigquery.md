@@ -7,8 +7,8 @@ sidebar_label: GCP BigQuery
 excerpt: Integrate with GCP BigQuery.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
-docslink: 
-partnerlink: 
+docslink:
+partnerlink:
 logo: /integrations/gcp-bigquery.svg
 categories:
   - Storage
@@ -28,7 +28,7 @@ pip install dagster-gcp
 
 ### Examples
 
-<CodeExample filePath="integrations/gcp-bigquery.py" language="python" title="Dagster & GCP BigQuery Example" />
+<CodeExample filePath="integrations/gcp-bigquery.py" language="python" />
 
 ### About Google Cloud Platform BigQuery
 

@@ -7,8 +7,8 @@ sidebar_label: GCP GCS
 excerpt: Integrate with GCP GCS.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
-docslink: 
-partnerlink: 
+docslink:
+partnerlink:
 logo: /integrations/gcp-gcs.svg
 categories:
   - Storage
@@ -28,7 +28,7 @@ pip install dagster-gcp
 
 ### Examples
 
-<CodeExample filePath="integrations/gcp-gcs.py" language="python" title="Dagster & GCP GCS Example" />
+<CodeExample filePath="integrations/gcp-gcs.py" language="python" />
 
 ### About Google Cloud Platform GCS
 

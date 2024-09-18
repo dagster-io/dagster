@@ -28,7 +28,7 @@ pip install dagster-embedded-elt
 
 ### Example
 
-<CodeExample filePath="integrations/sling.py" language="python" title="Dagster & Sling Example" />
+<CodeExample filePath="integrations/sling.py" language="python" />
 
 ### About dlt
 

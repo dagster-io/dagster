@@ -6,7 +6,7 @@ title: Dagster & Looker
 sidebar_label: Looker
 excerpt: The Looker integration allows you to monitor your Looker project as assets in Dagster, along with other data assets.
 date: 2024-08-30
-apireflink: 
+apireflink:
 docslink: https://docs.dagster.io/_apidocs/libraries/dagster-looker
 partnerlink: https://www.looker.com/
 communityIntegration: true
@@ -29,7 +29,7 @@ pip install dagster-looker
 
 ### Example
 
-<CodeExample filePath="integrations/looker.py" language="python" title="Dagster & Looker Example" />
+<CodeExample filePath="integrations/looker.py" language="python" />
 
 ### About Looker
 

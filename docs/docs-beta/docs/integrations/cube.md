@@ -4,7 +4,7 @@ status: published
 name: Cube
 title: Dagster & Cube
 sidebar_label: Cube
-excerpt: "Push changes from upstream data sources to Cubes semantic layer."
+excerpt: 'Push changes from upstream data sources to Cubes semantic layer.'
 date: 2023-08-30
 apireflink: https://cube.dev/docs/orchestration-api/dagster
 partnerlink: https://cube.dev/
@@ -28,7 +28,7 @@ pip install dagster_cube
 
 ### Example
 
-<CodeExample filePath="integrations/cube.py" language="python" title="Dagster & Census Example" />
+<CodeExample filePath="integrations/cube.py" language="python" />
 
 ### About Cube
 

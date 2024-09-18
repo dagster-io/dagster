@@ -30,7 +30,7 @@ pip install dagster-pandera
 
 ### Example
 
-<CodeExample filePath="integrations/pandera.py" language="python" title="Dagster & Pandera Example" />
+<CodeExample filePath="integrations/pandera.py" language="python" />
 
 ### About Pandera
 

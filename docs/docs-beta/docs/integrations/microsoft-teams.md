@@ -7,7 +7,7 @@ sidebar_label: Microsoft Teams
 excerpt: Keep your team up to speed with Teams messages.
 date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-msteams
-docslink: 
+docslink:
 partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
 logo: /integrations/Microsoft Teams.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-msteams
 
 ### Example
 
-<CodeExample filePath="integrations/microsoft-teams.py" language="python" title="Dagster & Microsoft Teams Example" />
+<CodeExample filePath="integrations/microsoft-teams.py" language="python" />
 
 ### About Microsoft Teams
 

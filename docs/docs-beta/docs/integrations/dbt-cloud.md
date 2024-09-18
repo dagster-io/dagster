@@ -8,7 +8,7 @@ excerpt: Run dbt Cloud™ jobs as part of your data pipeline.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dbt#assets-dbt-cloud
 docslink: https://docs.dagster.io/integrations/dbt_cloud
-partnerlink: 
+partnerlink:
 logo: /integrations/dbt.svg
 categories:
   - ETL
@@ -28,7 +28,7 @@ pip install dagster-dbt
 
 ### Example
 
-<CodeExample filePath="integrations/dbt_cloud.py" language="python" title="Dagster & dbt Cloud Example" />
+<CodeExample filePath="integrations/dbt_cloud.py" language="python" />
 
 ### About dbt Cloud
 

@@ -7,7 +7,7 @@ sidebar_label: Twilio
 excerpt: Integrate Twilio tasks into your data pipeline runs.
 date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-twilio
-docslink: 
+docslink:
 partnerlink: https://www.twilio.com/
 logo: /integrations/Twilio.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-twilio
 
 ### Example
 
-<CodeExample filePath="integrations/twilio.py" language="python" title="Dagster & Twilio Example" />
+<CodeExample filePath="integrations/twilio.py" language="python" />
 
 ### About Twilio
 

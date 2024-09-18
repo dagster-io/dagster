@@ -7,7 +7,7 @@ sidebar_label: SSH/SFTP
 excerpt: Establish encrypted connections to networked resources.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-ssh
-docslink: 
+docslink:
 partnerlink: https://www.ssh.com/academy/ssh/protocol
 logo: /integrations/SSH.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-ssh
 
 ### Example
 
-<CodeExample filePath="integrations/ssh-sftp.py" language="python" title="Dagster & SSH/SFTP Example" />
+<CodeExample filePath="integrations/ssh-sftp.py" language="python" />
 
 ### About SSH SFTP
 

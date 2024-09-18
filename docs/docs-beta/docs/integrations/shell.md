@@ -28,7 +28,7 @@ pip install dagster
 
 ### Example
 
-<CodeExample filePath="integrations/shell.py" language="python" title="Dagster & shell Example" />
+<CodeExample filePath="integrations/shell.py" language="python" />
 
 ### About shell
 

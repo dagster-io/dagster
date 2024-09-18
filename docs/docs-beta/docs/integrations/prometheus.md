@@ -8,7 +8,7 @@ excerpt: Integrate with Prometheus via the prometheus_client library.
 date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-prometheus
 docslink: https://prometheus.io/
-partnerlink: 
+partnerlink:
 logo: /integrations/Prometheus.svg
 categories:
   - Monitoring
@@ -28,7 +28,7 @@ pip install dagster-prometheus
 
 ### Example
 
-<CodeExample filePath="integrations/prometheus.py" language="python" title="Dagster & Prometheus Example" />
+<CodeExample filePath="integrations/prometheus.py" language="python" />
 
 ### About Prometheus
 

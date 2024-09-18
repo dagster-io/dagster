@@ -8,7 +8,7 @@ excerpt: Integrate OpenAI calls into your Dagster pipelines, without breaking th
 date: 2024-03-12
 apireflink: https://platform.openai.com/docs/introduction
 docslink: https://docs.dagster.io/integrations/openai
-partnerlink: 
+partnerlink:
 logo: /integrations/openai.svg
 categories:
   - Other
@@ -30,7 +30,7 @@ pip install dagster dagster-openai
 
 ### Example
 
-<CodeExample filePath="integrations/openai.py" language="python" title="Dagster & OpenAI Example" />
+<CodeExample filePath="integrations/openai.py" language="python" />
 
 ### About OpenAI
 

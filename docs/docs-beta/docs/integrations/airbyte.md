@@ -28,7 +28,7 @@ pip install dagster-airbyte
 
 ### Example
 
-<CodeExample filePath="integrations/airbyte.py" language="python" title="Dagster & Airbyte Example" />
+<CodeExample filePath="integrations/airbyte.py" language="python" />
 
 ### About Airbyte
 

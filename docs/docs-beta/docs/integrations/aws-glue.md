@@ -7,7 +7,7 @@ sidebar_label: AWS Glue
 excerpt: The AWS Glue integration enables you to initiate AWS Glue jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.
 date: 2024-08-20
 apireflink: https://docs.dagster.io/concepts/dagster-pipes/aws-glue
-docslink: 
+docslink:
 partnerlink: https://aws.amazon.com/
 logo: /integrations/aws-glue.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample filePath="integrations/aws-glue.py" language="python" title="Dagster & AWS Glue Example" />
+<CodeExample filePath="integrations/aws-glue.py" language="python" />
 
 ### About AWS Glue
 

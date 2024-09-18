@@ -4,10 +4,10 @@ status: published
 name: AWS Redshift
 title: Dagster & AWS Redshift
 sidebar_label: AWS Redshift
-excerpt: "Using this integration, you can seamlessly integrate AWS Redshift into your Dagster workflows, leveraging Redshifts data warehousing capabilities for your data pipelines."
+excerpt: 'Using this integration, you can seamlessly integrate AWS Redshift into your Dagster workflows, leveraging Redshifts data warehousing capabilities for your data pipelines.'
 date: 2024-06-21
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
-docslink: 
+docslink:
 partnerlink: https://aws.amazon.com/
 logo: /integrations/aws-redshift.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample filePath="integrations/aws-redshift.py" language="python" title="Dagster & AWS Redshift Example" />
+<CodeExample filePath="integrations/aws-redshift.py" language="python" />
 
 ### About AWS Redshift
 

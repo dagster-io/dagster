@@ -8,7 +8,7 @@ excerpt: Integrate your pipelines into Delta Lake.
 date: 2022-11-07
 communityIntegration: true
 apireflink: https://delta-io.github.io/delta-rs/integrations/delta-lake-dagster/
-docslink: 
+docslink:
 partnerlink: https://delta.io/
 logo: /integrations/DeltaLake.svg
 categories:

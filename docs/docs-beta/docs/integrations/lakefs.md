@@ -8,7 +8,7 @@ excerpt: lakeFS provides version control and complete lineage over the data lake
 date: 2023-06-27
 communityIntegration: true
 apireflink: https://pydocs.lakefs.io/
-docslink: 
+docslink:
 partnerlink: https://lakefs.io/
 logo: /integrations/lakefs.svg
 categories:
@@ -33,7 +33,7 @@ pip install lakefs-client
 
 ### Example
 
-<CodeExample filePath="integrations/lakefs.py" language="python" title="Dagster & LakeFS Example" />
+<CodeExample filePath="integrations/lakefs.py" language="python" />
 
 ### About lakeFS
 

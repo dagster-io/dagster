@@ -28,7 +28,7 @@ pip install dagster-duckdb
 
 ### Example
 
-<CodeExample filePath="integrations/duckdb.py" language="python" title="Dagster & DuckDB Example" />
+<CodeExample filePath="integrations/duckdb.py" language="python" />
 
 ### About DuckDB
 

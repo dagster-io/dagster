@@ -7,7 +7,7 @@ sidebar_label: Docker
 excerpt: Run runs external processes in docker containers directly from Dagster.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-docker
-docslink: 
+docslink:
 partnerlink: https://www.docker.com/
 logo: /integrations/Docker.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-docker
 
 ### Example
 
-<CodeExample filePath="integrations/docker.py" language="python" title="Dagster & Docker Example" />
+<CodeExample filePath="integrations/docker.py" language="python" />
 
 ### Deploying to Docker?
 

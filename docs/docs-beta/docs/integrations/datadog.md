@@ -7,7 +7,7 @@ sidebar_label: Datadog
 excerpt: Publish metrics to Datadog from within Dagster ops and entralize your monitoring metrics.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-datadog
-docslink: 
+docslink:
 partnerlink: https://www.datadoghq.com/
 logo: /integrations/Datadog.svg
 categories:
@@ -28,7 +28,7 @@ pip install dagster-datadog
 
 ### Example
 
-<CodeExample filePath="integrations/datadog.py" language="python" title="Dagster & Datadog Example" />
+<CodeExample filePath="integrations/datadog.py" language="python" />
 
 ### About Datadog
 

@@ -30,7 +30,7 @@ pip install dagster-hightouch
 
 ### Example
 
-<CodeExample filePath="integrations/hightouch.py" language="python" title="Dagster & Hightouch Example" />
+<CodeExample filePath="integrations/hightouch.py" language="python" />
 
 ### About Hightouch
 

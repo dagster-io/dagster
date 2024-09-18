@@ -6,7 +6,7 @@ title: Dagster & Meltano
 sidebar_label: Meltano
 excerpt: Tap into open source configurable ETL+ and the Singer integration library.
 date: 2023-03-25
-apireflink: 
+apireflink:
 docslink: https://github.com/quantile-development/dagster-meltano#readme
 partnerlink: https://meltano.com/
 logo: /integrations/Meltano.svg
@@ -31,7 +31,7 @@ pip install dagster-meltano
 
 ### Example
 
-<CodeExample filePath="integrations/meltano.py" language="python" title="Dagster & Meltano Example" />
+<CodeExample filePath="integrations/meltano.py" language="python" />
 
 ### About Meltano
 

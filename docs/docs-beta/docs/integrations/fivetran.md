@@ -28,7 +28,7 @@ pip install dagster-fivetran
 
 ### Example
 
-<CodeExample filePath="integrations/fivetran.py" language="python" title="Dagster & Fivetran Example" />
+<CodeExample filePath="integrations/fivetran.py" language="python" />
 
 ### About Fivetran
 

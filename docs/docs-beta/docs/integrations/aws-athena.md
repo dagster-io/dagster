@@ -28,7 +28,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample filePath="integrations/aws-athena.py" language="python" title="Dagster & AWS Athena Example" />
+<CodeExample filePath="integrations/aws-athena.py" language="python" />
 
 ### About AWS Athena
 
