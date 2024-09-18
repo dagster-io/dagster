@@ -504,7 +504,7 @@ def _bulk_action_filters_from_run_filters(filters: RunsFilter) -> BulkActionsFil
 
 
 def _replace_created_before_with_cursor(
-    filters: Union[RunsFilter, BulkActionsFilter], created_before_cursor: datetime
+    filters: RunsFilter, created_before_cursor: datetime.datetime
 ):
     """After the first page of results is returned, created_before_cursor will be less than
     filters.created_before. For pagination of results to work, we need to ensure that the
@@ -516,8 +516,8 @@ def _replace_created_before_with_cursor(
         created_before = created_before_cursor
     elif filters.created_before:
         created_before = filters.created_before
-    else:
-        created_before = None
+    else:  # no created_before should be applied, return filters as is
+        return filters
 
     return copy(filters, created_before=created_before)
 
