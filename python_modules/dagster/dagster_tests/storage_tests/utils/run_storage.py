@@ -32,6 +32,7 @@ from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -88,6 +89,14 @@ class TestRunStorage:
     # Override for storages that are not allowed to delete runs
     def can_delete_runs(self):
         return True
+
+    # Override for storages that support filtering backfills by tag
+    def supports_backfill_tags_filtering_queries(self):
+        return False
+
+    # Override for storages that support filtering backfills by job name
+    def supports_backfill_job_name_filtering_queries(self):
+        return False
 
     @staticmethod
     def fake_repo_target(repo_name=None):
@@ -1486,6 +1495,154 @@ class TestRunStorage:
         assert len(created_after) == 2
         for backfill in created_after:
             assert backfill.backfill_timestamp > all_backfills[2].backfill_timestamp
+
+    def test_backfill_simple_tags_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={"foo": "bar", "letter": "z"},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "bar", "letter": "z", BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "bar"}))
+        assert len(backfill_with_tags) == 1
+        assert backfill_with_tags[0].backfill_id == backfill.backfill_id
+        assert backfill_with_tags[0].tags == backfill.tags
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        )
+        assert len(backfill_with_tags) == 1
+        assert backfill_with_tags[0].backfill_id == backfill.backfill_id
+        assert backfill_with_tags[0].tags == backfill.tags
+
+        # test for a tag that doesn't exist
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"not": "present"})
+        )
+        assert len(backfill_with_tags) == 0
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "no"}))
+        assert len(backfill_with_tags) == 0
+
+    def test_backfill_tags_on_runs_not_backfills_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={"foo": "bar"},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={
+                    "foo": "bar",
+                    "baz": "qux",
+                    "letter": "z",
+                    BACKFILL_ID_TAG: backfill.backfill_id,
+                },
+            )
+        )
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"baz": "qux"}))
+        assert len(backfill_with_tags) == 0
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        )
+        assert len(backfill_with_tags) == 0
+
+    def test_backfill_tags_filtering_multiple_results(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        all_backfills = []
+        for i in range(3):
+            shared_tags = {"foo": "bar", "iter": str(i), "even": str(i % 2 == 0)}
+            backfill = PartitionBackfill(
+                f"backfill_{i}",
+                partition_set_origin=origin,
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["a", "b", "c"],
+                from_failure=False,
+                tags=shared_tags,
+                backfill_timestamp=time.time(),
+            )
+            storage.add_backfill(backfill)
+            all_backfills.append(backfill)
+
+            storage.add_run(
+                TestRunStorage.build_run(
+                    run_id=make_new_run_id(),
+                    job_name="some_pipeline",
+                    status=DagsterRunStatus.SUCCESS,
+                    tags={**shared_tags, "letter": "z", BACKFILL_ID_TAG: backfill.backfill_id},
+                )
+            )
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "bar"}))
+        assert len(backfill_with_tags) == 3
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        )
+        assert len(backfill_with_tags) == 0
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"even": "True"}))
+        assert len(backfill_with_tags) == 2
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"iter": ["1", "2"]})
+        )
+        assert len(backfill_with_tags) == 2
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"iter": ["1", "2"], "even": "True"})
+        )
+        assert len(backfill_with_tags) == 1
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"not": "present"})
+        )
+        assert len(backfill_with_tags) == 0
 
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)

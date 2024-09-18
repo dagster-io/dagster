@@ -10,6 +10,9 @@ from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 class TestPostgresRunStorage(TestRunStorage):
     __test__ = True
 
+    def supports_backfill_tags_filtering_queries(self):
+        return True
+
     @pytest.fixture(name="instance", scope="function")
     def instance(self, conn_string):
         PostgresRunStorage.create_clean_storage(conn_string)
