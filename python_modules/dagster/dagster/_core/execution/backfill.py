@@ -58,9 +58,9 @@ class BulkActionsFilter:
         created_before (Optional[DateTime]): Filter by bulk actions that were created before this datetime. Note that the
             create_time for each bulk action is stored in UTC.
         created_after (Optional[DateTime]): Filter by bulk actions that were created after this datetime. Note that the
-            create_time for each bulk action is stored in UTC.t
-        tags (Optional[Dict[str, Union[str, List[str]]]]):
-            A dictionary of tags to query by. All tags specified here must be present for a given bulk action to pass the filter.
+            create_time for each bulk action is stored in UTC.
+        tags (Optional[Dict[str, Union[str, List[str]]]]): A dictionary of tags to query by. All tags specified
+            here must be present for a given bulk action to pass the filter.
         job_name (Optional[str]): Name of the job to query for. If blank, all job_names will be accepted.
     """
 
