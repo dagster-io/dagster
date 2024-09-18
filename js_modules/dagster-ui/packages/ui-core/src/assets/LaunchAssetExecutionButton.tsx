@@ -12,7 +12,6 @@ import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React, {useContext} from 'react';
 import {Link} from 'react-router-dom';
-import {DEFAULT_DISABLED_REASON} from 'shared/app/Permissions';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {
@@ -41,6 +40,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
