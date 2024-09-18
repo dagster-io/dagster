@@ -258,12 +258,6 @@ class SqlRunStorage(RunStorage):
         if filters.tags:
             table = self._apply_tags_table_filters(table, filters.tags)
 
-        if filters.exclude_runs_in_backfill:
-            runs_in_backfills = db_select([RunTagsTable.c.value]).where(
-                RunTagsTable.c.key == BACKFILL_ID_TAG
-            )
-            table.where(RunsTable.c.run_id.not_in(db_subquery(runs_in_backfills)))
-
         return table
 
     def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
@@ -302,6 +296,12 @@ class SqlRunStorage(RunStorage):
             query = query.where(
                 RunsTable.c.create_timestamp < filters.created_before.replace(tzinfo=None)
             )
+
+        if filters.exclude_subruns:
+            runs_in_backfills = db_select([RunTagsTable.c.run_id]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
+            query = query.where(RunsTable.c.run_id.not_in(db_subquery(runs_in_backfills)))
 
         return query
 

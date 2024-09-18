@@ -573,7 +573,6 @@ def get_runs_feed_entries(
     else:
         backfills = []
 
-
     runs = [
         GrapheneRun(run)
         for run in instance.get_run_records(limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters)
