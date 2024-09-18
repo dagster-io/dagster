@@ -13,6 +13,7 @@ export type AssetTableDefinitionFragment = {
   isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   kinds: Array<string>;
   partitionDefinition: {
@@ -51,6 +52,7 @@ export type AssetTableFragment = {
     isExecutable: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
     kinds: Array<string>;
     partitionDefinition: {

@@ -290,7 +290,12 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
 
   const reportEvents = useReportEventsModal(
     definition && repoAddress
-      ? {assetKey: definition.assetKey, isPartitioned: definition.isPartitioned, repoAddress}
+      ? {
+          assetKey: definition.assetKey,
+          isPartitioned: definition.isPartitioned,
+          hasReportRunlessAssetEventPermission: definition.hasReportRunlessAssetEventPermission,
+          repoAddress,
+        }
       : null,
     refresh,
   );
@@ -491,6 +496,7 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     partitionKeysByDimension {
       name
     }
+    hasReportRunlessAssetEventPermission
     repository {
       id
       name
