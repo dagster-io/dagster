@@ -7,7 +7,7 @@ sidebar_label: Microsoft Teams
 excerpt: Keep your team up to speed with Teams messages.
 date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-msteams
-docslink: 
+docslink:
 partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
 logo: /integrations/Microsoft Teams.svg
 categories:
@@ -28,24 +28,7 @@ pip install dagster-msteams
 
 ### Example
 
-```python
-# Read the docs on Resources to learn more: https://docs.dagster.io/deployment/resources
-import dagster as dg
-from dagster_msteams import Card, MSTeamsResource
-
-
-@dg.asset
-def microsoft_teams_message(msteams: MSTeamsResource):
-    card = Card()
-    card.add_attachment(text_message="Hello there!")
-    msteams.get_client().post_message(payload=card.payload)
-
-
-defs = dg.Definitions(
-    assets=[microsoft_teams_message],
-    resources={"msteams": MSTeamsResource(hook_url=dg.EnvVar("TEAMS_WEBHOOK_URL"))},
-)
-```
+<CodeExample filePath="integrations/microsoft-teams.py" language="python" />
 
 ### About Microsoft Teams
 

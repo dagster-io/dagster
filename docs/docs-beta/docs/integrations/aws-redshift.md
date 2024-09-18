@@ -4,10 +4,10 @@ status: published
 name: AWS Redshift
 title: Dagster & AWS Redshift
 sidebar_label: AWS Redshift
-excerpt: "Using this integration, you can seamlessly integrate AWS Redshift into your Dagster workflows, leveraging Redshifts data warehousing capabilities for your data pipelines."
+excerpt: 'Using this integration, you can seamlessly integrate AWS Redshift into your Dagster workflows, leveraging Redshifts data warehousing capabilities for your data pipelines.'
 date: 2024-06-21
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
-docslink: 
+docslink:
 partnerlink: https://aws.amazon.com/
 logo: /integrations/aws-redshift.svg
 categories:
@@ -28,30 +28,7 @@ pip install dagster-aws
 
 ### Examples
 
-```python
-from dagster import Definitions, asset, EnvVar
-from dagster_aws.redshift import RedshiftClientResource
-
-
-@asset
-def example_redshift_asset(context, redshift: RedshiftClientResource):
-    result = redshift.get_client().execute_query("SELECT 1", fetch_results=True)
-    context.log.info(f"Query result: {result}")
-
-
-redshift_configured = RedshiftClientResource(
-    host="my-redshift-cluster.us-east-1.redshift.amazonaws.com",
-    port=5439,
-    user="dagster",
-    password=EnvVar("DAGSTER_REDSHIFT_PASSWORD"),
-    database="dev",
-)
-
-defs = Definitions(
-    assets=[example_redshift_asset],
-    resources={"redshift": redshift_configured},
-)
-```
+<CodeExample filePath="integrations/aws-redshift.py" language="python" />
 
 ### About AWS Redshift
 

@@ -6,7 +6,7 @@ title: Dagster & HashiCorp Vault
 sidebar_label: HashiCorp Vault
 excerpt: Centrally manage credentials and certificates, then use them in your pipelines.
 date: 2022-11-07
-apireflink: 
+apireflink:
 docslink: https://github.com/silentsokolov/dagster-hashicorp
 partnerlink: https://www.vaultproject.io/
 communityIntegration: true
@@ -29,29 +29,7 @@ pip install dagster-hashicorp
 
 ### Example
 
-```python
-# See the Resources docs to learn more: https://docs.dagster.io/concepts/resources
-
-from dagster import asset, repository, with_resources
-from dagster_hashicorp.vault import vault_resource
-import os
-
-@asset(required_resource_keys={"vault"})
-def example_asset(context):
-    secret_data = context.resources.vault.read_secret(
-        secret_path="secret/data/foo/bar"
-    )
-    context.log.debug(f"Secret: {secret_data}")
-
-
-assets = with_resources(
-    [example_asset],
-    {"vault": vault_resource.configured({
-        "url": "vault-host:8200",
-        "auth_type": {"token": {"token": os.environ['VAULT_AUTH_TOKEN']}},
-    })}
-)
-```
+<CodeExample filePath="integrations/hashicorp.py" language="python" />
 
 ### About HashiCorp Vault
 

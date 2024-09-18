@@ -7,7 +7,7 @@ sidebar_label: SSH/SFTP
 excerpt: Establish encrypted connections to networked resources.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-ssh
-docslink: 
+docslink:
 partnerlink: https://www.ssh.com/academy/ssh/protocol
 logo: /integrations/SSH.svg
 categories:
@@ -28,22 +28,7 @@ pip install dagster-ssh
 
 ### Example
 
-```python
-import dagster as dg
-from dagster_ssh import SSHResource
-
-
-@dg.asset
-def ssh_asset(ssh: SSHResource):
-    ssh.sftp_get("/path/to/remote.csv", "path/to/local.csv")
-
-
-defs = dg.Definitions(
-    assets=[ssh_asset],
-    resources={"ssh": SSHResource(remote_host="foo.com", key_file="path/to/id_rsa")},
-)
-
-```
+<CodeExample filePath="integrations/ssh-sftp.py" language="python" />
 
 ### About SSH SFTP
 

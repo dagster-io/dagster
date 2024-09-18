@@ -8,7 +8,7 @@ excerpt: Run dbt Cloud™ jobs as part of your data pipeline.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dbt#assets-dbt-cloud
 docslink: https://docs.dagster.io/integrations/dbt_cloud
-partnerlink: 
+partnerlink:
 logo: /integrations/dbt.svg
 categories:
   - ETL
@@ -28,21 +28,7 @@ pip install dagster-dbt
 
 ### Example
 
-```python
-from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
-import os
-
-# configure a resource to connect to your dbt Cloud instance
-dbt_cloud = dbt_cloud_resource.configured(
-    {"auth_token": os.environ["DBT_CLOUD_AUTH_TOKEN"], "account_id": 11111}
-)
-
-# import assets from dbt
-dbt_cloud_assets = load_assets_from_dbt_cloud_job(
-    dbt_cloud=dbt_cloud,
-    job_id=33333,
-)
-```
+<CodeExample filePath="integrations/dbt_cloud.py" language="python" />
 
 ### About dbt Cloud
 
