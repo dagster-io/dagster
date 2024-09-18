@@ -490,7 +490,9 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
                 for view_id in workspace_data.views_by_id.keys():
                     data = client.get_view(view_id)["view"]
                     yield ObserveResult(
-                        asset_key=translator.get_view_asset_key(workspace_data.views_by_id[view_id]),
+                        asset_key=translator.get_view_asset_key(
+                            workspace_data.views_by_id[view_id]
+                        ),
                         metadata={
                             "workbook_id": data["workbook"]["id"],
                             "owner_id": data["owner"]["id"],
