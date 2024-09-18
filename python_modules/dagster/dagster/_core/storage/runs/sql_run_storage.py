@@ -851,13 +851,9 @@ class SqlRunStorage(RunStorage):
             # applied to the runs the backfill launches. So we can query for runs that match the tags and
             # are also part of a backfill to find the backfills that match the tags.
 
-            backfills_with_tags_query = db_select(
-                [
-                    # RunTagsTable.c.run_id,
-                    # RunTagsTable.c.key,
-                    RunTagsTable.c.value
-                ]
-            ).where(RunTagsTable.c.key == BACKFILL_ID_TAG)
+            backfills_with_tags_query = db_select([RunTagsTable.c.value]).where(
+                RunTagsTable.c.key == BACKFILL_ID_TAG
+            )
 
             for i, (key, value) in enumerate(filters.tags.items()):
                 run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
