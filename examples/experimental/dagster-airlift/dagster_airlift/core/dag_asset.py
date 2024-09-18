@@ -1,31 +1,31 @@
-from typing import Any, Dict, List, Mapping, Set
+from typing import Any, Dict, List, Mapping, Sequence, Set
 
 from dagster import AssetKey, JsonMetadataValue, MarkdownMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 
 from dagster_airlift.constants import DAG_ID_METADATA_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
-from dagster_airlift.core.serialization_utils import AssetSpecData, CacheableAssetDep
+from dagster_airlift.core.serialization.serialized_data import (
+    SerializedAssetDepData,
+    SerializedAssetSpecData,
+)
 from dagster_airlift.core.utils import airflow_kind_dict
 
 
 def dag_asset_spec_data(
     airflow_instance: AirflowInstance,
-    task_asset_keys_in_dag: Set[AssetKey],
-    downstreams_asset_dependency_graph: Dict[AssetKey, Set[AssetKey]],
+    asset_keys_for_leaf_tasks: Sequence[AssetKey],
     dag_info: DagInfo,
-) -> AssetSpecData:
-    leaf_asset_keys = get_leaf_assets_for_dag(
-        asset_keys_in_dag=task_asset_keys_in_dag,
-        downstreams_asset_dependency_graph=downstreams_asset_dependency_graph,
-    )
-
-    return AssetSpecData(
+) -> SerializedAssetSpecData:
+    return SerializedAssetSpecData(
         asset_key=dag_info.dag_asset_key,
         description=dag_description(dag_info),
         metadata=dag_asset_metadata(airflow_instance, dag_info),
         tags=airflow_kind_dict(),
-        deps=[CacheableAssetDep(asset_key=leaf_asset_key) for leaf_asset_key in leaf_asset_keys],
+        deps=[
+            SerializedAssetDepData(asset_key=leaf_asset_key)
+            for leaf_asset_key in asset_keys_for_leaf_tasks
+        ],
     )
 
 

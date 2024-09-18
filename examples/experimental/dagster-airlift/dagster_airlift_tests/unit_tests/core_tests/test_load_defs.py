@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import cast
 
 import mock
-import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -17,14 +16,13 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster._check.functions import CheckError
 from dagster._core.definitions.definitions_loader import DefinitionsLoadContext, DefinitionsLoadType
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.test_utils import environ
 from dagster_airlift.core import (
     build_defs_from_airflow_instance as build_defs_from_airflow_instance,
 )
-from dagster_airlift.core.load_defs import compute_serialized_data
+from dagster_airlift.core.serialization.compute import compute_serialized_data
 from dagster_airlift.test import make_instance
 from dagster_airlift.utils import DAGSTER_AIRLIFT_MIGRATION_STATE_DIR_ENV_VAR
 
@@ -336,7 +334,7 @@ def test_cached_loading() -> None:
     )
     DefinitionsLoadContext.set(context_with_cache)
     with mock.patch(
-        "dagster_airlift.core.load_defs.compute_serialized_data",
+        "dagster_airlift.core.serialization.compute.compute_serialized_data",
         wraps=compute_serialized_data,
     ) as mock_compute_serialized_data:
         reloaded_defs = build_defs_from_airflow_instance(
@@ -376,9 +374,26 @@ def test_multiple_tasks_per_asset(init_load_context: None) -> None:
         pass
 
     instance = make_instance({"dag1": ["task1"], "dag2": ["task2"]})
-    # Currently not possible.
-    with pytest.raises(CheckError, match="within same AssetsDefinition"):
-        build_defs_from_airflow_instance(
-            airflow_instance=instance,
-            defs=Definitions(assets=[my_asset]),
-        )
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance,
+        defs=Definitions(assets=[my_asset]),
+    )
+    assert defs.assets
+    # 3 Full assets definitions, but 4 keys
+    assert len(list(defs.assets)) == 3
+    assert {
+        key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
+    } == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey(["airflow_instance", "dag", "dag1"]),
+        AssetKey(["airflow_instance", "dag", "dag2"]),
+    }
+    repo_def = defs.get_repository_def()
+    a_and_b_asset = repo_def.assets_defs_by_key[AssetKey("a")]
+    a_spec = next(iter(spec for spec in a_and_b_asset.specs if spec.key == AssetKey("a")))
+    assert a_spec.metadata["airlift/dag_id"] == "dag1"
+    assert a_spec.metadata["airlift/task_id"] == "task1"
+    b_spec = next(iter(spec for spec in a_and_b_asset.specs if spec.key == AssetKey("b")))
+    assert b_spec.metadata["airlift/dag_id"] == "dag2"
+    assert b_spec.metadata["airlift/task_id"] == "task2"
