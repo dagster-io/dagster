@@ -329,6 +329,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     )
     type = graphene.Field(GrapheneDagsterType)
     hasMaterializePermission = graphene.NonNull(graphene.Boolean)
+    hasReportRunlessAssetEventPermission = graphene.NonNull(graphene.Boolean)
+
     # the acutal checks are listed in the assetChecksOrError resolver. We use this boolean
     # to show/hide the checks tab. We plan to remove this field once we always show the checks tab.
     hasAssetChecks = graphene.NonNull(graphene.Boolean)
@@ -561,6 +563,14 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> bool:
         return graphene_info.context.has_permission_for_location(
             Permissions.LAUNCH_PIPELINE_EXECUTION, self._repository_location.name
+        )
+
+    def resolve_hasReportRunlessAssetEventPermission(
+        self,
+        graphene_info: ResolveInfo,
+    ) -> bool:
+        return graphene_info.context.has_permission_for_location(
+            Permissions.REPORT_RUNLESS_ASSET_EVENTS, self._repository_location.name
         )
 
     def resolve_assetMaterializationUsedData(
