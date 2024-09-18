@@ -144,13 +144,15 @@ export const RunsFeedRoot = () => {
               }
               return (
                 <Row $height={size} $start={start} data-key={key} key={key}>
-                  <RunsFeedRow
-                    key={key}
-                    entry={entry}
-                    checked={checkedIds.has(entry.id)}
-                    onToggleChecked={onToggleFactory(entry.id)}
-                    refetch={refreshState.refetch}
-                  />
+                  <div ref={rowVirtualizer.measureElement} data-index={index}>
+                    <RunsFeedRow
+                      key={key}
+                      entry={entry}
+                      checked={checkedIds.has(entry.id)}
+                      onToggleChecked={onToggleFactory(entry.id)}
+                      refetch={refreshState.refetch}
+                    />
+                  </div>
                 </Row>
               );
             })}
