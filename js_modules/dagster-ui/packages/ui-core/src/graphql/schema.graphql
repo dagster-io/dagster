@@ -677,6 +677,7 @@ type AssetNode {
   staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
   type: DagsterType
   hasMaterializePermission: Boolean!
+  hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: Int

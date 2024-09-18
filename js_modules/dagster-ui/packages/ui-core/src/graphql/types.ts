@@ -441,6 +441,7 @@ export type AssetNode = {
   groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
+  hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
@@ -6507,6 +6508,10 @@ export const buildAssetNode = (
     hasMaterializePermission:
       overrides && overrides.hasOwnProperty('hasMaterializePermission')
         ? overrides.hasMaterializePermission!
+        : false,
+    hasReportRunlessAssetEventPermission:
+      overrides && overrides.hasOwnProperty('hasReportRunlessAssetEventPermission')
+        ? overrides.hasReportRunlessAssetEventPermission!
         : false,
     id:
       overrides && overrides.hasOwnProperty('id')
