@@ -377,7 +377,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     jobName = graphene.Field(
         graphene.String(),
-        description="Included to comply with RunsFeedEntry interface. Duplicate of partitionSetName.",
+        description="Included to comply with RunsFeedEntry interface.",
     )
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
@@ -392,7 +392,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         super().__init__(
             id=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
-            jobName=backfill_job.partition_set_name,
+            jobName=backfill_job.job_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
