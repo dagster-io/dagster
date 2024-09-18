@@ -552,12 +552,13 @@ def get_runs_feed_entries(
 
     should_fetch_backfills = _filters_apply_to_backfills(filters) if filters else True
     if filters:
-        run_filters = _replace_created_before_with_cursor(filters, created_before_cursor)
+        run_filters = copy(filters, exclude_runs_in_backfill=True)
+        run_filters = _replace_created_before_with_cursor(run_filters, created_before_cursor)
         backfill_filters = (
             _bulk_action_filters_from_run_filters(run_filters) if should_fetch_backfills else None
         )
     else:
-        run_filters = RunsFilter(created_before=created_before_cursor)
+        run_filters = RunsFilter(created_before=created_before_cursor, exclude_runs_in_backfill=True)
         backfill_filters = BulkActionsFilter(created_before=created_before_cursor)
 
     if should_fetch_backfills:
@@ -565,21 +566,17 @@ def get_runs_feed_entries(
             GraphenePartitionBackfill(backfill)
             for backfill in instance.get_backfills(
                 cursor=runs_feed_cursor.backfill_cursor,
-                limit=limit,
+                limit=fetch_limit,
                 filters=backfill_filters,
             )
         ]
     else:
         backfills = []
 
+
     runs = [
         GrapheneRun(run)
-        for run in _fetch_runs_not_in_backfill(
-            instance,
-            cursor=runs_feed_cursor.run_cursor,
-            limit=fetch_limit,
-            filters=run_filters,
-        )
+        for run in instance.get_run_records(limit=fetch_limit, cursor=runs_feed_cursor.run_cursor, filters=run_filters)
     ]
 
     # if we fetched limit+1 of either runs or backfills, we know there must be more results
