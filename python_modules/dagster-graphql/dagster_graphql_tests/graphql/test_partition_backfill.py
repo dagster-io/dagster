@@ -11,7 +11,6 @@ from dagster import (
     define_asset_job,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.execution.asset_backfill import (
@@ -1223,7 +1222,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
 
         stored_backfill = graphql_context.instance.get_backfill(backfill_id)
-        assert stored_backfill.job_name == IMPLICIT_ASSET_JOB_NAME
+        assert stored_backfill.job_name is None
 
     def test_set_title_and_description_for_backfill_invalid_title(self, graphql_context):
         title = "Title with invalid characters * %"

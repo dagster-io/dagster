@@ -5,7 +5,6 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
@@ -206,7 +205,7 @@ class PartitionBackfill(
     @property
     def job_name(self) -> Optional[str]:
         if self.is_asset_backfill:
-            return IMPLICIT_ASSET_JOB_NAME
+            return None
         return (
             job_name_for_external_partition_set_name(self.partition_set_name)
             if self.partition_set_name
