@@ -1,9 +1,9 @@
 ---
 layout: Integration
 status: published
-name: AWS EMR
+name: EMR
 title: Dagster & AWS EMR
-sidebar_label: AWS EMR
+sidebar_label: EMR
 excerpt: The AWS EMR integration allows you to seamlessly integrate AWS EMR into your Dagster pipelines for petabyte-scale data processing using open source tools like Apache Spark, Hive, Presto, and more.
 date: 2024-06-21
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws

@@ -1,9 +1,9 @@
 ---
 layout: Integration
 status: published
-name: GCP BigQuery
+name: BigQuery
 title: Dagster & GCP BigQuery
-sidebar_label: GCP BigQuery
+sidebar_label: BigQuery
 excerpt: Integrate with GCP BigQuery.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp

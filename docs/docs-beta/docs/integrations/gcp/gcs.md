@@ -1,9 +1,9 @@
 ---
 layout: Integration
 status: published
-name: GCP GCS
+name: GCS
 title: Dagster & GCP GCS
-sidebar_label: GCP GCS
+sidebar_label: GCS
 excerpt: Integrate with GCP GCS.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
