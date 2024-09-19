@@ -19,12 +19,12 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
     )
 
     input_step: BlockStep = {
-        "block": "Choose package to release",
+        "block": ":question: Choose package",
         "prompt": None,
         "fields": [
             {
                 "select": "Select a package to publish",
-                "key": "releasepackage",
+                "key": "package-to-release-path",
                 "options": [{"label": package[len("python_modules/"):], "value": package} for package in packages],
                 "hint": None,
                 "default": None,
@@ -34,7 +34,7 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
             {
                 "text": "Enter the version to publish",
                 "required": False,
-                "key": "releaseversion",
+                "key": "version-to-release",
                 "default": None,
                 "hint": "Leave blank to auto-increment the minor version",
             }
@@ -44,7 +44,7 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
 
     steps.append(  CommandStepBuilder(":package: Build and publish package")
         .run(
-            "sh ./scripts/build_and_publish.sh $RELEASEPACKAGE $RELEASEVERSION",
+            "sh ./scripts/build_and_publish.sh",
         )
         .on_test_image(AvailablePythonVersion.get_default())
         .build(),

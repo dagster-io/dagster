@@ -6,8 +6,8 @@
 # Define the path to the .pypirc file
 PYPIRC_FILE="$HOME/.pypirc"
 
-PACKAGE_TO_RELEASE_PATH=$1
-VERSION_TO_RELEASE=$2
+PACKAGE_TO_RELEASE_PATH=$(buildkite-agent meta-data get package-to-release-path)
+VERSION_TO_RELEASE=$(buildkite-agent meta-data get version-to-release)
 
 if [ -z "$PACKAGE_TO_RELEASE_PATH" ]; then
     echo "Please provide the path to the package to release."
