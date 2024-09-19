@@ -295,8 +295,8 @@ class AssetDaemonScenarioState(ScenarioState):
         )
 
     def _log_assertion_error(self, expected: Sequence[Any], actual: Sequence[Any]) -> None:
-        expected_str = "\n\n".join("\t" + str(rr) for rr in expected)
-        actual_str = "\n\n".join("\t" + str(rr) for rr in actual)
+        expected_str = "\n\n".join("\t" + str(serialize_value(rr)) for rr in expected)
+        actual_str = "\n\n".join("\t" + str(serialize_value(rr)) for rr in actual)
         message = f"\nExpected: \n\n{expected_str}\n\nActual: \n\n{actual_str}\n"
         self.logger.error(message)
 
@@ -481,8 +481,8 @@ class AssetDaemonScenarioState(ScenarioState):
 
         except:
             self._log_assertion_error(
-                sorted(expected_subsets_with_metadata, key=lambda x: str(x)),
-                sorted(actual_subsets_with_metadata, key=lambda x: str(x)),
+                sorted(expected_subsets_with_metadata, key=lambda x: str(serialize_value(x))),
+                sorted(actual_subsets_with_metadata, key=lambda x: str(serialize_value(x))),
             )
             raise
 
