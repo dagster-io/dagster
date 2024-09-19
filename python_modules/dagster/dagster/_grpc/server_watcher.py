@@ -20,8 +20,7 @@ def watch_grpc_server_thread(
     watch_interval=None,
     max_reconnect_attempts=None,
 ):
-    """
-    This thread watches the state of the unmanaged gRPC server and calls the appropriate handler
+    """This thread watches the state of the unmanaged gRPC server and calls the appropriate handler
     functions in case of a change.
 
     The following loop polls the GetServerId endpoint to check if either:
@@ -46,7 +45,6 @@ def watch_grpc_server_thread(
     events are called at most once, while `on_disconnected` and `on_reconnected` may be called
     multiple times in order to be properly handle intermittent network failures.
     """
-
     check.str_param(location_name, "location_name")
     check.inst_param(client, "client", DagsterGrpcClient)
     check.callable_param(on_disconnect, "on_disconnect")
@@ -158,6 +156,6 @@ def create_grpc_watch_thread(
             max_reconnect_attempts,
         ],
         name="grpc-server-watch",
+        daemon=True,
     )
-    thread.daemon = True
     return shutdown_event, thread

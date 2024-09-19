@@ -2,20 +2,22 @@ import os
 import subprocess
 import tempfile
 import time
+from typing import Iterator
 
 import docker
 import pytest
 from dagster import file_relative_path
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ, instance_for_test
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from .utils import start_celery_worker
+from dagster_celery_tests.utils import start_celery_worker
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 @pytest.fixture(scope="session")
-def rabbitmq():  # pylint: disable=redefined-outer-name
+def rabbitmq():
     if IS_BUILDKITE:
         # Set the enviornment variable that celery uses in the start_worker() test function
         # to find the broker host
@@ -39,7 +41,7 @@ def rabbitmq():  # pylint: disable=redefined-outer-name
 
     subprocess.check_output(["docker-compose", "-f", docker_compose_file, "up", "-d", service_name])
 
-    print("Waiting for rabbitmq to be ready...")  # pylint: disable=print-call
+    print("Waiting for rabbitmq to be ready...")  # noqa: T201
     while True:
         logs = str(subprocess.check_output(["docker", "logs", service_name]))
         if "started TCP listener on [::]:5672" in logs:
@@ -67,15 +69,13 @@ def tempdir():
 
 
 @pytest.fixture(scope="function")
-def instance(tempdir):  # pylint: disable=redefined-outer-name
+def instance(tempdir):
     with instance_for_test(temp_dir=tempdir) as test_instance:
         yield test_instance
 
 
 @pytest.fixture(scope="function")
-def dagster_celery_worker(
-    rabbitmq, instance
-):  # pylint: disable=redefined-outer-name, unused-argument
+def dagster_celery_worker(rabbitmq, instance: DagsterInstance) -> Iterator[None]:
     with start_celery_worker():
         yield
 
@@ -88,9 +88,9 @@ def dagster_docker_image():
         try:
             client = docker.from_env()
             client.images.get(docker_image)
-            print(  # pylint: disable=print-call
-                "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-                "docker rmi {image}".format(image=docker_image)
+            print(  # noqa: T201
+                f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
+                f"docker rmi {docker_image}"
             )
         except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)

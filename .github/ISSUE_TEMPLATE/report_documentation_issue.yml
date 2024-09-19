@@ -1,6 +1,6 @@
 name: ❓ Report documentation issue
 description: Report problems and issues with Dagster documentation.
-labels: ["documentation"]
+labels: ["area: docs"]
 body:
   - type: markdown
     attributes:
@@ -50,7 +50,7 @@ body:
     attributes:
       value: >
         By submitting this issue, you agree to follow Dagster's
-        [Code of Conduct](https://github.com/dagster-io/dagster/blob/master/CODE_OF_CONDUCT.md).
+        [Code of Conduct](https://github.com/dagster-io/dagster/blob/master/.github/CODE_OF_CONDUCT.md).
   - type: textarea
     attributes:
       label: Message from the maintainers

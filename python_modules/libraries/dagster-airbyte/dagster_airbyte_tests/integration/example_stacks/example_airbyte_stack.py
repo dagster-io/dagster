@@ -209,3 +209,26 @@ reconciler_alt_sync_mode = AirbyteManagedElementReconciler(
     ],
     delete_unmentioned_resources=True,
 )
+
+
+# Version with custom prefix
+
+custom_prefix_local_json_conn = AirbyteConnection(
+    name="local-json-conn",
+    source=local_json_source,
+    destination=local_json_destination,
+    stream_config={
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
+    },
+    normalize_data=False,
+    prefix="my_prefix",
+)
+
+
+reconciler_custom_prefix = AirbyteManagedElementReconciler(
+    airbyte=airbyte_instance,
+    connections=[
+        custom_prefix_local_json_conn,
+    ],
+    delete_unmentioned_resources=True,
+)

@@ -12,16 +12,15 @@ ENV DAGSTER_DISABLE_TELEMETRY=true
 # This makes sure that logs show up immediately instead of being buffered
 ENV PYTHONUNBUFFERED=1
 
-RUN pip install --upgrade pip
-
+RUN pip install -U uv
 # dagster-celery specified twice to deal with pip resolution in pip 20.3.3 when only
 # extras are specified
-RUN pip install \
+RUN python -m uv pip install \
     -e modules/dagster \
     -e modules/dagster-graphql \
     -e modules/dagster-celery \
     -e modules/dagster-celery[flower,redis,kubernetes] \
-    -e modules/dagit \
+    -e modules/dagster-webserver \
     -e modules/dagster-postgres \
     -e modules/dagster-pandas \
     -e modules/dagster-aws \
@@ -32,10 +31,11 @@ RUN pip install \
     -e modules/dagster-docker \
     -e modules/dagster-airflow \
     -e modules/dagstermill \
+    -e modules/dagster-pipes \
     -e . \
     pyparsing\<3.0.0
 
-RUN ! (pip list --exclude-editable | grep -e dagster -e dagit)
+RUN ! (pip list --exclude-editable | grep -e dagster)
 
 WORKDIR /dagster_test/test_project/
 

@@ -1,25 +1,35 @@
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.snap import PipelineSnapshot
-from dagster._core.snap.dagster_types import DagsterTypeSnap
+from dagster._core.snap import JobSnapshot
 from dagster._core.types.dagster_type import DagsterTypeKind
+from typing_extensions import TypeAlias
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-
-from .config_types import GrapheneConfigType, GrapheneConfigTypeUnion, to_config_type
-from .errors import (
+from dagster_graphql.schema.config_types import (
+    GrapheneConfigType,
+    GrapheneConfigTypeUnion,
+    to_config_type,
+)
+from dagster_graphql.schema.errors import (
     GrapheneDagsterTypeNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
 )
-from .util import non_null_list
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.util import non_null_list
+
+if TYPE_CHECKING:
+    from dagster._core.snap.dagster_types import DagsterTypeSnap
+
+GrapheneDagsterTypeUnion: TypeAlias = Union[
+    "GrapheneListDagsterType", "GrapheneNullableDagsterType", "GrapheneRegularDagsterType"
+]
 
 
 def config_type_for_schema(
-    pipeline_snapshot: PipelineSnapshot, schema_key: Optional[str]
+    pipeline_snapshot: JobSnapshot, schema_key: Optional[str]
 ) -> Optional[GrapheneConfigTypeUnion]:
     return (
         to_config_type(pipeline_snapshot.config_schema_snapshot, schema_key) if schema_key else None
@@ -27,16 +37,16 @@ def config_type_for_schema(
 
 
 def to_dagster_type(
-    pipeline_snapshot: PipelineSnapshot, dagster_type_key: str
-) -> Union["GrapheneListDagsterType", "GrapheneNullableDagsterType", "GrapheneRegularDagsterType"]:
-    check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+    pipeline_snapshot: JobSnapshot, dagster_type_key: str
+) -> GrapheneDagsterTypeUnion:
+    check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
     check.str_param(dagster_type_key, "dagster_type_key")
 
     dagster_type_meta: DagsterTypeSnap = (
         pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(dagster_type_key)
     )
 
-    base_args = dict(
+    base_args: Dict[str, Any] = dict(
         key=dagster_type_meta.key,
         name=dagster_type_meta.name,
         display_name=dagster_type_meta.display_name,
@@ -49,17 +59,13 @@ def to_dagster_type(
             pipeline_snapshot,
             dagster_type_meta.loader_schema_key,
         ),
-        output_schema_type=config_type_for_schema(
-            pipeline_snapshot,
-            dagster_type_meta.materializer_schema_key,
-        ),
         inner_types=list(
             map(
                 lambda key: to_dagster_type(pipeline_snapshot, key),
                 dagster_type_meta.type_param_keys,
             )
         ),
-        metadata_entries=list(iterate_metadata_entries(dagster_type_meta.metadata_entries)),
+        metadata_entries=list(iterate_metadata_entries(dagster_type_meta.metadata)),
     )
 
     if dagster_type_meta.kind == DagsterTypeKind.LIST:

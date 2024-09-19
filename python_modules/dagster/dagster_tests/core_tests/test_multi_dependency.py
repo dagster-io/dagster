@@ -3,150 +3,161 @@ from dagster import (
     Any,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
+    GraphDefinition,
+    In,
+    InputMapping,
     Int,
     List,
     MultiDependencyDefinition,
     Nothing,
+    Out,
+    OutputMapping,
+    graph,
+    job,
+    op,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
 
 
 def test_simple_values():
-    @solid(input_defs=[InputDefinition("numbers", List[Int])])
+    @op(ins={"numbers": In(List[Int])})
     def sum_num(_context, numbers):
         # cant guarantee order
         assert set(numbers) == set([1, 2, 3])
         return sum(numbers)
 
-    @lambda_solid
+    @op
     def emit_1():
         return 1
 
-    @lambda_solid
+    @op
     def emit_2():
         return 2
 
-    @lambda_solid
+    @op
     def emit_3():
         return 3
 
-    result = execute_pipeline(
-        PipelineDefinition(
-            name="input_test",
-            solid_defs=[emit_1, emit_2, emit_3, sum_num],
-            dependencies={
-                "sum_num": {
-                    "numbers": MultiDependencyDefinition(
-                        [
-                            DependencyDefinition("emit_1"),
-                            DependencyDefinition("emit_2"),
-                            DependencyDefinition("emit_3"),
-                        ]
-                    )
-                }
-            },
-        )
-    )
+    foo_job = GraphDefinition(
+        name="input_test",
+        node_defs=[emit_1, emit_2, emit_3, sum_num],
+        dependencies={
+            "sum_num": {
+                "numbers": MultiDependencyDefinition(
+                    [
+                        DependencyDefinition("emit_1"),
+                        DependencyDefinition("emit_2"),
+                        DependencyDefinition("emit_3"),
+                    ]
+                )
+            }
+        },
+    ).to_job()
+    result = foo_job.execute_in_process()
     assert result.success
-    assert result.result_for_node("sum_num").output_value() == 6
+    assert result.output_for_node("sum_num") == 6
 
 
-@solid(input_defs=[InputDefinition("stuff", List[Any])])
+@op(ins={"stuff": In(List[Any])})
 def collect(_context, stuff):
     assert set(stuff) == set([1, None, "one"])
     return stuff
 
 
-@lambda_solid
+@op
 def emit_num():
     return 1
 
 
-@lambda_solid
+@op
 def emit_none():
     pass
 
 
-@lambda_solid
+@op
 def emit_str():
     return "one"
 
 
-@lambda_solid(output_def=OutputDefinition(Nothing))
+@op(out=Out(Nothing))
 def emit_nothing():
     pass
 
 
 def test_interleaved_values():
-    result = execute_pipeline(
-        PipelineDefinition(
-            name="input_test",
-            solid_defs=[emit_num, emit_none, emit_str, collect],
-            dependencies={
-                "collect": {
-                    "stuff": MultiDependencyDefinition(
-                        [
-                            DependencyDefinition("emit_num"),
-                            DependencyDefinition("emit_none"),
-                            DependencyDefinition("emit_str"),
-                        ]
-                    )
-                }
-            },
-        )
-    )
+    foo_job = GraphDefinition(
+        name="input_test",
+        node_defs=[emit_num, emit_none, emit_str, collect],
+        dependencies={
+            "collect": {
+                "stuff": MultiDependencyDefinition(
+                    [
+                        DependencyDefinition("emit_num"),
+                        DependencyDefinition("emit_none"),
+                        DependencyDefinition("emit_str"),
+                    ]
+                )
+            }
+        },
+    ).to_job()
+    result = foo_job.execute_in_process()
     assert result.success
 
 
 def test_dsl():
-    @pipeline
+    @job
     def input_test():
         collect([emit_num(), emit_none(), emit_str()])
 
-    result = execute_pipeline(input_test)
+    result = input_test.execute_in_process()
 
     assert result.success
 
 
 def test_collect_one():
-    @lambda_solid
+    @op
     def collect_one(list_arg):
         assert list_arg == ["one"]
 
-    @pipeline
+    @job
     def multi_one():
         collect_one([emit_str()])
 
-    assert execute_pipeline(multi_one).success
+    assert multi_one.execute_in_process().success
 
 
 def test_fan_in_manual():
     # manually building up this guy
     @graph
-    def _target_composite_dsl(str_in, none_in):
+    def _target_graph_dsl(str_in, none_in):
         num = emit_num()
         return collect([num, str_in, none_in])
 
     # base case works
     _target_graph_manual = GraphDefinition(
-        name="manual_composite",
+        name="manual_graph",
         node_defs=[emit_num, collect],
         input_mappings=[
-            InputDefinition("str_in").mapping_to("collect", "stuff", 1),
-            InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+            InputMapping(
+                graph_input_name="str_in",
+                mapped_node_name="collect",
+                mapped_node_input_name="stuff",
+                fan_in_index=1,
+            ),
+            InputMapping(
+                graph_input_name="none_in",
+                mapped_node_name="collect",
+                mapped_node_input_name="stuff",
+                fan_in_index=2,
+            ),
         ],
-        output_mappings=[OutputDefinition().mapping_from("collect")],
+        output_mappings=[
+            OutputMapping(
+                graph_output_name="result",
+                mapped_node_name="collect",
+                mapped_node_output_name="result",
+            )
+        ],
         dependencies={
             "collect": {
                 "stuff": MultiDependencyDefinition(
@@ -168,10 +179,26 @@ def test_fan_in_manual():
             name="manual_graph",
             node_defs=[emit_num, collect],
             input_mappings=[
-                InputDefinition("str_in").mapping_to("collect", "stuff", 1),
-                InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+                InputMapping(
+                    graph_input_name="str_in",
+                    mapped_node_name="collect",
+                    mapped_node_input_name="stuff",
+                    fan_in_index=1,
+                ),
+                InputMapping(
+                    graph_input_name="none_in",
+                    mapped_node_name="collect",
+                    mapped_node_input_name="stuff",
+                    fan_in_index=2,
+                ),
             ],
-            output_mappings=[OutputDefinition().mapping_from("collect")],
+            output_mappings=[
+                OutputMapping(
+                    graph_output_name="result",
+                    mapped_node_name="collect",
+                    mapped_node_output_name="result",
+                )
+            ],
             dependencies={
                 "collect": {
                     "stuff": MultiDependencyDefinition(
@@ -189,10 +216,26 @@ def test_fan_in_manual():
             name="manual_graph",
             node_defs=[emit_num, collect],
             input_mappings=[
-                InputDefinition("str_in").mapping_to("collect", "stuff", 1),
-                InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+                InputMapping(
+                    graph_input_name="str_in",
+                    mapped_node_name="collect",
+                    mapped_node_input_name="stuff",
+                    fan_in_index=1,
+                ),
+                InputMapping(
+                    graph_input_name="none_in",
+                    mapped_node_name="collect",
+                    mapped_node_input_name="stuff",
+                    fan_in_index=2,
+                ),
             ],
-            output_mappings=[OutputDefinition().mapping_from("collect")],
+            output_mappings=[
+                OutputMapping(
+                    graph_output_name="result",
+                    mapped_node_name="collect",
+                    mapped_node_output_name="result",
+                )
+            ],
             dependencies={"collect": {"stuff": DependencyDefinition("emit_num")}},
         )
 
@@ -204,10 +247,26 @@ def test_fan_in_manual():
             name="manual_graph",
             node_defs=[emit_num, collect],
             input_mappings=[
-                InputDefinition("str_in").mapping_to("collect", "stuff", 1),
-                InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+                InputMapping(
+                    graph_input_name="str_in",
+                    mapped_node_name="collect",
+                    mapped_node_input_name="stuff",
+                    fan_in_index=1,
+                ),
+                InputMapping(
+                    graph_input_name="none_in",
+                    mapped_node_name="collect",
+                    mapped_node_input_name="stuff",
+                    fan_in_index=2,
+                ),
             ],
-            output_mappings=[OutputDefinition().mapping_from("collect")],
+            output_mappings=[
+                OutputMapping(
+                    graph_output_name="result",
+                    mapped_node_name="collect",
+                    mapped_node_output_name="result",
+                )
+            ],
             dependencies={
                 "collect": {
                     "stuff": MultiDependencyDefinition(
@@ -224,9 +283,9 @@ def test_fan_in_manual():
 
 
 def test_nothing_deps():
-    PipelineDefinition(
+    GraphDefinition(
         name="input_test",
-        solid_defs=[emit_num, emit_nothing, emit_str, collect],
+        node_defs=[emit_num, emit_nothing, emit_str, collect],
         dependencies={
             "collect": {
                 "stuff": MultiDependencyDefinition(
@@ -238,4 +297,4 @@ def test_nothing_deps():
                 )
             }
         },
-    )
+    ).to_job()

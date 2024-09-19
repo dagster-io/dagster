@@ -4,14 +4,13 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import MetadataValue, OpExecutionContext, asset
+from dagster import AssetExecutionContext, MetadataValue, asset
 from wordcloud import STOPWORDS, WordCloud
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstory_ids() -> pd.DataFrame:
-    """
-    Get up to 500 top stories from the HackerNews topstories endpoint.
+    """Get up to 500 top stories from the HackerNews topstories endpoint.
 
     API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
     """
@@ -22,14 +21,12 @@ def hackernews_topstory_ids() -> pd.DataFrame:
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstories(
-    context: OpExecutionContext, hackernews_topstory_ids: pd.DataFrame
+    context: AssetExecutionContext, hackernews_topstory_ids: pd.DataFrame
 ) -> pd.DataFrame:
-    """
-    Get items based on story ids from the HackerNews items endpoint. It may take 1-2 minutes to fetch all 500 items.
+    """Get items based on story ids from the HackerNews items endpoint. It may take 1-2 minutes to fetch all 500 items.
 
     API Docs: https://github.com/HackerNews/API#items
     """
-
     results = []
     for item_id in hackernews_topstory_ids["item_ids"]:
         item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
@@ -39,10 +36,13 @@ def hackernews_topstories(
 
     df = pd.DataFrame(results)
 
+    # Rename the column to avoid conflict with the reserved keyword "by"
+    df.rename(columns={"by": "by_"}, inplace=True)
+
     # Dagster supports attaching arbitrary metadata to asset materializations. This metadata will be
     # shown in the run logs and also be displayed on the "Activity" tab of the "Asset Details" page in the UI.
     # This metadata would be useful for monitoring and maintaining the asset as you iterate.
-    # Read more about in asset metadata in https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata
+    # Read more about in asset metadata in https://docs.dagster.io/concepts/metadata-tags/asset-metadata
     context.add_output_metadata(
         {
             "num_records": len(df),
@@ -54,10 +54,9 @@ def hackernews_topstories(
 
 @asset(group_name="hackernews", compute_kind="Plot")
 def hackernews_topstories_word_cloud(
-    context: OpExecutionContext, hackernews_topstories: pd.DataFrame
+    context: AssetExecutionContext, hackernews_topstories: pd.DataFrame
 ) -> None:
-    """
-    Exploratory analysis: Generate a word cloud from the current top 500 HackerNews top stories.
+    """Exploratory analysis: Generate a word cloud from the current top 500 HackerNews top stories.
     Embed the plot into a Markdown metadata for quick view.
 
     Read more about how to create word clouds in http://amueller.github.io/word_cloud/.

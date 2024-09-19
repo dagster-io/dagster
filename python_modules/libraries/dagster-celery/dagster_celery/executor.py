@@ -12,8 +12,8 @@ from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes import pack_value
 
-from .config import DEFAULT_CONFIG, dict_wrapper
-from .defaults import broker_url, result_backend
+from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
+from dagster_celery.defaults import broker_url, result_backend
 
 CELERY_CONFIG = {
     "broker": Field(
@@ -95,7 +95,6 @@ def celery_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
     """
-
     return CeleryExecutor(
         broker=init_context.executor_config.get("broker"),
         backend=init_context.executor_config.get("backend"),
@@ -106,26 +105,27 @@ def celery_executor(init_context):
 
 
 def _submit_task(app, plan_context, step, queue, priority, known_state):
-    from .tasks import create_task
+    from dagster_celery.tasks import create_task
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
-        pipeline_run_id=plan_context.pipeline_run.run_id,
+        job_origin=plan_context.reconstructable_job.get_python_origin(),
+        run_id=plan_context.dagster_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
+        print_serialized_events=True,  # Not actually checked by the celery task
     )
 
     task = create_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        executable_dict=plan_context.reconstructable_pipeline.to_dict(),
+        executable_dict=plan_context.reconstructable_job.to_dict(),
     )
     return task_signature.apply_async(
         priority=priority,
         queue=queue,
-        routing_key="{queue}.execute_plan".format(queue=queue),
+        routing_key=f"{queue}.execute_plan",
     )
 
 
@@ -151,7 +151,7 @@ class CeleryExecutor(Executor):
         return self._retries
 
     def execute(self, plan_context, execution_plan):
-        from .core_execution_loop import core_celery_execution_loop
+        from dagster_celery.core_execution_loop import core_celery_execution_loop
 
         return core_celery_execution_loop(
             plan_context, execution_plan, step_execution_fn=_submit_task

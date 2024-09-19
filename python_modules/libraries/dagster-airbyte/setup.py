@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_airbyte/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -18,21 +18,25 @@ pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-airbyte",
     version=ver,
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     description="Package for integrating Airbyte with Dagster.",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte"
     ),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_airbyte_tests*"]),
+    include_package_data=True,
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         "requests",
@@ -46,6 +50,9 @@ setup(
     extras_require={
         "test": [
             "requests-mock",
-        ]
+        ],
+        "managed": [
+            f"dagster-managed-elements{pin}",
+        ],
     },
 )

@@ -1,6 +1,8 @@
 # Running the docs, v2
 
-This directory contains the code for the Dagster documentation site at [https://docs.dagster.io](https://docs.dagster.io/).
+> **Submitting a pull request to update the docs?** If so, please verify that the updates follow the [docs style checklist](https://github.com/dagster-io/dagster/blob/master/docs/DOC_CHECKLIST.md).
+
+This directory contains the code for the Dagster documentation site at https://docs.dagster.io. The site is built with [NextJS](https://nextjs.org/), with the code for the site living in `next`. To serve the site locally in development mode (hot-reloading), run:
 
 ---
 
@@ -207,8 +209,12 @@ Content here!
 
 Each MDX file in `/content` directly corresponds to a single, rendered docs page where the file path is used to construct the page’s final URL. For example:
 
-- This file: `/content/getting-started.mdx`
-- Once built and deployed, becomes: `[https://docs.dagster.io/getting-started](https://docs.dagster.io/getting-started)`
+- [**Prose docs**](#prose-docs) make up the majority of the docs site: Tutorials, Concepts, Guides, etc. All prose docs live directly in the `content` folder as `mdx` files (markdown with React components). You should edit these files directly to update prose docs.
+- [**API docs**](#api-docs) contain the formal specification of Dagster's APIs. The built representation of the API docs consists of a few large JSON files in `content/api`. These files should not be edited directly-- they are the output of a build process that extracts the docstrings in Dagster source. The primary build tools are [Sphinx](https://www.sphinx-doc.org/en/master/) and its [autodoc extension](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html). Sphinx processes a set of `rst` files (found in `sphinx/index.rst` and `sphinx/sections`) into JSON, which is then massaged into a (still-JSON) structure that NextJS can understand (`scripts/pack_json.py` script) and written to `content/api`. Note that there is little text in the `rst` files, because their main purpose is to invoke `autodoc` directives which pull in docstrings from all over the dagster codebase.
+- [**Code snippets**](#code-snippets) are embedded throughout the prose docs. All code snippets used in the docs site live (outside the `docs` folder) in `examples/docs_snippets`. This is just a regular python package, which makes it easy to test and specify dependencies for the snippets.
+- [**Screenshots**](#screenshots) are image files living in `next/public/images`, typically under a subdirectory corresponding to the page on which they appear. There's no need to manually manage the screenshots in this directory-- instead you can add a specification your screenshot to `screenshots` and run `dagster-ui-screenshot capture` to quasi-automatically generate the screenshot and place it in the appropriate subdirectory of `next/public/images`.
+- [**Navigation schema**](#navigation-schema) is a JSON file specifying the contents of the main nav for the site (found in the left sidebar). This typically needs to be updated to include a link when new prose doc is added.
+- [**Dagster University**](#dagster-university) is a separate Nextjs site containing the content for Dagster University courses. 
 
 Refer to the [Development section][docs-development] for info about committing and pushing MDX changes.
 
@@ -632,7 +638,7 @@ Screenshots are image files living in `/next/public/images`, typically under a s
 
 All non-remotely-sourced images should be stored in `next/public/images`. This directory is organized in a hierarchy that matches the structure of the prose docs, which keeps clear which images are used in which docs. For instance, images used in the `concepts/ops-jobs-graphs` pages are typically stored in `images/concepts/ops-jobs-graphs`.
 
-Most of the site's images are screenshots of Dagit. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in YAML files in the `screenshots` directory. This directory contains a "screenshot spec database", which is just a tree of YAML files that matches the hierarchical structure of `content`. These files are intended to be read by the command-line tool `dagit-screenshot`, which generates and writes screenshot image files to `next/public/images`. See `dagit-screenshot/README.md` for details.
+Most of the site's images are screenshots of the Dagster UI. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in YAML files in the `screenshots` directory. This directory contains a "screenshot spec database", which is just a tree of YAML files that matches the hierarchical structure of `content`. These files are intended to be read by the command-line tool `dagster-ui-screenshot`, which generates and writes screenshot image files to `next/public/images`. See `dagster-ui-screenshot/README.md` for details.
 
 ---
 
@@ -840,6 +846,12 @@ Quote
 | make apidoc-buildsphinx |  | API docs |  |
 | make apidoc-watch-build |  | API docs |  |
 | sphinx build |  | API docs |  |
+
+---
+
+## Dagster University
+
+Refer to the Dagster University [README](https://github.com/dagster-io/dagster/tree/master/docs/dagster-university) for more info about working in this directory.
 
 ---
 

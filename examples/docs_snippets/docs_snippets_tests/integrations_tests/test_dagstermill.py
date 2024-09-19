@@ -3,9 +3,9 @@ from contextlib import contextmanager
 
 from dagstermill_tests.test_ops import cleanup_result_notebook
 
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster import execute_job
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -32,18 +32,18 @@ def kernel():
 @contextmanager
 def exec_for_test(module_name, fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module(module_name, fn_name)
+    recon_job = ReconstructableJob.for_module(module_name, fn_name)
 
     with instance_for_test() as instance:
         try:
-            result = execute_pipeline(
-                recon_pipeline,
-                env,
+            with execute_job(
+                recon_job,
+                run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
                 **kwargs,
-            )
-            yield result
+            ) as result:
+                yield result
         finally:
             if result:
                 cleanup_result_notebook(result)

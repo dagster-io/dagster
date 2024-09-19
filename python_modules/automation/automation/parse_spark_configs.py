@@ -3,6 +3,7 @@
 This script parses the Spark configuration parameters downloaded from the Spark Github repository,
 and codegens a file that contains dagster configurations for these parameters.
 """
+
 import re
 import sys
 from enum import Enum
@@ -170,7 +171,7 @@ class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), (
         printer.append("Field(")
         with printer.with_indent():
             printer.line("")
-            printer.line("{config_type},".format(config_type=config_type))
+            printer.line(f"{config_type},")
             printer.append('description="""')
             printer.append(self.meaning)
             printer.line('""",')
@@ -210,7 +211,7 @@ class SparkConfigNode:
                     with printer.with_indent():
                         for k, v in retdict.items():
                             with printer.with_indent():
-                                printer.append('"{}": '.format(k))
+                                printer.append(f'"{k}": ')
                             v.write(printer)
 
                             printer.line(",")
@@ -227,7 +228,7 @@ def extract(spark_docs_markdown_text: str) -> SparkConfigNode:
 
     spark_configs = []
     for name, table in tables:
-        parsed_table = list(ptr.HtmlTableTextLoader(table).load())[0]
+        parsed_table = next(iter(ptr.HtmlTableTextLoader(table).load()))
         df = parsed_table.as_dataframe()
         for _, row in df.iterrows():
             s = SparkConfig(row["Property Name"], row["Default"], name + ": " + row["Meaning"])
@@ -241,7 +242,7 @@ def extract(spark_docs_markdown_text: str) -> SparkConfigNode:
 
         # Traverse spark.app.name key paths, creating SparkConfigNode at each tree node.
         # The leaves of the tree (stored in SparkConfigNode.value) are SparkConfig values.
-        print(spark_config.path, file=sys.stderr)  # pylint: disable=print-call
+        print(spark_config.path, file=sys.stderr)  # noqa: T201
         key_path = spark_config.split_path
 
         d = result
@@ -261,21 +262,17 @@ def serialize(result: SparkConfigNode) -> bytes:
         printer.line("from dagster import Bool, Field, Float, IntSource, Permissive, StringSource")
         printer.blank_line()
         printer.blank_line()
-        printer.line("# pylint: disable=line-too-long")
         printer.line("def spark_config():")
         with printer.with_indent():
             printer.append("return ")
             result.write(printer)
-        printer.line("# pylint: enable=line-too-long")
         return printer.read().strip().encode("utf-8")
 
 
 @click.command()
 def run() -> None:
     r = requests.get(
-        "https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md".format(
-            SPARK_VERSION
-        )
+        f"https://raw.githubusercontent.com/apache/spark/{SPARK_VERSION}/docs/configuration.md"
     )
 
     result = extract(r.text)

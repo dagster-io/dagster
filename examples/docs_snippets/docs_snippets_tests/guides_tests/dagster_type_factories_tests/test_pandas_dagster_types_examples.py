@@ -17,7 +17,8 @@ from docs_snippets.guides.dagster.dagster_type_factories.simple_example import (
     set_has_element_type_factory,
 )
 
-EBIKE_TRIPS_PATH = os.path.join(example_root.__path__[0], "ebike_trips.csv")
+example_root_path = next(iter(example_root.__path__))
+EBIKE_TRIPS_PATH = os.path.join(example_root_path, "ebike_trips.csv")
 
 
 def test_simple_example_one_off():
@@ -48,6 +49,8 @@ def test_job_2_no_clean_fails():
         job_2.execute_in_process()
 
 
+# Unskip when this is resolved: https://github.com/unionai-oss/pandera/issues/1500
+@pytest.mark.skip("Test is broken by second order dependency of pandera")
 @pytest.mark.usefixtures("in_tmpdir")
 def test_job_2_no_clean_succeeds():
     assert job_2.execute_in_process(

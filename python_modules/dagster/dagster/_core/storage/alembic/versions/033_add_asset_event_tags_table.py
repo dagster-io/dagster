@@ -1,10 +1,11 @@
-"""add_asset_event_tags_table
+"""add_asset_event_tags_table.
 
 Revision ID: 958a9495162d
 Revises: a00dd8d936a1
 Create Date: 2022-10-25 10:00:50.954192
 
 """
+
 import sqlalchemy as db
 from alembic import op
 from dagster._core.storage.migration.utils import has_index, has_table

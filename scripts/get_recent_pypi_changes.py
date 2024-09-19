@@ -1,16 +1,16 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 
 import datetime
 import subprocess
 import time
-import urllib
+from urllib.parse import urlunparse
 
 import requests
 
 # Checks all packages in the current venv, sorts their most recent releases by time, and prints
 # anything that has changed in the last N days. Use to detect upstream breakages.
 
-libraries = subprocess.check_output("pip list | cut -f1 -d ' '", shell=True).decode("utf-8")
+libraries = subprocess.check_output("uv pip list | cut -f1 -d ' '", shell=True).decode("utf-8")
 
 libraries = libraries.split("\n")
 
@@ -29,7 +29,7 @@ for library in libraries:
 
     if library:
         res_json = requests.get(
-            urllib.parse.urlunparse(
+            urlunparse(
                 (
                     "https",
                     "pypi.org",
@@ -55,7 +55,6 @@ print(f"\n\nPyPi releases in the last {LAST_N_DAYS} days:")
 now = time.time()
 
 for library, release_time in sorted(release_times.items(), key=lambda item: item[1], reverse=True):
-
     timestamp = datetime.datetime.strptime(release_time, "%Y-%m-%dT%H:%M:%S").timestamp()
     if now - timestamp > 3600 * 24 * LAST_N_DAYS:
         break

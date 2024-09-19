@@ -2,14 +2,17 @@ import sys
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import dagster._check as check
-from dagster._utils import ensure_single_item, frozendict, frozenlist
+from dagster._config.config_type import ConfigType, ConfigTypeKind
+from dagster._config.errors import (
+    EvaluationError,
+    PostProcessingError,
+    create_failed_post_processing_error,
+)
+from dagster._config.evaluate_value_result import EvaluateValueResult
+from dagster._config.stack import EvaluationStack
+from dagster._config.traversal_context import TraversalContext, TraversalType
+from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .config_type import ConfigType, ConfigTypeKind
-from .errors import EvaluationError, PostProcessingError, create_failed_post_processing_error
-from .evaluate_value_result import EvaluateValueResult
-from .stack import EvaluationStack
-from .traversal_context import TraversalContext, TraversalType
 
 
 def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
@@ -44,7 +47,7 @@ def _recursively_process_config(
         return evr
 
 
-def _recursively_resolve_defaults(  # type: ignore # mypy missing check.failed NoReturn
+def _recursively_resolve_defaults(
     context: TraversalContext, config_value: Any
 ) -> EvaluateValueResult[Any]:
     kind = context.config_type.kind
@@ -90,11 +93,13 @@ def _recurse_in_to_scalar_union(
 ) -> EvaluateValueResult[Any]:
     if isinstance(config_value, (dict, list)):
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.non_scalar_type),  # type: ignore
+            config_value,
         )
     else:
         return _recursively_process_config(
-            context.for_new_config_type(context.config_type.scalar_type), config_value  # type: ignore
+            context.for_new_config_type(context.config_type.scalar_type),  # type: ignore
+            config_value,
         )
 
 
@@ -117,12 +122,15 @@ def _recurse_in_to_selector(
 
     field_evr = _recursively_process_config(
         context.for_field(field_def, field_name),
-        {}
-        if incoming_field_value is None and ConfigTypeKind.has_fields(field_def.config_type.kind)
-        else incoming_field_value,
+        (
+            {}
+            if incoming_field_value is None
+            and ConfigTypeKind.has_fields(field_def.config_type.kind)
+            else incoming_field_value
+        ),
     )
     if field_evr.success:
-        return EvaluateValueResult.for_value(frozendict({field_name: field_evr.value}))
+        return EvaluateValueResult.for_value({field_name: field_evr.value})
 
     return field_evr
 
@@ -183,7 +191,7 @@ def _recurse_in_to_shape(
         return EvaluateValueResult.for_errors(errors)
 
     return EvaluateValueResult.for_value(
-        frozendict({key: result.value for key, result in processed_fields.items()})
+        {key: result.value for key, result in processed_fields.items()}
     )
 
 
@@ -210,7 +218,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
     if errors:
         return EvaluateValueResult.for_errors(errors)
 
-    return EvaluateValueResult.for_value(frozenlist([result.value for result in results]))
+    return EvaluateValueResult.for_value([result.value for result in results])
 
 
 def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:
@@ -243,6 +251,4 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
     if errors:
         return EvaluateValueResult.for_errors(errors)
 
-    return EvaluateValueResult.for_value(
-        frozendict({key: result.value for key, result in results.items()})
-    )
+    return EvaluateValueResult.for_value({key: result.value for key, result in results.items()})

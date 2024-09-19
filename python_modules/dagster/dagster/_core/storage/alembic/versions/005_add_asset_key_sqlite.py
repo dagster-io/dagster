@@ -1,15 +1,14 @@
-"""add_asset_key
+"""add_asset_key.
 
 Revision ID: c39c047fa021
 Revises: 727ffe943a9f
 Create Date: 2020-04-28 09:35:54.768791
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
-
-# pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
 revision = "c39c047fa021"

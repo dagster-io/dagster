@@ -2,14 +2,14 @@ import os
 from enum import Enum
 from typing import Dict, List, Optional
 
-from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
-from .python_version import AvailablePythonVersion
-from .utils import CommandStep, message_contains, safe_getenv
+from dagster_buildkite.images.versions import BUILDKITE_TEST_IMAGE_VERSION
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.utils import CommandStep, safe_getenv
 
 DEFAULT_TIMEOUT_IN_MIN = 25
 
-DOCKER_PLUGIN = "docker#v3.7.0"
-ECR_PLUGIN = "ecr#v2.2.0"
+DOCKER_PLUGIN = "docker#v5.10.0"
+ECR_PLUGIN = "ecr#v2.7.0"
 
 
 AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID")
@@ -42,6 +42,8 @@ class CommandStepBuilder:
             "retry": {
                 "automatic": [
                     {"exit_status": -1, "limit": 2},  # agent lost
+                    {"exit_status": 143, "limit": 2},  # agent lost
+                    {"exit_status": 2, "limit": 2},  # often a uv read timeout
                     {"exit_status": 255, "limit": 2},  # agent forced shut down
                 ],
                 "manual": {"permit_on_passed": True},
@@ -57,8 +59,8 @@ class CommandStepBuilder:
     def _base_docker_settings(self) -> Dict[str, object]:
         return {
             "shell": ["/bin/bash", "-xeuc"],
-            "always-pull": True,
             "mount-ssh-agent": True,
+            "mount-buildkite-agent": True,
         }
 
     def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "CommandStepBuilder":
@@ -72,8 +74,12 @@ class CommandStepBuilder:
         settings["volumes"] = ["/var/run/docker.sock:/var/run/docker.sock", "/tmp:/tmp"]
         settings["network"] = "kind"
 
-        # Pass through all BUILDKITE* envvars so our test analytics are properly tagged
-        buildkite_envvars = [env for env in list(os.environ.keys()) if env.startswith("BUILDKITE")]
+        # Pass through all BUILDKITE* and CI* envvars so our test analytics are properly tagged
+        buildkite_envvars = [
+            env
+            for env in list(os.environ.keys())
+            if env.startswith("BUILDKITE") or env.startswith("CI_")
+        ]
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
@@ -133,8 +139,6 @@ class CommandStepBuilder:
         return self
 
     def with_skip(self, skip_reason: Optional[str]) -> "CommandStepBuilder":
-        if message_contains("NO_SKIP"):
-            return self
         if skip_reason:
             self._step["skip"] = skip_reason
         return self

@@ -1,0 +1,16 @@
+### CHECKED SEPARATELY
+
+examples/assets_pandas_type_metadata
+examples/project_fully_featured
+
+### NOT TYPE CHECKED
+
+examples/assets_dbt_python
+examples/assets_modern_data_stack
+examples/assets_smoke_test
+examples/docs_beta_snippets
+examples/project_analytics
+examples/project_dagster_university_start
+examples/project_du_dbt_starter
+examples/tutorial
+helm

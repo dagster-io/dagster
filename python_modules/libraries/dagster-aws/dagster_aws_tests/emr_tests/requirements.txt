@@ -1,6 +1,6 @@
 boto3
 dagster
-dagit
+dagster-webserver
 dagster_aws
 dagster_pyspark
 dagster_spark

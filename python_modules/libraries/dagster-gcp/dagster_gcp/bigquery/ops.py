@@ -8,17 +8,19 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster_pandas import DataFrame
+from google.cloud.bigquery.encryption_configuration import EncryptionConfiguration
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
-from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
+from google.cloud.bigquery.table import TimePartitioning
 
-from .configs import (
+from dagster_gcp.bigquery.configs import (
     define_bigquery_create_dataset_config,
     define_bigquery_delete_dataset_config,
     define_bigquery_load_config,
     define_bigquery_query_config,
 )
-from .types import BigQueryLoadSource
+from dagster_gcp.bigquery.types import BigQueryLoadSource
 
 _START = "start"
 
@@ -39,12 +41,10 @@ def _preprocess_config(cfg):
 
 
 def bq_op_for_queries(sql_queries):
-    """
-    Executes BigQuery SQL queries.
+    """Executes BigQuery SQL queries.
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-
     sql_queries = check.list_param(sql_queries, "sql queries", of_type=str)
     m = hashlib.sha1()
     for query in sql_queries:
@@ -58,9 +58,9 @@ def bq_op_for_queries(sql_queries):
         out=Out(List[DataFrame]),
         config_schema=define_bigquery_query_config(),
         required_resource_keys={"bigquery"},
-        tags={"kind": "sql", "sql": "\n".join(sql_queries)},
+        tags={COMPUTE_KIND_TAG: "sql", "sql": "\n".join(sql_queries)},
     )
-    def _bq_fn(context):  # pylint: disable=unused-argument
+    def _bq_fn(context):
         query_job_config = _preprocess_config(context.op_config.get("query_job_config", {}))
 
         # Retrieve results as pandas DataFrames
@@ -171,7 +171,6 @@ def bq_delete_dataset(context):
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-
     (dataset, delete_contents, not_found_ok) = [
         context.op_config.get(k) for k in ("dataset", "delete_contents", "not_found_ok")
     ]

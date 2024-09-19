@@ -3,7 +3,7 @@ import os
 
 import dagster._check as check
 
-from .types import SparkOpError
+from dagster_spark.types import SparkOpError
 
 
 def flatten_dict(d):
@@ -28,11 +28,12 @@ def flatten_dict(d):
 
 
 def parse_spark_config(spark_conf):
-    """For each key-value pair in spark conf, we need to pass to CLI in format:
+    """Convert spark conf dict to list of CLI arguments.
+
+    For each key-value pair in spark conf, we need to pass to CLI in format:
 
     --conf "key=value"
     """
-
     spark_conf_list = flatten_dict(spark_conf)
     return format_for_cli(spark_conf_list)
 
@@ -71,7 +72,7 @@ def construct_spark_shell_command(
     deploy_mode = ["--deploy-mode", deploy_mode] if deploy_mode else []
 
     spark_shell_cmd = (
-        ["{}/bin/spark-submit".format(spark_home), "--class", main_class]
+        [f"{spark_home}/bin/spark-submit", "--class", main_class]
         + master_url
         + deploy_mode
         + parse_spark_config(spark_conf)

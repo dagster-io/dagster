@@ -9,7 +9,7 @@ from .summary_stats import summary_stats_trip
 @repository
 def dagster_pandas_guide_examples():
     return {
-        "pipelines": {
+        "jobs": {
             "custom_column_constraint_trip": lambda: custom_column_constraint_trip,
             "shape_constrained_trip": lambda: shape_constrained_trip,
             "summary_stats_trip": lambda: summary_stats_trip,

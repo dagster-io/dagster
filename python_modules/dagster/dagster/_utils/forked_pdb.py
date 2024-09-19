@@ -1,10 +1,10 @@
-import pdb  # noqa: T100
+import pdb
 import sys
 
 
 # From https://stackoverflow.com/questions/4716533/how-to-attach-debugger-to-a-python-subproccess
 class ForkedPdb(pdb.Pdb):
-    """A pdb subclass that may be used from a forked multiprocessing child
+    """A pdb subclass that may be used from a forked multiprocessing child.
 
     **Examples**:
 
@@ -20,7 +20,7 @@ class ForkedPdb(pdb.Pdb):
 
             # some other complicated stuff
 
-    You can initiate pipeline execution via dagit and use the pdb debugger to examine/step through
+    You can initiate pipeline execution via the webserver and use the pdb debugger to examine/step through
     execution at the breakpoint.
     """
 

@@ -1,14 +1,13 @@
-"""cascade run deletion
+"""cascade run deletion.
 
 Revision ID: 9fe9e746268c
 Revises: 8f8dba68fd3b
 Create Date: 2020-02-10 18:13:58.993653
 
 """
+
 from alembic import op
 from sqlalchemy import inspect
-
-# pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
 revision = "9fe9e746268c"

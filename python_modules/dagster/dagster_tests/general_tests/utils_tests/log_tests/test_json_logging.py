@@ -1,8 +1,8 @@
 import json
 import logging
 
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.execution.context.logger import InitLoggerContext
-from dagster._legacy import PipelineDefinition
 from dagster._utils.log import define_json_file_logger
 from dagster._utils.test import create_test_pipeline_execution_context, get_temp_file_name
 
@@ -12,7 +12,7 @@ def setup_json_file_logger(tf_name, name="foo", level=logging.DEBUG):
     init_logger_context = InitLoggerContext(
         {},
         logger_def,
-        pipeline_def=PipelineDefinition([], "test"),
+        job_def=GraphDefinition(node_defs=[], name="test").to_job(logger_defs={"json": logger_def}),
         run_id="",
     )
 

@@ -1,21 +1,28 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 
-from ...utils import kubernetes
+from schema.charts.utils import kubernetes
 
 
 class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
     enabled: bool
 
 
+ReadinessProbeWithEnabled = create_model(
+    "ReadinessProbeWithEnabled", __base__=(kubernetes.ReadinessProbe), enabled=(bool)
+)
+
+
 class UserDeployment(BaseModel):
     name: str
     image: kubernetes.Image
-    dagsterApiGrpcArgs: List[str]
+    dagsterApiGrpcArgs: Optional[List[str]]
+    codeServerArgs: Optional[List[str]]
     includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns]
+    deploymentNamespace: Optional[str]
     port: int
-    env: Optional[Dict[str, str]]
+    env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]]
     envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]]
     envSecrets: Optional[List[kubernetes.SecretEnvSource]]
     annotations: Optional[kubernetes.Annotations]
@@ -26,12 +33,14 @@ class UserDeployment(BaseModel):
     securityContext: Optional[kubernetes.SecurityContext]
     resources: Optional[kubernetes.Resources]
     livenessProbe: Optional[kubernetes.LivenessProbe]
-    readinessProbe: Optional[kubernetes.ReadinessProbe]
+    readinessProbe: Optional[ReadinessProbeWithEnabled]
     startupProbe: Optional[kubernetes.StartupProbe]
     labels: Optional[Dict[str, str]]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]
     volumes: Optional[List[kubernetes.Volume]]
     schedulerName: Optional[str]
+    initContainers: Optional[List[kubernetes.Container]]
+    sidecarContainers: Optional[List[kubernetes.Container]]
 
 
 class UserDeployments(BaseModel):

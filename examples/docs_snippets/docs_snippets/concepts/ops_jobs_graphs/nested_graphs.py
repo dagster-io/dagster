@@ -1,8 +1,7 @@
-# isort: skip_file
-# pylint: disable=unused-argument
-# pylint: disable=print-call
+# ruff: isort: skip_file
 
-from dagster import graph, job, op
+
+from dagster import graph, job, op, OpExecutionContext
 
 from .unnested_ops import (
     add_thirty_two,
@@ -30,12 +29,12 @@ def all_together_nested():
 
 
 @op(config_schema={"n": float})
-def add_n(context, number):
+def add_n(context: OpExecutionContext, number):
     return number + context.op_config["n"]
 
 
 @op(config_schema={"m": float})
-def multiply_by_m(context, number):
+def multiply_by_m(context: OpExecutionContext, number):
     return number * context.op_config["m"]
 
 
@@ -58,7 +57,7 @@ from dagster import GraphOut
 
 @op
 def echo(i):
-    print(i)
+    print(i)  # noqa: T201
 
 
 @op

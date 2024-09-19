@@ -1,3 +1,5 @@
+from typing import List
+
 import pandas as pd
 
 from dagster import AssetIn, Definitions, asset
@@ -15,18 +17,20 @@ def load_numpy_array(*_args, **_kwargs):
     pass
 
 
-pandas_series_io_manager = None
+class PandasSeriesIOManager:
+    pass
+
 
 # start_different_input_managers
 
 
 @asset
-def first_asset():
+def first_asset() -> List[int]:
     return [1, 2, 3]
 
 
 @asset
-def second_asset():
+def second_asset() -> List[int]:
     return [4, 5, 6]
 
 
@@ -36,14 +40,14 @@ def second_asset():
         "second_asset": AssetIn(input_manager_key="pandas_series"),
     }
 )
-def third_asset(first_asset, second_asset):
+def third_asset(first_asset: pd.Series, second_asset: pd.Series) -> pd.Series:
     return pd.concat([first_asset, second_asset, pd.Series([7, 8])])
 
 
 defs = Definitions(
     assets=[first_asset, second_asset, third_asset],
     resources={
-        "pandas_series": pandas_series_io_manager,
+        "pandas_series": PandasSeriesIOManager(),
     },
 )
 

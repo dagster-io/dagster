@@ -20,7 +20,7 @@ from dagster import (
 from dagster._core.execution.api import create_execution_plan
 
 
-def _define_nothing_dep_pipeline():
+def _define_nothing_dep_job():
     @op(out={"complete": Out(Nothing)})
     def start_nothing():
         pass
@@ -69,13 +69,13 @@ def _define_nothing_dep_pipeline():
 
 
 def test_valid_nothing_dependencies():
-    result = _define_nothing_dep_pipeline().execute_in_process()
+    result = _define_nothing_dep_job().execute_in_process()
 
     assert result.success
 
 
-def test_nothing_output_something_input():
-    @op(out=Out(Nothing))
+def test_output_input_type_mismatch():
+    @op
     def do_nothing():
         pass
 
@@ -228,6 +228,13 @@ def test_valid_nothing_fns():
     result = fn_test.execute_in_process()
     assert result.success
 
+    # test direct invocations
+    just_pass()
+    just_pass2()
+    ret_none()
+    [_ for _ in yield_none()]
+    [_ for _ in yield_stuff()]
+
 
 def test_invalid_nothing_fns():
     @op(out=Out(Nothing))
@@ -323,13 +330,13 @@ def test_nothing_infer():
     ):
 
         @op
-        def _bad(_previous_steps_complete: Nothing):
+        def _bad(_previous_steps_complete: Nothing):  # type: ignore
             pass
 
 
 def test_none_output_non_none_input():
     @op
-    def op1() -> None:
+    def op1():
         pass
 
     @op
@@ -345,7 +352,7 @@ def test_none_output_non_none_input():
 
 def test_asset_none_output_non_none_input():
     @asset
-    def asset1() -> None:
+    def asset1():
         pass
 
     @asset
@@ -364,4 +371,5 @@ def test_asset_nothing_output_non_none_input():
     def asset2(asset1):
         assert asset1 is None
 
-    assert materialize_to_memory([asset1, asset2]).success
+    with pytest.raises(KeyError):
+        assert materialize_to_memory([asset1, asset2]).success

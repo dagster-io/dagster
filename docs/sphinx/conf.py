@@ -13,68 +13,35 @@
 import os
 import sys
 
-paths = [
-    ### dagster packages
-    "../../python_modules/automation",
-    "../../python_modules/dagster",
-    "../../python_modules/dagster-graphql",
-    "../../python_modules/dagit",
-    "../../python_modules/libraries/dagster-airbyte",
-    "../../python_modules/libraries/dagster-airflow",
-    "../../python_modules/libraries/dagster-aws",
-    "../../python_modules/libraries/dagster-azure",
-    "../../python_modules/libraries/dagster-celery",
-    "../../python_modules/libraries/dagster-celery-docker",
-    "../../python_modules/libraries/dagster-dask",
-    "../../python_modules/libraries/dagster-datadog",
-    "../../python_modules/libraries/dagster-datahub",
-    "../../python_modules/libraries/dagster-docker",
-    "../../python_modules/libraries/dagster-fivetran",
-    "../../python_modules/libraries/dagster-github",
-    "../../python_modules/libraries/dagster-k8s",
-    "../../python_modules/libraries/dagster-managed-elements",
-    "../../python_modules/libraries/dagster-mlflow",
-    "../../python_modules/libraries/dagster-msteams",
-    "../../python_modules/libraries/dagster-mysql",
-    "../../python_modules/libraries/dagster-pagerduty",
-    "../../python_modules/libraries/dagster-pandas",
-    "../../python_modules/libraries/dagster-papertrail",
-    "../../python_modules/libraries/dagster-postgres",
-    "../../python_modules/libraries/dagster-prometheus",
-    "../../python_modules/libraries/dagster-shell",
-    "../../python_modules/libraries/dagster-slack",
-    "../../python_modules/libraries/dagster-snowflake",
-    "../../python_modules/libraries/dagster-snowflake-pandas",
-    "../../python_modules/libraries/dagster-spark",
-    "../../python_modules/libraries/dagster-ssh",
-    "../../python_modules/libraries/dagster-twilio",
-    "../../python_modules/libraries/dagstermill",
-    "../../python_modules/libraries/dagster-celery-k8s",
-    "../../python_modules/libraries/dagster-dbt",
-    "../../python_modules/libraries/dagster-ge",
-    "../../python_modules/libraries/dagster-gcp",
-    "../../python_modules/libraries/dagster-pyspark",
-    "../../python_modules/libraries/dagster-databricks",
-    "../../python_modules/libraries/dagster-duckdb",
-    "../../python_modules/libraries/dagster-duckdb-pandas",
-    "../../python_modules/libraries/dagster-duckdb-pyspark",
-    ### autodoc_dagster extension
-    "./_ext",
-]
+ignored_folders = ["dagster-test"]
+base_path = "../../python_modules"
+python_modules_path = os.path.abspath(base_path)
+libraries_path = os.path.abspath(os.path.join(base_path, "libraries"))
+paths = []
+# Add python_modules folders
+for folder in os.listdir(python_modules_path):
+    folder_path = os.path.join(python_modules_path, folder)
+    if os.path.isdir(folder_path) and not any(
+        ignored in folder_path for ignored in ignored_folders
+    ):
+        paths.append(folder_path)
+# Add libraries folders
+for folder in os.listdir(libraries_path):
+    folder_path = os.path.join(libraries_path, folder)
+    if os.path.isdir(folder_path) and not any(
+        ignored in folder_path for ignored in ignored_folders
+    ):
+        paths.append(folder_path)
+# Add the _ext folder
+paths.append(os.path.abspath("./_ext"))
 
 for path in paths:
-    sys.path.insert(0, os.path.abspath(path))
-
+    sys.path.insert(0, path)
 # -- Project information -----------------------------------------------------
 
 project = "Dagster"
-copyright = "2019, Elementl, Inc"  # pylint: disable=redefined-builtin
-author = "The Dagster Team"
-
-# The short X.Y version
-version = ""
-# The full version, including alpha/beta/rc tags
-release = ""
+copyright = "2019, Dagster Labs, Inc"  # noqa: A001
+author = "Dagster Labs"
 
 # -- General configuration ---------------------------------------------------
 
@@ -93,10 +60,11 @@ extensions = [
     "sphinx.ext.viewcode",
     # Directives for automatically documenting CLIs built with the `click` package.
     "sphinx_click.ext",
-    # Elementl-authored extension with custom directives and sphinx processing.
-    "autodoc_dagster",
-    # Renders a collapsible HTML component. Used by autodoc_dagster.
+    # Dagster-labs-authored extension with custom directives and sphinx processing.
+    "dagster_sphinx",
     "sphinx_toolbox.collapse",
+    # Render MDX
+    "sphinxcontrib.mdxbuilder",
 ]
 
 # -- Extension configuration -------------------------------------------------
@@ -112,7 +80,12 @@ extensions = [
 # directive invocation. Note that filtration by publicity (done in the `autodoc_dagster` extension)
 # is performed on the member list controlled by this option-- without `members` set, even a method
 # marked `@public` will _not_ be included in the docs!
-autodoc_default_options = {"members": True}
+autodoc_default_options = {"members": True, "undoc-members": True}
+
+# Determines the order in which members (e.g., methods, attributes) are documented
+# within a class or module. "groupwise" groups members by type (e.g., methods together,
+# attributes together) before sorting alphabetically within each group.
+autodoc_member_order = "groupwise"
 
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those
@@ -126,8 +99,11 @@ autodoc_mock_imports = [
     "coloredlogs",
     "croniter",
     "dask",
+    "databricks",
     "databricks_api",
+    "databricks_cli",
     "datadog",
+    "dlt",
     "docker",
     "docker_image",
     "gevent",
@@ -138,16 +114,23 @@ autodoc_mock_imports = [
     "kubernetes",
     "lazy_object_proxy",
     "mlflow",
+    "mypy_boto3_glue",
     "mysql",
     "oauth2client",
+    "orjson",
+    "pandas_gbq",
+    "pandera",
+    "polars",
     "prometheus_client",
     "psycopg2",
     "pypd",
+    "sentry_sdk",
     "slack_sdk",
     "snowflake",
     "sshtunnel",
     "toposort",
     "twilio",
+    "wandb",
 ]
 
 autodoc_typehints = "none"

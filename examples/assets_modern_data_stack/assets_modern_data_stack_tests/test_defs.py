@@ -1,7 +1,8 @@
-from assets_modern_data_stack import defs
+from assets_modern_data_stack.definitions import defs
 
 
 def test_defs_can_load():
-    # Repo should have only one "default" asset group, which is represented a "__ASSET_JOB" job
-    assert defs.get_job_def("__ASSET_JOB")
+    # Repo will have a single implicit job for all the assets, since they all
+    # have the same partitioning scheme
+    assert defs.get_implicit_global_asset_job_def()
     assert defs.get_job_def("all_assets")

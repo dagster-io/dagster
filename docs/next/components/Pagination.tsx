@@ -1,14 +1,13 @@
-import {flatten, useNavigation} from 'util/useNavigation';
+import navigation, {flatten} from 'util/navigation';
 
 import React from 'react';
 
-import {useVersion} from '../util/useVersion';
+import {usePath} from '../util/usePath';
 
 import Link from './Link';
 
 const Pagination = () => {
-  const {asPath} = useVersion();
-  const navigation = useNavigation();
+  const {asPath} = usePath();
   const flattenedNavigation = flatten(navigation).filter((n: {path: any}) => n.path);
 
   const currentIndex = flattenedNavigation.findIndex((n: {path: string}) => n.path === asPath);

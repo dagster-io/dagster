@@ -1,31 +1,74 @@
+from datetime import datetime
 from enum import Enum
-from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Set
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.selector import PartitionsByAssetSelector
+from dagster._core.definitions.utils import check_valid_title
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
+from dagster._core.execution.asset_backfill import (
+    AssetBackfillData,
+    PartitionedAssetBackfillStatus,
+    UnpartitionedAssetBackfillStatus,
+)
 from dagster._core.execution.bulk_actions import BulkActionType
-from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_representation.external_data import (
+    job_name_for_external_partition_set_name,
+)
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.workspace import IWorkspace
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
-
-from .asset_backfill import AssetBackfillData
 
 
 @whitelist_for_serdes
 class BulkActionStatus(Enum):
     REQUESTED = "REQUESTED"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
+    COMPLETED = "COMPLETED"  # deprecated. Use COMPLETED_SUCCESS or COMPLETED_FAILED instead
+    FAILED = "FAILED"  # denotes when there is a daemon failure, or some other issue processing the backfill
+    CANCELING = "CANCELING"
     CANCELED = "CANCELED"
+    COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
+    COMPLETED_FAILED = "COMPLETED_FAILED"  # denotes that the backfill daemon completed successfully, but some runs failed
 
     @staticmethod
     def from_graphql_input(graphql_str):
         return BulkActionStatus(graphql_str)
+
+
+@record
+class BulkActionsFilter:
+    """Filters to use when querying for bulk actions (i.e. backfills) from the BulkActionsTable.
+
+    Each field of the BulkActionsFilter represents a logical AND with each other. For
+    example, if you specify status and created_before, then you will receive only bulk actions
+    with the specified states AND the created before created_before. If left blank, then
+    all values will be permitted for that field.
+
+    Args:
+        statuses (Optional[Sequence[BulkActionStatus]]): A list of statuses to filter by.
+        created_before (Optional[DateTime]): Filter by bulk actions that were created before this datetime. Note that the
+            create_time for each bulk action is stored in UTC.
+        created_after (Optional[DateTime]): Filter by bulk actions that were created after this datetime. Note that the
+            create_time for each bulk action is stored in UTC.t
+        tags (Optional[Dict[str, Union[str, List[str]]]]):
+            A dictionary of tags to query by. All tags specified here must be present for a given bulk action to pass the filter.
+        job_name (Optional[str]): Name of the job to query for. If blank, all job_names will be accepted.
+    """
+
+    statuses: Optional[Sequence[BulkActionStatus]] = None
+    created_before: Optional[datetime] = None
+    created_after: Optional[datetime] = None
+    tags: Optional[Mapping[str, Union[str, Sequence[str]]]] = None
+    job_name: Optional[str] = None
 
 
 @whitelist_for_serdes
@@ -40,13 +83,19 @@ class PartitionBackfill(
             ("backfill_timestamp", float),
             ("error", Optional[SerializableErrorInfo]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
+            ("title", Optional[str]),
+            ("description", Optional[str]),
             # fields that are only used by job backfills
-            ("partition_set_origin", Optional[ExternalPartitionSetOrigin]),
+            ("partition_set_origin", Optional[RemotePartitionSetOrigin]),
             ("partition_names", Optional[Sequence[str]]),
             ("last_submitted_partition_name", Optional[str]),
             ("reexecution_steps", Optional[Sequence[str]]),
             # only used by asset backfills
             ("serialized_asset_backfill_data", Optional[str]),
+            ("asset_backfill_data", Optional[AssetBackfillData]),
+            ("failure_count", int),
+            ("submitting_run_requests", Sequence[RunRequest]),
+            ("reserved_run_ids", Sequence[str]),
         ],
     ),
 ):
@@ -55,15 +104,21 @@ class PartitionBackfill(
         backfill_id: str,
         status: BulkActionStatus,
         from_failure: bool,
-        tags: Mapping[str, str],
+        tags: Optional[Mapping[str, str]],
         backfill_timestamp: float,
         error: Optional[SerializableErrorInfo] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
-        partition_set_origin: Optional[ExternalPartitionSetOrigin] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
         partition_names: Optional[Sequence[str]] = None,
         last_submitted_partition_name: Optional[str] = None,
         reexecution_steps: Optional[Sequence[str]] = None,
         serialized_asset_backfill_data: Optional[str] = None,
+        asset_backfill_data: Optional[AssetBackfillData] = None,
+        failure_count: Optional[int] = None,
+        submitting_run_requests: Optional[Sequence[RunRequest]] = None,
+        reserved_run_ids: Optional[Sequence[str]] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -78,20 +133,42 @@ class PartitionBackfill(
 
         return super(PartitionBackfill, cls).__new__(
             cls,
-            check.str_param(backfill_id, "backfill_id"),
-            check.inst_param(status, "status", BulkActionStatus),
-            check.bool_param(from_failure, "from_failure"),
-            check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
-            check.float_param(backfill_timestamp, "backfill_timestamp"),
-            check.opt_inst_param(error, "error", SerializableErrorInfo),
-            check.opt_nullable_sequence_param(asset_selection, "asset_selection", of_type=AssetKey),
-            check.opt_inst_param(
-                partition_set_origin, "partition_set_origin", ExternalPartitionSetOrigin
+            backfill_id=check.str_param(backfill_id, "backfill_id"),
+            status=check.inst_param(status, "status", BulkActionStatus),
+            from_failure=check.bool_param(from_failure, "from_failure"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
+            backfill_timestamp=check.float_param(backfill_timestamp, "backfill_timestamp"),
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            asset_selection=check.opt_nullable_sequence_param(
+                asset_selection, "asset_selection", of_type=AssetKey
             ),
-            check.opt_nullable_sequence_param(partition_names, "partition_names", of_type=str),
-            check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
-            check.opt_nullable_sequence_param(reexecution_steps, "reexecution_steps", of_type=str),
-            check.opt_str_param(serialized_asset_backfill_data, "serialized_asset_backfill_data"),
+            title=check_valid_title(title),
+            description=check.opt_str_param(description, "description"),
+            partition_set_origin=check.opt_inst_param(
+                partition_set_origin, "partition_set_origin", RemotePartitionSetOrigin
+            ),
+            partition_names=check.opt_nullable_sequence_param(
+                partition_names, "partition_names", of_type=str
+            ),
+            last_submitted_partition_name=check.opt_str_param(
+                last_submitted_partition_name, "last_submitted_partition_name"
+            ),
+            reexecution_steps=check.opt_nullable_sequence_param(
+                reexecution_steps, "reexecution_steps", of_type=str
+            ),
+            serialized_asset_backfill_data=check.opt_str_param(
+                serialized_asset_backfill_data, "serialized_asset_backfill_data"
+            ),
+            asset_backfill_data=check.opt_inst_param(
+                asset_backfill_data, "asset_backfill_data", AssetBackfillData
+            ),
+            failure_count=check.opt_int_param(failure_count, "failure_count", 0),
+            submitting_run_requests=check.opt_sequence_param(
+                submitting_run_requests, "submitting_run_requests", of_type=RunRequest
+            ),
+            reserved_run_ids=check.opt_sequence_param(
+                reserved_run_ids, "reserved_run_ids", of_type=str
+            ),
         )
 
     @property
@@ -100,7 +177,21 @@ class PartitionBackfill(
 
     @property
     def is_asset_backfill(self) -> bool:
-        return self.serialized_asset_backfill_data is not None
+        return (
+            self.serialized_asset_backfill_data is not None or self.asset_backfill_data is not None
+        )
+
+    def get_asset_backfill_data(self, asset_graph: BaseAssetGraph) -> AssetBackfillData:
+        if self.serialized_asset_backfill_data:
+            asset_backfill_data = AssetBackfillData.from_serialized(
+                self.serialized_asset_backfill_data, asset_graph, self.backfill_timestamp
+            )
+        elif self.asset_backfill_data:
+            asset_backfill_data = self.asset_backfill_data
+        else:
+            check.failed("Expected either serialized_asset_backfill_data or asset_backfill_data")
+
+        return asset_backfill_data
 
     @property
     def bulk_action_type(self) -> BulkActionType:
@@ -116,11 +207,103 @@ class PartitionBackfill(
 
         return self.partition_set_origin.partition_set_name
 
-    def get_num_partitions(self, workspace: IWorkspace) -> int:
-        if self.serialized_asset_backfill_data is not None:
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
-            )
+    @property
+    def job_name(self) -> Optional[str]:
+        if self.is_asset_backfill:
+            return None
+        return (
+            job_name_for_external_partition_set_name(self.partition_set_name)
+            if self.partition_set_name
+            else None
+        )
+
+    @property
+    def log_storage_prefix(self) -> Sequence[str]:
+        return ["backfill", self.backfill_id]
+
+    @property
+    def user(self) -> Optional[str]:
+        if self.tags:
+            return self.tags.get(USER_TAG)
+        return None
+
+    def is_valid_serialization(self, workspace: IWorkspace) -> bool:
+        if self.is_asset_backfill:
+            if self.serialized_asset_backfill_data:
+                return AssetBackfillData.is_valid_serialization(
+                    self.serialized_asset_backfill_data,
+                    workspace.asset_graph,
+                )
+            else:
+                return True
+        else:
+            return True
+
+    def get_backfill_status_per_asset_key(
+        self, workspace: IWorkspace
+    ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
+        """Returns a sequence of backfill statuses for each targeted asset key in the asset graph,
+        in topological order.
+        """
+        if not self.is_valid_serialization(workspace):
+            return []
+
+        if self.is_asset_backfill:
+            asset_graph = workspace.asset_graph
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return []
+
+            return asset_backfill_data.get_backfill_status_per_asset_key(asset_graph)
+        else:
+            return []
+
+    def get_target_partitions_subset(
+        self, workspace: IWorkspace, asset_key: AssetKey
+    ) -> Optional[PartitionsSubset]:
+        if not self.is_valid_serialization(workspace):
+            return None
+
+        if self.is_asset_backfill:
+            asset_graph = workspace.asset_graph
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
+            return asset_backfill_data.get_target_partitions_subset(asset_key)
+        else:
+            return None
+
+    def get_target_root_partitions_subset(
+        self, workspace: IWorkspace
+    ) -> Optional[PartitionsSubset]:
+        if not self.is_valid_serialization(workspace):
+            return None
+
+        if self.is_asset_backfill:
+            asset_graph = workspace.asset_graph
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
+            return asset_backfill_data.get_target_root_partitions_subset(asset_graph)
+        else:
+            return None
+
+    def get_num_partitions(self, workspace: IWorkspace) -> Optional[int]:
+        if not self.is_valid_serialization(workspace):
+            return 0
+
+        if self.is_asset_backfill:
+            asset_graph = workspace.asset_graph
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return 0
+
             return asset_backfill_data.get_num_partitions()
         else:
             if self.partition_names is None:
@@ -128,11 +311,17 @@ class PartitionBackfill(
 
             return len(self.partition_names)
 
-    def get_partition_names(self, workspace: IWorkspace) -> Sequence[str]:
-        if self.serialized_asset_backfill_data is not None:
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
-            )
+    def get_partition_names(self, workspace: IWorkspace) -> Optional[Sequence[str]]:
+        if not self.is_valid_serialization(workspace):
+            return []
+
+        if self.is_asset_backfill:
+            asset_graph = workspace.asset_graph
+            try:
+                asset_backfill_data = self.get_asset_backfill_data(asset_graph)
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
             return asset_backfill_data.get_partition_names()
         else:
             if self.partition_names is None:
@@ -141,6 +330,11 @@ class PartitionBackfill(
             return self.partition_names
 
     def get_num_cancelable(self) -> int:
+        """This method is only valid for job backfills. It eturns the number of partitions that are have
+        not yet been requested by the backfill.
+
+        For asset backfills, returns 0.
+        """
         if self.is_asset_backfill:
             return 0
 
@@ -161,94 +355,75 @@ class PartitionBackfill(
 
     def with_status(self, status):
         check.inst_param(status, "status", BulkActionStatus)
-        return PartitionBackfill(
-            status=status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=self.last_submitted_partition_name,
-            error=self.error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=self.serialized_asset_backfill_data,
-        )
+        return self._replace(status=status)
 
     def with_partition_checkpoint(self, last_submitted_partition_name):
-        check.str_param(last_submitted_partition_name, "last_submitted_partition_name")
-        return PartitionBackfill(
-            status=self.status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=last_submitted_partition_name,
-            error=self.error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=self.serialized_asset_backfill_data,
+        check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name")
+        return self._replace(last_submitted_partition_name=last_submitted_partition_name)
+
+    def with_submitting_run_requests(
+        self, submitting_run_requests: Sequence[RunRequest], reserved_run_ids: Sequence[str]
+    ) -> "PartitionBackfill":
+        return self._replace(
+            submitting_run_requests=submitting_run_requests,
+            reserved_run_ids=reserved_run_ids,
         )
+
+    def with_failure_count(self, new_failure_count: int):
+        return self._replace(failure_count=new_failure_count)
 
     def with_error(self, error):
         check.opt_inst_param(error, "error", SerializableErrorInfo)
-        return PartitionBackfill(
-            status=self.status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=self.last_submitted_partition_name,
-            error=error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=self.serialized_asset_backfill_data,
-        )
+        return self._replace(error=error)
 
     def with_asset_backfill_data(
-        self, asset_backfill_data: AssetBackfillData
+        self,
+        asset_backfill_data: AssetBackfillData,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        asset_graph: BaseAssetGraph,
     ) -> "PartitionBackfill":
-        return PartitionBackfill(
-            status=self.status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=self.last_submitted_partition_name,
-            error=self.error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=asset_backfill_data.serialize(),
+        is_backcompat = self.serialized_asset_backfill_data is not None
+        return self._replace(
+            serialized_asset_backfill_data=(
+                asset_backfill_data.serialize(
+                    dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
+                )
+                if is_backcompat
+                else None
+            ),
+            asset_backfill_data=(asset_backfill_data if not is_backcompat else None),
         )
 
     @classmethod
     def from_asset_partitions(
         cls,
         backfill_id: str,
-        asset_graph: AssetGraph,
-        partition_names: Sequence[str],
+        asset_graph: BaseAssetGraph,
+        partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         backfill_timestamp: float,
         tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
+        all_partitions: bool,
+        title: Optional[str],
+        description: Optional[str],
     ) -> "PartitionBackfill":
-        target_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
-        non_partitioned_asset_keys: Set[AssetKey] = set()
-        for asset_key in asset_selection:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
-            if partitions_def:
-                target_subsets_by_asset_key[
-                    asset_key
-                ] = partitions_def.empty_subset().with_partition_keys(partition_names)
-            else:
-                non_partitioned_asset_keys.add(asset_key)
+        """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
+        the backfill will target the provided partition_names for all those assets.
 
+        Otherwise, the backfill must consist of a partitioned "anchor" asset and a set of other
+        assets that descend from it. In that case, the backfill will target the partition_names of
+        the anchor asset, as well as all partitions of other selected assets that are downstream
+        of those partitions of the anchor asset.
+        """
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=partition_names,
+            asset_selection=asset_selection,
+            dynamic_partitions_store=dynamic_partitions_store,
+            all_partitions=all_partitions,
+            backfill_start_timestamp=backfill_timestamp,
+        )
         return cls(
             backfill_id=backfill_id,
             status=BulkActionStatus.REQUESTED,
@@ -256,9 +431,68 @@ class PartitionBackfill(
             tags=tags,
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
-            serialized_asset_backfill_data=AssetBackfillData.empty(
-                AssetGraphSubset(
-                    asset_graph, target_subsets_by_asset_key, non_partitioned_asset_keys
-                )
-            ).serialize(),
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=asset_backfill_data,
+            title=title,
+            description=description,
+        )
+
+    @classmethod
+    def from_partitions_by_assets(
+        cls,
+        backfill_id: str,
+        asset_graph: BaseAssetGraph,
+        backfill_timestamp: float,
+        tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
+        partitions_by_assets: Sequence[PartitionsByAssetSelector],
+        title: Optional[str],
+        description: Optional[str],
+    ):
+        asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
+            asset_graph=asset_graph,
+            dynamic_partitions_store=dynamic_partitions_store,
+            backfill_start_timestamp=backfill_timestamp,
+            partitions_by_assets=partitions_by_assets,
+        )
+        return cls(
+            backfill_id=backfill_id,
+            status=BulkActionStatus.REQUESTED,
+            from_failure=False,
+            tags=tags,
+            backfill_timestamp=backfill_timestamp,
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=asset_backfill_data,
+            asset_selection=[selector.asset_key for selector in partitions_by_assets],
+            title=title,
+            description=description,
+        )
+
+    @classmethod
+    def from_asset_graph_subset(
+        cls,
+        backfill_id: str,
+        backfill_timestamp: float,
+        tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
+        asset_graph_subset: AssetGraphSubset,
+        title: Optional[str],
+        description: Optional[str],
+    ):
+        asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+            asset_graph_subset=asset_graph_subset,
+            dynamic_partitions_store=dynamic_partitions_store,
+            backfill_start_timestamp=backfill_timestamp,
+        )
+        return cls(
+            backfill_id=backfill_id,
+            status=BulkActionStatus.REQUESTED,
+            from_failure=False,
+            tags=tags,
+            backfill_timestamp=backfill_timestamp,
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=asset_backfill_data,
+            asset_selection=list(asset_graph_subset.asset_keys),
+            title=title,
+            description=description,
         )

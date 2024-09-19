@@ -1,56 +1,26 @@
-from enum import Enum
-from typing import NamedTuple, Optional, Sequence, cast
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer, UnknownSerdesValue
 from dagster._utils.error import SerializableErrorInfo
 
 
-# DEPRECATED - daemon types are now strings, only exists in code for deserializing old heartbeats
-@whitelist_for_serdes
-class DaemonType(Enum):
-    SENSOR = "SENSOR"
-    SCHEDULER = "SCHEDULER"
-    QUEUED_RUN_COORDINATOR = "QUEUED_RUN_COORDINATOR"
+class DaemonHeartbeatSerializer(NamedTupleSerializer["DaemonHeartbeat"]):
+    def before_unpack(self, context, unpacked_dict):
+        # Previously daemon types were enums, now they are strings. If we find a packed enum,
+        # just extract the name, which is the string we want.
+        if isinstance(unpacked_dict.get("daemon_type"), UnknownSerdesValue):
+            unknown = unpacked_dict["daemon_type"]
+            unpacked_dict["daemon_type"] = unknown.value["__enum__"].split(".")[-1]
+            context.clear_ignored_unknown_values(unknown)
+        if unpacked_dict.get("error"):
+            unpacked_dict["errors"] = [unpacked_dict["error"]]
+            del unpacked_dict["error"]
+        return unpacked_dict
 
 
-class DaemonBackcompat(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict,
-        klass,
-        args_for_class,
-        whitelist_map,
-        descent_path,
-    ):
-        # Handle case where daemon_type used to be an enum (e.g. DaemonType.SCHEDULER)
-        daemon_type = unpack_inner_value(
-            storage_dict.get("daemon_type"),
-            whitelist_map,
-            descent_path=f"{descent_path}.daemon_type",
-        )
-        return DaemonHeartbeat(
-            timestamp=cast(float, storage_dict.get("timestamp")),
-            daemon_type=(daemon_type.value if isinstance(daemon_type, DaemonType) else daemon_type),
-            daemon_id=cast(str, storage_dict.get("daemon_id")),
-            errors=[
-                unpack_inner_value(
-                    storage_dict.get("error"),
-                    whitelist_map,
-                    descent_path=f"{descent_path}.error",
-                )
-            ]  # error was replaced with errors
-            if storage_dict.get("error")
-            else unpack_inner_value(
-                storage_dict.get("errors"),
-                whitelist_map,
-                descent_path=f"{descent_path}.errors",
-            ),
-        )
-
-
-@whitelist_for_serdes(serializer=DaemonBackcompat)
+@whitelist_for_serdes(serializer=DaemonHeartbeatSerializer)
 class DaemonHeartbeat(
     NamedTuple(
         "_DaemonHeartbeat",
@@ -66,7 +36,7 @@ class DaemonHeartbeat(
         cls,
         timestamp: float,
         daemon_type: str,
-        daemon_id: str,
+        daemon_id: Optional[str],
         errors: Optional[Sequence[SerializableErrorInfo]] = None,
     ):
         errors = check.opt_sequence_param(errors, "errors", of_type=SerializableErrorInfo)
@@ -91,8 +61,7 @@ class DaemonStatus(
         ],
     )
 ):
-    """
-    Daemon statuses are derived from daemon heartbeats and instance configuration to provide an
+    """Daemon statuses are derived from daemon heartbeats and instance configuration to provide an
     overview about the daemon's liveness.
     """
 

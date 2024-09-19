@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dagster import Definitions, build_sensor_context, job, op
+from dagster import Definitions, OpExecutionContext, build_sensor_context, job, op
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_run_failure,
     my_slack_on_run_failure,
@@ -15,13 +15,12 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import 
     sensor_B,
     test_my_directory_sensor_cursor,
     test_sensor,
-    uses_db_connection,
 )
 
 
 @op(config_schema={"fail": bool})
-def foo(context):
-    if context.solid_config["fail"]:
+def foo(context: OpExecutionContext):
+    if context.op_config["fail"]:
         raise Exception("This will always fail!")
 
 
@@ -67,10 +66,6 @@ def test_run_failure_sensor_def():
 def test_sensor_testing_example():
     test_sensor()
     test_my_directory_sensor_cursor()
-
-
-def test_resource_sensor_example():
-    uses_db_connection()
 
 
 def test_s3_sensor():

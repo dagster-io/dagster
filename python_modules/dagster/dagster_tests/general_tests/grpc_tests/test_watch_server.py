@@ -1,5 +1,3 @@
-# pylint: disable=cell-var-from-loop
-
 import time
 
 import pytest
@@ -15,7 +13,7 @@ def wait_for_condition(fn, interval, timeout=60):
     start_time = time.time()
     while not fn():
         if time.time() - start_time > timeout:
-            raise Exception("Timeout of {} seconds exceeded for condition {}".format(timeout, fn))
+            raise Exception(f"Timeout of {timeout} seconds exceeded for condition {fn}")
 
         time.sleep(interval)
 

@@ -1,10 +1,71 @@
+from dagster import AssetKey
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.merger import deep_merge_dicts
 
-SAMPLE_ACCOUNT_ID = 30000
+SAMPLE_PROJECT_ID = 35000
 SAMPLE_JOB_ID = 40000
 SAMPLE_RUN_ID = 5000000
 
-SAMPLE_API_PREFIX = f"https://cloud.getdbt.com/api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
+DBT_CLOUD_API_TOKEN = "abc"
+DBT_CLOUD_ACCOUNT_ID = 30000
+DBT_CLOUD_US_HOST = "https://cloud.getdbt.com/"
+DBT_CLOUD_EMEA_HOST = "https://emea.dbt.com/"
+
+SAMPLE_API_PREFIX = f"{DBT_CLOUD_US_HOST}api/v2/accounts/{DBT_CLOUD_ACCOUNT_ID}"
+SAMPLE_API_V3_PREFIX = f"{DBT_CLOUD_US_HOST}api/v3/accounts/{DBT_CLOUD_ACCOUNT_ID}"
+
+SAMPLE_EMEA_API_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v2/accounts/{DBT_CLOUD_ACCOUNT_ID}"
+SAMPLE_EMEA_API_V3_PREFIX = f"{DBT_CLOUD_EMEA_HOST}api/v3/accounts/{DBT_CLOUD_ACCOUNT_ID}"
+
+
+def job_details_data(job_id: int):
+    return {
+        "execution": {"timeout_seconds": 0},
+        "generate_docs": False,
+        "run_generate_sources": False,
+        "id": job_id,
+        "account_id": DBT_CLOUD_ACCOUNT_ID,
+        "project_id": 50000,
+        "environment_id": 47000,
+        "name": "MyCoolJob",
+        "dbt_version": None,
+        "created_at": "2021-10-29T21:35:33.278228+00:00",
+        "updated_at": "2021-11-01T22:47:48.056913+00:00",
+        "execute_steps": ["dbt run"],
+        "state": 1,
+        "deferring_job_definition_id": None,
+        "lifecycle_webhooks": False,
+        "lifecycle_webhooks_url": None,
+        "triggers": {
+            "github_webhook": False,
+            "git_provider_webhook": False,
+            "custom_branch_only": False,
+            "schedule": False,
+        },
+        "settings": {"threads": 4, "target_name": "default"},
+        "schedule": {
+            "cron": "0 * * * *",
+            "date": {"type": "every_day"},
+            "time": {"type": "every_hour", "interval": 1},
+        },
+        "is_deferrable": False,
+        "generate_sources": False,
+        "cron_humanized": "Every hour",
+        "next_run": None,
+        "next_run_humanized": None,
+    }
+
+
+def sample_list_job_details():
+    return {
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+        "data": [job_details_data(job_id=SAMPLE_JOB_ID)],
+    }
 
 
 def sample_job_details():
@@ -15,53 +76,19 @@ def sample_job_details():
             "user_message": "Success!",
             "developer_message": "",
         },
-        "data": {
-            "execution": {"timeout_seconds": 0},
-            "generate_docs": False,
-            "run_generate_sources": False,
-            "id": SAMPLE_JOB_ID,
-            "account_id": SAMPLE_ACCOUNT_ID,
-            "project_id": 50000,
-            "environment_id": 47000,
-            "name": "MyCoolJob",
-            "dbt_version": None,
-            "created_at": "2021-10-29T21:35:33.278228+00:00",
-            "updated_at": "2021-11-01T22:47:48.056913+00:00",
-            "execute_steps": ["dbt run"],
-            "state": 1,
-            "deferring_job_definition_id": None,
-            "lifecycle_webhooks": False,
-            "lifecycle_webhooks_url": None,
-            "triggers": {
-                "github_webhook": False,
-                "git_provider_webhook": False,
-                "custom_branch_only": False,
-                "schedule": False,
-            },
-            "settings": {"threads": 4, "target_name": "default"},
-            "schedule": {
-                "cron": "0 * * * *",
-                "date": {"type": "every_day"},
-                "time": {"type": "every_hour", "interval": 1},
-            },
-            "is_deferrable": False,
-            "generate_sources": False,
-            "cron_humanized": "Every hour",
-            "next_run": None,
-            "next_run_humanized": None,
-        },
+        "data": [job_details_data(job_id=SAMPLE_JOB_ID)],
     }
 
 
 def sample_runs_details(include_related=None, **kwargs):
     runs = [sample_run_details(include_related, **kwargs) for i in range(100)]
     if include_related and "environment" in include_related:
-        for run in runs:
+        for i, run in enumerate(runs):
             run["environment"] = {
                 "dbt_project_subdirectory": None,
                 "project_id": 50000,
                 "id": 47000,
-                "account_id": SAMPLE_ACCOUNT_ID,
+                "account_id": DBT_CLOUD_ACCOUNT_ID,
                 "connection_id": 56000,
                 "repository_id": 58000,
                 "credentials_id": 52000,
@@ -73,7 +100,7 @@ def sample_runs_details(include_related=None, **kwargs):
                 "supports_docs": False,
                 "state": 10,
             }
-            run = deep_merge_dicts(run, kwargs)
+            runs[i] = deep_merge_dicts(run, kwargs)
     return {
         "status": {
             "code": 200,
@@ -89,7 +116,7 @@ def sample_run_details(include_related=None, **kwargs):
     base_data = {
         "id": SAMPLE_RUN_ID,
         "trigger_id": 33000000,
-        "account_id": SAMPLE_ACCOUNT_ID,
+        "account_id": DBT_CLOUD_ACCOUNT_ID,
         "environment_id": 47000,
         "project_id": 50000,
         "job_definition_id": SAMPLE_JOB_ID,
@@ -117,7 +144,7 @@ def sample_run_details(include_related=None, **kwargs):
         "last_heartbeat_at": None,
         "should_start_at": "2021-11-01 22:47:48.501943+00:00",
         "trigger": None,
-        "job": None,
+        "job": {"triggers": {"schedule": True}},
         "environment": None,
         "run_steps": [],
         "status_humanized": "Success",
@@ -164,7 +191,7 @@ def sample_run_details(include_related=None, **kwargs):
                 "generate_docs": False,
                 "run_generate_sources": False,
                 "id": SAMPLE_JOB_ID,
-                "account_id": SAMPLE_ACCOUNT_ID,
+                "account_id": DBT_CLOUD_ACCOUNT_ID,
                 "project_id": 50000,
                 "environment_id": 47071,
                 "name": "MyCoolJob",
@@ -295,3 +322,98 @@ def sample_run_results():
             "rpc_method": "run",
         },
     }
+
+
+def sample_get_environment_variables(environment_variable_id: int, name: str, value: str):
+    return {
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+        "data": {
+            name: {
+                "project": {"id": 1, "value": "-1"},
+                "environment": {"id": 2, "value": "-1"},
+                "job": {"id": environment_variable_id, "value": value},
+            },
+        },
+    }
+
+
+def sample_set_environment_variable(environment_variable_id: int, name: str, value: str):
+    return {
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+        "data": {
+            "account_id": DBT_CLOUD_ACCOUNT_ID,
+            "project_id": SAMPLE_PROJECT_ID,
+            "name": name,
+            "type": "job",
+            "state": 1,
+            "user_id": None,
+            "environment_id": None,
+            "job_definition_id": SAMPLE_JOB_ID,
+            "environment": None,
+            "display_value": value,
+            "id": environment_variable_id,
+            "created_at": "2023-01-01 10:00:00.000000+00:00",
+            "updated_at": "2023-01-02 10:00:00.000000+00:00",
+        },
+    }
+
+
+def assert_assets_match_project(
+    dbt_assets, include_seeds_and_snapshots: bool = True, prefix=None, has_non_argument_deps=False
+):
+    if prefix is None:
+        prefix = []
+    elif isinstance(prefix, str):
+        prefix = [prefix]
+
+    assert len(dbt_assets) == 1
+    assets_op = dbt_assets[0].op
+    assert assets_op.tags == {COMPUTE_KIND_TAG: "dbt"}
+
+    # this is the set of keys which are "true" inputs to the op, rather than placeholder inputs
+    # which will not be used if this op is run without subsetting
+    non_subset_input_keys = set(dbt_assets[0].keys_by_input_name.values()) - dbt_assets[0].keys
+    assert len(non_subset_input_keys) == bool(has_non_argument_deps)
+
+    def_outputs = sorted(set(assets_op.output_dict.keys()))
+    expected_outputs = sorted(
+        [
+            "model_dagster_dbt_test_project_least_caloric",
+            "model_dagster_dbt_test_project_sort_by_calories",
+            "model_dagster_dbt_test_project_sort_cold_cereals_by_calories",
+            "model_dagster_dbt_test_project_sort_hot_cereals_by_calories",
+        ]
+        + (
+            [
+                "seed_dagster_dbt_test_project_cereals",
+                "snapshot_dagster_dbt_test_project_orders_snapshot",
+            ]
+            if include_seeds_and_snapshots
+            else []
+        )
+    )
+    assert def_outputs == expected_outputs, f"{def_outputs} != {expected_outputs}"
+    for asset_name in [
+        "subdir_schema/least_caloric",
+        "sort_hot_cereals_by_calories",
+        "cold_schema/sort_cold_cereals_by_calories",
+    ]:
+        asset_key = AssetKey(prefix + asset_name.split("/"))
+        assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(prefix + ["sort_by_calories"])}
+
+    for asset_key, group_name in dbt_assets[0].group_names_by_key.items():
+        assert group_name == "default", f'{asset_key} group {group_name} != "default"'
+
+    assert AssetKey(prefix + ["sort_by_calories"]) in dbt_assets[0].keys
+    sort_by_calories_deps = dbt_assets[0].asset_deps[AssetKey(prefix + ["sort_by_calories"])]
+    assert sort_by_calories_deps == {AssetKey(prefix + ["cereals"])}, sort_by_calories_deps

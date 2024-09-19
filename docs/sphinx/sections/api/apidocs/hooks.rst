@@ -10,6 +10,5 @@ Hooks
 .. autoclass:: HookDefinition
 
 .. autoclass:: HookContext
-    :members:
 
 .. autofunction:: build_hook_context

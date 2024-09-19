@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagstermill/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -19,18 +19,19 @@ setup(
     name="dagstermill",
     version=ver,
     description="run notebooks using the Dagster tools",
-    author="Elementl",
-    author_email="hello@elementl.com",
+    author="Dagster Labs",
+    author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
     packages=find_packages(exclude=["dagstermill_tests*"]),
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         # ipykernel 5.4.0 and 5.4.1 broke papermill
@@ -48,6 +49,7 @@ setup(
         "papermill>=1.0.0",
         "scrapbook>=0.5.0",
         "nbconvert",
+        "jupyter-client<8",  # jupyter-client 8 causing test hangs
     ],
     extras_require={
         "test": [

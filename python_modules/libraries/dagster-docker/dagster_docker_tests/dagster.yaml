@@ -1,4 +1,4 @@
-# for debugging local tests in Dagit
+# for debugging local tests in Dagster UI
 
 run_storage:
   module: dagster_postgres.run_storage.run_storage

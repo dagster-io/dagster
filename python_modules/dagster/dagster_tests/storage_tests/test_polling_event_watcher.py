@@ -1,13 +1,16 @@
 import tempfile
 import time
 from contextlib import contextmanager
-from typing import Callable, Union
+from typing import Any, Callable, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log import SqliteEventLogStorage, SqlPollingEventWatcher
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.utils import make_new_run_id
+from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
 
 class SqlitePollingEventLogStorage(SqliteEventLogStorage):
@@ -18,38 +21,47 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     observe runs.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(SqlitePollingEventLogStorage, self).__init__(*args, **kwargs)
-        self._watcher = SqlPollingEventWatcher(self)
-        self._disposed = False
+        self._watcher: Optional[SqlPollingEventWatcher] = None
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
-        return SqlitePollingEventLogStorage(inst_data=inst_data, **config_value)
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
+        return cls(inst_data=inst_data, **config_value)
 
     def watch(
-        self, run_id: str, cursor: Union[str, int], callback: Callable[[EventLogEntry], None]
+        self,
+        run_id: str,
+        cursor: Optional[str],
+        callback: Callable[[EventLogEntry, str], None],
     ):
         check.str_param(run_id, "run_id")
         check.opt_str_param(cursor, "cursor")
         check.callable_param(callback, "callback")
+        if self._watcher is None:
+            self._watcher = SqlPollingEventWatcher(self)
+
         self._watcher.watch_run(run_id, cursor, callback)
 
-    def end_watch(self, run_id: str, handler: Callable[[EventLogEntry], None]):
+    def end_watch(
+        self,
+        run_id: str,
+        handler: Callable[[EventLogEntry, str], None],
+    ):
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
-        self._watcher.unwatch_run(run_id, handler)
+        if self._watcher:
+            self._watcher.unwatch_run(run_id, handler)
 
-    def __del__(self):
-        self.dispose()
-
-    def dispose(self):
-        if not self._disposed:
-            self._disposed = True
+    def dispose(self) -> None:
+        if self._watcher:
             self._watcher.close()
+            self._watcher = None
 
 
-RUN_ID = "foo"
+RUN_ID = make_new_run_id()
 
 
 def create_event(count: int, run_id: str = RUN_ID):
@@ -70,7 +82,9 @@ def create_event(count: int, run_id: str = RUN_ID):
 @contextmanager
 def create_sqlite_run_event_logstorage():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        yield SqlitePollingEventLogStorage(tmpdir_path)
+        storage = SqlitePollingEventLogStorage(tmpdir_path)
+        yield storage
+        storage.dispose()
 
 
 def test_using_logstorage():
@@ -129,3 +143,6 @@ def test_using_logstorage():
 
         assert [int(evt.message) for evt in watched_1] == [2, 3, 4]
         assert [int(evt.message) for evt in watched_2] == [4, 5]
+
+    # calling end_watch after dispose does not error
+    storage.end_watch(RUN_ID, watch_two)

@@ -2,24 +2,22 @@ import click
 from tqdm import tqdm
 
 from dagster import __version__ as dagster_version
+from dagster._cli.utils import get_instance_for_cli
 from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
-from dagster._core.instance import DagsterInstance
 
 
 @click.group(name="run")
 def run_cli():
-    """
-    Commands for working with Dagster job runs.
-    """
+    """Commands for working with Dagster job runs."""
 
 
 @run_cli.command(name="list", help="List the runs in the current Dagster instance.")
 @click.option("--limit", help="Only list a specified number of runs", default=None, type=int)
 def run_list_command(limit):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         for run in instance.get_runs(limit=limit):
-            click.echo("Run: {}".format(run.run_id))
-            click.echo("     Job: {}".format(run.pipeline_name))
+            click.echo(f"Run: {run.run_id}")
+            click.echo(f"     Job: {run.job_name}")
 
 
 @run_cli.command(
@@ -29,7 +27,7 @@ def run_list_command(limit):
 @click.option("--force", "-f", is_flag=True, default=False, help="Skip prompt to delete run.")
 @click.argument("run_id")
 def run_delete_command(run_id, force):
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         if not instance.has_run(run_id):
             raise click.ClickException(f"No run found with id {run_id}.")
 
@@ -68,7 +66,7 @@ def run_wipe_command(force):
         should_delete_run = confirmation == "DELETE"
 
     if should_delete_run:
-        with DagsterInstance.get() as instance:
+        with get_instance_for_cli() as instance:
             instance.wipe()
         click.echo("Deleted all run history and event logs.")
     else:
@@ -87,7 +85,7 @@ def run_wipe_command(force):
 )
 @job_target_argument
 def run_migrate_command(from_label, **kwargs):
-    from dagster._core.storage.pipeline_run import RunsFilter
+    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
@@ -99,13 +97,13 @@ def run_migrate_command(from_label, **kwargs):
             "`--from` argument must be of the format: <repository_name>@<location_name>"
         )
 
-    with DagsterInstance.get() as instance:
+    with get_instance_for_cli() as instance:
         with get_external_job_from_kwargs(
             instance, version=dagster_version, kwargs=kwargs
         ) as external_job:
             new_job_origin = external_job.get_external_origin()
             job_name = external_job.name
-            to_label = new_job_origin.external_repository_origin.get_label()
+            to_label = new_job_origin.repository_origin.get_label()
 
         if not to_label:
             raise click.UsageError("Must specify valid job targets to migrate history to.")
@@ -134,7 +132,7 @@ def run_migrate_command(from_label, **kwargs):
 
         if should_migrate:
             for record in tqdm(records):
-                instance.run_storage.replace_job_origin(record.pipeline_run, new_job_origin)
+                instance.run_storage.replace_job_origin(record.dagster_run, new_job_origin)
             click.echo(f"Migrated the run history for {job_name} from {from_label} to {to_label}.")
         else:
             raise click.ClickException("Exiting without migrating.")

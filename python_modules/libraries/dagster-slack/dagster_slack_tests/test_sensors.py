@@ -36,8 +36,8 @@ def test_slack_run_failure_sensor_def():
 
 @pytest.mark.parametrize(
     [
-        "minutes_late",
-        "previous_minutes_late",
+        "minutes_overdue",
+        "previous_minutes_overdue",
         "warn_after_minutes",
         "notify_when_back_on_time",
         "should_output",
@@ -61,8 +61,8 @@ def test_slack_run_failure_sensor_def():
     ],
 )
 def test_slack_freshness_polciy_status(
-    minutes_late: Optional[float],
-    previous_minutes_late: Optional[float],
+    minutes_overdue: Optional[float],
+    previous_minutes_overdue: Optional[float],
     warn_after_minutes: float,
     notify_when_back_on_time: bool,
     should_output: bool,
@@ -72,7 +72,7 @@ def test_slack_freshness_polciy_status(
             channel="#foo",
             slack_token="blah",
             asset_selection=AssetSelection.all(),
-            warn_after_minutes_late=warn_after_minutes,
+            warn_after_minutes_overdue=warn_after_minutes,
             notify_when_back_on_time=notify_when_back_on_time,
         )
         my_sensor(
@@ -80,8 +80,8 @@ def test_slack_freshness_polciy_status(
                 "slack_on_freshness_policy",
                 asset_key=AssetKey(["foo", "bar"]),
                 freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
-                minutes_late=minutes_late,
-                previous_minutes_late=previous_minutes_late,
+                minutes_overdue=minutes_overdue,
+                previous_minutes_overdue=previous_minutes_overdue,
             )
         )
         if should_output:

@@ -15,16 +15,16 @@ def test_health_check_success():
             attribute="bar_repo",
             python_file=file_relative_path(__file__, "grpc_repo.py"),
         )
-        server = GrpcServerProcess(
+        with GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=loadable_target_origin,
             max_workers=2,
             heartbeat=True,
             heartbeat_timeout=1,
-        )
-        with server.create_ephemeral_client() as client:
+            wait_on_exit=True,
+        ) as server:
+            client = server.create_client()
             assert client.health_check_query() == "SERVING"
-        server.wait()
 
 
 def test_health_check_fail():

@@ -1,9 +1,9 @@
 import inspect
 import json
 import re
+import warnings
 from datetime import datetime
 
-import pendulum
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -15,10 +15,11 @@ from dagster import (
     schedule,
     validate_run_config,
 )
+from dagster._core.errors import ScheduleExecutionError
+from dagster._time import get_current_datetime
 from dagster._utils.merger import merge_dicts
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
-# pylint: disable=unused-variable, unused-argument, redefined-outer-name
 
 
 def test_scheduler():
@@ -36,11 +37,9 @@ def test_scheduler():
     def echo_time_schedule(context):
         return {
             "echo_time": (
-                (
-                    context.scheduled_execution_time.isoformat()
-                    if context.scheduled_execution_time
-                    else ""
-                )
+                context.scheduled_execution_time.isoformat()
+                if context.scheduled_execution_time
+                else ""
             )
         }
 
@@ -58,10 +57,8 @@ def test_scheduler():
 
     context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
 
-    execution_data = echo_time_schedule.evaluate_tick(context_without_time)
-    assert execution_data.run_requests
-    assert len(execution_data.run_requests) == 1
-    assert execution_data.run_requests[0].run_config == {"echo_time": ""}
+    with pytest.raises(ScheduleExecutionError):
+        echo_time_schedule.evaluate_tick(context_without_time)
 
     execution_data = echo_time_schedule.evaluate_tick(context_with_time)
     assert execution_data.run_requests
@@ -87,11 +84,11 @@ def test_schedule_decorators_sanity():
 
     @schedule(cron_schedule="* * * * *", job_name="foo_job")
     def foo_schedule():
-        """Fake doc block"""
+        """Fake doc block."""
         return {}
 
     # Ensure that schedule definition inherits properties from wrapped fxn
-    assert foo_schedule.__doc__ == """Fake doc block"""
+    assert foo_schedule.__doc__ == """Fake doc block."""
 
     assert not foo_schedule.execution_timezone
 
@@ -180,11 +177,34 @@ def test_schedule_with_nested_tags():
         return {}
 
     assert my_tag_schedule.evaluate_tick(
-        build_schedule_context(scheduled_execution_time=pendulum.now())
+        build_schedule_context(scheduled_execution_time=get_current_datetime())
     )[0][0].tags == merge_dicts(
         {key: json.dumps(val) for key, val in nested_tags.items()},
         {"dagster/schedule_name": "my_tag_schedule"},
     )
+
+
+def test_invalid_tag_keys():
+    tags = {"my_tag&": "yes", "my_tag#": "yes"}
+
+    # turn off any outer warnings filters, e.g. ignores that are set in pyproject.toml
+    warnings.resetwarnings()
+    with warnings.catch_warnings(record=True) as caught_warnings:
+
+        @schedule(cron_schedule="* * * * *", job_name="foo_job", tags=tags)
+        def my_tag_schedule():
+            return {}
+
+        assert len(caught_warnings) == 1
+        warning = caught_warnings[0]
+        assert "Non-compliant tag keys like ['my_tag&', 'my_tag#'] are deprecated" in str(
+            warning.message
+        )
+        assert warning.filename.endswith("test_schedule.py")
+
+    assert my_tag_schedule.evaluate_tick(
+        build_schedule_context(scheduled_execution_time=get_current_datetime())
+    )[0][0].tags == merge_dicts(tags, {"dagster/schedule_name": "my_tag_schedule"})
 
 
 def test_scheduled_jobs():

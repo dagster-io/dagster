@@ -10,29 +10,43 @@ your data warehouse.
 
 Related Guides:
 
-* `Using Dagster with Snowflake </integrations/snowflake>`_
-* `Transitioning Data Pipelines from Development to Production </guides/dagster/transitioning-data-pipelines-from-development-to-production>`_
-* `Testing Against Production with Dagster Cloud Branch Deployments </guides/dagster/branch_deployments>`_
+* `Using Dagster with Snowflake <https://docs.dagster.io/integrations/snowflake>`_
+* `Snowflake I/O manager reference <https://docs.dagster.io/integrations/snowflake/reference>`_
+* `Transitioning data pipelines from development to production <https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production>`_
+* `Testing against production with Dagster+ Branch Deployments <https://docs.dagster.io/guides/dagster/branch_deployments>`_
 
 
 .. currentmodule:: dagster_snowflake
 
 I/O Manager
 ===========
-.. autoconfigurable:: build_snowflake_io_manager
+.. autoconfigurable:: SnowflakeIOManager
   :annotation: IOManagerDefinition
-
 
 Resource
 ========
 
-.. autoconfigurable:: snowflake_resource
+.. autoconfigurable:: SnowflakeResource
   :annotation: ResourceDefinition
 
 .. autoclass:: SnowflakeConnection
   :members:
-  :undoc-members:
+
+Data Freshness 
+==============
+
+.. autofunction:: fetch_last_updated_timestamps
 
 Ops
 ===
 .. autofunction:: snowflake_op_for_query
+
+
+Legacy
+=======
+
+.. autoconfigurable:: build_snowflake_io_manager
+  :annotation: IOManagerDefinition
+
+.. autoconfigurable:: snowflake_resource
+  :annotation: ResourceDefinition

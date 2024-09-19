@@ -3,13 +3,13 @@
 # DAGSTER BUILDKITE TEST
 #
 # This Dockerfile specifies an image that serves as base for all Python testing
-# steps (both integration and unit) run on BK. 
+# steps (both integration and unit) run on BK.
 #
 ####################################################################################################
 ARG BASE_IMAGE
 FROM "${BASE_IMAGE}" AS system_base
 
-LABEL maintainer="Elementl"
+LABEL maintainer="Dagster Labs"
 
 # Never prompts the user for choices on installation/configuration of packages (NOTE:
 # DEBIAN_FRONTEND does not affect the apt-get command)
@@ -20,12 +20,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update -yqq \
     && apt-get upgrade -yqq \
     && apt-get install -yqq --no-install-recommends \
-       apt-transport-https \
-       curl \
-       ca-certificates \
-       gnupg2 \
-       locales \
-       lsb-release \
+    apt-transport-https \
+    curl \
+    ca-certificates \
+    gnupg2 \
+    locales \
+    lsb-release \
     # Set locale
     && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
     && dpkg-reconfigure --frontend=noninteractive locales \
@@ -38,8 +38,7 @@ ENV LANG=en_US.UTF-8 \
     DOCKER_COMPOSE_VERSION=1.29.1 \
     KIND_VERSION=v0.14.0 \
     KUBECTL_VERSION=v1.20.1 \
-    PYSPARK_VERSION=3.0.1 \
-    FOSSA_VERSION=v1.1.10
+    FOSSA_VERSION=1.1.10
 
 # Install Kubernetes tools: kubectl, kind, helm
 RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl" \
@@ -53,60 +52,68 @@ RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL
 # Install libxmlsec to use xmlsec
 RUN apt-get update -yqq \
     && apt-get install -yqq --no-install-recommends \
-       libxmlsec1-dev \
-       pkg-config
+    libxmlsec1-dev \
+    pkg-config
+
+# Install Java (required by pyspark)
+COPY --from=openjdk:8-jre-slim /usr/local/openjdk-8 /usr/local/openjdk-8
+ENV JAVA_HOME /usr/local/openjdk-8
+RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/java 1
 
 # Install various packages used in running/installing/testing Dagster:
 # - git/make (cloning dagster, running checks defined in Makefile)
-# - openjdk-11-{jdk,jre}-headless 8 (Java required by pyspark) see: http://bit.ly/2ZIuHRh
-# - nodejs/yarn (dagit)
+# - nodejs/yarn (dagster UI)
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
-# deb.nodesource script adds node source to apt 
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
+# deb.nodesource script adds node source to apt
+RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
-       gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
+    gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/yarnkey.gpg] https://dl.yarnpkg.com/debian/ stable main" | \
-       tee -a /etc/apt/sources.list.d/yarn.list >/dev/null \
+    tee -a /etc/apt/sources.list.d/yarn.list >/dev/null \
     # Deal with slim variants not having man page directories (which causes "update-alternatives" to fail)
     && mkdir -p /usr/share/man/man1 /usr/share/man/man2 \
     && apt-get update -yqq \
     && apt-get install -yqq --no-install-recommends \
-       build-essential \
-       bzip2 \
-       cron \
-       g++ \
-       gcc \
-       git \
-       make \
-       mariadb-client \
-       nodejs \
-       openjdk-11-jdk-headless \
-       openjdk-11-jre-headless \
-       pandoc \
-       postgresql \
-       rabbitmq-server \
-       rsync \
-       ssh \
-       software-properties-common \
-       unzip \
-       wget \
-       xz-utils \
-       yarn \
-    # Confirm Java works
-    && java -version
+    build-essential \
+    bzip2 \
+    cron \
+    g++ \
+    gcc \
+    git \
+    make \
+    mariadb-client \
+    nodejs \
+    pandoc \
+    postgresql \
+    rabbitmq-server \
+    rsync \
+    ssh \
+    software-properties-common \
+    unzip \
+    wget \
+    xz-utils \
+    yarn
+
+# Install FOSSA cli for analyzing our open-source dependencies
+# https://github.com/fossas/fossa-cli
+RUN wget https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}/fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz \
+    && tar xvzf fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz fossa \
+    && chmod +x ./fossa \
+    && mv ./fossa /usr/local/bin/fossa \
+    && rm fossa-cli_${FOSSA_VERSION}_linux_amd64.tar.gz \
+    && fossa --version
 
 # Install Google Cloud SDK
 # https://cloud.google.com/sdk/docs/install#deb
 # Add Google Cloud GPG key and apt source
-RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg > /usr/share/keyrings/cloud.google.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
-       tee -a /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null \
-    # Install google cloud
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
+    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | \
+    tee -a /etc/apt/sources.list.d/google-cloud-sdk.list > /dev/null \
     && apt-get -yqq update \
     && apt-get -yqq install \
-       google-cloud-sdk
+    google-cloud-cli
 
 # Install Docker -- note that we have some older code using `docker-compose` instead of `docker
 # compose`, so we have to install both the `docker-compose` executable and the docker compose CLI
@@ -114,20 +121,15 @@ RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg > /usr/share/keyr
 # CLI plugin.
 # See: https://docs.docker.com/engine/install/debian/
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
-       gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
+    gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
-       tee -a /etc/apt/sources.list.d/docker.list > /dev/null \
+    tee -a /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get -yqq update \
     && apt-get -yqq install \
-       docker-ce docker-ce-cli containerd.io docker-compose-plugin \
+    docker-ce docker-ce-cli containerd.io docker-compose-plugin \
     # Install docker-compose
     && curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
-    && chmod +x /usr/local/bin/docker-compose \
-    # Install docker compose Cloud Integrations (for ecs). Note that the `compose-cli` name is old.
-    # The compose-cli is actually handled by `docker-compose-plugin` above, but we still have to
-    # install this for the cloud integrations.
-    # https://github.com/docker/compose-cli/blob/main/INSTALL.md
-    && curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
+    && chmod +x /usr/local/bin/docker-compose
 
 # Install Python build deps
 RUN pip install -U pip setuptools wheel
@@ -138,16 +140,10 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
     && cd redis-stable \
     && make install
 
-# Install FOSSA cli for analyzing our open-source dependencies
-# https://github.com/fossas/fossa-cli
-RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | \
-       sh -s $FOSSA_VERSION
-
 # Clean up
 RUN apt-get remove -yqq \
     && apt-get autoremove -yqq --purge \
     && apt-get clean
-
 
 # Temp image used to get non-dagster Python dependencies
 FROM system_base AS snapshot_builder
@@ -156,12 +152,14 @@ FROM system_base AS snapshot_builder
 # package. We also install `awscli` (used in Buildkite) at this stage so that it can be installed
 # together with Dagster dependencies. This allows pip's dependency resolver to account for
 # everything.
-RUN git clone https://github.com/dagster-io/dagster.git
+RUN git clone --depth 1 https://github.com/dagster-io/dagster.git
 
 WORKDIR dagster
 
-RUN python scripts/install_dev_python_modules.py awscli \
-    && pip freeze --exclude-editable > /snapshot-reqs.txt
+ENV VIRTUAL_ENV=/usr/local
+ENV UV_HTTP_TIMEOUT=300
+RUN python scripts/install_dev_python_modules.py --system awscli || exit 1
+RUN pip freeze --exclude-editable > /snapshot-reqs.txt
 
 # Final image includes both system deps and preinstalled non-Dagster python deps
 FROM system_base
@@ -172,3 +170,6 @@ COPY --from=snapshot_builder /snapshot-reqs.txt .
 # builds faster in Buildkite.
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
+
+# New versions of debian require allowlisting folders where `git` can run
+RUN git config --system --add safe.directory \*

@@ -1,0 +1,111 @@
+---
+title: "Microsoft Teams & Dagster+"
+description: "Create policies that send alerts for Dagster+ events to Microsoft Teams."
+
+platform_type: "cloud"
+feature: "alerting"
+---
+
+# Microsoft Teams & Dagster+
+
+<ApplicableDagsterProduct />
+
+Dagster+ supports [sending alerts](/dagster-plus/managing-deployments/alerts) to Microsoft Teams using incoming webhooks.
+
+---
+
+## Prerequisites
+
+To follow the steps in this guide, you'll need:
+
+- **Permissions in Microsoft Teams** that allow you to create an incoming webhook
+- **Organization, Admin, or Editor permissions in Dagster+**, which are required to create and manage alerts
+
+---
+
+## Step 1: Create an incoming webhook in Microsoft Teams
+
+To create an incoming webhook, follow the instructions in the [Microsoft Teams documentation](https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook).
+
+Keep the webhook URL handy - you'll need it in the next step.
+
+---
+
+## Step 2: Create an alert policy in Dagster+
+
+Creating an alert policy can be done using the Dagster+ UI or the `dagster-cloud` CLI and a YAML file.
+
+<TabGroup>
+<TabItem name="In the UI">
+
+### In the UI
+
+1. Create and configure an alert policy. Refer to the [Managing alerts in Dagster+ guide](/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui) for more info.
+2. In the **Notification Service** section of the **Create alert policy** window, select the **Microsoft Teams** option.
+3. Paste the Microsoft Teams webhook URL into the field that displays.
+4. Click **Save policy**.
+
+</TabItem>
+<TabItem name="dagster-cloud CLI">
+
+### dagster-cloud CLI
+
+To define a Microsoft Teams alert policy in code, use the `notification_service.microsoft_teams.webhook_url` key to provide the webhook URL. For example:
+
+```yaml file=/dagster_cloud/alerts/microsoft_teams_policy.yaml
+# alert_policies.yaml
+
+alert_policies:
+  - name: "ms-teams-alert-policy"
+    description: "An alert policy to send a Microsoft Teams webhook during job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "AGENT_UNAVAILABLE"
+    notification_service:
+      microsoft_teams:
+        webhook_url: "https://yourdomain.webhook.office.com/..."
+```
+
+Then, use the `dagster-cloud` CLI to set the alert policies for the deployment:
+
+```bash file=/dagster_cloud/alerts/cli_commands.yaml startafter=start_set_alerts endbefore=end_set_alerts
+dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
+```
+
+Refer to the [Managing alerts using the `dagster-cloud` CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli) guide for more information.
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster+ alerts"
+    href="/dagster-plus/managing-deployments/alerts"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts in Dagster+"
+    href="/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing alerts using the dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/alerts/managing-alerts-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deployment settings"
+    href="/dagster-plus/managing-deployments/deployment-settings-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-cloud CLI"
+    href="/dagster-plus/managing-deployments/dagster-plus-cli"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster_cloud.yaml"
+    href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+</ArticleList>

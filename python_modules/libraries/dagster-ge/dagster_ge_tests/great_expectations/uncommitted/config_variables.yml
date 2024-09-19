@@ -1,4 +1,3 @@
-
 # This config file supports variable substitution which enables: 1) keeping
 # secrets out of source control & 2) environment-based configuration changes
 # such as staging vs prod.
@@ -16,4 +15,4 @@
 #
 # https://docs.greatexpectations.io/en/latest/how_to_guides/configuring_data_contexts/how_to_use_a_yaml_file_or_environment_variables_to_populate_credentials.html
 
-instance_id: bd20cf38-7fa3-4477-96ed-fad020607cec
+instance_id: bd20cf38-7fa3-4477-96ed-fad020607cec

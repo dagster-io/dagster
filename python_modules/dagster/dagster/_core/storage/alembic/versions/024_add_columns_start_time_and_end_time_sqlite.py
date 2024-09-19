@@ -1,10 +1,11 @@
-"""add columns start_time and end_time
+"""add columns start_time and end_time.
 
 Revision ID: f4eed4c26e2c
 Revises: 42add02bf976
 Create Date: 2021-12-20 13:18:31.122983
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
@@ -14,8 +15,6 @@ revision = "f4eed4c26e2c"
 down_revision = "42add02bf976"
 branch_labels = None
 depends_on = None
-
-# pylint: disable=no-member
 
 
 def upgrade():

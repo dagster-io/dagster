@@ -24,6 +24,13 @@ class DagsterEcsTaskDefinitionConfig(
             ("requires_compatibilities", Sequence[str]),
             ("cpu", str),
             ("memory", str),
+            ("ephemeral_storage", Optional[int]),
+            ("runtime_platform", Mapping[str, Any]),
+            ("mount_points", Sequence[Mapping[str, Any]]),
+            ("volumes", Sequence[Mapping[str, Any]]),
+            ("repository_credentials", Optional[str]),
+            ("linux_parameters", Optional[Mapping[str, Any]]),
+            ("health_check", Optional[Mapping[str, Any]]),
         ],
     )
 ):
@@ -46,6 +53,13 @@ class DagsterEcsTaskDefinitionConfig(
         requires_compatibilities: Optional[Sequence[str]],
         cpu: Optional[str] = None,
         memory: Optional[str] = None,
+        ephemeral_storage: Optional[int] = None,
+        runtime_platform: Optional[Mapping[str, Any]] = None,
+        mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
+        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        repository_credentials: Optional[str] = None,
+        linux_parameters: Optional[Mapping[str, Any]] = None,
+        health_check: Optional[Mapping[str, Any]] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -62,6 +76,13 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_sequence_param(requires_compatibilities, "requires_compatibilities"),
             check.opt_str_param(cpu, "cpu", default="256"),
             check.opt_str_param(memory, "memory", default="512"),
+            check.opt_int_param(ephemeral_storage, "ephemeral_storage"),
+            check.opt_mapping_param(runtime_platform, "runtime_platform"),
+            check.opt_sequence_param(mount_points, "mount_points"),
+            check.opt_sequence_param(volumes, "volumes"),
+            check.opt_str_param(repository_credentials, "repository_credentials"),
+            check.opt_mapping_param(linux_parameters, "linux_parameters"),
+            check.opt_mapping_param(health_check, "health_check"),
         )
 
     def task_definition_dict(self):
@@ -83,6 +104,18 @@ class DagsterEcsTaskDefinitionConfig(
                     ({"command": self.command} if self.command else {}),
                     ({"secrets": self.secrets} if self.secrets else {}),
                     ({"environment": self.environment} if self.environment else {}),
+                    ({"mountPoints": self.mount_points} if self.mount_points else {}),
+                    (
+                        {
+                            "repositoryCredentials": {
+                                "credentialsParameter": self.repository_credentials
+                            }
+                        }
+                        if self.repository_credentials
+                        else {}
+                    ),
+                    ({"linuxParameters": self.linux_parameters} if self.linux_parameters else {}),
+                    ({"healthCheck": self.health_check} if self.health_check else {}),
                 ),
                 *self.sidecars,
             ],
@@ -95,6 +128,15 @@ class DagsterEcsTaskDefinitionConfig(
 
         if self.task_role_arn:
             kwargs.update(dict(taskRoleArn=self.task_role_arn))
+
+        if self.runtime_platform:
+            kwargs.update(dict(runtimePlatform=self.runtime_platform))
+
+        if self.ephemeral_storage:
+            kwargs.update(dict(ephemeralStorage={"sizeInGiB": self.ephemeral_storage}))
+
+        if self.volumes:
+            kwargs.update(dict(volumes=self.volumes))
 
         return kwargs
 
@@ -131,6 +173,15 @@ class DagsterEcsTaskDefinitionConfig(
             requires_compatibilities=task_definition_dict.get("requiresCompatibilities"),
             cpu=task_definition_dict.get("cpu"),
             memory=task_definition_dict.get("memory"),
+            ephemeral_storage=task_definition_dict.get("ephemeralStorage", {}).get("sizeInGiB"),
+            runtime_platform=task_definition_dict.get("runtimePlatform"),
+            mount_points=container_definition.get("mountPoints"),
+            volumes=task_definition_dict.get("volumes"),
+            repository_credentials=container_definition.get("repositoryCredentials", {}).get(
+                "credentialsParameter"
+            ),
+            linux_parameters=container_definition.get("linuxParameters"),
+            health_check=container_definition.get("healthCheck"),
         )
 
 
@@ -159,6 +210,16 @@ def get_task_definition_dict_from_current_task(
     command=None,
     secrets=None,
     include_sidecars=False,
+    task_role_arn=None,
+    execution_role_arn=None,
+    runtime_platform=None,
+    cpu=None,
+    memory=None,
+    ephemeral_storage=None,
+    mount_points=None,
+    volumes=None,
+    additional_sidecars=None,
+    repository_credentials=None,
 ):
     current_container_name = current_ecs_container_name()
 
@@ -167,7 +228,7 @@ def get_task_definition_dict_from_current_task(
         taskDefinition=current_task_definition_arn
     )["taskDefinition"]
 
-    container_definition = next(
+    current_container_definition = next(
         iter(
             [
                 container
@@ -176,6 +237,11 @@ def get_task_definition_dict_from_current_task(
             ]
         )
     )
+
+    # Don't automatically include health check - may be specific to the current task
+    current_container_definition = {
+        key: val for key, val in current_container_definition.items() if key != "healthCheck"
+    }
 
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition
@@ -190,19 +256,24 @@ def get_task_definition_dict_from_current_task(
     )
 
     # The current process might not be running in a container that has the
-    # pipeline's code installed. Inherit most of the process's container
+    # job's code installed. Inherit most of the process's container
     # definition (things like environment, dependencies, etc.) but replace
-    # the image with the pipeline origin's image and give it a new name.
+    # the image with the job origin's image and give it a new name.
     # Also remove entryPoint. We plan to set containerOverrides. If both
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
     new_container_definition = {
-        **container_definition,
+        **current_container_definition,
         "name": container_name,
         "image": image,
         "entryPoint": [],
         "command": command if command else [],
+        **(
+            {"repositoryCredentials": {"credentialsParameter": repository_credentials}}
+            if repository_credentials
+            else {}
+        ),
         **({"secrets": secrets} if secrets else {}),
         **({} if include_sidecars else {"dependsOn": []}),
     }
@@ -212,18 +283,40 @@ def get_task_definition_dict_from_current_task(
             *environment,
         ]
 
+    if mount_points:
+        new_container_definition["mountPoints"] = (
+            new_container_definition.get("mountPoints", []) + mount_points
+        )
+
     if include_sidecars:
-        container_definitions = current_task_definition_dict.get("containerDefinitions")
-        container_definitions.remove(container_definition)
+        # Start with all the sidecars
+        container_definitions = [
+            container_definition
+            for container_definition in current_task_definition_dict.get("containerDefinitions", [])
+            if container_definition["name"] != current_container_name
+        ]
+        # add the adjusted container based on the current container
         container_definitions.append(new_container_definition)
     else:
         container_definitions = [new_container_definition]
+
+    if additional_sidecars:
+        container_definitions = [*container_definitions, *additional_sidecars]
 
     task_definition = {
         **task_definition,
         "family": family,
         "containerDefinitions": container_definitions,
+        **({"taskRoleArn": task_role_arn} if task_role_arn else {}),
+        **({"executionRoleArn": execution_role_arn} if execution_role_arn else {}),
+        **({"runtimePlatform": runtime_platform} if runtime_platform else {}),
+        **({"cpu": cpu} if cpu else {}),
+        **({"memory": memory} if memory else {}),
+        **({"ephemeralStorage": {"sizeInGiB": ephemeral_storage}} if ephemeral_storage else {}),
     }
+
+    if volumes:
+        task_definition["volumes"] = task_definition.get("volumes", []) + volumes
 
     return task_definition
 
@@ -244,7 +337,8 @@ def get_current_ecs_task_metadata() -> CurrentEcsTaskMetadata:
 
 
 def _container_metadata_uri():
-    """
+    """Get the metadata uri for the current ECS task.
+
     ECS injects an environment variable into each Fargate task. The value
     of this environment variable is a url that can be queried to introspect
     information about the current processes's running task:
@@ -283,32 +377,38 @@ def get_task_kwargs_from_current_task(
     cluster,
     task,
 ):
-    enis = []
-    subnets = []
-    for attachment in task["attachments"]:
-        if attachment["type"] == "ElasticNetworkInterface":
-            for detail in attachment["details"]:
-                if detail["name"] == "subnetId":
-                    subnets.append(detail["value"])
-                if detail["name"] == "networkInterfaceId":
-                    enis.append(ec2.NetworkInterface(detail["value"]))
+    run_task_kwargs = {"cluster": cluster}
 
-    public_ip = False
-    security_groups = []
-    for eni in enis:
-        if (eni.association_attribute or {}).get("PublicIp"):
-            public_ip = True
-        for group in eni.groups:
-            security_groups.append(group["GroupId"])
+    if not task.get("capacityProviderStrategy"):
+        run_task_kwargs["launchType"] = task.get("launchType") or "FARGATE"
+    else:
+        run_task_kwargs["capacityProviderStrategy"] = task.get("capacityProviderStrategy")
 
-    return {
-        "cluster": cluster,
-        "networkConfiguration": {
-            "awsvpcConfiguration": {
-                "subnets": subnets,
-                "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
-                "securityGroups": security_groups,
-            },
-        },
-        "launchType": task.get("launchType") or "FARGATE",
-    }
+    if run_task_kwargs["launchType"] != "EXTERNAL":
+        enis = []
+        subnets = []
+        for attachment in task["attachments"]:
+            if attachment["type"] == "ElasticNetworkInterface":
+                for detail in attachment["details"]:
+                    if detail["name"] == "subnetId":
+                        subnets.append(detail["value"])
+                    if detail["name"] == "networkInterfaceId":
+                        enis.append(ec2.NetworkInterface(detail["value"]))
+
+        public_ip = False
+        security_groups = []
+
+        for eni in enis:
+            if (eni.association_attribute or {}).get("PublicIp"):
+                public_ip = True
+            for group in eni.groups:
+                security_groups.append(group["GroupId"])
+
+        aws_vpc_config = {
+            "subnets": subnets,
+            "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
+            "securityGroups": security_groups,
+        }
+        run_task_kwargs["networkConfiguration"] = {"awsvpcConfiguration": aws_vpc_config}
+
+    return run_task_kwargs

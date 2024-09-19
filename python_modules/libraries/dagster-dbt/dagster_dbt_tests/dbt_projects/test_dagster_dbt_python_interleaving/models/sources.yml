@@ -1,0 +1,6 @@
+version: 2
+
+sources:
+  - name: dagster
+    tables:
+      - name: python_augmented_customers

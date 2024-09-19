@@ -15,9 +15,12 @@ from dagster_graphql.implementation.utils import (
     check_permission,
     require_permission_check,
 )
+from dagster_graphql.schema.util import ResolveInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    NonLaunchableGraphQLContextTestMatrix,
+)
 
 PERMISSIONS_QUERY = """
     query PermissionsQuery {
@@ -30,55 +33,68 @@ PERMISSIONS_QUERY = """
 """
 
 WORKSPACE_PERMISSIONS_QUERY = """
-    query WorkspacePermissionsQuery {
-      workspaceOrError {
-        ... on Workspace {
-          locationEntries {
-            permissions {
-              permission
-              value
-              disabledReason
-            }
-          }
+query WorkspacePermissionsQuery {
+  # faster loading option due to avoiding full workspace load
+  locationStatusesOrError {
+    __typename
+    ... on WorkspaceLocationStatusEntries {
+      entries {
+        permissions {
+          permission
+          value
+          disabledReason
         }
       }
     }
+  }
+  workspaceOrError {
+    ... on Workspace {
+      locationEntries {
+        permissions {
+          permission
+          value
+          disabledReason
+        }
+      }
+    }
+  }
+}
 """
 
 
 class FakeMutation:
     @check_permission("fake_permission")
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeOtherPermissionMutation:
     @check_permission("fake_other_permission")
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeMissingPermissionMutation:
     @check_permission("fake_missing_permission")
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeEnumPermissionMutation:
     @check_permission(Permissions.LAUNCH_PIPELINE_EXECUTION)
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeOtherEnumPermissionMutation:
     @check_permission(Permissions.LAUNCH_PIPELINE_REEXECUTION)
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
 class FakeMissingEnumPermissionMutation:
     @check_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         pass
 
 
@@ -241,7 +257,7 @@ class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
             if permission_result:
                 pass
 
-        permission_result.enabled  # pylint: disable=pointless-statement
+        permission_result.enabled  # noqa: B018
 
 
 class TestWorkspacePermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
@@ -250,8 +266,15 @@ class TestWorkspacePermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
 
         assert result.data["workspaceOrError"]["locationEntries"]
+        assert result.data["locationStatusesOrError"]["entries"]
 
-        for location in result.data["workspaceOrError"]["locationEntries"]:
+        # ensure both old and new ways to fetch work and return same data
+        assert (
+            result.data["locationStatusesOrError"]["entries"]
+            == result.data["workspaceOrError"]["locationEntries"]
+        )
+
+        for location in result.data["locationStatusesOrError"]["entries"]:
             permissions_map = {
                 permission["permission"]: permission["value"]
                 for permission in location["permissions"]

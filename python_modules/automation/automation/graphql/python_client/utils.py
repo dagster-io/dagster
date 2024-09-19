@@ -13,13 +13,16 @@ class LegacyQueryHistoryInfo(NamedTuple):
 
     @staticmethod
     def get() -> "LegacyQueryHistoryInfo":
-        directory = dagster_graphql_tests.__path__[0] + "/graphql/client_backcompat/query_snapshots"
+        directory = (
+            next(iter(dagster_graphql_tests.__path__))
+            + "/graphql/client_backcompat/query_snapshots"
+        )
         legacy_queries = frozenset(os.listdir(directory))
         return LegacyQueryHistoryInfo(directory=directory, legacy_queries=legacy_queries)
 
 
 def get_queries() -> Dict[str, str]:
-    """Helper function to index the graphql client's queries
+    """Helper function to index the graphql client's queries.
 
     Returns:
         Dict[str, str]: dictionary - key is variable (query) name

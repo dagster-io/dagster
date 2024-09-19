@@ -1,0 +1,13 @@
+from dagster import Definitions
+from dagster_dbt import DbtCliResource
+from .assets import {{ dbt_assets_name }}
+from .project import {{ dbt_project_name }}
+from .schedules import schedules
+
+defs = Definitions(
+    assets=[{{ dbt_assets_name }}],
+    schedules=schedules,
+    resources={
+        "dbt": DbtCliResource(project_dir={{ dbt_project_name }}),
+    },
+)

@@ -1,4 +1,4 @@
-from quickstart_gcp import defs
+from quickstart_gcp.definitions import defs
 
 
 def test_def_can_load():

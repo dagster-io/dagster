@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>panel_show_top</title>
-    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect id="Rectangle" stroke="#000000" stroke-width="1.5" transform="translate(8.000000, 4.521573) scale(1, -1) translate(-8.000000, -4.521573) " x="2.75" y="2.77157288" width="10.5" height="3.5"></rect>
-        <polygon id="Path-2" stroke="#000000" fill="#000000" stroke-linecap="round" stroke-linejoin="round" transform="translate(8.000000, 11.500000) scale(1, -1) translate(-8.000000, -11.500000) " points="8 9.5 12 13.5 4 13.5"></polygon>
-    </g>
-</svg>

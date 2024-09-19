@@ -1,15 +1,17 @@
 from unittest import mock
 
+import pytest
 from dagster import configured, job, op
 from dagster_gcp.gcs.file_manager import GCSFileHandle, GCSFileManager
 from dagster_gcp.gcs.resources import gcs_file_manager
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 
 
+@pytest.mark.integration
 def test_gcs_file_manager_write():
     gcs_mock = mock.MagicMock()
     file_manager = GCSFileManager(storage.client.Client(), "some-bucket", "some-key")
-    file_manager._client = gcs_mock  # pylint:disable=protected-access
+    file_manager._client = gcs_mock  # noqa: SLF001
 
     foo_bytes = b"foo"
 

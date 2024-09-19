@@ -23,8 +23,10 @@ UserConfigSchema: TypeAlias = Union[
 
 
 class ConfigSchema:
-    """This is a placeholder type. Any time that it appears in documentation, it means that any of
-    the following types are acceptable:
+    """Placeholder type for config schemas.
+
+    Any time that it appears in documentation, it means that any of the following types are
+    acceptable:
 
     #. A Python scalar type that resolves to a Dagster config type
        (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,

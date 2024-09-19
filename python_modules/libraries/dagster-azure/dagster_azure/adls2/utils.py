@@ -2,7 +2,7 @@ import warnings
 
 try:
     # Centralise Azure imports here so we only need to warn in one place
-    from azure.core.exceptions import ResourceNotFoundError  # pylint: disable=unused-import
+    from azure.core.exceptions import ResourceNotFoundError
     from azure.storage.filedatalake import DataLakeServiceClient
 except ImportError:
     msg = (
@@ -17,13 +17,11 @@ except ImportError:
 
 
 def _create_url(storage_account, subdomain):
-    return "https://{}.{}.core.windows.net/".format(storage_account, subdomain)
+    return f"https://{storage_account}.{subdomain}.core.windows.net/"
 
 
-def create_adls2_client(storage_account, credential):
-    """
-    Create an ADLS2 client.
-    """
+def create_adls2_client(storage_account: str, credential) -> DataLakeServiceClient:
+    """Create an ADLS2 client."""
     account_url = _create_url(storage_account, "dfs")
     return DataLakeServiceClient(account_url, credential)
 

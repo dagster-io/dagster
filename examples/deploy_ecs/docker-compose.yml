@@ -2,20 +2,20 @@
 version: "3.8"
 
 services:
-  # This service runs dagit. It has no user code; instead it loads its
+  # This service runs dagster-webserver. It has no user code; instead it loads its
   # jobs from the gRPC server running in the user_code service.
   # Because our instance uses the QueuedRunCoordinator, any runs submitted from
-  # dagit will be put on a queue and later dequeued and launched by
+  # the webserver will be put on a queue and later dequeued and launched by
   # the dagster-daemon service.
-  dagit:
+  webserver:
     platform: linux/amd64
     build:
       context: .
       dockerfile: ./Dockerfile
-      target: dagit
-    image: "$REGISTRY_URL/deploy_ecs/dagit"
-    container_name: dagit
-    command: "dagit -h 0.0.0.0 -p 3000 -w workspace.yaml"
+      target: webserver
+    image: "$REGISTRY_URL/deploy_ecs/webserver"
+    container_name: webserver
+    command: "dagster-webserver -h 0.0.0.0 -p 3000 -w workspace.yaml"
     ports:
       - "3000:3000"
     environment:
@@ -89,7 +89,7 @@ services:
               iam:PassedToService: "ecs-tasks.amazonaws.com"
 
   # This service runs a gRPC server that serves information about your
-  # repository. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
+  # definitions. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
   # run launcher to use this same image when launching runs in a new container.
   # Multiple containers like this can be deployed separately - each needs to
   # run on its own port and have its own entry in the workspace.yaml file.
@@ -101,7 +101,7 @@ services:
       target: user_code
     image: "$REGISTRY_URL/deploy_ecs/user_code"
     container_name: user_code
-    command: "dagster api grpc -h 0.0.0.0 -p 4000 -f repo.py"
+    command: "dagster api grpc -h 0.0.0.0 -p 4000 -f defs.py"
     environment:
       DAGSTER_POSTGRES_DB: "postgres_db"
       DAGSTER_POSTGRES_HOSTNAME: "postgresql"

@@ -10,12 +10,19 @@ your data warehouse.
 
 Related Guides:
 
-* `Using Dagster with Snowflake guide </integrations/snowflake>`_
-
+* `Using Dagster with Snowflake guide <https://docs.dagster.io/integrations/snowflake>`_
+* `Snowflake I/O manager reference <https://docs.dagster.io/integrations/snowflake/reference>`_
 
 .. currentmodule:: dagster_snowflake_pandas
 
-.. autoconfigurable:: snowflake_pandas_io_manager
+.. autoconfigurable:: SnowflakePandasIOManager
   :annotation: IOManagerDefinition
 
 .. autoclass:: SnowflakePandasTypeHandler
+
+
+Legacy
+======
+
+.. autoconfigurable:: snowflake_pandas_io_manager
+  :annotation: IOManagerDefinition

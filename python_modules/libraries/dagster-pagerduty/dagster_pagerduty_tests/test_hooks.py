@@ -61,7 +61,7 @@ def test_failure_hook_decorator():
 
     @job(
         resource_defs={"pagerduty": pagerduty_resource},
-        hooks={pagerduty_on_failure(severity="info", dagit_base_url="localhost:3000")},
+        hooks={pagerduty_on_failure(severity="info", webserver_base_url="localhost:3000")},
     )
     def a_job():
         pass_op()

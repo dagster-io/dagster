@@ -8,17 +8,20 @@ Dagster is an orchestrator that's designed for developing and maintaining data a
 
 You declare functions that you want to run and the data assets that those functions produce or update. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
 
-Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
+Dagster is designed to be used at every stage of the data development lifecycle, including local development, unit tests, integration tests, staging environments, and production.
 
-**New to Dagster**? Check out the **Hello Dagster example**, learn with some hands-on **Tutorials**, or dive into **Concepts**.
+**New to Dagster**? Check out the **Quickstart**, learn with some hands-on **Tutorials**, or dive into **Concepts**. For an in-depth learning experience, enroll in **Dagster University**.
 
-<div className="inline-flex flex-row space-x-4">
-  <Button link="/getting-started/hello-dagster">Run Hello Dagster</Button>
+<div className="w-full inline-flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
+  <Button link="/getting-started/quickstart">Quickstart</Button>
+  <Button link="/tutorial" style="secondary">
+    View Tutorials
+  </Button>
   <Button link="/concepts" style="secondary">
     Explore Concepts
   </Button>
-  <Button link="/tutorial" style="secondary">
-    View Tutorials
+  <Button link="https://courses.dagster.io" style="secondary">
+    Enroll in Dagster University
   </Button>
 </div>
 
@@ -30,7 +33,7 @@ Dagster is built to be used at every stage of the data development lifecycle - l
 
 <ArticleList>
   <ArticleListItem
-    href="https://dagster-slackin.herokuapp.com/"
+    href="https://dagster.io/slack"
     title="Dagster Slack"
   ></ArticleListItem>
   <ArticleListItem
@@ -38,7 +41,7 @@ Dagster is built to be used at every stage of the data development lifecycle - l
     title="Community Q&A"
   ></ArticleListItem>
   <ArticleListItem
-    href="https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q/videos"
+    href="https://www.youtube.com/@dagsterio"
     title="YouTube"
   ></ArticleListItem>
   <ArticleListItem
@@ -67,7 +70,7 @@ Use one of our examples to explore Dagster concepts, integrations, and realistic
     href="https://github.com/dagster-io/dagster/blob/master/examples"
   ></ArticleListItem>
   <ArticleListItem
-    title="dbt + Dagster"
+    title="dbt & Dagster"
     href="https://github.com/dagster-io/dagster/blob/master/examples/assets_dbt_python"
   ></ArticleListItem>
 </ArticleList>
@@ -90,8 +93,8 @@ Use one of our examples to explore Dagster concepts, integrations, and realistic
     href="/deployment/guides/kubernetes/deploying-with-helm"
   ></ArticleListItem>
   <ArticleListItem
-    title="Scheduling jobs"
-    href="/concepts/partitions-schedules-sensors/schedules"
+    title="Automating data pipelines with schedules"
+    href="/concepts/automation/schedules"
   ></ArticleListItem>
   <ArticleListItem
     title="Parameterizing your data pipeline"
@@ -109,31 +112,31 @@ Use one of our examples to explore Dagster concepts, integrations, and realistic
 
 ---
 
-## Using Dagster Cloud
+## Using Dagster+
 
 <ArticleList>
   <ArticleListItem
-    title="Getting started with Dagster Cloud"
-    href="/dagster-cloud/getting-started"
+    title="Getting started with Dagster+"
+    href="/dagster-plus/getting-started"
   ></ArticleListItem>
   <ArticleListItem
     title="Understanding Hybrid and Serverless Deployment"
-    href="/dagster-cloud/deployment"
+    href="/dagster-plus/deployment"
   ></ArticleListItem>
   <ArticleListItem
-    title="Managing accounts and authentication"
-    href="/dagster-cloud/account"
+    title="Configuring code locations with dagster_cloud.yaml"
+    href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
   ></ArticleListItem>
   <ArticleListItem
-    title="Dagster Cloud environment variables and secrets"
-    href="/dagster-cloud/developing-testing/environment-variables-and-secrets"
+    title="Dagster+ environment variables and secrets"
+    href="/dagster-plus/managing-deployments/environment-variables-and-secrets"
   ></ArticleListItem>
   <ArticleListItem
     title="Using Branch Deployments for Continuous Integration"
-    href="/dagster-cloud/developing-testing/branch-deployments"
+    href="/dagster-plus/managing-deployments/branch-deployments"
   ></ArticleListItem>
   <ArticleListItem
-    title="All Dagster Cloud docs"
-    href="/dagster-cloud"
+    title="All Dagster+ docs"
+    href="/dagster-plus"
   ></ArticleListItem>
 </ArticleList>

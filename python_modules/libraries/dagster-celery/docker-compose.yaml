@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   test-rabbitmq:
-    image: rabbitmq:3.8.2
+    image: rabbitmq:3.13.3
     container_name: test-rabbitmq
     ports:
       - "5672:5672"

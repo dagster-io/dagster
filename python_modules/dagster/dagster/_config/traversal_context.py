@@ -1,11 +1,10 @@
 from enum import Enum
 
 import dagster._check as check
-
-from .config_type import ConfigType
-from .field import Field
-from .snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
-from .stack import EvaluationStack
+from dagster._config.config_type import ConfigType
+from dagster._config.field import Field
+from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._config.stack import EvaluationStack
 
 
 class TraversalType(Enum):

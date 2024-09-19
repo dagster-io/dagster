@@ -13,7 +13,7 @@ from typing import Union
 import pandas as pd
 from dagster import (
     AssetKey,
-    IOManager,
+    ConfigurableIOManager,
     _check as check,
 )
 from pandas import DataFrame as PandasDF
@@ -23,7 +23,7 @@ from pyspark.sql import (
 )
 
 
-class LocalFileSystemIOManager(IOManager):
+class LocalFileSystemIOManager(ConfigurableIOManager):
     def _get_fs_path(self, asset_key: AssetKey) -> str:
         return os.path.abspath(os.path.join(*asset_key.path))
 
@@ -40,9 +40,9 @@ class LocalFileSystemIOManager(IOManager):
         if isinstance(obj, PandasDF):
             directory = self._get_fs_path(context.asset_key)
             os.makedirs(directory, exist_ok=True)
-            open(os.path.join(directory, "_SUCCESS"), "wb").close()
             csv_path = os.path.join(directory, "part-00000.csv")
             obj.to_csv(csv_path)
+            open(os.path.join(directory, "_SUCCESS"), "wb").close()
         elif isinstance(obj, SparkDF):
             obj.write.format("csv").options(header="true").save(
                 self._get_fs_path(context.asset_key), mode="overwrite"
@@ -70,7 +70,7 @@ class LocalFileSystemIOManager(IOManager):
             return pd.concat(map(pd.read_csv, paths))
         elif context.dagster_type.typing_type == SparkDF:
             return (
-                SparkSession.builder.getOrCreate()
+                SparkSession.builder.getOrCreate()  # type: ignore
                 .read.format("csv")
                 .options(header="true")
                 .load(self._get_fs_path(context.asset_key))

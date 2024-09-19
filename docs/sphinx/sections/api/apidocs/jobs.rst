@@ -10,7 +10,6 @@ Jobs are created by calling :py:meth:`GraphDefinition.to_job` on a graph instanc
 .. autodecorator:: job
 
 .. autoclass:: JobDefinition
-    :members:
 
 Reconstructable jobs
 -------------------------

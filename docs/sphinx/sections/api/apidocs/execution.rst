@@ -37,19 +37,14 @@ Execution results
 .. currentmodule:: dagster
 
 .. autoclass:: ExecuteInProcessResult
-   :members:
    :inherited-members:
 
-.. autoclass:: ExecuteJobResult
-   :members:
+.. autoclass:: JobExecutionResult
    :inherited-members:
 
 .. autoclass:: DagsterEvent
-   :members:
 
 .. autoclass:: DagsterEventType
-   :members:
-   :undoc-members:
 
 
 Reconstructable jobs
@@ -57,7 +52,7 @@ Reconstructable jobs
 .. currentmodule:: dagster
 
 .. autoclass:: reconstructable
-   :members:
+
 
 Executors
 ---------
@@ -73,12 +68,17 @@ Executors
 
 Contexts
 --------
+.. autoclass:: AssetExecutionContext
+  :members:
+  :inherited-members:
 
 .. autoclass:: OpExecutionContext
   :members:
   :inherited-members:
 
 .. autofunction:: build_op_context
+
+.. autofunction:: build_asset_context
 
 .. autoclass:: TypeCheckContext
   :members:

@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.reconstruct import (
@@ -11,9 +11,16 @@ from dagster._core.definitions.reconstruct import (
 if TYPE_CHECKING:
     from dagster._core.workspace.autodiscovery import LoadableTarget
 
+_DEFAULT_GRPC_TIMEOUT_IF_NO_ENV_VAR_SET = 60
+_DEFAULT_REPOSITORY_TIMEOUT_IF_NO_ENV_VAR_SET = 180
+
 
 def get_loadable_targets(
-    python_file, module_name, package_name, working_directory, attribute
+    python_file: Optional[str],
+    module_name: Optional[str],
+    package_name: Optional[str],
+    working_directory: Optional[str],
+    attribute: Optional[str],
 ) -> Sequence["LoadableTarget"]:
     from dagster._core.workspace.autodiscovery import (
         LoadableTarget,
@@ -79,5 +86,45 @@ def default_grpc_timeout() -> int:
     if env_set:
         return int(env_set)
 
-    # default 60 seconds
-    return 60
+    return _DEFAULT_GRPC_TIMEOUT_IF_NO_ENV_VAR_SET
+
+
+def default_repository_grpc_timeout() -> int:
+    env_set = os.getenv("DAGSTER_REPOSITORY_GRPC_TIMEOUT_SECONDS")
+    if env_set:
+        return int(env_set)
+
+    return max(_DEFAULT_REPOSITORY_TIMEOUT_IF_NO_ENV_VAR_SET, default_grpc_timeout())
+
+
+def default_schedule_grpc_timeout() -> int:
+    env_set = os.getenv("DAGSTER_SCHEDULE_GRPC_TIMEOUT_SECONDS")
+    if env_set:
+        return int(env_set)
+
+    return default_grpc_timeout()
+
+
+def default_sensor_grpc_timeout() -> int:
+    env_set = os.getenv("DAGSTER_SENSOR_GRPC_TIMEOUT_SECONDS")
+    if env_set:
+        return int(env_set)
+
+    return default_grpc_timeout()
+
+
+def default_grpc_server_shutdown_grace_period():
+    # Time to wait for calls to finish before shutting down the server
+    # Defaults to the same as default_grpc_timeout() unless
+    # DAGSTER_GRPC_SHUTDOWN_GRACE_PERIOD is set
+    # default_repository_grpc_timeout(0) is omitted since that call is only
+    # made during startup and is unlikely to need to be cleanly completed
+    # in order to avoid downtime
+
+    env_set = os.getenv("DAGSTER_GRPC_SHUTDOWN_GRACE_PERIOD")
+    if env_set:
+        return int(env_set)
+
+    return max(
+        default_grpc_timeout(), default_schedule_grpc_timeout(), default_sensor_grpc_timeout()
+    )

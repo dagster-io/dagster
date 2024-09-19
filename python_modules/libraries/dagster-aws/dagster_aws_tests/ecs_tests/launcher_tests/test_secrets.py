@@ -1,6 +1,3 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -33,7 +30,7 @@ def test_secrets(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -66,7 +63,7 @@ def test_environment(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -96,7 +93,7 @@ def test_environment_missing_env_var_value(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -125,7 +122,7 @@ def test_secrets_with_container_context(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -159,7 +156,7 @@ def test_environment_with_container_context(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -193,7 +190,7 @@ def test_secrets_backcompat(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 
@@ -227,7 +224,7 @@ def test_empty_secrets(
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
     task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
     task_definition = task_definition["taskDefinition"]
 

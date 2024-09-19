@@ -1,4 +1,4 @@
-"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
+"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT.
 
 @generated
 
@@ -6,7 +6,6 @@ Produced via:
 parse_dataproc_configs.py \
 
 """
-
 
 from dagster import Bool, Field, Int, Permissive, Shape, String
 

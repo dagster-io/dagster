@@ -1,0 +1,302 @@
+import {RunMetadataProviderMessageFragment} from '../../runs/types/RunMetadataProvider.types';
+import {IGanttNode} from '../Constants';
+
+export const GRAPH: IGanttNode[] = [
+  {name: 'A', inputs: [], outputs: [{dependedBy: [{solid: {name: 'B_very_long_step_name'}}]}]},
+  {
+    name: 'B_very_long_step_name',
+    inputs: [{dependsOn: [{solid: {name: 'A'}}]}],
+    outputs: [{dependedBy: [{solid: {name: 'C'}}, {solid: {name: 'D'}}]}],
+  },
+  {
+    name: 'C',
+    inputs: [{dependsOn: [{solid: {name: 'B_very_long_step_name'}}]}],
+    outputs: [{dependedBy: [{solid: {name: 'E'}}]}],
+  },
+  {
+    name: 'D',
+    inputs: [{dependsOn: [{solid: {name: 'B_very_long_step_name'}}]}],
+    outputs: [{dependedBy: [{solid: {name: 'E'}}]}],
+  },
+  {
+    name: 'E',
+    inputs: [{dependsOn: [{solid: {name: 'C'}}, {solid: {name: 'D'}}]}],
+    outputs: [],
+  },
+];
+
+export const LOGS: RunMetadataProviderMessageFragment[] = [
+  {
+    message: '',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'RunStartingEvent',
+  },
+  {
+    message: 'Started process for pipeline (pid: 76720).',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'EngineEvent',
+    markerStart: null,
+    markerEnd: 'cli_api_subprocess_init',
+  },
+  {
+    message: 'Started execution of pipeline "composition".',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'RunStartEvent',
+  },
+  {
+    message: 'Executing steps in process (pid: 76720)',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'EngineEvent',
+    markerStart: null,
+    markerEnd: null,
+  },
+  {
+    message: 'Starting initialization of resources [io_manager].',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'EngineEvent',
+    markerStart: 'resources',
+    markerEnd: null,
+  },
+  {
+    message: 'Finished initialization of resources [io_manager].',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'EngineEvent',
+    markerStart: null,
+    markerEnd: 'resources',
+  },
+  {
+    message: 'Started execution of step "A".',
+    timestamp: '0',
+    stepKey: 'A',
+    __typename: 'ExecutionStepStartEvent',
+  },
+  {
+    message: 'Yielded output "result" of type "Int". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'A',
+    __typename: 'ExecutionStepOutputEvent',
+  },
+  {
+    message: 'Handled output "result" using IO manager "io_manager"',
+    timestamp: '0',
+    stepKey: 'A',
+    __typename: 'HandledOutputEvent',
+  },
+  {
+    message: 'Finished execution of step "A" in 82ms.',
+    timestamp: '0',
+    stepKey: 'A',
+    __typename: 'ExecutionStepSuccessEvent',
+  },
+  {
+    message: 'Started execution of step "B".',
+    timestamp: '0',
+    stepKey: 'B_very_long_step_name',
+    __typename: 'ExecutionStepStartEvent',
+  },
+  {
+    message: 'Got input "numbers" of type "[Int]". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'B_very_long_step_name',
+    __typename: 'ExecutionStepInputEvent',
+  },
+  {
+    message: 'Execution of step "B" failed and has requested a retry in 2 seconds.',
+    timestamp: '0',
+    stepKey: 'B_very_long_step_name',
+    __typename: 'ExecutionStepUpForRetryEvent',
+  },
+  {
+    message: 'Started re-execution (attempt # 2) of step "retry_solid".',
+    timestamp: '0',
+    stepKey: 'B_very_long_step_name',
+    __typename: 'ExecutionStepRestartEvent',
+  },
+  {
+    message: 'Yielded output "result" of type "Any". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'B_very_long_step_name',
+    __typename: 'ExecutionStepOutputEvent',
+  },
+  {
+    message: 'Handled output "result" using IO manager "io_manager"',
+    timestamp: '0',
+    stepKey: 'B_very_long_step_name',
+    __typename: 'HandledOutputEvent',
+  },
+  {
+    message: 'Finished execution of step "B" in 33ms.',
+    timestamp: '0',
+    stepKey: 'B_very_long_step_name',
+    __typename: 'ExecutionStepSuccessEvent',
+  },
+  {
+    message: 'Starting initialization of resources [io_manager].',
+    timestamp: '0',
+    markerStart: `c-resource-1`,
+    markerEnd: null,
+    stepKey: 'C',
+    __typename: 'ResourceInitStartedEvent',
+  },
+  {
+    message: 'Finished initialization of resources [io_manager].',
+    timestamp: '0',
+    markerStart: null,
+    markerEnd: `c-resource-1`,
+    stepKey: 'C',
+    __typename: 'ResourceInitSuccessEvent',
+  },
+  {
+    message: 'Started execution of step "C".',
+    timestamp: '0',
+    stepKey: 'C',
+    __typename: 'ExecutionStepStartEvent',
+  },
+  {
+    message:
+      'Loaded input "numbers" using input manager "io_manager", from output "result" of step "B"',
+    timestamp: '0',
+    stepKey: 'C',
+    __typename: 'LoadedInputEvent',
+  },
+  {
+    message:
+      'Loaded input "numbers" using input manager "io_manager", from output "result" of step "B"',
+    timestamp: '0',
+    stepKey: 'C',
+    __typename: 'LoadedInputEvent',
+  },
+  {
+    message: 'Got input "numbers" of type "[Int]". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'C',
+    __typename: 'ExecutionStepInputEvent',
+  },
+  {
+    message: 'Yielded output "result" of type "Int". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'C',
+    __typename: 'ExecutionStepOutputEvent',
+  },
+  {
+    message: 'Handled output "result" using IO manager "io_manager"',
+    timestamp: '0',
+    stepKey: 'C',
+    __typename: 'HandledOutputEvent',
+  },
+  {
+    message: 'Finished execution of step "C" in 34ms.',
+    timestamp: '0',
+    stepKey: 'C',
+    __typename: 'ExecutionStepSuccessEvent',
+  },
+  {
+    message: 'Started execution of step "D".',
+    timestamp: '0',
+    stepKey: 'D',
+    __typename: 'ExecutionStepStartEvent',
+  },
+  {
+    message:
+      'Loaded input "numbers" using input manager "io_manager", from output "result" of step "B"',
+    timestamp: '0',
+    stepKey: 'D',
+    __typename: 'LoadedInputEvent',
+  },
+  {
+    message:
+      'Loaded input "numbers" using input manager "io_manager", from output "result" of step "C"',
+    timestamp: '0',
+    stepKey: 'D',
+    __typename: 'LoadedInputEvent',
+  },
+  {
+    message: 'Got input "numbers" of type "[Int]". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'D',
+    __typename: 'ExecutionStepInputEvent',
+  },
+  {
+    message: 'Yielded output "result" of type "Int". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'D',
+    __typename: 'ExecutionStepOutputEvent',
+  },
+  {
+    message: 'Handled output "result" using IO manager "io_manager"',
+    timestamp: '0',
+    stepKey: 'D',
+    __typename: 'HandledOutputEvent',
+  },
+  {
+    message: 'Finished execution of step "D" in 32ms.',
+    timestamp: '0',
+    stepKey: 'D',
+    __typename: 'ExecutionStepSuccessEvent',
+  },
+  {
+    message: 'Started execution of step "E".',
+    timestamp: '0',
+    stepKey: 'E',
+    __typename: 'ExecutionStepStartEvent',
+  },
+  {
+    message:
+      'Loaded input "num" using input manager "io_manager", from output "result" of step "D"',
+    timestamp: '0',
+    stepKey: 'E',
+    __typename: 'LoadedInputEvent',
+  },
+  {
+    message: 'Got input "num" of type "Int". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'E',
+    __typename: 'ExecutionStepInputEvent',
+  },
+  {
+    message: 'Yielded output "result" of type "Float". (Type check passed).',
+    timestamp: '0',
+    stepKey: 'E',
+    __typename: 'ExecutionStepOutputEvent',
+  },
+  {
+    message: 'Handled output "result" using IO manager "io_manager"',
+    timestamp: '0',
+    stepKey: 'E',
+    __typename: 'HandledOutputEvent',
+  },
+  {
+    message: 'Finished execution of step "E" in 34ms.',
+    timestamp: '0',
+    stepKey: 'E',
+    __typename: 'ExecutionStepSuccessEvent',
+  },
+  {
+    message: 'Finished steps in process (pid: 76720) in 1.13s',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'EngineEvent',
+    markerStart: null,
+    markerEnd: null,
+  },
+  {
+    message: 'Finished execution of pipeline "composition".',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'RunSuccessEvent',
+  },
+  {
+    message: 'Process for pipeline exited (pid: 76720).',
+    timestamp: '0',
+    stepKey: null,
+    __typename: 'EngineEvent',
+    markerStart: null,
+    markerEnd: null,
+  },
+];

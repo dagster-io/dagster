@@ -3,11 +3,11 @@
 import os
 
 import pandas as pd
-from dagster import AssetKey, IOManager
+from dagster import AssetKey, ConfigurableIOManager
 from pandas import DataFrame
 
 
-class LocalFileSystemIOManager(IOManager):
+class LocalFileSystemIOManager(ConfigurableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
     def _get_fs_path(self, asset_key: AssetKey) -> str:

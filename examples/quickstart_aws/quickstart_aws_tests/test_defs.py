@@ -1,4 +1,4 @@
-from quickstart_aws import defs
+from quickstart_aws.definitions import defs
 
 
 def test_def_can_load():

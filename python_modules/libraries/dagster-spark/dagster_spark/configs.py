@@ -1,14 +1,15 @@
-"""Spark Configuration
+"""Spark Configuration.
 
 In this file we define the key configuration parameters for submitting Spark jobs. Spark can be run
 in a variety of deployment contexts. See the Spark documentation at
 https://spark.apache.org/docs/latest/submitting-applications.html for a more in-depth summary of
 Spark deployment contexts and configuration.
 """
+
 from dagster import Field, StringSource
 
-from .configs_spark import spark_config
-from .types import SparkDeployMode
+from dagster_spark.configs_spark import spark_config
+from dagster_spark.types import SparkDeployMode
 
 
 def define_spark_config():
@@ -17,7 +18,6 @@ def define_spark_config():
     See the Spark documentation for reference:
         https://spark.apache.org/docs/latest/submitting-applications.html
     """
-
     master_url = Field(
         StringSource,
         description="The master URL for the cluster (e.g. spark://23.195.26.187:7077)",

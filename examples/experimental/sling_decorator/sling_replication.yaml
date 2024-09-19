@@ -1,0 +1,33 @@
+source: MY_POSTGRES
+target: MY_DUCKDB
+
+defaults:
+  mode: full-refresh
+
+  object: "{stream_schema}_{stream_table}"
+
+streams:
+  public.accounts:
+  public.users:
+    disabled: true
+  public.finance_departments_old:
+    object: "departments" # overwrite default object
+    source_options:
+      empty_as_null: false
+    meta:
+      dagster_source: boo
+
+  public."Transactions":
+    mode: incremental # overwrite default mode
+    primary_key: id
+    update_key: last_updated_at
+
+  public.all_users:
+    sql: |
+      select all_user_id, name 
+      from public."all_Users"
+    object: public.all_users # need to add 'object' key for custom SQL
+
+env:
+  SLING_LOADED_AT_COLUMN: true # adds the _sling_loaded_at timestamp column
+  SLING_STREAM_URL_COLUMN: true # if source is file, adds a _sling_stream_url column with file path / url

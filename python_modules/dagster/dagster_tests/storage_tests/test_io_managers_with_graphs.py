@@ -1,4 +1,4 @@
-from dagster import DagsterType, In, Out, graph, job, op, root_input_manager
+from dagster import DagsterType, In, Out, graph, job, op
 from dagster._core.storage.io_manager import IOManager, io_manager
 
 
@@ -23,7 +23,7 @@ def named_io_manager(storage_dict, name):
     return my_io_manager
 
 
-def test_composite_solid_output():
+def test_graph_output():
     @op(out=Out(io_manager_key="inner_manager"))
     def my_op(_):
         return 5
@@ -50,8 +50,8 @@ def test_composite_solid_output():
 
     result = my_job.execute_in_process()
     assert result.success
-    # Ensure that the IO manager used to store and load my_composite.my_solid_takes_input is the
-    # manager of my_solid_takes_input, not my_composite.
+    # Ensure that the IO manager used to store and load my_composite.my_op_takes_input is the
+    # manager of my_op_takes_input, not my_composite.
     assert storage_dict[(result.run_id, "my_graph.my_op_takes_input", "result")]["value"] == {
         "value": 5,
         "output_manager_name": "inner",
@@ -59,7 +59,7 @@ def test_composite_solid_output():
     }
 
 
-def test_composite_solid_upstream_output():
+def test_graph_upstream_output():
     # Only use the io managers on inner ops for loading downstream inputs.
 
     @op(out=Out(io_manager_key="inner_manager"))
@@ -157,43 +157,12 @@ def test_inner_inputs_connected_to_outer_dependency():
 
     @job
     def my_job():
-        # inner_solid should be connected to top_level_solid
+        # inner_op should be connected to top_level_op
         my_graph(top_level_op())
 
     result = my_job.execute_in_process()
     assert result.success
     assert result.output_for_node("my_graph.inner_op") == "from top_level_op"
-
-
-def test_inner_inputs_connected_to_outer_dependency_with_root_input_manager():
-    called = {}
-
-    @root_input_manager(input_config_schema={"test": str})
-    def my_root(_):
-        # should not reach
-        called["my_root"] = True
-
-    @op(ins={"data": In(dagster_type=str, root_manager_key="my_root")})
-    def inner_op(_, data):
-        return data
-
-    @graph
-    def my_graph(data: str):
-        return inner_op(data)
-
-    @op
-    def top_level_op():
-        return "from top_level_op"
-
-    @job(resource_defs={"my_root": my_root})
-    def my_job():
-        # inner_solid should be connected to top_level_solid
-        my_graph(top_level_op())
-
-    result = my_job.execute_in_process()
-    assert result.success
-    assert result.output_for_node("my_graph.inner_op") == "from top_level_op"
-    assert "my_root" not in called
 
 
 def test_inner_inputs_connected_to_nested_outer_dependency():
@@ -222,7 +191,7 @@ def test_inner_inputs_connected_to_nested_outer_dependency():
 
     @job
     def my_job():
-        # inner_solid should be connected to top_level_solid
+        # inner_op should be connected to top_level_op
         outer_graph(top_level_op())
 
     result = my_job.execute_in_process()

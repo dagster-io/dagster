@@ -8,6 +8,7 @@ from moto import mock_s3, mock_secretsmanager, mock_ssm
 def fake_aws_credentials(monkeypatch):
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
+    monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def mock_s3_resource():
 
 
 @pytest.fixture
-def mock_s3_bucket(mock_s3_resource):  # pylint: disable=redefined-outer-name
+def mock_s3_bucket(mock_s3_resource):
     yield mock_s3_resource.create_bucket(Bucket="test-bucket")
 
 

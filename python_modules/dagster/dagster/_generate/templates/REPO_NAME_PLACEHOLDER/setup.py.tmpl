@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["{{ repo_name }}_tests"]),
     install_requires=[
         "dagster",
+        "dagster-cloud"
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagster-webserver", "pytest"]},
 )

@@ -5,31 +5,32 @@ locally (over UDS on MacOS and Unix, and over a local port on Windows) and when 
 remote Dagster user proceses (e.g., containers).
 
 The GRPC layer is not intended to supplant the dagster-graphql layer, which should still be used to
-drive web frontends like dagit.
+drive web frontends like the Dagster UI.
 """
 
-from .client import (
+from dagster._grpc.client import (
     DagsterGrpcClient as DagsterGrpcClient,
     client_heartbeat_thread as client_heartbeat_thread,
     ephemeral_grpc_api_client as ephemeral_grpc_api_client,
 )
-from .impl import core_execute_run as core_execute_run
-from .server import (
+from dagster._grpc.impl import core_execute_run as core_execute_run
+from dagster._grpc.server import (
     DagsterGrpcServer as DagsterGrpcServer,
     GrpcServerProcess as GrpcServerProcess,
 )
-from .types import (
+from dagster._grpc.types import (
     CanCancelExecutionRequest as CanCancelExecutionRequest,
     CanCancelExecutionResult as CanCancelExecutionResult,
     CancelExecutionRequest as CancelExecutionRequest,
     CancelExecutionResult as CancelExecutionResult,
-    ExecuteExternalPipelineArgs as ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs as ExecuteExternalJobArgs,
     ExecuteRunArgs as ExecuteRunArgs,
     ExecuteStepArgs as ExecuteStepArgs,
     ExecutionPlanSnapshotArgs as ExecutionPlanSnapshotArgs,
     ExternalJobArgs as ExternalJobArgs,
     ExternalScheduleExecutionArgs as ExternalScheduleExecutionArgs,
     GetCurrentImageResult as GetCurrentImageResult,
+    JobSubsetSnapshotArgs as JobSubsetSnapshotArgs,
     ListRepositoriesInput as ListRepositoriesInput,
     ListRepositoriesResponse as ListRepositoriesResponse,
     LoadableRepositorySymbol as LoadableRepositorySymbol,
@@ -37,10 +38,9 @@ from .types import (
     PartitionArgs as PartitionArgs,
     PartitionNamesArgs as PartitionNamesArgs,
     PartitionSetExecutionParamArgs as PartitionSetExecutionParamArgs,
-    PipelineSubsetSnapshotArgs as PipelineSubsetSnapshotArgs,
     ResumeRunArgs as ResumeRunArgs,
     SensorExecutionArgs as SensorExecutionArgs,
     ShutdownServerResult as ShutdownServerResult,
     StartRunResult as StartRunResult,
 )
-from .utils import get_loadable_targets as get_loadable_targets
+from dagster._grpc.utils import get_loadable_targets as get_loadable_targets

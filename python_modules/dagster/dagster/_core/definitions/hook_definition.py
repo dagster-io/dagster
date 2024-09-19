@@ -1,12 +1,14 @@
-from typing import AbstractSet, Any, Callable, Iterator, NamedTuple, Optional, cast
+from typing import AbstractSet, Any, Callable, Iterator, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-
-from ..decorator_utils import get_function_params
-from ..errors import DagsterInvalidInvocationError
-from .resource_requirement import HookResourceRequirement, RequiresResources, ResourceRequirement
-from .utils import check_valid_name
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.resource_requirement import (
+    HookResourceRequirement,
+    ResourceRequirement,
+)
+from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 class HookDefinition(
@@ -19,7 +21,6 @@ class HookDefinition(
             ("decorated_fn", PublicAttr[Optional[Callable]]),
         ],
     ),
-    RequiresResources,
 ):
     """Define a hook which can be triggered during a op execution (e.g. a callback on the step
     execution failure event during a op execution).
@@ -54,7 +55,7 @@ class HookDefinition(
 
         We currently support hooks to decorate the following:
 
-        - PipelineDefinition: when the hook decorates a job definition, it will be added to
+        - JobDefinition: when the hook decorates a job definition, it will be added to
             all the op invocations within the job.
 
         Example:
@@ -70,14 +71,14 @@ class HookDefinition(
                     foo(bar())
 
         """
-        from ..execution.context.hook import HookContext
-        from .graph_definition import GraphDefinition
-        from .hook_invocation import hook_invocation_result
-        from .pipeline_definition import PipelineDefinition
+        from dagster._core.definitions.graph_definition import GraphDefinition
+        from dagster._core.definitions.hook_invocation import hook_invocation_result
+        from dagster._core.definitions.job_definition import JobDefinition
+        from dagster._core.execution.context.hook import HookContext
 
-        if len(args) > 0 and isinstance(args[0], (PipelineDefinition, GraphDefinition)):
-            # when it decorates a pipeline, we apply this hook to all the solid invocations within
-            # the pipeline.
+        if len(args) > 0 and isinstance(args[0], (JobDefinition, GraphDefinition)):
+            # when it decorates a job, we apply this hook to all the op invocations within
+            # the job.
             return args[0].with_hooks({self})
         else:
             if not self.decorated_fn:
@@ -140,10 +141,9 @@ class HookDefinition(
                 return hook_invocation_result(self, context)
 
     def get_resource_requirements(
-        self, outer_context: Optional[object] = None
+        self,
+        attached_to: Optional[str],
     ) -> Iterator[ResourceRequirement]:
-        # outer_context in this case is a string of (pipeline/job, pipeline/job name) or (node, node name)
-        attached_to = cast(Optional[str], outer_context)
         for resource_key in sorted(list(self.required_resource_keys)):
             yield HookResourceRequirement(
                 key=resource_key, attached_to=attached_to, hook_name=self.name

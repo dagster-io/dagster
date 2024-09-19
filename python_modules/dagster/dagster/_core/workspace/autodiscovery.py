@@ -2,17 +2,12 @@ import inspect
 from types import ModuleType
 from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 
-from dagster import (
-    DagsterInvariantViolationError,
-    GraphDefinition,
-    JobDefinition,
-    RepositoryDefinition,
-)
+from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module
-from dagster._core.definitions import AssetGroup
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.definitions_loader import DefinitionsLoader
+from dagster._core.definitions.load_assets_from_modules import assets_from_modules
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
-from dagster._legacy import PipelineDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 
@@ -54,6 +49,18 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
+    from dagster._core.definitions import JobDefinition
+
+    loadable_def_loaders = _loadable_targets_of_type(module, DefinitionsLoader)
+
+    if loadable_def_loaders:
+        if len(loadable_def_loaders) > 1:
+            raise DagsterInvariantViolationError(
+                "Cannot have more than one function decorated with @definitions defined in module scope"
+            )
+
+        return loadable_def_loaders
+
     loadable_defs = _loadable_targets_of_type(module, Definitions)
 
     if loadable_defs:
@@ -70,24 +77,20 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     if loadable_repos:
         return loadable_repos
 
-    loadable_pipelines = _loadable_targets_of_type(module, PipelineDefinition)
+    loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
     loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
 
-    if len(loadable_pipelines) == 1:
-        return loadable_pipelines
+    if len(loadable_jobs) == 1:
+        return loadable_jobs
 
-    elif len(loadable_pipelines) > 1:
+    elif len(loadable_jobs) > 1:
         target_type = "job" if len(loadable_jobs) > 1 else "pipeline"
         raise DagsterInvariantViolationError(
             (
-                'No repository and more than one {target_type} found in "{module_name}". If you'
-                " load a file or module directly it must have only one {target_type} in scope."
-                " Found {target_type}s defined in variables or decorated functions:"
-                " {pipeline_symbols}."
-            ).format(
-                module_name=module.__name__,
-                pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
-                target_type=target_type,
+                f'No repository and more than one {target_type} found in "{module.__name__}". If you'
+                f" load a file or module directly it must have only one {target_type} in scope."
+                f" Found {target_type}s defined in variables or decorated functions:"
+                f" {[p.attribute for p in loadable_jobs]!r}."
             )
         )
 
@@ -99,38 +102,19 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     elif len(loadable_graphs) > 1:
         raise DagsterInvariantViolationError(
             (
-                'More than one graph found in "{module_name}". '
+                f'More than one graph found in "{module.__name__}". '
                 "If you load a file or module directly and it has no repositories, jobs, or "
                 "pipelines in scope, it must have no more than one graph in scope. "
-                "Found graphs defined in variables or decorated functions: {graph_symbols}."
-            ).format(
-                module_name=module.__name__,
-                graph_symbols=repr([g.attribute for g in loadable_graphs]),
+                f"Found graphs defined in variables or decorated functions: {[g.attribute for g in loadable_graphs]!r}."
             )
         )
 
-    loadable_asset_groups = _loadable_targets_of_type(module, AssetGroup)
-    if len(loadable_asset_groups) == 1:
-        return loadable_asset_groups
-
-    elif len(loadable_asset_groups) > 1:
-        var_names = repr([a.attribute for a in loadable_asset_groups])
-        raise DagsterInvariantViolationError(
-            f'More than one asset group found in "{module.__name__}". '
-            "If you load a file or module directly and it has no repositories, jobs, "
-            "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
-            f"Found asset groups defined in variables: {var_names}."
-        )
-
-    asset_group_from_module_assets = AssetGroup.from_modules([module])
-    if (
-        len(asset_group_from_module_assets.assets) > 0
-        or len(asset_group_from_module_assets.source_assets) > 0
-    ):
-        return [LoadableTarget(LOAD_ALL_ASSETS, asset_group_from_module_assets)]
+    module_assets, module_source_assets, _ = assets_from_modules([module])
+    if len(module_assets) > 0 or len(module_source_assets) > 0:
+        return [LoadableTarget(LOAD_ALL_ASSETS, [*module_assets, *module_source_assets])]
 
     raise DagsterInvariantViolationError(
-        "No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in "
+        "No Definitions, function decorated with @definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "
         f'"{module.__name__}".'
     )
 

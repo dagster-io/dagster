@@ -1,4 +1,4 @@
-# Dagster + Modern Data Stack starter kit
+# Dagster + Modern Data Stack starter kit [UNMAINTAINED]
 
 This starter kit shows how to build the Dagster's [Software-Defined Assets](https://docs.dagster.io/concepts/assets/software-defined-assets) alongside Modern Data Stack tools (specifically, [Airbyte](https://github.com/airbytehq/airbyte) and [dbt](https://github.com/dbt-labs/dbt-core)).
 
@@ -20,6 +20,7 @@ You can follow the [Set up data and connections](#set-up-data-and-connections) s
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
 In this example, we ingest data from Airbyte by reading info from an [Airbyte connection](https://airbytehq.github.io/understanding-airbyte/connections/) where it syncs data from Postgres to Postgres. So, in order to kick off runs successfully, you'll need the following environment variables to configure the connection:
+
 - Airbyte
   - `AIRBYTE_CONNECTION_ID`
   - `AIRBYTE_HOST`
@@ -35,6 +36,7 @@ In this example, we ingest data from Airbyte by reading info from an [Airbyte co
 You can find all the configurations in [`assets_modern_data_stack/utils/constants.py`](./assets_modern_data_stack/utils/constants.py).
 
 You can declare environment variables in various ways:
+
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)
 - **Dagster Cloud**: [Using the Dagster Cloud UI](https://docs.dagster.io/master/dagster-cloud/developing-testing/environment-variables-and-secrets#using-the-dagster-cloud-ui) to manage environment variables
 - **Dagster Open Source**: How environment variables are set for Dagster projects deployed on your infrastructure depends on where Dagster is deployed. Read about how to declare environment variables [here](https://docs.dagster.io/master/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables).
@@ -57,10 +59,10 @@ To install this example and its Python dependencies, run:
 pip install -e ".[dev]"
 ```
 
-Then, start the Dagit web server:
+Then, start the Dagster UI web server:
 
 ```
-dagit
+dagster dev
 ```
 
 Open http://localhost:3000 with your browser to see the project.
@@ -112,7 +114,6 @@ Created Airbyte Connection: c90cb8a5-c516-4c1a-b243-33dfe2cfb9e8
 This connection id is specific to your local setup, so you'll need to update `constants.py` with this
 value. Once you've update your `constants.py` file, you're good to go!
 
-
 ## Learning more
 
 ### Changing the code locally
@@ -120,6 +121,7 @@ value. Once you've update your `constants.py` file, you're good to go!
 When developing pipelines locally, be sure to click the **Reload definition** button in the Dagster UI after you change the code. This ensures that Dagster picks up the latest changes you made.
 
 You can reload the code using the **Deployment** page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
@@ -129,37 +131,11 @@ You can reload the code using the **Deployment** page:
 </details>
 
 Or from the left nav or on each job page:
+
 <details><summary>👈 Expand to view the screenshot</summary>
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/more-reload-left-nav.png" />
-</p>
-
-</details>
-
-### Running daemon locally
-
-If you're running Dagster locally and trying to set up schedules, you will see a warning that your daemon isn’t running.
-
-<details><summary>👈 Expand to learn how to set up a local daemon</summary>
-
-<p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/yuhan/11-11-quickstart_1/_add_quickstart_basic_etl_as_the_very_basic_template/docs/next/public/images/quickstarts/basic/step-3-3-daemon-warning.png?raw=true" />
-</p>
-
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) for your jobs, start the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
-
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within /tmp may cause issues. See [Dagster Instance default local behavior](https://docs.dagster.io/deployment/dagster-instance#default-local-behavior) for more details.
-
-In this case, go to the project root directory and run:
-```bash
-dagster-daemon run
-```
-
-Once your Dagster Daemon is running, the schedules that are turned on will start running.
-
-<p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-4-daemon-on.png?raw=true" />
 </p>
 
 </details>

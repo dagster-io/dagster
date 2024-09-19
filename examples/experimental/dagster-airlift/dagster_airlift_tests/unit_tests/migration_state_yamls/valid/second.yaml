@@ -1,0 +1,5 @@
+tasks: 
+  - id: some_task 
+    migrated: True
+  - id: other_task 
+    migrated: False

@@ -1,0 +1,7 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "assets_dynamic_partitions.definitions"
+code_location_name = "assets_dynamic_partitions"

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -19,19 +17,22 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
 )
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.host_representation import GraphSelector, PipelineSelector
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
-from graphene import ResolveInfo
 from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.errors import GraphenePythonError
+    from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
+    from dagster_graphql.schema.util import ResolveInfo
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -40,7 +41,9 @@ GrapheneResolverFn: TypeAlias = Callable[..., object]
 T_Callable = TypeVar("T_Callable", bound=Callable)
 
 
-def assert_permission_for_location(graphene_info: ResolveInfo, permission: str, location_name: str):
+def assert_permission_for_location(
+    graphene_info: "ResolveInfo", permission: str, location_name: str
+) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)
@@ -50,9 +53,7 @@ def assert_permission_for_location(graphene_info: ResolveInfo, permission: str, 
 
 def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
-        def _fn(
-            self, graphene_info, *args: P.args, **kwargs: P.kwargs
-        ):  # pylint: disable=unused-argument
+        def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             result = fn(self, graphene_info, *args, **kwargs)
 
             if not graphene_info.context.was_permission_checked(permission):
@@ -67,9 +68,7 @@ def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], 
 
 def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
-        def _fn(
-            self, graphene_info, *args: P.args, **kwargs: P.kwargs
-        ):  # pylint: disable=unused-argument
+        def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             assert_permission(graphene_info, permission)
 
             return fn(self, graphene_info, *args, **kwargs)
@@ -79,12 +78,48 @@ def check_permission(permission: str) -> Callable[[GrapheneResolverFn], Graphene
     return decorator
 
 
-def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
+def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)
     if not context.has_permission(permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def assert_permission_for_asset_graph(
+    graphene_info: "ResolveInfo",
+    asset_graph: RemoteAssetGraph,
+    asset_selection: Optional[Sequence[AssetKey]],
+    permission: str,
+) -> None:
+    asset_keys = set(asset_selection or [])
+
+    # If any of the asset keys don't map to a location (e.g. because they are no longer in the
+    # graph) need deployment-wide permissions - no valid code location to check
+    if asset_keys.difference(asset_graph.repository_handles_by_key.keys()):
+        assert_permission(
+            graphene_info,
+            permission,
+        )
+        return
+
+    if asset_keys:
+        repo_handles = [asset_graph.get_repository_handle(asset_key) for asset_key in asset_keys]
+    else:
+        repo_handles = asset_graph.repository_handles_by_key.values()
+
+    location_names = set(
+        repo_handle.code_location_origin.location_name for repo_handle in repo_handles
+    )
+
+    if not location_names:
+        assert_permission(
+            graphene_info,
+            permission,
+        )
+    else:
+        for location_name in location_names:
+            assert_permission_for_location(graphene_info, permission, location_name)
 
 
 def _noop(_) -> None:
@@ -94,11 +129,11 @@ def _noop(_) -> None:
 class ErrorCapture:
     @staticmethod
     def default_on_exception(
-        exc_info: Tuple[Type[BaseException], BaseException, TracebackType]
-    ) -> GraphenePythonError:
+        exc_info: Tuple[Type[BaseException], BaseException, TracebackType],
+    ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
-        # Transform exception in to PythonErron to present to user
+        # Transform exception in to PythonError to present to user
         return GraphenePythonError(serializable_error_info_from_exc_info(exc_info))
 
     # global behavior for how to handle unexpected exceptions
@@ -119,8 +154,10 @@ class ErrorCapture:
             ErrorCapture.observer.reset(token)
 
 
-def capture_error(fn: T_Callable) -> T_Callable:
-    def _fn(*args, **kwargs):
+def capture_error(
+    fn: Callable[P, T],
+) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
+    def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
@@ -129,11 +166,13 @@ def capture_error(fn: T_Callable) -> T_Callable:
             ErrorCapture.observer.get()(exc)
             return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
 
-    return cast(T_Callable, _fn)
+    return _fn
 
 
 class UserFacingGraphQLError(Exception):
-    def __init__(self, error):
+    # The `error` arg here should be a Graphene type implementing the interface `GrapheneError`, but
+    # this is not trackable by the Python type system.
+    def __init__(self, error: Any):
         self.error = error
         message = "[{cls}] {message}".format(
             cls=error.__class__.__name__,
@@ -142,18 +181,26 @@ class UserFacingGraphQLError(Exception):
         super(UserFacingGraphQLError, self).__init__(message)
 
 
-def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
+def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector:
     asset_selection = cast(Optional[Iterable[Dict[str, List[str]]]], data.get("assetSelection"))
-    return PipelineSelector(
+    asset_check_selection = cast(
+        Optional[Iterable[Dict[str, Any]]], data.get("assetCheckSelection")
+    )
+    return JobSubsetSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
-        pipeline_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
-        solid_selection=data.get("solidSelection"),
-        asset_selection=[  # type: ignore
-            check.not_none(AssetKey.from_graphql_input(asset_key)) for asset_key in asset_selection
-        ]
-        if asset_selection
-        else None,
+        job_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
+        op_selection=data.get("solidSelection"),
+        asset_selection=(
+            [AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
+            if asset_selection
+            else None
+        ),
+        asset_check_selection=(
+            [AssetCheckKey.from_graphql_input(asset_check) for asset_check in asset_check_selection]
+            if asset_check_selection is not None
+            else None
+        ),
     )
 
 
@@ -169,7 +216,7 @@ class ExecutionParams(
     NamedTuple(
         "_ExecutionParams",
         [
-            ("selector", PipelineSelector),
+            ("selector", JobSubsetSelector),
             ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
             ("execution_metadata", "ExecutionMetadata"),
@@ -179,7 +226,7 @@ class ExecutionParams(
 ):
     def __new__(
         cls,
-        selector: PipelineSelector,
+        selector: JobSubsetSelector,
         run_config: Optional[Mapping[str, object]],
         mode: Optional[str],
         execution_metadata: "ExecutionMetadata",
@@ -189,7 +236,7 @@ class ExecutionParams(
 
         return super(ExecutionParams, cls).__new__(
             cls,
-            selector=check.inst_param(selector, "selector", PipelineSelector),
+            selector=check.inst_param(selector, "selector", JobSubsetSelector),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             execution_metadata=check.inst_param(
@@ -241,3 +288,31 @@ class ExecutionMetadata(
             "rootRunId": self.root_run_id,
             "parentRunId": self.parent_run_id,
         }
+
+
+def apply_cursor_limit_reverse(
+    items: Sequence[str], cursor: Optional[str], limit: Optional[int], reverse: Optional[bool]
+) -> Sequence[str]:
+    start = 0
+    end = len(items)
+    index = 0
+
+    if cursor:
+        index = next((idx for (idx, item) in enumerate(items) if item == cursor))
+
+        if reverse:
+            end = index
+        else:
+            start = index + 1
+
+    if limit:
+        if reverse:
+            start = end - limit
+        else:
+            end = start + limit
+
+    return items[max(start, 0) : end]
+
+
+BackfillParams: TypeAlias = Mapping[str, Any]
+AssetBackfillPreviewParams: TypeAlias = Mapping[str, Any]

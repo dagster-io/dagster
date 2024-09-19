@@ -3,11 +3,10 @@ import time
 from dagster import (
     AssetKey,
     AssetOut,
-    AssetSelection,
     RunRequest,
     SkipReason,
+    StaticPartitionsDefinition,
     asset,
-    build_asset_reconciliation_sensor,
     job,
     multi_asset,
     multi_asset_sensor,
@@ -56,7 +55,7 @@ def log_asset_sensor_job():
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+    monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=log_asset_sensor_job,
 )
 def asset_a_and_b_sensor(context):
@@ -76,7 +75,7 @@ def asset_a_and_b_sensor(context):
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
+    monitored_assets=[AssetKey("asset_c"), AssetKey("asset_d")],
     job=log_asset_sensor_job,
 )
 def asset_c_or_d_sensor(context):
@@ -96,7 +95,7 @@ def asset_c_or_d_sensor(context):
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("my_string_asset"), AssetKey("my_int_asset")],
+    monitored_assets=[AssetKey("my_string_asset"), AssetKey("my_int_asset")],
     job=log_asset_sensor_job,
 )
 def asset_string_and_int_sensor(context):
@@ -114,7 +113,7 @@ def asset_string_and_int_sensor(context):
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a")],
+    monitored_assets=[AssetKey("asset_a")],
     job=log_asset_sensor_job,
 )
 def every_fifth_materialization_sensor(context):
@@ -157,6 +156,56 @@ def waits(runs_long):
     return runs_long + 1
 
 
+def _build_partitioned_assets():
+    assets = []
+
+    for i in range(10):
+
+        @asset(
+            name=f"partitioned_asset_{i}",
+            group_name="partitioned_assets",
+            partitions_def=StaticPartitionsDefinition([str(j) for j in range(20)]),
+        )
+        def partitioned_asset():
+            return 1
+
+        assets.append(partitioned_asset)
+    return assets
+
+
+partitioned_assets = _build_partitioned_assets()
+
+
+@multi_asset_sensor(
+    monitored_assets=[asset_def.key for asset_def in partitioned_assets],
+    job=log_asset_sensor_job,
+)
+def partitioned_multi_asset_sensor(context):
+    run_requests = []
+    for (
+        partition,
+        materialization_by_asset,
+    ) in context.latest_materialization_records_by_partition_and_asset().items():
+        context.advance_cursor(materialization_by_asset)
+        run_requests.append(
+            RunRequest(
+                run_config={
+                    "ops": {
+                        "log_asset_sensor": {
+                            "config": {
+                                "message": (
+                                    f"Materializations by asset {materialization_by_asset} for"
+                                    f" partition key {partition}"
+                                )
+                            }
+                        }
+                    }
+                },
+            )
+        )
+    return run_requests
+
+
 def get_asset_sensors_repo():
     return [
         asset_a,
@@ -172,7 +221,6 @@ def get_asset_sensors_repo():
         downstream,
         runs_long,
         waits,
-        build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.assets(downstream, waits), name="generated_sensor"
-        ),
+        *partitioned_assets,
+        partitioned_multi_asset_sensor,
     ]

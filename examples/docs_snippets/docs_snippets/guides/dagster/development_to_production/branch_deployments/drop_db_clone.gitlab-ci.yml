@@ -1,0 +1,43 @@
+# .gitlab-ci.yml
+
+stages:
+  - setup
+  - build
+  - deploy
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+parse-workspace:
+  ...
+
+build-image:
+  ...
+
+deploy-docker:
+  ...
+
+deploy-docker-branch:
+  ...
+
+close_branch:
+  stage: deploy
+  image: ghcr.io/dagster-io/dagster-cloud-action:0.1.23
+  when: manual
+  only:
+    - merge_requests
+  script:
+    # Existing steps here
+    ...
+
+    # Add a step to launch the job dropping the cloned db
+    - dagster-plus job launch
+      --url "$DAGSTER_CLOUD_URL/$DEPLOYMENT_NAME"
+      --api-token "$DAGSTER_CLOUD_API_TOKEN"
+      --location "location_name_containing_drop_prod_clone_job"
+      --job drop_prod_clone
+  environment:
+    name: branch/$CI_COMMIT_REF_NAME
+    action: stop

@@ -1,9 +1,11 @@
+from typing import List, Optional
+
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._utils.error import SerializableErrorInfo
 
-from .util import non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneError(graphene.Interface):
@@ -76,22 +78,18 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_message(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            (
-                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
-                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
-                " expected"
-            ),
+            f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+            " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+            " expected",
         )
         return self._message
 
     def resolve_stack(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            (
-                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
-                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
-                " expected"
-            ),
+            f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+            " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+            " expected",
         )
         return self._stack
 
@@ -104,16 +102,14 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_className(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            (
-                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
-                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
-                " expected"
-            ),
+            f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+            " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+            " expected",
         )
         return self._className
 
-    def resolve_causes(self, _graphene_info):
-        causes = []
+    def resolve_causes(self, _graphene_info: ResolveInfo):
+        causes: List[GraphenePythonError] = []
         current_error = self._cause
         while current_error and len(causes) < 10:  # Sanity check the depth of the causes
             causes.append(GraphenePythonError(current_error))
@@ -196,16 +192,16 @@ class GraphenePipelineNotFoundError(graphene.ObjectType):
     repository_location_name = graphene.NonNull(graphene.String)
 
     def __init__(self, selector):
-        from ..implementation.utils import PipelineSelector
+        from dagster_graphql.implementation.utils import JobSubsetSelector
 
         super().__init__()
-        check.inst_param(selector, "selector", PipelineSelector)
-        self.pipeline_name = selector.pipeline_name
+        check.inst_param(selector, "selector", JobSubsetSelector)
+        self.pipeline_name = selector.job_name
         self.repository_name = selector.repository_name
         self.repository_location_name = selector.location_name
         self.message = (
             "Could not find Pipeline "
-            f"{selector.location_name}.{selector.repository_name}.{selector.pipeline_name}"
+            f"{selector.location_name}.{selector.repository_name}.{selector.job_name}"
         )
 
 
@@ -219,7 +215,7 @@ class GrapheneGraphNotFoundError(graphene.ObjectType):
     repository_location_name = graphene.NonNull(graphene.String)
 
     def __init__(self, selector):
-        from ..implementation.utils import GraphSelector
+        from dagster_graphql.implementation.utils import GraphSelector
 
         super().__init__()
         check.inst_param(selector, "selector", GraphSelector)
@@ -287,7 +283,7 @@ class GraphenePresetNotFoundError(graphene.ObjectType):
     def __init__(self, preset, selector):
         super().__init__()
         self.preset = check.str_param(preset, "preset")
-        self.message = f"Preset {preset} not found in pipeline {selector.pipeline_name}."
+        self.message = f"Preset {preset} not found in pipeline {selector.job_name}."
 
 
 class GrapheneConflictingExecutionParamsError(graphene.ObjectType):
@@ -312,7 +308,7 @@ class GrapheneModeNotFoundError(graphene.ObjectType):
     def __init__(self, mode, selector):
         super().__init__()
         self.mode = check.str_param(mode, "mode")
-        self.message = f"Mode {mode} not found in pipeline {selector.pipeline_name}."
+        self.message = f"Mode {mode} not found in pipeline {selector.job_name}."
 
 
 class GrapheneNoModeProvidedError(graphene.ObjectType):
@@ -416,6 +412,19 @@ class GrapheneScheduleNotFoundError(graphene.ObjectType):
         self.message = f"Schedule {self.schedule_name} could not be found."
 
 
+class GrapheneResourceNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "ResourceNotFoundError"
+
+    resource_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, resource_name):
+        super().__init__()
+        self.resource_name = check.str_param(resource_name, "resource_name")
+        self.message = f"Top-level resource {self.resource_name} could not be found."
+
+
 class GrapheneSensorNotFoundError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
@@ -425,7 +434,7 @@ class GrapheneSensorNotFoundError(graphene.ObjectType):
 
     def __init__(self, sensor_name):
         super().__init__()
-        self.name = check.str_param(sensor_name, "sensor_name")
+        self.sensor_name = check.str_param(sensor_name, "sensor_name")
         self.message = f"Could not find `{sensor_name}` in the currently loaded repository."
 
 
@@ -480,6 +489,34 @@ class GrapheneUnauthorizedError(graphene.ObjectType):
         self.message = message if message else "Authorization failed"
 
 
+class GrapheneDuplicateDynamicPartitionError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "DuplicateDynamicPartitionError"
+
+    partitions_def_name = graphene.NonNull(graphene.String)
+    partition_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, partitions_def_name, partition_name):
+        super().__init__()
+        self.partitions_def_name = check.str_param(partitions_def_name, "partitions_def_name")
+        self.partition_name = check.str_param(partition_name, "partition_name")
+        self.message = (
+            f"Partition {self.partition_name} already exists in dynamic partitions definition"
+            f" {self.partitions_def_name}."
+        )
+
+
+class GrapheneUnsupportedOperationError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "UnsupportedOperationError"
+
+    def __init__(self, message: Optional[str] = None):
+        super().__init__()
+        self.message = check.str_param(message, "message") or "Unsupported operation."
+
+
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -504,9 +541,12 @@ types = [
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,
+    GrapheneResourceNotFoundError,
     GrapheneRunGroupNotFoundError,
     GrapheneRunNotFoundError,
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,
+    GrapheneUnsupportedOperationError,
+    GrapheneDuplicateDynamicPartitionError,
 ]

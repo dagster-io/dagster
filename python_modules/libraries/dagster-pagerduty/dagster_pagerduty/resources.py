@@ -1,10 +1,16 @@
 from typing import Dict, Optional, cast
 
 import pypd
-from dagster import Field, resource
+from dagster import ConfigurableResource, resource
+from dagster._config.pythonic_config import infer_schema_from_config_class
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._utils.warnings import suppress_dagster_warnings
+from pydantic import Field as PyField
 
 
-class PagerDutyService:
+class PagerDutyService(ConfigurableResource):
+    """This resource is for posting events to PagerDuty."""
+
     """Integrates with PagerDuty via the pypd library.
 
     See:
@@ -16,8 +22,18 @@ class PagerDutyService:
     for documentation and more information.
     """
 
-    def __init__(self, routing_key: str):
-        self.routing_key = routing_key
+    routing_key: str = PyField(
+        ...,
+        description=(
+            "The routing key provisions access to your PagerDuty service. You"
+            "will need to include the integration key for your new integration, as a"
+            "routing_key in the event payload."
+        ),
+    )
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     def EventV2_create(
         self,
@@ -56,7 +72,7 @@ class PagerDutyService:
                 How impacted the affected system is. Displayed to users in lists and influences the
                 priority of any created incidents. Must be one of {info, warning, error, critical}
 
-        Keyword args:
+        Keyword Args:
             event_action (str):
                 There are three types of events that PagerDuty recognizes, and are used to represent
                 different types of activity in your monitored systems. (default: 'trigger')
@@ -120,7 +136,6 @@ class PagerDutyService:
 
                 {"ping time": "1500ms", "load avg": 0.75 }
         """
-
         data = {
             "routing_key": self.routing_key,
             "event_action": event_action,
@@ -150,43 +165,37 @@ class PagerDutyService:
         return pypd.EventV2.create(data=data)
 
 
+@dagster_maintained_resource
 @resource(
-    {
-        "routing_key": Field(
-            str,
-            description="""The routing key provisions access to your PagerDuty service. You
-                    will need to include the integration key for your new integration, as a
-                    routing_key in the event payload.""",
-        )
-    },
+    config_schema=infer_schema_from_config_class(PagerDutyService),
     description="""This resource is for posting events to PagerDuty.""",
 )
-def pagerduty_resource(context):
+@suppress_dagster_warnings
+def pagerduty_resource(context) -> PagerDutyService:
     """A resource for posting events (alerts) to PagerDuty.
 
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
+            @op
+            def pagerduty_op(pagerduty: PagerDutyService):
+                pagerduty.EventV2_create(
+                    summary='alert from dagster'
+                    source='localhost',
+                    severity='error',
+                    event_action='trigger',
+                )
 
-        @op(required_resource_keys={'pagerduty'})
-        def pagerduty_op(context):
-            context.resources.pagerduty.EventV2_create(
-                summary='alert from dagster'
-                source='localhost',
-                severity='error',
-                event_action='trigger',
-            )
+            @job(resource_defs={ 'pagerduty': pagerduty_resource })
+            def pagerduty_test():
+                pagerduty_op()
 
-        @job(resource_defs={ 'pagerduty': pagerduty_resource })
-        def pagerduty_test():
-            pagerduty_op()
-
-        pagerduty_test.execute_in_process(
-            run_config={
-                "resources": {
-                    'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
+            pagerduty_test.execute_in_process(
+                run_config={
+                    "resources": {
+                        'pagerduty': {'config': {'routing_key': '0123456789abcdef0123456789abcdef'}}
+                    }
                 }
-            }
-        )
+            )
     """
-    return PagerDutyService(context.resource_config.get("routing_key"))
+    return PagerDutyService(**context.resource_config)

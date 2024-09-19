@@ -3,11 +3,10 @@ from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
-
-from ..config import ConfigMapping
-from ..graph_definition import GraphDefinition
-from ..input import GraphIn, InputDefinition
-from ..output import GraphOut, OutputDefinition
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.input import GraphIn, InputDefinition
+from dagster._core.definitions.output import GraphOut, OutputDefinition
 
 
 class _Graph:
@@ -72,9 +71,10 @@ class _Graph:
             input_mappings,
             output_mappings,
             dependencies,
-            solid_defs,
+            node_defs,
             config_mapping,
             positional_inputs,
+            input_assets,
         ) = do_composition(
             decorator_name="@graph",
             graph_name=self.name,
@@ -88,21 +88,22 @@ class _Graph:
         graph_def = GraphDefinition(
             name=self.name,
             dependencies=dependencies,
-            node_defs=solid_defs,
+            node_defs=node_defs,
             description=self.description or format_docstring_for_description(fn),
             input_mappings=input_mappings,
             output_mappings=output_mappings,
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
+            input_assets=input_assets,
+            composition_fn=fn,
         )
         update_wrapper(graph_def, fn)
         return graph_def
 
 
 @overload
-def graph(compose_fn: Callable) -> GraphDefinition:
-    ...
+def graph(compose_fn: Callable[..., Any]) -> GraphDefinition: ...
 
 
 @overload
@@ -116,8 +117,7 @@ def graph(
     out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = ...,
-) -> _Graph:
-    ...
+) -> _Graph: ...
 
 
 def graph(
@@ -132,14 +132,14 @@ def graph(
     tags: Optional[Mapping[str, Any]] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
 ) -> Union[GraphDefinition, _Graph]:
-    """Create a graph with the specified parameters from the decorated composition function.
+    """Create an op graph with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up a dependency graph by writing a
     function that invokes ops (or other graphs) and passes the output to subsequent invocations.
 
     Args:
         name (Optional[str]):
-            The name of the graph. Must be unique within any :py:class:`RepositoryDefinition` containing the graph.
+            The name of the op graph. Must be unique within any :py:class:`RepositoryDefinition` containing the graph.
         description (Optional[str]):
             A human-readable description of the graph.
         input_defs (Optional[List[InputDefinition]]):
@@ -173,6 +173,21 @@ def graph(
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+
+       config (Optional[Union[ConfigMapping], Mapping[str, Any]):
+            Describes how the graph is configured at runtime.
+
+            If a :py:class:`ConfigMapping` object is provided, then the graph takes on the config
+            schema of this object. The mapping will be applied at runtime to generate the config for
+            the graph's constituent nodes.
+
+            If a dictionary is provided, then it will be used as the default run config for the
+            graph. This means it must conform to the config schema of the underlying nodes. Note
+            that the values provided will be viewable and editable in the Dagster UI, so be careful
+            with secrets. its constituent nodes.
+
+            If no value is provided, then the config schema for the graph is the default (derived
+            from the underlying nodes).
     """
     if compose_fn is not None:
         check.invariant(description is None)

@@ -1,15 +1,31 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/js_modules/dagster-ui"
     schedule:
-      interval: "monthly"
+      interval: "daily"
     reviewers:
       - "hellendag"
       - "salazarm"
+    open-pull-requests-limit: 0
   - package-ecosystem: "pip"
-    directory: "/"
+    directory: "/python_modules/dagster"
     schedule:
-      interval: "monthly"
+      interval: "daily"
     reviewers:
-      - "sryza"
+      - "dagster-io/oss"
+    open-pull-requests-limit: 0
+  - package-ecosystem: "pip"
+    directory: "/python_modules/dagster-graphql"
+    schedule:
+      interval: "daily"
+    reviewers:
+      - "dagster-io/oss"
+    open-pull-requests-limit: 0
+  - package-ecosystem: "pip"
+    directory: "/python_modules/dagster-webserver"
+    schedule:
+      interval: "daily"
+    reviewers:
+      - "dagster-io/oss"
+    open-pull-requests-limit: 0

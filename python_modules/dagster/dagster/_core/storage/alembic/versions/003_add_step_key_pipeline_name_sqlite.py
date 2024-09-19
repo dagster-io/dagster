@@ -1,15 +1,14 @@
-"""add step_key pipeline_name
+"""add step_key pipeline_name.
 
 Revision ID: 3b1e175a2be3
 Revises: 1ebdd7a9686f
 Create Date: 2020-03-31 11:01:42.609069
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
-
-# pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
 revision = "3b1e175a2be3"

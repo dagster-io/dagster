@@ -2,7 +2,8 @@ import dagster._check as check
 import graphene
 from dagster._core.snap import ConfigSchemaSnapshot, ResourceDefSnap
 
-from ..config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.util import ResolveInfo
 
 
 class GrapheneResource(graphene.ObjectType):
@@ -24,7 +25,7 @@ class GrapheneResource(graphene.ObjectType):
         self.name = resource_def_snap.name
         self.description = resource_def_snap.description
 
-    def resolve_configField(self, _graphene_info):
+    def resolve_configField(self, _graphene_info: ResolveInfo):
         if (
             self._resource_def_snap.config_field_snap
             # config type may not be present if mode config mapped

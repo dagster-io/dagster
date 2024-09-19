@@ -1,10 +1,14 @@
 import graphene
-import pendulum
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._time import datetime_from_timestamp
+from dagster._utils import check
 
-from .pipelines.status import GrapheneRunStatus
-from .runs import GrapheneRunConfigData
-from .util import non_null_list
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.runs import GrapheneRunConfigData
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneAssetKeyInput(graphene.InputObjectType):
@@ -12,6 +16,17 @@ class GrapheneAssetKeyInput(graphene.InputObjectType):
 
     class Meta:
         name = "AssetKeyInput"
+
+    def to_asset_key(self) -> AssetKey:
+        return AssetKey(self.path)
+
+
+class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    name = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetCheckHandleInput"
 
 
 class GrapheneExecutionTag(graphene.InputObjectType):
@@ -29,7 +44,9 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     statuses = graphene.List(graphene.NonNull(GrapheneRunStatus))
     snapshotId = graphene.InputField(graphene.String)
     updatedAfter = graphene.InputField(graphene.Float)
+    updatedBefore = graphene.InputField(graphene.Float)
     createdBefore = graphene.InputField(graphene.Float)
+    createdAfter = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
 
     class Meta:
@@ -44,25 +61,25 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             tags = None
 
         if self.statuses:
-            statuses = [
-                DagsterRunStatus[status.value]  # type: ignore
-                for status in self.statuses  # pylint: disable=not-an-iterable
-            ]
+            statuses = [DagsterRunStatus[status.value] for status in self.statuses]
         else:
             statuses = None
 
-        updated_after = pendulum.from_timestamp(self.updatedAfter) if self.updatedAfter else None
-        created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
+        updated_before = datetime_from_timestamp(self.updatedBefore) if self.updatedBefore else None
+        updated_after = datetime_from_timestamp(self.updatedAfter) if self.updatedAfter else None
+        created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
-            pipeline_name=self.pipelineName,
+            job_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
+            updated_before=updated_before,
             updated_after=updated_after,
-            mode=self.mode,
             created_before=created_before,
+            created_after=created_after,
         )
 
 
@@ -80,6 +97,7 @@ class GraphenePipelineSelector(graphene.InputObjectType):
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandleInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a
@@ -116,6 +134,7 @@ class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
+    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandleInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a job or pipeline"""
@@ -141,18 +160,84 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
         name = "PartitionSetSelector"
 
 
+class GraphenePartitionRangeSelector(graphene.InputObjectType):
+    start = graphene.NonNull(graphene.String)
+    end = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = """This type represents a partition range selection with start and end."""
+        name = "PartitionRangeSelector"
+
+
+class GraphenePartitionsSelector(graphene.InputObjectType):
+    range = graphene.InputField(GraphenePartitionRangeSelector)
+    ranges = graphene.InputField(graphene.List(graphene.NonNull(GraphenePartitionRangeSelector)))
+
+    class Meta:
+        description = """This type represents a partitions selection."""
+        name = "PartitionsSelector"
+
+
+class GraphenePartitionsByAssetSelector(graphene.InputObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    partitions = graphene.InputField(GraphenePartitionsSelector)
+
+    class Meta:
+        description = """This type represents a partitions selection for an asset."""
+        name = "PartitionsByAssetSelector"
+
+
+class GrapheneAssetBackfillPreviewParams(graphene.InputObjectType):
+    partitionNames = graphene.InputField(non_null_list(graphene.String))
+    assetSelection = graphene.InputField(non_null_list(GrapheneAssetKeyInput))
+
+    class Meta:
+        name = "AssetBackfillPreviewParams"
+
+
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.InputField(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
+    partitionsByAssets = graphene.List(GraphenePartitionsByAssetSelector)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.InputField(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
     fromFailure = graphene.Boolean()
     allPartitions = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     forceSynchronousSubmission = graphene.Boolean()
+    title = graphene.String()
+    description = graphene.String()
 
     class Meta:
         name = "LaunchBackfillParams"
+
+
+class GrapheneRunlessAssetEventType(graphene.Enum):
+    """The event type of an asset event."""
+
+    ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_OBSERVATION = "ASSET_OBSERVATION"
+
+    class Meta:
+        name = "AssetEventType"
+
+    def to_dagster_event_type(self) -> DagsterEventType:
+        if self == GrapheneRunlessAssetEventType.ASSET_MATERIALIZATION:
+            return DagsterEventType.ASSET_MATERIALIZATION
+        elif self == GrapheneRunlessAssetEventType.ASSET_OBSERVATION:
+            return DagsterEventType.ASSET_OBSERVATION
+        else:
+            check.assert_never(self)
+
+
+class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
+    eventType = graphene.NonNull(GrapheneRunlessAssetEventType)
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    partitionKeys = graphene.InputField(graphene.List(graphene.String))
+    description = graphene.String()
+
+    class Meta:
+        name = "ReportRunlessAssetEventsParams"
 
 
 class GrapheneSensorSelector(graphene.InputObjectType):
@@ -175,8 +260,19 @@ class GrapheneScheduleSelector(graphene.InputObjectType):
         name = "ScheduleSelector"
 
 
+class GrapheneResourceSelector(graphene.InputObjectType):
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+    resourceName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = (
+            """This type represents the fields necessary to identify a top-level resource."""
+        )
+        name = "ResourceSelector"
+
+
 class GrapheneExecutionMetadata(graphene.InputObjectType):
-    runId = graphene.String()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     rootRunId = graphene.String(
         description="""The ID of the run at the root of the run group. All partial /
@@ -275,12 +371,37 @@ class GrapheneInstigationSelector(graphene.InputObjectType):
     name = graphene.NonNull(graphene.String)
 
 
-class GrapheneInputTag(graphene.InputObjectType):
-    name = graphene.NonNull(graphene.String)
+class GrapheneTagInput(graphene.InputObjectType):
+    key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "InputTag"
+        name = "TagInput"
+
+
+class GrapheneBulkActionsFilter(graphene.InputObjectType):
+    statuses = graphene.List(
+        graphene.NonNull("dagster_graphql.schema.backfill.GrapheneBulkActionStatus")
+    )
+    createdBefore = graphene.InputField(graphene.Float)
+    createdAfter = graphene.InputField(graphene.Float)
+
+    class Meta:
+        description = """This type represents a filter on Dagster Bulk Actions (backfills)."""
+        name = "BulkActionsFilter"
+
+    def to_selector(self):
+        statuses = (
+            [BulkActionStatus[status.value] for status in self.statuses] if self.statuses else None
+        )
+        created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
+
+        return BulkActionsFilter(
+            statuses=statuses,
+            created_before=created_before,
+            created_after=created_after,
+        )
 
 
 types = [
@@ -293,12 +414,16 @@ types = [
     GrapheneMarshalledOutput,
     GrapheneLaunchBackfillParams,
     GraphenePartitionSetSelector,
+    GraphenePartitionsByAssetSelector,
     GrapheneRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneResourceSelector,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
-    GrapheneInputTag,
+    GrapheneTagInput,
+    GrapheneReportRunlessAssetEventsParams,
+    GrapheneBulkActionsFilter,
 ]

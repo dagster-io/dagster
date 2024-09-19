@@ -1,7 +1,14 @@
 import graphene
 
-from ..errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError, GraphenePythonError
-from .config import GraphenePipelineConfigValidationValid, GrapheneRunConfigValidationInvalid
+from dagster_graphql.schema.errors import (
+    GrapheneInvalidSubsetError,
+    GraphenePipelineNotFoundError,
+    GraphenePythonError,
+)
+from dagster_graphql.schema.pipelines.config import (
+    GraphenePipelineConfigValidationValid,
+    GrapheneRunConfigValidationInvalid,
+)
 
 
 class GraphenePipelineConfigValidationResult(graphene.Union):

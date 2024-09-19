@@ -194,11 +194,11 @@ def test_nested_missing_and_not_defined():
     assert not result.success
     assert len(result.errors) == 2
 
-    fields_error = [
+    fields_error = next(
         error
         for error in result.errors
         if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
-    ][0]
+    )
 
     assert fields_error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS
     assert fields_error.error_data.field_names == ["bool_field", "string_field"]

@@ -11,7 +11,7 @@ from dagster._core.test_utils import instance_for_test, new_cwd
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 
-from .test_cli_commands import (
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
     job_python_origin_contexts,
     non_existant_python_origin_target_args,
     runner_job_execute,
@@ -142,19 +142,19 @@ def test_output_execute_log_stdout(capfd):
     ) as instance:
         execute_execute_command(
             kwargs={
-                "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
-                "attribute": "stdout_pipeline",
+                "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                "attribute": "stdout_job",
             },
             instance=instance,
         )
 
         captured = capfd.readouterr()
-        # All pipeline execute output currently logged to stderr
+        # All job execution output currently logged to stderr
         assert "HELLO WORLD" in captured.err
 
         execute_execute_command(
             kwargs={
-                "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+                "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                 "attribute": "my_stdout",
             },
             instance=instance,
@@ -176,8 +176,8 @@ def test_output_execute_log_stderr(capfd):
         with pytest.raises(click.ClickException, match=re.escape("resulted in failure")):
             execute_execute_command(
                 kwargs={
-                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
-                    "attribute": "stderr_pipeline",
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+                    "attribute": "stderr_job",
                 },
                 instance=instance,
             )
@@ -187,7 +187,7 @@ def test_output_execute_log_stderr(capfd):
         with pytest.raises(click.ClickException, match=re.escape("resulted in failure")):
             execute_execute_command(
                 kwargs={
-                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "attribute": "my_stderr",
                 },
                 instance=instance,
@@ -206,7 +206,7 @@ def test_more_than_one_job():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": None,
                 },
@@ -221,7 +221,7 @@ def test_more_than_one_job():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": None,
                 },
@@ -233,14 +233,14 @@ def invalid_pipeline_python_origin_target_args():
     return [
         {
             "job_name": "foo",
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
         },
         {
             "job_name": "foo",
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": None,
         },
     ]
@@ -251,7 +251,7 @@ def test_invalid_parameters(args):
     with instance_for_test() as instance:
         with pytest.raises(
             UsageError,
-            match=re.escape("Invalid set of CLI arguments for loading repository/pipeline"),
+            match=re.escape("Invalid set of CLI arguments for loading repository/job"),
         ):
             execute_execute_command(
                 kwargs=args,
@@ -277,7 +277,7 @@ def test_attribute_not_found():
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
                     "attribute": "nope",
                 },
@@ -290,17 +290,17 @@ def test_attribute_is_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a JobDefinition, GraphDefinition,"
-                " PipelineDefinition, AssetGroup, or RepositoryDefinition. Got 123."
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, function decorated with @definitions,"
+                " or RepositoryDefinition. Got 123."
             ),
         ):
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
-                    "attribute": "not_a_repo_or_pipeline",
+                    "attribute": "not_a_repo_or_job",
                 },
                 instance=instance,
             )
@@ -311,17 +311,17 @@ def test_attribute_fn_returns_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a JobDefinition, GraphDefinition,"
-                " PipelineDefinition, AssetGroup, or RepositoryDefinition."
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, Definitions, function decorated with @definitions,"
+                " or RepositoryDefinition."
             ),
         ):
             execute_execute_command(
                 kwargs={
                     "repository_yaml": None,
                     "job_name": None,
-                    "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+                    "python_file": file_relative_path(__file__, "test_cli_commands.py"),
                     "module_name": None,
-                    "attribute": "not_a_repo_or_pipeline_fn",
+                    "attribute": "not_a_repo_or_job_fn",
                 },
                 instance=instance,
             )
@@ -330,7 +330,7 @@ def test_attribute_fn_returns_wrong_thing():
 def test_default_memory_run_storage():
     with instance_for_test() as instance:
         cli_args = {
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "attribute": "bar",
             "job_name": "foo",
             "module_name": None,
@@ -339,7 +339,7 @@ def test_default_memory_run_storage():
         assert result.success
 
         cli_args = {
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "attribute": "bar",
             "job_name": "qux",
             "module_name": None,
@@ -467,3 +467,33 @@ def test_empty_working_directory():
             assert result.exit_code == 0
             runs = instance.get_runs()
             assert len(runs) == 1
+
+
+def test_execute_command_help():
+    runner = CliRunner()
+    result = runner.invoke(job_execute_command, ["--help"])
+
+    assert "multiple times" not in result.stdout
+
+
+def test_op_selection():
+    runner = CliRunner()
+    with instance_for_test() as instance:
+        runner_job_execute(
+            runner,
+            [
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-j",
+                "foo",
+                "--op-selection",
+                "*do_something",
+            ],
+        )
+
+        runs = instance.get_run_records()
+        assert len(runs) == 1
+        conn = instance.get_records_for_run(run_id=runs[0].dagster_run.run_id)
+        observed_steps = {record.event_log_entry.step_key for record in conn.records}
+        assert "do_something" in observed_steps
+        assert "do_input" not in observed_steps

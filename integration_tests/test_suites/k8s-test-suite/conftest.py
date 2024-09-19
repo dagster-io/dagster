@@ -1,7 +1,9 @@
 import os
 import tempfile
+from typing import Iterator
 
 import docker
+import docker.errors
 import pytest
 
 # fixtures: redundant alias marks them as used imports
@@ -18,7 +20,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 @pytest.fixture(scope="session", autouse=True)
-def dagster_home():
+def dagster_home() -> Iterator[None]:
     old_env = os.getenv("DAGSTER_HOME")
     os.environ["DAGSTER_HOME"] = "/opt/dagster/dagster_home"
     yield
@@ -36,22 +38,22 @@ cluster_provider = define_cluster_provider_fixture(
 
 
 @pytest.yield_fixture
-def schedule_tempdir():
+def schedule_tempdir() -> Iterator[str]:
     with tempfile.TemporaryDirectory() as tempdir:
         yield tempdir
 
 
 @pytest.fixture(scope="session")
-def dagster_docker_image():
+def dagster_docker_image() -> str:
     docker_image = get_test_project_docker_image()
 
     if not IS_BUILDKITE:
         try:
             client = docker.from_env()
             client.images.get(docker_image)
-            print(  # pylint: disable=print-call
-                "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
-                "docker rmi {image}".format(image=docker_image)
+            print(  # noqa: T201
+                f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
+                f"docker rmi {docker_image}"
             )
         except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)
@@ -60,7 +62,7 @@ def dagster_docker_image():
 
 
 # See: https://stackoverflow.com/a/31526934/324449
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     # We catch the ValueError to support cases where we are loading multiple test suites, e.g., in
     # the VSCode test explorer. When pytest tries to add an option twice, we get, e.g.
     #

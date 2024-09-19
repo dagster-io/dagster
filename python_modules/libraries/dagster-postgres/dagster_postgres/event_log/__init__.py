@@ -1,2 +1,1 @@
-from .event_log import PostgresEventLogStorage as PostgresEventLogStorage
-from .event_watcher import PostgresEventWatcher as PostgresEventWatcher
+from dagster_postgres.event_log.event_log import PostgresEventLogStorage as PostgresEventLogStorage

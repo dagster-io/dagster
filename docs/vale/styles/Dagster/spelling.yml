@@ -1,0 +1,6 @@
+# Uses the built-in dictionary and filters.
+extends: spelling
+message: "Is '%s' spelled correctly?"
+level: error
+ignore:
+  - ignore.txt

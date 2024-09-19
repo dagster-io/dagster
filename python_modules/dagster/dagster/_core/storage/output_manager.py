@@ -11,7 +11,7 @@ class IOutputManagerDefinition:
     @abstractmethod
     def output_config_schema(self):
         """The schema for per-output configuration for outputs that are managed by this
-        manager
+        manager.
         """
 
 

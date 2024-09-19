@@ -1,0 +1,95 @@
+- id: simple-asset-in-catalog.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize `a_number`
+    - go to `a_number` in the asset catalog
+    - expand "System tags"
+
+- id: simple-asset-with-code-version-in-catalog.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize `versioned_number`
+    - go to it in the asset catalog
+    - expand "System tags"
+
+- id: simple-asset-with-code-version-in-asset-graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize `versioned_number`
+    - edit its `code_version` in vanilla_asset_with_code_version.py
+    - reload code location
+    - select asset and expand "Materialization system tags" in sidebar
+    - hover over stale tag in sidebar
+    - (change `code_version` back after screenshot)
+
+- id: materialize-stale-event-log.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py
+  route: /workspace
+  vetted: false
+  steps:
+    - comment out `multiplied_number` in `dependencies_code_version_only`
+    - reload code location
+    - materialize `versioned_number`
+    - uncomment `multiplied_number`
+    - reload code location
+    - click "Materialize stale and missing"
+    - go to Runs and select the top run
+
+- id: dependencies-code-version-only.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize both assets
+    - change the `code_version` of `versioned_number`
+    - reload code location
+    - select `multiplied_number` and expand "Materialization system tags" in sidebar
+    - hover over stale tag in sidebar
+    - (change `code_version` back after screenshot)
+
+- id: manual-data-versions-1.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize both assets
+    - select `versioned_number` and expand "Materialization system tags" in sidebar
+
+- id: manual-data-versions-2.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize both assets
+    - change the `code_version` of `versioned_number`
+    - reload code location
+    - materialize only versioned number
+    - select `versioned_number` and expand "Materialization system tags" in sidebar
+    - (change `code_version` back after screenshot)
+
+- id: source-asset-in-graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
+  route: /workspace
+  vetted: false
+  steps:
+    - comment out `input_number` in `observable_source_asset_path_with_non_argument_deps`
+    - remove `non_argument_deps` of `versioned_number`
+    - reload code location
+    - materialize all
+    - uncomment `input_number` and restore `non_argument_deps` of `versioned_number`
+    - reload code location
+
+- id: source-asset-in-catalog.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
+  route: /workspace
+  vetted: false
+  steps:
+    - observe source assets
+    - view asset catalog entry for `input_number`
+    - expand "System tags"

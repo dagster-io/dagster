@@ -1,0 +1,12 @@
+stocks_to_index:
+  - ticker: MSFT
+  - ticker: AAPL
+  - ticker: GOOG
+  - ticker: AMZN
+  - ticker: META
+  - ticker: NVDA
+  - ticker: TSLA
+index_strategy:
+  type: weighted_average
+forecast:
+  days: 30

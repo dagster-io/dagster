@@ -1,8 +1,8 @@
-# pylint: disable=redefined-outer-name
 import re
 
 import pandas as pd
 import pandera as pa
+import pandera.typing as pa_typing
 import pytest
 from dagster import DagsterType, TypeCheck, check_dagster_type
 from dagster._core.definitions.metadata import TableSchemaMetadataValue
@@ -13,7 +13,7 @@ from dagster._core.definitions.metadata.table import (
     TableSchema,
 )
 from dagster_pandera import pandera_schema_to_dagster_type
-from pandera.typing.config import BaseConfig
+from pandera.api.pandas.model_config import BaseConfig
 
 # ########################
 # ##### FIXTURES
@@ -48,13 +48,13 @@ def sample_dataframe_schema(**kwargs):
                     pa.Check.str_startswith("value_"),
                     pa.Check(
                         lambda s: s.str.split("_", expand=True).shape[1] == 2,
-                        description="Two words separated by underscore",
+                        description="Two words separated by underscore.",
                     ),
                 ],
             ),
         },
         checks=[
-            pa.Check(lambda df: df["a"].sum() > df["b"].sum(), description="sum(a) > sum(b)"),
+            pa.Check(lambda df: df["a"].sum() > df["b"].sum(), description="sum(a) > sum(b)."),
         ],
         **kwargs,
     )
@@ -70,26 +70,24 @@ def make_schema_model_config(**config_attrs):
 
 
 def sample_schema_model(**config_attrs):
-    class SampleSchemaModel(pa.SchemaModel):
-        a: pa.typing.Series[int] = pa.Field(le=10, description="a desc")
-        b: pa.typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
-        c: pa.typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")
+    class SampleDataframeModel(pa.DataFrameModel):
+        a: pa_typing.Series[int] = pa.Field(le=10, description="a desc")
+        b: pa_typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
+        c: pa_typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")
 
         @pa.check("c")
-        def c_check(  # pylint: disable=no-self-argument
-            cls, series: pa.typing.Series[str]
-        ) -> pa.typing.Series[bool]:
-            """Two words separated by underscore"""
-            return series.str.split("_", expand=True).shape[1] == 2
+        def c_check(cls, series: pa_typing.Series[str]) -> pa_typing.Series[bool]:
+            """Two words separated by underscore."""
+            return series.str.split("_", expand=True).shape[1] == 2  # type: ignore  # (bad stubs)
 
         @pa.dataframe_check
-        def a_gt_b(cls, df):  # pylint: disable=no-self-argument
-            """sum(a) > sum(b)"""
+        def a_gt_b(cls, df):
+            """sum(a) > sum(b)."""
             return df["a"].sum() > df["b"].sum()
 
         Config = make_schema_model_config(**config_attrs)
 
-    return SampleSchemaModel
+    return SampleDataframeModel
 
 
 @pytest.fixture(
@@ -117,11 +115,11 @@ def dagster_type():
 def test_pandera_schema_to_dagster_type(schema):
     dagster_type = pandera_schema_to_dagster_type(schema)
     assert isinstance(dagster_type, DagsterType)
-    assert len(dagster_type.metadata_entries) == 1
-    schema_entry = dagster_type.metadata_entries[0]
-    assert isinstance(schema_entry.entry_data, TableSchemaMetadataValue)
-    assert schema_entry.entry_data.schema == TableSchema(
-        constraints=TableConstraints(other=["sum(a) > sum(b)"]),
+    assert len(dagster_type.metadata) == 1
+    schema_metadata = dagster_type.metadata["schema"]
+    assert isinstance(schema_metadata, TableSchemaMetadataValue)
+    assert schema_metadata.schema == TableSchema(
+        constraints=TableConstraints(other=["sum(a) > sum(b)."]),
         columns=[
             TableColumn(
                 name="a",
@@ -142,8 +140,8 @@ def test_pandera_schema_to_dagster_type(schema):
                 constraints=TableColumnConstraints(
                     nullable=False,
                     other=[
-                        "str_startswith(value_)",
-                        "Two words separated by underscore",
+                        "str_startswith('value_')",
+                        "Two words separated by underscore.",
                     ],
                 ),
             ),

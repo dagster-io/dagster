@@ -1,4 +1,4 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 import contextlib
 import os
 import shutil
@@ -6,9 +6,8 @@ from typing import Callable, Dict, Iterator, List, Optional
 
 import dagster._check as check
 
+from automation.docker.dagster_docker import DagsterDockerImage, default_images_path
 from automation.git import git_repo_root
-
-from .dagster_docker import DagsterDockerImage, default_images_path
 
 
 def get_dagster_repo() -> str:
@@ -38,7 +37,7 @@ def copy_directories(
             paths_to_copy.append((src_path, dest_path))
 
         for src_path, dest_path in paths_to_copy:
-            print("Syncing {} to build dir {}...".format(src_path, dest_path))
+            print(f"Syncing {src_path} to build dir {dest_path}...")
             if os.path.isdir(src_path):
                 shutil.copytree(src_path, dest_path)
             else:
@@ -94,13 +93,16 @@ def k8s_example_editable_cm(cwd: str) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def k8s_dagit_editable_cm(cwd: str) -> Iterator[None]:
-    print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
+def k8s_webserver_editable_cm(cwd: str) -> Iterator[None]:
+    print(
+        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster UI"
+        " !!!!\n"
+    )
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
         ],
         cwd,
     ):
@@ -108,13 +110,13 @@ def k8s_dagit_editable_cm(cwd: str) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def k8s_dagit_example_cm(cwd: str) -> Iterator[None]:
+def k8s_dagit_example(cwd: str) -> Iterator[None]:
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
             "python_modules/libraries/dagster-aws",
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
         ],
         cwd,
     ):
@@ -158,12 +160,15 @@ def user_code_example_editable_cm(cwd: str) -> Iterator[None]:
 
 @contextlib.contextmanager
 def dagster_k8s_editable_cm(cwd: str) -> Iterator[None]:
-    print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
+    print(
+        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster"
+        " UI!!!!\n"
+    )
     with copy_directories(
         get_core_k8s_dirs()
         + [
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
             "python_modules/libraries/dagster-aws",
         ],
         cwd,
@@ -173,12 +178,15 @@ def dagster_k8s_editable_cm(cwd: str) -> Iterator[None]:
 
 @contextlib.contextmanager
 def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
-    print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
+    print(
+        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster"
+        " UI!!!!\n"
+    )
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
             "python_modules/dagster-graphql",
-            "python_modules/dagit",
+            "python_modules/dagster-webserver",
             "python_modules/libraries/dagster-aws",
         ],
         cwd,
@@ -188,11 +196,6 @@ def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
 
 # Some images have custom build context manager functions, listed here
 CUSTOM_BUILD_CONTEXTMANAGERS: Dict[str, Callable] = {
-    "k8s-example": k8s_example_cm,
-    "k8s-example-editable": k8s_example_editable_cm,
-    "k8s-dagit-editable": k8s_dagit_editable_cm,
-    "k8s-dagit-example": k8s_dagit_example_cm,
-    "k8s-celery-worker-editable": k8s_celery_worker_editable_cm,
     "user-code-example": user_code_example_cm,
     "user-code-example-editable": user_code_example_editable_cm,
     "dagster-k8s-editable": dagster_k8s_editable_cm,
@@ -206,7 +209,6 @@ def list_images(images_path: Optional[str] = None) -> List[DagsterDockerImage]:
     Returns:
         List[DagsterDockerImage]: A list of all images managed by this tool.
     """
-
     images_path = images_path or default_images_path()
     image_folders = [f.name for f in os.scandir(images_path) if f.is_dir()]
 
@@ -222,4 +224,4 @@ def list_images(images_path: Optional[str] = None) -> List[DagsterDockerImage]:
 def get_image(name: str, images_path: Optional[str] = None) -> DagsterDockerImage:
     """Retrieve the image information from the list defined above."""
     image = next((img for img in list_images(images_path=images_path) if img.image == name), None)
-    return check.not_none(image, "could not find image {}".format(name))
+    return check.not_none(image, f"could not find image {name}")

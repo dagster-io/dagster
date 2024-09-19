@@ -7,10 +7,18 @@ etc. in a single workflow. Dagster's software-defined asset abstractions make it
 data assets that depend on specific dbt models, or to define the computation required to compute
 the sources that your dbt models depend on.
 
-Related guides: `Visualize and orchestrate assets in dbt Core </integrations/dbt>`_ and
-`dbt Cloud <integrations/dbt-cloud>`_.
+Related documentation pages: `dbt <https://docs.dagster.io/integrations/dbt>`_ and
+`dbt Cloud <https://docs.dagster.io/integrations/dbt-cloud>`_.
 
 .. currentmodule:: dagster_dbt
+
+***********
+dagster-dbt
+***********
+
+.. click:: dagster_dbt.cli.app:project_app_typer_click_object
+    :prog: dagster-dbt project
+    :nested: full
 
 ********
 dbt Core
@@ -22,69 +30,44 @@ Here, we provide interfaces to manage dbt projects invoked by the local dbt comm
 Assets (dbt Core)
 =================
 
-.. autofunction:: load_assets_from_dbt_project
+.. autodecorator:: dbt_assets
 
-.. autofunction:: load_assets_from_dbt_manifest
+.. autoclass:: DagsterDbtTranslator
+
+.. autoclass:: DagsterDbtTranslatorSettings
 
 .. autoclass:: DbtManifestAssetSelection
 
-Ops (dbt Core)
-==============
+.. autofunction:: build_dbt_asset_selection
 
-If you're using asset-based dbt APIs like `load_assets_from_dbt_project`, you usually will not also use the below op-based APIs.
+.. autofunction:: build_schedule_from_dbt_selection
 
-``dagster_dbt`` provides a set of pre-built ops that work with either the CLI or RPC interfaces. For
-more advanced use cases, we suggest building your own ops which directly interact with these resources.
+.. autofunction:: get_asset_key_for_model
 
-.. autoconfigurable:: dbt_run_op
+.. autofunction:: get_asset_key_for_source
 
-.. autofunction:: dbt_compile_op
+.. autofunction:: get_asset_keys_by_output_name_for_source
 
-.. autofunction:: dbt_ls_op
+.. autoclass:: DbtProject
 
-.. autofunction:: dbt_test_op
+Asset Checks (dbt Core)
+=======================
 
-.. autofunction:: dbt_snapshot_op
-
-.. autofunction:: dbt_seed_op
-
-.. autofunction:: dbt_docs_generate_op
+.. autofunction:: build_freshness_checks_from_dbt_assets
 
 Resources (dbt Core)
 ====================
 
-CLI Resources
--------------
+CLI Resource
+------------
 
 .. autoclass:: DbtCliResource
-    :members:
 
-.. autoclass:: DbtCliOutput
-    :members:
+.. autoclass:: DbtCliInvocation
 
-.. autoconfigurable:: dbt_cli_resource
-    :annotation: ResourceDefinition
+.. autoclass:: dagster_dbt.core.dbt_cli_invocation.DbtEventIterator
 
-RPC Resources
--------------
-
-.. autoclass:: DbtRpcResource
-    :members:
-
-.. autoclass:: DbtRpcSyncResource
-    :members:
-
-.. autoclass:: DbtRpcOutput
-    :members:
-
-.. autodata:: local_dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_resource
-    :annotation: ResourceDefinition
-
-.. autoconfigurable:: dbt_rpc_sync_resource
-    :annotation: ResourceDefinition
+.. autoclass:: DbtCliEventMessage
 
 *********
 dbt Cloud
@@ -105,21 +88,13 @@ Ops (dbt Cloud)
 Resources (dbt Cloud)
 =====================
 
-.. autoclass:: DbtCloudResourceV2
-    :members:
+.. autoclass:: DbtCloudClientResource
+
+Deprecated (dbt Cloud)
+----------------------
 
 .. autoconfigurable:: dbt_cloud_resource
     :annotation: ResourceDefinition
-
-*****
-Types
-*****
-
-.. autoclass:: DbtOutput
-    :members:
-
-.. autoclass:: DbtResource
-    :members:
 
 ******
 Errors
@@ -129,20 +104,12 @@ Errors
 
 .. autoexception:: DagsterDbtCliRuntimeError
 
-.. autoexception:: DagsterDbtCliFatalRuntimeError
-
-.. autoexception:: DagsterDbtCliHandledRuntimeError
-
-.. autoexception:: DagsterDbtCliOutputsNotFoundError
-
-.. autoexception:: DagsterDbtCliUnexpectedOutputError
-
-.. autoexception:: DagsterDbtRpcUnexpectedPollOutputError
-
 *****
 Utils
 *****
 
-.. currentmodule:: dagster_dbt.utils
+.. autofunction:: default_group_from_dbt_resource_props
 
-.. autofunction:: generate_materializations
+.. autofunction:: group_from_dbt_resource_props_fallback_to_directory
+
+.. autofunction:: default_metadata_from_dbt_resource_props

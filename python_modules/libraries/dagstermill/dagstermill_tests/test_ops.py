@@ -6,12 +6,12 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagster import job
+from dagster import execute_job, job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
@@ -26,18 +26,16 @@ MATPLOTLIB_PRESENT = importlib.util.find_spec("matplotlib") is not None
 
 
 def get_path(materialization_event):
-    for (
-        metadata_entry
-    ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.entry_data, (PathMetadataValue, NotebookMetadataValue)):
-            return metadata_entry.entry_data.path
+    for value in materialization_event.event_specific_data.materialization.metadata.values():
+        if isinstance(value, (PathMetadataValue, NotebookMetadataValue)):
+            return value.path
 
 
 def cleanup_result_notebook(result):
     if not result:
         return
     materialization_events = [
-        x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+        x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
@@ -48,18 +46,18 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module("dagstermill.examples.repository", fn_name)
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", fn_name)
 
     with instance_for_test() as instance:
         try:
-            result = execute_pipeline(
-                recon_pipeline,
-                env,
+            with execute_job(
+                job=recon_job,
+                run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
                 **kwargs,
-            )
-            yield result
+            ) as result:
+                yield result
         finally:
             if result:
                 cleanup_result_notebook(result)
@@ -68,6 +66,12 @@ def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
 @pytest.mark.notebook_test
 def test_hello_world():
     with exec_for_test("hello_world_job") as result:
+        assert result.success
+
+
+@pytest.mark.notebook_test
+def test_hello_world_struct_resource() -> None:
+    with exec_for_test("hello_world_job_struct_resource") as result:
         assert result.success
 
 
@@ -82,6 +86,13 @@ def test_hello_world_with_config():
     with exec_for_test("hello_world_config_job") as result:
         assert result.success
         assert result.output_for_node("hello_world_config") == "hello"
+
+
+@pytest.mark.notebook_test
+def test_hello_world_with_struct_config() -> None:
+    with exec_for_test("hello_world_config_job_struct") as result:
+        assert result.success
+        assert result.output_for_node("hello_world_config_struct") == "hello"
 
 
 @pytest.mark.notebook_test
@@ -151,7 +162,7 @@ def test_reexecute_result_notebook():
         assert result.success
 
         materialization_events = [
-            x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+            x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"
         ]
         for materialization_event in materialization_events:
             result_path = get_path(materialization_event)
@@ -171,14 +182,14 @@ def test_reexecute_result_notebook():
 def test_hello_world_with_output():
     with exec_for_test("hello_world_output_job") as result:
         assert result.success
-        assert result.result_for_node("hello_world_output").output_value() == "hello, world"
+        assert result.output_for_node("hello_world_output") == "hello, world"
 
 
 @pytest.mark.notebook_test
 def test_hello_world_explicit_yield():
     with exec_for_test("hello_world_explicit_yield_job") as result:
         materializations = [
-            x for x in result.event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+            x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"
         ]
         assert len(materializations) == 2
         assert get_path(materializations[1]) == "/path/to/file"
@@ -190,7 +201,7 @@ def test_add_job():
         "add_job", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
     ) as result:
         assert result.success
-        assert result.result_for_node("add_two_numbers").output_value() == 3
+        assert result.output_for_node("add_two_numbers") == 3
 
 
 @pytest.mark.notebook_test
@@ -200,8 +211,8 @@ def test_double_add_job():
         {"loggers": {"console": {"config": {"log_level": "ERROR"}}}},
     ) as result:
         assert result.success
-        assert result.result_for_node("add_two_numbers_1").output_value() == 3
-        assert result.result_for_node("add_two_numbers_2").output_value() == 7
+        assert result.output_for_node("add_two_numbers_1") == 3
+        assert result.output_for_node("add_two_numbers_2") == 7
 
 
 @pytest.mark.notebook_test
@@ -217,9 +228,9 @@ def test_fan_in_notebook_job():
         },
     ) as result:
         assert result.success
-        assert result.result_for_node("op_1").output_value() == "hello"
-        assert result.result_for_node("op_2").output_value() == "world"
-        assert result.result_for_node("fan_in").output_value() == "hello world"
+        assert result.output_for_node("op_1") == "hello"
+        assert result.output_for_node("op_2") == "world"
+        assert result.output_for_node("fan_in") == "hello world"
 
 
 @pytest.mark.notebook_test
@@ -232,10 +243,7 @@ def test_graph_job():
         },
     ) as result:
         assert result.success
-        assert (
-            result.result_for_node("outer").result_for_node("yield_something").output_value()
-            == "hello"
-        )
+        assert result.output_for_node("outer.yield_something") == "hello"
 
 
 @pytest.mark.notebook_test
@@ -262,8 +270,8 @@ def test_notebook_dag():
         {"ops": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
     ) as result:
         assert result.success
-        assert result.result_for_node("add_two_numbers").output_value() == 3
-        assert result.result_for_node("mult_two_numbers").output_value() == 6
+        assert result.output_for_node("add_two_numbers") == 3
+        assert result.output_for_node("mult_two_numbers") == 6
 
 
 @pytest.mark.notebook_test
@@ -279,19 +287,17 @@ def test_error_notebook():
         "error_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
         assert not result.success
-        assert result.step_event_list[1].event_type.value == "STEP_FAILURE"
+        assert len(result.get_failed_step_keys()) > 0
 
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module(
-        "dagstermill.examples.repository", "error_job"
-    )
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", "error_job")
 
     # test that the notebook is saved on failure
     with instance_for_test() as instance:
         try:
-            result = execute_pipeline(
-                recon_pipeline,
-                {"execution": {"config": {"in_process": {}}}},
+            result = execute_job(
+                recon_job,
+                run_config={"execution": {"config": {"in_process": {}}}},
                 instance=instance,
                 raise_on_error=False,
             )
@@ -328,33 +334,30 @@ def test_hello_world_reexecution():
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"][0]
+            next(x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION")
         )
 
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
             reexecution_notebook_file.write(
-                (
-                    "from dagster import job\n"
-                    "from dagstermill.factory import define_dagstermill_op\n\n\n"
-                    "reexecution_op = define_dagstermill_op(\n"
-                    "    'hello_world_reexecution', '{output_notebook_path}'\n"
-                    ")\n\n"
-                    "@job\n"
-                    "def reexecution_job():\n"
-                    "    reexecution_op()\n"
-                ).format(output_notebook_path=output_notebook_path)
+                "from dagster import job\n"
+                "from dagstermill.factory import define_dagstermill_op\n\n\n"
+                "reexecution_op = define_dagstermill_op(\n"
+                f"    'hello_world_reexecution', '{output_notebook_path}'\n"
+                ")\n\n"
+                "@job\n"
+                "def reexecution_job():\n"
+                "    reexecution_op()\n"
             )
             reexecution_notebook_file.flush()
 
-            result = None
-            reexecution_job = ReconstructablePipeline.for_file(
+            reexecution_job = ReconstructableJob.for_file(
                 reexecution_notebook_file.name, "reexecution_job"
             )
 
             reexecution_result = None
             with instance_for_test() as instance:
                 try:
-                    reexecution_result = execute_pipeline(reexecution_job, instance=instance)
+                    reexecution_result = execute_job(reexecution_job, instance=instance)
                     assert reexecution_result.success
                 finally:
                     if reexecution_result:
@@ -379,7 +382,7 @@ def test_resources_notebook():
             messages = [message.split(": ") for message in messages]
 
             resource_ids = [x[0] for x in messages]
-            assert len(set(resource_ids)) == 2
+            assert len(set(resource_ids)) == 3
             assert resource_ids[0] == resource_ids[1] == resource_ids[5]
             assert resource_ids[2] == resource_ids[3] == resource_ids[4]
 
@@ -394,7 +397,6 @@ def test_resources_notebook():
 @pytest.mark.skip
 @pytest.mark.notebook_test
 def test_resources_notebook_with_exception():
-    result = None
     with safe_tempfile_path() as path:
         with exec_for_test(
             "resource_with_exception_job",
@@ -402,10 +404,9 @@ def test_resources_notebook_with_exception():
             raise_on_error=False,
         ) as result:
             assert not result.success
-            assert result.step_event_list[8].event_type.value == "STEP_FAILURE"
+            assert result.all_events[8].event_type.value == "STEP_FAILURE"
             assert (
-                "raise Exception()"
-                in result.step_event_list[8].event_specific_data.error.cause.message
+                "raise Exception()" in result.all_events[8].event_specific_data.error.cause.message
             )
 
             # Expect something like:
@@ -447,21 +448,21 @@ def test_hello_logging():
 def test_reimport():
     with exec_for_test("reimport_job") as result:
         assert result.success
-        assert result.result_for_node("reimport").output_value() == 6
+        assert result.output_for_node("reimport") == 6
 
 
 @pytest.mark.notebook_test
 def test_yield_3_job():
     with exec_for_test("yield_3_job") as result:
         assert result.success
-        assert result.result_for_node("yield_3").output_value() == 3
+        assert result.output_for_node("yield_3") == 3
 
 
 @pytest.mark.notebook_test
 def test_yield_obj_job():
     with exec_for_test("yield_obj_job") as result:
         assert result.success
-        assert result.result_for_node("yield_obj").output_value().x == 3
+        assert result.output_for_node("yield_obj").x == 3
 
 
 @pytest.mark.notebook_test
@@ -491,7 +492,7 @@ def test_default_tags():
     test_op_default_tags = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
 
     assert test_op_default_tags.tags == {
-        "kind": "ipynb",
+        COMPUTE_KIND_TAG: "ipynb",
         "notebook_path": BACKING_NB_PATH,
     }
 
@@ -502,7 +503,7 @@ def test_custom_tags():
     )
 
     assert test_op_custom_tags.tags == {
-        "kind": "ipynb",
+        COMPUTE_KIND_TAG: "ipynb",
         "notebook_path": BACKING_NB_PATH,
         "foo": "bar",
     }
@@ -513,7 +514,7 @@ def test_reserved_tags_not_overridden():
         define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"notebook_path": "~"})
 
     with pytest.raises(CheckError, match="key is reserved for use by Dagster"):
-        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"kind": "py"})
+        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={COMPUTE_KIND_TAG: "py"})
 
 
 def test_default_description():
@@ -532,7 +533,7 @@ def test_retries(capsys):
     with exec_for_test(
         "retries_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
-        assert result.result_for_node("yield_retry").retry_attempts == 1
+        assert result.retry_attempts_for_node("yield_retry") == 1
 
         # the raise_retry op should trigger a warning to use yield_event
         warn_found = False
@@ -550,7 +551,7 @@ def test_failure(capsys):
         "failure_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
         assert (
-            result.result_for_node("yield_failure").failure_data.user_failure_data.description
+            result.failure_data_for_node("yield_failure").user_failure_data.description
             == "bad bad notebook"
         )
 
@@ -572,7 +573,7 @@ def test_hello_world_graph():
     with instance_for_test() as instance:
         result = None
         try:
-            result = execute_pipeline(
+            result = execute_job(
                 reconstructable(build_hello_world_job),
                 instance=instance,
             )

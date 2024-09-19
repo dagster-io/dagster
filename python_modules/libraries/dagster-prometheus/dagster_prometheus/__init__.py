@@ -1,8 +1,8 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
-from .resources import prometheus_resource
-from .version import __version__
+from dagster_prometheus.resources import PrometheusResource, prometheus_resource
+from dagster_prometheus.version import __version__
 
-check_dagster_package_version("dagster-prometheus", __version__)
+DagsterLibraryRegistry.register("dagster-prometheus", __version__)
 
-__all__ = ["prometheus_resource"]
+__all__ = ["prometheus_resource", "PrometheusResource"]

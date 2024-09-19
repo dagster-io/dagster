@@ -1,0 +1,16 @@
+from dagster import Definitions
+from dagster_sdf.resource import SdfCliResource
+
+from .assets import {{ sdf_assets_name }}
+from .constants import sdf_workspace_dir
+from .schedules import schedules
+
+defs = Definitions(
+    assets=[{{ sdf_assets_name }}],
+    schedules=schedules,
+    resources={
+        "sdf": SdfCliResource(
+            workspace_dir=sdf_workspace_dir
+        ),
+    },
+)

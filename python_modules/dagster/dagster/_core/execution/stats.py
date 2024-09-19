@@ -6,12 +6,13 @@ import dagster._check as check
 from dagster._core.definitions import ExpectationResult
 from dagster._core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import datetime_as_float
 
 
-def build_run_stats_from_events(run_id, records):
+def build_run_stats_from_events(
+    run_id: str, records: Iterable[EventLogEntry]
+) -> DagsterRunStatsSnapshot:
     try:
         iter(records)
     except TypeError as exc:
@@ -35,17 +36,12 @@ def build_run_stats_from_events(run_id, records):
             continue
         dagster_event = event.get_dagster_event()
 
-        event_timestamp_float = (
-            event.timestamp
-            if isinstance(event.timestamp, float)
-            else datetime_as_float(event.timestamp)
-        )
         if dagster_event.event_type == DagsterEventType.PIPELINE_START:
-            start_time = event_timestamp_float
+            start_time = event.timestamp
         if dagster_event.event_type == DagsterEventType.PIPELINE_STARTING:
-            launch_time = event_timestamp_float
+            launch_time = event.timestamp
         if dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
-            enqueued_time = event_timestamp_float
+            enqueued_time = event.timestamp
         if dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             steps_failed += 1
         if dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
@@ -59,13 +55,9 @@ def build_run_stats_from_events(run_id, records):
             or dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE
             or dagster_event.event_type == DagsterEventType.PIPELINE_CANCELED
         ):
-            end_time = (
-                event.timestamp
-                if isinstance(event.timestamp, float)
-                else datetime_as_float(event.timestamp)
-            )
+            end_time = event.timestamp
 
-    return PipelineRunStatsSnapshot(
+    return DagsterRunStatsSnapshot(
         run_id,
         steps_succeeded,
         steps_failed,

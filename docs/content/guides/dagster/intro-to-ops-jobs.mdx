@@ -17,20 +17,19 @@ By the end of this tutorial, you will:
 
 ## Prerequisites
 
-To complete this tutorial, you'll need to install Dagster, Dagit, and the `requests` library:
+To complete this tutorial, you'll need to install Dagster, the Dagster webserver/UI, and the `requests` library:
 
 ```shell
-pip install dagster dagit requests
+pip install dagster dagster-webserver
 ```
 
 This installs a few packages:
 
-- **Dagster**. The core programming model and abstraction stack; stateless, single-node, single-process and multi-process execution engines; and a CLI tool for driving those engines. Refer to the [Dagster installation guide](/getting-started/install) for more info, including how to ensure your environment is set up correctly.
-- **Dagit**: The web-based UI for developing and operating Dagster jobs, including a DAG browser, a type-aware config editor, and a live execution interface.
-- **Requests**: While not a part of Dagster, we'll use this in the tutorial to download data from the internet.
+- `dagster`. The core programming model and abstraction stack; stateless, single-node, single-process and multi-process execution engines; and a CLI tool for driving those engines. Refer to the [Dagster installation guide](/getting-started/install) for more info, including how to ensure your environment is set up correctly.
+- `dagster-webserver`: The server for Dagster's browser UI for developing and operating Dagster jobs, including a DAG browser, a type-aware config editor, and a live execution interface.
 
 ---
 
 ## Ready to get started?
 
-When you've fulfilled all the [prerequisites](#prerequisites) for the tutorial, you can get started [creating your first asset](/tutorial/assets/defining-an-asset).
+When you've fulfilled all the [prerequisites](#prerequisites) for the tutorial, you can get started [creating your first op job](/guides/dagster/intro-to-ops-jobs/single-op-job).

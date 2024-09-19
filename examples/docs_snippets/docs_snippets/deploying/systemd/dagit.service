@@ -1,5 +1,5 @@
 [Unit]
-Description=Run Dagit
+Description=Run dagster-webserver
 After=network.target
 
 [Service]
@@ -11,7 +11,7 @@ ExecStart=/bin/bash -c '\
     export LC_ALL=C.UTF-8 && \
     export LANG=C.UTF-8 && \
     source /opt/dagster/venv/bin/activate && \
-    /opt/dagster/venv/bin/dagit \
+    /opt/dagster/venv/bin/dagster-webserver \
         -h 0.0.0.0 \
         -p 3000 \
         -y /opt/dagster/app/workspace.yaml'

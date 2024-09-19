@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
-from ...utils import kubernetes
+from schema.charts.utils import kubernetes
 
 
 class IngressPathType(str, Enum):
@@ -25,7 +25,7 @@ class IngressPath(BaseModel):
     servicePort: Union[str, int]
 
 
-class DagitIngressConfiguration(BaseModel):
+class WebserverIngressConfiguration(BaseModel):
     host: str
     path: str
     pathType: IngressPathType
@@ -48,6 +48,6 @@ class Ingress(BaseModel):
     apiVersion: Optional[str]
     labels: kubernetes.Labels
     annotations: kubernetes.Annotations
-    dagit: DagitIngressConfiguration
-    readOnlyDagit: DagitIngressConfiguration
     flower: FlowerIngressConfiguration
+    dagsterWebserver: WebserverIngressConfiguration
+    readOnlyDagsterWebserver: WebserverIngressConfiguration

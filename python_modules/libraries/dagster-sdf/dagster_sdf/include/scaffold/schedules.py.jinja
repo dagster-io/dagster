@@ -1,0 +1,14 @@
+"""
+To add a daily schedule that materializes your sdf assets, uncomment the following lines.
+"""
+from dagster_sdf import build_schedule_from_sdf_selection
+
+from .assets import {{ sdf_assets_name }}
+
+schedules = [
+#     build_schedule_from_sdf_selection(
+#         [{{ sdf_assets_name }}],
+#         job_name="materialize_sdf_models",
+#         cron_schedule="0 0 * * *",
+#     ),
+]

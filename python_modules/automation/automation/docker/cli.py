@@ -3,10 +3,10 @@ from typing import List, Optional
 import click
 import dagster._check as check
 
-from .dagster_docker import DagsterDockerImage
-from .ecr import ensure_ecr_login
-from .image_defs import get_image, list_images
-from .utils import current_time_str, execute_docker_push, execute_docker_tag
+from automation.docker.dagster_docker import DagsterDockerImage
+from automation.docker.ecr import ensure_ecr_login
+from automation.docker.image_defs import get_image, list_images
+from automation.docker.utils import current_time_str, execute_docker_push, execute_docker_tag
 
 CLI_HELP = """This CLI is used for building the various Dagster images we use in test
 """
@@ -19,10 +19,10 @@ def cli():
     pass
 
 
-@cli.command()
-def list():  # pylint: disable=redefined-builtin
+@cli.command(name="list")
+def lst():
     for image in list_images():
-        print(image.image)  # pylint: disable=print-call
+        print(image.image)  # noqa: T201
 
 
 # Shared options between `build` and `build_all`
@@ -35,6 +35,7 @@ opt_build_dagster_version = click.option(
 opt_build_platform = click.option(
     "--platform",
     required=False,
+    default="linux/amd64",
     help="Target platform name to pass to `docker build`",
 )
 opt_build_timestamp = click.option(
@@ -65,7 +66,7 @@ def build(
 @opt_build_timestamp
 @opt_build_platform
 def build_all(name: str, dagster_version: str, timestamp: str, platform: Optional[str]):
-    """Build all supported python versions for image"""
+    """Build all supported python versions for image."""
     image = get_image(name)
 
     for python_version in image.python_versions:
@@ -128,7 +129,6 @@ def push_dockerhub(name: str, dagster_version: str, set_latest: bool):
     """Used for pushing k8s images to Docker Hub. Must be logged in to Docker Hub for this to
     succeed.
     """
-
     tags = [
         f"dagster/{name}:{dagster_version}",
     ]
@@ -149,7 +149,6 @@ def push_ecr(name: str, dagster_version: str, set_latest: bool):
 
         aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/dagster
     """
-
     tags = [
         f"{AWS_ECR_REGISTRY}/{name}:{dagster_version}",
     ]

@@ -1,0 +1,18 @@
+# serializer version: 1
+# name: test_instance_yaml
+  list([
+    'auto_materialize',
+    'code_servers',
+    'compute_logs',
+    'local_artifact_storage',
+    'retention',
+    'run_coordinator',
+    'run_launcher',
+    'run_monitoring',
+    'run_retries',
+    'schedules',
+    'sensors',
+    'storage',
+    'telemetry',
+  ])
+# ---

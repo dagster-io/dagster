@@ -10,7 +10,7 @@ def foo():
 
 
 # Will unexpectedly materialize foo_asset
-defs.get_job_def("graph_asset").execute_in_process(
+defs.get_job_def("my_graph_assets").execute_in_process(
     asset_selection=[AssetKey("baz_asset")]
 )
 # end_unexpected_materialization_foo

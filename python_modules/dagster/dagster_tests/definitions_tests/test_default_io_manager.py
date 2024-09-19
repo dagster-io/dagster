@@ -1,13 +1,16 @@
 import pytest
 from dagster import (
+    AssetCheckResult,
     IOManagerDefinition,
     asset,
+    asset_check,
     define_asset_job,
     execute_job,
     job,
     op,
     reconstructable,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.test_utils import environ, instance_for_test
@@ -74,8 +77,17 @@ def foo_io_manager_asset(context):
     assert type(context.resources.io_manager) == FooIoManager
 
 
+@asset_check(asset=foo_io_manager_asset)
+def check_foo(context, foo_io_manager_asset):
+    assert foo_io_manager_asset is None
+    assert type(context.resources.io_manager) == FooIoManager
+    return AssetCheckResult(passed=True)
+
+
 def create_asset_job():
-    return define_asset_job(name="foo_io_manager_asset_job").resolve([foo_io_manager_asset], [])
+    return define_asset_job(name="foo_io_manager_asset_job").resolve(
+        asset_graph=AssetGraph.from_assets([foo_io_manager_asset, check_foo])
+    )
 
 
 def test_asset_override_default_io_manager(instance):

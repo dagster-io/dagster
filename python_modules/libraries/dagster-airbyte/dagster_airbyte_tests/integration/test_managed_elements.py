@@ -1,4 +1,5 @@
-# pylint: disable=unused-argument,print-call
+# ruff: noqa: T201
+
 
 import os
 import time
@@ -18,7 +19,7 @@ from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts
 
-from .example_stacks import example_airbyte_stack
+from dagster_airbyte_tests.integration.example_stacks import example_airbyte_stack
 
 TEST_ROOT_DIR = str(file_relative_path(__file__, "./example_stacks"))
 
@@ -45,10 +46,7 @@ def docker_compose_airbyte_instance_fixture(
     docker_compose_file,
     docker_compose_env_file,
 ):
-    """
-    Spins up an Airbyte instance using docker-compose, and tears it down after the test.
-    """
-
+    """Spins up an Airbyte instance using docker-compose, and tears it down after the test."""
     with docker_compose_cm(docker_compose_file, env_file=docker_compose_env_file) as hostnames:
         webapp_host = hostnames["airbyte-webapp"]
         webapp_port = "8000" if webapp_host == "localhost" else "80"
@@ -91,10 +89,7 @@ def track_make_requests_fixture():
 
 @pytest.fixture(name="empty_airbyte_instance")
 def empty_airbyte_instance_fixture(docker_compose_airbyte_instance):
-    """
-    Ensures that the docker-compose Airbyte instance is empty before running a test.
-    """
-
+    """Ensures that the docker-compose Airbyte instance is empty before running a test."""
     apply(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
 
     yield docker_compose_airbyte_instance
@@ -161,6 +156,7 @@ def test_basic_integration(
                 "my_data_stream": {"syncMode": "full_refresh", "destinationSyncMode": "append"}
             },
             "destination namespace": "SAME_AS_SOURCE",
+            "prefix": None,
         },
     }
     expected_result = diff_dicts(
@@ -350,6 +346,7 @@ def test_mark_secrets_as_changed(docker_compose_airbyte_instance, airbyte_source
         assert ManagedElementDiff() != check_result
 
 
+@pytest.mark.flaky(reruns=1)
 def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_files):
     # Set up example element and ensure no diff
     apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
@@ -403,6 +400,35 @@ def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_fil
     assert apply_result == expected_diff
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert check_result == ManagedElementDiff()
+
+
+def test_change_destination_prefix(empty_airbyte_instance, airbyte_source_files):
+    # Set up example element and ensure no diff
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert check_result == ManagedElementDiff()
+
+    # Change the destination prefix, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-conn": {
+                "prefix": "my_prefix",
+            },
+        },
+        {
+            "local-json-conn": {
+                "prefix": None,
+            },
+        },
+    )
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_prefix")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_prefix")
+    assert apply_result == expected_diff
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_prefix")
     assert check_result == ManagedElementDiff()
 
 

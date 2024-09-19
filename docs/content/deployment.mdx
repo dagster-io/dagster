@@ -1,23 +1,125 @@
 ---
-title: Deployment | Dagster
+title: Deploying Dagster with your infrastructure | Dagster Docs
 ---
 
-# Deployment
+# Deploying Dagster with your infrastructure
 
-Explore your options for deploying Dagster to your infrastructure or using Dagster Cloud.
+<Note>
+  This section is applicable to Dagster Open Source. If you're looking for
+  Dagster+, <a href="/dagster-plus">click here</a>.
+</Note>
 
----
-
-## Deploying to your infrastructure
-
-Ready to deploy Dagster to your infrastructure? Use these resources to learn more:
-
-- [Dagster architecture](/deployment/overview) - An overview of Dagster's architecture
-- [Concepts](/deployment/concepts) - Understand the concepts relevant to deploying Dagster
-- [Guides](/deployment/guides) - Step-by-step guides for deploying and executing Dagster on services like Amazon Web Services, Docker, Google Cloud Platform, and Kubernetes
+Learn how to deploy and execute Dagster with these hands-on guides.
 
 ---
 
-## Deploying with Dagster Cloud
+## Overview
 
-If using Dagster Cloud, some or all of the deployment infrastructure is managed by Dagster on your behalf. Check out the [Dagster Cloud docs](/dagster-cloud) to learn more.
+Get started with a look at Dagster's architecture, including a primer on deployment concepts. [Learn more](/deployment/overview).
+
+---
+
+## Concepts
+
+Learn about the concepts relevant to deploying Dagster.
+
+<ArticleList>
+  <ArticleListItem
+    title="Dagster instance"
+    href="/deployment/dagster-instance"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster daemon"
+    href="/deployment/dagster-daemon"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Run launchers"
+    href="/deployment/run-launcher"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Executors"
+    href="/deployment/executors"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Run coordinator"
+    href="/deployment/run-coordinator"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Run monitoring"
+    href="/deployment/run-monitoring"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Run retries"
+    href="/deployment/run-retries"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Guides
+
+- [Deploying Dagster](#deploying-dagster)
+- [Executing Dagster](#executing-dagster)
+
+### Deploying Dagster
+
+Check out these guides to learn the basics of Dagster deployment, including setting up Dagster and running the Dagster webserver.
+
+<ArticleList>
+  <ArticleListItem
+    title="Running Dagster locally"
+    href="/guides/running-dagster-locally"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Running Dagster as a service"
+    href="/deployment/guides/service"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying to a single node using Docker"
+    href="/deployment/guides/docker"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying to Amazon Web Services EC2 or ECS"
+    href="/deployment/guides/aws"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying to Google Cloud Platform"
+    href="/deployment/guides/gcp"
+  ></ArticleListItem>
+</ArticleList>
+
+**Using Helm?** Check out the following guides to walk you through Dagster deployment:
+
+<ArticleList>
+  <ArticleListItem
+    title="Deploying with Helm"
+    href="/deployment/guides/kubernetes/deploying-with-helm"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying with Celery using Helm"
+    href="/deployment/guides/kubernetes/deploying-with-helm-advanced"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Customizing Kubernetes deployments"
+    href="/deployment/guides/kubernetes/customizing-your-deployment"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Migrating Dagster instances while upgrading"
+    href="/deployment/guides/kubernetes/how-to-migrate-your-instance"
+  ></ArticleListItem>
+</ArticleList>
+
+### Executing Dagster
+
+For more advanced job execution, you can submit to different compute substrates. These can be mixed and matched. For example, you can deploy the Dagster webserver on Amazon Web Services (AWS) EC2 and execute jobs on a Dask cluster.
+
+<ArticleList>
+  <ArticleListItem
+    title="Celery"
+    href="/deployment/guides/celery"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dask"
+    href="/deployment/guides/dask"
+  ></ArticleListItem>
+</ArticleList>

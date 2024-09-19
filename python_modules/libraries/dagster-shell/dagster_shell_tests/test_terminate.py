@@ -2,30 +2,29 @@ import time
 from contextlib import contextmanager
 
 import psutil
-from dagster import repository
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster import job, op, repository
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._legacy import pipeline, solid
 from dagster._utils import file_relative_path
 from dagster_shell.utils import execute
 
 
-@solid
-def sleepy_solid(context):
+@op
+def sleepy_op(context):
     # execute a sleep in the background
     execute("sleep 60", "NONE", context.log)
 
 
-@pipeline
-def sleepy_pipeline():
-    sleepy_solid()
+@job
+def sleepy_job():
+    sleepy_op()
 
 
 @repository
 def sleepy_repo():
-    return [sleepy_pipeline]
+    return [sleepy_job]
 
 
 @contextmanager
@@ -64,22 +63,22 @@ def poll_for_pid(instance, run_id, timeout=20):
 def test_terminate_kills_subproc():
     with instance_for_test() as instance:
         with get_managed_grpc_server_workspace(instance) as workspace:
-            external_pipeline = (
-                workspace.get_repository_location("test")
+            external_job = (
+                workspace.get_code_location("test")
                 .get_repository("sleepy_repo")
-                .get_full_external_job("sleepy_pipeline")
+                .get_full_external_job("sleepy_job")
             )
-            pipeline_run = instance.create_run_for_pipeline(
-                pipeline_def=sleepy_pipeline,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+            dagster_run = instance.create_run_for_job(
+                job_def=sleepy_job,
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
 
-            run_id = pipeline_run.run_id
+            run_id = dagster_run.run_id
 
             assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
 
-            instance.launch_run(pipeline_run.run_id, workspace)
+            instance.launch_run(dagster_run.run_id, workspace)
 
             poll_for_step_start(instance, run_id)
 
@@ -87,15 +86,15 @@ def test_terminate_kills_subproc():
             subproc_pid = poll_for_pid(instance, run_id)
             assert psutil.pid_exists(subproc_pid)
 
-            # simulate waiting a bit to terminate the pipeline
+            # simulate waiting a bit to terminate the job
             time.sleep(0.5)
 
             launcher = instance.run_launcher
             assert launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
-            terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == DagsterRunStatus.CANCELED
+            terminated_dagster_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_dagster_run = instance.get_run_by_id(run_id)
+            assert terminated_dagster_run.status == DagsterRunStatus.CANCELED
 
             # make sure the subprocess is killed after a short delay
             time.sleep(0.5)

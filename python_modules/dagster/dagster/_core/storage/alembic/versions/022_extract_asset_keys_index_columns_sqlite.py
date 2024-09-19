@@ -1,10 +1,11 @@
-"""extract asset_keys index columns
+"""extract asset_keys index columns.
 
 Revision ID: e784752027a6
 Revises: 7b8304b4429d
 Create Date: 2021-07-06 10:51:26.269010
 
 """
+
 from dagster._core.storage.migration.utils import extract_asset_keys_idx_columns
 
 # revision identifiers, used by Alembic.

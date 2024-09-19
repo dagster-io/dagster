@@ -1,17 +1,18 @@
 import time
 
-from dagster._legacy import ModeDefinition, execute_solid, solid
-from dagster_prometheus import prometheus_resource
+from dagster import op
+from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster_prometheus import PrometheusResource
 from prometheus_client import Counter, Enum, Gauge, Histogram, Info, Summary
 
 EPS = 0.001
-ENV = {"resources": {"prometheus": {"config": {"gateway": "localhost:9091"}}}}
-MODE = ModeDefinition(resource_defs={"prometheus": prometheus_resource})
+ENV = {}
+RESOURCES = {"prometheus": PrometheusResource(gateway="localhost:9091")}
 
 
 def test_prometheus_counter():
-    @solid(required_resource_keys={"prometheus"})
-    def prometheus_solid(context):
+    @op(required_resource_keys={"prometheus"})
+    def prometheus_op(context):
         c = Counter(
             "some_counter_seconds",
             "Description of this counter",
@@ -24,12 +25,29 @@ def test_prometheus_counter():
         )
         assert abs(2.6 - recorded) < EPS
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(prometheus_op, run_config=ENV, resources=RESOURCES).success
+
+
+def test_prometheus_counter_pythonic_res() -> None:
+    @op
+    def prometheus_op(prometheus: PrometheusResource) -> None:
+        c = Counter(
+            "some_counter_seconds",
+            "Description of this counter",
+            registry=prometheus.registry,
+        )
+        c.inc()
+        c.inc(1.6)
+        recorded = prometheus.registry.get_sample_value("some_counter_seconds_total")
+        assert recorded
+        assert abs(2.6 - recorded) < EPS
+
+    assert wrap_op_in_graph_and_execute(prometheus_op, run_config=ENV, resources=RESOURCES).success
 
 
 def test_prometheus_gauge():
-    @solid(required_resource_keys={"prometheus"})
-    def prometheus_solid(context):
+    @op(required_resource_keys={"prometheus"})
+    def prometheus_op(context):
         g = Gauge(
             "job_last_success_unixtime",
             "Last time a batch job successfully finished",
@@ -41,12 +59,12 @@ def test_prometheus_gauge():
         )
         assert abs(time.time() - recorded) < 10.0
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(prometheus_op, run_config=ENV, resources=RESOURCES).success
 
 
 def test_prometheus_summary():
-    @solid(required_resource_keys={"prometheus"})
-    def prometheus_solid(context):
+    @op(required_resource_keys={"prometheus"})
+    def prometheus_op(context):
         s = Summary(
             "request_latency_seconds",
             "Description of summary",
@@ -72,29 +90,27 @@ def test_prometheus_summary():
         )
         assert abs(1.0 - recorded) < 1.0
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(prometheus_op, run_config=ENV, resources=RESOURCES).success
 
 
 def test_prometheus_histogram():
-    @solid(required_resource_keys={"prometheus"})
-    def prometheus_solid(context):
+    @op(required_resource_keys={"prometheus"})
+    def prometheus_op(context):
         h = Histogram(
-            "pipeline_runtime_seconds",
+            "job_runtime_seconds",
             "Description of histogram",
             registry=context.resources.prometheus.registry,
         )
         h.observe(4.7)
-        recorded = context.resources.prometheus.registry.get_sample_value(
-            "pipeline_runtime_seconds_sum"
-        )
+        recorded = context.resources.prometheus.registry.get_sample_value("job_runtime_seconds_sum")
         assert abs(4.7 - recorded) < EPS
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(prometheus_op, run_config=ENV, resources=RESOURCES).success
 
 
 def test_prometheus_info():
-    @solid(required_resource_keys={"prometheus"})
-    def prometheus_solid(context):
+    @op(required_resource_keys={"prometheus"})
+    def prometheus_op(context):
         i = Info(
             "my_build_version",
             "Description of info",
@@ -108,12 +124,12 @@ def test_prometheus_info():
                 break
         assert metric and metric.samples[0].labels == info_labels
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(prometheus_op, run_config=ENV, resources=RESOURCES).success
 
 
 def test_prometheus_enum():
-    @solid(required_resource_keys={"prometheus"})
-    def prometheus_solid(context):
+    @op(required_resource_keys={"prometheus"})
+    def prometheus_op(context):
         e = Enum(
             "my_task_state",
             "Description of enum",
@@ -121,7 +137,7 @@ def test_prometheus_enum():
             registry=context.resources.prometheus.registry,
         )
         # no idea why pylint doesn't like this line, it's correct
-        e.state("running")  # pylint: disable=no-member
+        e.state("running")
 
         metric = None
         for metric in context.resources.prometheus.registry.collect():
@@ -129,4 +145,4 @@ def test_prometheus_enum():
                 break
         assert metric and metric.samples[0].labels == {"my_task_state": "starting"}
 
-    assert execute_solid(prometheus_solid, run_config=ENV, mode_def=MODE).success
+    assert wrap_op_in_graph_and_execute(prometheus_op, run_config=ENV, resources=RESOURCES).success

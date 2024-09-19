@@ -1,5 +1,10 @@
 # Dagster Images
 
+- `dagster-celery-k8s` (Helm default): Host process image for Dagster Webserver, Daemon, and Celery workers. We use this
+  as the default so that users can switch to Celery without hitting a dependency issue.
+- `user-code-example` (Helm default): Example job code.
+- `dagster-k8s`: `dagster-celery-k8s` without the Celery dependency.
+
 ## Creating an image
 
 For each image, create a new directory under `images/<YOUR IMAGE>`. Each image

@@ -1,10 +1,11 @@
-"""add column mode
+"""add column mode.
 
 Revision ID: ddcc6d7244c6
 Revises: 45fa602c43dc
 Create Date: 2021-07-06 13:56:08.987201
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
@@ -14,8 +15,6 @@ revision = "ddcc6d7244c6"
 down_revision = "45fa602c43dc"
 branch_labels = None
 depends_on = None
-
-# pylint: disable=no-member
 
 
 def upgrade():

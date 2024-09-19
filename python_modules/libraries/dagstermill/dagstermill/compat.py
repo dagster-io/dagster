@@ -11,7 +11,7 @@ def is_papermill_2():
 
 
 if is_papermill_2():
-    from nbclient.exceptions import CellExecutionError  # pylint: disable=import-error
+    from nbclient.exceptions import CellExecutionError
 
     ExecutionError = (PapermillExecutionError, CellExecutionError)
 

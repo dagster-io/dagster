@@ -34,15 +34,13 @@ def get_kernelspec(kernel: Optional[str] = None):
             )
         ) + list(kernelspecs["kernelspecs"].keys())
         kernel = preferred_kernels[0]
-        print(  # pylint: disable=print-call
-            "No kernel specified, defaulting to '{kernel}'".format(kernel=kernel)
-        )
+        print(f"No kernel specified, defaulting to '{kernel}'")  # noqa: T201
 
     check.invariant(
         kernel in kernelspecs["kernelspecs"],
         "Could not find kernel '{kernel}': available kernels are [{kernels}]".format(
             kernel=kernel,
-            kernels=", ".join(["'{k}'".format(k=k) for k in kernelspecs["kernelspecs"]]),
+            kernels=", ".join([f"'{k}'" for k in kernelspecs["kernelspecs"]]),
         ),
     )
 
@@ -112,17 +110,15 @@ def execute_create_notebook(notebook: str, force_overwrite: bool, kernel: str):
 
     if not force_overwrite and safe_isfile(notebook_path):
         click.confirm(
-            (
-                "Warning, {notebook_path} already exists and continuing "
-                "will overwrite the existing notebook. "
-                "Are you sure you want to continue?"
-            ).format(notebook_path=notebook_path),
+            f"Warning, {notebook_path} already exists and continuing "
+            "will overwrite the existing notebook. "
+            "Are you sure you want to continue?",
             abort=True,
         )
 
     with open(notebook_path, "w", encoding="utf8") as f:
         f.write(get_notebook_scaffolding(get_kernelspec(kernel)))
-        click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
+        click.echo(f"Created new dagstermill notebook at {notebook_path}")
 
 
 def create_dagstermill_cli():

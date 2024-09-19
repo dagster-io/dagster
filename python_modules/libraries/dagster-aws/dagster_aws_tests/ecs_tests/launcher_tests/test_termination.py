@@ -1,7 +1,13 @@
+from dagster import DagsterRunStatus
+
+
 def test_termination(instance, workspace, run):
     instance.launch_run(run.run_id, workspace)
 
     assert instance.run_launcher.terminate(run.run_id)
+
+    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELING
+
     assert not instance.run_launcher.terminate(run.run_id)
 
 
@@ -26,6 +32,9 @@ def test_missing_tag(instance, workspace, run):
 
     instance.add_run_tags(run.run_id, {"ecs/task_arn": ""})
     assert not instance.run_launcher.terminate(run.run_id)
+
+    # Still moves to CANCELING
+    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELING
 
     instance.add_run_tags(run.run_id, original)
     instance.add_run_tags(run.run_id, {"ecs/cluster": ""})

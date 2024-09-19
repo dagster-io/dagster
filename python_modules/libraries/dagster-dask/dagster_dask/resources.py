@@ -1,4 +1,5 @@
 from dagster import Bool, Field, Int, Permissive, Selector, Shape, String, resource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dask.distributed import Client
 
 DaskClusterTypes = {
@@ -65,7 +66,8 @@ class DaskResource:
         self._client, self._cluster = None, None
 
 
-@resource(  # type: ignore
+@dagster_maintained_resource
+@resource(
     description="Dask Client resource.",
     config_schema=Shape(
         {

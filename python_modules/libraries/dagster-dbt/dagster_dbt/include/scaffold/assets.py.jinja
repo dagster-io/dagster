@@ -1,0 +1,14 @@
+from dagster import AssetExecutionContext
+from dagster_dbt import DbtCliResource, dbt_assets
+
+from .project import {{ dbt_project_name }}
+
+
+@dbt_assets(manifest={{ dbt_project_name }}.manifest_path)
+def {{ dbt_assets_name }}(context: AssetExecutionContext, dbt: DbtCliResource):
+    {% if use_experimental_dbt_state -%}
+    # When dbt state is available, pass it to the dbt invocation.
+    yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
+    {% else -%}
+    yield from dbt.cli(["build"], context=context).stream()
+    {% endif -%}

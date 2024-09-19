@@ -6,6 +6,7 @@ config:
   dagster_home: {{ .Values.global.dagsterHome | quote }}
   instance_config_map: "{{ template "dagster.fullname" .}}-instance"
   postgres_password_secret: {{ include "dagster.postgresql.secretName" . | quote }}
+  job_namespace: {{ $celeryK8sRunLauncherConfig.jobNamespace | default .Release.Namespace }}
   broker:
     env: DAGSTER_CELERY_BROKER_URL
   backend:
@@ -76,7 +77,7 @@ config:
   service_account_name: {{ include "dagster.serviceAccountName" . }}
 
   {{- if (hasKey $k8sRunLauncherConfig "image") }}
-  job_image: {{ include "dagster.externalImage.name" (list $ $k8sRunLauncherConfig.image) | quote }}
+  job_image: {{ include "dagster.externalImage.name" $k8sRunLauncherConfig.image | quote }}
   {{- end }}
   dagster_home: {{ .Values.global.dagsterHome | quote }}
   instance_config_map: "{{ template "dagster.fullname" .}}-instance"

@@ -1,11 +1,16 @@
+import datetime
+
 import numpy as np
 import pandas as pd
-from dagster import asset
+from dagster import AssetExecutionContext, asset
+from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
+)
 from dagster_airbyte import build_airbyte_assets
-from dagster_dbt import load_assets_from_dbt_project
+from dagster_dbt import DbtCliResource, dbt_assets
 from scipy import optimize
 
-from ..utils.constants import AIRBYTE_CONNECTION_ID, DBT_PROJECT_DIR
+from ..utils.constants import AIRBYTE_CONNECTION_ID, DBT_MANIFEST_PATH
 
 airbyte_assets = build_airbyte_assets(
     connection_id=AIRBYTE_CONNECTION_ID,
@@ -14,9 +19,12 @@ airbyte_assets = build_airbyte_assets(
 )
 
 
-dbt_assets = load_assets_from_dbt_project(
-    project_dir=DBT_PROJECT_DIR, io_manager_key="db_io_manager"
+@dbt_assets(
+    manifest=DBT_MANIFEST_PATH,
+    io_manager_key="db_io_manager",
 )
+def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
 
 
 def model_func(x, a, b):
@@ -25,7 +33,7 @@ def model_func(x, a, b):
 
 @asset(compute_kind="python")
 def order_forecast_model(daily_order_summary: pd.DataFrame) -> np.ndarray:
-    """Model parameters that best fit the observed data"""
+    """Model parameters that best fit the observed data."""
     train_set = daily_order_summary.to_numpy()
     return optimize.curve_fit(
         f=model_func, xdata=train_set[:, 0], ydata=train_set[:, 2], p0=[10, 100]
@@ -36,9 +44,17 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> np.ndarray:
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: np.ndarray
 ) -> pd.DataFrame:
-    """Predicted orders for the next 30 days based on the fit paramters"""
+    """Predicted orders for the next 30 days based on the fit paramters."""
     a, b = tuple(order_forecast_model)
     start_date = daily_order_summary.order_date.max()
     future_dates = pd.date_range(start=start_date, end=start_date + pd.DateOffset(days=30))
     predicted_data = model_func(x=future_dates.astype(np.int64), a=a, b=b)
     return pd.DataFrame({"order_date": future_dates, "num_orders": predicted_data})
+
+
+# Each of these assets should be getting run every day. If it hasn't been run in the last
+# 2 days, we consider it stale.
+freshness_checks = build_last_update_freshness_checks(
+    assets=[predicted_orders, order_forecast_model],
+    lower_bound_delta=datetime.timedelta(days=2),
+)

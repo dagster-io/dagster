@@ -1,9 +1,6 @@
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
-    tag_concurrency_limits:
-      - key: "use-case"
-        value:
-          applyLimitPerUniqueValue: true
-        limit: 3
+run_queue:
+  tag_concurrency_limits:
+    - key: "use-case"
+      value:
+        applyLimitPerUniqueValue: true
+      limit: 3

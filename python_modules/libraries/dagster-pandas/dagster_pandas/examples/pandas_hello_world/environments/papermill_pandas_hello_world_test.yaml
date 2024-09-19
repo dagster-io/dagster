@@ -3,4 +3,4 @@ ops:
     inputs:
       df:
         csv:
-          path: 'data/num.csv'
+          path: "data/num.csv"

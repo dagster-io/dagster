@@ -5,10 +5,9 @@ def test_description_inference():
     decorators = [job, op, graph, resource]
     for decorator in decorators:
 
-        @decorator  # pylint: disable=cell-var-from-loop
+        @decorator
         def my_thing():
-            """
-            Here is some
+            """Here is some
             multiline description.
             """
 

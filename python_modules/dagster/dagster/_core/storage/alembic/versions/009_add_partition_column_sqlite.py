@@ -1,15 +1,14 @@
-"""add partition column
+"""add partition column.
 
 Revision ID: 9483999bad92
 Revises: 3e0770016702
 Create Date: 2020-12-21 10:07:10.099687
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
-
-# pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
 revision = "9483999bad92"

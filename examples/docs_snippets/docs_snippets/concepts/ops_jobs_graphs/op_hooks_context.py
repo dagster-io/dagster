@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 # start_failure_hook_op_exception
 from dagster import HookContext, failure_hook
@@ -7,7 +7,7 @@ import traceback
 
 @failure_hook
 def my_failure_hook(context: HookContext):
-    op_exception: BaseException = context.op_exception
+    op_exception: BaseException = context.op_exception  # type: ignore  # (possible none)
     # print stack trace of exception
     traceback.print_tb(op_exception.__traceback__)
 

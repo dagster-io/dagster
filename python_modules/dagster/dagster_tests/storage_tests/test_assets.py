@@ -1,3 +1,4 @@
+import pytest
 from dagster import AssetKey, AssetMaterialization, Output, job, op
 from dagster._core.definitions.events import parse_asset_key_string
 from dagster._core.events.log import EventLogEntry
@@ -78,8 +79,11 @@ def test_backcompat_asset_read():
             _validate_instance_assets(instance)
 
 
-def test_backcompat_asset_materializations():
-    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+@pytest.mark.parametrize(
+    "snapshot", ["snapshot_0_11_0_asset_materialization", "snapshot_1_1_14_asset_materialization"]
+)
+def test_backcompat_asset_materializations(snapshot):
+    src_dir = file_relative_path(__file__, f"compat_tests/{snapshot}")
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
 
@@ -143,8 +147,11 @@ def test_backcompat_asset_materializations():
             _validate_materialization(c, c_mat)
 
 
-def test_backcompat_get_asset_records():
-    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+@pytest.mark.parametrize(
+    "snapshot", ["snapshot_0_11_0_asset_materialization", "snapshot_1_1_14_asset_materialization"]
+)
+def test_backcompat_get_asset_records(snapshot):
+    src_dir = file_relative_path(__file__, f"compat_tests/{snapshot}")
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
 
@@ -164,6 +171,14 @@ def test_backcompat_get_asset_records():
             asset_entry = records[0].asset_entry
             assert asset_entry.asset_key == b
             _validate_materialization(b, asset_entry.last_materialization)
+
+            # assert that the EventLogRecord was fetched
+            assert asset_entry.last_materialization_record is not None
+            assert (
+                asset_entry.last_materialization_record.event_log_entry
+                == asset_entry.last_materialization
+            )
+            assert asset_entry.last_materialization_record.storage_id is not None
 
 
 def test_asset_lazy_migration():

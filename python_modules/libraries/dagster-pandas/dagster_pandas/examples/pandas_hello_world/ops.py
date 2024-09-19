@@ -2,8 +2,7 @@ import dagstermill
 from dagster import In, Out, file_relative_path, op
 
 import dagster_pandas as dagster_pd
-
-from ...data_frame import DataFrame
+from dagster_pandas.data_frame import DataFrame
 
 
 @op(
@@ -35,7 +34,7 @@ def always_fails_op(**_kwargs):
 
 
 def nb_test_path(name):
-    return file_relative_path(__file__, "../notebooks/{name}.ipynb".format(name=name))
+    return file_relative_path(__file__, f"../notebooks/{name}.ipynb")
 
 
 papermill_pandas_hello_world = dagstermill.factory.define_dagstermill_op(

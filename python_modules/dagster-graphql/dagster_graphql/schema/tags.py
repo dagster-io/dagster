@@ -1,6 +1,6 @@
 import graphene
 
-from .util import non_null_list
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneTagType(graphene.Enum):
@@ -23,12 +23,23 @@ class GraphenePipelineTag(graphene.ObjectType):
         super().__init__(key=key, value=value)
 
 
-class GrapheneAssetTag(graphene.ObjectType):
+class GrapheneEventTag(graphene.ObjectType):
     key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "AssetTag"
+        name = "EventTag"
+
+    def __init__(self, key, value):
+        super().__init__(key=key, value=value)
+
+
+class GrapheneDefinitionTag(graphene.ObjectType):
+    key = graphene.NonNull(graphene.String)
+    value = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DefinitionTag"
 
     def __init__(self, key, value):
         super().__init__(key=key, value=value)

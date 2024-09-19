@@ -1,14 +1,13 @@
-"""add run status index
+"""add run status index.
 
 Revision ID: 521d4caca7ad
 Revises: 3e71cf573ba6
 Create Date: 2021-02-23 15:55:33.837945
 
 """
+
 from alembic import op
 from sqlalchemy import inspect
-
-# pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
 revision = "521d4caca7ad"

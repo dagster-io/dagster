@@ -1,8 +1,9 @@
 from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
-from .resources import DEFAULT_POLL_INTERVAL
-from .types import CensusOutput
-from .utils import generate_materialization
+from dagster_census.resources import DEFAULT_POLL_INTERVAL
+from dagster_census.types import CensusOutput
+from dagster_census.utils import generate_materialization
 
 
 @op(
@@ -19,7 +20,7 @@ from .utils import generate_materialization
         "sync_id": Field(
             int,
             is_required=True,
-            description="id of the parent sync.",
+            description="Id of the parent sync.",
         ),
         "force_full_sync": Field(
             config=Bool,
@@ -32,13 +33,13 @@ from .utils import generate_materialization
         "poll_interval": Field(
             float,
             default_value=DEFAULT_POLL_INTERVAL,
-            description="The time (in seconds) that will be waited between successive polls.",
+            description="The time (in seconds) to wait between successive polls.",
         ),
         "poll_timeout": Field(
             Noneable(float),
             default_value=None,
             description=(
-                "The maximum time that will waited before this operation is timed out. By "
+                "The maximum time to wait before this operation is timed out. By "
                 "default, this will never time out."
             ),
         ),
@@ -59,19 +60,19 @@ from .utils import generate_materialization
             ),
         ),
     },
-    tags={"kind": "census"},
+    tags={COMPUTE_KIND_TAG: "census"},
 )
 def census_trigger_sync_op(context):
-    """
-    Executes a Census sync for a given ``sync_id``, and polls until that sync
-    completes, raising an error if it is unsuccessful. It outputs a CensusOutput which contains
-    the details of the Census sync after the sync successfully completes, as well as details
-    about which tables the sync updates.
+    """Executes a Census sync for a given ``sync_id`` and polls until that sync completes, raising
+    an error if it is unsuccessful.
+
+    It outputs a :py:class:`~dagster_census.CensusOutput` which contains the details of the Census
+    sync after it successfully completes.
 
     It requires the use of the :py:class:`~dagster_census.census_resource`, which allows it to
-    communicate with the census API.
+    communicate with the Census API.
 
-    Examples:
+    **Examples:**
 
     .. code-block:: python
 

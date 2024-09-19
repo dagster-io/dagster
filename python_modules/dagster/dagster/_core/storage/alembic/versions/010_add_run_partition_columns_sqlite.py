@@ -1,15 +1,14 @@
-"""add run partition columns
+"""add run partition columns.
 
 Revision ID: 375e95bad550
 Revises: f3e43ff66603
 Create Date: 2021-01-05 14:39:50.395455
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
-
-# pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
 revision = "375e95bad550"

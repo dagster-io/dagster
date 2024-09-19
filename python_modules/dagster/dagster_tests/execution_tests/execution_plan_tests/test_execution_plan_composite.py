@@ -1,7 +1,7 @@
 from dagster import Field, Int, String, job, op
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 
@@ -46,9 +46,9 @@ def composite_job_with_config_mapping():
 
 def test_execution_plan_for_graph():
     run_config = {
-        "solids": {
+        "ops": {
             "graph_with_nested_config_graph": {
-                "solids": {
+                "ops": {
                     "node_a": {"config": {"foo": "baz"}},
                     "node_b": {"config": {"bar": 3}},
                 }
@@ -57,14 +57,12 @@ def test_execution_plan_for_graph():
     }
     execution_plan = create_execution_plan(composite_job, run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=composite_job, execution_plan=execution_plan
-    )
+    dagster_run = instance.create_run_for_job(job_def=composite_job, execution_plan=execution_plan)
     events = execute_plan(
         execution_plan,
-        InMemoryPipeline(composite_job),
+        InMemoryJob(composite_job),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
 
@@ -87,7 +85,7 @@ def test_execution_plan_for_graph():
 
 def test_execution_plan_for_graph_with_config_mapping():
     run_config = {
-        "solids": {
+        "ops": {
             "graph_with_nested_config_graph_and_config_mapping": {
                 "config": {"foo": "baz", "bar": 3}
             }
@@ -95,16 +93,16 @@ def test_execution_plan_for_graph_with_config_mapping():
     }
     execution_plan = create_execution_plan(composite_job_with_config_mapping, run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=composite_job_with_config_mapping,
+    dagster_run = instance.create_run_for_job(
+        job_def=composite_job_with_config_mapping,
         execution_plan=execution_plan,
     )
 
     events = execute_plan(
         execution_plan,
-        InMemoryPipeline(composite_job_with_config_mapping),
+        InMemoryJob(composite_job_with_config_mapping),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
 

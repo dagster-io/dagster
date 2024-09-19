@@ -2,8 +2,8 @@ import os
 import uuid
 
 import yaml
-from dagster._legacy import ModeDefinition, execute_solid
 from dagster._utils import file_relative_path
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_spark import spark_resource
 from dagster_spark.ops import create_spark_op
 
@@ -22,7 +22,7 @@ ops:
             name: "test_app"
 """
 
-MODE_DEF = ModeDefinition(resource_defs={"spark": spark_resource})
+RESOURCE_DEFS = {"spark": spark_resource}
 
 
 def test_jar_not_found():
@@ -30,11 +30,13 @@ def test_jar_not_found():
     # guid guaranteed to not exist
     run_config = yaml.safe_load(CONFIG_FILE.format(path=str(uuid.uuid4())))
 
-    result = execute_solid(spark_op, run_config=run_config, raise_on_error=False, mode_def=MODE_DEF)
-    assert result.failure_data
+    result = wrap_op_in_graph_and_execute(
+        spark_op, run_config=run_config, raise_on_error=False, resources=RESOURCE_DEFS
+    )
+    assert result.is_node_failed("spark_op")
     assert (
         "does not exist. A valid jar must be built before running this op."
-        in result.failure_data.error.cause.message
+        in result.failure_data_for_node("spark_op").error.cause.message
     )
 
 
@@ -62,10 +64,12 @@ def test_no_spark_home():
         NO_SPARK_HOME_CONFIG_FILE.format(path=file_relative_path(__file__, "."))
     )
 
-    result = execute_solid(spark_op, run_config=run_config, raise_on_error=False, mode_def=MODE_DEF)
-    assert result.failure_data
+    result = wrap_op_in_graph_and_execute(
+        spark_op, run_config=run_config, raise_on_error=False, resources=RESOURCE_DEFS
+    )
+    assert result.is_node_failed("spark_op")
     assert (
         "No spark home set. You must either pass spark_home in config or set "
         "$SPARK_HOME in your environment (got None)."
-        in result.failure_data.error.cause.message
+        in result.failure_data_for_node("spark_op").error.cause.message
     )

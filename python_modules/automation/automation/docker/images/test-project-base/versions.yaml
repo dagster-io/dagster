@@ -1,15 +1,15 @@
-3.6.15:
+"3.8":
   docker_args:
-    BASE_IMAGE: python:3.6.15-slim
-3.7.13:
+    BASE_IMAGE: python:3.8-slim
+"3.9":
   docker_args:
-    BASE_IMAGE: python:3.7.13-slim
-3.8.13:
+    BASE_IMAGE: python:3.9-slim
+"3.10":
   docker_args:
-    BASE_IMAGE: python:3.8.13-slim
-3.9.13:
+    BASE_IMAGE: python:3.10-slim
+"3.11":
   docker_args:
-    BASE_IMAGE: python:3.9.13-slim
-3.10.5:
+    BASE_IMAGE: python:3.11-slim
+"3.12":
   docker_args:
-    BASE_IMAGE: python:3.10.5-slim
+    BASE_IMAGE: python:3.12-slim

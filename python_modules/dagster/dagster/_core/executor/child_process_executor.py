@@ -1,13 +1,15 @@
 """Facilities for running arbitrary commands in child processes."""
 
-
 import os
 import queue
 import sys
 from abc import ABC, abstractmethod
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import TYPE_CHECKING, Iterator, NamedTuple, Union
+from multiprocessing.process import BaseProcess
+from typing import TYPE_CHECKING, Iterator, NamedTuple, Optional, Union
+
+from typing_extensions import Literal
 
 import dagster._check as check
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -41,7 +43,7 @@ class ChildProcessSystemErrorEvent(
     pass
 
 
-class ChildProcessCommand(ABC):  # pylint: disable=no-init
+class ChildProcessCommand(ABC):
     """Inherit from this class in order to use this library.
 
     The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.
@@ -58,7 +60,8 @@ class ChildProcessCommand(ABC):  # pylint: disable=no-init
 class ChildProcessCrashException(Exception):
     """Thrown when the child process crashes."""
 
-    def __init__(self, exit_code=None):
+    def __init__(self, pid, exit_code=None):
+        self.pid = pid
         self.exit_code = exit_code
         super().__init__()
 
@@ -68,7 +71,6 @@ def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessC
 
     Handles errors and communicates across a queue with the parent process.
     """
-
     check.inst_param(command, "command", ChildProcessCommand)
 
     with capture_interrupts():
@@ -98,7 +100,9 @@ PROCESS_DEAD_AND_QUEUE_EMPTY = "PROCESS_DEAD_AND_QUEUE_EMPTY"
 """Sentinel value."""
 
 
-def _poll_for_event(process, event_queue):
+def _poll_for_event(
+    process, event_queue
+) -> Optional[Union["DagsterEvent", Literal["PROCESS_DEAD_AND_QUEUE_EMPTY"]]]:
     try:
         return event_queue.get(block=True, timeout=TICK)
     except queue.Empty:
@@ -112,13 +116,12 @@ def _poll_for_event(process, event_queue):
                 # If the queue empty we know that there are no more events
                 # and that the process has died.
                 return PROCESS_DEAD_AND_QUEUE_EMPTY
-
     return None
 
 
 def execute_child_process_command(
     multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
-) -> Iterator["DagsterEvent"]:
+) -> Iterator[Optional[Union["DagsterEvent", ChildProcessEvent, BaseProcess]]]:
     """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by
@@ -129,12 +132,9 @@ def execute_child_process_command(
     executions in flight:
         * None - nothing has happened, yielded to enable cooperative multitasking other iterators
 
-        * ChildProcessEvent - Family of objects that communicates state changes in the child process
+        * multiprocessing.BaseProcess - the child process object.
 
-        * KeyboardInterrupt - Yielded in the case that an interrupt was recieved while
-            polling the child process. Yielded instead of raised to allow forwarding of the
-            interrupt to the child and completion of the iterator for this child and
-            any others that may be executing
+        * ChildProcessEvent - Family of objects that communicates state changes in the child process
 
         * The actual values yielded by the child process command
 
@@ -145,7 +145,6 @@ def execute_child_process_command(
     Warning: if the child process is in an infinite loop, this will
     also infinitely loop.
     """
-
     check.inst_param(command, "command", ChildProcessCommand)
 
     event_queue = multiprocessing_ctx.Queue()
@@ -154,6 +153,7 @@ def execute_child_process_command(
             target=_execute_command_in_child_process, args=(event_queue, command)
         )
         process.start()
+        yield process
 
         completed_properly = False
 
@@ -170,7 +170,7 @@ def execute_child_process_command(
 
         if not completed_properly:
             # TODO Figure out what to do about stderr/stdout
-            raise ChildProcessCrashException(exit_code=process.exitcode)
+            raise ChildProcessCrashException(pid=process.pid, exit_code=process.exitcode)
 
         process.join()
     finally:

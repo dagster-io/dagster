@@ -7,58 +7,9 @@ description: Contributions are welcome and are greatly appreciated. Here's the c
 
 We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
 
-## Environment Setup
+## Environment setup
 
-### Apple M1-specific setup
-
-If you have a Mac with an M1 chip, you will need to set up a separate environment to emulate an x86 architecture before following the remaining setup instructions. To find out if your Mac has an M1 chip, follow the instructions [here](https://www.howtogeek.com/706226/how-to-check-if-your-mac-is-using-an-intel-or-apple-silicon-processor/).
-
-If you don't have a Mac with an M1 chip, skip ahead to the next section - [Dagster development setup](#dagster-development-setup).
-
-1. Install rosetta. [About rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment).
-
-   ```bash
-   softwareupdate --install-rosetta --agree-to-license
-   ```
-
-2. Create a duplicate terminal that will default to running the rosetta x86 emulator. [Source stack overflow post](https://apple.stackexchange.com/questions/428768/on-apple-m1-with-rosetta-how-to-open-entire-terminal-iterm-in-x86-64-architec).
-
-   - Go to `Finder` > `Applications` and find your terminal app.
-   - Right click the app and duplicate it.
-   - Right click the new terminal > `Get Info` > `Enable Open using Rosetta`.
-   - Click to open the terminal, type `arch` to verify it says `i386` now.
-
-3. In your rosetta terminal, install `homebrew`.
-
-   ```bash
-   arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
-
-4. To ensure that the correct installation of `homebrew` is automatically used in your rosetta terminal, add the following snippet to your `~/.bashrc`, `~/.zshrc` or profile manager of choice.
-
-   ```bash
-   arch_name="$(uname -m)"
-
-   if [ "${arch_name}" = "x86_64" ]; then
-      echo "Running in x86 mode"
-      eval $(/usr/local/bin/brew shellenv)
-   elif [ "${arch_name}" = "arm64" ]; then
-      echo "Running in Arm mode"
-      eval $(/opt/homebrew/bin/brew shellenv)
-   else
-      echo "Unexpected uname -m result ${arch_name}"
-   fi
-
-   # brew libraries
-   export LDFLAGS="-L $(brew --prefix openssl)/lib"
-   export CFLAGS="-I $(brew --prefix openssl)/include"
-   ```
-
-After sourcing this file, you can ensure that the correct version of `homebrew` is being used by confirming the output of `which brew` is `/usr/local/bin/brew`.
-
-### Dagster development setup
-
-1. Install Python. Python 3.6 or above recommended, but our CI/CD pipeline currently tests against up-to-date patch versions of Python 3.6, 3.7 and 3.8.
+1. Install a version of Python that Dagster supports. <DagsterVersion />
 
 2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
 
@@ -76,9 +27,9 @@ After sourcing this file, you can ensure that the correct version of `homebrew` 
    and finally create and activate the virtualenev:
 
    ```bash
-   pyenv install 3.7.4
-   pyenv virtualenv 3.7.4 dagster37
-   pyenv activate dagster37
+   pyenv install 3.10.14
+   pyenv virtualenv 3.10.14 dagster310
+   pyenv activate dagster310
    ```
 
 3. Ensure that you have node installed by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
@@ -93,11 +44,13 @@ After sourcing this file, you can ensure that the correct version of `homebrew` 
    git clone git@github.com:dagster-io/dagster.git
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of rebuild_dagit) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
+5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker. This will take a few minutes. Note that certain sections of the makefile (sanity_check, which is part of `rebuild_ui`) require POSIX compliant shells and will fail on CMD and powershell -- if developing on windows, using something like WSL or git-bash is recommended. Note also that if this command fails while installing python packages, the problem might be resolved by ensuring you are running an up-to-date version of `pip` (upgrade with `pip install -U pip`).
 
    ```bash
    make dev_install
    ```
+
+   **Note for Macs with an Apple silicon chip**: Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines, run `make dev_install_m1_grpcio_wheel` instead of `make dev_install`.
 
 6. Run some tests manually to make sure things are working:
 
@@ -109,31 +62,30 @@ After sourcing this file, you can ensure that the correct version of `homebrew` 
 
 Some notes on developing in Dagster:
 
-- **Black/Pylint**: We use [black](https://github.com/python/black) to enforce a consistent code style, along with [pylint](https://www.pylint.org/). We test these in our CI/CD pipeline.
-  - You can run `make black` from the repo root to automatically format your files.
+- **Ruff/Pyright**: We use [ruff](https://github.com/charliermarsh/ruff) for formatting, linting and import sorting, and [pyright](https://github.com/microsoft/pyright) for static type-checking. We test these in our CI/CD pipeline.
+  - Run `make ruff` from the repo root to format, sort imports, and autofix some lint errors. It will also print out errors that need to be manually fixed.
+  - Run `make pyright` from the repo root to analyze the whole repo for type-correctness. Note that the first time you run this, it will take several minutes because a new virtualenv will be constructed.
 - **Line Width**: We use a line width of 100.
-- **Import ordering**: We use [isort](https://github.com/PyCQA/isort) to standardize the order of imports.
-  - You can run "make isort" from the repo root to automatically isort your files.
-- **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
+- **IDE**: We recommend setting up your IDE to format and check with ruff on save, but you can always run `make ruff` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
 
-## Developing Dagit
+## Developing the Dagster webserver/UI
 
-For development, run the Dagit GraphQL server on a different port than the webapp, with any pipeline. For example:
+For development, run an instance of the webserver providing GraphQL service on a different port than the webapp, with any pipeline. For example:
 
 ```bash
-cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/
-dagit -p 3333 -f complex_pipeline.py
+cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_ops/
+dagster-webserver -p 3333 -f complex_job.py
 ```
 
 Keep this running. Then, in another terminal, run the local development (autoreloading, etc.) version of the webapp:
 
 ```bash
-cd dagster/js_modules/dagit
+cd dagster/js_modules/dagster-ui
 make dev_webapp
 ```
 
-During development, you might find these commands useful. Run them from `dagster/js_modules/dagit`:
+During development, you might find these commands useful. Run them from `dagster/js_modules/dagster-ui`:
 
 - `yarn ts`: Typescript typechecking
 - `yarn lint`: Linting with autofix
@@ -142,6 +94,8 @@ During development, you might find these commands useful. Run them from `dagster
 To run all of them together, run `yarn test`.
 
 ## Developing Docs
+
+The [docs style checklist](https://github.com/dagster-io/dagster/blob/master/docs/DOC_CHECKLIST.md) includes a set of style guidelines to adhere to when adding or modifying docs.
 
 To run the Dagster documentation website locally, run the following commands:
 
@@ -166,7 +120,7 @@ In `.mdx` files, you'll see a code snippet with `python file=/path/to/file.py st
 
 <Image src="/images/community/md-code-block.png" width={1434} height={368} />
 
-You can find the corresponding Python file at `dagster/examples/docs_snippets/docs_snippets/concepts/asset/asset_dependenyy.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments.
+You can find the corresponding Python file at `dagster/examples/docs_snippets/docs_snippets/concepts/asset/asset_dependency.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments.
 
 <Image src="/images/community/py-code-block.png" width={736} height={496} />
 
@@ -174,14 +128,13 @@ To change the code snippet, update the `.py` file, then run the following from t
 
 ```bash
 make mdx-format
+```
 
 You can find more information about developing documentation in `docs/README.md`.
 
 ## Picking a Github Issue
 
-We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
-
-Then, you can work on the issue labeled as [`good second issue`](https://github.com/dagster-io/dagster/labels/good%20second%20issue) which is more like a medium task.
+We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aopen+is%3Aissue+label%3A%22type%3A+good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
 When you are ready for more of a challenge, you can tackle issues with the [most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc). We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest.
 
@@ -194,4 +147,3 @@ In the PR template, please describe the change, including the motivation/context
 A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved. Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in Github 🥳.
 
 Your PR is now merged into Dagster! We’ll shout out your contribution in the weekly release notes.
-```

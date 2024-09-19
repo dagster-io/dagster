@@ -21,7 +21,7 @@ class S3FakeSession:
         self.buckets = defaultdict(dict, buckets) if buckets else defaultdict(dict)
         self.mock_extras = mock.MagicMock()
 
-    def head_bucket(self, Bucket, *args, **kwargs):  # pylint: disable=unused-argument
+    def head_bucket(self, Bucket, *args, **kwargs):
         self.mock_extras.head_bucket(*args, **kwargs)
 
     def head_object(self, Bucket, Key, *args, **kwargs):
@@ -70,9 +70,9 @@ class S3FakeSession:
         with open(Filename, "rb") as fileobj:
             self.buckets[Bucket][Key] = fileobj.read()
 
-    def upload_fileobj(self, fileobj, bucket, key, *args, **kwargs):
+    def upload_fileobj(self, Fileobj, Bucket, Key, *args, **kwargs):
         self.mock_extras.upload_fileobj(*args, **kwargs)
-        self.buckets[bucket][key] = fileobj.read()
+        self.buckets[Bucket][Key] = Fileobj.read()
 
     def has_object(self, bucket, key):
         return bucket in self.buckets and key in self.buckets[bucket]

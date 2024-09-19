@@ -1,7 +1,6 @@
-"""
-This module contains serializable classes that contain all the meta information
+"""This module contains serializable classes that contain all the meta information
 in our definitions and type systems. The purpose is to be able to represent
-user-defined code artifacts (e.g. Pipelines Solids) in a serializable format
+user-defined code artifacts (e.g. jobs, ops) in a serializable format
 so that they can be persisted and manipulated in remote processes.
 
 This will have a number of uses, but the most immediately germane are:
@@ -10,7 +9,7 @@ This will have a number of uses, but the most immediately germane are:
 will enable, in the short term, for the user to be able to go to a historical
 run and view the meta information at that point in time.
 2) Access metadata about dagster artifiacts that are resident in an external
-process or container. For example, dagit uses these classes load and represent
+process or container. For example, dagster-webserver uses these classes to load and represent
 metadata from user repositories that reside in different processes.
 
 There are a few varietals of classes:
@@ -25,7 +24,7 @@ snapshot data for fast access.
 3) "Active Data". These classes are serializable but not meant to be persisted.
 For example we do not persist preset configuration blocks since config
 can contain sensitive information. However this information needs to be
-communicated between user repositories and host processes such as dagit.
+communicated between user repositories and host processes such as dagster-webserver.
 
 """
 
@@ -37,16 +36,17 @@ from dagster._config import (
     snap_from_config_type as snap_from_config_type,
     snap_from_field as snap_from_field,
 )
-
-from .config_types import build_config_schema_snapshot as build_config_schema_snapshot
-from .dagster_types import (
+from dagster._core.snap.config_types import (
+    build_config_schema_snapshot as build_config_schema_snapshot,
+)
+from dagster._core.snap.dagster_types import (
     build_dagster_type_namespace_snapshot as build_dagster_type_namespace_snapshot,
 )
-from .dep_snapshot import (
+from dagster._core.snap.dep_snapshot import (
     DependencyStructureIndex as DependencyStructureIndex,
-    SolidInvocationSnap as SolidInvocationSnap,
+    NodeInvocationSnap as NodeInvocationSnap,
 )
-from .execution_plan_snapshot import (
+from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot as ExecutionPlanSnapshot,
     ExecutionStepInputSnap as ExecutionStepInputSnap,
     ExecutionStepOutputSnap as ExecutionStepOutputSnap,
@@ -54,17 +54,17 @@ from .execution_plan_snapshot import (
     create_execution_plan_snapshot_id as create_execution_plan_snapshot_id,
     snapshot_from_execution_plan as snapshot_from_execution_plan,
 )
-from .mode import (
+from dagster._core.snap.job_snapshot import (
+    JobSnapshot as JobSnapshot,
+    create_job_snapshot_id as create_job_snapshot_id,
+)
+from dagster._core.snap.mode import (
     LoggerDefSnap as LoggerDefSnap,
     ModeDefSnap as ModeDefSnap,
     ResourceDefSnap as ResourceDefSnap,
 )
-from .pipeline_snapshot import (
-    PipelineSnapshot as PipelineSnapshot,
-    create_pipeline_snapshot_id as create_pipeline_snapshot_id,
-)
-from .solid import (
-    CompositeSolidDefSnap as CompositeSolidDefSnap,
-    SolidDefSnap as SolidDefSnap,
-    build_composite_solid_def_snap as build_composite_solid_def_snap,
+from dagster._core.snap.node import (
+    GraphDefSnap as GraphDefSnap,
+    OpDefSnap as OpDefSnap,
+    build_graph_def_snap as build_graph_def_snap,
 )

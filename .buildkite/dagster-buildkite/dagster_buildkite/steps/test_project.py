@@ -1,12 +1,14 @@
+import os
 from typing import List, Optional, Set
 
-from ..images.versions import (
+from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
+from dagster_buildkite.images.versions import (
     BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
     TEST_PROJECT_BASE_IMAGE_VERSION,
 )
-from ..python_version import AvailablePythonVersion
-from ..step_builder import CommandStepBuilder
-from ..utils import BuildkiteLeafStep, GroupStep
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.step_builder import CommandStepBuilder
+from dagster_buildkite.utils import BuildkiteLeafStep, GroupStep
 
 # Some python packages depend on these images but we don't explicitly define that dependency anywhere other
 # than when we construct said package's Buildkite steps. Until we more explicitly define those dependencies
@@ -25,7 +27,7 @@ build_test_project_for: Set[AvailablePythonVersion] = set()
 
 def build_test_project_steps() -> List[GroupStep]:
     """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
-    the dagster-k8s tests
+    the dagster-k8s tests.
     """
     steps: List[BuildkiteLeafStep] = []
 
@@ -41,12 +43,10 @@ def build_test_project_steps() -> List[GroupStep]:
             .run(
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-2 | sh",
-                'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
-                (
-                    "/scriptdir/aws.pex s3 cp"
-                    " s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json"
-                    " $${GOOGLE_APPLICATION_CREDENTIALS}"
-                ),
+                f'export GOOGLE_APPLICATION_CREDENTIALS="{GCP_CREDS_LOCAL_FILE}"',
+                "/scriptdir/aws.pex s3 cp"
+                f" s3://$${{BUILDKITE_SECRETS_BUCKET}}/{GCP_CREDS_FILENAME}"
+                " $${GOOGLE_APPLICATION_CREDENTIALS}",
                 "export"
                 " BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-base:py"
                 + version
@@ -56,6 +56,7 @@ def build_test_project_steps() -> List[GroupStep]:
                 "export"
                 " TEST_PROJECT_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project:$${BUILDKITE_BUILD_ID}-"
                 + version,
+                "git config --global --add safe.directory /workdir",
                 "./python_modules/dagster-test/dagster_test/test_project/build.sh "
                 + version
                 + " $${TEST_PROJECT_IMAGE}",
@@ -65,10 +66,8 @@ def build_test_project_steps() -> List[GroupStep]:
                 "docker push $${TEST_PROJECT_IMAGE}",
             )
             .on_python_image(
-                "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
-                    python_version=AvailablePythonVersion.V3_8,
-                    image_version=BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
-                ),
+                # py version can be bumped when rebuilt
+                f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_8}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
                 [
                     "AIRFLOW_HOME",
                     "AWS_ACCOUNT_ID",
@@ -95,8 +94,11 @@ def _test_project_step_key(version: AvailablePythonVersion) -> str:
 
 
 def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    build_test_project_for.add(version)
-    return [_test_project_step_key(version)]
+    if not os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        build_test_project_for.add(version)
+        return [_test_project_step_key(version)]
+    else:
+        return []
 
 
 def skip_if_version_not_needed(version: AvailablePythonVersion) -> Optional[str]:

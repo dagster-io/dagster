@@ -1,0 +1,11 @@
+## This rule finds non-allowed characters in headings
+## WHY? Headings don't need periods or formatting, ex: `@asset`
+
+extends: existence
+message: "Headings shouldn't have periods or other Markdown formatting"
+level: error
+scope: heading
+ignorecase: false
+nonword: true
+raw:
+  - '`|(?<=.)\.$'

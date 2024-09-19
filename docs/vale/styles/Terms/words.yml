@@ -1,0 +1,19 @@
+## This rule finds "bad" words and suggests an improved replacement.
+
+extends: substitution
+message: "Use '%s' instead of '%s'."
+level: warning
+ignorecase: false
+action:
+  name: replace
+swap:
+  check box: checkbox
+  click on: click|click in|click the
+  drop-down: dropdown
+  file name: filename
+  HTTPs: HTTPS
+  in order to: to
+  open-source: open source
+  regex: regular expression
+  sign into: sign in to
+  url: URL

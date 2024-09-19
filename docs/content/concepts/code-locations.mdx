@@ -22,7 +22,7 @@ description: "A code location is a collection of Dagster definitions loadable an
   />
 </center>
 
-A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, Dagit, and Dagster Cloud. A code location comprises:
+A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster+. A code location comprises:
 
 - A reference to a Python module that has an instance of <PyObject object="Definitions" /> in a top-level variable
 - A Python environment that can successfully load that module
@@ -33,9 +33,9 @@ A single deployment can have one or multiple code locations.
 
 Code locations are loaded in a different process and communicate with Dagster system processes over an RPC mechanism. This architecture provides several advantages:
 
-- When there is an update to user code, Dagit can pick up the change without a restart.
-- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of Dagit.
-- The Dagit process can run in a separate Python environment from user code so job dependencies don't need to be installed into the Dagit environment.
+- When there is an update to user code, the Dagster webserver/UI can pick up the change without a restart.
+- You can use multiple code locations to organize jobs, but still work on all of your code locations using a single instance of the webserver/UI.
+- The Dagster webserver process can run in a separate Python environment from user code so job dependencies don't need to be installed into the webserver environment.
 - Each code location can be sourced from a separate Python environment, so teams can manage their dependencies (or even their Python versions) separately.
 
 ---
@@ -53,98 +53,37 @@ Code locations are loaded in a different process and communicate with Dagster sy
 To define a code location, create a top-level variable that contains a <PyObject object="Definitions"/> object in a Python module. For example:
 
 ```python
-# my_file.py
+# definitions.py
 
 defs = Definitions(
     assets=[dbt_customers_asset, dbt_orders_asset],
     schedules=[bi_weekly_schedule],
     sensors=[new_data_sensor],
-    resources=dbt_resource
+    resources=[dbt_resource],
 )
 ```
 
-Definitions can be included in a Python file like `my_file.py` or a Python module. If using the latter, the <PyObject object="Definitions"/> object should be defined in the module's top-level `__init__.py` file.
+It is recommenced to include definitions in a Python file named `definitions.py`.
 
 ---
 
 ## Deploying and loading code locations
 
 - [Local development](#local-development)
-- [Cloud deployment](#cloud-deployment)
+- [Dagster+ deployment](#dagster-deployment)
 - [Open source deployment](#open-source-deployment)
 
 ### Local development
 
-<TabGroup>
-<TabItem name="From a file">
+<!-- Lives in /next/components/mdx/includes/dagster/DagsterDevTabs.mdx -->
 
-Dagit and other Dagster tools can load a file directly as a code location. In the following example, we used the `-f` argument to supply the name of the file to `dagit`:
+<DagsterDevTabs />
 
-```shell
-dagit -f my_file.py
-```
+Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info about local development, including how to configure your local instance.
 
-This command loads the definitions in `my_file.py` as a code location in the same Python environment where Dagit resides.
+### Dagster+ deployment
 
-You can also include multiple files at a time, which Dagit will load as individual code locations:
-
-```shell
-dagit -f my_file.py -f my_second_file.py
-```
-
----
-
-</TabItem>
-<TabItem name="From a module">
-
-Dagit and other Dagster tools can also load Python modules as code locations. When this approach is used, Dagster loads the definitions defined at the top-level of the module, in a variable containing the <PyObject object="Definitions" /> object of its root `__init__.py` file. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
-
-In the following example, we used the `-m` argument to supply the name of the module to Dagit:
-
-```shell
-dagit -m your_module_name
-```
-
-This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named module - defined as the root `__init__.py` file - in the same virtual environment as Dagit.
-
-**Note**: Before getting started, install dependencies as an editable install by running:
-
-```shell
-pip install -e path/to/your/module_name
-```
-
----
-
-</TabItem>
-<TabItem name="Without command line arguments">
-
-To load definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `module_name` variable:
-
-```shell
-[tool.dagster]
-module_name = "your_module_name"  ## name of project's Python module
-```
-
-When defined, you can run this in the same directory as the `pyproject.toml` file:
-
-```shell
-dagit
-```
-
-Instead of this:
-
-```shell
-dagit -m your_module_name
-```
-
----
-
-</TabItem>
-</TabGroup>
-
-### Cloud deployment
-
-The `dagster_cloud.yaml` file is used to create and deploy code locations for Cloud deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file or module:
+The [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file is used to create and deploy code locations for Dagster+ deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file or module:
 
 <TabGroup>
 <TabItem name="Using a Python file">
@@ -171,7 +110,7 @@ To load a code location from a Python module, use the `module_name` property in 
 locations:
   - location_name: my-code-location
     code_source:
-      module_name: my_module_name
+      module_name: my_module_name.definitions
 ```
 
 </TabItem>
@@ -179,7 +118,7 @@ locations:
 
 ### Open source deployment
 
-The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. Refer to the [Open source deployment guides](/deployment/guides) for more info.
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. Refer to the [Workspace files page](/concepts/code-locations/workspace-files) for more info.
 
 ---
 

@@ -1,10 +1,11 @@
-"""add column "mode"
+"""add column "mode".
 
 Revision ID: 45fa602c43dc
 Revises: 3b529ad30626
 Create Date: 2021-07-06 14:04:04.808944
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
@@ -14,8 +15,6 @@ revision = "45fa602c43dc"
 down_revision = "3b529ad30626"
 branch_labels = None
 depends_on = None
-
-# pylint: disable=no-member
 
 
 def upgrade():

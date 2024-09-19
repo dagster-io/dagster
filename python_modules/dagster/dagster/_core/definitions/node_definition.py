@@ -8,29 +8,27 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Union,
 )
 
 import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._utils import frozendict, frozenlist
-
-from .hook_definition import HookDefinition
-from .utils import check_valid_name, validate_tags
+from dagster._core.definitions.utils import NormalizedTags, check_valid_name, normalize_tags
+from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_layer import AssetLayer
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+    from dagster._core.definitions.input import InputDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
+    from dagster._core.definitions.output import OutputDefinition
     from dagster._core.types.dagster_type import DagsterType
 
-    from .asset_layer import AssetLayer
-    from .composition import PendingNodeInvocation
-    from .dependency import NodeHandle
-    from .graph_definition import GraphDefinition
-    from .input import InputDefinition
-    from .op_definition import OpDefinition
-    from .output import OutputDefinition
 
-
-# base class for SolidDefinition and GraphDefinition
+# base class for OpDefinition and GraphDefinition
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
     _name: str
@@ -48,17 +46,17 @@ class NodeDefinition(NamedConfigurableDefinition):
         input_defs: Sequence["InputDefinition"],
         output_defs: Sequence["OutputDefinition"],
         description: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         positional_inputs: Optional[Sequence[str]] = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
-        self._tags = validate_tags(tags)
-        self._input_defs = frozenlist(input_defs)
-        self._input_dict = frozendict({input_def.name: input_def for input_def in input_defs})
+        self._tags = normalize_tags(tags).tags
+        self._input_defs = input_defs
+        self._input_dict = {input_def.name: input_def for input_def in input_defs}
         check.invariant(len(self._input_defs) == len(self._input_dict), "Duplicate input def names")
-        self._output_defs = frozenlist(output_defs)
-        self._output_dict = frozendict({output_def.name: output_def for output_def in output_defs})
+        self._output_defs = output_defs
+        self._output_dict = {output_def.name: output_def for output_def in output_defs}
         check.invariant(
             len(self._output_defs) == len(self._output_dict), "Duplicate output def names"
         )
@@ -71,17 +69,14 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @property
     @abstractmethod
-    def node_type_str(self) -> str:
-        ...
+    def node_type_str(self) -> str: ...
 
     @property
     @abstractmethod
-    def is_graph_job_op_node(self) -> bool:
-        ...
+    def is_graph_job_op_node(self) -> bool: ...
 
     @abstractmethod
-    def all_dagster_types(self) -> Iterable["DagsterType"]:
-        ...
+    def all_dagster_types(self) -> Iterable["DagsterType"]: ...
 
     @property
     def name(self) -> str:
@@ -149,39 +144,42 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     def output_def_named(self, name: str) -> "OutputDefinition":
         check.str_param(name, "name")
+        if name not in self._output_dict:
+            raise DagsterInvariantViolationError(f"{self._name} has no output named {name}.")
         return self._output_dict[name]
 
     @abstractmethod
-    def iterate_node_defs(self) -> Iterable["NodeDefinition"]:
-        ...
+    def iterate_node_defs(self) -> Iterable["NodeDefinition"]: ...
 
     @abstractmethod
-    def iterate_solid_defs(self) -> Iterable["OpDefinition"]:
-        ...
+    def iterate_op_defs(self) -> Iterable["OpDefinition"]: ...
 
     @abstractmethod
     def resolve_output_to_origin(
         self,
         output_name: str,
         handle: Optional["NodeHandle"],
-    ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]:
-        ...
+    ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]: ...
 
     @abstractmethod
-    def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
-        ...
+    def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition": ...
 
     @abstractmethod
-    def input_has_default(self, input_name: str) -> bool:
-        ...
+    def resolve_input_to_destinations(
+        self, input_handle: "NodeInputHandle"
+    ) -> Sequence["NodeInputHandle"]:
+        """Recursively follow input mappings to find all op inputs that correspond to the given input
+        to this graph.
+        """
 
     @abstractmethod
-    def default_value_for_input(self, input_name: str) -> object:
-        ...
+    def input_has_default(self, input_name: str) -> bool: ...
 
     @abstractmethod
-    def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
-        ...
+    def default_value_for_input(self, input_name: str) -> object: ...
+
+    @abstractmethod
+    def input_supports_dynamic_output_dep(self, input_name: str) -> bool: ...
 
     def all_input_output_types(self) -> Iterator["DagsterType"]:
         for input_def in self._input_defs:
@@ -192,83 +190,53 @@ class NodeDefinition(NamedConfigurableDefinition):
             yield output_def.dagster_type
             yield from output_def.dagster_type.inner_types
 
-    def __call__(self, *args: object, **kwargs: object) -> object:
-        from .composition import PendingNodeInvocation
+    def get_pending_invocation(
+        self,
+        given_alias: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+    ) -> "PendingNodeInvocation":
+        from dagster._core.definitions.composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
             node_def=self,
-            given_alias=None,
-            tags=None,
-            hook_defs=None,
-            retry_policy=None,
-        )(*args, **kwargs)
-
-    def alias(self, name: str) -> "PendingNodeInvocation":
-        from .composition import PendingNodeInvocation
-
-        check.str_param(name, "name")
-
-        return PendingNodeInvocation(
-            node_def=self,
-            given_alias=name,
-            tags=None,
-            hook_defs=None,
-            retry_policy=None,
-        )
-
-    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
-        from .composition import PendingNodeInvocation
-
-        return PendingNodeInvocation(
-            node_def=self,
-            given_alias=None,
-            tags=validate_tags(tags),
-            hook_defs=None,
-            retry_policy=None,
-        )
-
-    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
-        from .composition import PendingNodeInvocation
-
-        hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
-
-        return PendingNodeInvocation(
-            node_def=self,
-            given_alias=None,
-            tags=None,
+            given_alias=given_alias,
+            tags=normalize_tags(tags).tags if tags else None,
             hook_defs=hook_defs,
-            retry_policy=None,
-        )
-
-    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
-        from .composition import PendingNodeInvocation
-
-        return PendingNodeInvocation(
-            node_def=self,
-            given_alias=None,
-            tags=None,
-            hook_defs=None,
             retry_policy=retry_policy,
         )
 
-    def ensure_graph_def(self) -> "GraphDefinition":
-        from .graph_definition import GraphDefinition
+    def __call__(self, *args: object, **kwargs: object) -> object:
+        return self.get_pending_invocation()(*args, **kwargs)
 
-        if isinstance(self, GraphDefinition):
-            return self
+    def alias(self, name: str) -> "PendingNodeInvocation":
+        return self.get_pending_invocation(given_alias=name)
 
-        check.failed(f"{self.name} is not a GraphDefinition")
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+        return self.get_pending_invocation(tags=tags)
 
-    def ensure_op_def(self) -> "OpDefinition":
-        from .op_definition import OpDefinition
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
+        return self.get_pending_invocation(hook_defs=hook_defs)
 
-        if isinstance(self, OpDefinition):
-            return self
-
-        check.failed(f"{self.name} is not an OpDefinition")
+    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        return self.get_pending_invocation(retry_policy=retry_policy)
 
     @abstractmethod
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional["NodeHandle"] = None
-    ) -> Sequence["InputDefinition"]:
-        ...
+    ) -> Sequence["InputDefinition"]: ...
+
+    @abstractmethod
+    def resolve_output_to_destinations(
+        self, output_name: str, handle: Optional["NodeHandle"]
+    ) -> Sequence["NodeInputHandle"]: ...
+
+    @abstractmethod
+    def get_op_handles(self, parent: "NodeHandle") -> AbstractSet["NodeHandle"]: ...
+
+    @abstractmethod
+    def get_op_output_handles(
+        self, parent: Optional["NodeHandle"]
+    ) -> AbstractSet["NodeOutputHandle"]: ...

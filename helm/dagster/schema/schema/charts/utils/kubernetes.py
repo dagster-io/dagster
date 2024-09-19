@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra
 
-from .utils import (
+from schema.charts.utils.utils import (
     BaseModel as BaseModelWithNullableRequiredFields,
     create_definition_ref,
 )
@@ -156,3 +156,13 @@ class Volume(BaseModel):
 class ResourceRequirements(BaseModel):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")}
+
+
+class EnvVar(BaseModel):
+    class Config:
+        schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.EnvVar")}
+
+
+class Container(BaseModel):
+    class Config:
+        schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Container")}

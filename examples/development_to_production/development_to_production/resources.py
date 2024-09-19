@@ -5,32 +5,24 @@ import requests
 
 
 class HNClient(ABC):
-    """
-    Base class for a Hacker News Client
-    """
+    """Base class for a Hacker News Client."""
 
     @abstractmethod
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
-        ...
+    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]: ...
 
     @abstractmethod
-    def fetch_max_item_id(self) -> int:
-        ...
+    def fetch_max_item_id(self) -> int: ...
 
     @property
     @abstractmethod
-    def item_field_names(self) -> Sequence[str]:
-        ...
+    def item_field_names(self) -> Sequence[str]: ...
 
 
 class HNAPIClient(HNClient):
-    """
-    Hacker News client that fetches live data
-    """
+    """Hacker News client that fetches live data."""
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         """Fetches a single item from the Hacker News API by item id."""
-
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         item = requests.get(item_url, timeout=5).json()
         return item
@@ -56,9 +48,7 @@ class HNAPIClient(HNClient):
 
 
 class StubHNClient(HNClient):
-    """
-    Hacker News Client that returns fake data
-    """
+    """Hacker News Client that returns fake data."""
 
     def __init__(self):
         self.data = {

@@ -22,6 +22,14 @@ Users should be prompted to manually run migrations using `dagster instance migr
 
 For schema migrations, we test migration behavior in sqlite / postgres / mysql.
 
+For all backcompat schema migrations, the back compat tests should have the following structure:
+
+1. Load an instance from a DB snapshot
+1. Assert that the migrations have not been run
+1. Test the affected storage methods using the pre-migrated snapshot, if the functionality existed pre-migration
+1. Run the migration
+1. Test the affected storage methods post-migration
+
 ### sqlite
 
 Migration tests for sqlite can be found here: `python_modules/dagster/dagster_tests/general_tests/compat_tests/test_back_compat.py`
@@ -31,7 +39,7 @@ To add a new back-compat test for sqlite, follow the following steps:
 1. Switch code branches to master or some revision before you’ve added the schema change.
 1. Change your dagster.yaml to use the default sqlite implementation for run/event_log storage.
 1. Make sure your configured storage directory (e.g. $DAGSTER_HOME/history) is wiped
-1. Start dagit and execute a pipeline run, to ensure that both the run db and per-run event_log dbs are created.
+1. Start dagster-webserver and execute a run, to ensure that both the run db and per-run event_log dbs are created.
 1. Copy the runs.db and all per-run event log dbs to the back compat test directory:
    - `mkdir -p python_modules/dagster/dagster_tests/general_tests/compat_tests/<my_schema_change>/sqlite/history`
    - `cp $DAGSTER_HOME/history/runs.db\* python_modules/dagster/dagster_tests/general_tests/compat_tests/<my_schema_change>/sqlite/history/`
@@ -64,7 +72,7 @@ To add a new back-compat test for postgres, follow the following steps:
        postgres_url: "postgresql://test:test@localhost:5432/test"
    ```
 1. Wipe, if you haven’t already dagster run wipe
-1. Start dagit and execute a pipeline run, to ensure that both the run db and per-run event_log dbs are created.
+1. Start dagster-webserver and execute a run, to ensure that both the run db and per-run event_log dbs are created.
 1. Create a pg dump file
    - `mkdir python_modules/libraries/dagster-postgres/dagster_postgres_tests/compat_tests/<my_schema_change>/postgres`
    - `pg_dump test > python_modules/libraries/dagster-postgres/dagster_postgres_tests/compat_tests/<my_schema_change>/postgres/pg_dump.txt`
@@ -97,7 +105,7 @@ To add a new back-compat test for mysql, follow the following steps:
        mysql_url: "mysql+mysqlconnector://test:test@localhost:3306/test"
    ```
 3. Wipe, if you haven’t already dagster run wipe
-4. Start dagit and execute a pipeline run, to ensure that both the run db and per-run event_log dbs are created.
+4. Start dagster-webserver and execute a run, to ensure that both the run db and per-run event_log dbs are created.
 5. Create a mysql dump file
    - `mkdir python_modules/libraries/dagster-mysql/dagster_mysql_tests/compat_tests/<my_schema_change>/mysql`
    - `mysqldump test > python_modules/libraries/dagster-mysql/dagster_mysql_tests/compat_tests/<my_schema_change>/mysql/mysql_dump.sql -p`

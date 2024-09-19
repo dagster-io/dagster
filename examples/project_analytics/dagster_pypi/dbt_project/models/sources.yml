@@ -1,0 +1,6 @@
+version: 2
+sources:
+  - name: "dagster_pypi"
+    tables:
+      - name: github_stars
+      - name: pypi_downloads

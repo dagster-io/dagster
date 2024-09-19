@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Any, Generator, Mapping
 
 from dagster import (
     AssetMaterialization,
@@ -15,7 +15,7 @@ from dagster import (
 )
 from dagster._core.types.dagster_type import PythonObjectDagsterType
 
-from .file_manager import S3FileHandle
+from dagster_aws.s3.file_manager import S3FileHandle
 
 
 def dict_with_fields(name: str, fields: Mapping[str, object]):
@@ -66,12 +66,15 @@ def last_key(key: str) -> str:
     description="""Take a file handle and upload it to s3. Returns an S3FileHandle.""",
     required_resource_keys={"s3", "file_manager"},
 )
-def file_handle_to_s3(context, file_handle):
-    bucket = context.solid_config["Bucket"]
-    key = context.solid_config["Key"]
+def file_handle_to_s3(context, file_handle) -> Generator[Any, None, None]:
+    bucket = context.op_config["Bucket"]
+    key = context.op_config["Key"]
 
-    with context.resources.file_manager.read(file_handle, "rb") as fileobj:
-        context.resources.s3.upload_fileobj(fileobj, bucket, key)
+    file_manager = context.resources.file_manager
+    s3 = context.resources.s3
+
+    with file_manager.read(file_handle, "rb") as fileobj:
+        s3.upload_fileobj(fileobj, bucket, key)
         s3_file_handle = S3FileHandle(bucket, key)
 
         yield AssetMaterialization(

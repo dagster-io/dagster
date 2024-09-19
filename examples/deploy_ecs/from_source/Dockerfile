@@ -1,5 +1,5 @@
 # Dagster
-FROM python:3.7-slim as dagster
+FROM python:3.10-slim as dagster
 
 COPY ./python_modules/ /tmp/python_modules/
 
@@ -18,30 +18,32 @@ WORKDIR /tmp
 #   PostgresRunStorage, and PostgresScheduleStorage
 RUN pip install \
   -e python_modules/dagster \
+  -e python_modules/dagster-pipes \
   -e python_modules/libraries/dagster-aws \
   -e python_modules/libraries/dagster-postgres
 
-RUN ! pip list --exclude-editable | grep -e dagster -e dagit
+RUN ! pip list --exclude-editable | grep -e dagster
 
 WORKDIR $DAGSTER_HOME
 
-# Dagit
-FROM dagster as dagit
+# Webserver
+FROM dagster as webserver
 
 WORKDIR /tmp
 
 RUN pip install \
-  -e python_modules/dagit \
+  -e python_modules/dagster-webserver \
   -e python_modules/dagster-graphql \
-  -e python_modules/dagster
+  -e python_modules/dagster \
+  -e python_modules/dagster-pipes
 
-RUN ! pip list --exclude-editable | grep -e dagster -e dagit
+RUN ! pip list --exclude-editable | grep -e dagster
 
 WORKDIR $DAGSTER_HOME
 
 # User Code gRPC Server
-# You can either include all of your repositories in this
-# stage or you can create multiple stages that each use
-# the same base - one for each repository.
+# You can include only one set of definitions
+# per code location. Consider adding more code locations
+# if you require multiple sets of definition.
 FROM dagster as user_code
-COPY repo.py $DAGSTER_HOME
+COPY defs.py $DAGSTER_HOME

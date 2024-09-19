@@ -46,7 +46,7 @@ def combined_data_size(partition_date):
 
 
 class IntentionalRandomFailure(Exception):
-    """To distinguish from other errors"""
+    """To distinguish from other errors."""
 
 
 def make_op(

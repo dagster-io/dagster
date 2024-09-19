@@ -1,5 +1,6 @@
 # start_multi_partitions_marker
 from dagster import (
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -15,8 +16,9 @@ from dagster import (
         }
     )
 )
-def multi_partitions_asset(context):
-    context.log.info(context.partition_key.keys_by_dimension)
+def multi_partitions_asset(context: AssetExecutionContext):
+    if isinstance(context.partition_key, MultiPartitionKey):
+        context.log.info(context.partition_key.keys_by_dimension)
 
 
 # end_multi_partitions_marker

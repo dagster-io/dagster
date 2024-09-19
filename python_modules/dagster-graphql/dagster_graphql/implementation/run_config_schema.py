@@ -1,45 +1,54 @@
+from typing import TYPE_CHECKING, Mapping, Optional
+
 import dagster._check as check
 from dagster._config import validate_config_from_snap
-from dagster._core.host_representation import RepresentedPipeline
-from graphene import ResolveInfo
+from dagster._core.remote_representation import RepresentedJob
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 
-from .external import get_external_pipeline_or_raise
-from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
+from dagster_graphql.implementation.external import get_external_job_or_raise
+from dagster_graphql.implementation.utils import JobSubsetSelector, UserFacingGraphQLError
+from dagster_graphql.schema.errors import GrapheneModeNotFoundError
+from dagster_graphql.schema.util import ResolveInfo
+
+if TYPE_CHECKING:
+    from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
+    from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 
 
-@capture_error
-def resolve_run_config_schema_or_error(graphene_info, selector, mode):
-    from ..schema.errors import GrapheneModeNotFoundError
-    from ..schema.run_config import GrapheneRunConfigSchema
+def resolve_run_config_schema_or_error(
+    graphene_info: ResolveInfo, selector: JobSubsetSelector, mode: Optional[str] = None
+) -> "GrapheneRunConfigSchema":
+    from dagster_graphql.schema.run_config import GrapheneRunConfigSchema
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
+    # Mode has been eliminated from the definitions layer, so we perform a "shallow" check for
+    # invalid mode. This is temporary and will be removed when the GQL API transitions to
+    # job/op/graph.
+    if mode and mode != DEFAULT_MODE_NAME:
+        return GrapheneModeNotFoundError(selector=selector, mode=mode)
 
-    if mode is None:
-        mode = external_pipeline.get_default_mode_name()
-
-    if not external_pipeline.has_mode(mode):
-        raise UserFacingGraphQLError(GrapheneModeNotFoundError(mode=mode, selector=selector))
+    external_job = get_external_job_or_raise(graphene_info, selector)
 
     return GrapheneRunConfigSchema(
-        represented_pipeline=external_pipeline,
-        mode=mode,
+        represented_job=external_job,
+        mode=DEFAULT_MODE_NAME,
     )
 
 
-@capture_error
-def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_config):
-    from ..schema.pipelines.config import (
+def resolve_is_run_config_valid(
+    graphene_info: ResolveInfo,
+    represented_pipeline: RepresentedJob,
+    mode: str,
+    run_config: Mapping[str, object],
+) -> "GraphenePipelineConfigValidationValid":
+    from dagster_graphql.schema.pipelines.config import (
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationValid,
         GrapheneRunConfigValidationInvalid,
     )
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.str_param(mode, "mode")
     check.dict_param(run_config, "run_config", key_type=str)
 
@@ -54,6 +63,7 @@ def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_c
     )
 
     if not validated_config.success:
+        errors = check.not_none(validated_config.errors)
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid(
                 pipeline_name=represented_pipeline.name,
@@ -62,7 +72,7 @@ def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_c
                         represented_pipeline.config_schema_snapshot,
                         err,
                     )
-                    for err in validated_config.errors
+                    for err in errors
                 ],
             )
         )

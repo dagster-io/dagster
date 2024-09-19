@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from unittest import mock
 
-from .utils import ResourceNotFoundError
+from dagster_azure.blob.utils import ResourceNotFoundError
 
 
 class FakeBlobServiceClient:
@@ -139,7 +139,7 @@ class FakeBlobClient:
         return ":memory:"
 
     @contextmanager
-    def acquire_lease(self, lease_duration=-1):  # pylint: disable=unused-argument
+    def acquire_lease(self, lease_duration=-1):
         if self.lease is None:
             self.lease = random.randint(0, 2**9)
             try:

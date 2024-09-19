@@ -1,16 +1,15 @@
-"""0.11.0 db.Text to MySQLCompatabilityTypes.UniqueText for MySQL Support
+"""0.11.0 db.Text to MySQLCompatabilityTypes.UniqueText for MySQL Support.
 
 Revision ID: 3778078a3582
 Revises: 6e1f65d78b92
 Create Date: 2021-03-11 14:59:25.755063
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 from dagster._core.storage.migration.utils import has_table
 from dagster._core.storage.sql import MySQLCompatabilityTypes
-
-# pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
 revision = "3778078a3582"

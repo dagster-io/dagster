@@ -6,7 +6,7 @@ from dagster import (
 from dagster._utils.merger import merge_dicts
 from docker_image import reference
 
-from .container_context import DOCKER_CONTAINER_CONTEXT_SCHEMA
+from dagster_docker.container_context import DOCKER_CONTAINER_CONTEXT_SCHEMA
 
 DOCKER_CONFIG_SCHEMA = merge_dicts(
     {
@@ -55,8 +55,4 @@ def validate_docker_image(docker_image):
         # validate that the docker image name is valid
         reference.Reference.parse(docker_image)
     except Exception as e:
-        raise Exception(
-            "Docker image name {docker_image} is not correctly formatted".format(
-                docker_image=docker_image
-            )
-        ) from e
+        raise Exception(f"Docker image name {docker_image} is not correctly formatted") from e

@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import random
 
 from dagster import AssetIn, MetadataValue, Output, asset
@@ -10,9 +9,7 @@ from .user_story_matrix import IndexedCooMatrix
 
 @asset(key_prefix=["s3", "recommender"])
 def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSVD]:
-    """
-    An SVD model for collaborative filtering-based recommendation.
-    """
+    """An SVD model for collaborative filtering-based recommendation."""
     n_components = min(random.randint(90, 110), len(user_story_matrix.col_index) - 1)
     svd = TruncatedSVD(n_components=n_components)
     svd.fit(user_story_matrix.matrix)
@@ -38,8 +35,7 @@ def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSV
 def component_top_stories(
     recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame
 ) -> Output[DataFrame]:
-    """
-    For each component in the collaborative filtering model, the titles of the top stories
+    """For each component in the collaborative filtering model, the titles of the top stories
     it's associated with.
     """
     n_stories = 10

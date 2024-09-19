@@ -1,5 +1,3 @@
-# pylint: disable=protected-access
-
 import multiprocessing
 from os import path
 
@@ -23,9 +21,10 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterUnmetExecutorRequirementsError,
 )
-from dagster._core.events import DagsterEventType
+from dagster._core.events import DagsterEventType, RunFailureReason
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multiprocess import MultiprocessExecutor
+from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG
 from dagster._core.test_utils import environ, instance_for_test
 
 
@@ -38,9 +37,9 @@ def get_job_for_executor(executor_def, execution_config=None):
 
     @job(
         name="testing_job",
-        executor_def=executor_def.configured(execution_config)
-        if execution_config
-        else executor_def,
+        executor_def=(
+            executor_def.configured(execution_config) if execution_config else executor_def
+        ),
     )
     def the_job():
         a_op()
@@ -270,6 +269,9 @@ def test_failing_executor_initialization():
         assert len(event_records) == 1
         assert event_records[0].dagster_event_type == DagsterEventType.RUN_FAILURE
 
+        run = instance.get_run_by_id(result.run_id)
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.JOB_INITIALIZATION_FAILURE.value
+
 
 def test_multiprocess_executor_default():
     executor = MultiprocessExecutor(
@@ -277,16 +279,14 @@ def test_multiprocess_executor_default():
         retries=RetryMode.DISABLED,
     )
 
-    assert executor._max_concurrent == 2  # pylint: disable=protected-access
+    assert executor._max_concurrent == 2  # noqa: SLF001
 
     executor = MultiprocessExecutor(
         max_concurrent=0,
         retries=RetryMode.DISABLED,
     )
 
-    assert (
-        executor._max_concurrent == multiprocessing.cpu_count()  # pylint: disable=protected-access
-    )
+    assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001
 
     with environ({"DAGSTER_MULTIPROCESS_EXECUTOR_MAX_CONCURRENT": "12345"}):
         executor = MultiprocessExecutor(
@@ -294,7 +294,7 @@ def test_multiprocess_executor_default():
             retries=RetryMode.DISABLED,
         )
 
-        assert executor._max_concurrent == 12345  # pylint: disable=protected-access
+        assert executor._max_concurrent == 12345  # noqa: SLF001
 
 
 def test_multiprocess_executor_config():
@@ -309,6 +309,30 @@ def test_multiprocess_executor_config():
             "tag_concurrency_limits": tag_concurrency_limits,
         }
     )
-    assert executor._retries == RetryMode.DISABLED
-    assert executor._max_concurrent == 2
-    assert executor._tag_concurrency_limits == tag_concurrency_limits
+    assert executor._retries == RetryMode.DISABLED  # noqa: SLF001
+    assert executor._max_concurrent == 2  # noqa: SLF001
+    assert executor._tag_concurrency_limits == tag_concurrency_limits  # noqa: SLF001
+
+
+def test_multiprocess_executor_config_none_is_sentinel() -> None:
+    executor = _core_multiprocess_executor_creation(
+        {
+            "retries": {
+                "disabled": {},
+            },
+            "max_concurrent": None,
+        }
+    )
+    assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001
+
+
+def test_multiprocess_executor_config_zero_is_sentinel() -> None:
+    executor = _core_multiprocess_executor_creation(
+        {
+            "retries": {
+                "disabled": {},
+            },
+            "max_concurrent": 0,
+        }
+    )
+    assert executor._max_concurrent == multiprocessing.cpu_count()  # noqa: SLF001

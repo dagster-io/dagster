@@ -1,0 +1,7 @@
+variables:
+  # highlight-start
+  DISABLE_FAST_DEPLOYS: 'true'
+  # highlight-end
+  DAGSTER_CLOUD_URL: $DAGSTER_CLOUD_URL
+  DAGSTER_CLOUD_API_TOKEN: $DAGSTER_CLOUD_API_TOKEN
+  PYTHON_VERSION: '3.8'

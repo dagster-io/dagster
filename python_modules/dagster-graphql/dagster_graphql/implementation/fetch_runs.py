@@ -1,104 +1,127 @@
+import datetime
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._config import validate_config
-from dagster._core.definitions import create_run_config_schema
-from dagster._core.errors import DagsterRunNotFoundError
-from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
-from dagster._core.host_representation import PipelineSelector
-from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
-from dagster._core.storage.tags import TagType, get_tag_type
-from dagster._legacy import DagsterRunStatus, PipelineDefinition
-from graphene import ResolveInfo
+from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
+from dagster._core.execution.backfill import BulkActionsFilter
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
+from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.storage.tags import BACKFILL_ID_TAG, TagType, get_tag_type
+from dagster._record import record
+from dagster._time import datetime_from_timestamp
 
-from .external import ensure_valid_config, get_external_pipeline_or_raise
-from .utils import UserFacingGraphQLError, capture_error
+from dagster_graphql.implementation.external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
-    from ..schema.asset_graph import GrapheneAssetNode
+    from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.execution import GrapheneExecutionPlan
+    from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+    from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
+    from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
+    from dagster_graphql.schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
+    from dagster_graphql.schema.util import ResolveInfo
 
 
-def is_config_valid(pipeline_def, run_config, mode):
-    check.str_param(mode, "mode")
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-
-    run_config_schema = create_run_config_schema(pipeline_def, mode)
-    validated_config = validate_config(run_config_schema.config_type, run_config)
-    return validated_config.success
+_DELIMITER = "::"
 
 
-def get_validated_config(pipeline_def, run_config, mode):
-    from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
+async def gen_run_by_id(
+    graphene_info: "ResolveInfo", run_id: str
+) -> Union["GrapheneRun", "GrapheneRunNotFoundError"]:
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-    check.str_param(mode, "mode")
-    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-
-    run_config_schema = create_run_config_schema(pipeline_def, mode)
-
-    validated_config = validate_config(run_config_schema.config_type, run_config)
-
-    if not validated_config.success:
-        raise UserFacingGraphQLError(
-            GrapheneRunConfigValidationInvalid.for_validation_errors(
-                pipeline_def.get_external_pipeline(), validated_config.errors
-            )
-        )
-
-    return validated_config
-
-
-def get_run_by_id(graphene_info, run_id):
-    from ..schema.errors import GrapheneRunNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneRun
-
-    instance = graphene_info.context.instance
-    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
-    if not records:
+    record = await RunRecord.gen(graphene_info.context, run_id)
+    if not record:
         return GrapheneRunNotFoundError(run_id)
     else:
-        return GrapheneRun(records[0])
+        return GrapheneRun(record)
 
 
-def get_run_tags(graphene_info):
-    from ..schema.tags import GraphenePipelineTagAndValues
+def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
+    from dagster_graphql.schema.runs import GrapheneRunTagKeys
+
+    return GrapheneRunTagKeys(
+        keys=[
+            tag_key
+            for tag_key in graphene_info.context.instance.get_run_tag_keys()
+            if get_tag_type(tag_key) != TagType.HIDDEN
+        ]
+    )
+
+
+def get_run_tags(
+    graphene_info: "ResolveInfo",
+    tag_keys: List[str],
+    value_prefix: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> "GrapheneRunTags":
+    from dagster_graphql.schema.runs import GrapheneRunTags
+    from dagster_graphql.schema.tags import GraphenePipelineTagAndValues
 
     instance = graphene_info.context.instance
-    return [
-        GraphenePipelineTagAndValues(key=key, values=values)
-        for key, values in instance.get_run_tags()
-        if get_tag_type(key) != TagType.HIDDEN
-    ]
+    return GrapheneRunTags(
+        tags=[
+            GraphenePipelineTagAndValues(key=key, values=values)
+            for key, values in instance.get_run_tags(
+                tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
+            )
+            if get_tag_type(key) != TagType.HIDDEN
+        ]
+    )
 
 
-@capture_error
-def get_run_group(graphene_info, run_id):
-    from ..schema.errors import GrapheneRunGroupNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneRun
-    from ..schema.runs import GrapheneRunGroup
+def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
+    from dagster_graphql.schema.errors import GrapheneRunGroupNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.runs import GrapheneRunGroup
 
     instance = graphene_info.context.instance
     try:
         result = instance.get_run_group(run_id)
+        if result is None:
+            return GrapheneRunGroupNotFoundError(run_id)
     except DagsterRunNotFoundError:
         return GrapheneRunGroupNotFoundError(run_id)
     root_run_id, run_group = result
     run_group_run_ids = [run.run_id for run in run_group]
     records_by_id = {
-        record.pipeline_run.run_id: record
+        record.dagster_run.run_id: record
         for record in instance.get_run_records(RunsFilter(run_ids=run_group_run_ids))
     }
     return GrapheneRunGroup(
         root_run_id=root_run_id,
-        runs=[GrapheneRun(records_by_id.get(run_id)) for run_id in run_group_run_ids],
+        runs=[GrapheneRun(records_by_id[run_id]) for run_id in run_group_run_ids],
     )
 
 
-def get_runs(graphene_info, filters, cursor=None, limit=None):
-    from ..schema.pipelines.pipeline import GrapheneRun
+def get_runs(
+    graphene_info: "ResolveInfo",
+    filters: Optional[RunsFilter],
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> Sequence["GrapheneRun"]:
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
     check.opt_inst_param(filters, "filters", RunsFilter)
     check.opt_str_param(cursor, "cursor")
@@ -110,6 +133,21 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
         GrapheneRun(record)
         for record in instance.get_run_records(filters=filters, cursor=cursor, limit=limit)
     ]
+
+
+def get_run_ids(
+    graphene_info: "ResolveInfo",
+    filters: Optional[RunsFilter],
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> Sequence[str]:
+    check.opt_inst_param(filters, "filters", RunsFilter)
+    check.opt_str_param(cursor, "cursor")
+    check.opt_int_param(limit, "limit")
+
+    instance = graphene_info.context.instance
+
+    return instance.get_run_ids(filters=filters, cursor=cursor, limit=limit)
 
 
 PENDING_STATUSES = [
@@ -126,209 +164,179 @@ IN_PROGRESS_STATUSES = [
 ]
 
 
-def add_all_upstream_keys(
-    all_asset_nodes: Mapping[AssetKey, "GrapheneAssetNode"],
-    requested_asset_keys: KeysView[AssetKey],
-):
-    required: Dict[AssetKey, bool] = {}
-
-    def append_key_and_upstream(key: AssetKey):
-        if required.get(key):
-            return
-        required[key] = True
-        asset_node = all_asset_nodes[key].external_asset_node
-        for dep in asset_node.dependencies:
-            append_key_and_upstream(dep.upstream_asset_key)
-
-    for asset_key in requested_asset_keys:
-        append_key_and_upstream(asset_key)
-
-    return required.keys()
+def _get_latest_planned_run_id(instance: DagsterInstance, asset_record: AssetRecord):
+    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+        return asset_record.asset_entry.last_planned_materialization_run_id
+    else:
+        planned_info = instance.get_latest_planned_materialization_info(
+            asset_record.asset_entry.asset_key
+        )
+        return planned_info.run_id if planned_info else None
 
 
-def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Sequence[str]]):
+def get_assets_latest_info(
+    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
-
-    from ..schema.asset_graph import GrapheneAssetLatestInfo
-    from ..schema.logs.events import GrapheneMaterializationEvent
-    from ..schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
+    from dagster_graphql.schema.logs.events import GrapheneMaterializationEvent
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
 
-    asset_nodes = get_asset_nodes_by_asset_key(graphene_info)
-    asset_record_keys_needed = add_all_upstream_keys(asset_nodes, step_keys_by_asset.keys())
-    if not asset_record_keys_needed:
+    asset_keys = list(step_keys_by_asset.keys())
+
+    if not asset_keys:
         return []
 
-    asset_records = instance.get_asset_records(asset_record_keys_needed)
+    asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
+
+    asset_records = AssetRecord.blocking_get_many(graphene_info.context, asset_keys)
 
     latest_materialization_by_asset = {
-        asset_record.asset_entry.asset_key: GrapheneMaterializationEvent(
-            event=asset_record.asset_entry.last_materialization
+        asset_record.asset_entry.asset_key: (
+            GrapheneMaterializationEvent(event=asset_record.asset_entry.last_materialization)
+            if asset_record.asset_entry.last_materialization
+            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            else None
         )
-        if asset_record.asset_entry.last_materialization
-        and asset_record.asset_entry.asset_key in step_keys_by_asset
-        else None
         for asset_record in asset_records
     }
 
-    latest_run_ids_by_asset: Dict[
-        AssetKey, str
-    ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
+    # Build a lookup table of asset keys to last materialization run IDs. We will filter these
+    # run IDs out of the "in progress" run lists that are generated below since they have already
+    # emitted an output for the run.
+    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]] = {
+        asset_record.asset_entry.asset_key: (
+            asset_record.asset_entry.last_materialization.run_id
+            if asset_record.asset_entry.last_materialization
+            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            else None
+        )
         for asset_record in asset_records
-        if asset_record.asset_entry.last_run_id
+    }
+
+    latest_planned_run_ids_by_asset = {
+        k: v
+        for k, v in {
+            asset_record.asset_entry.asset_key: _get_latest_planned_run_id(instance, asset_record)
+            for asset_record in asset_records
+        }.items()
+        if v
     }
 
     run_records_by_run_id = {}
-    in_progress_records = []
-    run_ids = list(set(latest_run_ids_by_asset.values())) if latest_run_ids_by_asset else []
+
+    run_ids = (
+        list(set(latest_planned_run_ids_by_asset.values()))
+        if latest_planned_run_ids_by_asset
+        else []
+    )
     if run_ids:
         run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
         for run_record in run_records:
-            if run_record.pipeline_run.status in PENDING_STATUSES:
-                in_progress_records.append(run_record)
-            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
+            run_records_by_run_id[run_record.dagster_run.run_id] = run_record
 
     (
         in_progress_run_ids_by_asset,
         unstarted_run_ids_by_asset,
-    ) = _get_in_progress_runs_for_assets(graphene_info, in_progress_records, step_keys_by_asset)
+    ) = _get_in_progress_runs_for_assets(
+        run_records_by_run_id,
+        latest_materialization_run_id_by_asset,
+        latest_planned_run_ids_by_asset,
+    )
+
+    from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
     return [
         GrapheneAssetLatestInfo(
-            asset_key,
-            latest_materialization_by_asset.get(asset_key),
-            list(unstarted_run_ids_by_asset.get(asset_key, [])),
-            list(in_progress_run_ids_by_asset.get(asset_key, [])),
-            GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
-            # Dagit error occurs if a run is terminated at the same time that this endpoint is called
-            # so we check to make sure the run ID exists in the run records
-            if asset_key in latest_run_ids_by_asset
-            and latest_run_ids_by_asset[asset_key] in run_records_by_run_id
-            else None,
+            id=(
+                get_unique_asset_id(
+                    asset_key,
+                    asset_nodes[asset_key].repository_location.name,
+                    asset_nodes[asset_key].external_repository.name,
+                )
+                if asset_nodes[asset_key]
+                else get_unique_asset_id(asset_key)
+            ),
+            assetKey=asset_key,
+            latestMaterialization=latest_materialization_by_asset.get(asset_key),
+            unstartedRunIds=list(unstarted_run_ids_by_asset.get(asset_key, [])),
+            inProgressRunIds=list(in_progress_run_ids_by_asset.get(asset_key, [])),
+            latestRun=(
+                GrapheneRun(run_records_by_run_id[latest_planned_run_ids_by_asset[asset_key]])
+                # Dagster UI error occurs if a run is terminated at the same time that this endpoint is
+                # called so we check to make sure the run ID exists in the run records.
+                if asset_key in latest_planned_run_ids_by_asset
+                and latest_planned_run_ids_by_asset[asset_key] in run_records_by_run_id
+                else None
+            ),
         )
         for asset_key in step_keys_by_asset.keys()
     ]
 
 
 def _get_in_progress_runs_for_assets(
-    graphene_info,
-    in_progress_records: Sequence[RunRecord],
-    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
-):
-    # Build mapping of step key to the assets it generates
-    asset_key_by_step_key = defaultdict(set)
-    for asset_key, step_keys in step_keys_by_asset.items():
-        for step_key in step_keys:
-            asset_key_by_step_key[step_key].add(asset_key)
-
+    run_records_by_run_id: Mapping[str, RunRecord],
+    latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]],
+    latest_run_ids_by_asset: Dict[AssetKey, str],
+) -> Tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
     in_progress_run_ids_by_asset = defaultdict(set)
     unstarted_run_ids_by_asset = defaultdict(set)
 
-    for record in in_progress_records:
-        run = record.pipeline_run
-        asset_selection = run.asset_selection
-        run_step_keys = graphene_info.context.instance.get_execution_plan_snapshot(
-            run.execution_plan_snapshot_id
-        ).step_keys_to_execute
+    for asset_key, run_id in latest_run_ids_by_asset.items():
+        record = run_records_by_run_id.get(run_id)
 
-        selected_assets = (
-            set.union(*[asset_key_by_step_key[run_step_key] for run_step_key in run_step_keys])
-            if asset_selection is None
-            else cast(frozenset, asset_selection)
-        )  # only display in progress/unstarted indicators for selected assets
+        if not record:
+            continue
+
+        run = record.dagster_run
+        if (
+            run.status not in PENDING_STATUSES
+            or latest_materialization_run_id_by_asset.get(asset_key) == run.run_id
+        ):
+            continue
 
         if run.status in IN_PROGRESS_STATUSES:
-            step_stats = graphene_info.context.instance.get_run_step_stats(
-                run.run_id, run_step_keys
-            )
-            # Build mapping of asset to all the step stats that generate the asset
-            step_stats_by_asset: Dict[AssetKey, List[RunStepKeyStatsSnapshot]] = defaultdict(list)
-            for step_stat in step_stats:
-                for asset_key in asset_key_by_step_key[step_stat.step_key]:
-                    step_stats_by_asset[asset_key].append(step_stat)
-
-            for asset in selected_assets:
-                step_stats = step_stats_by_asset.get(asset)
-                if step_stats:
-                    # step_stats will contain all steps that are in progress or complete
-                    if any(
-                        [
-                            step_stat.status == StepEventStatus.IN_PROGRESS
-                            for step_stat in step_stats
-                        ]
-                    ):
-                        in_progress_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
-                    # else if step_stats exist and none are in progress, the step has completed
-                else:  # if step stats is none, then the step has not started
-                    unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+            in_progress_run_ids_by_asset[asset_key].add(record.dagster_run.run_id)
         else:
-            # the run never began execution, all steps are unstarted
-            for asset in selected_assets:
-                unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+            unstarted_run_ids_by_asset[asset_key].add(record.dagster_run.run_id)
 
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
 
-def get_runs_count(graphene_info, filters):
+def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
     return graphene_info.context.instance.get_runs_count(filters)
 
 
-def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
-    from ..schema.pipelines.pipeline import GrapheneRun
-    from ..schema.runs import GrapheneRunGroup
+def validate_pipeline_config(
+    graphene_info: "ResolveInfo",
+    selector: JobSubsetSelector,
+    run_config: Union[str, Mapping[str, object]],
+) -> "GraphenePipelineConfigValidationValid":
+    from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
 
-    check.opt_inst_param(filters, "filters", RunsFilter)
-    check.opt_str_param(cursor, "cursor")
-    check.opt_int_param(limit, "limit")
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    instance = graphene_info.context.instance
-    run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
-    run_ids = {run.run_id for run_group in run_groups.values() for run in run_group.get("runs", [])}
-    records_by_ids = {
-        record.pipeline_run.run_id: record
-        for record in instance.get_run_records(RunsFilter(run_ids=list(run_ids)))
-    }
-
-    for root_run_id in run_groups:
-        run_groups[root_run_id]["runs"] = [
-            GrapheneRun(records_by_ids.get(run.run_id)) for run in run_groups[root_run_id]["runs"]
-        ]
-
-    return [
-        GrapheneRunGroup(root_run_id=root_run_id, runs=run_group["runs"])
-        for root_run_id, run_group in run_groups.items()
-    ]
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
 
 
-@capture_error
-def validate_pipeline_config(graphene_info, selector, run_config, mode):
-    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
+def get_execution_plan(
+    graphene_info: "ResolveInfo",
+    selector: JobSubsetSelector,
+    run_config: Mapping[str, Any],
+) -> "GrapheneExecutionPlan":
+    from dagster_graphql.schema.execution import GrapheneExecutionPlan
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
+    check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_pipeline.name)
-
-
-@capture_error
-def get_execution_plan(graphene_info, selector, run_config, mode):
-    from ..schema.execution import GrapheneExecutionPlan
-
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
-
-    external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, mode, run_config)
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
-            external_pipeline=external_pipeline,
-            mode=mode,
+            external_job=external_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,
@@ -336,27 +344,32 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
     )
 
 
-@capture_error
-def get_stats(graphene_info, run_id):
-    from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
+def get_stats(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunStatsSnapshot":
+    from dagster_graphql.schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
 
     stats = graphene_info.context.instance.get_run_stats(run_id)
-    stats.id = "stats-{run_id}"
+    stats.id = "stats-{run_id}"  # type: ignore  # (unused code path)
     return GrapheneRunStatsSnapshot(stats)
 
 
-def get_step_stats(graphene_info, run_id, step_keys=None):
-    from ..schema.logs.events import GrapheneRunStepStats
+def get_step_stats(
+    graphene_info: "ResolveInfo", run_id: str, step_keys: Optional[Sequence[str]] = None
+) -> Sequence["GrapheneRunStepStats"]:
+    from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 
     step_stats = graphene_info.context.instance.get_run_step_stats(run_id, step_keys)
     return [GrapheneRunStepStats(stats) for stats in step_stats]
 
 
-@capture_error
-def get_logs_for_run(graphene_info, run_id, cursor=None, limit=None):
-    from ..schema.errors import GrapheneRunNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneEventConnection
-    from .events import from_event_record
+def get_logs_for_run(
+    graphene_info: "ResolveInfo",
+    run_id: str,
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> Union["GrapheneRunNotFoundError", "GrapheneEventConnection"]:
+    from dagster_graphql.implementation.events import from_event_record
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneEventConnection
 
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)
@@ -365,9 +378,173 @@ def get_logs_for_run(graphene_info, run_id, cursor=None, limit=None):
 
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
     return GrapheneEventConnection(
-        events=[
-            from_event_record(record.event_log_entry, run.pipeline_name) for record in conn.records
-        ],
+        events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
         cursor=conn.cursor,
         hasMore=conn.has_more,
+    )
+
+
+@record
+class RunsFeedCursor:
+    """Three part cursor for paginating the Runs Feed. The run_cursor is the run_id of the oldest run that
+    has been returned. The backfill_cursor is the id of the oldest backfill that has been returned. The
+    timestamp is the timestamp of the oldest entry (run or backfill).
+
+    If the run/backfill cursor is None, that means that no runs/backfills have been returned yet and querying
+    should begin at the start of the table. Once all runs/backfills in the table have been returned, the
+    corresponding cursor should still be set to the id of the last run/backfill returned.
+
+    The timestamp is used for the following case. If a deployment has 20 runs and 0 backfills, and a query is
+    made for 10 Runs Feed entries, the first 10 runs will be returned. At this time, the run_cursor will be an id,
+    and the backfill_cursor will be None. Then a backfill is created. If a second query is made for 10 Runs Feed entries
+    the newly created backfill will get included in the list, even though it should be included on the first page by time
+    order. To prevent this, the timestamp is used to ensure that all returned entires are older than the entries on the
+    previous page.
+    """
+
+    run_cursor: Optional[str]
+    backfill_cursor: Optional[str]
+    timestamp: Optional[float]
+
+    def to_string(self) -> str:
+        return f"{self.run_cursor if self.run_cursor else ''}{_DELIMITER}{self.backfill_cursor if self.backfill_cursor else ''}{_DELIMITER}{self.timestamp if self.timestamp else ''}"
+
+    @staticmethod
+    def from_string(serialized: Optional[str]):
+        if serialized is None:
+            return RunsFeedCursor(
+                run_cursor=None,
+                backfill_cursor=None,
+                timestamp=None,
+            )
+        parts = serialized.split(_DELIMITER)
+        if len(parts) != 3:
+            raise DagsterInvariantViolationError(f"Invalid cursor for querying runs: {serialized}")
+
+        return RunsFeedCursor(
+            run_cursor=parts[0] if parts[0] else None,
+            backfill_cursor=parts[1] if parts[1] else None,
+            timestamp=float(parts[2]) if parts[2] else None,
+        )
+
+
+def _fetch_runs_not_in_backfill(
+    instance: DagsterInstance,
+    cursor: Optional[str],
+    limit: int,
+    created_before: Optional[datetime.datetime],
+) -> Sequence[RunRecord]:
+    """Fetches limit RunRecords that are not part of a backfill and were created before a given timestamp."""
+    runs_filter = RunsFilter(created_before=created_before) if created_before else None
+
+    runs = []
+    while len(runs) < limit:
+        # fetch runs in a loop and discard runs that are part of a backfill until we have
+        # limit runs to return or have reached the end of the runs table
+        new_runs = instance.get_run_records(limit=limit, cursor=cursor, filters=runs_filter)
+        if len(new_runs) == 0:
+            return runs
+        cursor = new_runs[-1].dagster_run.run_id
+        runs.extend([run for run in new_runs if run.dagster_run.tags.get(BACKFILL_ID_TAG) is None])
+
+    return runs[:limit]
+
+
+def get_runs_feed_entries(
+    graphene_info: "ResolveInfo",
+    limit: int,
+    cursor: Optional[str] = None,
+) -> "GrapheneRunsFeedConnection":
+    """Returns a GrapheneRunsFeedConnection, which contains a merged list of backfills and
+    single runs (runs that are not part of a backfill), the cursor to fetch the next page,
+    and a boolean indicating if there are more results to fetch.
+
+    Args:
+        limit (int): max number of results to return
+        cursor (Optional[str]): String that can be deserialized into a RunsFeedCursor. If None, indicates
+            that querying should start at the beginning of the table for both runs and backfills.
+    """
+    from dagster_graphql.schema.backfill import GraphenePartitionBackfill
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.runs_feed import GrapheneRunsFeedConnection
+
+    check.opt_str_param(cursor, "cursor")
+    check.int_param(limit, "limit")
+
+    instance = graphene_info.context.instance
+    runs_feed_cursor = RunsFeedCursor.from_string(cursor)
+
+    # if using limit, fetch limit+1 of each type to know if there are more than limit remaining
+    fetch_limit = limit + 1
+    # filter out any backfills/runs that are newer than the cursor timestamp. See RunsFeedCursor docstring
+    # for case when theis is necessary
+    created_before_cursor = (
+        datetime_from_timestamp(runs_feed_cursor.timestamp) if runs_feed_cursor.timestamp else None
+    )
+    backfills = [
+        GraphenePartitionBackfill(backfill)
+        for backfill in instance.get_backfills(
+            cursor=runs_feed_cursor.backfill_cursor,
+            limit=limit,
+            filters=BulkActionsFilter(created_before=created_before_cursor),
+        )
+    ]
+    runs = [
+        GrapheneRun(run)
+        for run in _fetch_runs_not_in_backfill(
+            instance,
+            cursor=runs_feed_cursor.run_cursor,
+            limit=fetch_limit,
+            created_before=created_before_cursor,
+        )
+    ]
+
+    # if we fetched limit+1 of either runs or backfills, we know there must be more results
+    # to fetch on the next call since we will return limit results for this call. Additionally,
+    # if we fetched more than limit of runs and backfill combined, we know there are more results
+    has_more = (
+        len(backfills) == fetch_limit
+        or len(runs) == fetch_limit
+        or len(backfills) + len(runs) > limit
+    )
+
+    all_entries = backfills + runs
+
+    # order runs and backfills by create_time. typically we sort by storage id but that won't work here since
+    # they are different tables
+    all_entries = sorted(
+        all_entries,
+        key=lambda x: x.creation_timestamp,
+        reverse=True,
+    )
+
+    if limit:
+        to_return = all_entries[:limit]
+    else:
+        to_return = all_entries
+
+    new_run_cursor = None
+    new_backfill_cursor = None
+    for run in reversed(to_return):
+        if new_run_cursor is not None and new_backfill_cursor is not None:
+            break
+        if new_backfill_cursor is None and isinstance(run, GraphenePartitionBackfill):
+            new_backfill_cursor = run.id
+        if new_run_cursor is None and isinstance(run, GrapheneRun):
+            new_run_cursor = run.runId
+
+    new_timestamp = to_return[-1].creation_timestamp if to_return else None
+
+    # if either of the new cursors are None, replace with the cursor passed in so the next call doesn't
+    # restart at the top the table.
+    final_cursor = RunsFeedCursor(
+        run_cursor=new_run_cursor if new_run_cursor else runs_feed_cursor.run_cursor,
+        backfill_cursor=new_backfill_cursor
+        if new_backfill_cursor
+        else runs_feed_cursor.backfill_cursor,
+        timestamp=new_timestamp if new_timestamp else runs_feed_cursor.timestamp,
+    )
+
+    return GrapheneRunsFeedConnection(
+        results=to_return, cursor=final_cursor.to_string(), hasMore=has_more
     )

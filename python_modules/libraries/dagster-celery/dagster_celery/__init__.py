@@ -1,8 +1,8 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
-from .executor import celery_executor
-from .version import __version__
+from dagster_celery.executor import celery_executor
+from dagster_celery.version import __version__
 
-check_dagster_package_version("dagster-celery", __version__)
+DagsterLibraryRegistry.register("dagster-celery", __version__)
 
 __all__ = ["celery_executor"]

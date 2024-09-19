@@ -1,17 +1,17 @@
 ---
-title: Software-Defined Assets with Pandas and PySpark | Dagster
-description: The "software-defined asset" APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
+title: Asset definitions with Pandas and PySpark | Dagster
+description: The asset definition APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
 ---
 
-# Software-Defined Assets with Pandas and PySpark
+# Asset definitions with Pandas and PySpark
 
 <CodeReferenceLink filePath="examples/assets_pandas_pyspark" />
 
-The software-defined asset APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
+The asset definition APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
 
 In Dagster, an "asset" is a data product, an object produced by a data pipeline. Some examples are tables, machine learning models, or reports.
 
-Conceptually, software-defined assets invert the typical relationship between assets and computation. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets. Each asset knows how to compute its contents from upstream assets.
+Conceptually, asset definitions invert the typical relationship between assets and computation. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets. Each asset knows how to compute its contents from upstream assets.
 
 Taking a software-defined asset approach has a few main benefits:
 
@@ -29,10 +29,10 @@ Here are our asset definitions that define tables we want to materialize.
 
 ```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/table_assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
-from dagster import AssetKey, SourceAsset, asset
+from dagster import AssetKey, AssetSpec, Definitions, asset
 from pandas import DataFrame
 
-sfo_q2_weather_sample = SourceAsset(
+sfo_q2_weather_sample = AssetSpec(
     key=AssetKey("sfo_q2_weather_sample"),
     description="Weather samples, taken every five minutes at SFO",
     metadata={"format": "csv"},
@@ -41,18 +41,21 @@ sfo_q2_weather_sample = SourceAsset(
 
 @asset
 def daily_temperature_highs(sfo_q2_weather_sample: DataFrame) -> DataFrame:
-    """Computes the temperature high for each day"""
+    """Computes the temperature high for each day."""
     sfo_q2_weather_sample["valid_date"] = pd.to_datetime(sfo_q2_weather_sample["valid"])
     return sfo_q2_weather_sample.groupby("valid_date").max().rename(columns={"tmpf": "max_tmpf"})
 
 
 @asset
 def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
-    """Computes the 10 hottest dates"""
+    """Computes the 10 hottest dates."""
     return daily_temperature_highs.nlargest(10, "max_tmpf")
+
+
+defs = Definitions(assets=[sfo_q2_weather_sample, daily_temperature_highs, hottest_dates])
 ```
 
-`sfo_q2_weather_sample` represents our base temperature table. It's a <PyObject module="dagster" object="SourceAsset" />, meaning that we rely on it, but don't generate it.
+`sfo_q2_weather_sample` represents our base temperature table. It's a table that's used by the assets in our pipeline, but that we're not responsible for generating. We define it using an <PyObject object="AssetSpec" />, which allows us to specify its attributes without providing a function that materializes it.
 
 `daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function, a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on in an <PyObject object="IOManager" />. This allows us to swap in different implementations in different environments. For example, in local development, we might want to store data in a local CSV file for easy testing. However in production, we would want to store data in a data warehouse.
 
@@ -70,8 +73,8 @@ To load definitions such as assets and resources, we use <PyObject object="Defin
 
 - We supply resources mapped to the assets using the `resources` argument to the <PyObject object="Definitions" /> object.
 
-```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/__init__.py startafter=gather_assets_start endbefore=gather_assets_end
-# __init__.py
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/definitions.py startafter=gather_assets_start endbefore=gather_assets_end
+# definitions.py
     from dagster import Definitions, load_assets_from_modules
 
     from .assets import table_assets
@@ -95,11 +98,11 @@ The functions we used to define our assets describe how to compute their content
 import os
 
 import pandas as pd
-from dagster import AssetKey, IOManager
+from dagster import AssetKey, ConfigurableIOManager
 from pandas import DataFrame
 
 
-class LocalFileSystemIOManager(IOManager):
+class LocalFileSystemIOManager(ConfigurableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
     def _get_fs_path(self, asset_key: AssetKey) -> str:
@@ -132,7 +135,7 @@ from pyspark.sql import (
 
 @asset
 def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
-    """Computes the difference between each day's high and the previous day's high"""
+    """Computes the difference between each day's high and the previous day's high."""
     window = Window.orderBy("valid_date")
     return daily_temperature_highs.select(
         "valid_date",
@@ -145,8 +148,8 @@ def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
 
 Here's an extended version of `weather_assets` that contains the new asset:
 
-```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/__init__.py  startafter=gather_spark_assets_start endbefore=gather_spark_assets_end
-# __init__.py
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/definitions.py  startafter=gather_spark_assets_start endbefore=gather_spark_assets_end
+# definitions.py
 
     from dagster import Definitions, load_assets_from_modules
 
@@ -179,7 +182,7 @@ from typing import Union
 import pandas as pd
 from dagster import (
     AssetKey,
-    IOManager,
+    ConfigurableIOManager,
     _check as check,
 )
 from pandas import DataFrame as PandasDF
@@ -189,7 +192,7 @@ from pyspark.sql import (
 )
 
 
-class LocalFileSystemIOManager(IOManager):
+class LocalFileSystemIOManager(ConfigurableIOManager):
     def _get_fs_path(self, asset_key: AssetKey) -> str:
         return os.path.abspath(os.path.join(*asset_key.path))
 
@@ -206,9 +209,9 @@ class LocalFileSystemIOManager(IOManager):
         if isinstance(obj, PandasDF):
             directory = self._get_fs_path(context.asset_key)
             os.makedirs(directory, exist_ok=True)
-            open(os.path.join(directory, "_SUCCESS"), "wb").close()
             csv_path = os.path.join(directory, "part-00000.csv")
             obj.to_csv(csv_path)
+            open(os.path.join(directory, "_SUCCESS"), "wb").close()
         elif isinstance(obj, SparkDF):
             obj.write.format("csv").options(header="true").save(
                 self._get_fs_path(context.asset_key), mode="overwrite"

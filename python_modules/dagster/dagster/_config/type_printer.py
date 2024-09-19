@@ -1,9 +1,8 @@
 import dagster._check as check
+from dagster._config.config_type import ConfigType, ConfigTypeKind
+from dagster._config.field import resolve_to_config_type
+from dagster._config.snap import ConfigSchemaSnapshot
 from dagster._utils.indenting_printer import IndentingPrinter
-
-from .config_type import ConfigType, ConfigTypeKind
-from .field import resolve_to_config_type
-from .snap import ConfigSchemaSnapshot
 
 
 def _print_type_from_config_type(config_type, print_fn=print, with_lines=True):

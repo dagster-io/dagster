@@ -1,16 +1,16 @@
-"""wipe schedules table for 0.10.0
+"""wipe schedules table for 0.10.0.
 
 Revision ID: b32a4f3036d2
 Revises: 375e95bad550
 Create Date: 2021-01-11 22:20:01.253271
 
 """
+
 from alembic import op
 from dagster._core.storage.migration.utils import get_currently_upgrading_instance, has_table
 from sqlalchemy import inspect
 
 # alembic magic breaks pylint
-# pylint: disable=no-member
 
 
 # revision identifiers, used by Alembic.

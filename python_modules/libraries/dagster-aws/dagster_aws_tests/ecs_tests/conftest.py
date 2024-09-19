@@ -1,9 +1,8 @@
-# pylint: disable=redefined-outer-name
 import boto3
 import moto
 import pytest
 
-from .stubbed_ecs import ThreadsafeStubbedEcs
+from dagster_aws_tests.ecs_tests.stubbed_ecs import ThreadsafeStubbedEcs
 
 
 @pytest.fixture

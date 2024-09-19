@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scroll-margin-top {
+    scroll-margin-top: 90px;
+  }
+}
+
+@layer base {
+  html {
+    font-feature-settings: 'ss02';
+    letter-spacing: 0.0175em;
+  }
+
+  ::selection {
+    background: #deddff; /* WebKit/Blink Browsers */
+    color: #21463d;
+  }
+  ::-moz-selection {
+    background: #deddff; /* WebKit/Blink Browsers */
+    color: #21463d;
+  }
+}
+
+page {
+  position: fixed;
+  top: 5rem;
+  display: flex;
+  width: 100vw;
+  flex-grow: 1;
+  max-width: 1280px;
+}
+
+main {
+  height: calc(100vh - var(--top-nav-height));
+  margin: 0 auto;
+  flex-grow: 1;
+  font-size: 16px;
+  padding-bottom: 32px;
+}
+
+.codeBlock code[class*='language-'],
+.codeBlock pre[class*='language-'] {
+  font-family: theme('fontFamily.mono');
+  font-size: 14px;
+  text-shadow: none;
+  border-radius: 4px;
+}
+
+.callout p {
+  margin: 0;
+}
+
+.prose.prose :where(tbody td):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+.prose.prose :where(thead th):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  vertical-align: top;
+}
+
+.prose.prose td :where(img):not(:where([class~='not-prose'], [class~='not-prose'] *)),
+.prose.prose th :where(img):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  margin-top: 0;
+  margin-bottom: 0;
+}

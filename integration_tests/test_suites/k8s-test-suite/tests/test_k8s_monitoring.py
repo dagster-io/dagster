@@ -1,8 +1,9 @@
+import json
 import os
 import time
 
 import pytest
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_path
@@ -14,30 +15,73 @@ from dagster_test.test_project import get_test_project_environments_path
 
 def log_run_events(instance, run_id):
     for log in instance.all_logs(run_id):
-        print(str(log) + "\n")  # pylint: disable=print-call
+        print(str(log) + "\n")  # noqa: T201
 
 
 @pytest.mark.integration
-def test_k8s_run_monitoring(
+def test_k8s_run_monitoring_startup_fail(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "image_pull_policy": image_pull_policy(),
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "image_pull_policy": image_pull_policy(),
+                    "env_config_maps": ["non-existent-config-map"],
+                }
+            }
+        },
+    )
+    run_id = None
+    try:
+        run_id = launch_run_over_graphql(
+            webserver_url_for_k8s_run_launcher,
+            run_config=run_config,
+            job_name="slow_job_k8s",
+            tags={
+                "dagster-k8s/config": json.dumps(
+                    {
+                        "container_config": {
+                            "env_from": [{"config_map_ref": {"name": "non-existent-config-map"}}]
+                        }
                     }
+                )
+            },
+        )
+
+        poll_for_finished_run(dagster_instance_for_k8s_run_launcher, run_id, timeout=120)
+        assert (
+            dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id).status
+            == DagsterRunStatus.FAILURE
+        )
+    finally:
+        if run_id:
+            log_run_events(dagster_instance_for_k8s_run_launcher, run_id)
+
+
+@pytest.mark.integration
+def test_k8s_run_monitoring_resume(
+    dagster_instance_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
+):
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
     )
     _launch_run_and_wait_for_resume(
-        dagit_url_for_k8s_run_launcher,
+        webserver_url_for_k8s_run_launcher,
         run_config,
         dagster_instance_for_k8s_run_launcher,
         user_code_namespace_for_k8s_run_launcher,
@@ -45,20 +89,19 @@ def test_k8s_run_monitoring(
 
 
 def _launch_run_and_wait_for_resume(
-    dagit_url_for_k8s_run_launcher,
+    webserver_url_for_k8s_run_launcher,
     run_config,
     instance,
     namespace,
-    pipeline_name="slow_pipeline",
+    job_name="slow_job_k8s",
 ):
     run_id = None
 
     try:
         run_id = launch_run_over_graphql(
-            dagit_url_for_k8s_run_launcher,
+            webserver_url_for_k8s_run_launcher,
             run_config=run_config,
-            pipeline_name=pipeline_name,
-            mode="k8s",
+            job_name=job_name,
         )
 
         start_time = time.time()

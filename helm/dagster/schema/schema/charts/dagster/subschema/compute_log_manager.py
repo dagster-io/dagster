@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional, Type
 
 from pydantic import Extra
 
-from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
-from .config import StringSource
+from schema.charts.dagster.subschema.config import StringSource
+from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class ComputeLogManagerType(str, Enum):
@@ -18,7 +18,8 @@ class ComputeLogManagerType(str, Enum):
 class AzureBlobComputeLogManager(BaseModel):
     storageAccount: StringSource
     container: StringSource
-    secretKey: StringSource
+    secretKey: Optional[StringSource]
+    defaultAzureCredential: Optional[dict]
     localDir: Optional[StringSource]
     prefix: Optional[StringSource]
     uploadInterval: Optional[int]
@@ -30,6 +31,7 @@ class GCSComputeLogManager(BaseModel):
     prefix: Optional[StringSource]
     jsonCredentialsEnvvar: Optional[StringSource]
     uploadInterval: Optional[int]
+    showUrlOnly: Optional[bool]
 
 
 class S3ComputeLogManager(BaseModel):
@@ -43,6 +45,8 @@ class S3ComputeLogManager(BaseModel):
     skipEmptyFiles: Optional[bool]
     uploadInterval: Optional[int]
     uploadExtraArgs: Optional[dict]
+    showUrlOnly: Optional[bool]
+    region: Optional[StringSource]
 
 
 class ComputeLogManagerConfig(BaseModel):

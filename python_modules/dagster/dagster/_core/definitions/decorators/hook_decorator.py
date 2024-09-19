@@ -12,11 +12,10 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.decorator_utils import get_function_params, validate_expected_params
+from dagster._core.definitions.events import HookExecutionResult
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
-
-from ...decorator_utils import get_function_params, validate_expected_params
-from ..events import HookExecutionResult
-from ..hook_definition import HookDefinition
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
@@ -28,12 +27,10 @@ def _validate_hook_fn_params(fn, expected_positionals):
     missing_positional = validate_expected_params(params, expected_positionals)
     if missing_positional:
         raise DagsterInvalidDefinitionError(
-            "'{hook_name}' decorated function does not have required positional "
-            "parameter '{missing_param}'. Hook functions should only have keyword arguments "
+            f"'{fn.__name__}' decorated function does not have required positional "
+            f"parameter '{missing_positional}'. Hook functions should only have keyword arguments "
             "that match input names and a first positional parameter named 'context' and "
-            "a second positional parameter named 'event_list'.".format(
-                hook_name=fn.__name__, missing_param=missing_positional
-            )
+            "a second positional parameter named 'event_list'."
         )
 
 
@@ -72,7 +69,7 @@ class _Hook:
 
 @overload
 def event_list_hook(
-    hook_fn: Callable,
+    hook_fn: Callable[..., Any],
 ) -> HookDefinition:
     pass
 
@@ -102,8 +99,8 @@ def event_list_hook(
     The user-defined hook function requires two parameters:
     - A `context` object is passed as the first parameter. The context is an instance of
         :py:class:`context <HookContext>`, and provides access to system
-        information, such as loggers (context.log), resources (context.resources), the solid
-        (context.solid) and its execution step (context.step) which triggers this hook.
+        information, such as loggers (context.log), resources (context.resources), the op
+        (context.op) and its execution step (context.step) which triggers this hook.
     - An `event_list` object is passed as the second paramter. It provides the full event list of the
         associated execution step.
 
@@ -113,17 +110,13 @@ def event_list_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @event_list_hook(required_resource_keys={'slack'})
             def slack_on_materializations(context, event_list):
                 for event in event_list:
                     if event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-                        message = '{solid} has materialized an asset {key}.'.format(
-                            solid=context.solid.name,
-                            key=event.asset_key
-                        )
+                        message = f'{context.op_name} has materialized an asset {event.asset_key}.'
                         # send a slack message every time a materialization event occurs
                         context.resources.slack.send_message(message)
 
@@ -144,8 +137,7 @@ SuccessOrFailureHookFn = Callable[["HookContext"], Any]
 
 
 @overload
-def success_hook(hook_fn: SuccessOrFailureHookFn) -> HookDefinition:
-    ...
+def success_hook(hook_fn: SuccessOrFailureHookFn) -> HookDefinition: ...
 
 
 @overload
@@ -153,8 +145,7 @@ def success_hook(
     *,
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
-    ...
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
 def success_hook(
@@ -171,7 +162,6 @@ def success_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @success_hook(required_resource_keys={'slack'})
@@ -220,16 +210,14 @@ def success_hook(
 
 
 @overload
-def failure_hook(name: SuccessOrFailureHookFn) -> HookDefinition:
-    ...
+def failure_hook(name: SuccessOrFailureHookFn) -> HookDefinition: ...
 
 
 @overload
 def failure_hook(
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
-) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
-    ...
+) -> Callable[[SuccessOrFailureHookFn], HookDefinition]: ...
 
 
 def failure_hook(
@@ -244,7 +232,6 @@ def failure_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @failure_hook(required_resource_keys={'slack'})

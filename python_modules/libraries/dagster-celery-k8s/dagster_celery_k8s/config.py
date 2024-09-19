@@ -1,9 +1,10 @@
-from dagster import Field, Float, Noneable, StringSource
-from dagster._core.host_representation import IN_PROCESS_NAME
+from dagster import Field, Float, Map, Noneable, StringSource
+from dagster._core.remote_representation import IN_PROCESS_NAME
 from dagster._utils.merger import merge_dicts
 from dagster_celery.executor import CELERY_CONFIG
 from dagster_k8s import DagsterK8sJobConfig
 from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
+from dagster_k8s.job import USER_DEFINED_K8S_CONFIG_SCHEMA
 
 CELERY_K8S_CONFIG_KEY = "celery-k8s"
 
@@ -31,7 +32,6 @@ def celery_k8s_executor_config():
         "job_namespace": Field(
             StringSource,
             is_required=False,
-            default_value="default",
             description=(
                 "The namespace into which to launch new jobs. Note that any "
                 "other Kubernetes resources the Job requires (such as the service account) must be "
@@ -53,6 +53,12 @@ def celery_k8s_executor_config():
                 f" Defaults to {DEFAULT_WAIT_TIMEOUT} seconds."
             ),
         ),
+        "per_step_k8s_config": Field(
+            Map(str, USER_DEFINED_K8S_CONFIG_SCHEMA, key_label_name="step_name"),
+            is_required=False,
+            default_value={},
+            description="Per op k8s configuration overrides.",
+        ),
     }
 
     cfg = merge_dicts(CELERY_CONFIG, job_config)
@@ -71,12 +77,10 @@ def get_celery_engine_job_config(image_pull_policy=None, additional_env_config_m
             "config": merge_dicts(
                 {
                     "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
-                    "env_config_maps": (
-                        [
-                            {"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},
-                        ]
-                        + (additional_env_config_maps if additional_env_config_maps else [])
-                    ),
+                    "env_config_maps": [
+                        {"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},
+                    ]
+                    + (additional_env_config_maps if additional_env_config_maps else []),
                 },
                 (
                     {

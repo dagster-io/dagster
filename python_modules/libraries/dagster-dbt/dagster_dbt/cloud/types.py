@@ -2,12 +2,10 @@ from datetime import datetime
 from typing import Any, Mapping, Optional
 
 import dagster._check as check
-from dateutil.parser import isoparse
-
-from ..types import DbtOutput
+from dagster._vendored.dateutil.parser import isoparse
 
 
-class DbtCloudOutput(DbtOutput):
+class DbtCloudOutput:
     """The results of executing a dbt Cloud job, along with additional metadata produced from the
     job run.
 
@@ -32,7 +30,11 @@ class DbtCloudOutput(DbtOutput):
         result: Mapping[str, Any],
     ):
         self._run_details = check.mapping_param(run_details, "run_details", key_type=str)
-        super().__init__(result)
+        self._result = check.mapping_param(result, "result", key_type=str)
+
+    @property
+    def result(self) -> Mapping[str, Any]:
+        return self._result
 
     @property
     def run_details(self) -> Mapping[str, Any]:

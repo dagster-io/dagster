@@ -9,10 +9,11 @@ setup(
         "dagster-pandas",
         "dagster-dbt",
         "pandas",
-        "dbt-core",
         "dbt-snowflake",
         "dagster-snowflake",
         "dagster-snowflake-pandas",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={
+        "dev": ["dagster-webserver", "pytest"],
+    },
 )

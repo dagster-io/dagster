@@ -1,0 +1,4 @@
+locations:
+  - location_name: quickstart_etl
+    code_source:
+      module_name: quickstart_etl.definitions

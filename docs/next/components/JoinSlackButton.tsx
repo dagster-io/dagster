@@ -3,7 +3,7 @@ import React from 'react';
 export const JoinSlackButton: React.FC<{icon?: boolean}> = ({icon}) => {
   return (
     <>
-      <p className="self-center">
+      <div className="self-center">
         <a
           href="https://dagster.io/slack"
           className={
@@ -17,7 +17,7 @@ export const JoinSlackButton: React.FC<{icon?: boolean}> = ({icon}) => {
           </svg>
           <span className={icon ? 'hidden' : ''}>Join us on Slack</span>
         </a>
-      </p>
+      </div>
     </>
   );
 };

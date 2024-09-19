@@ -91,9 +91,9 @@ def _get_user_code_error_str_lambda(
     configured_definition: "ConfigurableDefinition",
 ) -> Callable[[], str]:
     return lambda: (
-        "The config mapping function on a `configured` {} has thrown an unexpected "
+        f"The config mapping function on a `configured` {configured_definition.__class__.__name__} has thrown an unexpected "
         "error during its execution."
-    ).format(configured_definition.__class__.__name__)
+    )
 
 
 class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
@@ -107,7 +107,7 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
         config_schema: Optional[IDefinitionConfigSchema],
         config_or_config_fn: object,
     ):
-        from .configurable import ConfigurableDefinition
+        from dagster._core.definitions.configurable import ConfigurableDefinition
 
         self.parent_def = check.inst_param(
             parent_definition, "parent_definition", ConfigurableDefinition
@@ -118,9 +118,9 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
 
         # type-ignores for mypy "Cannot assign to a method" (pyright works)
         if not callable(config_or_config_fn):
-            self._config_fn = lambda _: config_or_config_fn  # type: ignore
+            self._config_fn = lambda _: config_or_config_fn
         else:
-            self._config_fn = config_or_config_fn  # type: ignore
+            self._config_fn = config_or_config_fn
 
     def as_field(self) -> Field:
         return check.not_none(self._current_field)

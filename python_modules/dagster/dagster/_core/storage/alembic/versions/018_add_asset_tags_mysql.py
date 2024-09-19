@@ -1,10 +1,11 @@
-"""add asset tags
+"""add asset tags.
 
 Revision ID: 3ca619834060
 Revises: ba4050312958
 Create Date: 2021-03-15 15:08:10.277993
 
 """
+
 from dagster._core.storage.migration.utils import add_asset_materialization_columns
 
 # revision identifiers, used by Alembic.

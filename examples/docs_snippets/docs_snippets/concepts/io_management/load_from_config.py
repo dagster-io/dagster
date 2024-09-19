@@ -1,9 +1,9 @@
-from dagster import In, String, job, op
+from dagster import OpExecutionContext, job, op
 
 
 # def_start_marker
-@op(ins={"input_string": In(String)})
-def my_op(context, input_string):
+@op
+def my_op(context: OpExecutionContext, input_string: str):
     context.log.info(f"input string: {input_string}")
 
 

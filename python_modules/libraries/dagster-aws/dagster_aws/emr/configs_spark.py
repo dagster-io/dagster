@@ -1,4 +1,4 @@
-"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
+"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT.
 
 @generated
 
@@ -7,11 +7,9 @@ parse_spark_configs.py \
 
 """
 
-
 from dagster import Bool, Field, Float, IntSource, Permissive, StringSource
 
 
-# pylint: disable=line-too-long
 def spark_config():
     return Field(
         Permissive(
@@ -1686,6 +1684,3 @@ def spark_config():
             }
         )
     )
-
-
-# pylint: enable=line-too-long

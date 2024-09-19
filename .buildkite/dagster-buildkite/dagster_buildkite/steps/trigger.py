@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from ..utils import TriggerStep, safe_getenv
+from dagster_buildkite.utils import TriggerStep, safe_getenv
 
 
 def build_trigger_step(
@@ -11,11 +11,12 @@ def build_trigger_step(
     if_condition: Optional[str] = None,
     env: Optional[Dict[str, str]] = None,
 ) -> TriggerStep:
-    """trigger_step: Trigger a build of another pipeline. See:
+    """Trigger a build of another pipeline.
 
+    See:
         https://buildkite.com/docs/pipelines/trigger-step
 
-    Parameters:
+    Args:
         pipeline (str): The pipeline to trigger
         branches (List[str]): List of branches to trigger
         async_step (bool): If set to true the step will immediately continue, regardless of the

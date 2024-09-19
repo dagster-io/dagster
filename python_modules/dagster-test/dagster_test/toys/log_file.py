@@ -15,7 +15,7 @@ def read_file(context):
     filename = os.path.join(directory, relative_filename)
     try:
         fstats = os.stat(filename)
-        context.log.info("Found file {}".format(relative_filename))
+        context.log.info(f"Found file {relative_filename}")
         yield AssetMaterialization(
             asset_key=AssetKey(["log_file", relative_filename]),
             metadata={
@@ -29,7 +29,7 @@ def read_file(context):
         )
         yield Output(relative_filename)
     except FileNotFoundError:
-        context.log.error("No file found: {}".format(relative_filename))
+        context.log.error(f"No file found: {relative_filename}")
 
 
 @graph

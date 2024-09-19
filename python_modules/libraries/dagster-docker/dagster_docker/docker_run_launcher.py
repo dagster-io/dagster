@@ -1,3 +1,6 @@
+import json
+from typing import Any, Mapping, Optional
+
 import dagster._check as check
 import docker
 from dagster._core.launcher.base import (
@@ -7,15 +10,16 @@ from dagster._core.launcher.base import (
     RunLauncher,
     WorkerStatus,
 )
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
+from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
-from .container_context import DockerContainerContext
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 
@@ -25,7 +29,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def __init__(
         self,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         image=None,
         registry=None,
         env_vars=None,
@@ -61,12 +65,14 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return DOCKER_CONFIG_SCHEMA
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
-        return DockerRunLauncher(inst_data=inst_data, **config_value)
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
+        return cls(inst_data=inst_data, **config_value)
 
-    def get_container_context(self, pipeline_run: DagsterRun) -> DockerContainerContext:
-        return DockerContainerContext.create_for_run(pipeline_run, self)
+    def get_container_context(self, dagster_run: DagsterRun) -> DockerContainerContext:
+        return DockerContainerContext.create_for_run(dagster_run, self)
 
     def _get_client(self, container_context: DockerContainerContext):
         client = docker.client.from_env()
@@ -78,8 +84,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         return client
 
-    def _get_docker_image(self, pipeline_code_origin):
-        docker_image = pipeline_code_origin.repository_origin.container_image
+    def _get_docker_image(self, job_code_origin):
+        docker_image = job_code_origin.repository_origin.container_image
 
         if not docker_image:
             docker_image = self.image
@@ -124,13 +130,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 network.connect(container)
 
         self._instance.report_engine_event(
-            message=(
-                "Launching run in a new container {container_id} with image {docker_image}".format(
-                    container_id=container.id,
-                    docker_image=docker_image,
-                )
-            ),
-            pipeline_run=run,
+            message=f"Launching run in a new container {container.id} with image {docker_image}",
+            dagster_run=run,
             cls=self.__class__,
         )
 
@@ -142,13 +143,13 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         container.start()
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
-        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
-        docker_image = self._get_docker_image(pipeline_code_origin)
+        run = context.dagster_run
+        job_code_origin = check.not_none(context.job_code_origin)
+        docker_image = self._get_docker_image(job_code_origin)
 
         command = ExecuteRunArgs(
-            pipeline_origin=pipeline_code_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_code_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
@@ -159,13 +160,13 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
-        run = context.pipeline_run
-        pipeline_code_origin = check.not_none(context.pipeline_code_origin)
-        docker_image = self._get_docker_image(pipeline_code_origin)
+        run = context.dagster_run
+        job_code_origin = check.not_none(context.job_code_origin)
+        docker_image = self._get_docker_image(job_code_origin)
 
         command = ResumeRunArgs(
-            pipeline_origin=pipeline_code_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=job_code_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
@@ -184,22 +185,26 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client(container_context).containers.get(container_id)
-        except Exception:
+        except docker.errors.NotFound:
             return None
 
     def terminate(self, run_id):
         run = self._instance.get_run_by_id(run_id)
+
+        if not run or run.is_finished:
+            return False
+
+        self._instance.report_run_canceling(run)
+
         container = self._get_container(run)
 
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
-
-        self._instance.report_run_canceling(run)
 
         container.stop()
 
@@ -210,11 +215,22 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, run: DagsterRun):
+        container_id = run.tags.get(DOCKER_CONTAINER_ID_TAG)
+
+        if not container_id:
+            return CheckRunHealthResult(WorkerStatus.NOT_FOUND, msg="No container ID tag for run.")
+
         container = self._get_container(run)
         if container is None:
-            return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
+            return CheckRunHealthResult(
+                WorkerStatus.NOT_FOUND, msg=f"Could not find container with ID {container_id}."
+            )
         if container.status == "running":
             return CheckRunHealthResult(WorkerStatus.RUNNING)
-        return CheckRunHealthResult(
-            WorkerStatus.FAILED, msg=f"Container status is {container.status}"
+
+        container_state = container.attrs.get("State")
+        failure_string = f"Container status is {container.status}." + (
+            f" Container state: {json.dumps(container_state)}" if container_state else ""
         )
+
+        return CheckRunHealthResult(WorkerStatus.FAILED, msg=failure_string)

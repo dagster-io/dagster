@@ -1,29 +1,30 @@
 import os
 from contextlib import contextmanager
+from typing import cast
 
 import pytest
 from dagster import AssetKey, DagsterEventType
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.execution.api import execute_job
+from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_asset
 
 
 def get_path(materialization_event):
-    for (
-        metadata_entry
-    ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.entry_data, (NotebookMetadataValue, PathMetadataValue)):
-            return metadata_entry.entry_data.path
+    for value in materialization_event.event_specific_data.materialization.metadata.values():
+        if isinstance(value, (NotebookMetadataValue, PathMetadataValue)):
+            return value.path
 
 
-def cleanup_result_notebook(result):
+def cleanup_result_notebook(result: ExecutionResult):
     if not result:
         return
     materialization_events = [
-        x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+        x for x in result.all_node_events if x.event_type_value == "ASSET_MATERIALIZATION"
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
@@ -34,18 +35,18 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(job_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module("dagstermill.examples.repository", job_name)
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", job_name)
 
     with instance_for_test() as instance:
         try:
-            result = execute_pipeline(
-                recon_pipeline,
-                env,
+            with execute_job(
+                recon_job,
+                run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
                 **kwargs,
-            )
-            yield result
+            ) as result:
+                yield result
         finally:
             if result:
                 cleanup_result_notebook(result)
@@ -79,7 +80,7 @@ def test_yield_event():
     with exec_for_test("yield_event_asset_job") as result:
         assert result.success
         event_found = False
-        for event in result.event_list:
+        for event in result.all_events:
             if event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
                 if event.asset_key == AssetKey("my_asset"):
                     event_found = True
@@ -111,6 +112,12 @@ def test_hello_world_resource_asset():
 
 
 @pytest.mark.notebook_test
+def test_asset_tags() -> None:
+    key = cast(AssetsDefinition, custom_io_mgr_key_asset).key
+    assert cast(AssetsDefinition, custom_io_mgr_key_asset).tags_by_key[key] == {"foo": "bar"}
+
+
+@pytest.mark.notebook_test
 def test_custom_io_manager_key():
     assert "my_custom_io_manager" in custom_io_mgr_key_asset.required_resource_keys
     assert "output_notebook_io_manager" not in custom_io_mgr_key_asset.required_resource_keys
@@ -119,28 +126,29 @@ def test_custom_io_manager_key():
 @pytest.mark.notebook_test
 def test_error_notebook_saved_asset():
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module(
+    recon_job = ReconstructableJob.for_module(
         "dagstermill.examples.repository", "error_notebook_asset_job"
     )
 
     with instance_for_test() as instance:
+        outer_result = None
         try:
-            result = execute_pipeline(
-                recon_pipeline,
-                {},
+            with execute_job(
+                recon_job,
+                run_config={},
                 instance=instance,
                 raise_on_error=False,
-            )
+            ) as result:
+                storage_dir = instance.storage_directory()
+                files = os.listdir(storage_dir)
+                notebook_found = (False,)
+                for f in files:
+                    if "-out.ipynb" in f:
+                        notebook_found = True
+                outer_result = result
 
-            storage_dir = instance.storage_directory()
-            files = os.listdir(storage_dir)
-            notebook_found = (False,)
-            for f in files:
-                if "-out.ipynb" in f:
-                    notebook_found = True
-
-            assert notebook_found
+                assert notebook_found
 
         finally:
-            if result:
-                cleanup_result_notebook(result)
+            if outer_result:
+                cleanup_result_notebook(outer_result)

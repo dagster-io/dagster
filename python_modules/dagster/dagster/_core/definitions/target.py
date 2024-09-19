@@ -1,81 +1,150 @@
-from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence, Union
+from typing import NamedTuple, Optional, Sequence, Union
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
-
-from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-
-if TYPE_CHECKING:
-    from .graph_definition import GraphDefinition
+from dagster._core.definitions.asset_selection import (
+    AssetSelection,
+    CoercibleToAssetSelection,
+    is_coercible_to_asset_selection,
+)
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.unresolved_asset_job_definition import (
+    UnresolvedAssetJobDefinition,
+    define_asset_job,
+)
+from dagster._utils.warnings import deprecation_warning
 
 ExecutableDefinition: TypeAlias = Union[
-    PipelineDefinition, "GraphDefinition", UnresolvedAssetJobDefinition
+    JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition
 ]
 
+CoercibleToAutomationTarget: TypeAlias = Union[
+    CoercibleToAssetSelection,
+    AssetsDefinition,
+    ExecutableDefinition,
+]
 
-class RepoRelativeTarget(NamedTuple):
-    """
-    The thing to be executed by a schedule or sensor, selecting by name a pipeline in the same repository.
-    """
+ResolvableToJob: TypeAlias = Union[JobDefinition, UnresolvedAssetJobDefinition, str]
+"""
+A piece of data that is resolvable to a JobDefinition. One of:
 
-    pipeline_name: str
-    mode: str
-    solid_selection: Optional[Sequence[str]]
+- JobDefinition
+- UnresolvedAssetJobDefinition
+- str (a job name)
+
+The property of being resolvable to a JobDefinition is what unites all of the entities that an
+AutomationTarget can wrap.
+"""
+
+ANONYMOUS_ASSET_JOB_PREFIX = "__anonymous_asset_job"
 
 
-class DirectTarget(
+class AutomationTarget(
     NamedTuple(
-        "_DirectTarget",
-        [("target", ExecutableDefinition)],
+        "_AutomationTarget",
+        [
+            ("resolvable_to_job", ResolvableToJob),
+            ("op_selection", Optional[Sequence[str]]),
+            ("assets_defs", Sequence[Union[AssetsDefinition, SourceAsset]]),
+        ],
     )
 ):
-    """
-    The thing to be executed by a schedule or sensor, referenced directly and loaded
-    in to any repository the container is included in.
+    """An abstraction representing a job to be executed by an automation, i.e. schedule or sensor.
+
+    Attributes:
+        resolvable_to_job (ResolvableToJob): An entity that is resolvable to a job at
+            definition-resolution time.
+        op_selection (Optional[Sequence[str]]): An optional list of op names to execute within the job.
     """
 
     def __new__(
         cls,
-        target: ExecutableDefinition,
+        resolvable_to_job: Union[JobDefinition, UnresolvedAssetJobDefinition, str],
+        op_selection: Optional[Sequence[str]] = None,
+        assets_defs: Optional[Sequence[Union[AssetsDefinition, SourceAsset]]] = None,
     ):
-        from .graph_definition import GraphDefinition
-
-        check.inst_param(
-            target, "target", (GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition)
-        )
-
-        if isinstance(target, PipelineDefinition) and not len(target.mode_definitions) == 1:
-            check.failed(
-                "Only graphs, jobs, and single-mode pipelines are valid "
-                "execution targets from a schedule or sensor. Please see the "
-                f"following guide to migrate your pipeline '{target.name}': "
-                "https://docs.dagster.io/guides/dagster/graph_job_op#migrating-to-ops-jobs-and-graphs"
-            )
-
         return super().__new__(
             cls,
-            target,
+            resolvable_to_job=check.inst_param(
+                resolvable_to_job,
+                "resolvable_to_job",
+                (JobDefinition, UnresolvedAssetJobDefinition, str),
+            ),
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", of_type=str
+            ),
+            assets_defs=check.opt_sequence_param(
+                assets_defs, "assets_defs", of_type=AssetsDefinition
+            ),
         )
 
-    @property
-    def pipeline_name(self) -> str:
-        return self.target.name
+    @classmethod
+    def from_coercible(
+        cls,
+        coercible: CoercibleToAutomationTarget,
+        automation_name: Optional[str] = None,  # only needed if we are generating an anonymous job
+    ) -> Self:
+        if isinstance(coercible, (JobDefinition, UnresolvedAssetJobDefinition)):
+            return cls(coercible)
+        elif isinstance(coercible, GraphDefinition):
+            deprecation_warning(
+                "Passing GraphDefinition as a job/target argument to ScheduleDefinition and SensorDefinition",
+                breaking_version="2.0",
+            )
+            return cls(coercible.to_job())
+        else:
+            if isinstance(coercible, AssetsDefinition):
+                asset_selection = AssetSelection.assets(coercible)
+                assets_defs = [coercible]
+            elif is_coercible_to_asset_selection(coercible):
+                asset_selection = AssetSelection.from_coercible(coercible)
+                assets_defs = (
+                    [x for x in coercible if isinstance(x, (AssetsDefinition, SourceAsset))]
+                    if isinstance(coercible, Sequence)
+                    else []
+                )
+            else:
+                check.failed(_make_invalid_target_error_message(coercible))
+
+            job_name = _make_anonymous_asset_job_name(
+                check.not_none(automation_name, "Must provide automation_name")
+            )
+            return cls(
+                resolvable_to_job=define_asset_job(name=job_name, selection=asset_selection),
+                assets_defs=assets_defs,
+            )
 
     @property
-    def mode(self) -> str:
-        return (
-            self.target.mode_definitions[0].name
-            if isinstance(self.target, PipelineDefinition)
-            else DEFAULT_MODE_NAME
-        )
+    def job_name(self) -> str:
+        if isinstance(self.resolvable_to_job, str):
+            return self.resolvable_to_job
+        else:
+            return self.resolvable_to_job.name
 
     @property
-    def solid_selection(self):
-        # open question on how to direct target subset pipeline
-        return None
+    def job_def(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
+        if isinstance(self.resolvable_to_job, str):
+            check.failed(
+                "Cannot access job_def for a target with string job name for resolvable_to_job"
+            )
+        return self.resolvable_to_job
 
-    def load(self) -> ExecutableDefinition:
-        return self.target
+    @property
+    def has_job_def(self) -> bool:
+        return isinstance(self.resolvable_to_job, (JobDefinition, UnresolvedAssetJobDefinition))
+
+
+def _make_anonymous_asset_job_name(automation_name: str) -> str:
+    return f"{ANONYMOUS_ASSET_JOB_PREFIX}_{automation_name}"
+
+
+def _make_invalid_target_error_message(target: object) -> str:
+    if isinstance(target, Sequence):
+        additional_message = " If you pass a sequence to a schedule, it must be a sequence of strings, AssetKeys, AssetsDefinitions, or SourceAssets."
+    else:
+        additional_message = ""
+    return f"Invalid target passed to schedule/sensor.{additional_message} Target: {target}"

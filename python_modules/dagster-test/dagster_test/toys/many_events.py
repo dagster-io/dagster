@@ -30,19 +30,17 @@ def create_raw_file_op(name):
         return ExpectationResult(
             success=True,
             label="output_table_exists",
-            description="Checked {name} exists".format(name=name),
+            description=f"Checked {name} exists",
         )
 
     @op(
         name=name,
-        description="Inject raw file for input to table {} and do expectation on output".format(
-            name
-        ),
+        description=f"Inject raw file for input to table {name} and do expectation on output",
     )
     def raw_file_op(_context):
         yield AssetMaterialization(
             asset_key="table_info",
-            metadata={"table_path": MetadataValue.path("/path/to/{}.raw".format(name))},
+            metadata={"table_path": MetadataValue.path(f"/path/to/{name}.raw")},
         )
         yield do_expectation(_context, name)
         yield Output(name)
@@ -123,8 +121,8 @@ def many_materializations_and_passing_expectations(_context):
         )
         yield ExpectationResult(
             success=True,
-            label="{table}.row_count".format(table=table),
-            description="Row count passed for {table}".format(table=table),
+            label=f"{table}.row_count",
+            description=f"Row count passed for {table}",
         )
 
 

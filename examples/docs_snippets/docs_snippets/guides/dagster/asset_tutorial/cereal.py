@@ -1,4 +1,4 @@
-# isort: skip_file
+# ruff: isort: skip_file
 
 import csv
 import requests
@@ -12,7 +12,7 @@ from dagster import asset
 
 
 @asset
-def cereals():
+def cereals():  # type: ignore  # (didactic)
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
     cereal_rows = [row for row in csv.DictReader(lines)]
@@ -37,7 +37,7 @@ def cereals():
 
 @asset
 def nabisco_cereals(cereals):
-    """Cereals manufactured by Nabisco"""
+    """Cereals manufactured by Nabisco."""
     return [row for row in cereals if row["mfr"] == "N"]
 
 

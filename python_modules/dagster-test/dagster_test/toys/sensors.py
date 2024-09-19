@@ -2,6 +2,7 @@ import os
 
 from dagster import (
     AssetKey,
+    DefaultSensorStatus,
     RunFailureSensorContext,
     RunRequest,
     SkipReason,
@@ -17,6 +18,7 @@ from dagster_test.toys.error_monster import error_monster_failing_job
 from dagster_test.toys.log_asset import log_asset_job
 from dagster_test.toys.log_file import log_file_job
 from dagster_test.toys.log_s3 import log_s3_job
+from dagster_test.toys.simple_config import simple_config_job
 
 
 def get_directory_files(directory_name, since=None):
@@ -63,9 +65,9 @@ def get_toys_sensors():
 
         for filename, mtime in directory_files:
             yield RunRequest(
-                run_key="{}:{}".format(filename, str(mtime)),
+                run_key=f"{filename}:{mtime}",
                 run_config={
-                    "solids": {
+                    "ops": {
                         "read_file": {"config": {"directory": directory_name, "filename": filename}}
                     }
                 },
@@ -91,7 +93,7 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=s3_key,
                 run_config={
-                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
+                    "ops": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
                 },
             )
 
@@ -101,13 +103,12 @@ def get_toys_sensors():
 
         slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
 
-        run_page_url = f"{base_url}/instance/runs/{context.pipeline_run.run_id}"
+        run_page_url = f"{base_url}/runs/{context.dagster_run.run_id}"
         channel = "#toy-test"
         message = "\n".join(
             [
-                f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
+                f'Pipeline "{context.dagster_run.job_name}" failed.',
                 f"error: {context.failure_event.message}",
-                f"mode: {context.pipeline_run.mode}",
                 f"run_page_url: {run_page_url}",
             ]
         )
@@ -122,7 +123,7 @@ def get_toys_sensors():
         channel="#toy-test",
         slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
         monitored_jobs=[error_monster_failing_job],
-        dagit_base_url="http://localhost:3000",
+        webserver_base_url="http://localhost:3000",
     )
 
     @asset_sensor(asset_key=AssetKey("model"), job=log_asset_job)
@@ -132,11 +133,47 @@ def get_toys_sensors():
             run_config={
                 "ops": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "ops": asset_event.pipeline_name}
+                        "config": {"asset_key": ["model"], "ops": asset_event.job_name}
                     }
                 }
             },
         )
+
+    @sensor(job=simple_config_job)
+    def math_sensor(context):
+        cursor = context.cursor if context.cursor else 0
+        context.update_cursor(str(int(cursor) + 1))
+        for i in range(3):
+            yield RunRequest(
+                run_key=str(i),
+                run_config={"ops": {"requires_config": {"config": {"num": 0}}}},
+                tags={"fee": "fifofum"},
+            )
+
+    @sensor(
+        job=simple_config_job,
+        minimum_interval_seconds=2,
+        default_status=DefaultSensorStatus.STOPPED,
+    )
+    def tick_logging_sensor(context):
+        cursor = int(context.cursor) if context.cursor else 1
+        context.update_cursor(str(cursor + 1))
+
+        context.log.debug("debug")
+        context.log.info("info")
+        context.log.warning("warning")
+        context.log.error("error")
+        context.log.critical("critical")
+
+        if cursor % 3 == 0:
+            raise Exception("Sensor error! All subsequent ticks will fail.")
+        elif cursor % 3 == 1:
+            yield SkipReason("A skip reason.")
+        elif cursor % 3 == 2:
+            yield RunRequest(
+                run_key=str(cursor),
+                run_config={"ops": {"requires_config": {"config": {"num": cursor}}}},
+            )
 
     return [
         toy_file_sensor,
@@ -144,4 +181,6 @@ def get_toys_sensors():
         toy_s3_sensor,
         custom_slack_on_job_failure,
         built_in_slack_on_run_failure_sensor,
+        math_sensor,
+        tick_logging_sensor,
     ]

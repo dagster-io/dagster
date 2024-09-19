@@ -4,6 +4,7 @@ import sys
 import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_loader import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 from dagster._core.errors import DagsterImportError
@@ -43,32 +44,32 @@ def test_double_repository():
     assert found_names == {"repo_one", "repo_two"}
 
 
-def test_single_pipeline():
-    single_pipeline_path = file_relative_path(__file__, "single_pipeline.py")
-    loadable_targets = loadable_targets_from_python_file(single_pipeline_path)
+def test_single_job():
+    single_job_path = file_relative_path(__file__, "single_job.py")
+    loadable_targets = loadable_targets_from_python_file(single_job_path)
 
     assert len(loadable_targets) == 1
     symbol = loadable_targets[0].attribute
-    assert symbol == "a_pipeline"
+    assert symbol == "a_job"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(single_pipeline_path, symbol, None)
+        CodePointer.from_python_file(single_job_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
-    assert repo_def.get_pipeline("a_pipeline")
+    assert repo_def.get_job("a_job")
 
 
-def test_double_pipeline():
-    double_pipeline_path = file_relative_path(__file__, "double_pipeline.py")
+def test_double_job():
+    double_job_path = file_relative_path(__file__, "double_job.py")
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(double_pipeline_path)
+        loadable_targets_from_python_file(double_job_path)
 
     assert (
-        str(exc_info.value)
-        == 'No repository and more than one pipeline found in "double_pipeline". '
-        "If you load a file or module directly it must have only one pipeline "
-        "in scope. Found pipelines defined in variables or decorated "
+        str(exc_info.value) == 'No repository and more than one job found in "double_job". '
+        "If you load a file or module directly it must have only one job "
+        "in scope. Found jobs defined in variables or decorated "
         "functions: ['pipe_one', 'pipe_two']."
     )
 
@@ -82,53 +83,24 @@ def test_single_graph():
     assert symbol == "graph_one"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(single_graph_path, symbol, None)
+        CodePointer.from_python_file(single_graph_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
-    assert repo_def.get_pipeline("graph_one")
+    assert repo_def.get_job("graph_one")
 
 
 def test_double_graph():
-    double_pipeline_path = file_relative_path(__file__, "double_graph.py")
+    double_job_path = file_relative_path(__file__, "double_graph.py")
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(double_pipeline_path)
+        loadable_targets_from_python_file(double_job_path)
 
     assert (
-        str(exc_info.value)
-        == 'More than one graph found in "double_graph". '
+        str(exc_info.value) == 'More than one graph found in "double_graph". '
         "If you load a file or module directly and it has no repositories, jobs, or "
         "pipelines in scope, it must have no more than one graph in scope. "
         "Found graphs defined in variables or decorated functions: ['graph_one', 'graph_two']."
-    )
-
-
-def test_single_asset_group():
-    path = file_relative_path(__file__, "single_asset_group.py")
-    loadable_targets = loadable_targets_from_python_file(path)
-
-    assert len(loadable_targets) == 1
-    symbol = loadable_targets[0].attribute
-    assert symbol == "my_asset_group"
-
-    repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
-
-    assert isinstance(repo_def, RepositoryDefinition)
-    the_job = repo_def.get_job("__ASSET_JOB")
-    assert len(the_job.graph.node_defs) == 2
-
-
-def test_double_asset_group():
-    path = file_relative_path(__file__, "double_asset_group.py")
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(path)
-
-    assert (
-        str(exc_info.value)
-        == 'More than one asset group found in "double_asset_group". '
-        "If you load a file or module directly and it has no repositories, jobs, "
-        "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
-        "Found asset groups defined in variables: ['ac1', 'ac2']."
     )
 
 
@@ -140,10 +112,13 @@ def test_multiple_assets():
     symbol = loadable_targets[0].attribute
     assert symbol == LOAD_ALL_ASSETS
 
-    repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
+    )
 
     assert isinstance(repo_def, RepositoryDefinition)
-    the_job = repo_def.get_job("__ASSET_JOB")
+    the_job = repo_def.get_implicit_global_asset_job_def()
     assert len(the_job.graph.node_defs) == 2
 
 
@@ -153,8 +128,7 @@ def test_no_loadable_targets():
 
     assert (
         str(exc_info.value)
-        == "No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in"
-        ' "nada".'
+        == 'No Definitions, function decorated with @definitions, RepositoryDefinition, Job, Pipeline, Graph, or AssetsDefinition found in "nada".'
     )
 
 
@@ -212,7 +186,8 @@ def test_single_defs_in_file():
     assert symbol == "defs"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(dagster_defs_path, symbol, None)
+        CodePointer.from_python_file(dagster_defs_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
@@ -290,3 +265,24 @@ def test_local_directory_file():
 
     with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
         loadable_targets_from_python_file(path, working_directory=os.path.dirname(path))
+
+
+@pytest.mark.parametrize(
+    "filename", ["definitions_loader_with_context.py", "definitions_loader_no_context.py"]
+)
+def test_definitions_loader(filename):
+    module_path = file_relative_path(__file__, filename)
+    loadable_targets = loadable_targets_from_python_file(module_path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "defs"
+
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(module_path, symbol, None),
+        DefinitionsLoadType.INITIALIZATION,
+        None,
+    )
+
+    assert isinstance(repo_def, RepositoryDefinition)
+    assert len(repo_def.assets_defs_by_key) == 1

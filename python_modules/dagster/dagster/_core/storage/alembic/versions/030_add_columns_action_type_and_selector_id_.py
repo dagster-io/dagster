@@ -1,10 +1,11 @@
-"""add columns action_type and selector_id to bulk_actions
+"""add columns action_type and selector_id to bulk_actions.
 
 Revision ID: 6860f830e40c
 Revises: 721d858e1dda
 Create Date: 2022-05-20 15:00:01.260860
 
 """
+
 import sqlalchemy as db
 from alembic import op
 from dagster._core.storage.migration.utils import has_column, has_index, has_table

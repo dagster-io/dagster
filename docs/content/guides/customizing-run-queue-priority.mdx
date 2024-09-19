@@ -1,0 +1,141 @@
+---
+title: "Customizing run queue priority"
+description: "Define custom prioritization rules for your Dagster instance's run queue."
+---
+
+# Customizing run queue priority
+
+When using a [run queue](/deployment/run-coordinator), you can define custom prioritization rules for your Dagster instance.
+
+By the end of this guide, you’ll:
+
+- Understand how the run queue works
+- Learn how to define custom prioritization rules
+- Understand how prioritization rules and concurrency limits work together
+
+---
+
+## Understanding the run queue
+
+The run queue is a sequence of Dagster runs waiting to be executed. Dagster pulls runs from the queue and calls `launch_run` on submitted runs. It operates as a first-in, first-out priority queue.
+
+For example, if three runs are submitted in the following order:
+
+1. Run `A`
+2. Run `B`
+3. Run `C`
+
+Then the runs will be launched in the same order: Run `A`, then `B`, then `C`. This will be true unless there are [tag concurrency limits](/guides/limiting-concurrency-in-data-pipelines) or prioritization rules in place, which we’ll cover later in this guide.
+
+By default, all runs have a priority of `0`. Dagster launches runs with higher priority first. If multiple runs have the same priority, Dagster will launch the runs in the order they're submitted to the queue.
+
+Negative priorities are also allowed and can be useful for de-prioritizing sets of runs, such as backfills.
+
+---
+
+## Defining queue prioritization rules
+
+Custom priority is specified using the `dagster/priority` tag, which can be set in code on definitions or in the launchpad of the Dagster UI.
+
+When defining a priority value, note that:
+
+- Values must be integers specified as a string. For example: `"1"`
+- Negative values are allowed. For example: `"-1"`
+
+<TabGroup>
+<TabItem name="In Python">
+
+### In Python
+
+In this example, the priority is set to `-1` with a `dagster/priority` tag value of `"-1"`:
+
+```python startafter=start_marker_priority endbefore=end_marker_priority file=/deploying/concurrency_limits/concurrency_limits.py
+@job(tags={"dagster/priority": "3"})
+def important_job(): ...
+
+
+@schedule(
+    cron_schedule="* * * * *",
+    job_name="important_job",
+    execution_timezone="US/Central",
+    tags={"dagster/priority": "-1"},
+)
+def less_important_schedule(_): ...
+```
+
+</TabItem>
+<TabItem name="In the Dagster UI">
+
+### In the Dagster UI
+
+Using the launchpad in the Dagster UI, you can also override priority tag values. In this example, we clicked the **Edit tags** button to display the following modal:
+
+<Image
+alt="Add tags to run modal in Dagster UI Launchpad"
+src="/images/guides/customizing-run-queue-priority/dagster-priority-in-launchpad.png"
+width={3066}
+height={1520}
+/>
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Understanding prioritization rules and concurrency limits
+
+Unless tag concurrency limits and/or prioritization rules are in place, queued runs are executed in the order they’re submitted to the queue. However, a run blocked by tag concurrency limits won’t block runs submitted after it.
+
+Let’s walk through an example to demonstrate. In this example, three runs are submitted in the following order:
+
+1. Run `A`, tagged as `team: docs`
+2. Run `B`, tagged as `team: docs`
+3. Run `C`, which isn’t tagged
+
+Without configured limits, these runs will be launched in the order they were submitted, or run `A`, then `B`, then `C`.
+
+Before any more runs are launched, let’s add the following configuration to our instance’s settings:
+
+```yaml
+tag_concurrency_limits:
+  - key: "team"
+    limit: 1
+```
+
+Now, runs `A` and `B` can’t execute concurrently, while there isn’t a limit on run `C`. Assuming each run executes for a minimum of five minutes, the order in which the runs are launched will change.
+
+If the runs are submitted in the same order as before - that is, `A`, `B`, `C` - then the following will occur:
+
+- Run `A` launches
+- Run `B` B is skipped, as run `A` is in progress and concurrent runs are limited to `1` for the `team` tag
+- Run `C` launches
+- Run `B` launches after run `A` finishes
+
+To summarize, due to the concurrency limit, this configuration will change the run launching order to `A`, `C`, `B`.
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="Limiting concurrency in data pipelines"
+    href="/guides/limiting-concurrency-in-data-pipelines"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Run coordinators"
+    href="/deployment/run-coordinator"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Software-defined-assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Managing Dagster+ deployments"
+    href="/dagster-plus/managing-deployments/managing-deployments"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Ops"
+    href="/concepts/ops-jobs-graphs/ops"
+  ></ArticleListItem>
+</ArticleList>

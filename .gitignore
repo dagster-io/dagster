@@ -45,6 +45,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+mlruns/
 
 # Translations
 *.mo
@@ -80,8 +81,10 @@ celerybeat-schedule
 
 # dotenv
 .env
+.envrc
 
 # virtualenv
+.direnv/
 .venv
 venv/
 ENV/
@@ -98,24 +101,32 @@ Pipfile.lock
 # mkdocs documentation
 /site
 
+# ruff
+.ruff_cache/
+
 # mypy
 .mypy_cache/
 
 tags
+!python_modules/dagster/dagster/_core/definitions/tags
 
 .pytest_cache
 .DS_Store
 
 docs/_build
 python_modules/dagster/docs/_build
-.vscode/
 
 dagit_run_logs
 
 python_modules/libraries/dagster-aws/dagster_aws/ecs/config.yaml
 
+python_modules/dagster-webserver/node_modules/
+python_modules/dagster-webserver/yarn.lock
+
+# old dagit stuff
 python_modules/dagit/node_modules/
 python_modules/dagit/yarn.lock
+js_modules/dagit
 
 # Gatsby stuff
 docs/gatsby/**/node_modules/
@@ -134,7 +145,7 @@ data
 dask-worker-space
 
 # PyCharm IDE Config files
-.idea
+.idea/
 
 # Codemod bookmarks
 .codemod.bookmark
@@ -159,7 +170,10 @@ pythonenv*/
 *.duckdb
 
 # PyRight config
-pyrightconfig.json
+pyrightconfig*
 
 # Scripts working directory
 scripts/.build
+
+# dbt .user files
+.user.yml

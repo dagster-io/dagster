@@ -1,52 +1,59 @@
 import asyncio
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import graphene
 from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.host_representation import (
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.remote_representation import (
+    CodeLocation,
     ExternalRepository,
-    GrpcServerRepositoryLocation,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocation,
+    GrpcServerCodeLocation,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.host_representation.grpc_server_state_subscriber import (
+from dagster._core.remote_representation.feature_flags import get_feature_flags_for_location
+from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
+    LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.workspace.context import (
-    WorkspaceLocationEntry,
-    WorkspaceLocationLoadStatus,
-    WorkspaceProcessContext,
-)
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceProcessContext
+from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import (
-    ProjectedLogicalVersionLoader,
-    RepositoryScopedBatchLoader,
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader, StaleStatusLoader
+from dagster_graphql.schema.asset_graph import GrapheneAssetGroup, GrapheneAssetNode
+from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRepositoryNotFoundError
+from dagster_graphql.schema.partition_sets import GraphenePartitionSet
+from dagster_graphql.schema.permissions import GraphenePermission
+from dagster_graphql.schema.pipelines.pipeline import GrapheneJob, GraphenePipeline
+from dagster_graphql.schema.repository_origin import (
+    GrapheneRepositoryMetadata,
+    GrapheneRepositoryOrigin,
 )
+from dagster_graphql.schema.resources import GrapheneResourceDetails
+from dagster_graphql.schema.schedules import GrapheneSchedule
+from dagster_graphql.schema.sensors import GrapheneSensor, GrapheneSensorType
+from dagster_graphql.schema.used_solid import GrapheneUsedSolid
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
-from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
-from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
-from .partition_sets import GraphenePartitionSet
-from .permissions import GraphenePermission
-from .pipelines.pipeline import GrapheneJob, GraphenePipeline
-from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
-from .schedules import GrapheneSchedule
-from .sensors import GrapheneSensor
-from .used_solid import GrapheneUsedSolid
-from .util import HasContext, non_null_list
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.external_data import ExternalAssetNode
+
+GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 
 
-class GrapheneLocationStateChangeEventType(graphene.Enum):
-    LOCATION_UPDATED = "LOCATION_UPDATED"
-    LOCATION_DISCONNECTED = "LOCATION_DISCONNECTED"
-    LOCATION_RECONNECTED = "LOCATION_RECONNECTED"
-    LOCATION_ERROR = "LOCATION_ERROR"
+class GrapheneDagsterLibraryVersion(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    version = graphene.NonNull(graphene.String)
 
     class Meta:
-        name = "LocationStateChangeEventType"
+        name = "DagsterLibraryVersion"
 
 
 class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
@@ -58,10 +65,10 @@ class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
 
     @classmethod
     def from_python_status(cls, python_status):
-        check.inst_param(python_status, "python_status", WorkspaceLocationLoadStatus)
-        if python_status == WorkspaceLocationLoadStatus.LOADING:
+        check.inst_param(python_status, "python_status", CodeLocationLoadStatus)
+        if python_status == CodeLocationLoadStatus.LOADING:
             return GrapheneRepositoryLocationLoadStatus.LOADING
-        elif python_status == WorkspaceLocationLoadStatus.LOADED:
+        elif python_status == CodeLocationLoadStatus.LOADED:
             return GrapheneRepositoryLocationLoadStatus.LOADED
         else:
             check.failed(f"Invalid location load status: {python_status}")
@@ -74,21 +81,20 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     environment_path = graphene.String()
     repositories = non_null_list(lambda: GrapheneRepository)
     server_id = graphene.String()
+    dagsterLibraryVersions = graphene.List(graphene.NonNull(GrapheneDagsterLibraryVersion))
 
     class Meta:
         name = "RepositoryLocation"
 
-    def __init__(self, location):
-        self._location = check.inst_param(location, "location", RepositoryLocation)
+    def __init__(self, location: CodeLocation):
+        self._location = check.inst_param(location, "location", CodeLocation)
         environment_path = (
             location.origin.loadable_target_origin.executable_path
-            if isinstance(location.origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+            if isinstance(location.origin, ManagedGrpcPythonEnvCodeLocationOrigin)
             else None
         )
 
-        server_id = (
-            location.server_id if isinstance(location, GrpcServerRepositoryLocation) else None
-        )
+        server_id = location.server_id if isinstance(location, GrpcServerCodeLocation) else None
 
         check.invariant(location.name is not None)
 
@@ -99,14 +105,21 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
             server_id=server_id,
         )
 
-    def resolve_id(self, _):
+    def resolve_id(self, _) -> str:
         return self.name
 
-    def resolve_repositories(self, graphene_info):
+    def resolve_repositories(self, graphene_info: ResolveInfo):
         return [
-            GrapheneRepository(graphene_info.context.instance, repository, self._location)
+            GrapheneRepository(graphene_info.context, repository, self._location)
             for repository in self._location.get_repositories().values()
         ]
+
+    def resolve_dagsterLibraryVersions(self, _: ResolveInfo):
+        libs = self._location.get_dagster_library_versions()
+        if libs is None:
+            return None
+
+        return [GrapheneDagsterLibraryVersion(name, ver) for name, ver in libs.items()]
 
 
 class GrapheneRepositoryLocationOrLoadError(graphene.Union):
@@ -123,15 +136,32 @@ class GrapheneWorkspaceLocationStatusEntry(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
     updateTimestamp = graphene.NonNull(graphene.Float)
+    versionKey = graphene.NonNull(graphene.String)
+
+    permissions = graphene.Field(non_null_list(GraphenePermission))
 
     class Meta:
         name = "WorkspaceLocationStatusEntry"
 
-    def __init__(self, name, load_status, update_timestamp):
-        super().__init__(name=name, loadStatus=load_status, updateTimestamp=update_timestamp)
+    def __init__(
+        self,
+        id,
+        name,
+        load_status,
+        update_timestamp,
+        version_key,
+    ):
+        super().__init__(
+            id=id,
+            name=name,
+            loadStatus=load_status,
+            updateTimestamp=update_timestamp,
+            versionKey=version_key,
+        )
 
-    def resolve_id(self, _):
-        return f"location_status:{self.name}"
+    def resolve_permissions(self, graphene_info):
+        permissions = graphene_info.context.permissions_for_location(location_name=self.name)
+        return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
 
 class GrapheneWorkspaceLocationStatusEntries(graphene.ObjectType):
@@ -150,6 +180,14 @@ class GrapheneWorkspaceLocationStatusEntriesOrError(graphene.Union):
         name = "WorkspaceLocationStatusEntriesOrError"
 
 
+class GrapheneFeatureFlag(graphene.ObjectType):
+    class Meta:
+        name = "FeatureFlag"
+
+    name = graphene.NonNull(graphene.String)
+    enabled = graphene.NonNull(graphene.Boolean)
+
+
 class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     name = graphene.NonNull(graphene.String)
@@ -157,24 +195,25 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     updatedTimestamp = graphene.NonNull(graphene.Float)
+    versionKey = graphene.NonNull(graphene.String)
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
+
+    featureFlags = non_null_list(GrapheneFeatureFlag)
 
     class Meta:
         name = "WorkspaceLocationEntry"
 
-    def __init__(self, location_entry: WorkspaceLocationEntry):
-        self._location_entry = check.inst_param(
-            location_entry, "location_entry", WorkspaceLocationEntry
-        )
+    def __init__(self, location_entry: CodeLocationEntry):
+        self._location_entry = check.inst_param(location_entry, "location_entry", CodeLocationEntry)
         super().__init__(name=self._location_entry.origin.location_name)
 
     def resolve_id(self, _):
         return self.name
 
     def resolve_locationOrLoadError(self, _):
-        if self._location_entry.repository_location:
-            return GrapheneRepositoryLocation(self._location_entry.repository_location)
+        if self._location_entry.code_location:
+            return GrapheneRepositoryLocation(self._location_entry.code_location)
 
         error = self._location_entry.load_error
         return GraphenePythonError(error) if error else None
@@ -192,12 +231,22 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
             if value is not None
         ]
 
-    def resolve_updatedTimestamp(self, _):
+    def resolve_updatedTimestamp(self, _) -> float:
         return self._location_entry.update_timestamp
 
+    def resolve_versionKey(self, _) -> str:
+        return self._location_entry.version_key
+
     def resolve_permissions(self, graphene_info):
-        permissions = graphene_info.context.permissions_for_location(self.name)
+        permissions = graphene_info.context.permissions_for_location(location_name=self.name)
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
+
+    def resolve_featureFlags(self, graphene_info):
+        feature_flags = get_feature_flags_for_location(self._location_entry)
+        return [
+            GrapheneFeatureFlag(name=feature_flag_name.value, enabled=feature_flag_enabled)
+            for feature_flag_name, feature_flag_enabled in feature_flags.items()
+        ]
 
 
 class GrapheneRepository(graphene.ObjectType):
@@ -211,48 +260,69 @@ class GrapheneRepository(graphene.ObjectType):
     origin = graphene.NonNull(GrapheneRepositoryOrigin)
     partitionSets = non_null_list(GraphenePartitionSet)
     schedules = non_null_list(GrapheneSchedule)
-    sensors = non_null_list(GrapheneSensor)
+    sensors = graphene.Field(
+        non_null_list(GrapheneSensor), sensorType=graphene.Argument(GrapheneSensorType)
+    )
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
+    allTopLevelResourceDetails = non_null_list(GrapheneResourceDetails)
 
     class Meta:
         name = "Repository"
 
     def __init__(
         self,
-        instance: DagsterInstance,
+        workspace_context: BaseWorkspaceRequestContext,
         repository: ExternalRepository,
-        repository_location: RepositoryLocation,
+        repository_location: CodeLocation,
     ):
+        # Warning! GrapheneAssetNode contains a GrapheneRepository. Any computation in this
+        # __init__ will be done **once per asset**. Ensure that any expensive work is done
+        # elsewhere or cached.
+        instance = workspace_context.instance
         self._repository = check.inst_param(repository, "repository", ExternalRepository)
         self._repository_location = check.inst_param(
-            repository_location, "repository_location", RepositoryLocation
+            repository_location, "repository_location", CodeLocation
         )
         check.inst_param(instance, "instance", DagsterInstance)
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)
-        self._projected_logical_version_loader = ProjectedLogicalVersionLoader(
+        self._stale_status_loader = StaleStatusLoader(
             instance=instance,
-            key_to_node_map={},
-            repositories=[repository],
+            asset_graph=lambda: repository.asset_graph,
+            loading_context=workspace_context,
         )
+        self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
+
+        self._asset_graph_differ = None
+        # get_base_deployment_context is cached so there will only be one context per query
+        base_deployment_context = workspace_context.get_base_deployment_context()
+        if base_deployment_context is not None:
+            # then we are in a branch deployment
+            self._asset_graph_differ = AssetGraphDiffer.from_external_repositories(
+                code_location_name=self._repository_location.name,
+                repository_name=self._repository.name,
+                branch_workspace=workspace_context,
+                base_workspace=base_deployment_context,
+            )
         super().__init__(name=repository.name)
 
-    def resolve_id(self, _graphene_info):
-        return self._repository.get_external_origin_id()
+    def resolve_id(self, _graphene_info: ResolveInfo) -> str:
+        return self._repository.get_compound_id().to_string()
 
-    def resolve_origin(self, _graphene_info):
+    def resolve_origin(self, _graphene_info: ResolveInfo):
         origin = self._repository.get_external_origin()
         return GrapheneRepositoryOrigin(origin)
 
-    def resolve_location(self, _graphene_info):
+    def resolve_location(self, _graphene_info: ResolveInfo):
         return GrapheneRepositoryLocation(self._repository_location)
 
-    def resolve_schedules(self, _graphene_info):
+    def resolve_schedules(self, _graphene_info: ResolveInfo):
         return sorted(
             [
                 GrapheneSchedule(
                     schedule,
+                    self._repository,
                     self._batch_loader.get_schedule_state(schedule.name),
                     self._batch_loader,
                 )
@@ -261,49 +331,51 @@ class GrapheneRepository(graphene.ObjectType):
             key=lambda schedule: schedule.name,
         )
 
-    def resolve_sensors(self, _graphene_info):
-        return sorted(
-            [
-                GrapheneSensor(
-                    sensor,
-                    self._batch_loader.get_sensor_state(sensor.name),
-                    self._batch_loader,
-                )
-                for sensor in self._repository.get_external_sensors()
-            ],
-            key=lambda sensor: sensor.name,
-        )
-
-    def resolve_pipelines(self, _graphene_info):
+    def resolve_sensors(self, _graphene_info: ResolveInfo, sensorType: Optional[SensorType] = None):
         return [
-            GraphenePipeline(pipeline, self._batch_loader)
+            GrapheneSensor(
+                sensor,
+                self._repository,
+                self._batch_loader.get_sensor_state(sensor.name),
+                self._batch_loader,
+            )
+            for sensor in sorted(
+                self._repository.get_external_sensors(), key=lambda sensor: sensor.name
+            )
+            if not sensorType or sensor.sensor_type == sensorType
+        ]
+
+    def resolve_pipelines(self, _graphene_info: ResolveInfo):
+        return [
+            GraphenePipeline(pipeline)
             for pipeline in sorted(
-                self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
+                self._repository.get_all_external_jobs(),
+                key=lambda pipeline: pipeline.name,
             )
         ]
 
-    def resolve_jobs(self, _graphene_info):
+    def resolve_jobs(self, _graphene_info: ResolveInfo):
         return [
-            GrapheneJob(pipeline, self._batch_loader)
+            GrapheneJob(pipeline)
             for pipeline in sorted(
-                self._repository.get_all_external_jobs(), key=lambda pipeline: pipeline.name
+                self._repository.get_all_external_jobs(),
+                key=lambda pipeline: pipeline.name,
             )
-            if pipeline.is_job
         ]
 
-    def resolve_usedSolid(self, _graphene_info, name):
+    def resolve_usedSolid(self, _graphene_info: ResolveInfo, name):
         return get_solid(self._repository, name)
 
-    def resolve_usedSolids(self, _graphene_info):
+    def resolve_usedSolids(self, _graphene_info: ResolveInfo):
         return get_solids(self._repository)
 
-    def resolve_partitionSets(self, _graphene_info):
+    def resolve_partitionSets(self, _graphene_info: ResolveInfo):
         return (
             GraphenePartitionSet(self._repository.handle, partition_set)
             for partition_set in self._repository.get_external_partition_sets()
         )
 
-    def resolve_displayMetadata(self, _graphene_info):
+    def resolve_displayMetadata(self, _graphene_info: ResolveInfo):
         metadata = self._repository.get_display_metadata()
         return [
             GrapheneRepositoryMetadata(key=key, value=value)
@@ -311,19 +383,27 @@ class GrapheneRepository(graphene.ObjectType):
             if value is not None
         ]
 
-    def resolve_assetNodes(self, _graphene_info):
+    def resolve_assetNodes(self, graphene_info: ResolveInfo):
+        external_asset_nodes = self._repository.get_external_asset_nodes()
+        asset_checks_loader = AssetChecksLoader(
+            context=graphene_info.context,
+            asset_keys=[node.asset_key for node in external_asset_nodes],
+        )
         return [
             GrapheneAssetNode(
                 self._repository_location,
                 self._repository,
                 external_asset_node,
-                projected_logical_version_loader=self._projected_logical_version_loader,
+                asset_checks_loader=asset_checks_loader,
+                stale_status_loader=self._stale_status_loader,
+                dynamic_partitions_loader=self._dynamic_partitions_loader,
+                asset_graph_differ=self._asset_graph_differ,
             )
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
 
-    def resolve_assetGroups(self, _graphene_info):
-        groups = {}
+    def resolve_assetGroups(self, _graphene_info: ResolveInfo):
+        groups: Dict[str, List[ExternalAssetNode]] = {}
         for external_asset_node in self._repository.get_external_asset_nodes():
             if not external_asset_node.group_name:
                 continue
@@ -332,9 +412,25 @@ class GrapheneRepository(graphene.ObjectType):
 
         return [
             GrapheneAssetGroup(
-                group_name, [external_node.asset_key for external_node in external_nodes]
+                f"{self._repository_location.name}-{self._repository.name}-{group_name}",
+                group_name,
+                [external_node.asset_key for external_node in external_nodes],
             )
             for group_name, external_nodes in groups.items()
+        ]
+
+    def resolve_allTopLevelResourceDetails(self, _graphene_info) -> List[GrapheneResourceDetails]:
+        return [
+            GrapheneResourceDetails(
+                location_name=self._repository_location.name,
+                repository_name=self._repository.name,
+                external_resource=resource,
+            )
+            for resource in sorted(
+                self._repository.get_external_resources(),
+                key=lambda resource: resource.name,
+            )
+            if resource.is_top_level
         ]
 
 
@@ -346,10 +442,14 @@ class GrapheneRepositoryConnection(graphene.ObjectType):
 
 
 class GrapheneWorkspace(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
     locationEntries = non_null_list(GrapheneWorkspaceLocationEntry)
 
     class Meta:
         name = "Workspace"
+
+    def resolve_id(self, _graphene_info: ResolveInfo):
+        return "Workspace"
 
 
 class GrapheneLocationStateChangeEvent(graphene.ObjectType):
@@ -369,7 +469,7 @@ class GrapheneLocationStateChangeSubscription(graphene.ObjectType):
         name = "LocationStateChangeSubscription"
 
 
-async def gen_location_state_changes(graphene_info: HasContext):
+async def gen_location_state_changes(graphene_info: ResolveInfo):
     # This lives on the process context and is never modified/destroyed, so we can
     # access it directly
     context = graphene_info.context.process_context
@@ -401,7 +501,11 @@ async def gen_location_state_changes(graphene_info: HasContext):
 
 class GrapheneRepositoriesOrError(graphene.Union):
     class Meta:
-        types = (GrapheneRepositoryConnection, GraphenePythonError)
+        types = (
+            GrapheneRepositoryConnection,
+            GrapheneRepositoryNotFoundError,
+            GraphenePythonError,
+        )
         name = "RepositoriesOrError"
 
 
@@ -413,8 +517,18 @@ class GrapheneWorkspaceOrError(graphene.Union):
 
 class GrapheneRepositoryOrError(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneRepository, GrapheneRepositoryNotFoundError)
+        types = (
+            GraphenePythonError,
+            GrapheneRepository,
+            GrapheneRepositoryNotFoundError,
+        )
         name = "RepositoryOrError"
+
+
+class GrapheneWorkspaceLocationEntryOrError(graphene.Union):
+    class Meta:
+        types = (GrapheneWorkspaceLocationEntry, GraphenePythonError)
+        name = "WorkspaceLocationEntryOrError"
 
 
 types = [
@@ -426,4 +540,5 @@ types = [
     GrapheneRepositoryConnection,
     GrapheneRepositoryLocation,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceLocationEntryOrError,
 ]

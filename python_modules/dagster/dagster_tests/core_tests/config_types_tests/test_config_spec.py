@@ -43,7 +43,7 @@ def test_kitchen_sink():
     assert (
         wrap_op_in_graph_and_execute(
             kitchen_sink,
-            run_config={"solids": {"kitchen_sink": {"config": solid_config_one}}},
+            run_config={"ops": {"kitchen_sink": {"config": solid_config_one}}},
         ).output_value()
         == solid_config_one
     )
@@ -65,7 +65,7 @@ def test_kitchen_sink():
     assert (
         wrap_op_in_graph_and_execute(
             kitchen_sink,
-            run_config={"solids": {"kitchen_sink": {"config": solid_config_two}}},
+            run_config={"ops": {"kitchen_sink": {"config": solid_config_two}}},
         ).output_value()
         == solid_config_two
     )
@@ -83,13 +83,13 @@ def test_builtin_dict():
 
     assert wrap_op_in_graph_and_execute(
         builtin_dict_op,
-        run_config={"solids": {"builtin_dict_op": {"config": {"a": "b"}}}},
+        run_config={"ops": {"builtin_dict_op": {"config": {"a": "b"}}}},
     ).output_value() == {"a": "b"}
 
     assert executed["yup"]
 
 
-def test_bad_solid_config_argument():
+def test_bad_op_config_argument():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema="dkjfkd")
@@ -101,7 +101,7 @@ def test_bad_solid_config_argument():
     )
 
 
-def test_bad_solid_config_argument_nested():
+def test_bad_op_config_argument_nested():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema={"field": "kdjkfjd"})
@@ -114,7 +114,7 @@ def test_bad_solid_config_argument_nested():
     )
 
 
-def test_bad_solid_config_argument_list_wrong_length():
+def test_bad_op_config_argument_list_wrong_length():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema={"bad_list": []})
@@ -128,7 +128,7 @@ def test_bad_solid_config_argument_list_wrong_length():
     )
 
 
-def test_bad_solid_config_argument_map_bad_value():
+def test_bad_op_config_argument_map_bad_value():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema={"bad_map": {str: "asdf"}})
@@ -138,7 +138,7 @@ def test_bad_solid_config_argument_map_bad_value():
     assert "Map must have a single value and contain a valid type" in str(exc_info.value)
 
 
-def test_bad_solid_config_argument_list_bad_item():
+def test_bad_op_config_argument_list_bad_item():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema={"bad_list": ["kdjfkd"]})
@@ -153,7 +153,7 @@ def test_bad_solid_config_argument_list_bad_item():
     )
 
 
-def test_bad_solid_config_argument_list_bad_nested_item():
+def test_bad_op_config_argument_list_bad_nested_item():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema={"bad_nested_list": [{"bad_field": "kjdkfd"}]})

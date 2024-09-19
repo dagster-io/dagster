@@ -5,7 +5,8 @@ ARG DAGSTER_VERSION
 
 # All packages are hard-pinned to `dagster`, so setting the version on just `DAGSTER` will ensure
 # compatible versions.
-RUN pip install \
+RUN pip install -U uv
+RUN python -m uv pip install \
     dagster==${DAGSTER_VERSION} \
     dagster-postgres \
     dagster-aws \

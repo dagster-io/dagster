@@ -1,6 +1,5 @@
-# pylint: disable=redefined-outer-name
 # start_marker
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 from dagster import Definitions, asset
 
@@ -17,7 +16,11 @@ def downstream_asset(upstream_asset):
 
 defs = Definitions(
     assets=[upstream_asset, downstream_asset],
-    resources={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
+    resources={
+        "io_manager": S3PickleIOManager(
+            s3_resource=S3Resource(), s3_bucket="my-bucket"
+        ),
+    },
 )
 
 

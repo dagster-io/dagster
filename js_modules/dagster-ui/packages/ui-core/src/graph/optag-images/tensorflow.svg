@@ -1,0 +1,24 @@
+<svg width="14px" height="14px" viewBox="0 0 8 8" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+        <polygon id="path-1" points="3.24385833 1.845375 0 0 0 7.58333333 1.29756667 6.83363333 1.29756667 4.69991667 2.27791667 5.26219167 2.26350833 3.806075 1.29756667 3.2438 1.29756667 2.39321833 3.24385833 3.53214167"></polygon>
+        <polygon id="path-3" points="0 1.845375 3.2438 0 3.2438 7.58333333 1.94629167 6.83363333 1.94629167 2.39321833 0 3.53214167"></polygon>
+    </defs>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="tensorflow" transform="translate(0.666667, 0.208333)">
+            <g id="Clipped" transform="translate(3.532142, 0.000000)">
+                <mask id="mask-2" fill="white">
+                    <use xlink:href="#path-1"></use>
+                </mask>
+                <g id="Path"></g>
+                <polygon id="Path" fill="#171615" fill-rule="nonzero" mask="url(#mask-2)" points="-3.83493833 -0.0288283333 4.12323333 -0.0288283333 4.12323333 7.59774167 -3.83493833 7.59774167"></polygon>
+            </g>
+            <g id="Clipped">
+                <mask id="mask-4" fill="white">
+                    <use xlink:href="#path-3"></use>
+                </mask>
+                <g id="Path"></g>
+                <polygon id="Path" fill="#171615" fill-rule="nonzero" mask="url(#mask-4)" points="-0.3459925 -0.0288283333 7.61220833 -0.0288283333 7.61220833 7.59774167 -0.3459925 7.59774167"></polygon>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,123 +1,189 @@
 import os
-import subprocess
-from distutils import spawn  # pylint: disable=deprecated-module
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Optional
 
-import psycopg2
 import pytest
-from dagster._utils import file_relative_path, pushd
-from dagster._utils.test.postgres_instance import TestPostgresInstance
+from dagster_dbt import DbtCliResource
+from dagster_dbt.core.resource import DbtCliInvocation
 
-# ======= CONFIG ========
-DBT_EXECUTABLE = "dbt"
-TEST_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_test_project")
-DBT_CONFIG_DIR = os.path.join(TEST_PROJECT_DIR, "dbt_config")
-TEST_DBT_TARGET_DIR = os.path.join(TEST_PROJECT_DIR, "target_test")
-
-TEST_PYTHON_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_python_test_project")
-DBT_PYTHON_CONFIG_DIR = os.path.join(TEST_PYTHON_PROJECT_DIR, "dbt_config")
-
-IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-
-
-@pytest.fixture(scope="session")
-def test_project_dir():
-    return TEST_PROJECT_DIR
-
-
-@pytest.fixture(scope="session")
-def dbt_config_dir():
-    return DBT_CONFIG_DIR
-
-
-@pytest.fixture(scope="session")
-def dbt_target_dir():
-    return TEST_DBT_TARGET_DIR
+from dagster_dbt_tests.dbt_projects import (
+    test_asset_checks_path,
+    test_asset_key_exceptions_path,
+    test_dagster_dbt_mixed_freshness_path,
+    test_dbt_alias_path,
+    test_dbt_model_versions_path,
+    test_dbt_python_interleaving_path,
+    test_dbt_semantic_models_path,
+    test_dbt_source_freshness_path,
+    test_dbt_unit_tests_path,
+    test_duplicate_source_asset_key_path,
+    test_jaffle_shop_path,
+    test_last_update_freshness_multiple_assets_defs_path,
+    test_last_update_freshness_path,
+    test_meta_config_path,
+    test_metadata_path,
+    test_time_partition_freshness_multiple_assets_defs_path,
+    test_time_partition_freshness_path,
+)
 
 
-@pytest.fixture(scope="session")
-def dbt_executable():
-    return DBT_EXECUTABLE
+@pytest.hookimpl(hookwrapper=True)
+def pytest_collection_modifyitems(items: List[pytest.Item]) -> Iterator[None]:
+    """Mark tests in the `cloud` directories. Mark other tests as `core`."""
+    for item in items:
+        if "cloud" in item.path.parts:
+            item.add_marker(pytest.mark.cloud)
+        else:
+            item.add_marker(pytest.mark.core)
+
+    yield
 
 
-@pytest.fixture(scope="session")
-def test_python_project_dir():
-    return TEST_PYTHON_PROJECT_DIR
+@pytest.fixture(scope="session", autouse=True)
+def setup_duckdb_dbfile_path_fixture(worker_id: str) -> None:
+    """Set `DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH` to generate a unique duckdb dbfile path
+    for each pytest-xdist worker.
+    """
+    jaffle_shop_duckdb_db_file_name = f"{worker_id}_jaffle_shop"
+    jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
+
+    os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME"] = jaffle_shop_duckdb_db_file_name
+    os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH"] = jaffle_shop_duckdb_dbfile_path
 
 
-@pytest.fixture(scope="session")
-def dbt_python_config_dir():
-    return DBT_PYTHON_CONFIG_DIR
+@pytest.fixture(scope="session", autouse=True)
+def disable_openblas_threading_affinity_fixture() -> None:
+    """Disable OpenBLAS and GotoBLAS threading affinity to prevent test failures."""
+    os.environ["OPENBLAS_MAIN_FREE"] = "1"
+    os.environ["GOTOBLAS_MAIN_FREE"] = "1"
 
 
-@pytest.fixture(scope="session")
-def conn_string():
-    postgres_host = os.environ.get("POSTGRES_TEST_DB_DBT_HOST")
-    if postgres_host is None and IS_BUILDKITE:
-        pytest.fail("Env variable POSTGRES_TEST_DB_DBT_HOST is unset")
+def _create_dbt_invocation(
+    project_dir: Path, build_project: bool = False, target: Optional[str] = None
+) -> DbtCliInvocation:
+    dbt = DbtCliResource(
+        project_dir=os.fspath(project_dir), global_config_flags=["--quiet"], target=target
+    )
 
-    try:
-        if not IS_BUILDKITE:
-            os.environ["POSTGRES_TEST_DB_DBT_HOST"] = "localhost"
+    if not project_dir.joinpath("dbt_packages").exists():
+        dbt.cli(["deps"], raise_on_error=False).wait()
 
-        os.environ["DBT_TARGET_PATH"] = "target"
+    dbt_invocation = dbt.cli(["parse"]).wait()
 
-        with TestPostgresInstance.docker_service_up_or_skip(
-            file_relative_path(__file__, "docker-compose.yml"),
-            "test-postgres-db-dbt",
-            {"hostname": postgres_host} if IS_BUILDKITE else {},
-        ) as conn_str:
-            yield conn_str
-    finally:
-        if postgres_host is not None:
-            os.environ["POSTGRES_TEST_DB_DBT_HOST"] = postgres_host
+    if build_project:
+        dbt.cli(["build", "--exclude", "resource_type:test"], raise_on_error=False).wait()
+
+    return dbt_invocation
 
 
-@pytest.fixture(scope="session")
-def prepare_dbt_cli(conn_string):  # pylint: disable=unused-argument, redefined-outer-name
-    if not spawn.find_executable(DBT_EXECUTABLE):
-        raise Exception("executable not found in path for `dbt`")
-
-    with pushd(TEST_PROJECT_DIR):
-        yield
+@pytest.fixture(name="test_jaffle_shop_invocation", scope="session")
+def test_jaffle_shop_invocation_fixture() -> DbtCliInvocation:
+    return _create_dbt_invocation(test_jaffle_shop_path)
 
 
-@pytest.fixture(scope="session")
-def dbt_seed(
-    prepare_dbt_cli, dbt_executable, dbt_config_dir
-):  # pylint: disable=unused-argument, redefined-outer-name
-    subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
+@pytest.fixture(name="test_jaffle_shop_manifest_path", scope="session")
+def test_jaffle_shop_manifest_path_fixture(test_jaffle_shop_invocation: DbtCliInvocation) -> Path:
+    return test_jaffle_shop_invocation.target_path.joinpath("manifest.json")
 
 
-@pytest.fixture(scope="session")
-def dbt_build(
-    prepare_dbt_cli, dbt_executable, dbt_config_dir
-):  # pylint: disable=unused-argument, redefined-outer-name
-    subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
-    subprocess.run([dbt_executable, "run", "--profiles-dir", dbt_config_dir], check=True)
+@pytest.fixture(name="test_jaffle_shop_manifest", scope="session")
+def test_jaffle_shop_manifest_fixture(
+    test_jaffle_shop_invocation: DbtCliInvocation,
+) -> Dict[str, Any]:
+    return test_jaffle_shop_invocation.get_artifact("manifest.json")
 
 
-@pytest.fixture(scope="session")
-def dbt_python_sources(conn_string):
-    """Create sample users/events table sources"""
+@pytest.fixture(name="test_asset_checks_manifest", scope="session")
+def test_asset_checks_manifest_fixture() -> Dict[str, Any]:
+    # Prepopulate duckdb with jaffle shop data to support testing individual asset checks.
+    return _create_dbt_invocation(
+        test_asset_checks_path,
+        build_project=True,
+    ).get_artifact("manifest.json")
 
-    conn = None
-    try:
-        conn = psycopg2.connect(conn_string)
-        cur = conn.cursor()
-        cur.execute("CREATE SCHEMA raw_data")
-        cur.execute("CREATE TABLE raw_data.events (day integer, user_id integer, event_id integer)")
-        cur.execute("CREATE TABLE raw_data.users (day integer, user_id integer)")
-        cur.executemany(
-            "INSERT INTO raw_data.users VALUES(%s, %s)", [(n / 10, n) for n in range(100)]
-        )
-        cur.executemany(
-            "INSERT INTO raw_data.events VALUES(%s, %s, %s)",
-            [(n / 10, n, n * 10) for n in range(100)],
-        )
-        conn.commit()
-        cur.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        raise error
-    finally:
-        if conn is not None:
-            conn.close()
+
+@pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
+def test_asset_key_exceptions_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_asset_key_exceptions_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_alias_manifest", scope="session")
+def test_dbt_alias_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_alias_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_model_versions_manifest", scope="session")
+def test_dbt_model_versions_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_model_versions_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_python_interleaving_manifest", scope="session")
+def test_dbt_python_interleaving_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_python_interleaving_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_semantic_models_manifest", scope="session")
+def test_dbt_semantic_models_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_semantic_models_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_source_freshness_manifest", scope="session")
+def test_dbt_source_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_source_freshness_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_unit_tests_manifest", scope="session")
+def test_dbt_unit_tests_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_unit_tests_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_duplicate_source_asset_key_manifest", scope="session")
+def test_duplicate_source_asset_key_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_duplicate_source_asset_key_path).get_artifact(
+        "manifest.json"
+    )
+
+
+@pytest.fixture(name="test_meta_config_manifest", scope="session")
+def test_meta_config_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_meta_config_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_last_update_freshness_manifest", scope="session")
+def test_last_update_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_last_update_freshness_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_time_partition_freshness_manifest_multiple_assets_defs", scope="session")
+def test_time_partition_freshness_manifest_fixture_multiple_assets_defs() -> Dict[str, Any]:
+    return _create_dbt_invocation(
+        test_time_partition_freshness_multiple_assets_defs_path
+    ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_last_update_freshness_manifest_multiple_assets_defs", scope="session")
+def test_last_update_freshness_manifest_fixture_multiple_assets_defs() -> Dict[str, Any]:
+    return _create_dbt_invocation(
+        test_last_update_freshness_multiple_assets_defs_path
+    ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_time_partition_freshness_manifest", scope="session")
+def test_time_partition_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_time_partition_freshness_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dagster_dbt_mixed_freshness_manifest", scope="session")
+def test_dagster_dbt_mixed_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dagster_dbt_mixed_freshness_path).get_artifact(
+        "manifest.json"
+    )
+
+
+@pytest.fixture(name="test_metadata_manifest", scope="session")
+def test_metadata_manifest_fixture() -> Dict[str, Any]:
+    # Prepopulate duckdb with jaffle shop data to support testing individual column metadata.
+    return _create_dbt_invocation(
+        test_metadata_path,
+        build_project=True,
+    ).get_artifact("manifest.json")

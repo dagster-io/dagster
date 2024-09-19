@@ -10,7 +10,7 @@ setup(
         # "pyarrow",
     ],
     extras_require={
-        "dev": ["dagit", "pytest"],
+        "dev": ["dagster-webserver", "pytest"],
         "test": ["pandas", "pyarrow; python_version < '3.9'", "pyspark"],
     },
 )

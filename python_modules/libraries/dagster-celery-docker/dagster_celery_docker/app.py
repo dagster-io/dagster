@@ -1,6 +1,6 @@
 from dagster_celery.make_app import make_app_with_task_routes
 
-from .executor import create_docker_task
+from dagster_celery_docker.executor import create_docker_task
 
 app = make_app_with_task_routes(
     task_routes={

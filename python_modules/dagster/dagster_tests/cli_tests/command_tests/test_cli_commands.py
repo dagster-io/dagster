@@ -3,6 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
+from typing import ContextManager, NoReturn, Optional, Tuple
 
 import mock
 import pytest
@@ -10,7 +11,6 @@ from click.testing import CliRunner
 from dagster import (
     Out,
     Output,
-    Partition,
     ScheduleDefinition,
     String,
     graph,
@@ -27,50 +27,40 @@ from dagster._cli.run import (
     run_migrate_command,
     run_wipe_command,
 )
+from dagster._cli.workspace.cli_target import ClickArgMapping
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
-from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
-from dagster._legacy import (
-    ModeDefinition,
-    PartitionSetDefinition,
-    PresetDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
+from typing_extensions import TypeAlias
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
 
-@pipeline(
+@job(
     name="foo",
-    preset_defs=[
-        PresetDefinition(name="test", tags={"foo": "bar"}),
-    ],
+    tags={"foo": "bar"},
 )
-def foo_pipeline():
+def foo_job():
     do_input(do_something())
 
 
-def define_foo_pipeline():
-    return foo_pipeline
+def define_foo_job():
+    return foo_job
 
 
 @op
@@ -91,7 +81,7 @@ def qux():
 qux_job = qux.to_job(
     config=PartitionedConfig(
         partitions_def=StaticPartitionsDefinition(["abc"]),
-        run_config_for_partition_fn=lambda _: {},
+        run_config_for_partition_key_fn=lambda _: {},
     ),
     tags={"foo": "bar"},
     executor_def=in_process_executor,
@@ -107,29 +97,56 @@ def define_qux_job():
     return qux_job
 
 
-@pipeline(name="baz", description="Not much tbh")
-def baz_pipeline():
+baz_partitions = StaticPartitionsDefinition(list(string.digits))
+
+baz_config = PartitionedConfig(
+    partitions_def=baz_partitions,
+    run_config_for_partition_key_fn=lambda key: {
+        "ops": {"do_input": {"inputs": {"x": {"value": key}}}}
+    },
+)
+
+
+@job(name="baz", description="Not much tbh", partitions_def=baz_partitions, config=baz_config)
+def baz_job():
     do_input()
 
 
-def not_a_repo_or_pipeline_fn():
+def throw_error(*args) -> NoReturn:
+    raise Exception()
+
+
+baz_error_config = PartitionedConfig(
+    partitions_def=baz_partitions,
+    run_config_for_partition_key_fn=throw_error,
+)
+
+
+@job(
+    name="baz_error_config",
+    description="Not much tbh",
+    partitions_def=baz_partitions,
+    config=baz_error_config,
+)
+def baz_error_config_job():
+    do_input()
+
+
+def not_a_repo_or_job_fn():
     return "kdjfkjdf"
 
 
-not_a_repo_or_pipeline = 123
+not_a_repo_or_job = 123
+
+partitioned_job_partitions = StaticPartitionsDefinition(list(string.digits))
 
 
-@pipeline
-def partitioned_scheduled_pipeline():
+@job(partitions_def=partitioned_job_partitions)
+def partitioned_job():
     do_something()
 
 
 def define_bar_schedules():
-    partition_set = PartitionSetDefinition(
-        name="scheduled_partitions",
-        pipeline_name="partitioned_scheduled_pipeline",
-        partition_fn=lambda: string.digits,
-    )
     return {
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
@@ -143,40 +160,6 @@ def define_bar_schedules():
             job_name="foo",
             run_config={},
         ),
-        "partitioned_schedule": partition_set.create_schedule_definition(
-            schedule_name="partitioned_schedule",
-            cron_schedule="* * * * *",
-            partition_selector=lambda _context, _def: Partition("7"),
-        ),
-    }
-
-
-def define_bar_partitions():
-    def error_name():
-        raise Exception("womp womp")
-
-    def error_config(_):
-        raise Exception("womp womp")
-
-    return {
-        "baz_partitions": PartitionSetDefinition(
-            name="baz_partitions",
-            pipeline_name="baz",
-            partition_fn=lambda: string.digits,
-            run_config_fn_for_partition=lambda partition: {
-                "solids": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
-            },
-        ),
-        "error_name_partitions": PartitionSetDefinition(
-            name="error_name_partitions",
-            pipeline_name="baz",
-            partition_fn=error_name,
-        ),
-        "error_config_partitions": PartitionSetDefinition(
-            name="error_config_partitions",
-            pipeline_name="baz",
-            partition_fn=error_config,
-        ),
     }
 
 
@@ -184,25 +167,11 @@ def define_bar_sensors():
     @sensor(job_name="baz")
     def foo_sensor(context):
         run_config = {"foo": "FOO"}
-        if context.last_completion_time:
-            run_config["since"] = context.last_completion_time
+        if context.last_tick_completion_time:
+            run_config["since"] = context.last_tick_completion_time
         return RunRequest(run_key=None, run_config=run_config)
 
     return {"foo_sensor": foo_sensor}
-
-
-@solid(version="foo")
-def my_solid():
-    return 5
-
-
-@pipeline(
-    name="memoizable",
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})],
-    tags={MEMOIZED_RUN_TAG: "true"},
-)
-def memoizable_pipeline():
-    my_solid()
 
 
 @op(version="foo")
@@ -210,44 +179,39 @@ def my_op():
     return 5
 
 
-@job(tags={MEMOIZED_RUN_TAG: "true"}, resource_defs={"io_manager": versioned_filesystem_io_manager})
-def memoizable_job():
-    my_op()
-
-
 @repository
 def bar():
     return {
-        "pipelines": {
-            "foo": foo_pipeline,
-            "baz": baz_pipeline,
-            "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
-            "memoizable": memoizable_pipeline,
+        "jobs": {
+            "foo": foo_job,
+            "qux": qux_job,
+            "quux": quux_job,
+            "partitioned_job": partitioned_job,
+            "baz": baz_job,
+            "baz_error_config": baz_error_config_job,
         },
-        "jobs": {"qux": qux_job, "quux": quux_job, "memoizable_job": memoizable_job},
         "schedules": define_bar_schedules(),
-        "partition_sets": define_bar_partitions(),
         "sensors": define_bar_sensors(),
     }
 
 
-@solid
+@op
 def spew(context):
     context.log.info("HELLO WORLD")
 
 
-@solid
+@op
 def fail(context):
     raise Exception("I AM SUPPOSED TO FAIL")
 
 
-@pipeline
-def stdout_pipeline():
+@job
+def stdout_job():
     spew()
 
 
-@pipeline
-def stderr_pipeline():
+@job
+def stderr_job():
     fail()
 
 
@@ -328,25 +292,25 @@ def args_with_default_cli_test_instance(*args):
 
 
 @contextmanager
-def grpc_server_bar_kwargs(instance, pipeline_name=None):
-    server_process = GrpcServerProcess(
+def grpc_server_bar_kwargs(instance, job_name: Optional[str] = None):
+    with GrpcServerProcess(
         instance_ref=instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             python_file=file_relative_path(__file__, "test_cli_commands.py"),
             attribute="bar",
         ),
-    )
-    with server_process.create_ephemeral_client() as client:
+        wait_on_exit=True,
+    ) as server_process:
+        client = server_process.create_client()
         args = {"grpc_host": client.host}
-        if pipeline_name:
+        if job_name:
             args["job_name"] = "foo"
         if client.port:
             args["grpc_port"] = client.port
         if client.socket:
             args["grpc_socket"] = client.socket
         yield args
-    server_process.wait()
 
 
 @contextmanager
@@ -365,15 +329,16 @@ def python_bar_cli_args(job_name=None):
 
 @contextmanager
 def grpc_server_bar_cli_args(instance, job_name=None):
-    server_process = GrpcServerProcess(
+    with GrpcServerProcess(
         instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             python_file=file_relative_path(__file__, "test_cli_commands.py"),
             attribute="bar",
         ),
-    )
-    with server_process.create_ephemeral_client() as client:
+        wait_on_exit=True,
+    ) as server_process:
+        client = server_process.create_client()
         args = ["--grpc-host", client.host]
         if client.port:
             args.append("--grpc-port")
@@ -386,13 +351,12 @@ def grpc_server_bar_cli_args(instance, job_name=None):
             args.append(job_name)
 
         yield args
-    server_process.wait()
 
 
 @contextmanager
 def grpc_server_bar_pipeline_args():
     with default_cli_test_instance() as instance:
-        with grpc_server_bar_kwargs(instance, pipeline_name="foo") as kwargs:
+        with grpc_server_bar_kwargs(instance, job_name="foo") as kwargs:
             yield kwargs, instance
 
 
@@ -458,6 +422,9 @@ def sensor_command_contexts():
     ]
 
 
+BackfillCommandTestContext: TypeAlias = ContextManager[Tuple[ClickArgMapping, DagsterInstance]]
+
+
 # This iterates over a list of contextmanagers that can be used to contruct
 # (cli_args, instance) tuples for backfill calls
 def backfill_command_contexts():
@@ -482,6 +449,16 @@ def non_existant_python_origin_target_args():
     return {
         "workspace": None,
         "job_name": "foo",
+        "python_file": file_relative_path(__file__, "made_up_file.py"),
+        "module_name": None,
+        "attribute": "bar",
+    }
+
+
+def non_existant_python_file_workspace_args():
+    return {
+        "workspace": None,
+        "job_name": "foo",
         "python_file": (file_relative_path(__file__, "made_up_file.py"),),
         "module_name": None,
         "attribute": "bar",
@@ -496,14 +473,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": "bar",
         },
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": "bar",
             "working_directory": os.path.dirname(__file__),
@@ -512,14 +489,14 @@ def valid_job_python_origin_target_args():
             "workspace": None,
             "job_name": job_name,
             "python_file": None,
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
         },
         {
             "workspace": None,
             "job_name": job_name,
             "python_file": None,
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
             "working_directory": os.path.dirname(__file__),
         },
@@ -542,7 +519,7 @@ def valid_job_python_origin_target_args():
             "workspace": None,
             "job_name": None,
             "python_file": None,
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": job_fn_name,
         },
         {
@@ -555,14 +532,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": job_def_name,
         },
         {
             "workspace": None,
             "job_name": None,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": job_def_name,
             "working_directory": os.path.dirname(__file__),
@@ -570,10 +547,25 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": job_fn_name,
         },
+    ]
+
+
+def job_python_args_to_workspace_args(args):
+    # Turn args expecting non-multiple files/modules into args allowing multiple
+    return [
+        {
+            "workspace": a.get("workspace"),
+            "job_name": a.get("job_name"),
+            "python_file": (a["python_file"],) if a.get("python_file") else None,
+            "module_name": (a["module_name"],) if a.get("module_name") else None,
+            "attribute": a["attribute"],
+            "package_name": a.get("package_name"),
+        }
+        for a in args
     ]
 
 
@@ -593,7 +585,7 @@ def valid_external_pipeline_target_args():
             "module_name": None,
             "attribute": None,
         },
-    ] + [args for args in valid_job_python_origin_target_args()]
+    ] + job_python_args_to_workspace_args(valid_job_python_origin_target_args())
 
 
 def valid_pipeline_python_origin_target_cli_args():
@@ -628,13 +620,13 @@ def valid_pipeline_python_origin_target_cli_args():
             "-m",
             "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "-a",
-            "foo_pipeline",
+            "foo_job",
         ],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
         ],
         [
             "-f",
@@ -642,7 +634,7 @@ def valid_pipeline_python_origin_target_cli_args():
             "-d",
             os.path.dirname(__file__),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
         ],
     ]
 
@@ -681,7 +673,7 @@ def valid_job_python_origin_target_cli_args():
             "-a",
             "bar",
             "-d",
-            os.path.dirname(__file__),
+            os.path.join(os.path.dirname(__file__), "..", "..", ".."),
             "-j",
             "qux",
         ],
@@ -743,7 +735,7 @@ def valid_external_pipeline_target_cli_args_with_preset():
             "-d",
             os.path.dirname(__file__),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
             "--preset",
             "test",
         ],
@@ -753,7 +745,7 @@ def valid_external_pipeline_target_cli_args_with_preset():
             "-d",
             os.path.dirname(__file__),
             "-a",
-            "define_foo_pipeline",
+            "define_foo_job",
         ],
     ]
 
@@ -800,9 +792,9 @@ def test_run_delete_bad_id():
 
 def test_run_delete_correct_delete_message():
     with instance_for_test() as instance:
-        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        result = foo_job.execute_in_process(instance=instance)
         runner = CliRunner()
-        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="DELETE\n")
+        result = runner.invoke(run_delete_command, args=[result.run_id], input="DELETE\n")
         assert "Deleted run" in result.output
         assert result.exit_code == 0
 
@@ -810,7 +802,7 @@ def test_run_delete_correct_delete_message():
 @pytest.mark.parametrize("force_flag", ["--force", "-f"])
 def test_run_delete_force(force_flag):
     with instance_for_test() as instance:
-        run_id = execute_pipeline(foo_pipeline, instance=instance).run_id
+        run_id = foo_job.execute_in_process(instance=instance).run_id
         runner = CliRunner()
         result = runner.invoke(run_delete_command, args=[force_flag, run_id])
         assert "Deleted run" in result.output
@@ -819,9 +811,9 @@ def test_run_delete_force(force_flag):
 
 def test_run_delete_incorrect_delete_message():
     with instance_for_test() as instance:
-        pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
+        job_result = foo_job.execute_in_process(instance=instance)
         runner = CliRunner()
-        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
+        result = runner.invoke(run_delete_command, args=[job_result.run_id], input="Wrong\n")
         assert "Exiting without deleting" in result.output
         assert result.exit_code == 1
 
@@ -885,22 +877,15 @@ def runner_job_execute(runner, cli_args):
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
-            (
-                "dagster job execute commands with cli_args {cli_args} "
-                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
-                '\nresult as string: "{result}"'
-            ).format(
-                cli_args=cli_args,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                result=result,
-            )
+            f"dagster job execute commands with cli_args {cli_args} "
+            f'returned exit_code {result.exit_code} with stdout:\n"{result.stdout}" and '
+            f'\nresult as string: "{result}"'
         )
     return result
 
 
 def test_use_env_vars_for_cli_option():
-    env_key = "{}_VERSION".format(ENV_PREFIX)
+    env_key = f"{ENV_PREFIX}_VERSION"
     runner = CliRunner(env={env_key: "1"})
     # use `debug` subcommand to trigger the cli group option flag `--version`
     # see issue: https://github.com/pallets/click/issues/1694
@@ -924,20 +909,20 @@ def create_repo_run(instance):
         ),
     ) as workspace_process_context:
         context = workspace_process_context.create_request_context()
-        repo = context.repository_locations[0].get_repository("my_repo")
+        repo = context.code_locations[0].get_repository("my_repo")
         external_job = repo.get_full_external_job("my_job")
         run = create_run_for_test(
             instance,
-            pipeline_name="my_job",
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            job_name="my_job",
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, context)
     return run
 
 
 def get_repo_runs(instance, repo_label):
-    from dagster._core.storage.pipeline_run import RunsFilter
+    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
     return instance.get_runs(filters=RunsFilter(tags={REPOSITORY_LABEL_TAG: repo_label}))
