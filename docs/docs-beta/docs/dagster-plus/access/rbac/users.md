@@ -40,7 +40,7 @@ After the user is created, they will be notified via email, and you can [add the
 
 ![Screenshot of assigning roles to a user](/img/placeholder.svg)
 
-## Adding users to teams {#teams}
+## Adding users to teams \{#teams}
 
 :::note
 Teams are a Dagster+ Pro feature.
@@ -54,7 +54,7 @@ Teams are useful for centralizing permission sets for different types of users. 
 When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to [Managing user roles and permissions](/todo) for more information.
 :::
 
-## Assigning user roles {#user-roles}
+## Assigning user roles \{#user-roles}
 
 In the **Roles** section, you can assign a [user role](/todo) for each deployment, granting them a set of permissions that controls their access to various features and functionalities within the platform.
 
