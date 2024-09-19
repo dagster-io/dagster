@@ -41,6 +41,5 @@ git add -A
 git config --global user.email "devtools@dagsterlabs.com"
 git config --global user.name "Dagster Labs"
 git commit -m "$PACKAGE_NAME $VERSION_TO_RELEASE"
-git tag -a "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
-git push
+git tag "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
 git push origin "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
