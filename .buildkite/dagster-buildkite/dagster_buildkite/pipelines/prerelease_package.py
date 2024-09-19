@@ -1,3 +1,5 @@
+import re
+from pathlib import Path
 from typing import List
 
 from dagster_buildkite.python_version import AvailablePythonVersion
@@ -15,6 +17,14 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
         + _get_uncustomized_pkg_roots("examples/experimental", [])
     )
 
+    # Get only packages that have a fixed version in setup.py
+    filtered_packages = []
+    for package in packages:
+        setup_file = Path(package) / "setup.py"
+        contents = setup_file.read_text()
+        if re.match(r"version=\"[\d\.]+\"", contents):
+            filtered_packages.append(package)
+
     input_step: BlockStep = {
         "block": ":question: Choose package",
         "prompt": None,
@@ -23,10 +33,13 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
                 "select": "Select a package to publish",
                 "key": "package-to-release-path",
                 "options": [
-                    {"label": package[len("python_modules/") :] if package.startswith(
-                        "python_modules/"
-                    ) else package, "value": package}
-                    for package in packages
+                    {
+                        "label": package[len("python_modules/") :]
+                        if package.startswith("python_modules/")
+                        else package,
+                        "value": package,
+                    }
+                    for package in filtered_packages
                 ],
                 "hint": None,
                 "default": None,
