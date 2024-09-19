@@ -62,7 +62,7 @@ Next, create a `_source.yml` file that points dbt to the upstream `raw_customers
 
 <CodeExample filePath="guides/etl/transform-dbt/basic-dbt-project/models/example/_source.yml" language="yaml" title="_source.yml_" />
 
-{/* TODO: Maybe screenshot to show the lineage? */}
+![Screenshot of dbt lineage](/img/placeholder.svg)
 
 ## Adding downstream dependencies
 
