@@ -37,7 +37,7 @@ defs = build_defs_from_airflow_instance(
     airflow_instance=airflow_instance,
     defs=Definitions.merge(
         dag_defs(
-            "load_lakehouse",
+            "rebuild_iris_models",
             task_defs(
                 "load_iris",
                 defs_from_lakehouse(
@@ -47,9 +47,6 @@ defs = build_defs_from_airflow_instance(
                     columns=IRIS_COLUMNS,
                 ),
             ),
-        ),
-        dag_defs(
-            "dbt_dag",
             task_defs(
                 "build_dbt_models",
                 dbt_defs(

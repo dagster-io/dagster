@@ -1,7 +1,10 @@
 from pathlib import Path
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 from dagster import AssetKey, AssetSpec, Definitions, multi_asset
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 
 from dbt_example.dagster_defs.table_existence_check import build_table_existence_check
 from dbt_example.shared.lakehouse_utils import id_from_path, load_csv_to_duckdb
@@ -11,8 +14,14 @@ def lakehouse_asset_key(*, csv_path) -> AssetKey:
     return AssetKey(["lakehouse", id_from_path(csv_path)])
 
 
-def specs_from_lakehouse(*, csv_path: Path) -> Sequence[AssetSpec]:
-    return [AssetSpec(key=lakehouse_asset_key(csv_path=csv_path))]
+def specs_from_lakehouse(
+    *, csv_path: Path, automation_condition: Optional[AutomationCondition] = None
+) -> Sequence[AssetSpec]:
+    return [
+        AssetSpec(
+            key=lakehouse_asset_key(csv_path=csv_path), automation_condition=automation_condition
+        )
+    ]
 
 
 def defs_from_lakehouse(
