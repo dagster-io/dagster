@@ -4,7 +4,7 @@ from unittest import mock
 
 import kubernetes
 import pytest
-from dagster_k8s.pipes import PipesK8sPodLogsMessageReader
+from dagster_k8s.pipes import PipesK8sPodLogsMessageReader, _is_kube_timestamp
 
 
 def _noop(*args, **kwargs):
@@ -163,3 +163,26 @@ def test_happy_path_startup_exception():
     ]
 
     mock_read.assert_has_calls(calls)
+
+# Tests for Kube timestamp parsing necessary for proper log ordering
+# Docker only logs RFC3339Nano timestamp: https://docs.docker.com/reference/cli/docker/container/logs/
+# This is not necessarily true for other runtimes such as containerd, etc
+# These tests only target RFC3339Nano timestamp as valid, though others may pass as well
+
+def test_valid_timestamp_with_nanoseconds():
+    timestamp = "2024-03-22T02:17:29.185548486Z"
+    assert _is_kube_timestamp(timestamp) is True
+
+def test_invalid_timestamp_without_fractional_seconds():
+    # Invalid because no nanoseconds
+    timestamp = "2024-03-22T02:17:29Z"
+    assert _is_kube_timestamp(timestamp) is False
+
+def test_invalid_timestamp_with_bad_date():
+    # Invalid date (Feb 30 doesn't exist)
+    timestamp = "2024-02-30T02:17:29Z"
+    assert _is_kube_timestamp(timestamp) is False
+
+def test_invalid_timestamp_without_z():
+    timestamp = "2024-03-22T02:17:29"
+    assert _is_kube_timestamp(timestamp) is False
