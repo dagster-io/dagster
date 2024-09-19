@@ -197,4 +197,4 @@ class AssetCheckKey(NamedTuple):
         return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
 
 
-AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
+EntityKey = Union[AssetKey, AssetCheckKey]
