@@ -72,7 +72,7 @@ Update the `tensorflow/main.js` script to:
 
 <CodeExample filePath="guides/non-python/pipes-full-featured-javascript.js" language="javascript" />
 
-## Step 5: Update the Dagster asset
+## Step 5: Update the asset to provide extra parameters
 
 Finally, update your Dagster asset to pass in the model information that's used by the script:
 
