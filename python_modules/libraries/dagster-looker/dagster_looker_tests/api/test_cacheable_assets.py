@@ -2,9 +2,9 @@ from typing import Iterator
 
 import pytest
 import responses
-from dagster_looker.resource import LookerResource
+from dagster_looker.api.resource import LookerResource
 
-from dagster_looker_tests.mock_looker_data import mock_lookml_explore, mock_lookml_models
+from dagster_looker_tests.api.mock_looker_data import mock_lookml_explore, mock_lookml_models
 
 TEST_BASE_URL = "https://your.cloud.looker.com"
 

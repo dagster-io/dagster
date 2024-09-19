@@ -12,10 +12,10 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from looker_sdk.sdk.api40.models import LookmlModelExplore
 
-from dagster_looker.translator import LookerInstanceData
+from dagster_looker.api.translator import LookerInstanceData
 
 if TYPE_CHECKING:
-    from dagster_looker.resource import LookerResource
+    from dagster_looker.api.resource import LookerResource
 
 
 class LookerCacheableAssetsDefinition(CacheableAssetsDefinition):
