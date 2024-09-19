@@ -12,7 +12,7 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
     packages = (
         _get_uncustomized_pkg_roots("python_modules", [])
         + _get_uncustomized_pkg_roots("python_modules/libraries", [])
-        + _get_uncustomized_pkg_roots("python_modules/libraries/examples/experimental", [])
+        + _get_uncustomized_pkg_roots("examples/experimental", [])
     )
 
     input_step: BlockStep = {
@@ -23,7 +23,9 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
                 "select": "Select a package to publish",
                 "key": "package-to-release-path",
                 "options": [
-                    {"label": package[len("python_modules/") :], "value": package}
+                    {"label": package[len("python_modules/") :] if package.startswith(
+                        "python_modules/"
+                    ) else package, "value": package}
                     for package in packages
                 ],
                 "hint": None,
