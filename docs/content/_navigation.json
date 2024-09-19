@@ -658,6 +658,10 @@
               {
                 "title": "Setup for Hybrid agents",
                 "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
+              },
+              {
+                "title": "Reserved environment variables",
+                "path": "/dagster-plus/managing-deployments/reserved-environment-variables"
               }
             ]
           },
