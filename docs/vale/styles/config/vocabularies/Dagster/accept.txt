@@ -56,6 +56,7 @@ Hudi
 IAM
 JavaScript
 Jupyter
+JWT
 Lakehouse
 Looker
 MLOps
