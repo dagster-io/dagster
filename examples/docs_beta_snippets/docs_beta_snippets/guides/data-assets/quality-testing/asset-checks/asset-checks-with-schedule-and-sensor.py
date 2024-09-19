@@ -21,13 +21,13 @@ def orders_id_has_no_nulls():
 
 
 # highlight-start
-# Only includes orders
+# Only include the `orders` asset
 asset_job = dg.define_asset_job(
     "asset_job",
     selection=dg.AssetSelection.assets(orders).without_checks(),
 )
 
-# Only includes orders_id_has_no_nulls
+# Only include the `orders_id_has_no_nulls` check
 check_job = dg.define_asset_job(
     "check_job", selection=dg.AssetSelection.checks_for_assets(orders)
 )
