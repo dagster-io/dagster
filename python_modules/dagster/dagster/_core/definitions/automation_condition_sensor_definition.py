@@ -38,7 +38,7 @@ def evaluate_automation_conditions(
         materialize_run_tags=context.instance.auto_materialize_run_tags,
         observe_run_tags={},
         auto_observe_asset_keys=set(),
-        asset_selection=AssetSelection.all(),
+        asset_selection=sensor_def.asset_selection,
         logger=context.log,
     ).evaluate()
 

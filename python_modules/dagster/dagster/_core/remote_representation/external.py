@@ -249,15 +249,13 @@ class ExternalRepository:
                     selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
                 )
 
-            default_sensor_asset_keys = set()
+            default_sensor_entity_keys = set()
             for entity_key in asset_graph.materializable_asset_keys | asset_graph.asset_check_keys:
                 if not asset_graph.get(entity_key).automation_condition:
                     continue
 
                 if entity_key not in covered_entity_keys:
-                    default_sensor_asset_keys.add(
-                        entity_key if isinstance(entity_key, AssetKey) else entity_key.asset_key
-                    )
+                    default_sensor_entity_keys.add(entity_key)
 
             for asset_key in asset_graph.observable_asset_keys:
                 if (
@@ -269,15 +267,21 @@ class ExternalRepository:
                 has_any_auto_observe_source_assets = True
 
                 if asset_key not in covered_entity_keys:
-                    default_sensor_asset_keys.add(asset_key)
+                    default_sensor_entity_keys.add(asset_key)
 
-            if default_sensor_asset_keys:
+            if default_sensor_entity_keys:
+                default_sensor_asset_check_keys = {
+                    key for key in default_sensor_entity_keys if isinstance(key, AssetCheckKey)
+                }
                 # Use AssetSelection.all if the default sensor is the only sensor - otherwise
                 # enumerate the assets that are not already included in some other
                 # non-default sensor
                 default_sensor_asset_selection = AssetSelection.all(
                     include_sources=has_any_auto_observe_source_assets
                 )
+                # if there are any asset checks, include them
+                if default_sensor_asset_check_keys:
+                    default_sensor_asset_selection |= AssetSelection.all_asset_checks()
 
                 for sensor in existing_automation_condition_sensors.values():
                     default_sensor_asset_selection = (
@@ -428,10 +432,13 @@ class ExternalRepository:
         from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
         return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=[
+            repo_handle_assets=[
                 (self.handle, asset_node) for asset_node in self.get_external_asset_nodes()
             ],
-            external_asset_checks=self.get_external_asset_checks(),
+            repo_handle_asset_checks=[
+                (self.handle, asset_check_node)
+                for asset_check_node in self.get_external_asset_checks()
+            ],
         )
 
     def get_partition_names_for_asset_job(

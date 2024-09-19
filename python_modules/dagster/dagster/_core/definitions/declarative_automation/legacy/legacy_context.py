@@ -355,9 +355,9 @@ class LegacyRuleEvaluationContext:
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
-        from dagster._core.definitions.asset_graph import materializable_in_same_run
+        from dagster._core.definitions.asset_graph import executable_in_same_run
 
-        return materializable_in_same_run(self.asset_graph, child_key, parent_key)
+        return executable_in_same_run(self.asset_graph, child_key, parent_key)
 
     def get_parents_that_will_not_be_materialized_on_current_tick(
         self, *, asset_partition: AssetKeyPartitionKey

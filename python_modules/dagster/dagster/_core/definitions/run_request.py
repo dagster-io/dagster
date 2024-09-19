@@ -243,6 +243,10 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         else:
             return None
 
+    @property
+    def entity_keys(self) -> Sequence[EntityKey]:
+        return [*(self.asset_selection or []), *(self.asset_check_keys or [])]
+
     def requires_backfill_daemon(self) -> bool:
         """For now we always send RunRequests with an asset_graph_subset to the backfill daemon, but
         eventaully we will want to introspect on the asset_graph_subset to determine if we can
