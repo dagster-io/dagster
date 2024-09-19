@@ -925,7 +925,6 @@ class TestScheduleStorage:
             == asset_subset_with_metadata
         )
 
-    @pytest.mark.xfail()
     def test_automation_condition_evaluations_check_key(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
@@ -957,6 +956,7 @@ class TestScheduleStorage:
         res = storage.get_auto_materialize_asset_evaluations(key=check_key, limit=100)
         assert len(res) == 1
 
+        assert res[0].key == check_key
         assert res[0].get_evaluation_with_run_ids().evaluation.key == check_key
         assert res[0].evaluation_id == 10
         assert res[0].get_evaluation_with_run_ids().evaluation.true_subset.size == 1

@@ -64,6 +64,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_string(self) -> str:
         """E.g. '["first_component", "second_component"]'."""
+        return self.to_db_string()
+
+    def to_db_string(self) -> str:
         return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
@@ -196,6 +199,28 @@ class AssetCheckKey(NamedTuple):
         asset_key_str, name = user_string.split(":")
         return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
 
+    @staticmethod
+    def from_db_string(db_string: str) -> Optional["AssetCheckKey"]:
+        try:
+            values = seven.json.loads(db_string)
+            if isinstance(values, dict) and values.keys() == {"asset_key", "check_name"}:
+                return AssetCheckKey(
+                    asset_key=check.not_none(AssetKey.from_db_string(values["asset_key"])),
+                    name=check.inst(values["check_name"], str),
+                )
+            else:
+                return None
+        except seven.JSONDecodeError:
+            return None
+
+    def to_db_string(self) -> str:
+        return seven.json.dumps({"asset_key": self.asset_key.to_string(), "check_name": self.name})
+
 
 EntityKey = Union[AssetKey, AssetCheckKey]
 T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
+
+
+def entity_key_from_db_string(db_string: str) -> EntityKey:
+    check_key = AssetCheckKey.from_db_string(db_string)
+    return check_key if check_key else check.not_none(AssetKey.from_db_string(db_string))
