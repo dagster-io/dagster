@@ -25,6 +25,12 @@ const config: Config = {
     require.resolve('docusaurus-plugin-image-zoom'),
   ],
   themeConfig: {
+    announcementBar: {
+      id: 'announcementBar',
+      // TODO - once discussion has been created update link
+      //content: `<b>This is the preview of the new documentation site. If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/discussions/23031">GitHub</a>. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</b>`,
+      content: `<b>This is the preview of the new documentation site. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</b>`,
+    },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
