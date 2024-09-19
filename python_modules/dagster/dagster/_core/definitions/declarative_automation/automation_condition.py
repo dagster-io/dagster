@@ -9,7 +9,6 @@ import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionCursor,
@@ -19,6 +18,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionSnapshot,
     get_serializable_candidate_subset,
 )
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._record import copy
@@ -556,7 +556,7 @@ class AutomationResult:
         self._extra_state = check.opt_str_param(cursor, "cursor") or structured_cursor
 
         # used to enable the evaluator class to modify the evaluation in some edge cases
-        self._serializable_subset_override: Optional[AssetSubset] = None
+        self._serializable_subset_override: Optional[EntitySubset] = None
 
     @property
     def asset_key(self) -> AssetKey:
@@ -595,7 +595,9 @@ class AutomationResult:
             self.condition_unique_id,
             self.condition.description,
             _compute_subset_value_str(self.get_serializable_subset()),
-            _compute_subset_value_str(self._context.candidate_slice.convert_to_asset_subset()),
+            _compute_subset_value_str(
+                self._context.candidate_slice.convert_to_serializable_subset()
+            ),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
         ]
@@ -609,7 +611,7 @@ class AutomationResult:
         return AutomationConditionNodeCursor(
             true_subset=self.get_serializable_subset(),
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_asset_subset()
+                self._context.candidate_slice.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             extra_state=self._extra_state,
@@ -621,7 +623,7 @@ class AutomationResult:
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
             true_subset=self.get_serializable_subset(),
             candidate_subset=get_serializable_candidate_subset(
-                self._context.candidate_slice.convert_to_asset_subset()
+                self._context.candidate_slice.convert_to_serializable_subset()
             ),
             subsets_with_metadata=self._subsets_with_metadata,
             start_timestamp=self._start_timestamp,
@@ -631,7 +633,7 @@ class AutomationResult:
             ],
         )
 
-    def set_internal_serializable_subset_override(self, override: AssetSubset) -> None:
+    def set_internal_serializable_subset_override(self, override: EntitySubset) -> None:
         """Internal method for handling edge cases in which the serializable evaluation must be
         updated after evaluation completes.
         """
@@ -652,11 +654,13 @@ class AutomationResult:
             result_value_hash=self.value_hash,
         )
 
-    def get_serializable_subset(self) -> AssetSubset:
-        return self.true_slice.convert_to_asset_subset() or self._serializable_subset_override
+    def get_serializable_subset(self) -> EntitySubset:
+        return (
+            self.true_slice.convert_to_serializable_subset() or self._serializable_subset_override
+        )
 
 
-def _compute_subset_value_str(subset: AssetSubset) -> str:
+def _compute_subset_value_str(subset: EntitySubset) -> str:
     """Computes a unique string representing a given AssetSubsets. This string will be equal for
     equivalent AssetSubsets.
     """

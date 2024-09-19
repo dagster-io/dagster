@@ -1,12 +1,12 @@
 from typing import Optional, Sequence
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.entity_subset import EntitySubset
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -33,7 +33,7 @@ class NewlyTrueCondition(AutomationCondition):
         """Returns the true slice of the child from the previous tick, which is stored in the
         extra state field of the cursor.
         """
-        true_subset = context.get_structured_cursor(as_type=AssetSubset)
+        true_subset = context.get_structured_cursor(as_type=EntitySubset)
         if not true_subset:
             return None
         return context.asset_graph_view.get_asset_slice_from_subset(true_subset)
@@ -57,5 +57,5 @@ class NewlyTrueCondition(AutomationCondition):
             context=context,
             true_slice=context.candidate_slice.compute_intersection(newly_true_child_slice),
             child_results=[child_result],
-            structured_cursor=child_result.true_slice.convert_to_asset_subset(),
+            structured_cursor=child_result.true_slice.convert_to_serializable_subset(),
         )

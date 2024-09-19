@@ -1325,11 +1325,11 @@ def _asset_graph_subset_to_str(
     asset_subsets = asset_graph_subset.iterate_asset_subsets(asset_graph)
     for subset in asset_subsets:
         if subset.is_partitioned:
-            partitions_def = asset_graph.get(subset.asset_key).partitions_def
+            partitions_def = asset_graph.get(subset.key).partitions_def
             partition_ranges_str = _partition_subset_str(subset.subset_value, partitions_def)
-            return_str += f"- {subset.asset_key.to_user_string()}: {{{partition_ranges_str}}}\n"
+            return_str += f"- {subset.key.to_user_string()}: {{{partition_ranges_str}}}\n"
         else:
-            return_str += f"- {subset.asset_key.to_user_string()}\n"
+            return_str += f"- {subset.key.to_user_string()}\n"
 
     return return_str
 
