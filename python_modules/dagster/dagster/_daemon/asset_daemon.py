@@ -1,4 +1,5 @@
 import base64
+import dataclasses
 import datetime
 import logging
 import sys
@@ -924,12 +925,12 @@ class AssetDaemon(DagsterDaemon):
                         evaluation_id
                     )
                 )
-                evaluations_by_asset_key = {
-                    evaluation_record.asset_key: evaluation_record.get_evaluation_with_run_ids()
+                evaluations_by_key = {
+                    evaluation_record.key: evaluation_record.get_evaluation_with_run_ids()
                     for evaluation_record in evaluation_records
                 }
             else:
-                evaluations_by_asset_key = {}
+                evaluations_by_key = {}
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
@@ -955,15 +956,15 @@ class AssetDaemon(DagsterDaemon):
 
             check_for_debug_crash(debug_crash_flags, "EVALUATIONS_FINISHED")
 
-            evaluations_by_asset_key = {
-                evaluation.asset_key: evaluation.with_run_ids(set()) for evaluation in evaluations
+            evaluations_by_key = {
+                evaluation.key: evaluation.with_run_ids(set()) for evaluation in evaluations
             }
 
             # Write the asset evaluations without run IDs first
             if schedule_storage.supports_auto_materialize_asset_evaluations:
                 schedule_storage.add_auto_materialize_asset_evaluations(
                     evaluation_id,
-                    list(evaluations_by_asset_key.values()),
+                    list(evaluations_by_key.values()),
                 )
                 check_for_debug_crash(debug_crash_flags, "ASSET_EVALUATIONS_ADDED")
 
@@ -1008,13 +1009,13 @@ class AssetDaemon(DagsterDaemon):
         self._logger.info(
             "Tick produced"
             f" {len(run_requests)} run{'s' if len(run_requests) != 1 else ''} and"
-            f" {len(evaluations_by_asset_key)} asset"
-            f" evaluation{'s' if len(evaluations_by_asset_key) != 1 else ''} for evaluation ID"
+            f" {len(evaluations_by_key)} asset"
+            f" evaluation{'s' if len(evaluations_by_key) != 1 else ''} for evaluation ID"
             f" {evaluation_id}{print_group_name}"
         )
 
         check.invariant(len(run_requests) == len(reserved_run_ids))
-        updated_evaluation_asset_keys = set()
+        updated_evaluation_keys = set()
 
         run_request_execution_data_cache = {}
         for i, (run_request, reserved_run_id) in enumerate(zip(run_requests, reserved_run_ids)):
@@ -1044,7 +1045,7 @@ class AssetDaemon(DagsterDaemon):
                         )
                     )
                 submitted_run_id = reserved_run_id
-                asset_keys = check.not_none(asset_graph_subset.asset_keys)
+                entity_keys = check.not_none(asset_graph_subset.asset_keys)
             else:
                 submitted_run = submit_asset_run(
                     run_id=reserved_run_id,
@@ -1064,24 +1065,27 @@ class AssetDaemon(DagsterDaemon):
                     logger=self._logger,
                 )
                 submitted_run_id = submitted_run.run_id
-                asset_keys = check.not_none(run_request.asset_selection)
+                entity_keys = [
+                    *(run_request.asset_selection or []),
+                    *(run_request.asset_check_keys or []),
+                ]
             # heartbeat after each submitted runs
             yield
 
             tick_context.add_run_info(run_id=submitted_run_id)
 
             # write the submitted run ID to any evaluations
-            for asset_key in asset_keys:
+            for entity_key in entity_keys:
                 # asset keys for observation runs don't have evaluations
-                if asset_key in evaluations_by_asset_key:
-                    evaluation = evaluations_by_asset_key[asset_key]
-                    evaluations_by_asset_key[asset_key] = evaluation._replace(
-                        run_ids=evaluation.run_ids | {submitted_run_id}
+                if entity_key in evaluations_by_key:
+                    evaluation = evaluations_by_key[entity_key]
+                    evaluations_by_key[entity_key] = dataclasses.replace(
+                        evaluation, run_ids=evaluation.run_ids | {submitted_run_id}
                     )
-                    updated_evaluation_asset_keys.add(asset_key)
+                    updated_evaluation_keys.add(entity_key)
 
         evaluations_to_update = [
-            evaluations_by_asset_key[asset_key] for asset_key in updated_evaluation_asset_keys
+            evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
         ]
         if evaluations_to_update:
             schedule_storage.add_auto_materialize_asset_evaluations(

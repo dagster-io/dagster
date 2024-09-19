@@ -401,7 +401,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     for e in check.not_none(
                         self.instance.schedule_storage
                     ).get_auto_materialize_evaluations_for_evaluation_id(current_evaluation_id)
-                    if e.asset_key == key
+                    if e.key == key
                 ]
             )
         )
@@ -420,7 +420,7 @@ class AssetDaemonScenarioState(ScenarioState):
         checked against the actual evaluation.
         """
         asset_key = AssetKey.from_coercible(key)
-        actual_evaluation = next((e for e in self.evaluations if e.asset_key == asset_key), None)
+        actual_evaluation = next((e for e in self.evaluations if e.key == asset_key), None)
 
         if actual_evaluation is None:
             try:

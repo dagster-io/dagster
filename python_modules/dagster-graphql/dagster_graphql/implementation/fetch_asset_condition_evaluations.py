@@ -41,7 +41,7 @@ def _get_graphene_records_from_evaluations(
     graphene_info: "ResolveInfo",
     evaluation_records: Sequence[AutoMaterializeAssetEvaluationRecord],
 ) -> GrapheneAssetConditionEvaluationRecords:
-    asset_keys = {record.asset_key for record in evaluation_records}
+    asset_keys = {record.key for record in evaluation_records}
 
     partitions_defs = {}
 
@@ -56,9 +56,7 @@ def _get_graphene_records_from_evaluations(
 
     return GrapheneAssetConditionEvaluationRecords(
         records=[
-            GrapheneAssetConditionEvaluationRecord(
-                evaluation, partitions_defs[evaluation.asset_key]
-            )
+            GrapheneAssetConditionEvaluationRecord(evaluation, partitions_defs[evaluation.key])
             for evaluation in evaluation_records
         ]
     )
@@ -97,7 +95,7 @@ def fetch_true_partitions_for_evaluation_node(
             schedule_storage.get_auto_materialize_asset_evaluations(
                 # there is no method to get a specific evaluation by id, so instead get the first
                 # evaluation before evaluation_id + 1
-                asset_key,
+                key=asset_key,
                 cursor=evaluation_id + 1,
                 limit=1,
             )
@@ -132,7 +130,7 @@ def fetch_asset_condition_evaluation_records_for_asset_key(
     return _get_graphene_records_from_evaluations(
         graphene_info,
         schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=asset_key,
+            key=asset_key,
             limit=limit,
             cursor=int(cursor) if cursor else None,
         ),

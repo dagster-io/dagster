@@ -283,7 +283,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
             evaluationId=record.evaluation_id,
             timestamp=record.timestamp,
             runIds=evaluation_with_run_ids.run_ids,
-            assetKey=GrapheneAssetKey(path=record.asset_key.path),
+            assetKey=GrapheneAssetKey(path=record.key.path),
             numRequested=root_evaluation.true_subset.size,
             startTimestamp=root_evaluation.start_timestamp,
             endTimestamp=root_evaluation.end_timestamp,
