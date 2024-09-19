@@ -17,6 +17,7 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
@@ -108,7 +109,7 @@ class AutomationConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[AssetKey]]]:
+    def evaluate(self) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[EntityKey]]]:
         self.prefetch()
         for asset_key in self.asset_graph.toposorted_asset_keys:
             if asset_key not in self.asset_keys:
@@ -159,7 +160,7 @@ class AutomationConditionEvaluator:
     def _handle_execution_set(self, result: AutomationResult[AssetKey]) -> None:
         # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
         # materialize all of them
-        asset_key = result.asset_key
+        asset_key = result.key
         execution_set_keys = self.asset_graph.get(asset_key).execution_set_asset_keys
 
         if len(execution_set_keys) > 1 and result.true_subset.size > 0:
@@ -189,7 +190,7 @@ class AutomationConditionEvaluator:
                 if extra:
                     self._execution_set_extras[neighbor_key].append(extra)
 
-    def _get_entity_subsets(self) -> Iterable[EntitySubset[AssetKey]]:
+    def _get_entity_subsets(self) -> Iterable[EntitySubset[EntityKey]]:
         subsets_by_key = {
             key: result.true_subset for key, result in self.current_results_by_key.items()
         }
