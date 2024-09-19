@@ -1,5 +1,5 @@
 import responses
-from dagster_looker.resource import LookerResource
+from dagster_looker.api.resource import LookerResource
 
 
 @responses.activate(assert_all_requests_are_fired=True)

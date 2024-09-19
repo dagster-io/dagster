@@ -10,8 +10,8 @@ from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
 from looker_sdk.sdk.api40.methods import Looker40SDK
 from pydantic import Field
 
-from dagster_looker.cacheable_assets import LookerCacheableAssetsDefinition
-from dagster_looker.translator import LookerInstanceData
+from dagster_looker.api.cacheable_assets import LookerCacheableAssetsDefinition
+from dagster_looker.api.translator import LookerInstanceData
 
 if TYPE_CHECKING:
     from looker_sdk.sdk.api40.models import LookmlModelExplore
