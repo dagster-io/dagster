@@ -41,7 +41,7 @@ def test_valid_project(options, monkeypatch):
         m.chdir(VALID_PROJECT_PATH)
         result = invoke_validate(options=options)
         assert result.exit_code == 0
-        assert "Validation successful!" in result.output
+        assert "Validation successful" in result.output
 
 
 def test_valid_project_with_multiple_definitions_files(monkeypatch):
@@ -50,9 +50,8 @@ def test_valid_project_with_multiple_definitions_files(monkeypatch):
         options = ["-f", "valid_project/definitions.py", "-f", "valid_project/more_definitions.py"]
         result = invoke_validate(options=options)
         assert result.exit_code == 0
-        assert "Validating definitions in valid_project/definitions.py." in result.output
-        assert "Validating definitions in valid_project/more_definitions.py." in result.output
-        assert "Validation successful!" in result.output
+        assert "Validation successful for code location definitions.py." in result.output
+        assert "Validation successful for code location more_definitions.py." in result.output
 
 
 @pytest.mark.parametrize(
@@ -69,7 +68,6 @@ def test_invalid_project(options, monkeypatch):
         m.chdir(INVALID_PROJECT_PATH)
         result = invoke_validate(options=options)
         assert result.exit_code == 1
-        assert (
-            "Validation failed with exception: Duplicate asset key: AssetKey(['my_asset'])"
-            in result.output
-        )
+        assert "Validation failed" in result.output
+        assert "Duplicate asset key: AssetKey(['my_asset'])" in result.output
+

@@ -1,15 +1,16 @@
+import logging
 import sys
 
 import click
 
-from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
-from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._grpc.server import LoadedRepositories
+from dagster import __version__ as dagster_version
+from dagster._utils.log import configure_loggers
 
 from .job import apply_click_params
+from .utils import get_possibly_temporary_instance_for_cli
 from .workspace.cli_target import (
     ClickArgValue,
-    get_workspace_load_target,
+    get_workspace_from_kwargs,
     python_file_option,
     python_module_option,
     workspace_option,
@@ -31,38 +32,46 @@ def validate_command_options(f):
 
 
 @validate_command_options
+@click.option(
+    "--log-level",
+    help="Set the log level for dagster services.",
+    show_default=True,
+    default="info",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+)
+@click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the logs for dagster services",
+)
 @definitions_cli.command(
     name="validate",
     help="Validate if Dagster definitions are loadable.",
 )
-def definitions_validate_command(**kwargs: ClickArgValue):
-    workspace_load_target = get_workspace_load_target(kwargs)
-    code_locations_origins = workspace_load_target.create_origins()
+def definitions_validate_command(log_level: str, log_format: str, **kwargs: ClickArgValue):
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
+    logger = logging.getLogger("dagster")
 
-    click.echo("Starting validation...")
-    for code_location_origin in code_locations_origins:
-        # CodeLocationOrigin objects are of type GrpcServerCodeLocationOrigin
-        # when loading from a grpc server in workspace.yaml.
-        if not isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin):
-            continue
-
-        curr_target_origin = (
-            code_location_origin.loadable_target_origin.python_file
-            or code_location_origin.loadable_target_origin.module_name
-            or code_location_origin.loadable_target_origin.package_name
-        )
-        click.echo(f"Validating definitions in {curr_target_origin}.")
-        try:
-            LoadedRepositories(
-                loadable_target_origin=code_location_origin.loadable_target_origin,
-                entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+    logger.info("Starting validation...")
+    with get_possibly_temporary_instance_for_cli(
+        "dagster definitions validate", logger=logger
+    ) as instance:
+        with get_workspace_from_kwargs(
+            instance=instance, version=dagster_version, kwargs=kwargs
+        ) as workspace:
+            invalid = any(
+                entry for entry in workspace.get_workspace_snapshot().values() if entry.load_error
             )
-        except Exception as e:
-            click.echo(
-                click.style("Validation failed with exception: ", fg="red") + f"{e}.", err=True
-            )
-            sys.exit(1)
-        else:
-            click.echo("Validation successful!")
-    click.echo("Ending validation...")
-    sys.exit(0)
+            for code_location, entry in workspace.get_workspace_snapshot().items():
+                if entry.load_error:
+                    logger.error(
+                        f"Validation failed for code location {code_location} with exception: "
+                        f"{entry.load_error.message}."
+                    )
+                else:
+                    logger.info(f"Validation successful for code location {code_location}.")
+    logger.info("Ending validation...")
+    sys.exit(0) if not invalid else sys.exit(1)
