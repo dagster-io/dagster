@@ -173,7 +173,7 @@ class AssetDaemonContext:
 
         evaluator = AutomationConditionEvaluator(
             asset_graph=self.asset_graph,
-            asset_keys=self.auto_materialize_asset_keys,
+            entity_keys=self.auto_materialize_asset_keys,
             asset_graph_view=self.asset_graph_view,
             logger=self._logger,
             cursor=self.cursor,

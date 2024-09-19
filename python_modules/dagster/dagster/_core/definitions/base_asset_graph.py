@@ -84,11 +84,27 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
     @abstractmethod
     def automation_condition(self) -> Optional["AutomationCondition[T_EntityKey]"]: ...
 
+    @property
+    @abstractmethod
+    def parent_entity_keys(self) -> AbstractSet[EntityKey]: ...
+
+    @property
+    @abstractmethod
+    def child_entity_keys(self) -> AbstractSet[EntityKey]: ...
+
 
 class BaseAssetNode(BaseEntityNode[AssetKey]):
     key: AssetKey
     parent_keys: AbstractSet[AssetKey]
     child_keys: AbstractSet[AssetKey]
+
+    @property
+    def parent_entity_keys(self) -> AbstractSet[AssetKey]:
+        return self.parent_keys
+
+    @property
+    def child_entity_keys(self) -> AbstractSet[EntityKey]:
+        return self.parent_keys | self.check_keys
 
     @property
     def has_self_dependency(self) -> bool:
@@ -184,6 +200,14 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         self._automation_condition = automation_condition
 
     @property
+    def parent_entity_keys(self) -> AbstractSet[AssetKey]:
+        return {self.key.asset_key}
+
+    @property
+    def child_entity_keys(self) -> AbstractSet[EntityKey]:
+        return {self.key.asset_key}
+
+    @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         # all checks are unpartitioned
         return None
@@ -208,6 +232,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def asset_nodes(self) -> Iterable[T_AssetNode]:
         return self._asset_nodes_by_key.values()
 
+    @property
+    def nodes(self) -> Iterable[BaseEntityNode]:
+        return [*self._asset_nodes_by_key.values(), *self._asset_check_nodes_by_key.values()]
+
     def has(self, asset_key: AssetKey) -> bool:
         return asset_key in self._asset_nodes_by_key
 
@@ -228,6 +256,13 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return {
             "upstream": {node.key: node.parent_keys for node in self.asset_nodes},
             "downstream": {node.key: node.child_keys for node in self.asset_nodes},
+        }
+
+    @cached_property
+    def entity_dep_graph(self) -> DependencyGraph[EntityKey]:
+        return {
+            "upstream": {node.key: node.parent_entity_keys for node in self.nodes},
+            "downstream": {node.key: node.child_entity_keys for node in self.nodes},
         }
 
     @cached_property
@@ -262,6 +297,17 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return [
             item
             for items_in_level in toposort(self.asset_dep_graph["upstream"])
+            for item in sorted(items_in_level)
+        ]
+
+    @cached_property
+    def toposorted_entity_keys(self) -> Sequence[EntityKey]:
+        """Return topologically sorted entity keys in graph. Keys with the same topological level are
+        sorted alphabetically to provide stability.
+        """
+        return [
+            item
+            for items_in_level in toposort(self.entity_dep_graph["upstream"])
             for item in sorted(items_in_level)
         ]
 

@@ -36,7 +36,7 @@ class AutomationConditionEvaluator:
         self,
         *,
         asset_graph: BaseAssetGraph,
-        asset_keys: AbstractSet[AssetKey],
+        entity_keys: AbstractSet[EntityKey],
         asset_graph_view: AssetGraphView,
         logger: logging.Logger,
         cursor: AssetDaemonCursor,
@@ -50,7 +50,7 @@ class AutomationConditionEvaluator:
         request_backfills: bool,
     ):
         self.asset_graph = asset_graph
-        self.asset_keys = asset_keys
+        self.entity_keys = entity_keys
         self.asset_graph_view = asset_graph_view
         self.logger = logger
         self.cursor = cursor
@@ -62,16 +62,16 @@ class AutomationConditionEvaluator:
         self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
         self.num_checked_assets = 0
-        self.num_asset_keys = len(asset_keys)
+        self.num_asset_keys = len(entity_keys)
         self.request_backfills = request_backfills
 
         self.legacy_expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
         self._execution_set_extras: Dict[AssetKey, List[EntitySubset[AssetKey]]] = defaultdict(list)
 
     asset_graph: BaseAssetGraph[BaseAssetNode]
-    asset_keys: AbstractSet[AssetKey]
+    entity_keys: AbstractSet[EntityKey]
     asset_graph_view: AssetGraphView
-    current_results_by_key: Dict[AssetKey, AutomationResult]
+    current_results_by_key: Dict[EntityKey, AutomationResult]
     num_checked_assets: int
     num_asset_keys: int
     logger: logging.Logger
@@ -87,11 +87,10 @@ class AutomationConditionEvaluator:
 
     @property
     def evaluated_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
+        asset_keys = {ek for ek in self.entity_keys if isinstance(ek, AssetKey)}
         return {
-            parent
-            for asset_key in self.asset_keys
-            for parent in self.asset_graph.get(asset_key).parent_keys
-        } | self.asset_keys
+            parent for ek in asset_keys for parent in self.asset_graph.get(ek).parent_keys
+        } | asset_keys
 
     @property
     def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
@@ -111,23 +110,23 @@ class AutomationConditionEvaluator:
 
     def evaluate(self) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[EntityKey]]]:
         self.prefetch()
-        for asset_key in self.asset_graph.toposorted_asset_keys:
-            if asset_key not in self.asset_keys:
+        for entity_key in self.asset_graph.toposorted_entity_keys:
+            if entity_key not in self.entity_keys:
                 continue
 
             self.num_checked_assets += 1
             self.logger.debug(
-                f"Evaluating asset {asset_key.to_user_string()} ({self.num_checked_assets}/{self.num_asset_keys})"
+                f"Evaluating {entity_key.to_user_string()} ({self.num_checked_assets}/{self.num_asset_keys})"
             )
 
             try:
-                self.evaluate_asset(asset_key)
+                self.evaluate_entity(entity_key)
             except Exception as e:
                 raise Exception(
-                    f"Error while evaluating conditions for asset {asset_key.to_user_string()}"
+                    f"Error while evaluating conditions for {entity_key.to_user_string()}"
                 ) from e
 
-            result = self.current_results_by_key[asset_key]
+            result = self.current_results_by_key[entity_key]
             num_requested = result.true_subset.size
             requested_str = ",".join(
                 [
@@ -137,25 +136,24 @@ class AutomationConditionEvaluator:
             )
             log_fn = self.logger.info if num_requested > 0 else self.logger.debug
             log_fn(
-                f"Asset {asset_key.to_user_string()} evaluation result: {num_requested} "
+                f"{entity_key.to_user_string()} evaluation result: {num_requested} "
                 f"requested ({requested_str}) "
                 f"({format(result.end_timestamp - result.start_timestamp, '.3f')} seconds)"
             )
         return self.current_results_by_key.values(), self._get_entity_subsets()
 
-    def evaluate_asset(self, asset_key: AssetKey) -> None:
+    def evaluate_entity(self, key: EntityKey) -> None:
         # evaluate the condition of this asset
-        context = AutomationContext.create(asset_key=asset_key, evaluator=self)
+        context = AutomationContext.create(key=key, evaluator=self)
         result = context.condition.evaluate(context)
 
         # update dictionaries to keep track of this result
-        self.current_results_by_key[asset_key] = result
-        self.legacy_expected_data_time_by_key[asset_key] = (
-            result.compute_legacy_expected_data_time()
-        )
+        self.current_results_by_key[key] = result
 
-        # handle cases where an entity must be materialized with others
-        self._handle_execution_set(result)
+        if isinstance(key, AssetKey):
+            self.legacy_expected_data_time_by_key[key] = result.compute_legacy_expected_data_time()
+            # handle cases where an entity must be materialized with others
+            self._handle_execution_set(result)
 
     def _handle_execution_set(self, result: AutomationResult[AssetKey]) -> None:
         # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
