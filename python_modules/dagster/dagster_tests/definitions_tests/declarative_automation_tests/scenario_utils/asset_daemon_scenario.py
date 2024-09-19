@@ -11,12 +11,14 @@ from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
+    ValidAssetSubset,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
     AutomationConditionEvaluation,
@@ -89,7 +91,7 @@ class AssetRuleEvaluationSpec(NamedTuple):
         """Returns a tuple of the resolved AutoMaterializeRuleEvaluation for this spec and the
         partitions that it applies to.
         """
-        subset = AssetSubset.from_asset_partitions_set(
+        subset = ValidAssetSubset.from_asset_partitions_set(
             asset_key,
             asset_graph.get(asset_key).partitions_def,
             {

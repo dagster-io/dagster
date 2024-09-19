@@ -1,12 +1,10 @@
 from typing import Optional, Sequence
 
-import dagster._check as check
 import pytest
 from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -41,21 +39,16 @@ def get_hardcoded_condition():
         def evaluate(self, context: AutomationContext) -> AutomationResult:
             true_candidates = {
                 candidate
-                for candidate in context.candidate_slice.convert_to_valid_asset_subset().asset_partitions
+                for candidate in context.candidate_slice.convert_to_asset_subset().asset_partitions
                 if candidate in true_set
             }
-            partitions_def = context.asset_graph_view.asset_graph.get(
-                context.asset_key
-            ).partitions_def
             return AutomationResult(
                 context,
-                true_slice=check.not_none(
-                    context.asset_graph_view.get_asset_slice_from_subset(
-                        AssetSubset.from_asset_partitions_set(
-                            context.asset_key, partitions_def, true_candidates
-                        )
-                    )
-                ),
+                true_slice=context.asset_graph_view.get_asset_slice_from_asset_partitions(
+                    true_candidates
+                )
+                if true_candidates
+                else context.get_empty_slice(),
             )
 
     return HardcodedCondition(), true_set
