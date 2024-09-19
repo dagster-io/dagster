@@ -40,6 +40,17 @@ import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 const PAGE_SIZE = 25;
 
+const filters: RunFilterTokenType[] = [
+  'tag',
+  'snapshotId',
+  'id',
+  'job',
+  'pipeline',
+  'partition',
+  'backfill',
+  'status',
+];
+
 export function useRunsFeedEntries() {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsFeedRootQuery,
@@ -107,24 +118,6 @@ export const RunsFeedRoot = () => {
     [nonStatusTokens, setFilterTokensWithStatus],
   );
 
-  const enabledFilters = useMemo(() => {
-    const filters: RunFilterTokenType[] = [
-      'tag',
-      'snapshotId',
-      'id',
-      'job',
-      'pipeline',
-      'partition',
-      'backfill',
-    ];
-
-    if (!staticStatusTags) {
-      filters.push('status');
-    }
-
-    return filters;
-  }, [staticStatusTags]);
-
   const mutableTokens = useMemo(() => {
     if (staticStatusTags) {
       return filterTokens.filter((token) => token.token !== 'status');
@@ -135,7 +128,7 @@ export const RunsFeedRoot = () => {
   const {button, activeFiltersJsx} = useRunsFilterInput({
     tokens: mutableTokens,
     onChange: setFilterTokensWithStatus,
-    enabledFilters,
+    enabledFilters: filters,
   });
 
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter);
@@ -205,8 +198,7 @@ export const RunsFeedRoot = () => {
         error.statusCode === 400
       );
       return (
-        <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8}}>
-          {actionBar()}
+        <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8}} border="top">
           <NonIdealState
             icon="warning"
             title={badRequest ? 'Invalid run filters' : 'Unexpected error'}
@@ -221,8 +213,7 @@ export const RunsFeedRoot = () => {
     }
     if (queryResult.loading && !queryResult.data) {
       return (
-        <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8}}>
-          {actionBar()}
+        <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8}} border="top">
           <LoadingSpinner purpose="page" />
         </Box>
       );

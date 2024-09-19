@@ -2,12 +2,12 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunTabsCountQueryVariables = Types.Exact<{
+export type RunFeedTabsCountQueryVariables = Types.Exact<{
   queuedFilter: Types.RunsFilter;
   inProgressFilter: Types.RunsFilter;
 }>;
 
-export type RunTabsCountQuery = {
+export type RunFeedTabsCountQuery = {
   __typename: 'Query';
   queuedCount:
     | {__typename: 'InvalidPipelineRunsFilterError'}
@@ -19,4 +19,4 @@ export type RunTabsCountQuery = {
     | {__typename: 'Runs'; count: number | null};
 };
 
-export const RunTabsCountQueryVersion = '5fe1760a3bf0494fb98e3c09f31add5138f9f31d59507a8b25186e2103bebbb4';
+export const RunFeedTabsCountQueryVersion = 'e845ed2b46945b3ae28446fd8b44ce96a48d59f06ca2f58cfad30f8d4f4d8fa2';
