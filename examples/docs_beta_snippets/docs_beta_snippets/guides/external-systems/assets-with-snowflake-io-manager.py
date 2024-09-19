@@ -24,6 +24,8 @@ def sales_summary(clean_sales_data: pd.DataFrame) -> pd.DataFrame:
 defs = dg.Definitions(
     assets=[raw_sales_data, clean_sales_data, sales_summary],
     resources={
+        # highlight-start
+        # Swap in a Snowflake I/O manager
         "io_manager": SnowflakePandasIOManager(
             database=dg.EnvVar("SNOWFLAKE_DATABASE"),
             account=dg.EnvVar("SNOWFLAKE_ACCOUNT"),
@@ -31,4 +33,5 @@ defs = dg.Definitions(
             password=dg.EnvVar("SNOWFLAKE_PASSWORD"),
         )
     },
+    # highlight-end
 )
