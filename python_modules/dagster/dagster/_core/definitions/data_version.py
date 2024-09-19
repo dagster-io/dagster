@@ -683,14 +683,6 @@ class CachingStaleStatusResolver:
     def _get_latest_data_version_record(
         self, key: "AssetKeyPartitionKey"
     ) -> Optional["EventLogRecord"]:
-        # If an asset record is cached, all of its ancestors have already been cached.
-        if (
-            key.partition_key is None
-            and not self.asset_graph.get(key.asset_key).is_external
-            and not self.instance_queryer.has_cached_asset_record(key.asset_key)
-        ):
-            ancestors = self.asset_graph.get_ancestor_asset_keys(key.asset_key, include_self=True)
-            self.instance_queryer.prefetch_asset_records(ancestors)
         return self.instance_queryer.get_latest_materialization_or_observation_record(
             asset_partition=key
         )

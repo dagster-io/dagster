@@ -31,7 +31,8 @@ from dagster._core.execution.stats import (
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance import DagsterInstance, MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.loader import InstanceLoadableBy
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
@@ -124,14 +125,24 @@ class AssetEntry(
         return self.last_materialization_record.storage_id
 
 
-class AssetRecord(NamedTuple):
+class AssetRecord(
+    NamedTuple("_NamedTuple", [("storage_id", int), ("asset_entry", AssetEntry)]),
+    InstanceLoadableBy[AssetKey],
+):
     """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
 
     Users should not invoke this class directly.
     """
 
-    storage_id: int
-    asset_entry: AssetEntry
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], instance: DagsterInstance
+    ) -> Iterable[Optional["AssetRecord"]]:
+        records_by_key = {
+            record.asset_entry.asset_key: record
+            for record in instance.get_asset_records(list(keys))
+        }
+        return [records_by_key.get(key) for key in keys]
 
 
 class AssetCheckSummaryRecord(NamedTuple):

@@ -19,6 +19,7 @@ from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
@@ -1024,8 +1025,7 @@ class GrapheneQuery(graphene.ObjectType):
         if not results:
             return []
 
-        asset_record_loader = graphene_info.context.asset_record_loader
-        asset_record_loader.add_asset_keys([node.assetKey for node in results])
+        AssetRecord.prepare(graphene_info.context, [node.assetKey for node in results])
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
             asset_keys=[node.assetKey for node in results],
@@ -1052,7 +1052,6 @@ class GrapheneQuery(graphene.ObjectType):
                 node.external_repository,
                 node.external_asset_node,
                 asset_checks_loader=asset_checks_loader,
-                asset_record_loader=asset_record_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
@@ -1160,10 +1159,9 @@ class GrapheneQuery(graphene.ObjectType):
             if node.assetKey in asset_keys
         }
 
-        asset_record_loader = graphene_info.context.asset_record_loader
-        asset_record_loader.add_asset_keys(asset_keys)
+        AssetRecord.prepare(graphene_info.context, asset_keys)
 
-        return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
+        return get_assets_latest_info(graphene_info, step_keys_by_asset)
 
     @capture_error
     def resolve_logsForRun(
