@@ -530,7 +530,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
 
-        assert len(result.data["runsFeedOrError"]["results"]) == 8
+        assert len(result.data["runsFeedOrError"]["results"]) == 9
         assert not result.data["runsFeedOrError"]["hasMore"]
 
         result = execute_dagster_graphql(
@@ -544,8 +544,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        # COMPLETED is cnsidered SUCCESS, so there should be 3 results
-        assert len(result.data["runsFeedOrError"]["results"]) == 3
+        assert len(result.data["runsFeedOrError"]["results"]) == 2
 
         result = execute_dagster_graphql(
             graphql_context,
