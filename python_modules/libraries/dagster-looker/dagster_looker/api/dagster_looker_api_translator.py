@@ -1,11 +1,15 @@
-from typing import Dict, Union
+from typing import Any, Dict, Mapping, Sequence, Union
 
 from dagster import (
     AssetSpec,
     _check as check,
 )
 from dagster._record import record
+from dagster._utils.log import get_dagster_logger
+from looker_sdk.sdk.api40.methods import Looker40SDK
 from looker_sdk.sdk.api40.models import Dashboard, DashboardFilter, LookmlModelExplore
+
+logger = get_dagster_logger("dagster_looker")
 
 
 @record
@@ -14,6 +18,55 @@ class LookerInstanceData:
 
     explores_by_id: Dict[str, LookmlModelExplore]
     dashboards_by_id: Dict[str, Dashboard]
+
+    def to_cacheable_metadata(self, *, sdk: Looker40SDK) -> Mapping[str, Any]:
+        return {
+            "dashboards_by_id": {
+                dashboard_id: (
+                    sdk.serialize(api_model=dashboard_data).decode()  # type: ignore
+                )
+                for dashboard_id, dashboard_data in self.dashboards_by_id.items()
+            },
+            "explores_by_id": {
+                explore_id: (
+                    sdk.serialize(api_model=explore_data).decode()  # type: ignore
+                )
+                for explore_id, explore_data in self.explores_by_id.items()
+            },
+        }
+
+    @staticmethod
+    def from_cacheable_metadata(
+        *, sdk: Looker40SDK, cacheable_metadata: Sequence[Mapping[str, Any]]
+    ) -> "LookerInstanceData":
+        explores_by_id = {
+            explore_id: (
+                sdk.deserialize(
+                    data=serialized_lookml_explore,  # type: ignore
+                    structure=LookmlModelExplore,
+                )
+            )
+            for cached_metadata in cacheable_metadata
+            for explore_id, serialized_lookml_explore in cached_metadata["explores_by_id"].items()
+        }
+
+        dashboards_by_id = {
+            dashboard_id: (
+                sdk.deserialize(
+                    data=serialized_looker_dashboard,  # type: ignore
+                    structure=Dashboard,
+                )
+            )
+            for cached_metadata in cacheable_metadata
+            for dashboard_id, serialized_looker_dashboard in cached_metadata[
+                "dashboards_by_id"
+            ].items()
+        }
+
+        return LookerInstanceData(
+            explores_by_id=explores_by_id,
+            dashboards_by_id=dashboards_by_id,
+        )
 
 
 class DagsterLookerApiTranslator:
