@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster import PartitionKeyRange
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -160,7 +161,7 @@ class AssetDaemonContext:
 
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
+    ) -> Tuple[Iterable[AutomationResult], Iterable[EntitySubset[AssetKey]]]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
@@ -198,24 +199,22 @@ class AssetDaemonContext:
             else []
         )
 
-        results, to_request = self.get_asset_condition_evaluations()
+        results, entity_subsets = self.get_asset_condition_evaluations()
 
         if self._request_backfills:
             run_requests = (
                 [
                     RunRequest.for_asset_graph_subset(
-                        asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
-                            to_request, asset_graph=self.asset_graph
-                        ),
+                        asset_graph_subset=AssetGraphSubset.from_entity_subsets(entity_subsets),
                         tags=self.auto_materialize_run_tags,
                     )
                 ]
-                if to_request
+                if entity_subsets
                 else []
             )
         else:
             run_requests = build_run_requests(
-                asset_partitions=to_request,
+                entity_subsets=entity_subsets,
                 asset_graph=self.asset_graph,
                 run_tags=self.auto_materialize_run_tags,
             )
@@ -252,26 +251,70 @@ class AssetDaemonContext:
         )
 
 
-def build_run_requests(
-    asset_partitions: Iterable[AssetKeyPartitionKey],
-    asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
-) -> Sequence[RunRequest]:
-    assets_to_reconcile_by_partitions_def_partition_key: Mapping[
-        Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
-    ] = defaultdict(set)
+_PartitionsDefMapping = Mapping[Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]]
+
+
+def _get_partitions_def_mapping_from_asset_partitions(
+    asset_partitions: AbstractSet[AssetKeyPartitionKey], asset_graph: BaseAssetGraph
+) -> _PartitionsDefMapping:
+    mapping: _PartitionsDefMapping = defaultdict(set)
 
     for asset_partition in asset_partitions:
-        assets_to_reconcile_by_partitions_def_partition_key[
+        mapping[
             asset_graph.get(asset_partition.asset_key).partitions_def, asset_partition.partition_key
         ].add(asset_partition.asset_key)
 
+    return mapping
+
+
+def _get_partitions_def_mapping_from_entity_subsets(
+    entity_subsets: Iterable[EntitySubset], asset_graph: BaseAssetGraph
+) -> _PartitionsDefMapping:
+    mapping: _PartitionsDefMapping = defaultdict(set)
+
+    for subset in entity_subsets:
+        partitions_def = asset_graph.get(subset.key).partitions_def
+        for asset_partition in subset.expensively_compute_asset_partitions():
+            mapping[partitions_def, asset_partition.partition_key].add(asset_partition.asset_key)
+
+    return mapping
+
+
+def build_run_requests_from_asset_partitions(
+    asset_partitions: AbstractSet[AssetKeyPartitionKey],
+    asset_graph: BaseAssetGraph,
+    run_tags: Optional[Mapping[str, str]],
+) -> Sequence[RunRequest]:
+    return _build_run_requests_from_partitions_def_mapping(
+        _get_partitions_def_mapping_from_asset_partitions(asset_partitions, asset_graph),
+        asset_graph,
+        run_tags,
+    )
+
+
+def build_run_requests(
+    entity_subsets: Iterable[EntitySubset[AssetKey]],
+    asset_graph: BaseAssetGraph,
+    run_tags: Optional[Mapping[str, str]],
+) -> Sequence[RunRequest]:
+    return _build_run_requests_from_partitions_def_mapping(
+        _get_partitions_def_mapping_from_entity_subsets(entity_subsets, asset_graph),
+        asset_graph,
+        run_tags,
+    )
+
+
+def _build_run_requests_from_partitions_def_mapping(
+    partitions_def_mapping: _PartitionsDefMapping,
+    asset_graph: BaseAssetGraph,
+    run_tags: Optional[Mapping[str, str]],
+) -> Sequence[RunRequest]:
     run_requests = []
 
     for (
         partitions_def,
         partition_key,
-    ), asset_keys in assets_to_reconcile_by_partitions_def_partition_key.items():
+    ), asset_keys in partitions_def_mapping.items():
         tags = {**(run_tags or {})}
         if partition_key is not None:
             if partitions_def is None:

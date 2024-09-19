@@ -23,7 +23,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import (
-    build_run_requests,
+    build_run_requests_from_asset_partitions,
     build_run_requests_with_backfill_policies,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -1495,7 +1495,7 @@ def execute_asset_backfill_iteration_inner(
             )
         # When any of the assets do not have backfill policies, we fall back to the default behavior of
         # backfilling them partition by partition.
-        run_requests = build_run_requests(
+        run_requests = build_run_requests_from_asset_partitions(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
             run_tags={},

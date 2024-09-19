@@ -16,6 +16,7 @@ from typing import (
 )
 
 from dagster import _check as check
+from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -267,6 +268,23 @@ class AssetGraphSubset(NamedTuple):
                 for asset_key, partition_keys in partitions_by_asset_key.items()
             },
             non_partitioned_asset_keys=non_partitioned_asset_keys,
+        )
+
+    @classmethod
+    def from_entity_subsets(
+        cls, entity_subsets: Iterable[EntitySubset[AssetKey]]
+    ) -> "AssetGraphSubset":
+        return AssetGraphSubset(
+            partitions_subsets_by_asset_key={
+                subset.key: subset.get_internal_subset_value()
+                for subset in entity_subsets
+                if subset.is_partitioned and not subset.is_empty
+            },
+            non_partitioned_asset_keys={
+                subset.key
+                for subset in entity_subsets
+                if not subset.is_partitioned and not subset.is_empty
+            },
         )
 
     @classmethod
