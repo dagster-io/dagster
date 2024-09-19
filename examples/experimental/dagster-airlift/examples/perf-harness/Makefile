@@ -14,7 +14,7 @@ help:
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 dev_install:
-	pip install uv && \
+	pip install uv
 	uv pip install -e ../../../dagster-airlift
 	uv pip install -e .
 
@@ -22,10 +22,10 @@ run_airflow:
 	airflow standalone
 
 wipe: ## Wipe out all the files created by the Makefile
-	rm -rf $$AIRFLOW_HOME $$DAGSTER_HOME
+	rm -rf $(AIRFLOW_HOME) $(DAGSTER_HOME)
 
 wipe_dagster: ## Wipe out all the files created by the Makefile
-	rm -rf $$DAGSTER_HOME
+	rm -rf $(DAGSTER_HOME)
 
 run_peer:
 	dagster dev -m perf_harness.dagster_defs.peer
@@ -48,10 +48,10 @@ run_migrate: scaffold_migrate
 # make airflow home and dagster home directories within current directory, set up env vars, and then
 # set up airflow environment.
 setup_local_env: scaffold_observe
-	make wipe && \
-	mkdir -p $$AIRFLOW_HOME && \
-	mkdir -p $$DAGSTER_HOME && \
-	chmod +x ../../scripts/airflow_setup.sh && \
+	$(MAKE) wipe
+	mkdir -p $$AIRFLOW_HOME
+	mkdir -p $$DAGSTER_HOME
+	chmod +x ../../scripts/airflow_setup.sh
 	../../scripts/airflow_setup.sh $(MAKEFILE_DIR)/perf_harness/airflow_dags
 
 run_perf_scenarios_test:
