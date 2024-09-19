@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
@@ -83,27 +82,6 @@ class WorkspaceSnapshot:
 
     def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
         return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})
-
-
-class IWorkspace(ABC):
-    """Manages a set of CodeLocations."""
-
-    @abstractmethod
-    def get_code_location(self, location_name: str) -> "CodeLocation":
-        """Return the CodeLocation for the given location name, or raise an error if there is an error loading it."""
-
-    @abstractmethod
-    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
-        """Return an entry for each location in the workspace."""
-
-    @abstractmethod
-    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
-        pass
-
-    @property
-    @abstractmethod
-    def asset_graph(self) -> "RemoteAssetGraph":
-        pass
 
 
 def location_status_from_location_entry(

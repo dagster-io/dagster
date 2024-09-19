@@ -16,7 +16,7 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
-from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._time import get_current_timestamp
 from dagster._utils import DebugCrashFlags
@@ -102,7 +102,7 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
 
 def monitor_started_run(
     instance: DagsterInstance,
-    workspace: IWorkspace,
+    workspace: BaseWorkspaceRequestContext,
     run_record: RunRecord,
     logger: logging.Logger,
 ) -> None:
