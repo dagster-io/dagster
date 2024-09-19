@@ -167,7 +167,11 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_check_nodes_by_key = {
-            k: AssetCheckNode(k, v.get_spec_for_check_key(k).blocking)
+            k: AssetCheckNode(
+                k,
+                v.get_spec_for_check_key(k).blocking,
+                v.get_spec_for_check_key(k).automation_condition,
+            )
             for k, v in assets_defs_by_check_key.items()
         }
         self._assets_defs_by_check_key = assets_defs_by_check_key

@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AutomationCondition,
     DailyPartitionsDefinition,
     GraphOut,
     HourlyPartitionsDefinition,
@@ -707,7 +708,11 @@ def test_required_assets_and_checks_by_key_check_decorator(
     @asset_check(asset=asset0)
     def check0(): ...
 
-    @asset_check(asset=asset0, blocking=True)
+    @asset_check(
+        asset=asset0,
+        blocking=True,
+        automation_condition=AutomationCondition.cron_tick_passed("*/15 * * * *"),
+    )
     def check1(): ...
 
     asset_graph = asset_graph_from_assets([asset0, check0, check1])
@@ -728,6 +733,7 @@ def test_required_assets_and_checks_by_key_check_decorator(
     check_node = asset_graph.get(check1.check_key)
     assert check_node.blocking
     assert check_node.partitions_def is None
+    assert check_node.automation_condition == AutomationCondition.cron_tick_passed("*/15 * * * *")
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(

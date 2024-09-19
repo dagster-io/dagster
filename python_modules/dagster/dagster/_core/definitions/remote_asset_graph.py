@@ -235,7 +235,8 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._asset_checks_by_key = asset_checks_by_key
         self._asset_check_nodes_by_key = {
-            k: AssetCheckNode(k, v.blocking) for k, v in asset_checks_by_key.items()
+            k: AssetCheckNode(k, v.blocking, v.automation_condition)
+            for k, v in asset_checks_by_key.items()
         }
         self._asset_check_execution_sets_by_key = asset_check_execution_sets_by_key
 
