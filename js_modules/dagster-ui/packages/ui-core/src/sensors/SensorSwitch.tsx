@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -33,6 +32,7 @@ import {
 } from './types/SensorMutations.types';
 import {SensorStateQuery, SensorStateQueryVariables} from './types/SensorStateQuery.types';
 import {SensorSwitchFragment} from './types/SensorSwitch.types';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';

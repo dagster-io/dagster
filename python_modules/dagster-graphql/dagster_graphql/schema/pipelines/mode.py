@@ -2,9 +2,9 @@ import dagster._check as check
 import graphene
 from dagster._core.snap import ConfigSchemaSnapshot, ModeDefSnap
 
-from ..util import ResolveInfo, non_null_list
-from .logger import GrapheneLogger
-from .resource import GrapheneResource
+from dagster_graphql.schema.pipelines.logger import GrapheneLogger
+from dagster_graphql.schema.pipelines.resource import GrapheneResource
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneMode(graphene.ObjectType):

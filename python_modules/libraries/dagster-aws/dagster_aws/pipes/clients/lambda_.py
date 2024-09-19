@@ -33,7 +33,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        client: Optional[boto3.client] = None,
+        client: Optional[boto3.client] = None,  # pyright: ignore (reportGeneralTypeIssues)
         context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
     ):

@@ -1,8 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {getAllByText, getByText, getByTitle, render, screen, waitFor} from '@testing-library/react';
-import {MemoryRouter, Route} from 'react-router-dom';
+import {MemoryRouter} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
+import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
@@ -19,7 +20,8 @@ import {
   mockViewportClientRect,
   restoreViewportClientRect,
 } from '../../../testing/mocking';
-import {BACKFILL_DETAILS_QUERY, BackfillPage} from '../BackfillPage';
+import {BackfillPage} from '../BackfillPage';
+import {BACKFILL_DETAILS_QUERY} from '../useBackfillDetailsQuery';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../../graph/asyncGraphLayout', () => ({}));

@@ -38,6 +38,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -236,6 +237,18 @@ def test_from_asset_partitions_target_subset(
     )
 
 
+def _get_instance_queryer(
+    instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
+) -> CachingInstanceQueryer:
+    return AssetGraphView(
+        temporal_context=TemporalContext(
+            effective_dt=evaluation_time or get_current_datetime(), last_event_id=None
+        ),
+        instance=instance,
+        asset_graph=asset_graph,
+    ).get_inner_queryer_for_back_compat()
+
+
 def _single_backfill_iteration(
     backfill_id, backfill_data, asset_graph, instance, assets_by_repo_name
 ) -> AssetBackfillData:
@@ -265,10 +278,8 @@ def _single_backfill_iteration(
     return backfill_data.with_run_requests_submitted(
         result.run_requests,
         asset_graph,
-        instance_queryer=CachingInstanceQueryer(
-            instance=instance,
-            asset_graph=asset_graph,
-            evaluation_time=backfill_data.backfill_start_datetime,
+        instance_queryer=_get_instance_queryer(
+            instance, asset_graph, backfill_data.backfill_start_datetime
         ),
     )
 
@@ -554,11 +565,12 @@ def execute_asset_backfill_iteration_consume_generator(
 ) -> AssetBackfillIterationResult:
     counter = Counter()
     traced_counter.set(counter)
+
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
-            instance_queryer=CachingInstanceQueryer(
+            instance_queryer=_get_instance_queryer(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
             asset_graph=asset_graph,
@@ -606,10 +618,8 @@ def run_backfill_to_completion(
         # iteration_count += 1
         assert result1.backfill_data != backfill_data
 
-        instance_queryer = CachingInstanceQueryer(
-            instance=instance,
-            asset_graph=asset_graph,
-            evaluation_time=backfill_data.backfill_start_datetime,
+        instance_queryer = _get_instance_queryer(
+            instance, asset_graph, evaluation_time=backfill_data.backfill_start_datetime
         )
 
         backfill_data_with_submitted_runs = result1.backfill_data.with_run_requests_submitted(
@@ -738,7 +748,7 @@ def external_asset_graph_from_assets_by_repo_name(
         )
 
     return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-        from_repository_handles_and_external_asset_nodes, external_asset_checks=[]
+        from_repository_handles_and_external_asset_nodes, []
     )
 
 
@@ -1130,7 +1140,7 @@ def test_asset_backfill_cancellation():
 
     assert len(instance.get_runs()) == 1
 
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
@@ -1215,7 +1225,7 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
         in asset_backfill_data.failed_and_downstream_subset
     )
 
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
@@ -1427,22 +1437,22 @@ def test_connected_assets_disconnected_partitions():
     asset_graph = get_asset_graph(assets_by_repo_name)
 
     backfill_start_datetime = create_datetime(2023, 10, 30, 0, 0, 0)
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
     asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
         asset_graph,
         instance_queryer,
         backfill_start_datetime.timestamp(),
         [
             PartitionsByAssetSelector(
-                foo.key, PartitionsSelector(PartitionRangeSelector("2023-10-01", "2023-10-05"))
+                foo.key, PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-05")])
             ),
             PartitionsByAssetSelector(
                 foo_child.key,
-                PartitionsSelector(PartitionRangeSelector("2023-10-01", "2023-10-03")),
+                PartitionsSelector([PartitionRangeSelector("2023-10-01", "2023-10-03")]),
             ),
             PartitionsByAssetSelector(
                 foo_grandchild.key,
-                PartitionsSelector(PartitionRangeSelector("2023-10-10", "2023-10-13")),
+                PartitionsSelector([PartitionRangeSelector("2023-10-10", "2023-10-13")]),
             ),
         ],
     )
@@ -1729,3 +1739,52 @@ def test_run_request_partition_order():
         "2023-10-02",
         "2023-10-03",
     ]
+
+
+def test_asset_backfill_multiple_partition_ranges():
+    instance = DagsterInstance.ephemeral()
+    partitions_def = DailyPartitionsDefinition("2023-10-01")
+
+    @asset(partitions_def=partitions_def)
+    def foo():
+        pass
+
+    @asset(partitions_def=partitions_def, deps=[foo])
+    def foo_child():
+        pass
+
+    assets_by_repo_name = {"repo": [foo, foo_child]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    target_partitions_subset = (
+        partitions_def.empty_subset()
+        .with_partition_key_range(partitions_def, PartitionKeyRange("2023-11-01", "2023-11-03"))
+        .with_partition_key_range(partitions_def, PartitionKeyRange("2023-11-06", "2023-11-07"))
+    )
+    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=AssetGraphSubset(
+            partitions_subsets_by_asset_key={
+                foo.key: target_partitions_subset,
+                foo_child.key: target_partitions_subset,
+            }
+        ),
+        dynamic_partitions_store=MagicMock(),
+        backfill_start_timestamp=create_datetime(2023, 12, 5, 0, 0, 0).timestamp(),
+    )
+    assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(foo.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo.key, "2023-11-03"),
+        AssetKeyPartitionKey(foo.key, "2023-11-06"),
+        AssetKeyPartitionKey(foo.key, "2023-11-07"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-01"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-02"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-03"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-06"),
+        AssetKeyPartitionKey(foo_child.key, "2023-11-07"),
+    }
+
+    asset_backfill_data = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, assets_by_repo_name
+    )
+    assert asset_backfill_data.requested_subset == asset_backfill_data.target_subset

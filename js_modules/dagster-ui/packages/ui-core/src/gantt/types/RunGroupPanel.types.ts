@@ -52,3 +52,5 @@ export type RunGroupPanelRunFragment = {
   updateTime: number | null;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
 };
+
+export const RunGroupPanelQueryVersion = 'c454b4e4c3d881b2a78361c5868212f734c458291a3cb28be8ba4a63030eb004';

@@ -4,7 +4,7 @@ import dagster._check as check
 import graphene
 from dagster._core.remote_representation import RemoteRepositoryOrigin
 
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneRepositoryMetadata(graphene.ObjectType):

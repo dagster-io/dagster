@@ -2,7 +2,7 @@ import dagster._check as check
 import graphene
 from dagster._core.snap import ConfigSchemaSnapshot, LoggerDefSnap
 
-from ..config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
 
 
 class GrapheneLogger(graphene.ObjectType):

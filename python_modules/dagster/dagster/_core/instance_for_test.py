@@ -6,11 +6,10 @@ from typing import Any, Iterator, Mapping, Optional
 
 import yaml
 
+from dagster._core.instance import DagsterInstance
+from dagster._utils.env import environ
 from dagster._utils.error import serializable_error_info_from_exc_info
-
-from .._utils.env import environ
-from .._utils.merger import merge_dicts
-from .instance import DagsterInstance
+from dagster._utils.merger import merge_dicts
 
 
 @contextmanager

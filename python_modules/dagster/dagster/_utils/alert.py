@@ -150,7 +150,7 @@ def make_email_on_run_failure_sensor(
             be sent when any job in the repository fails. To monitor jobs in external repositories,
             use RepositorySelector and JobSelector.
         monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition, JobDefinition,  RepositorySelector, JobSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure

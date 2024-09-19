@@ -5,8 +5,8 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
 
-from .container_context import EcsContainerContext
-from .launcher import EcsRunLauncher
+from dagster_aws.ecs.container_context import EcsContainerContext
+from dagster_aws.ecs.launcher import EcsRunLauncher
 
 
 class CustomECSRunLauncher(EcsRunLauncher):

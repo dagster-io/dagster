@@ -1,4 +1,3 @@
-import {RefetchQueriesFunction} from '@apollo/client';
 import {
   Box,
   Button,
@@ -19,10 +18,10 @@ import {AssetWipeDialog} from 'shared/assets/AssetWipeDialog.oss';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
+import {RefetchQueriesFunction} from '../apollo-client';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
-import {DefinitionTag} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -40,8 +39,8 @@ interface Props {
   displayPathForAsset: (asset: Asset) => string[];
   searchPath: string;
   isFiltered: boolean;
-  computeKindFilter?: StaticSetFilter<string>;
-  storageKindFilter?: StaticSetFilter<DefinitionTag>;
+  kindFilter?: StaticSetFilter<string>;
+  isLoading: boolean;
 }
 
 export const AssetTable = ({
@@ -54,8 +53,8 @@ export const AssetTable = ({
   searchPath,
   isFiltered,
   view,
-  computeKindFilter,
-  storageKindFilter,
+  kindFilter,
+  isLoading,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -140,8 +139,8 @@ export const AssetTable = ({
         onRefresh={() => refreshState.refetch()}
         showRepoColumn
         view={view}
-        computeKindFilter={computeKindFilter}
-        storageKindFilter={storageKindFilter}
+        kindFilter={kindFilter}
+        isLoading={isLoading}
       />
     );
   };
@@ -152,7 +151,7 @@ export const AssetTable = ({
         <Box
           background={Colors.backgroundDefault()}
           flex={{alignItems: 'center', gap: 12}}
-          padding={{vertical: 8, left: 24, right: 12}}
+          padding={{vertical: 12, horizontal: 24}}
           style={{position: 'sticky', top: 0, zIndex: 1}}
         >
           {actionBarComponents}

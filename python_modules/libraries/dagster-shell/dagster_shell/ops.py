@@ -16,7 +16,7 @@ from dagster._annotations import deprecated
 from dagster._core.definitions.op_definition import OpDefinition
 from pydantic import Field
 
-from .utils import execute, execute_script_file
+from dagster_shell.utils import execute, execute_script_file
 
 
 class OutputType(Enum):

@@ -6,7 +6,7 @@ from dagster._grpc.server import ExecuteExternalJobArgs
 from dagster._grpc.types import CancelExecutionRequest, CancelExecutionResult, StartRunResult
 from dagster._serdes.serdes import deserialize_value
 
-from .utils import get_bar_repo_code_location
+from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
 
 def test_launch_run_grpc():

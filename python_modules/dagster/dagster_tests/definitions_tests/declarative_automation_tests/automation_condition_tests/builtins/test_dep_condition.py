@@ -1,23 +1,27 @@
 from typing import Optional, Sequence
 
-import dagster._check as check
 import pytest
 from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    one_asset_depends_on_two,
+    two_partitions_def,
+)
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_state import (
     ScenarioSpec,
 )
-
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.base_scenario import run_request
-from ...scenario_utils.scenario_specs import one_asset_depends_on_two, two_partitions_def
 
 
 def get_hardcoded_condition():
@@ -33,24 +37,18 @@ def get_hardcoded_condition():
             return "..."
 
         def evaluate(self, context: AutomationContext) -> AutomationResult:
-            true_candidates = {
-                candidate
-                for candidate in context.candidate_slice.convert_to_valid_asset_subset().asset_partitions
-                if candidate in true_set
-            }
-            partitions_def = context.asset_graph_view.asset_graph.get(
-                context.asset_key
-            ).partitions_def
-            return AutomationResult(
-                context,
-                true_slice=check.not_none(
-                    context.asset_graph_view.get_asset_slice_from_subset(
-                        AssetSubset.from_asset_partitions_set(
-                            context.asset_key, partitions_def, true_candidates
-                        )
-                    )
-                ),
-            )
+            filtered_true_set = {akpk for akpk in true_set if akpk.asset_key == context.key}
+            if context.partitions_def:
+                true_subset = context.candidate_subset.compute_intersection_with_partition_keys(
+                    {apk.partition_key for apk in filtered_true_set}
+                )
+            else:
+                true_subset = (
+                    context.asset_graph_view.get_full_subset(key=context.key)
+                    if filtered_true_set
+                    else context.asset_graph_view.get_empty_subset(key=context.key)
+                )
+            return AutomationResult(context, true_subset=true_subset)
 
     return HardcodedCondition(), true_set
 

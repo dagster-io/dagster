@@ -1,4 +1,3 @@
-import {QueryResult, gql, useApolloClient} from '@apollo/client';
 import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
@@ -11,26 +10,26 @@ import {getAutomationForRun} from './getAutomationForRun';
 import {
   CompletedRunTimelineQuery,
   CompletedRunTimelineQueryVariables,
+  CompletedRunTimelineQueryVersion,
   FutureTicksQuery,
   FutureTicksQueryVariables,
   OngoingRunTimelineQuery,
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
+import {QueryResult, gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
-import {useBlockTraceOnQueryResult, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const BATCH_LIMIT = 500;
-
-export const QUERY_VERSION = 1;
 
 export const useRunsForTimeline = ({
   rangeMs,
@@ -67,12 +66,12 @@ export const useRunsForTimeline = ({
         id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
         keyPrefix: JSON.stringify(filter),
         keyMaxCount: 3,
-        version: QUERY_VERSION,
+        version: CompletedRunTimelineQueryVersion,
       });
     }
     return new HourlyDataCache<RunTimelineFragment>({
       id: localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
-      version: QUERY_VERSION,
+      version: CompletedRunTimelineQueryVersion,
     });
   }, [filter, localCacheIdPrefix]);
   const [completedRuns, setCompletedRuns] = useState<RunTimelineFragment[]>([]);
@@ -126,6 +125,18 @@ export const useRunsForTimeline = ({
   const fetchCompletedRunsQueryData = useCallback(async () => {
     await completedRunsCache.loadCacheFromIndexedDB();
     setDidLoadCache(true);
+
+    // Accumulate the data to commit to the cache.
+    // Intentionally don't commit until everything is done in order to avoid
+    // committing incomplete data (and then assuming its full data later) in case the tab is closed early.
+    const dataToCommitToCacheByBucket: WeakMap<
+      [number, number],
+      Array<{
+        updatedBefore: number;
+        updatedAfter: number;
+        runs: RunTimelineFragment[];
+      }>
+    > = new WeakMap();
 
     return await fetchPaginatedBucketData({
       buckets: buckets
@@ -188,10 +199,24 @@ export const useRunsForTimeline = ({
           };
         }
         const runs: RunTimelineFragment[] = data.completed.results;
-        completedRunsCache.addData(updatedAfter, updatedBefore, runs);
 
         const hasMoreData = runs.length === batchLimit;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+
+        const accumulatedData = dataToCommitToCacheByBucket.get(bucket) ?? [];
+        dataToCommitToCacheByBucket.set(bucket, accumulatedData);
+
+        if (hasMoreData) {
+          // If there are runs lets accumulate this data to commit to the cache later
+          // once all of the runs for this bucket have been fetched.
+          accumulatedData.push({updatedAfter, updatedBefore, runs});
+        } else {
+          // If there is no more data lets commit all of the accumulated data to the cache
+          completedRunsCache.addData(updatedAfter, updatedBefore, runs);
+          accumulatedData.forEach(({updatedAfter, updatedBefore, runs}) => {
+            completedRunsCache.addData(updatedAfter, updatedBefore, runs);
+          });
+        }
 
         return {
           data: [],
@@ -294,7 +319,6 @@ export const useRunsForTimeline = ({
     }
   }, [startSec, _end, client, showTicks]);
 
-  useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
   useBlockTraceUntilTrue('CompletedRunTimelineQuery', !completedRunsQueryData.loading);
 
   const {data: futureTicksData} = futureTicksQueryData;

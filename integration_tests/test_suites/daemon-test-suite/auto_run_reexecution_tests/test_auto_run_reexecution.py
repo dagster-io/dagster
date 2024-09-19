@@ -21,7 +21,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 
-from .utils import foo, get_foo_job_handle
+from auto_run_reexecution_tests.utils import foo, get_foo_job_handle
 
 
 def create_run(instance, **kwargs):

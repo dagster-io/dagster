@@ -137,7 +137,10 @@ def monitor_started_run(
                 # Return rather than immediately checking for a timeout, since we only just resumed
                 return
             else:
-                if instance.run_launcher.supports_resume_run:
+                if (
+                    instance.run_launcher.supports_resume_run
+                    and instance.run_monitoring_max_resume_run_attempts > 0
+                ):
                     msg = (
                         f"Detected run worker status {check_health_result}. Marking run"
                         f" {run.run_id} as failed, because it has surpassed the configured maximum"

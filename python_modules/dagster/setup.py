@@ -102,7 +102,7 @@ setup(
         "structlog",
         "sqlalchemy>=1.0,<3",
         "toposort>=1.0",
-        "watchdog>=0.8.3",
+        "watchdog>=0.8.3,<6",
         'psutil>=1.0; platform_system=="Windows"',
         # https://github.com/mhammond/pywin32/issues/1439
         'pywin32!=226; platform_system=="Windows"',
@@ -110,7 +110,7 @@ setup(
         "universal_pathlib; python_version<'3.12'",
         "universal_pathlib>=0.2.0; python_version>='3.12'",
         # https://github.com/pydantic/pydantic/issues/5821
-        "pydantic>1.10.0,!= 1.10.7,<3",
+        "pydantic>1.10.0,!=1.10.7,<2.10",
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
@@ -129,6 +129,7 @@ setup(
             "pytest-rerunfailures==14.0",
             "pytest-xdist==3.6.1",
             "pytest>=8",
+            "pytest-asyncio",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
             "tox>=4",
@@ -138,7 +139,7 @@ setup(
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
-            "pyright==1.1.370",
+            "pyright==1.1.379",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports

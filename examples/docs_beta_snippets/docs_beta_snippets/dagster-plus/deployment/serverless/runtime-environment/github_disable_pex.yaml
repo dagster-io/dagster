@@ -1,0 +1,6 @@
+env:
+  DAGSTER_CLOUD_URL: "http://jamie-test-1.canary.dagster.cloud"
+  DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+  # highlight-start
+  ENABLE_FAST_DEPLOYS: 'false'
+  # highlight-end

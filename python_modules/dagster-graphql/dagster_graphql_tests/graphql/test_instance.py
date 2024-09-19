@@ -3,7 +3,10 @@ from typing import Any
 from dagster._core.utils import make_new_run_id
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    GraphQLContextVariant,
+    make_graphql_context_test_suite,
+)
 
 INSTANCE_QUERY = """
 query InstanceDetailSummaryQuery {

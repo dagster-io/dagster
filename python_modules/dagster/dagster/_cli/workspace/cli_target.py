@@ -24,6 +24,7 @@ from typing_extensions import Never, TypeAlias
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_loader import DefinitionsLoadType
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.instance import DagsterInstance
@@ -569,7 +570,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, 
         return {
             cast(
                 RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
+                repository_def_from_target_def(
+                    loadable_target.target_definition, DefinitionsLoadType.INITIALIZATION
+                ),
             ).name: CodePointer.from_python_file(
                 python_file, loadable_target.attribute, working_directory
             )
@@ -582,7 +585,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, 
         return {
             cast(
                 RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
+                repository_def_from_target_def(
+                    loadable_target.target_definition, DefinitionsLoadType.INITIALIZATION
+                ),
             ).name: CodePointer.from_module(
                 module_name, loadable_target.attribute, working_directory
             )
@@ -595,7 +600,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, 
         return {
             cast(
                 RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
+                repository_def_from_target_def(
+                    loadable_target.target_definition, DefinitionsLoadType.INITIALIZATION
+                ),
             ).name: CodePointer.from_python_package(
                 package_name, loadable_target.attribute, working_directory
             )

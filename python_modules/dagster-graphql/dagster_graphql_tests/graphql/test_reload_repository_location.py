@@ -13,7 +13,7 @@ from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster._grpc.types import ListRepositoriesResponse
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
     ReadonlyGraphQLContextTestMatrix,
     make_graphql_context_test_suite,
@@ -485,6 +485,10 @@ class TestReloadLocationCodeServerCliGrpc(CodeServerCliTestSuite):
         assert result.data["reloadRepositoryLocation"]["name"] == "test"
         assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
 
-        new_location = graphql_context.process_context.create_snapshot()["test"].code_location
+        new_location = (
+            graphql_context.process_context.get_workspace_snapshot()
+            .code_location_entries["test"]
+            .code_location
+        )
 
         assert new_location.server_id != old_server_id  # Reload actually happened

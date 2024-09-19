@@ -10,8 +10,8 @@ from dagster import (
 )
 from dagster._annotations import public
 
-from .asset_utils import dagster_name_fn, exists_in_selected
-from .constants import (
+from dagster_sdf.asset_utils import dagster_name_fn, exists_in_selected
+from dagster_sdf.constants import (
     DAGSTER_SDF_CATALOG_NAME,
     DAGSTER_SDF_DIALECT,
     DAGSTER_SDF_PURPOSE,
@@ -19,8 +19,8 @@ from .constants import (
     DAGSTER_SDF_TABLE_ID,
     DAGSTER_SDF_TABLE_NAME,
 )
-from .dagster_sdf_translator import DagsterSdfTranslator
-from .sdf_event_iterator import SdfDagsterEventType
+from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator
+from dagster_sdf.sdf_event_iterator import SdfDagsterEventType
 
 
 @dataclass

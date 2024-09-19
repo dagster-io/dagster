@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
@@ -26,6 +25,7 @@ import {
   ConfigPartitionsQueryVariables,
   PartitionSetForConfigEditorFragment,
 } from './types/ConfigEditorConfigPicker.types';
+import {gql, useQuery} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
@@ -35,7 +35,6 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -188,7 +187,6 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
 
   const queryResult = assetSelection ? queryResultAssets : queryResultNoAssets;
   const {data, refetch, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'ConfigPartitionsQuery');
 
   const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
     repoAddress,
@@ -304,7 +302,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
         items={partitions}
         inputProps={inputProps}
         inputValueRenderer={(partition) => partition}
-        itemPredicate={(query, partition) => query.length === 0 || partition.includes(query)}
+        itemPredicate={(query, partition) => {
+          const sanitized = query.trim().toLocaleLowerCase();
+          return sanitized.length === 0 || partition.toLocaleLowerCase().includes(sanitized);
+        }}
         itemRenderer={(partition, props) => (
           <MenuItem
             active={props.modifiers.active}

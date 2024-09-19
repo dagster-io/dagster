@@ -15,17 +15,19 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.dagster_types import (
+    GrapheneDagsterType,
+    GrapheneDagsterTypeUnion,
+    to_dagster_type,
+)
+from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-
-from .config_types import GrapheneConfigTypeField
-from .dagster_types import GrapheneDagsterType, GrapheneDagsterTypeUnion, to_dagster_type
-from .errors import GrapheneError
-from .metadata import GrapheneMetadataItemDefinition
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry, GrapheneMetadataItemDefinition
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from .asset_graph import GrapheneAssetNode
+    from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
 
 class _ArgNotPresentSentinel:
@@ -426,7 +428,7 @@ class ISolidDefinitionMixin:
         # NOTE: This is a temporary hack. We really should prob be resolving solids against the repo
         # rather than pipeline, that way we would not have to refetch the repo here here in order to
         # access the asset nodes.
-        from .asset_graph import GrapheneAssetNode
+        from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
         # This is a workaround for the fact that asset info is not persisted in pipeline snapshots.
         if isinstance(self._represented_pipeline, HistoricalJob):

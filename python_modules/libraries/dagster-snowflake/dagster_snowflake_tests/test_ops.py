@@ -5,7 +5,7 @@ from dagster_snowflake import snowflake_resource
 from dagster_snowflake.constants import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 from dagster_snowflake.ops import snowflake_solid_for_query
 
-from .utils import create_mock_connector
+from dagster_snowflake_tests.utils import create_mock_connector
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)

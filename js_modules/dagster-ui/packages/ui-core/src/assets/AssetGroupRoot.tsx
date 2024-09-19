@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
@@ -12,13 +11,14 @@ import {
   AssetGroupMetadataQuery,
   AssetGroupMetadataQueryVariables,
 } from './types/AssetGroupRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetGraphViewType} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {AssetGroupSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {
   ExplorerPath,
   explorerPathFromString,
@@ -124,6 +124,7 @@ export const AssetGroupRoot = ({
           explorerPath={explorerPathFromString(path || 'lineage/')}
           onChangeExplorerPath={onChangeExplorerPath}
           onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
+          viewType={AssetGraphViewType.GROUP}
         />
       ) : (
         <AssetsCatalogTable
@@ -161,7 +162,6 @@ export const AssetGroupTags = ({
     ASSET_GROUP_METADATA_QUERY,
     {variables: {selector: groupSelector}},
   );
-  useBlockTraceOnQueryResult(queryResult, 'AssetGroupMetadataQuery');
   const {data} = queryResult;
 
   const sensorTag = () => {

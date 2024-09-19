@@ -28,14 +28,12 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
-
-from ..implementation.fetch_partition_sets import (
+from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
     partition_statuses_from_run_partition_data,
 )
-from .asset_key import GrapheneAssetKey
-from .errors import (
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.errors import (
     GrapheneError,
     GrapheneInvalidOutputError,
     GrapheneInvalidStepError,
@@ -47,15 +45,17 @@ from .errors import (
     GrapheneUnauthorizedError,
     create_execution_params_error_types,
 )
-from .pipelines.config import GrapheneRunConfigValidationInvalid
-from .runs_feed import GrapheneRunsFeedEntry
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.pipelines.config import GrapheneRunConfigValidationInvalid
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.runs_feed import GrapheneRunsFeedEntry
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.partition_sets import GraphenePartitionStatusCounts
-
-    from ..schema.partition_sets import GraphenePartitionSet
-    from .pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.partition_sets import (
+        GraphenePartitionSet,
+        GraphenePartitionStatusCounts,
+    )
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
 pipeline_execution_error_types = (
     GrapheneInvalidStepError,
@@ -118,6 +118,8 @@ class GrapheneBulkActionStatus(graphene.Enum):
     FAILED = "FAILED"
     CANCELED = "CANCELED"
     CANCELING = "CANCELING"
+    COMPLETED_SUCCESS = "COMPLETED_SUCCESS"
+    COMPLETED_FAILED = "COMPLETED_FAILED"
 
     class Meta:
         name = "BulkActionStatus"
@@ -130,6 +132,10 @@ class GrapheneBulkActionStatus(graphene.Enum):
             return GrapheneRunStatus.STARTED  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.COMPLETED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_SUCCESS.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.SUCCESS  # pyright: ignore[reportReturnType]
+        if self.args[0] == GrapheneBulkActionStatus.COMPLETED_FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
+            return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.FAILED.value:  # pyright: ignore[reportAttributeAccessIssue]
             return GrapheneRunStatus.FAILURE  # pyright: ignore[reportReturnType]
         if self.args[0] == GrapheneBulkActionStatus.CANCELED.value:  # pyright: ignore[reportAttributeAccessIssue]
@@ -371,7 +377,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     jobName = graphene.Field(
         graphene.String(),
-        description="Included to comply with RunsFeedEntry interface. Duplicate of partitionSetName.",
+        description="Included to comply with RunsFeedEntry interface.",
     )
     assetCheckSelection = graphene.List(
         graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
@@ -386,7 +392,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         super().__init__(
             id=backfill_job.backfill_id,
             partitionSetName=backfill_job.partition_set_name,
-            jobName=backfill_job.partition_set_name,
+            jobName=backfill_job.job_name,
             status=backfill_job.status.value,
             fromFailure=bool(backfill_job.from_failure),
             reexecutionSteps=backfill_job.reexecution_steps,
@@ -485,25 +491,25 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self.timestamp
 
     def resolve_unfinishedRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
-        from .pipelines.pipeline import GrapheneRun
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records if not record.dagster_run.is_finished]
 
     def resolve_cancelableRuns(self, graphene_info: ResolveInfo) -> Sequence["GrapheneRun"]:
-        from .pipelines.pipeline import GrapheneRun
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records if not record.dagster_run.is_cancelable]
+        return [GrapheneRun(record) for record in records if record.dagster_run.is_cancelable]
 
     def resolve_runs(self, graphene_info: ResolveInfo) -> "Sequence[GrapheneRun]":
-        from .pipelines.pipeline import GrapheneRun
+        from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records]
 
     def resolve_tags(self, _graphene_info: ResolveInfo):
-        from .tags import GraphenePipelineTag
+        from dagster_graphql.schema.tags import GraphenePipelineTag
 
         return [
             GraphenePipelineTag(key=key, value=value)
@@ -540,7 +546,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._backfill_job.get_num_cancelable()
 
     def resolve_partitionSet(self, graphene_info: ResolveInfo) -> Optional["GraphenePartitionSet"]:
-        from ..schema.partition_sets import GraphenePartitionSet
+        from dagster_graphql.schema.partition_sets import GraphenePartitionSet
 
         partition_set = self._get_partition_set(graphene_info)
 
@@ -641,11 +647,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._backfill_job.description
 
     def resolve_logEvents(self, graphene_info: ResolveInfo, cursor: Optional[str] = None):
-        from ..schema.instigation import (
+        from dagster_graphql.schema.instigation import (
             GrapheneInstigationEvent,
             GrapheneInstigationEventConnection,
         )
-        from ..schema.logs.log_level import GrapheneLogLevel
+        from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 
         backfill_log_key_prefix = self._backfill_job.log_storage_prefix
 

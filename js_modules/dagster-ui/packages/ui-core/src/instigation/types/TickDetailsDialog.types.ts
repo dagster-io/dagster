@@ -50,3 +50,5 @@ export type SelectedTickQuery = {
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};
 };
+
+export const SelectedTickQueryVersion = '4a6a1911d0769b8b5bb17ed1415d3691da3d029d6760ab42dc56de6431fc1fb6';

@@ -22,24 +22,22 @@ from dagster._core.execution.context.system import IStepContext, PlanOrchestrati
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
-from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
-from dagster._core.instance import DagsterInstance
-from dagster._utils import get_run_crash_explanation, start_termination_thread
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
-
-from .child_process_executor import (
+from dagster._core.executor.child_process_executor import (
     ChildProcessCommand,
     ChildProcessCrashException,
     ChildProcessEvent,
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
+from dagster._core.instance import DagsterInstance
+from dagster._utils import get_run_crash_explanation, start_termination_thread
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.timing import TimerResult, format_duration, time_execution_scope
 
 if TYPE_CHECKING:
     from dagster._core.instance.ref import InstanceRef
@@ -277,16 +275,12 @@ class MultiprocessExecutor(Executor):
                                 ),
                                 EngineEventData.engine_error(serializable_error),
                             )
-                            step_failure_event = DagsterEvent.step_failure_event(
-                                step_context=plan_context.for_step(
-                                    active_execution.get_step_by_key(key)
-                                ),
-                                step_failure_data=StepFailureData(
-                                    error=serializable_error, user_failure_data=None
-                                ),
+                            failure_or_retry_event = self.get_failure_or_retry_event_after_crash(
+                                step_context, serializable_error, active_execution.get_known_state()
                             )
-                            active_execution.handle_event(step_failure_event)
-                            yield step_failure_event
+
+                            active_execution.handle_event(failure_or_retry_event)
+                            yield failure_or_retry_event
                             empty_iters.append(key)
                             errors[crash.pid] = serializable_error
                         except StopIteration:

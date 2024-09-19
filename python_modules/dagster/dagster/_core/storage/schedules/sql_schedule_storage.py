@@ -19,10 +19,10 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (
@@ -33,27 +33,26 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
-from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
-from dagster._time import datetime_from_timestamp, get_current_datetime
-from dagster._utils import PrintFn
-
-from .base import ScheduleStorage
-from .migration import (
+from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._core.storage.schedules.migration import (
     OPTIONAL_SCHEDULE_DATA_MIGRATIONS,
     REQUIRED_SCHEDULE_DATA_MIGRATIONS,
     SCHEDULE_JOBS_SELECTOR_ID,
     SCHEDULE_TICKS_SELECTOR_ID,
 )
-from .schema import (
+from dagster._core.storage.schedules.schema import (
     AssetDaemonAssetEvaluationsTable,
     InstigatorsTable,
     JobTable,
     JobTickTable,
     SecondaryIndexMigrationTable,
 )
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
+from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
+from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
+from dagster._time import datetime_from_timestamp, get_current_datetime
+from dagster._utils import PrintFn
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
@@ -484,7 +483,7 @@ class SqlScheduleStorage(ScheduleStorage):
     def add_auto_materialize_asset_evaluations(
         self,
         evaluation_id: int,
-        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
+        asset_evaluations: Sequence[AutomationConditionEvaluationWithRunIds[EntityKey]],
     ):
         if not asset_evaluations:
             return
@@ -495,7 +494,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     [
                         {
                             "evaluation_id": evaluation_id,
-                            "asset_key": evaluation.asset_key.to_string(),
+                            "asset_key": evaluation.key.to_db_string(),
                             "asset_evaluation_body": serialize_value(evaluation),
                             "num_requested": evaluation.num_requested,
                         }
@@ -510,7 +509,7 @@ class SqlScheduleStorage(ScheduleStorage):
                             db.and_(
                                 AssetDaemonAssetEvaluationsTable.c.evaluation_id == evaluation_id,
                                 AssetDaemonAssetEvaluationsTable.c.asset_key
-                                == evaluation.asset_key.to_string(),
+                                == evaluation.key.to_db_string(),
                             )
                         )
                         .values(
@@ -520,7 +519,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence[AutoMaterializeAssetEvaluationRecord]:
         with self.connect() as conn:
             query = (
@@ -533,7 +532,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         AssetDaemonAssetEvaluationsTable.c.asset_key,
                     ]
                 )
-                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == asset_key.to_string())
+                .where(AssetDaemonAssetEvaluationsTable.c.asset_key == key.to_db_string())
                 .order_by(AssetDaemonAssetEvaluationsTable.c.evaluation_id.desc())
             ).limit(limit)
 

@@ -10,6 +10,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
@@ -17,6 +18,7 @@ import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment.types';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
@@ -70,6 +72,13 @@ export const SensorDetails = ({
     metadata,
   } = sensor;
 
+  const {
+    permissions,
+    disabledReasons,
+    loading: loadingPermissions,
+  } = usePermissionsForLocation(repoAddress.location);
+  const {canUpdateSensorCursor} = permissions;
+
   const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
     sensorName: sensor.name,
@@ -89,7 +98,13 @@ export const SensorDetails = ({
   return (
     <>
       <PageHeader
-        title={<Heading>{name}</Heading>}
+        title={
+          <Heading style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+            <Link to="/automation">Automation</Link>
+            <span>/</span>
+            {name}
+          </Heading>
+        }
         icon="sensors"
         tags={
           <Tag icon="sensors">
@@ -214,9 +229,18 @@ export const SensorDetails = ({
                   <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
                     {cursor ? cursor : 'None'}
                   </span>
-                  <Button icon={<Icon name="edit" />} onClick={() => setCursorEditing(true)}>
-                    Edit
-                  </Button>
+                  <Tooltip
+                    canShow={!canUpdateSensorCursor}
+                    content={disabledReasons.canUpdateSensorCursor}
+                  >
+                    <Button
+                      icon={<Icon name="edit" />}
+                      disabled={!canUpdateSensorCursor || loadingPermissions}
+                      onClick={() => setCursorEditing(true)}
+                    >
+                      Edit
+                    </Button>
+                  </Tooltip>
                 </Box>
                 <EditCursorDialog
                   isOpen={isCursorEditing}

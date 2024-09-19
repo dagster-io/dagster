@@ -1,7 +1,7 @@
 import nbformat
 from papermill.log import logger
 
-from .compat import ExecutionError, is_papermill_2
+from dagstermill.compat import ExecutionError, is_papermill_2
 
 if is_papermill_2():
     from papermill.clientwrap import PapermillNotebookClient

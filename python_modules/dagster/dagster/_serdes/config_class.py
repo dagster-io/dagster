@@ -16,10 +16,9 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._utils import convert_dagster_submodule_name
 from dagster._utils.yaml_utils import load_run_config_yaml
-
-from .serdes import NamedTupleSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._config.config_schema import UserConfigSchema

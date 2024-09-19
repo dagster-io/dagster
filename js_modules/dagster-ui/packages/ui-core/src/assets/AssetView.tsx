@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
@@ -33,6 +32,7 @@ import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDial
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
 import {useWipeModal} from './useWipeModal';
+import {gql, useQuery} from '../apollo-client';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -46,7 +46,6 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface Props {
@@ -165,7 +164,10 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   };
 
   const renderPartitionsTab = () => {
-    if (!definition?.isMaterializable) {
+    // We don't render <AssetLoadingDefinitionState /> here like the other tabs because
+    // AssetPartitions makes graphql requests and we want to avoid a request waterfall.
+    // Instead AssetPartitions will render the AssetLoadingDefinitionState itself.
+    if (!isLoading && !definition?.isMaterializable) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
 
@@ -288,7 +290,12 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
 
   const reportEvents = useReportEventsModal(
     definition && repoAddress
-      ? {assetKey: definition.assetKey, isPartitioned: definition.isPartitioned, repoAddress}
+      ? {
+          assetKey: definition.assetKey,
+          isPartitioned: definition.isPartitioned,
+          hasReportRunlessAssetEventPermission: definition.hasReportRunlessAssetEventPermission,
+          repoAddress,
+        }
       : null,
     refresh,
   );
@@ -323,7 +330,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
           </Box>
         }
         right={
-          <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
+          <Box flex={{direction: 'row'}}>
             {definition && definition.isObservable ? (
               <LaunchAssetObservationButton
                 primary
@@ -439,7 +446,6 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
     },
   );
 
-  useBlockTraceOnQueryResult(result, 'AssetViewDefinitionQuery');
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {
@@ -490,6 +496,7 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     partitionKeysByDimension {
       name
     }
+    hasReportRunlessAssetEventPermission
     repository {
       id
       name

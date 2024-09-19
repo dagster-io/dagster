@@ -512,17 +512,21 @@ def _join_thread(thread: Thread, thread_name: str) -> None:
         raise DagsterPipesExecutionError(f"Timed out waiting for {thread_name} thread to finish.")
 
 
-def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
+def extract_message_or_forward_to_file(handler: "PipesMessageHandler", log_line: str, file: TextIO):
     # exceptions as control flow, you love to see it
     try:
         message = json.loads(log_line)
         if PIPES_PROTOCOL_VERSION_FIELD in message.keys():
             handler.handle_message(message)
         else:
-            sys.stdout.writelines((log_line, "\n"))
+            file.writelines((log_line, "\n"))
     except Exception:
         # move non-message logs in to stdout for compute log capture
-        sys.stdout.writelines((log_line, "\n"))
+        file.writelines((log_line, "\n"))
+
+
+def extract_message_or_forward_to_stdout(handler: "PipesMessageHandler", log_line: str):
+    extract_message_or_forward_to_file(handler=handler, log_line=log_line, file=sys.stdout)
 
 
 _FAIL_TO_YIELD_ERROR_MESSAGE = (

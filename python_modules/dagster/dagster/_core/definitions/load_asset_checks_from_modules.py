@@ -4,11 +4,13 @@ from types import ModuleType
 from typing import Iterable, Optional, Sequence, Set, cast
 
 import dagster._check as check
+from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
+from dagster._core.definitions.asset_key import (
+    CoercibleToAssetKeyPrefix,
+    check_opt_coercible_to_asset_key_prefix_param,
+)
 from dagster._core.definitions.assets import AssetsDefinition
-
-from .asset_checks import AssetChecksDefinition, has_only_asset_checks
-from .asset_key import CoercibleToAssetKeyPrefix, check_opt_coercible_to_asset_key_prefix_param
-from .load_assets_from_modules import (
+from dagster._core.definitions.load_assets_from_modules import (
     find_modules_in_package,
     find_objects_in_module_of_types,
     prefix_assets,

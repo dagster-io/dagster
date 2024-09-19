@@ -8,11 +8,16 @@ from dagster import (
     multi_asset,
 )
 from dagster._annotations import deprecated_param
+from dagster._core.definitions.tags import build_kind_tag
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
-from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
-from .translator import DagsterDltTranslator
+from dagster_embedded_elt.dlt.constants import (
+    META_KEY_PIPELINE,
+    META_KEY_SOURCE,
+    META_KEY_TRANSLATOR,
+)
+from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
 def build_dlt_asset_specs(
@@ -37,7 +42,7 @@ def build_dlt_asset_specs(
     return [
         AssetSpec(
             key=dagster_dlt_translator.get_asset_key(dlt_source_resource),
-            auto_materialize_policy=dagster_dlt_translator.get_auto_materialize_policy(
+            automation_condition=dagster_dlt_translator.get_automation_condition(
                 dlt_source_resource
             ),
             deps=dagster_dlt_translator.get_deps_asset_keys(dlt_source_resource),
@@ -51,7 +56,8 @@ def build_dlt_asset_specs(
             },
             owners=dagster_dlt_translator.get_owners(dlt_source_resource),
             tags={
-                "dagster/storage_kind": destination_type,
+                **build_kind_tag("dlt"),
+                **build_kind_tag(destination_type),
                 **dagster_dlt_translator.get_tags(dlt_source_resource),
             },
         )
@@ -140,7 +146,6 @@ def dlt_assets(
     return multi_asset(
         name=name,
         group_name=group_name,
-        compute_kind="dlt",
         can_subset=True,
         partitions_def=partitions_def,
         specs=build_dlt_asset_specs(

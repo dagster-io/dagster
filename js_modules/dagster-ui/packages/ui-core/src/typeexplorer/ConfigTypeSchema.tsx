@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
   fragment ConfigTypeSchemaFragment on ConfigType {

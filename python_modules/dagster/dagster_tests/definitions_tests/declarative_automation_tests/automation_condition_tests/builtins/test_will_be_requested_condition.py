@@ -1,8 +1,13 @@
 from dagster import AssetKey, AutomationCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.scenario_specs import two_assets_in_sequence, two_partitions_def
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    two_assets_in_sequence,
+    two_partitions_def,
+)
 
 
 def test_will_be_requested_unpartitioned() -> None:
@@ -33,7 +38,9 @@ def test_will_be_requested_static_partitioned() -> None:
     state = state.with_requested_asset_partitions([AssetKeyPartitionKey(AssetKey("A"), "1")])
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {AssetKeyPartitionKey(AssetKey("B"), "1")}
+    assert result.true_subset.expensively_compute_asset_partitions() == {
+        AssetKeyPartitionKey(AssetKey("B"), "1")
+    }
 
     # two requested parents
     state = state.with_requested_asset_partitions(

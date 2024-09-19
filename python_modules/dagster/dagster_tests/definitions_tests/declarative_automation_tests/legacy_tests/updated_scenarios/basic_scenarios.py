@@ -4,9 +4,14 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 )
 from dagster._core.definitions.auto_materialize_rule_impls import SkipOnRunInProgressRule
 
-from ...scenario_utils.asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
-from ...scenario_utils.base_scenario import run_request
-from ...scenario_utils.scenario_specs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetRuleEvaluationSpec,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     diamond,
     one_asset,
     one_asset_depends_on_two,
@@ -14,7 +19,9 @@ from ...scenario_utils.scenario_specs import (
     two_assets_depend_on_one,
     two_assets_in_sequence,
 )
-from ...scenario_utils.scenario_state import ScenarioSpec
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_state import (
+    ScenarioSpec,
+)
 
 basic_scenarios = [
     AssetDaemonScenario(

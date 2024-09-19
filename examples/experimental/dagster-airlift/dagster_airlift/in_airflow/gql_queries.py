@@ -1,3 +1,9 @@
+VERIFICATION_QUERY = """
+query VerificationQuery {
+    version
+}
+"""
+
 ASSET_NODES_QUERY = """
 query AssetNodeQuery {
     assetNodes {
@@ -5,7 +11,13 @@ query AssetNodeQuery {
         assetKey {
             path
         }
-        opName
+        metadataEntries {
+            ... on TextMetadataEntry {
+                label
+                text
+            }
+            __typename
+        }
         jobs {
             id
             name

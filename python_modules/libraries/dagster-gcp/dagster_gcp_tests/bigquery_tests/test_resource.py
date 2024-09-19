@@ -17,7 +17,11 @@ from dagster._core.definitions.observe import observe
 from dagster._time import get_current_timestamp
 from dagster_gcp import BigQueryResource, bigquery_resource, fetch_last_updated_timestamps
 
-from .conftest import IS_BUILDKITE, SHARED_BUILDKITE_BQ_CONFIG, temporary_bigquery_table
+from dagster_gcp_tests.bigquery_tests.conftest import (
+    IS_BUILDKITE,
+    SHARED_BUILDKITE_BQ_CONFIG,
+    temporary_bigquery_table,
+)
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")

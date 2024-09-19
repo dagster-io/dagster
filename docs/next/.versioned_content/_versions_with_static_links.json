@@ -546,5 +546,21 @@
   {
     "url": "https://release-1-8-3.dagster.dagster-docs.io/",
     "version": "1.8.3"
+  },
+  {
+    "url": "https://release-1-8-4.dagster.dagster-docs.io/",
+    "version": "1.8.4"
+  },
+  {
+    "url": "https://release-1-8-5.dagster.dagster-docs.io/",
+    "version": "1.8.5"
+  },
+  {
+    "url": "https://release-1-8-6.dagster.dagster-docs.io/",
+    "version": "1.8.6"
+  },
+  {
+    "url": "https://release-1-8-7.dagster.dagster-docs.io/",
+    "version": "1.8.7"
   }
 ]

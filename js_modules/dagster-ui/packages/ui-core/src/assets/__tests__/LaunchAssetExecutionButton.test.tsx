@@ -9,8 +9,8 @@ import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
 import {TestProvider} from '../../testing/TestProvider';
-import * as WorkspaceContext from '../../workspace/WorkspaceContext';
-import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
+import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
+import * as WorkspaceContextUtil from '../../workspace/WorkspaceContext/util';
 import {ADDITIONAL_REQUIRED_KEYS_WARNING} from '../AssetDefinedInMultipleReposNotice';
 import {
   AssetsInScope,
@@ -50,7 +50,7 @@ const workspaceMocks = buildWorkspaceMocks([]);
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
-const flagSpy = jest.spyOn(WorkspaceContext, 'useFeatureFlagForCodeLocation');
+const flagSpy = jest.spyOn(WorkspaceContextUtil, 'useFeatureFlagForCodeLocation');
 
 describe('LaunchAssetExecutionButton', () => {
   describe('labeling', () => {

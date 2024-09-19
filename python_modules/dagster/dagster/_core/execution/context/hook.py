@@ -2,18 +2,17 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Set
 
 import dagster._check as check
 from dagster._annotations import public
-
-from ...definitions.composition import PendingNodeInvocation
-from ...definitions.decorators.graph_decorator import graph
-from ...definitions.dependency import Node
-from ...definitions.hook_definition import HookDefinition
-from ...definitions.op_definition import OpDefinition
-from ...definitions.resource_definition import IContainsGenerator, Resources
-from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
-from ...log_manager import DagsterLogManager
-from ..plan.step import ExecutionStep
-from ..plan.utils import RetryRequestedFromPolicy
-from .system import StepExecutionContext
+from dagster._core.definitions.composition import PendingNodeInvocation
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.dependency import Node
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
+from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.plan.step import ExecutionStep
+from dagster._core.execution.plan.utils import RetryRequestedFromPolicy
+from dagster._core.log_manager import DagsterLogManager
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -206,8 +205,11 @@ class UnboundHookContext(HookContext):
         op_exception: Optional[Exception],
         instance: Optional["DagsterInstance"],
     ):
-        from ..build_resources import build_resources, wrap_resources_for_execution
-        from ..context_creation_job import initialize_console_manager
+        from dagster._core.execution.build_resources import (
+            build_resources,
+            wrap_resources_for_execution,
+        )
+        from dagster._core.execution.context_creation_job import initialize_console_manager
 
         self._op = None
         if op is not None:

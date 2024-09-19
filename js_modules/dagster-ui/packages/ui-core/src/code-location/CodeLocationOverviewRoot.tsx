@@ -4,22 +4,28 @@ import {
   FontFamily,
   MiddleTruncate,
   Mono,
+  SpinnerWithText,
   StyledRawCodeMirror,
   Table,
 } from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {useContext, useMemo} from 'react';
+import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
 import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
 import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
 import {createGlobalStyle} from 'styled-components';
 import * as yaml from 'yaml';
 
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
-import {CodeLocationPageHeader} from './CodeLocationPageHeader';
 import {TimeFromNow} from '../ui/TimeFromNow';
+import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
-import {WorkspaceRepositoryLocationNode} from '../workspace/WorkspaceContext';
+import {
+  WorkspaceContext,
+  WorkspaceRepositoryLocationNode,
+} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {LocationStatusEntryFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {LocationStatusEntryFragment} from '../workspace/types/WorkspaceQueries.types';
 
 const RIGHT_COLUMN_WIDTH = '280px';
 
@@ -54,7 +60,6 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 
   return (
     <>
-      <CodeLocationPageHeader repoAddress={repoAddress} />
       <Box padding={{horizontal: 24}} border="bottom">
         <CodeLocationTabs selectedTab="overview" repoAddress={repoAddress} />
       </Box>
@@ -94,7 +99,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           ) : null}
         </tbody>
       </Table>
-      <CodeLocationServerSection />
+      <CodeLocationServerSection locationName={repoAddress.location} />
       {libraryVersions?.length ? (
         <>
           <CodeLocationOverviewSectionHeader label="Libraries" />
@@ -116,18 +121,64 @@ export const CodeLocationOverviewRoot = (props: Props) => {
       ) : null}
       <CodeLocationOverviewSectionHeader label="Metadata" border="bottom" />
       <CodeLocationMetadataStyle />
-      <StyledRawCodeMirror
-        options={{readOnly: true, lineNumbers: false}}
-        theme={['code-location-metadata']}
-        value={metadataAsYaml}
-      />
+      <div style={{height: '320px'}}>
+        <StyledRawCodeMirror
+          options={{readOnly: true, lineNumbers: false}}
+          theme={['code-location-metadata']}
+          value={metadataAsYaml}
+        />
+      </div>
     </>
   );
 };
+
+const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  const {locationEntries, locationStatuses, loading} = useContext(WorkspaceContext);
+  const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
+  const locationStatus = locationStatuses[repoAddress.location];
+
+  const content = () => {
+    if (!locationEntry || !locationStatus) {
+      const displayName = repoAddressAsHumanString(repoAddress);
+      if (loading) {
+        return (
+          <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
+            <SpinnerWithText label={`Loading ${displayName}…`} />
+          </Box>
+        );
+      }
+
+      return (
+        <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
+          <CodeLocationNotFound repoAddress={repoAddress} locationEntry={locationEntry || null} />
+        </Box>
+      );
+    }
+
+    return (
+      <CodeLocationOverviewRoot
+        repoAddress={repoAddress}
+        locationEntry={locationEntry}
+        locationStatus={locationStatus}
+      />
+    );
+  };
+
+  return (
+    <>
+      <CodeLocationPageHeader repoAddress={repoAddress} />
+      {content()}
+    </>
+  );
+};
+
+// eslint-disable-next-line import/no-default-export
+export default QueryfulCodeLocationOverviewRoot;
 
 const CodeLocationMetadataStyle = createGlobalStyle`
   .CodeMirror.cm-s-code-location-metadata.cm-s-code-location-metadata {
     background-color: ${Colors.backgroundDefault()};
     padding: 12px 20px;
+    height: 300px;
   }
 `;

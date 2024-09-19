@@ -21,8 +21,7 @@ from pytest_mock import MockFixture
 from sqlglot import Dialect
 
 from dagster_dbt_tests.conftest import _create_dbt_invocation
-
-from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
+from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path, test_metadata_path
 
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
 

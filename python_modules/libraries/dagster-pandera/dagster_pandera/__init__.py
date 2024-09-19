@@ -19,7 +19,7 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.libraries import DagsterLibraryRegistry
 from typing_extensions import TypeAlias
 
-from .version import __version__
+from dagster_pandera.version import __version__
 
 # NOTE: Pandera supports multiple dataframe libraries. Most of the alternatives
 # to pandas implement a pandas-like API wrapper around an underlying library

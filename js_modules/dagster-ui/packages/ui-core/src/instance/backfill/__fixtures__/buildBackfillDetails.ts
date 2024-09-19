@@ -1,8 +1,8 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {PartitionBackfill, buildPartitionBackfill} from '../../../graphql/types';
-import {BACKFILL_DETAILS_QUERY} from '../BackfillPage';
-import {BackfillStatusesByAssetQuery} from '../types/BackfillPage.types';
+import {BackfillStatusesByAssetQuery} from '../types/useBackfillDetailsQuery.types';
+import {BACKFILL_DETAILS_QUERY} from '../useBackfillDetailsQuery';
 
 export function buildBackfillDetailsQuery(
   backfillId: string,

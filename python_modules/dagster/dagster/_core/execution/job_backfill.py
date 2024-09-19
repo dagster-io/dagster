@@ -7,6 +7,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
@@ -33,8 +34,6 @@ from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorksp
 from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
-
-from .backfill import BulkActionStatus, PartitionBackfill
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -115,7 +114,20 @@ def execute_job_backfill_iteration(
                 f"Backfill completed for {backfill.backfill_id} for"
                 f" {len(partition_names)} partitions"
             )
-            instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
+            if (
+                len(
+                    instance.get_run_ids(
+                        filters=RunsFilter(
+                            tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
+                            statuses=[DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED],
+                        )
+                    )
+                )
+                > 0
+            ):
+                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_FAILED))
+            else:
+                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS))
             yield None
 
 

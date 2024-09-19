@@ -15,9 +15,14 @@ from dagster._core.definitions.auto_materialize_rule_impls import (
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._record import copy
 
-from ...scenario_utils.asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
-from ...scenario_utils.base_scenario import run_request
-from ...scenario_utils.scenario_specs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetRuleEvaluationSpec,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     daily_partitions_def,
     day_partition_key,
     dynamic_partitions_def,

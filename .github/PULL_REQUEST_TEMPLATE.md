@@ -2,6 +2,10 @@
 
 ## How I Tested These Changes
 
-## Changelog [New | Bug | Docs]
+## Changelog
 
-> Replace this message with a changelog entry, or `NOCHANGELOG`
+Insert changelog entry or "NOCHANGELOG" here.
+
+- [ ] `NEW` _(added new feature or capability)_
+- [ ] `BUGFIX` _(fixed a bug)_
+- [ ] `DOCS` _(added or updated documentation)_

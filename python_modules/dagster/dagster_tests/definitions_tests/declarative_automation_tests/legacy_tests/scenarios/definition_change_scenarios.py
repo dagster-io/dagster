@@ -1,8 +1,15 @@
 """Scenarios where the set of asset definitions changes between ticks."""
 
-from ...scenario_utils.base_scenario import AssetReconciliationScenario
-from .basic_scenarios import one_asset, two_assets_in_sequence
-from .partition_scenarios import one_asset_one_partition
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.basic_scenarios import (
+    one_asset,
+    two_assets_in_sequence,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.partition_scenarios import (
+    one_asset_one_partition,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    AssetReconciliationScenario,
+)
 
 definition_change_scenarios = {
     "asset_removed": AssetReconciliationScenario(

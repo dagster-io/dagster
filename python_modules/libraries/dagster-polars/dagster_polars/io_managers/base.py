@@ -26,6 +26,7 @@ from dagster import (
     UPathIOManager,
     _check as check,
 )
+from dagster._utils.warnings import deprecation_warning
 from pydantic import PrivateAttr
 from pydantic.fields import Field
 
@@ -137,6 +138,14 @@ def _process_env_vars(config: Mapping[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def emit_storage_metadata_deprecation_warning() -> None:
+    deprecation_warning(
+        subject="dagster-polars storage metadata",
+        breaking_version="0.25.0",
+        additional_warn_text="Please use a multi-output asset or op to save metadata.",
+    )
+
+
 class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     """Base class for `dagster-polars` IOManagers.
 
@@ -229,6 +238,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         ],
         path: "UPath",
     ):
+        if self.needs_output_metadata(context):
+            emit_storage_metadata_deprecation_warning()
+
         typing_type = context.dagster_type.typing_type
 
         if annotation_is_typing_optional(typing_type) and (
@@ -282,6 +294,9 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         Tuple[pl.LazyFrame, Dict[str, Any]],
         None,
     ]:
+        if self.needs_output_metadata(context):
+            emit_storage_metadata_deprecation_warning()
+
         if annotation_is_typing_optional(context.dagster_type.typing_type) and not path.exists():
             context.log.warning(self.get_missing_optional_input_log_message(context, path))
             return None

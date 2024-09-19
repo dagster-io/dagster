@@ -1,12 +1,10 @@
-import {gql, useQuery} from '@apollo/client';
-
 import {
   AssetGraphSidebarQuery,
   AssetGraphSidebarQueryVariables,
 } from './types/AssetGraphJobSidebar.types';
+import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PipelineSelector} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {NonIdealPipelineQueryResult} from '../pipelines/NonIdealPipelineQueryResult';
 import {
   SIDEBAR_ROOT_CONTAINER_FRAGMENT,
@@ -26,7 +24,6 @@ export const AssetGraphJobSidebar = ({pipelineSelector}: Props) => {
       variables: {pipelineSelector},
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'AssetGraphSidebarQuery');
 
   const {repositoryName, repositoryLocationName} = pipelineSelector;
   const repoAddress = buildRepoAddress(repositoryName, repositoryLocationName);

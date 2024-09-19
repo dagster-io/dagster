@@ -6,8 +6,8 @@ from dagster import resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.log_manager import DagsterLogManager
 
-from .types import SparkOpError
-from .utils import construct_spark_shell_command
+from dagster_spark.types import SparkOpError
+from dagster_spark.utils import construct_spark_shell_command
 
 
 class SparkResource:

@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -24,6 +23,7 @@ import {
   AssetStaleStatusQuery,
   AssetStaleStatusQueryVariables,
 } from './types/CalculateUnsyncedDialog.types';
+import {gql, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';

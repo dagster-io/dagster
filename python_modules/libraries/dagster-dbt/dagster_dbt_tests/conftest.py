@@ -6,7 +6,7 @@ import pytest
 from dagster_dbt import DbtCliResource
 from dagster_dbt.core.resource import DbtCliInvocation
 
-from .dbt_projects import (
+from dagster_dbt_tests.dbt_projects import (
     test_asset_checks_path,
     test_asset_key_exceptions_path,
     test_dagster_dbt_mixed_freshness_path,

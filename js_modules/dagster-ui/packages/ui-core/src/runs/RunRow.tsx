@@ -15,6 +15,7 @@ import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useResolveRunTarget} from './useResolveRunTarget';
 import {RunStatus} from '../graphql/types';
+import {RunRequestContext} from '../instance/backfill/RunsFeedBackfillPage';
 
 export const RunRow = ({
   run,
@@ -24,7 +25,6 @@ export const RunRow = ({
   checked,
   onToggleChecked,
   additionalColumns,
-  additionalActionsForRun,
   isHighlighted,
   hideCreatedBy,
 }: {
@@ -35,11 +35,11 @@ export const RunRow = ({
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
-  additionalActionsForRun?: (run: RunTableRunFragment) => React.ReactNode[];
   isHighlighted?: boolean;
   hideCreatedBy?: boolean;
 }) => {
   const {isJob, repoAddressGuess} = useResolveRunTarget(run);
+  const {buildLinkToRun} = React.useContext(RunRequestContext);
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
@@ -69,7 +69,7 @@ export const RunRow = ({
         </td>
       ) : null}
       <td>
-        <Link to={`/runs/${run.id}`}>
+        <Link to={buildLinkToRun(run)}>
           <Mono>{titleForRun(run)}</Mono>
         </Link>
       </td>
@@ -124,11 +124,7 @@ export const RunRow = ({
       </td>
       {additionalColumns}
       <td>
-        <RunActionsMenu
-          run={run}
-          onAddTag={onAddTag}
-          additionalActionsForRun={additionalActionsForRun}
-        />
+        <RunActionsMenu run={run} onAddTag={onAddTag} />
       </td>
       <QueuedRunCriteriaDialog
         run={run}

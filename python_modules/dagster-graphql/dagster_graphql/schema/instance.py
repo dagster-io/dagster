@@ -15,8 +15,8 @@ from dagster._utils.concurrency import (
     get_max_concurrency_limit_value,
 )
 
-from .errors import GraphenePythonError
-from .util import ResolveInfo, non_null_list
+from dagster_graphql.schema.errors import GraphenePythonError
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig

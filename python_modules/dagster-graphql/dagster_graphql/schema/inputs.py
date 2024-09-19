@@ -6,9 +6,9 @@ from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp
 from dagster._utils import check
 
-from .pipelines.status import GrapheneRunStatus
-from .runs import GrapheneRunConfigData
-from .util import non_null_list
+from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
+from dagster_graphql.schema.runs import GrapheneRunConfigData
+from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneAssetKeyInput(graphene.InputObjectType):
@@ -170,7 +170,8 @@ class GraphenePartitionRangeSelector(graphene.InputObjectType):
 
 
 class GraphenePartitionsSelector(graphene.InputObjectType):
-    range = graphene.NonNull(GraphenePartitionRangeSelector)
+    range = graphene.InputField(GraphenePartitionRangeSelector)
+    ranges = graphene.InputField(graphene.List(graphene.NonNull(GraphenePartitionRangeSelector)))
 
     class Meta:
         description = """This type represents a partitions selection."""

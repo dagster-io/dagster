@@ -25,7 +25,11 @@ from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
+    WorkspaceSnapshot,
+)
 
 
 @asset
@@ -150,15 +154,18 @@ def _make_location_entry(defs_attr: str, instance: DagsterInstance):
         load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},
         update_timestamp=time.time(),
+        version_key="test",
     )
 
 
 def _make_context(instance: DagsterInstance, defs_attrs):
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
-        workspace_snapshot={
-            defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
-        },
+        workspace_snapshot=WorkspaceSnapshot(
+            code_location_entries={
+                defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
+            }
+        ),
         process_context=mock.MagicMock(),
         version=None,
         source=None,
@@ -336,10 +343,11 @@ cycle_defs_a = Definitions(assets=[a])
 cycle_defs_b = Definitions(assets=[b])
 
 
-def test_cycle_status(instance):
-    asset_graph = _make_context(instance, ["cycle_defs_a", "cycle_defs_b"]).asset_graph
+def test_cycle_status(instance) -> None:
+    context = _make_context(instance, ["cycle_defs_a", "cycle_defs_b"])
+    asset_graph = context.asset_graph
 
-    resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph)
+    resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph, context)
     for key in asset_graph.all_asset_keys:
         resolver.get_status(key)
 

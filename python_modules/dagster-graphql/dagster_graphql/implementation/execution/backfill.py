@@ -18,7 +18,7 @@ from dagster._core.workspace.permissions import Permissions
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from ..utils import (
+from dagster_graphql.implementation.utils import (
     AssetBackfillPreviewParams,
     BackfillParams,
     assert_permission_for_asset_graph,
@@ -29,21 +29,20 @@ BACKFILL_CHUNK_SIZE = 25
 
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.util import ResolveInfo
-
-    from ...schema.backfill import (
+    from dagster_graphql.schema.backfill import (
         GrapheneAssetPartitions,
         GrapheneCancelBackfillSuccess,
         GrapheneLaunchBackfillSuccess,
         GrapheneResumeBackfillSuccess,
     )
-    from ...schema.errors import GraphenePartitionSetNotFoundError
+    from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def get_asset_backfill_preview(
     graphene_info: "ResolveInfo", backfill_preview_params: AssetBackfillPreviewParams
 ) -> Sequence["GrapheneAssetPartitions"]:
-    from ...schema.backfill import GrapheneAssetPartitions
+    from dagster_graphql.schema.backfill import GrapheneAssetPartitions
 
     asset_graph = graphene_info.context.asset_graph
 
@@ -82,8 +81,8 @@ def create_and_launch_partition_backfill(
     graphene_info: "ResolveInfo",
     backfill_params: BackfillParams,
 ) -> Union["GrapheneLaunchBackfillSuccess", "GraphenePartitionSetNotFoundError"]:
-    from ...schema.backfill import GrapheneLaunchBackfillSuccess
-    from ...schema.errors import GraphenePartitionSetNotFoundError
+    from dagster_graphql.schema.backfill import GrapheneLaunchBackfillSuccess
+    from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
 
     backfill_id = make_new_backfill_id()
 
@@ -218,9 +217,10 @@ def create_and_launch_partition_backfill(
             asset_selection=asset_selection,
             partition_names=backfill_params.get("partitionNames"),
             dynamic_partitions_store=CachingInstanceQueryer(
-                graphene_info.context.instance,
-                asset_graph,
-                datetime_from_timestamp(backfill_timestamp),
+                instance=graphene_info.context.instance,
+                asset_graph=asset_graph,
+                loading_context=graphene_info.context,
+                evaluation_time=datetime_from_timestamp(backfill_timestamp),
             ),
             all_partitions=backfill_params.get("allPartitions", False),
             title=backfill_params.get("title"),
@@ -253,9 +253,10 @@ def create_and_launch_partition_backfill(
             backfill_timestamp=backfill_timestamp,
             tags=tags,
             dynamic_partitions_store=CachingInstanceQueryer(
-                graphene_info.context.instance,
-                asset_graph,
-                datetime_from_timestamp(backfill_timestamp),
+                instance=graphene_info.context.instance,
+                asset_graph=asset_graph,
+                loading_context=graphene_info.context,
+                evaluation_time=datetime_from_timestamp(backfill_timestamp),
             ),
             partitions_by_assets=partitions_by_assets,
             title=backfill_params.get("title"),
@@ -273,7 +274,7 @@ def create_and_launch_partition_backfill(
 def cancel_partition_backfill(
     graphene_info: "ResolveInfo", backfill_id: str
 ) -> "GrapheneCancelBackfillSuccess":
-    from ...schema.backfill import GrapheneCancelBackfillSuccess
+    from dagster_graphql.schema.backfill import GrapheneCancelBackfillSuccess
 
     backfill = graphene_info.context.instance.get_backfill(backfill_id)
     if not backfill:
@@ -307,7 +308,7 @@ def cancel_partition_backfill(
 def resume_partition_backfill(
     graphene_info: "ResolveInfo", backfill_id: str
 ) -> "GrapheneResumeBackfillSuccess":
-    from ...schema.backfill import GrapheneResumeBackfillSuccess
+    from dagster_graphql.schema.backfill import GrapheneResumeBackfillSuccess
 
     backfill = graphene_info.context.instance.get_backfill(backfill_id)
     if not backfill:

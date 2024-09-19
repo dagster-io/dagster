@@ -1,25 +1,22 @@
 from abc import ABC, abstractproperty
 from enum import Enum
-from typing import Dict, FrozenSet, NamedTuple, Optional, Sequence, Tuple
+from typing import Dict, FrozenSet, NamedTuple, Optional, Tuple
 
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._serdes.serdes import (
-    NamedTupleSerializer,
-    PackableValue,
-    UnpackContext,
-    UnpackedValue,
-    WhitelistMap,
-    whitelist_for_serdes,
-)
-
-from .declarative_automation.serialized_objects import (
-    AssetSubsetWithMetadata,
+from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
     AutomationConditionEvaluationWithRunIds,
     AutomationConditionNodeSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
+)
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
+from dagster._serdes.serdes import (
+    NamedTupleSerializer,
+    UnpackContext,
+    UnpackedValue,
+    WhitelistMap,
+    whitelist_for_serdes,
 )
 
 
@@ -102,9 +99,6 @@ class WaitingOnAssetsRuleEvaluationData(
         }
 
 
-RuleEvaluations = Tuple[AssetSubset, Sequence["AssetSubsetWithMetadata"], PackableValue]
-
-
 # BACKCOMPAT GRAVEYARD
 
 
@@ -136,7 +130,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
                 condition_snapshot=AutomationConditionNodeSnapshot("", "", "", None, None),
                 start_timestamp=None,
                 end_timestamp=None,
-                true_subset=AssetSubset(asset_key=AssetKey("unknown"), value=False),
+                true_subset=SerializableEntitySubset(key=AssetKey("unknown"), value=False),
                 candidate_subset=HistoricalAllPartitionsSubsetSentinel(),
                 subsets_with_metadata=[],
                 child_evaluations=[],

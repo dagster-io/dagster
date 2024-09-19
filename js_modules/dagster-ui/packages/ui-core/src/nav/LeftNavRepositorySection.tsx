@@ -5,7 +5,8 @@ import styled from 'styled-components';
 import {RepoNavItem} from './RepoNavItem';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 import {SectionedLeftNav} from '../ui/SectionedLeftNav';
-import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 const LoadedRepositorySection = ({

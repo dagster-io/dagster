@@ -1,4 +1,3 @@
-import {useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
@@ -19,6 +18,7 @@ import {
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
+import {useMutation} from '../apollo-client';
 import {
   OpenWithIntent,
   useInstigationStateReducer,

@@ -35,7 +35,10 @@ from dagster._time import create_datetime, get_timezone
 from dagster._utils.env import environ
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .conftest import add_new_event, assert_check_result
+from dagster_tests.definitions_tests.freshness_checks_tests.conftest import (
+    add_new_event,
+    assert_check_result,
+)
 
 
 def test_params() -> None:
@@ -317,6 +320,87 @@ def test_result_cron_param(
             AssetCheckSeverity.WARN,
             True,
             description_match="Asset is currently fresh",
+        )
+
+
+def test_result_end_offset(
+    instance: DagsterInstance,
+) -> None:
+    partitions_def = DailyPartitionsDefinition(
+        start_date=create_datetime(2020, 1, 1, 0, 0, 0), end_offset=1
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset():
+        pass
+
+    start_time = create_datetime(2021, 1, 3, 1, 0, 0)  # 2021-01-03 at 01:00:00
+
+    check = build_time_partition_freshness_checks(
+        assets=[my_asset],
+        deadline_cron="0 9 * * *",  # 09:00 UTC
+        timezone="UTC",
+    )[0]
+
+    freeze_datetime = start_time
+    with freeze_time(freeze_datetime):
+        # With no events, check fails.
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            False,
+            # We expected the asset to arrive between the end of the partition window (2021-01-02) and the current time (2021-01-03).
+            description_match="The asset has never been observed/materialized.",
+            metadata_match={
+                "dagster/freshness_params": JsonMetadataValue(
+                    {
+                        "timezone": "UTC",
+                        "deadline_cron": "0 9 * * *",
+                    }
+                ),
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                    create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
+                ),
+            },
+        )
+
+        # Add an event for the end_offset=0 partition. Still fails.
+        add_new_event(instance, my_asset.key, "2020-01-01")
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            False,
+            description_match="Asset is overdue",
+        )
+
+        # Add an event for the most recent completed partition previous to the
+        # cron. Now the check passes.
+        add_new_event(instance, my_asset.key, "2021-01-02")
+    # Add a bit of time so that the description renders properly.
+    freeze_datetime = freeze_datetime + datetime.timedelta(seconds=1)
+    with freeze_time(freeze_datetime):
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            True,
+            description_match="Asset is currently fresh",
+            metadata_match={
+                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                    create_datetime(2021, 1, 3, 9, 0, 0).timestamp()
+                ),
+                "dagster/freshness_params": JsonMetadataValue(
+                    {"timezone": "UTC", "deadline_cron": "0 9 * * *"}
+                ),
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                    create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
+                ),
+            },
         )
 
 

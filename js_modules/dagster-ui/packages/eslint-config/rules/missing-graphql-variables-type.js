@@ -17,112 +17,95 @@ const createRule = ESLintUtils.RuleCreator((name) => name);
  *
  */
 
-const APIS = new Set(['useQuery', 'useMutation', 'useSubscription']);
-const APIToEnding = {
-  useQuery: 'Query',
-  useMutation: 'Mutation',
-  useSubscription: 'Subscription',
-  useLazyQuery: 'LazyQuery',
-};
+const apisRequiringVariableType = new Set([
+  'useQuery',
+  'useMutation',
+  'useSubscription',
+  'useLazyQuery',
+]);
 
-module.exports = {
-  rule: createRule({
-    create(context) {
-      return {
-        [AST_NODE_TYPES.CallExpression](node) {
-          const callee = node.callee;
-          if (callee.type !== 'Identifier') {
-            return;
-          }
-          // if it's not a useQuery call then ignore
-          if (!APIS.has(callee.name)) {
-            return;
-          }
-          const API = callee.name;
-          const queryType =
-            node.typeParameters && node.typeParameters.params && node.typeParameters.params[0];
-          if (!queryType || queryType.type !== 'TSTypeReference') {
-            return;
-          }
-          if (queryType.typeName.type !== 'Identifier') {
-            return;
-          }
-          const queryName = queryType.typeName.name;
-          // if the type doesn't end with Query then ignore
-          if (!queryName.endsWith(APIToEnding[API])) {
-            return;
-          }
-          const variablesName = queryName + 'Variables';
-          let queryImportSpecifier = null;
-          const importDeclaration = context.getSourceCode().ast.body.find(
-            (node) =>
-              node.type === 'ImportDeclaration' &&
-              node.specifiers.find((node) => {
-                if (node.type === 'ImportSpecifier' && node.local.name === queryName) {
-                  queryImportSpecifier = node;
-                  return true;
-                }
-              }),
-          );
-          const importPath = importDeclaration.source.value;
-          const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
-          const fullPath = path.join(currentPath, importPath + '.ts');
+module.exports = createRule({
+  create(context) {
+    return {
+      [AST_NODE_TYPES.CallExpression](node) {
+        const callee = node.callee;
+        if (callee.type !== 'Identifier') {
+          return;
+        }
+        // if it's not a useQuery call then ignore
+        if (!apisRequiringVariableType.has(callee.name)) {
+          return;
+        }
+        const API = callee.name;
+        const queryType =
+          node.typeParameters && node.typeParameters.params && node.typeParameters.params[0];
+        if (!queryType || queryType.type !== 'TSTypeReference') {
+          return;
+        }
+        if (queryType.typeName.type !== 'Identifier') {
+          return;
+        }
 
-          const graphqlTypeFile = fs.readFileSync(fullPath, {encoding: 'utf8'});
-
-          // This part is kind of hacky. I should use the parser service to find the identifier
-          // but this is faster then tokenizing the whole file
-          if (
-            !graphqlTypeFile.includes('export type ' + variablesName) &&
-            !graphqlTypeFile.includes('export interface ' + variablesName)
-          ) {
-            return;
-          }
-          // This is a Query type with a generated QueryVariables type. Make sure we're using it
-          const secondType = node.typeParameters.params[1];
-          if (
-            !secondType ||
-            (secondType.type === 'TSTypeReference' &&
-              secondType.typeName.type === 'Identifier' &&
-              secondType.typeName.name !== variablesName)
-          ) {
-            context.report({
-              messageId: 'missing-graphql-variables-type',
-              node,
-              data: {
-                queryType: queryName,
-                variablesType: variablesName,
-                api: API,
-              },
-              *fix(fixer) {
-                if (
-                  !importDeclaration.specifiers.find(
-                    (node) => node.type === 'ImportSpecifier' && node.local.name === variablesName,
-                  )
-                ) {
-                  yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
-                }
-                yield fixer.insertTextAfter(queryType, `, ${variablesName}`);
-              },
-            });
-          }
-        },
-      };
-    },
-    name: 'missing-graphql-variables-type',
-    meta: {
-      fixable: true,
-      docs: {
-        description: 'useQuery is missing QueryVariables parameter.',
-        recommended: 'error',
+        const queryName = queryType.typeName.name;
+        const variablesName = queryName + 'Variables';
+        const secondType = node.typeParameters.params[1];
+        if (
+          secondType &&
+          secondType.type === 'TSTypeReference' &&
+          secondType.typeName.type === 'Identifier' &&
+          secondType.typeName.name === variablesName
+        ) {
+          return;
+        }
+        let queryImportSpecifier = null;
+        const importDeclaration = context.getSourceCode().ast.body.find(
+          (node) =>
+            node.type === 'ImportDeclaration' &&
+            node.specifiers.find((node) => {
+              if (node.type === 'ImportSpecifier' && node.local.name === queryName) {
+                queryImportSpecifier = node;
+                return true;
+              }
+            }),
+        );
+        if (!importDeclaration) {
+          return;
+        }
+        context.report({
+          messageId: 'missing-graphql-variables-type',
+          node,
+          data: {
+            queryType: queryName,
+            variablesType: variablesName,
+            api: API,
+          },
+          *fix(fixer) {
+            if (
+              !importDeclaration.specifiers.find(
+                (node) => node.type === 'ImportSpecifier' && node.local.name === variablesName,
+              )
+            ) {
+              yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
+            }
+            yield fixer.insertTextAfter(queryType, `, ${variablesName}`);
+          },
+        });
       },
-      messages: {
-        'missing-graphql-variables-type':
-          '`{{api}}<{{queryType}}>(...)` should be `{{api}}<{{queryType}},{{variablesType}}>(...)`.',
-      },
-      type: 'problem',
-      schema: [],
+    };
+  },
+  name: 'missing-graphql-variables-type',
+  meta: {
+    fixable: true,
+    docs: {
+      description: 'useQuery is missing QueryVariables parameter.',
+      recommended: 'error',
     },
-    defaultOptions: [],
-  }),
-};
+    messages: {
+      'missing-graphql-variables-type':
+        '`{{api}}<{{queryType}}>(...)` should be `{{api}}<{{queryType}},{{variablesType}}>(...)`.',
+    },
+    type: 'problem',
+    schema: [],
+  },
+  defaultOptions: [],
+});

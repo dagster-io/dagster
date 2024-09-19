@@ -5,8 +5,8 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
-    from .job_definition import JobDefinition
-    from .repository_definition import RepositoryDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
 class IJob(ABC):

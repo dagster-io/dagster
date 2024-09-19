@@ -122,6 +122,7 @@ import insights from '../icon-svgs/insights.svg';
 import job from '../icon-svgs/job.svg';
 import key_command from '../icon-svgs/key_command.svg';
 import key_option from '../icon-svgs/key_option.svg';
+import key_return from '../icon-svgs/key_return.svg';
 import key_shift from '../icon-svgs/key_shift.svg';
 import launch from '../icon-svgs/launch.svg';
 import launchpad from '../icon-svgs/launchpad.svg';
@@ -194,6 +195,7 @@ import priority_9 from '../icon-svgs/priority_9.svg';
 import rainbow from '../icon-svgs/rainbow.svg';
 import re_execute from '../icon-svgs/re_execute.svg';
 import refresh from '../icon-svgs/refresh.svg';
+import reload_definitions from '../icon-svgs/reload-definitions.svg';
 import reload from '../icon-svgs/reload.svg';
 import replay from '../icon-svgs/replay.svg';
 import reporting from '../icon-svgs/reporting.svg';
@@ -211,6 +213,7 @@ import run_failed from '../icon-svgs/run_failed.svg';
 import run_queued from '../icon-svgs/run_queued.svg';
 import run_started from '../icon-svgs/run_started.svg';
 import run_success from '../icon-svgs/run_success.svg';
+import run_with_subruns from '../icon-svgs/run_with_subruns.svg';
 import schedule from '../icon-svgs/schedule.svg';
 import schema from '../icon-svgs/schema.svg';
 import scim_provision from '../icon-svgs/scim_provision.svg';
@@ -425,6 +428,7 @@ export const Icons = {
   key_command,
   key_option,
   key_shift,
+  key_return,
   launch,
   launchpad,
   layers,
@@ -496,6 +500,7 @@ export const Icons = {
   re_execute,
   refresh,
   reload,
+  reload_definitions,
   replay,
   reporting,
   resource,
@@ -507,6 +512,7 @@ export const Icons = {
   rss,
   rule,
   run,
+  run_with_subruns,
   run_canceled,
   run_failed,
   run_queued,

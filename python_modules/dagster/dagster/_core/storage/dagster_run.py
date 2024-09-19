@@ -22,20 +22,21 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.loader import InstanceLoadableBy
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
-from dagster._core.utils import make_new_run_id
-from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
-
-from .tags import (
+from dagster._core.storage.tags import (
     ASSET_EVALUATION_ID_TAG,
     AUTOMATION_CONDITION_TAG,
     BACKFILL_ID_TAG,
+    PARENT_RUN_ID_TAG,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
+    ROOT_RUN_ID_TAG,
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
     TICK_ID_TAG,
 )
+from dagster._core.utils import make_new_run_id
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
+from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -508,22 +509,8 @@ class DagsterRun(
         return {TICK_ID_TAG: tick_id, **automation_tags}
 
 
-class RunsFilter(
-    NamedTuple(
-        "_RunsFilter",
-        [
-            ("run_ids", Sequence[str]),
-            ("job_name", Optional[str]),
-            ("statuses", Sequence[DagsterRunStatus]),
-            ("tags", Mapping[str, Union[str, Sequence[str]]]),
-            ("snapshot_id", Optional[str]),
-            ("updated_after", Optional[datetime]),
-            ("updated_before", Optional[datetime]),
-            ("created_after", Optional[datetime]),
-            ("created_before", Optional[datetime]),
-        ],
-    )
-):
+@record_custom
+class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
     """Defines a filter across job runs, for use when querying storage directly.
 
     Each field of the RunsFilter represents a logical AND with each other. For
@@ -545,6 +532,16 @@ class RunsFilter(
 
     """
 
+    run_ids: Sequence[str]
+    job_name: Optional[str]
+    statuses: Sequence[DagsterRunStatus]
+    tags: Mapping[str, Union[str, Sequence[str]]]
+    snapshot_id: Optional[str]
+    updated_after: Optional[datetime]
+    updated_before: Optional[datetime]
+    created_after: Optional[datetime]
+    created_before: Optional[datetime]
+
     def __new__(
         cls,
         run_ids: Optional[Sequence[str]] = None,
@@ -559,17 +556,17 @@ class RunsFilter(
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
-        return super(RunsFilter, cls).__new__(
+        return super().__new__(
             cls,
-            run_ids=check.opt_sequence_param(run_ids, "run_ids", of_type=str),
-            job_name=check.opt_str_param(job_name, "job_name"),
-            statuses=check.opt_sequence_param(statuses, "statuses", of_type=DagsterRunStatus),
-            tags=check.opt_mapping_param(tags, "tags", key_type=str),
-            snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
-            updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
-            updated_before=check.opt_inst_param(updated_before, "updated_before", datetime),
-            created_after=check.opt_inst_param(created_after, "created_after", datetime),
-            created_before=check.opt_inst_param(created_before, "created_before", datetime),
+            run_ids=run_ids or [],
+            job_name=job_name,
+            statuses=statuses or [],
+            tags=tags or {},
+            snapshot_id=snapshot_id,
+            updated_after=updated_after,
+            updated_before=updated_before,
+            created_after=created_after,
+            created_before=created_before,
         )
 
     @staticmethod
@@ -641,10 +638,8 @@ class RunRecord(
         )
 
     @classmethod
-    async def _batch_load(
-        cls,
-        keys: Iterable[str],
-        instance: "DagsterInstance",
+    def _blocking_batch_load(
+        cls, keys: Iterable[str], instance: "DagsterInstance"
     ) -> Iterable[Optional["RunRecord"]]:
         result_map: Dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
 

@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-
+import {gql} from '../../apollo-client';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 
 const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`

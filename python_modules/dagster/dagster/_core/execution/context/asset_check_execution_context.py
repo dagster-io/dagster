@@ -10,14 +10,15 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 )
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.asset_execution_context import (
+    _copy_docs_from_op_execution_context,
+)
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
+from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-
-from .asset_execution_context import _copy_docs_from_op_execution_context
-from .op_execution_context import OpExecutionContext
-from .system import StepExecutionContext
 
 
 class AssetCheckExecutionContext:
@@ -29,7 +30,7 @@ class AssetCheckExecutionContext:
 
     @staticmethod
     def get() -> "AssetCheckExecutionContext":
-        from .compute import current_execution_context
+        from dagster._core.execution.context.compute import current_execution_context
 
         ctx = current_execution_context.get()
         if ctx is None:

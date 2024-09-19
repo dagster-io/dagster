@@ -47,6 +47,13 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster._core.instance.config import (
+    DAGSTER_CONFIG_YAML_FILENAME,
+    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    get_default_tick_retention_settings,
+    get_tick_retention_settings,
+)
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.log_manager import get_log_record_metadata
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import (
@@ -75,14 +82,6 @@ from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import experimental_warning
-
-from .config import (
-    DAGSTER_CONFIG_YAML_FILENAME,
-    DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
-    get_default_tick_retention_settings,
-    get_tick_retention_settings,
-)
-from .ref import InstanceRef
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -1252,7 +1251,9 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         if execution_plan_snapshot:
-            from ..op_concurrency_limits_counter import compute_run_op_concurrency_info_for_snapshot
+            from dagster._core.op_concurrency_limits_counter import (
+                compute_run_op_concurrency_info_for_snapshot,
+            )
 
             run_op_concurrency = compute_run_op_concurrency_info_for_snapshot(
                 execution_plan_snapshot
@@ -2432,7 +2433,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
         for event in events:
             run_id = event.run_id
-            if event.is_dagster_event and event.get_dagster_event().is_job_event:
+            if (
+                not self._event_storage.handles_run_events_in_store_event
+                and event.is_dagster_event
+                and event.get_dagster_event().is_job_event
+            ):
                 self._run_storage.handle_run_event(run_id, event.get_dagster_event())
 
             for sub in self._subscribers[run_id]:

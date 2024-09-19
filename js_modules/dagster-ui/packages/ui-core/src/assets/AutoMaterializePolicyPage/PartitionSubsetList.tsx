@@ -1,4 +1,3 @@
-import {useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -20,6 +19,7 @@ import {
   PartitionSubsetListQuery,
   PartitionSubsetListQueryVariables,
 } from './types/PartitionSubsetListQuery.types';
+import {useQuery} from '../../apollo-client';
 import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props {

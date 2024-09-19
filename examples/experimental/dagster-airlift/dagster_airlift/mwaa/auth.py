@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import boto3
 import requests
@@ -6,10 +6,8 @@ import requests
 from ..core.airflow_instance import AirflowAuthBackend
 
 
-def get_session_info(region: str, env_name: str, profile_name: Optional[str]) -> Tuple[str, str]:
+def get_session_info(mwaa: Any, env_name: str) -> Tuple[str, str]:
     # Initialize MWAA client and request a web login token
-    boto_session = boto3.Session(profile_name=profile_name, region_name=region)
-    mwaa = boto_session.client("mwaa")
     response = mwaa.create_web_login_token(Name=env_name)
 
     # Extract the web server hostname and login token
@@ -32,17 +30,22 @@ def get_session_info(region: str, env_name: str, profile_name: Optional[str]) ->
 
 
 class MwaaSessionAuthBackend(AirflowAuthBackend):
-    def __init__(self, region: str, env_name: str, profile_name: Optional[str] = None):
-        self.region = region
+    def __init__(self, mwaa_client: Any, env_name: str) -> None:
+        self.mwaa_client = mwaa_client
         self.env_name = env_name
-        self.profile_name = profile_name
         # Session info is generated when we either try to retrieve a session or retrieve the web server url
         self._session_info: Optional[Tuple[str, str]] = None
+
+    @staticmethod
+    def from_profile(region: str, env_name: str, profile_name: Optional[str] = None):
+        boto_session = boto3.Session(profile_name=profile_name, region_name=region)
+        mwaa = boto_session.client("mwaa")
+        return MwaaSessionAuthBackend(mwaa_client=mwaa, env_name=env_name)
 
     def get_session(self) -> requests.Session:
         # Get the session info
         if not self._session_info:
-            self._session_info = get_session_info(self.region, self.env_name, self.profile_name)
+            self._session_info = get_session_info(mwaa=self.mwaa_client, env_name=self.env_name)
         session_cookie = self._session_info[1]
         # Create a new session
         session = requests.Session()
@@ -53,5 +56,5 @@ class MwaaSessionAuthBackend(AirflowAuthBackend):
 
     def get_webserver_url(self) -> str:
         if not self._session_info:
-            self._session_info = get_session_info(self.region, self.env_name, self.profile_name)
+            self._session_info = get_session_info(mwaa=self.mwaa_client, env_name=self.env_name)
         return f"https://{self._session_info[0]}"

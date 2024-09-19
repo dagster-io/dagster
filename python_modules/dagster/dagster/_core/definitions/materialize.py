@@ -1,22 +1,20 @@
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.resource_requirement import ResourceKeyRequirement
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._utils.merger import merge_dicts
-
-from ..errors import DagsterInvariantViolationError
-from ..instance import DagsterInstance
-from ..storage.io_manager import IOManagerDefinition
-from ..storage.mem_io_manager import mem_io_manager
-from .asset_spec import AssetSpec
-from .assets import AssetsDefinition
-from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-
-    from ..execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 EPHEMERAL_JOB_NAME = "__ephemeral_asset_job__"
 

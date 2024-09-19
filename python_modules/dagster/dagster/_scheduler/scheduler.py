@@ -271,7 +271,7 @@ def launch_scheduled_runs(
     workspace_snapshot = {
         location_entry.origin.location_name: location_entry
         for location_entry in workspace_process_context.create_request_context()
-        .get_workspace_snapshot()
+        .get_code_location_entries()
         .values()
     }
 

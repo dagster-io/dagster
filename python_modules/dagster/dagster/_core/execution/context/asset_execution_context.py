@@ -18,13 +18,12 @@ from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
+from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-
-from .op_execution_context import OpExecutionContext
-from .system import StepExecutionContext
 
 
 def _copy_docs_from_op_execution_context(obj):
@@ -92,8 +91,10 @@ class AssetExecutionContext(OpExecutionContext):
 
     @staticmethod
     def get() -> "AssetExecutionContext":
-        from .asset_check_execution_context import AssetCheckExecutionContext
-        from .compute import current_execution_context
+        from dagster._core.execution.context.asset_check_execution_context import (
+            AssetCheckExecutionContext,
+        )
+        from dagster._core.execution.context.compute import current_execution_context
 
         ctx = current_execution_context.get()
         if ctx is None:

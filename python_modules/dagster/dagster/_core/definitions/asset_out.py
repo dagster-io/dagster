@@ -17,11 +17,13 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.definitions.utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    resolve_automation_condition,
+    validate_tags_strict,
+)
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster._utils.warnings import disable_dagster_warnings
-
-from .utils import resolve_automation_condition, validate_tags_strict
 
 
 @experimental_param(param="owners")
@@ -146,7 +148,9 @@ class AssetOut(
             code_version=self.code_version,
         )
 
-    def to_spec(self, key: AssetKey, deps: Sequence[AssetDep]) -> AssetSpec:
+    def to_spec(
+        self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
+    ) -> AssetSpec:
         with disable_dagster_warnings():
             return AssetSpec.dagster_internal_init(
                 key=key,
@@ -158,7 +162,7 @@ class AssetOut(
                 freshness_policy=self.freshness_policy,
                 automation_condition=self.automation_condition,
                 owners=self.owners,
-                tags=self.tags,
+                tags={**additional_tags, **self.tags} if self.tags else additional_tags,
                 deps=deps,
                 auto_materialize_policy=None,
                 partitions_def=None,

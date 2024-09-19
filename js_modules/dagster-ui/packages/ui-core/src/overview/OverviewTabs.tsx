@@ -1,7 +1,7 @@
-import {QueryResult} from '@apollo/client';
 import {Box, Colors, Spinner, Tabs} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
+import {QueryResult} from '../apollo-client';
 import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
@@ -67,7 +67,7 @@ export const OverviewTabs = <TData extends Record<string, any>>(props: Props<TDa
         <TabLink id="backfills" title="Backfills" to="/overview/backfills" />
       </Tabs>
       {refreshState ? (
-        <Box padding={{bottom: 8}}>
+        <Box style={{alignSelf: 'center'}}>
           <QueryRefreshCountdown refreshState={refreshState} />
         </Box>
       ) : null}

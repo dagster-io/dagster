@@ -441,6 +441,7 @@ export type AssetNode = {
   groupName: Scalars['String']['output'];
   hasAssetChecks: Scalars['Boolean']['output'];
   hasMaterializePermission: Scalars['Boolean']['output'];
+  hasReportRunlessAssetEventPermission: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   isExecutable: Scalars['Boolean']['output'];
   isMaterializable: Scalars['Boolean']['output'];
@@ -448,6 +449,7 @@ export type AssetNode = {
   isPartitioned: Scalars['Boolean']['output'];
   jobNames: Array<Scalars['String']['output']>;
   jobs: Array<Pipeline>;
+  kinds: Array<Scalars['String']['output']>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
   latestRunForPartition: Maybe<Run>;
   metadataEntries: Array<
@@ -726,6 +728,8 @@ export enum BulkActionStatus {
   CANCELED = 'CANCELED',
   CANCELING = 'CANCELING',
   COMPLETED = 'COMPLETED',
+  COMPLETED_FAILED = 'COMPLETED_FAILED',
+  COMPLETED_SUCCESS = 'COMPLETED_SUCCESS',
   FAILED = 'FAILED',
   REQUESTED = 'REQUESTED',
 }
@@ -3316,7 +3320,8 @@ export type PartitionsByAssetSelector = {
 export type PartitionsOrError = Partitions | PythonError;
 
 export type PartitionsSelector = {
-  range: PartitionRangeSelector;
+  range?: InputMaybe<PartitionRangeSelector>;
+  ranges?: InputMaybe<Array<PartitionRangeSelector>>;
 };
 
 export type PathMetadataEntry = MetadataEntry & {
@@ -5599,6 +5604,7 @@ export type WorkspaceLocationEntry = {
   name: Scalars['String']['output'];
   permissions: Array<Permission>;
   updatedTimestamp: Scalars['Float']['output'];
+  versionKey: Scalars['String']['output'];
 };
 
 export type WorkspaceLocationEntryOrError = PythonError | WorkspaceLocationEntry;
@@ -5617,6 +5623,7 @@ export type WorkspaceLocationStatusEntry = {
   name: Scalars['String']['output'];
   permissions: Array<Permission>;
   updateTimestamp: Scalars['Float']['output'];
+  versionKey: Scalars['String']['output'];
 };
 
 export type WorkspaceOrError = PythonError | Workspace;
@@ -6502,6 +6509,10 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('hasMaterializePermission')
         ? overrides.hasMaterializePermission!
         : false,
+    hasReportRunlessAssetEventPermission:
+      overrides && overrides.hasOwnProperty('hasReportRunlessAssetEventPermission')
+        ? overrides.hasReportRunlessAssetEventPermission!
+        : false,
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -6518,6 +6529,7 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
     jobNames: overrides && overrides.hasOwnProperty('jobNames') ? overrides.jobNames! : [],
     jobs: overrides && overrides.hasOwnProperty('jobs') ? overrides.jobs! : [],
+    kinds: overrides && overrides.hasOwnProperty('kinds') ? overrides.kinds! : [],
     latestMaterializationByPartition:
       overrides && overrides.hasOwnProperty('latestMaterializationByPartition')
         ? overrides.latestMaterializationByPartition!
@@ -11207,6 +11219,7 @@ export const buildPartitionsSelector = (
         : relationshipsToOmit.has('PartitionRangeSelector')
         ? ({} as PartitionRangeSelector)
         : buildPartitionRangeSelector({}, relationshipsToOmit),
+    ranges: overrides && overrides.hasOwnProperty('ranges') ? overrides.ranges! : [],
   };
 };
 
@@ -15157,6 +15170,8 @@ export const buildWorkspaceLocationEntry = (
       overrides && overrides.hasOwnProperty('updatedTimestamp')
         ? overrides.updatedTimestamp!
         : 2.68,
+    versionKey:
+      overrides && overrides.hasOwnProperty('versionKey') ? overrides.versionKey! : 'enim',
   };
 };
 
@@ -15192,6 +15207,7 @@ export const buildWorkspaceLocationStatusEntry = (
     permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
     updateTimestamp:
       overrides && overrides.hasOwnProperty('updateTimestamp') ? overrides.updateTimestamp! : 7.09,
+    versionKey: overrides && overrides.hasOwnProperty('versionKey') ? overrides.versionKey! : 'nam',
   };
 };
 

@@ -7,6 +7,7 @@ const config: Config = {
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
+  noIndex: true, // TODO - remove when production-ready
 
   baseUrl: '/',
   onBrokenLinks: 'throw',
@@ -24,6 +25,12 @@ const config: Config = {
     require.resolve('docusaurus-plugin-image-zoom'),
   ],
   themeConfig: {
+    announcementBar: {
+      id: 'announcementBar',
+      // TODO - once discussion has been created update link
+      //content: `<b>This is the preview of the new documentation site. If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/discussions/23031">GitHub</a>. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</b>`,
+      content: `<b>This is the preview of the new documentation site. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</b>`,
+    },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
@@ -32,7 +39,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['diff', 'json', 'bash'],
+      additionalLanguages: ['diff', 'json', 'bash', 'docker'],
     },
     zoom: {
       selector: '.markdown > img, .tabs-container img ',
@@ -49,6 +56,7 @@ const config: Config = {
       maxHeadingLevel: 4,
     },
     navbar: {
+      hideOnScroll: true,
       logo: {
         alt: 'Dagster Logo',
         src: 'img/dagster-docs-logo.svg',
@@ -65,7 +73,7 @@ const config: Config = {
         {
           label: 'Integrations',
           type: 'doc',
-          docId: 'integrations',
+          docId: 'integrations/index',
           position: 'left',
         },
         {
@@ -75,9 +83,9 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'References',
+          label: 'API Docs',
           type: 'doc',
-          docId: 'api',
+          docId: 'api/index',
           position: 'left',
         },
         {
@@ -99,43 +107,29 @@ const config: Config = {
     footer: {
       logo: {
         alt: 'Dagster Logo',
-        src: 'img/logo.svg',
+        src: 'img/dagster_labs-primary-horizontal.svg',
+        srcDark: 'img/dagster_labs-reversed-horizontal.svg',
         href: '/',
       },
       links: [
         {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Docs',
-              to: '/',
-            },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
-            {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/dagster',
-            },
-            {
-              label: 'Twitter',
-              href: 'https://twitter.com/dagster',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/dagster-io/dagster',
-            },
-          ],
+          html: `
+          <div class='footer__items'>
+            <a href='https://www.dagster.io/terms'>Terms of Service</a>
+            <a href='https://www.dagster.io/privacy/'>Privacy Policy</a>
+            <a href='https://www.dagster.io/security/'>Security</a>
+          </div>
+
+          <div class='footer__items--right'>
+            <a href='https://twitter.com/dagster' title="X" target="_blank" rel="noreferrer noopener"><img src="/icons/twitter.svg"/></a>
+            <a href='https://www.dagster.io/slack/' title="Community Slack" target="_blank" rel="noreferrer noopener"><img src="/icons/slack.svg"/></a>
+            <a href='https://github.com/dagster-io/dagster' title="GitHub" target="_blank" rel="noreferrer noopener"><img src="/icons/github.svg"/></a>
+            <a href='https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q/videos' title="Youtube" target="_blank" rel="noreferrer noopener"><img src="/icons/youtube.svg"/></a>
+          </div>
+          `,
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs`,
     },
   } satisfies Preset.ThemeConfig,
 

@@ -11,14 +11,18 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
   const [content, setContent] = React.useState<string>('');
   const [error, setError] = React.useState<string | null>(null);
 
+  language = language || 'python';
+
   React.useEffect(() => {
     // Adjust the import path to start from the docs directory
     import(`!!raw-loader!/../../examples/docs_beta_snippets/docs_beta_snippets/${filePath}`)
       .then((module) => {
-        const lines = module.default.split('\n');
+        const lines = module.default.split('\n').map((line) => {
+          return line.replaceAll(/#.*?noqa.*?$/g, '');
+        });
         const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
         const strippedContent =
-          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : module.default;
+          mainIndex !== -1 ? lines.slice(0, mainIndex).join('\n') : lines.join('\n');
         setContent(strippedContent);
         setError(null);
       })
@@ -35,7 +39,7 @@ const CodeExample: React.FC<CodeExampleProps> = ({filePath, language, title}) =>
   }
 
   return (
-    <CodeBlock language={language} title={title || filePath}>
+    <CodeBlock language={language} title={title}>
       {content || 'Loading...'}
     </CodeBlock>
   );

@@ -3,19 +3,16 @@ from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tu
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
-from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import PrintFn
-from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
-
-from .base_storage import DagsterStorage
-from .event_log.base import (
+from dagster._core.storage.base_storage import DagsterStorage
+from dagster._core.storage.event_log.base import (
+    AssetCheckSummaryRecord,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
@@ -24,8 +21,11 @@ from .event_log.base import (
     EventRecordsResult,
     PlannedMaterializationInfo,
 )
-from .runs.base import RunStorage
-from .schedules.base import ScheduleStorage
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.schedules.base import ScheduleStorage
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import PrintFn
+from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -811,10 +811,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         )
 
     def get_auto_materialize_asset_evaluations(
-        self, asset_key: AssetKey, limit: int, cursor: Optional[int] = None
+        self, key: EntityKey, limit: int, cursor: Optional[int] = None
     ) -> Sequence["AutoMaterializeAssetEvaluationRecord"]:
         return self._storage.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key, limit, cursor
+            key, limit, cursor
         )
 
     def get_auto_materialize_evaluations_for_evaluation_id(

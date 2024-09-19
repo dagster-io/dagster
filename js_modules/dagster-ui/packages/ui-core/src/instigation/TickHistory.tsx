@@ -1,6 +1,5 @@
 import 'chartjs-adapter-date-fns';
 
-import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -32,6 +31,7 @@ import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
 import {countPartitionsAddedOrDeleted, isStuckStartedTick, truncate} from './util';
+import {gql, useQuery} from '../apollo-client';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -44,7 +44,6 @@ import {
   InstigationType,
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -60,9 +59,9 @@ type InstigationTick = HistoryTickFragment;
 const PAGE_SIZE = 25;
 
 enum TickStatusDisplay {
-  ALL,
-  FAILED,
-  SUCCESS,
+  ALL = 'all',
+  FAILED = 'failed',
+  SUCCESS = 'success',
 }
 
 const STATUS_DISPLAY_MAP = {
@@ -123,7 +122,6 @@ export const TicksTable = ({
     query: JOB_TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
-  useBlockTraceOnQueryResult(queryResult, 'TickHistoryQuery');
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -329,8 +327,6 @@ export const TickHistoryTimeline = ({
       notifyOnNetworkStatusChange: true,
     },
   );
-
-  useBlockTraceOnQueryResult(queryResult, 'TickHistoryQuery');
 
   useQueryRefreshAtInterval(
     queryResult,

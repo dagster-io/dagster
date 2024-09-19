@@ -13,7 +13,9 @@ export type RepoAssetTableFragment = {
   isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {
     __typename: 'PartitionDefinition';
@@ -68,7 +70,9 @@ export type WorkspaceAssetsQuery = {
           isExecutable: boolean;
           computeKind: string | null;
           hasMaterializePermission: boolean;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
+          kinds: Array<string>;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
           partitionDefinition: {
             __typename: 'PartitionDefinition';
@@ -94,3 +98,5 @@ export type WorkspaceAssetsQuery = {
       }
     | {__typename: 'RepositoryNotFoundError'};
 };
+
+export const WorkspaceAssetsQueryVersion = '5f392a40e848c1adfc661f4f9db904cbab74d68900bf5632d92b44fdf2128228';

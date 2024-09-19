@@ -33,7 +33,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from .graphql_context_test_suite import (
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
@@ -95,6 +95,28 @@ query SensorsByStatusQuery($repositorySelector: RepositorySelector!, $status: In
         name
         sensorState {
           status
+        }
+      }
+    }
+  }
+}
+"""
+
+GET_SENSORS_TICKS_BY_STATUS_QUERY = """
+query SensorsTicksByStatusQuery($repositorySelector: RepositorySelector!, $statuses: [InstigationTickStatus!]) {
+  sensorsOrError(repositorySelector: $repositorySelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensors {
+      results {
+        name
+        sensorState {
+          ticks(statuses: $statuses) {
+            status
+          }
         }
       }
     }
@@ -501,6 +523,22 @@ query TickDynamicPartitionsRequestResultsQuery($sensorSelector: SensorSelector!)
           }
         }
       }
+    }
+  }
+}
+"""
+
+INSTIGATION_STATE_QUERY = """
+query InstigationStateQuery($instigationSelector: InstigationSelector! $id: String) {
+  instigationStateOrError(instigationSelector: $instigationSelector id: $id) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on InstigationState {
+        id
+        status
     }
   }
 }
@@ -1016,6 +1054,92 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert start_result.data["resetSensor"]["canReset"] is False
         assert start_result.data["resetSensor"]["sensorState"]["status"] == "RUNNING"
 
+    def test_sensor_with_default_status_stopped(self, graphql_context: WorkspaceRequestContext):
+        sensor_selector = infer_sensor_selector(graphql_context, "stopped_in_code_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_STATUS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert result.data["sensorOrError"]["defaultStatus"] == "STOPPED"
+        assert result.data["sensorOrError"]["canReset"] is False
+        assert result.data["sensorOrError"]["sensorState"]["status"] == "STOPPED"
+        assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is True
+        assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is True
+
+        sensor_id = result.data["sensorOrError"]["sensorState"]["id"]
+        instigation_selector = {
+            "name": sensor_selector["sensorName"],
+            "repositoryLocationName": sensor_selector["repositoryLocationName"],
+            "repositoryName": sensor_selector["repositoryName"],
+        }
+        state_result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATION_STATE_QUERY,
+            variables={
+                "instigationSelector": instigation_selector,
+                "id": sensor_id,
+            },
+        )
+        assert state_result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert state_result.data["instigationStateOrError"]["status"] == "STOPPED"
+
+        stop_result = execute_dagster_graphql(
+            graphql_context,
+            START_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert stop_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_STATUS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert result.data["sensorOrError"]["canReset"] is True
+
+        state_result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATION_STATE_QUERY,
+            variables={
+                "instigationSelector": instigation_selector,
+                "id": sensor_id,
+            },
+        )
+        assert state_result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert state_result.data["instigationStateOrError"]["status"] == "RUNNING"
+
+        # Now can be restarted
+        start_result = execute_dagster_graphql(
+            graphql_context,
+            RESET_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        cid = CompoundID.from_string(sensor_id)
+        instigator_state = graphql_context.instance.get_instigator_state(
+            cid.external_origin_id, cid.selector_id
+        )
+
+        assert instigator_state
+        assert instigator_state.status == InstigatorStatus.DECLARED_IN_CODE
+        assert start_result.data["resetSensor"]["canReset"] is False
+        assert start_result.data["resetSensor"]["sensorState"]["status"] == "STOPPED"
+
+        state_result = execute_dagster_graphql(
+            graphql_context,
+            INSTIGATION_STATE_QUERY,
+            variables={
+                "instigationSelector": instigation_selector,
+                "id": sensor_id,
+            },
+        )
+        assert state_result.data["instigationStateOrError"]["__typename"] == "InstigationState"
+        assert state_result.data["instigationStateOrError"]["status"] == "STOPPED"
+
 
 def test_sensor_next_ticks(graphql_context: WorkspaceRequestContext):
     external_repository = graphql_context.get_code_location(
@@ -1243,6 +1367,10 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
+    repository_selector = {
+        "repositoryLocationName": main_repo_location_name(),
+        "repositoryName": main_repo_name(),
+    }
     sensor_name = "always_no_config_sensor"
     external_sensor = external_repository.get_external_sensor(sensor_name)
     sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
@@ -1352,6 +1480,21 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         == result.data["sensorOrError"]["sensorState"]["tick"]["tickId"]
         == str(skipped_tick_id)
     )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SENSORS_TICKS_BY_STATUS_QUERY,
+        variables={
+            "repositorySelector": repository_selector,
+            "statuses": ["FAILURE", "SUCCESS"],
+        },
+    )
+    all_sensors = result.data["sensorsOrError"]["results"]
+    selected_sensor = next(
+        (sensor for sensor in all_sensors if sensor["name"] == sensor_selector["sensorName"]), None
+    )
+    assert selected_sensor
+    assert len(selected_sensor["sensorState"]["ticks"]) == 2
 
 
 def _get_unloadable_sensor_origin(name):

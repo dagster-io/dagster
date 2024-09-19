@@ -13,15 +13,15 @@ from dagster._core.utils import parse_env_var
 from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
-    from . import K8sRunLauncher
+    from dagster_k8s import K8sRunLauncher
 
-from .job import (
+from dagster_k8s.job import (
     DagsterK8sJobConfig,
     K8sConfigMergeBehavior,
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
-from .models import k8s_snake_case_dict, k8s_snake_case_keys
+from dagster_k8s.models import k8s_snake_case_dict, k8s_snake_case_keys
 
 
 def _dedupe_list(values):

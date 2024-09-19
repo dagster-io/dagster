@@ -1,4 +1,3 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Radio} from '@blueprintjs/core';
 import {
@@ -44,6 +43,7 @@ import {
 } from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
+import {gql, useApolloClient, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
@@ -76,7 +76,7 @@ import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {ToggleableSection} from '../ui/ToggleableSection';
-import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext';
+import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
@@ -710,7 +710,7 @@ const Warnings = ({
 }) => {
   const warningsResult = useQuery<LaunchAssetWarningsQuery, LaunchAssetWarningsQueryVariables>(
     LAUNCH_ASSET_WARNINGS_QUERY,
-    {variables: {upstreamAssetKeys}},
+    {variables: {upstreamAssetKeys}, blocking: false},
   );
 
   const instance = warningsResult.data?.instance;

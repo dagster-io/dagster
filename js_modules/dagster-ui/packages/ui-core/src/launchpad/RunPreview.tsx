@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {
@@ -22,6 +21,7 @@ import {
   RunPreviewValidationErrorsFragment,
   RunPreviewValidationFragment,
 } from './types/RunPreview.types';
+import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

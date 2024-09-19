@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
 import {createContext, memo, useEffect} from 'react';
@@ -10,6 +9,7 @@ import {RunFragment} from './types/RunFragments.types';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
 import {Mono} from '../../../ui-components/src';
+import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

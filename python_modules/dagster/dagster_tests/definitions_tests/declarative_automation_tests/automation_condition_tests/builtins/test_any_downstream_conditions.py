@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Iterable
 
 from dagster import (
     AssetKey,
@@ -8,16 +8,17 @@ from dagster import (
     evaluate_automation_conditions,
 )
 from dagster._core.definitions.asset_key import CoercibleToAssetKey
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
     AndAutomationCondition,
 )
 
 
-def _get_result(key: CoercibleToAssetKey, results: Sequence[AutomationResult]) -> AutomationResult:
+def _get_result(key: CoercibleToAssetKey, results: Iterable[AutomationResult]) -> AutomationResult:
     key = AssetKey.from_coercible(key)
     for result in results:
-        if result.asset_key == key:
+        if result.key == key:
             return result
     assert False
 
@@ -37,6 +38,23 @@ def test_basic() -> None:
     a_result = _get_result(a.key, result.results)
     assert len(a_result.child_results) == 1
     assert a_result.child_results[0].child_results[0].condition == cond2
+
+
+def test_basic_with_amp() -> None:
+    cond1 = AutomationCondition.any_downstream_conditions()
+    cond2 = AutoMaterializePolicy.eager()
+
+    @asset(automation_condition=cond1)
+    def a(): ...
+
+    @asset(auto_materialize_policy=cond2, deps=[a])
+    def b(): ...
+
+    result = evaluate_automation_conditions([a, b], instance=DagsterInstance.ephemeral())
+
+    a_result = _get_result(a.key, result.results)
+    # do not pick up child result
+    assert len(a_result.child_results) == 0
 
 
 def test_multiple_downstreams() -> None:

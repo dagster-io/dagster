@@ -1,6 +1,7 @@
 import hashlib
 import inspect
 import re
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import (
     Any,
@@ -28,11 +29,16 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix, Output
+from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKeyPrefix, Output
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster._core.utils import imap
+from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.utils import (
@@ -41,12 +47,54 @@ from dagster_fivetran.utils import (
     metadata_for_table,
 )
 
+DEFAULT_MAX_THREADPOOL_WORKERS = 10
+logger = get_dagster_logger()
+
+
+def _fetch_and_attach_col_metadata(
+    fivetran_resource: FivetranResource, connector_id: str, materialization: AssetMaterialization
+) -> AssetMaterialization:
+    """Subroutine to fetch column metadata for a given table from the Fivetran API and attach it to the
+    materialization.
+    """
+    try:
+        schema_source_name = materialization.metadata["schema_source_name"].value
+        table_source_name = materialization.metadata["table_source_name"].value
+
+        table_conn_data = fivetran_resource.make_request(
+            "GET",
+            f"connectors/{connector_id}/schemas/{schema_source_name}/tables/{table_source_name}/columns",
+        )
+        columns = check.dict_elem(table_conn_data, "columns")
+        table_columns = sorted(
+            [
+                TableColumn(name=col["name_in_destination"], type="")
+                for col in columns.values()
+                if "name_in_destination" in col and col.get("enabled")
+            ],
+            key=lambda col: col.name,
+        )
+        return materialization.with_metadata(
+            {
+                **materialization.metadata,
+                **TableMetadataSet(column_schema=TableSchema(table_columns)),
+            }
+        )
+    except Exception as e:
+        logger.warning(
+            "An error occurred while fetching column metadata for table %s",
+            f"Exception: {e}",
+            exc_info=True,
+        )
+        return materialization
+
 
 def _build_fivetran_assets(
     connector_id: str,
     destination_tables: Sequence[str],
-    poll_interval: float,
+    fetch_column_metadata: bool,
     poll_timeout: Optional[float],
+    poll_interval: float,
     io_manager_key: Optional[str],
     asset_key_prefix: Optional[Sequence[str]],
     metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]],
@@ -56,6 +104,7 @@ def _build_fivetran_assets(
     infer_missing_tables: bool,
     op_tags: Optional[Mapping[str, Any]],
     asset_tags: Optional[Mapping[str, Any]],
+    max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -74,7 +123,6 @@ def _build_fivetran_assets(
 
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
-        compute_kind="fivetran",
         resource_defs=resource_defs,
         group_name=group_name,
         op_tags=op_tags,
@@ -85,7 +133,10 @@ def _build_fivetran_assets(
                     **_metadata_by_table_name.get(table, {}),
                     **({"dagster/io_manager_key": io_manager_key} if io_manager_key else {}),
                 },
-                tags=asset_tags,
+                tags={
+                    **build_kind_tag("fivetran"),
+                    **(asset_tags or {}),
+                },
             )
             for table in tracked_asset_keys.keys()
         ],
@@ -98,22 +149,39 @@ def _build_fivetran_assets(
         )
 
         materialized_asset_keys = set()
-        for materialization in generate_materializations(
-            fivetran_output, asset_key_prefix=asset_key_prefix
-        ):
-            # scan through all tables actually created, if it was expected then emit an Output.
-            # otherwise, emit a runtime AssetMaterialization
-            if materialization.asset_key in tracked_asset_keys.values():
-                key = tracked_asset_key_to_user_facing_asset_key[materialization.asset_key]
-                yield Output(
-                    value=None,
-                    output_name=key.to_python_identifier(),
-                    metadata=materialization.metadata,
-                )
-                materialized_asset_keys.add(materialization.asset_key)
 
-            else:
-                yield materialization
+        _map_fn: Callable[[AssetMaterialization], AssetMaterialization] = (
+            lambda materialization: _fetch_and_attach_col_metadata(
+                fivetran, connector_id, materialization
+            )
+            if fetch_column_metadata
+            else materialization
+        )
+        with ThreadPoolExecutor(
+            max_workers=max_threadpool_workers,
+            thread_name_prefix=f"fivetran_{connector_id}",
+        ) as executor:
+            for materialization in imap(
+                executor=executor,
+                iterable=generate_materializations(
+                    fivetran_output,
+                    asset_key_prefix=asset_key_prefix,
+                ),
+                func=_map_fn,
+            ):
+                # scan through all tables actually created, if it was expected then emit an Output.
+                # otherwise, emit a runtime AssetMaterialization
+                if materialization.asset_key in tracked_asset_keys.values():
+                    key = tracked_asset_key_to_user_facing_asset_key[materialization.asset_key]
+                    yield Output(
+                        value=None,
+                        output_name=key.to_python_identifier(),
+                        metadata=materialization.metadata,
+                    )
+                    materialized_asset_keys.add(materialization.asset_key)
+
+                else:
+                    yield materialization
 
         unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
         if infer_missing_tables:
@@ -147,6 +215,7 @@ def build_fivetran_assets(
     group_name: Optional[str] = None,
     infer_missing_tables: bool = False,
     op_tags: Optional[Mapping[str, Any]] = None,
+    fetch_column_metadata: bool = True,
 ) -> Sequence[AssetsDefinition]:
     """Build a set of assets for a given Fivetran connector.
 
@@ -179,6 +248,8 @@ def build_fivetran_assets(
              A dictionary of tags for the op that computes the asset. Frameworks may expect and
              require certain metadata to be attached to a op. Values that are not strings will be
              json encoded and must meet the criteria that json.loads(json.dumps(value)) == value.
+        fetch_column_metadata (bool): If True, will fetch column schema information for each table in the connector.
+            This will induce additional API calls.
 
     **Examples:**
 
@@ -227,6 +298,7 @@ def build_fivetran_assets(
         infer_missing_tables=infer_missing_tables,
         op_tags=op_tags,
         asset_tags=None,
+        fetch_column_metadata=fetch_column_metadata,
         table_to_asset_key_map=None,
         resource_defs=None,
     )
@@ -299,7 +371,8 @@ def _build_fivetran_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
     resource_defs: Mapping[str, ResourceDefinition],
     poll_interval: float,
-    poll_timeout: Optional[float] = None,
+    poll_timeout: Optional[float],
+    fetch_column_metadata: bool,
 ) -> AssetsDefinition:
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
@@ -323,7 +396,8 @@ def _build_fivetran_assets_from_metadata(
         group_name=assets_defn_meta.group_name,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
-        asset_tags={"dagster/storage_kind": storage_kind} if storage_kind else None,
+        asset_tags=build_kind_tag(storage_kind) if storage_kind else None,
+        fetch_column_metadata=fetch_column_metadata,
         infer_missing_tables=False,
         op_tags=None,
     )[0]
@@ -341,6 +415,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         destination_ids: Optional[List[str]],
         poll_interval: float,
         poll_timeout: Optional[float],
+        fetch_column_metadata: bool,
     ):
         self._fivetran_resource_def = fivetran_resource_def
         if isinstance(fivetran_resource_def, FivetranResource):
@@ -369,6 +444,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._destination_ids = destination_ids
         self._poll_interval = poll_interval
         self._poll_timeout = poll_timeout
+        self._fetch_column_metadata = fetch_column_metadata
 
         contents = hashlib.sha1()
         contents.update(",".join(key_prefix).encode("utf-8"))
@@ -458,6 +534,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
                 },
                 poll_interval=self._poll_interval,
                 poll_timeout=self._poll_timeout,
+                fetch_column_metadata=self._fetch_column_metadata,
             )
             for meta in data
         ]
@@ -481,6 +558,7 @@ def load_assets_from_fivetran_instance(
     destination_ids: Optional[List[str]] = None,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
+    fetch_column_metadata: bool = True,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -508,6 +586,8 @@ def load_assets_from_fivetran_instance(
         poll_interval (float): The time (in seconds) that will be waited between successive polls.
         poll_timeout (Optional[float]): The maximum time that will waited before this operation is
             timed out. By default, this will never time out.
+        fetch_column_metadata (bool): If True, will fetch column schema information for each table in the connector.
+            This will induce additional API calls.
 
     **Examples:**
 
@@ -563,4 +643,5 @@ def load_assets_from_fivetran_instance(
         destination_ids=destination_ids,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
+        fetch_column_metadata=fetch_column_metadata,
     )

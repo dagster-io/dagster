@@ -8,17 +8,19 @@ from dagster import (
     AssetKey,
     AutoMaterializePolicy,
     AutoMaterializeRule,
+    AutomationCondition,
     Definitions,
     MonthlyPartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.tags import build_kind_tag, has_kind
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
 from dlt.extract.resource import DltResource
 
-from .dlt_test_sources.duckdb_with_transformer import (
+from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import (
     pipeline,
     pipeline as dlt_source,
 )
@@ -151,6 +153,44 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
         assert "0 1 * * *" in str(item)
 
 
+def test_get_automation_condition(dlt_pipeline: Pipeline):
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_automation_condition(self, resource: DltResource) -> Optional[AutomationCondition]:
+            return AutomationCondition.eager() | AutomationCondition.on_cron("0 1 * * *")
+
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def assets():
+        pass
+
+    for item in assets.automation_conditions_by_key.values():
+        assert "0 1 * * *" in str(item)
+
+
+def test_get_automation_condition_converts_auto_materialize_policy(dlt_pipeline: Pipeline):
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        def get_auto_materialize_policy(
+            self, resource: DltResource
+        ) -> Optional[AutoMaterializePolicy]:
+            return AutoMaterializePolicy.eager().with_rules(
+                AutoMaterializeRule.materialize_on_cron("0 1 * * *")
+            )
+
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        dagster_dlt_translator=CustomDagsterDltTranslator(),
+    )
+    def assets():
+        pass
+
+    for item in assets.automation_conditions_by_key.values():
+        assert "0 1 * * *" in str(item)
+
+
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     required_metadata_keys = {
         "destination_type",
@@ -193,10 +233,7 @@ def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
 
         for key in example_pipeline_assets.asset_and_check_keys:
             if isinstance(key, AssetKey):
-                assert (
-                    example_pipeline_assets.tags_by_key[key].get("dagster/storage_kind")
-                    == destination_type
-                )
+                assert has_kind(example_pipeline_assets.tags_by_key[key], destination_type)
 
 
 def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
@@ -459,7 +496,7 @@ def test_with_owner_replacements(dlt_pipeline: Pipeline) -> None:
 
 
 def test_with_tag_replacements(dlt_pipeline: Pipeline) -> None:
-    expected_tags = {"customized": "tag", "dagster/storage_kind": "duckdb"}
+    expected_tags = {"customized": "tag", **build_kind_tag("dlt"), **build_kind_tag("duckdb")}
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_tags(self, _) -> Optional[Mapping[str, str]]:

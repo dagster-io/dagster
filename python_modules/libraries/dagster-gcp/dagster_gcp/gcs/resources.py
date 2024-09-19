@@ -5,7 +5,7 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from google.cloud import storage
 from pydantic import Field
 
-from .file_manager import GCSFileManager
+from dagster_gcp.gcs.file_manager import GCSFileManager
 
 
 class GCSResource(ConfigurableResource, IAttachDifferentObjectToOpContext):

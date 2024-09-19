@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Tuple
 
+from typing_extensions import Annotated
+
+from dagster._record import ImportFrom, record
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -21,16 +24,21 @@ class CodeLocationLoadStatus(Enum):
     LOADED = "LOADED"  # Finished loading (may be an error)
 
 
-class CodeLocationEntry(NamedTuple):
-    origin: "CodeLocationOrigin"
-    code_location: Optional["CodeLocation"]
+@record
+class CodeLocationEntry:
+    origin: Annotated["CodeLocationOrigin", ImportFrom("dagster._core.remote_representation")]
+    code_location: Optional[
+        Annotated["CodeLocation", ImportFrom("dagster._core.remote_representation")]
+    ]
     load_error: Optional[SerializableErrorInfo]
     load_status: CodeLocationLoadStatus
     display_metadata: Mapping[str, str]
     update_timestamp: float
+    version_key: str
 
 
-class CodeLocationStatusEntry(NamedTuple):
+@record
+class CodeLocationStatusEntry:
     """Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
     to know whether the workspace needs reloading.
     """
@@ -38,6 +46,43 @@ class CodeLocationStatusEntry(NamedTuple):
     location_name: str
     load_status: CodeLocationLoadStatus
     update_timestamp: float
+    version_key: str
+
+
+@record
+class WorkspaceSnapshot:
+    code_location_entries: Mapping[str, CodeLocationEntry]
+
+    @cached_property
+    def asset_graph(self) -> "RemoteAssetGraph":
+        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+
+        code_locations = (
+            location_entry.code_location
+            for location_entry in self.code_location_entries.values()
+            if location_entry.code_location
+        )
+        repos = (
+            repo
+            for code_location in code_locations
+            for repo in code_location.get_repositories().values()
+        )
+        repo_handle_assets: Sequence[Tuple["RepositoryHandle", "ExternalAssetNode"]] = []
+        repo_handle_asset_checks: Sequence[Tuple["RepositoryHandle", "ExternalAssetCheck"]] = []
+
+        for repo in repos:
+            for external_asset_node in repo.get_external_asset_nodes():
+                repo_handle_assets.append((repo.handle, external_asset_node))
+            for external_asset_check in repo.get_external_asset_checks():
+                repo_handle_asset_checks.append((repo.handle, external_asset_check))
+
+        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
+            repo_handle_assets=repo_handle_assets,
+            repo_handle_asset_checks=repo_handle_asset_checks,
+        )
+
+    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
+        return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})
 
 
 class IWorkspace(ABC):
@@ -48,43 +93,17 @@ class IWorkspace(ABC):
         """Return the CodeLocation for the given location name, or raise an error if there is an error loading it."""
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
+    def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
         """Return an entry for each location in the workspace."""
 
     @abstractmethod
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         pass
 
-    @cached_property
+    @property
+    @abstractmethod
     def asset_graph(self) -> "RemoteAssetGraph":
-        """Returns a workspace scoped RemoteAssetGraph."""
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-
-        code_locations = (
-            location_entry.code_location
-            for location_entry in self.get_workspace_snapshot().values()
-            if location_entry.code_location
-        )
-        repos = (
-            repo
-            for code_location in code_locations
-            for repo in code_location.get_repositories().values()
-        )
-        repo_handle_external_asset_nodes: Sequence[
-            Tuple["RepositoryHandle", "ExternalAssetNode"]
-        ] = []
-        asset_checks: Sequence["ExternalAssetCheck"] = []
-
-        for repo in repos:
-            for external_asset_node in repo.get_external_asset_nodes():
-                repo_handle_external_asset_nodes.append((repo.handle, external_asset_node))
-
-            asset_checks.extend(repo.get_external_asset_checks())
-
-        return RemoteAssetGraph.from_repository_handles_and_external_asset_nodes(
-            repo_handle_external_asset_nodes=repo_handle_external_asset_nodes,
-            external_asset_checks=asset_checks,
-        )
+        pass
 
 
 def location_status_from_location_entry(
@@ -94,4 +113,5 @@ def location_status_from_location_entry(
         location_name=entry.origin.location_name,
         load_status=entry.load_status,
         update_timestamp=entry.update_timestamp,
+        version_key=entry.version_key,
     )

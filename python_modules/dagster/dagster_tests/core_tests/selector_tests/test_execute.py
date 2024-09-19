@@ -6,7 +6,10 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._core.test_utils import instance_for_test
 
-from .test_subset_selector import foo_job, get_asset_selection_job
+from dagster_tests.core_tests.selector_tests.test_subset_selector import (
+    foo_job,
+    get_asset_selection_job,
+)
 
 
 def test_subset_for_execution():

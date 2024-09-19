@@ -1,6 +1,6 @@
-import {QueryResult} from '@apollo/client';
 import {ReactNode, createContext, useContext, useLayoutEffect, useMemo} from 'react';
 
+import {QueryResult} from '../apollo-client';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 
 export enum CompletionType {

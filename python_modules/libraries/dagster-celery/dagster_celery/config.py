@@ -1,4 +1,8 @@
-from .defaults import broker_transport_options, task_default_priority, task_default_queue
+from dagster_celery.defaults import (
+    broker_transport_options,
+    task_default_priority,
+    task_default_queue,
+)
 
 DEFAULT_CONFIG = {
     # 'task_queue_max_priority': 10,

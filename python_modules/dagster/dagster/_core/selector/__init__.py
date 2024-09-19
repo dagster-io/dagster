@@ -1,4 +1,4 @@
-from .subset_selector import (
+from dagster._core.selector.subset_selector import (
     Traverser as Traverser,
     generate_dep_graph as generate_dep_graph,
     parse_clause as parse_clause,

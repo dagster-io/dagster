@@ -8,12 +8,6 @@ last_update:
 
 Automation is key to building reliable, efficient data pipelines. This guide provides a simplified overview of the main ways to automate processes in Dagster, helping you choose the right method for your needs. You will find links to more detailed guides for each method below.
 
-## What you'll learn
-
-- The different automation options available in Dagster
-- How to implement basic scheduling and event-based triggers
-- Best practices for selecting and using automation methods
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -45,7 +39,7 @@ To make creating cron expressions easier, you can use an online tool like [Cront
 - You need to run jobs at regular intervals
 - You want basic time-based automation
 
-For examples of how to create schedules, see [How-To Use Schedules](/guides/automation/schedules).
+For examples of how to create schedules, see [How-To Use Schedules](/guides/schedules).
 
 For more information about how Schedules work, see [About Schedules](/concepts/schedules).
 
@@ -62,7 +56,7 @@ Like schedules, sensors operate on a selection of assets, known as [Jobs](/conce
 - You need event-driven automation
 - You want to react to changes in external systems
 
-For more examples of how to create sensors, see the [How-To Use Sensors](/guides/automation/sensors) guide.
+For more examples of how to create sensors, see the [How-To Use Sensors](/guides/sensors) guide.
 
 For more information about how sensors work, see the [About Sensors](/concepts/sensors) concept page.
 
@@ -75,11 +69,11 @@ Asset Sensors trigger jobs when specified assets are materialized, allowing you 
 - You need to trigger jobs based on asset materializations
 - You want to create dependencies between different jobs or code locations
 
-For more examples of how to create asset sensors, see the [How-To Use Asset Sensors](/guides/automation/asset-sensors) guide.
+For more examples of how to create asset sensors, see the [How-To Use Asset Sensors](/guides/asset-sensors) guide.
 
 ## Declarative Automation
 
-TODO: add content
+{/* TODO: add content */}
 
 ## How to choose the right automation method
 
@@ -101,8 +95,8 @@ Use this table to help guide your decision:
 
 ## Next steps
 
-- Learn more about [advanced scheduling patterns] - TODO ADD LINK
-- Explore [complex sensor examples] - TODO ADD LINK
-- Dive into [Declarative Automation best practices] - TODO ADD LINK
+- Learn more about [advanced scheduling patterns] - {/* TODO ADD LINK */}
+- Explore [complex sensor examples] - {/* TODO ADD LINK */}
+- Dive into [Declarative Automation best practices] - {/* TODO ADD LINK */}
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.

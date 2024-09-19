@@ -60,8 +60,6 @@
   --ifm-link-color: var(--theme-color-link-default);
   --ifm-toc-link-color: var(--theme-color-text-light);
   --ifm-toc-border-color: var(--theme-color-keyline);
-  --ifm-navbar-item-padding-vertical: 19px;
-  --ifm-navbar-padding-vertical: 0px;
   --ifm-navbar-padding-horizontal: 20px;
   --ifm-navbar-link-color: var(--theme-color-text-light);
   --ifm-navbar-link-hover-color: var(--theme-color-text-default);
@@ -69,7 +67,6 @@
   //Top Navbar
   --ifm-navbar-height: 60px;
   --ifm-navbar-background-color: var(--theme-color-background-default);
-  --ifm-navbar-item-padding-horizontal: 8px;
 
   //Left Menu
   --ifm-menu-color: var(--theme-color-text-light);
@@ -80,7 +77,7 @@
   --ifm-hr-background-color: var(--theme-color-background-light);
 
   // docusaurus
-  --docusaurus-highlighted-code-line-bg: var(--theme-color-background-blue);
+  --docusaurus-highlighted-code-line-bg: var(--theme-color-background-gray);
 
   // infima shadow levels
   // generated from https://www.joshwcomeau.com/shadow-palette/

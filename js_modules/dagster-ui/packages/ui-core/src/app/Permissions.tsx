@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {
@@ -6,7 +5,7 @@ import {
   PermissionsQuery,
   PermissionsQueryVariables,
 } from './types/Permissions.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {gql, useQuery} from '../apollo-client';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -105,6 +104,7 @@ export const extractPermissions = (
     canToggleAutoMaterialize: permissionOrFallback('toggle_auto_materialize'),
     canEditConcurrencyLimit: permissionOrFallback('edit_concurrency_limit'),
     canEditWorkspace: permissionOrFallback('edit_workspace'),
+    canUpdateSensorCursor: permissionOrFallback('update_sensor_cursor'),
   };
 };
 
@@ -139,7 +139,6 @@ export const PermissionsProvider = (props: {children: React.ReactNode}) => {
   });
 
   const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'PermissionsQuery');
 
   const value = React.useMemo(() => {
     const unscopedPermissionsRaw = data?.unscopedPermissions || [];

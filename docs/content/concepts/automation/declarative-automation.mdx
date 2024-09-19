@@ -108,7 +108,7 @@ Automation conditions describe the conditions under which an asset should be exe
     </tr>
     <tr>
       <td>
-        <strong>AutomationCondition.cron(cron_schedule)</strong>
+        <strong>AutomationCondition.on_cron(cron_schedule)</strong>
       </td>
       <td>
         This condition will materialize an asset once per cron schedule tick,
@@ -130,7 +130,7 @@ from dagster import AssetSpec, AutomationCondition, asset
 @asset(automation_condition=AutomationCondition.eager())
 def my_eager_asset(): ...
 
-AssetSpec("my_cron_asset", automation_condition=AutomationCondition.cron("@daily"))
+AssetSpec("my_cron_asset", automation_condition=AutomationCondition.on_cron("@daily"))
 ```
 
 The core <PyObject object="AutomationCondition" /> framework is extremely flexible, allowing you to build custom conditions from the ground up. Refer to the [Customizing automation conditions guide](/concepts/automation/declarative-automation/customizing-automation-conditions) for more information.

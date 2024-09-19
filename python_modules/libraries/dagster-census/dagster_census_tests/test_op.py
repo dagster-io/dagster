@@ -2,7 +2,7 @@ import responses
 from dagster import job, op
 from dagster_census import CensusOutput, census_resource, census_trigger_sync_op
 
-from .utils import (
+from dagster_census_tests.utils import (
     get_destination_data,
     get_source_data,
     get_sync_data,

@@ -4,13 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Set, Tuple, Ty
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.errors import (
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-)
-
-from .events import (
+from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -18,16 +12,21 @@ from .events import (
     ExpectationResult,
     Output,
 )
-from .output import DynamicOutputDefinition, OutputDefinition
-from .result import AssetResult
+from dagster._core.definitions.output import DynamicOutputDefinition, OutputDefinition
+from dagster._core.definitions.result import AssetResult
+from dagster._core.errors import (
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+    DagsterTypeCheckDidNotPass,
+)
 
 if TYPE_CHECKING:
-    from ..execution.context.compute import OpExecutionContext
-    from ..execution.context.invocation import BaseDirectExecutionContext
-    from .assets import AssetsDefinition
-    from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
-    from .op_definition import OpDefinition
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.op_definition import OpDefinition
+    from dagster._core.execution.context.compute import OpExecutionContext
+    from dagster._core.execution.context.invocation import BaseDirectExecutionContext
 
 T = TypeVar("T")
 
@@ -109,16 +108,15 @@ def direct_invocation_result(
     **kwargs,
 ) -> Any:
     from dagster._config.pythonic_config import Config
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.composition import PendingNodeInvocation
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.execution.context.invocation import (
         BaseDirectExecutionContext,
         build_op_context,
     )
-
-    from ..execution.plan.compute_generator import invoke_compute_fn
-    from .assets import AssetsDefinition
-    from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
-    from .op_definition import OpDefinition
+    from dagster._core.execution.plan.compute_generator import invoke_compute_fn
 
     if isinstance(def_or_invocation, OpDefinition):
         op_def = def_or_invocation
@@ -518,7 +516,9 @@ def _type_check_output_wrapper(
 def _type_check_function_output(
     op_def: "OpDefinition", result: T, context: "BaseDirectExecutionContext"
 ) -> T:
-    from ..execution.plan.compute_generator import validate_and_coerce_op_result_to_iterator
+    from dagster._core.execution.plan.compute_generator import (
+        validate_and_coerce_op_result_to_iterator,
+    )
 
     output_defs_by_name = {output_def.name: output_def for output_def in op_def.output_defs}
     op_context = _get_op_context(context)
@@ -546,7 +546,7 @@ def _type_check_output(
         context (BaseDirectExecutionContext): Context containing resources to be used for type
             check.
     """
-    from ..execution.plan.execute_step import do_type_check
+    from dagster._core.execution.plan.execute_step import do_type_check
 
     op_label = context.per_invocation_properties.step_description
     dagster_type = output_def.dagster_type

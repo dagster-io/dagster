@@ -1,3 +1,4 @@
+import json
 from typing import Any, Mapping, Optional
 
 import dagster._check as check
@@ -17,9 +18,8 @@ from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
 
+from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
-from .container_context import DockerContainerContext
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 
@@ -185,7 +185,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         try:
             return self._get_client(container_context).containers.get(container_id)
-        except Exception:
+        except docker.errors.NotFound:
             return None
 
     def terminate(self, run_id):
@@ -215,11 +215,22 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, run: DagsterRun):
+        container_id = run.tags.get(DOCKER_CONTAINER_ID_TAG)
+
+        if not container_id:
+            return CheckRunHealthResult(WorkerStatus.NOT_FOUND, msg="No container ID tag for run.")
+
         container = self._get_container(run)
         if container is None:
-            return CheckRunHealthResult(WorkerStatus.NOT_FOUND)
+            return CheckRunHealthResult(
+                WorkerStatus.NOT_FOUND, msg=f"Could not find container with ID {container_id}."
+            )
         if container.status == "running":
             return CheckRunHealthResult(WorkerStatus.RUNNING)
-        return CheckRunHealthResult(
-            WorkerStatus.FAILED, msg=f"Container status is {container.status}"
+
+        container_state = container.attrs.get("State")
+        failure_string = f"Container status is {container.status}." + (
+            f" Container state: {json.dumps(container_state)}" if container_state else ""
         )
+
+        return CheckRunHealthResult(WorkerStatus.FAILED, msg=failure_string)

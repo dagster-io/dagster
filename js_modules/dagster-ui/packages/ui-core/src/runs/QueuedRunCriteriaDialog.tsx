@@ -1,4 +1,3 @@
-import {useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -23,6 +22,7 @@ import {
   QueuedRunCriteriaQueryVariables,
 } from './types/QueuedRunCriteriaQuery.types';
 import {RunFragment} from './types/RunFragments.types';
+import {useQuery} from '../apollo-client';
 import {useRunQueueConfig} from '../instance/useRunQueueConfig';
 import {StructuredContentTable} from '../metadata/MetadataEntry';
 import {numberFormatter} from '../ui/formatters';

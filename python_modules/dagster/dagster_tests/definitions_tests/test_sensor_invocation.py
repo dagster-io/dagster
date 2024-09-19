@@ -43,6 +43,8 @@ from dagster import (
     static_partitioned_config,
 )
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import ResourceParam
@@ -1840,3 +1842,65 @@ def test_sensor_invocation_runconfig() -> None:
     assert cast(RunRequest, basic_sensor()).run_config.get("ops", {}) == {
         "foo": {"config": {"a_str": "foo", "an_int": 55}}
     }
+
+
+def test_empty_asset_selection():
+    @asset
+    def asset1():
+        pass
+
+    @sensor(asset_selection=AssetSelection.all())
+    def my_sensor(context):
+        return RunRequest(asset_selection=[])
+
+    @repository
+    def my_repo():
+        return [asset1, my_sensor]
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            repository_def=my_repo,
+            instance=instance,
+        )
+        exec_data = my_sensor.evaluate_tick(ctx)
+        assert exec_data.run_requests[0].asset_selection == []
+
+
+def test_reject_invalid_asset_check_keys():
+    @asset
+    def asset1():
+        pass
+
+    @asset
+    def asset2():
+        pass
+
+    @asset_check(asset=asset1)
+    def check1():
+        return AssetCheckResult(passed=True)
+
+    @sensor(asset_selection=AssetSelection.assets(asset1))
+    def asset1_sensor(context):
+        return RunRequest(asset_check_keys=[check1.check_key])
+
+    @sensor(asset_selection=AssetSelection.assets(asset2))
+    def asset2_sensor(context):
+        return RunRequest(asset_check_keys=[check1.check_key])
+
+    my_repo = Definitions(
+        assets=[asset1, asset2],
+        asset_checks=[check1],
+        sensors=[asset1_sensor, asset2_sensor],
+    ).get_repository_def()
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            repository_def=my_repo,
+            instance=instance,
+        )
+        asset1_sensor_data = asset1_sensor.evaluate_tick(ctx)
+        assert asset1_sensor_data.run_requests[0].asset_selection == [asset1.key]
+        assert asset1_sensor_data.run_requests[0].asset_check_keys == [check1.check_key]
+
+        with pytest.warns(DeprecationWarning, match="asset check keys"):
+            asset2_sensor.evaluate_tick(ctx)

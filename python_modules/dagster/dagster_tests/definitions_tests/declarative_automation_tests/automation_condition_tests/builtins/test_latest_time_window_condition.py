@@ -4,8 +4,10 @@ from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.scenario_specs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     daily_partitions_def,
     one_asset,
     time_partitions_start_datetime,
@@ -68,14 +70,14 @@ def test_in_latest_time_window_time_partitioned() -> None:
     state = state.with_current_time("2020-02-02T01:00:00")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-01")
     }
 
     state = state.with_current_time_advanced(days=5)
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-06")
     }
 
@@ -96,7 +98,7 @@ def test_in_latest_time_window_time_partitioned_lookback() -> None:
     state = state.with_current_time("2020-02-07T01:00:00")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 3
-    assert result.true_subset.asset_partitions == {
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-06"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-05"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-04"),
@@ -105,7 +107,7 @@ def test_in_latest_time_window_time_partitioned_lookback() -> None:
     state = state.with_current_time_advanced(days=5)
     state, result = state.evaluate("A")
     assert result.true_subset.size == 3
-    assert result.true_subset.asset_partitions == {
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-11"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-10"),
         AssetKeyPartitionKey(AssetKey("A"), "2020-02-09"),

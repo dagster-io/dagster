@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -12,6 +11,7 @@ import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
@@ -24,7 +24,6 @@ import {BulkActionStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {useFilters} from '../ui/BaseFilters';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
@@ -43,6 +42,10 @@ const labelForBackfillStatus = (key: BulkActionStatus) => {
       return 'Failed';
     case BulkActionStatus.REQUESTED:
       return 'In progress';
+    case BulkActionStatus.COMPLETED_SUCCESS:
+      return 'Success';
+    case BulkActionStatus.COMPLETED_FAILED:
+      return 'Failed';
   }
 };
 
@@ -96,8 +99,6 @@ export const InstanceBackfills = () => {
         ? result.partitionBackfillsOrError.results
         : [],
   });
-
-  useBlockTraceOnQueryResult(queryResult, 'InstanceBackfillsQuery'); // this is the main page content
 
   const isDaemonHealthy = useIsBackfillDaemonHealthy();
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);

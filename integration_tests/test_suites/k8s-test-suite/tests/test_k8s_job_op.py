@@ -8,7 +8,7 @@ from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
-from .utils import _wait_k8s_job_to_delete
+from tests.utils import _wait_k8s_job_to_delete
 
 
 def _get_pods_logs(cluster_provider, job_name, namespace, container_name=None):

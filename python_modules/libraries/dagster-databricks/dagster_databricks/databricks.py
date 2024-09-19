@@ -23,9 +23,8 @@ from databricks.sdk.service import jobs
 from typing_extensions import Final
 
 import dagster_databricks
-
-from .types import DatabricksRunState
-from .version import __version__
+from dagster_databricks.types import DatabricksRunState
+from dagster_databricks.version import __version__
 
 # wait at most 24 hours by default for run execution
 DEFAULT_RUN_MAX_WAIT_TIME_SEC: Final = 24 * 60 * 60

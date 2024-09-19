@@ -5,9 +5,16 @@ from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.time_window_partitions import TimeWindow
 
-from ..scenario_utils.asset_daemon_scenario import AssetDaemonScenarioState
-from ..scenario_utils.base_scenario import run_request
-from ..scenario_utils.scenario_specs import (
+from dagster_tests.definitions_tests.declarative_automation_tests.daemon_tests.test_asset_daemon import (
+    get_daemon_instance,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
+    AssetDaemonScenarioState,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
+    run_request,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     daily_partitions_def,
     hourly_partitions_def,
     two_assets_depend_on_one,
@@ -15,7 +22,6 @@ from ..scenario_utils.scenario_specs import (
     two_disconnected_graphs,
     two_partitions_def,
 )
-from .test_asset_daemon import get_daemon_instance
 
 
 @mock.patch(

@@ -22,6 +22,7 @@ export type AssetViewDefinitionQuery = {
           __typename: 'AssetNode';
           id: string;
           groupName: string;
+          hasReportRunlessAssetEventPermission: boolean;
           description: string | null;
           graphName: string | null;
           opNames: Array<string>;
@@ -34,6 +35,7 @@ export type AssetViewDefinitionQuery = {
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
+          kinds: Array<string>;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -16301,6 +16303,7 @@ export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string;
+  hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
   graphName: string | null;
   opNames: Array<string>;
@@ -16313,6 +16316,7 @@ export type AssetViewDefinitionNodeFragment = {
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  kinds: Array<string>;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -32433,3 +32437,5 @@ export type AssetViewDefinitionNodeFragment = {
       }
     | null;
 };
+
+export const AssetViewDefinitionQueryVersion = '77ecb76ceb98cec5fc78c06edb596a328a2ea9e4ac4b2577eae74aa931eb8f90';

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -11,6 +10,7 @@ import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
+import {gql} from '../apollo-client';
 import {withMiddleTruncation} from '../app/Util';
 import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {PartitionCountTags} from '../assets/AssetNodePartitionCounts';
@@ -18,17 +18,17 @@ import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetComputeKindTag} from '../graph/KindTags';
+import {AssetKind} from '../graph/KindTags';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
-  computeKindTagsFilter?: StaticSetFilter<string>;
+  kindFilter?: StaticSetFilter<string>;
 }
 
-export const AssetNode = React.memo(({definition, selected, computeKindTagsFilter}: Props) => {
+export const AssetNode = React.memo(({definition, selected, kindFilter}: Props) => {
   const {liveData} = useAssetLiveData(definition.assetKey);
   return (
     <AssetInsetForHoverEffect>
@@ -64,11 +64,14 @@ export const AssetNode = React.memo(({definition, selected, computeKindTagsFilte
           )}
         </AssetNodeBox>
         <Box flex={{direction: 'row-reverse', gap: 8}}>
-          <AssetComputeKindTag
-            definition={definition}
-            style={{position: 'relative', paddingTop: 7, margin: 0}}
-            currentPageFilter={computeKindTagsFilter}
-          />
+          {definition.kinds.map((kind) => (
+            <AssetKind
+              key={kind}
+              kind={kind}
+              style={{position: 'relative', paddingTop: 7, margin: 0}}
+              currentPageFilter={kindFilter}
+            />
+          ))}
         </Box>
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
@@ -260,6 +263,7 @@ export const ASSET_NODE_FRAGMENT = gql`
       key
       value
     }
+    kinds
   }
 
   fragment AssetNodeKey on AssetKey {

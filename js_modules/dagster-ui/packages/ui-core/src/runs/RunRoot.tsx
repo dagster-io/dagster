@@ -1,7 +1,14 @@
-import {gql, useQuery} from '@apollo/client';
-import {Box, FontFamily, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  FontFamily,
+  Heading,
+  NonIdealState,
+  PageHeader,
+  Tag,
+} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {Run} from './Run';
@@ -14,28 +21,27 @@ import {RunTimingTags} from './RunTimingTags';
 import {assetKeysForRun} from './RunUtils';
 import {TickTagForRun} from './TickTagForRun';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {gql, useQuery} from '../apollo-client';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
 import {InstigationSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 export const RunRoot = () => {
   useTrackPageView();
 
-  const {runId} = useParams<{runId: string}>();
+  const {runId, runFeedEntryId} = useParams<{runId: string; runFeedEntryId?: string}>();
   useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
     variables: {runId},
   });
   const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'RunRootQuery');
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError : null;
   const snapshotID = run?.pipelineSnapshotId;
@@ -104,9 +110,28 @@ export const RunRoot = () => {
       >
         <PageHeader
           title={
-            <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
-              {runId.slice(0, 8)}
-            </Heading>
+            runFeedEntryId ? (
+              <Heading>
+                <Link to="/runs-feed" style={{color: Colors.textLight()}}>
+                  All runs
+                </Link>
+                {' / '}
+                <Link
+                  to={`/runs-feed/b/${runFeedEntryId}?tab=runs&view=list`}
+                  style={{color: Colors.textLight()}}
+                >
+                  {runFeedEntryId}
+                </Link>
+                {' / '}
+                {runId.slice(0, 8)}
+              </Heading>
+            ) : (
+              <Heading style={{display: 'flex', flexDirection: 'row', gap: 6}}>
+                <Link to="/runs">Runs</Link>
+                <span>/</span>
+                <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+              </Heading>
+            )
           }
           tags={
             run ? (

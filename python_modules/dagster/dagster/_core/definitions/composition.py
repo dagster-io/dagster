@@ -25,7 +25,26 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.dependency import (
+    DependencyDefinition,
+    DependencyMapping,
+    DynamicCollectDependencyDefinition,
+    IDependencyDefinition,
+    MultiDependencyDefinition,
+    NodeInvocation,
+)
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.inference import infer_output_props
+from dagster._core.definitions.input import InputDefinition, InputMapping
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.output import OutputDefinition, OutputMapping
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.utils import NormalizedTags, check_valid_name, normalize_tags
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -34,34 +53,13 @@ from dagster._core.errors import (
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
-from .config import ConfigMapping
-from .dependency import (
-    DependencyDefinition,
-    DependencyMapping,
-    DynamicCollectDependencyDefinition,
-    IDependencyDefinition,
-    MultiDependencyDefinition,
-    NodeInvocation,
-)
-from .graph_definition import GraphDefinition
-from .hook_definition import HookDefinition
-from .inference import infer_output_props
-from .input import InputDefinition, InputMapping
-from .logger_definition import LoggerDefinition
-from .node_definition import NodeDefinition
-from .output import OutputDefinition, OutputMapping
-from .policy import RetryPolicy
-from .resource_definition import ResourceDefinition
-from .utils import NormalizedTags, check_valid_name, normalize_tags
-
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.executor_definition import ExecutorDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.instance import DagsterInstance
-
-    from .assets import AssetsDefinition
-    from .executor_definition import ExecutorDefinition
-    from .job_definition import JobDefinition
-    from .partition import PartitionedConfig, PartitionsDefinition
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -278,7 +276,7 @@ class CompleteCompositionContext(NamedTuple):
         output_mapping_dict: Mapping[str, OutputMapping],
         pending_invocations: Mapping[str, "PendingNodeInvocation"],
     ) -> "CompleteCompositionContext":
-        from .assets import AssetsDefinition
+        from dagster._core.definitions.assets import AssetsDefinition
 
         dep_dict: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
         node_def_dict: Dict[str, NodeDefinition] = {}
@@ -406,7 +404,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs) -> Any:
-        from .op_invocation import direct_invocation_result
+        from dagster._core.definitions.op_invocation import direct_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
@@ -505,10 +503,10 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
     def _process_argument_node(
         self, node_name: str, output_node, input_name: str, input_bindings, arg_desc: str
     ) -> None:
-        from .asset_spec import AssetSpec
-        from .assets import AssetsDefinition
-        from .external_asset import create_external_asset_from_source_asset
-        from .source_asset import SourceAsset
+        from dagster._core.definitions.asset_spec import AssetSpec
+        from dagster._core.definitions.assets import AssetsDefinition
+        from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+        from dagster._core.definitions.source_asset import SourceAsset
 
         # already set - conflict between kwargs and args
         if input_bindings.get(input_name):
@@ -675,10 +673,9 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
                 "constructed using the `@graph` decorator support this method."
             )
 
+        from dagster._core.definitions.executor_definition import execute_in_process_executor
+        from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.build_resources import wrap_resources_for_execution
-
-        from .executor_definition import execute_in_process_executor
-        from .job_definition import JobDefinition
 
         input_values = check.opt_mapping_param(input_values, "input_values")
 
@@ -917,7 +914,10 @@ def do_composition(
             the user has not explicitly provided the output definitions.
             This should be removed in 0.11.0.
     """
-    from .decorators.op_decorator import NoContextDecoratedOpFunction, resolve_checked_op_fn_inputs
+    from dagster._core.definitions.decorators.op_decorator import (
+        NoContextDecoratedOpFunction,
+        resolve_checked_op_fn_inputs,
+    )
 
     actual_output_defs: Sequence[OutputDefinition]
     if provided_output_defs is None:

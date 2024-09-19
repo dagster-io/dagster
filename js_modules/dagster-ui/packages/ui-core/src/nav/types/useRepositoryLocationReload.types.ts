@@ -139,3 +139,9 @@ export type ReloadRepositoryLocationMutation = {
           | null;
       };
 };
+
+export const RepositoryLocationStatusQueryVersion = '7129557ca993e0638a147e30c6fe3bdff04a929d4e6775c3e4e5dc9fa3c88d94';
+
+export const ReloadWorkspaceMutationVersion = '763808cb236e2d60a426cd891a4f60efd6851a755345d4a3ef019549f35e0a5e';
+
+export const ReloadRepositoryLocationMutationVersion = '19f0c7c1764ac7327424133d498295b6417cb00ef06d88f30a458a7d33926e26';

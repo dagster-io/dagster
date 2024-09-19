@@ -14,6 +14,7 @@ from dagster._core.errors import (
     DagsterSnapshotDoesNotExist,
 )
 from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -31,6 +32,7 @@ from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -80,9 +82,21 @@ class TestRunStorage:
         with request.param() as s:
             yield s
 
+    @pytest.fixture(name="instance")
+    def instance(self, request) -> Optional[DagsterInstance]:
+        return None
+
     # Override for storages that are not allowed to delete runs
     def can_delete_runs(self):
         return True
+
+    # Override for storages that support filtering backfills by tag
+    def supports_backfill_tags_filtering_queries(self):
+        return False
+
+    # Override for storages that support filtering backfills by job name
+    def supports_backfill_job_name_filtering_queries(self):
+        return False
 
     @staticmethod
     def fake_repo_target(repo_name=None):
@@ -714,7 +728,7 @@ class TestRunStorage:
             run.run_id for run in storage.get_runs(RunsFilter(statuses=[DagsterRunStatus.SUCCESS]))
         } == set()
 
-    def test_failure_event_updates_tags(self, storage):
+    def test_failure_event_updates_tags(self, storage, instance):
         assert storage
         one = make_new_run_id()
         storage.add_run(
@@ -722,22 +736,34 @@ class TestRunStorage:
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
-        storage.handle_run_event(
-            one,  # fail one after two has fails and three has succeeded
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                job_name="some_pipeline",
-                event_specific_data=JobFailureData(
-                    error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                    job_name="some_pipeline",
+                    event_specific_data=JobFailureData(
+                        error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+                    ),
                 ),
-            ),
+                one,  # fail one after two has fails and three has succeeded
+            )
         )
 
         run = _get_run_by_id(storage, one)
         assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
 
-    def test_get_run_records(self, storage):
+    def _get_run_event_entry(self, dagster_event: DagsterEvent, run_id: str):
+        return EventLogEntry(
+            error_info=None,
+            level="debug",
+            user_message="",
+            run_id=run_id,
+            timestamp=time.time(),
+            dagster_event=dagster_event,
+        )
+
+    def test_get_run_records(self, storage, instance):
         assert storage
         [one, two, three] = [make_new_run_id() for _ in range(3)]
         storage.add_run(
@@ -755,29 +781,35 @@ class TestRunStorage:
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
-        storage.handle_run_event(
-            three,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                three,
+            )
         )
-        storage.handle_run_event(
-            two,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                two,
+            )
         )
-        storage.handle_run_event(
-            one,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                one,
+            )
         )
 
         def _run_ids(records):
@@ -791,7 +823,7 @@ class TestRunStorage:
         assert _run_ids(storage.get_run_records(cursor=three, limit=1)) == [two]
         assert _run_ids(storage.get_run_records(cursor=one, limit=1, ascending=True)) == [two]
 
-    def test_fetch_records_by_update_timestamp(self, storage):
+    def test_fetch_records_by_update_timestamp(self, storage, instance):
         assert storage
         self._skip_in_memory(storage)
 
@@ -813,21 +845,25 @@ class TestRunStorage:
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
-        storage.handle_run_event(
-            three,  # three succeeds
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="some_pipeline",
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="some_pipeline",
+                ),
+                three,  # three succeeds
             ),
         )
-        storage.handle_run_event(
-            one,  # fail one after two has fails and three has succeeded
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                job_name="some_pipeline",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                    job_name="some_pipeline",
+                ),
+                one,  # fail one after two has fails and three has succeeded
+            )
         )
 
         record_two = storage.get_run_records(
@@ -1334,7 +1370,7 @@ class TestRunStorage:
         backfill = storage.get_backfill(one.backfill_id)
         assert backfill == one
 
-        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
+        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
         assert len(storage.get_backfills()) == 1
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
 
@@ -1364,7 +1400,7 @@ class TestRunStorage:
         assert (
             len(
                 storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED])
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED_SUCCESS])
                 )
             )
             == 0
@@ -1373,7 +1409,7 @@ class TestRunStorage:
             len(
                 storage.get_backfills(
                     filters=BulkActionsFilter(
-                        statuses=[BulkActionStatus.COMPLETED, BulkActionStatus.REQUESTED]
+                        statuses=[BulkActionStatus.COMPLETED_SUCCESS, BulkActionStatus.REQUESTED]
                     )
                 )
             )
@@ -1384,7 +1420,7 @@ class TestRunStorage:
         )
         assert backfills[0] == one
 
-        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED))
+        storage.update_backfill(one.with_status(status=BulkActionStatus.COMPLETED_SUCCESS))
         assert (
             len(
                 storage.get_backfills(
@@ -1396,7 +1432,7 @@ class TestRunStorage:
         assert (
             len(
                 storage.get_backfills(
-                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED])
+                    filters=BulkActionsFilter(statuses=[BulkActionStatus.COMPLETED_SUCCESS])
                 )
             )
             == 1
@@ -1416,7 +1452,7 @@ class TestRunStorage:
             len(
                 storage.get_backfills(
                     filters=BulkActionsFilter(
-                        statuses=[BulkActionStatus.COMPLETED, BulkActionStatus.REQUESTED]
+                        statuses=[BulkActionStatus.COMPLETED_SUCCESS, BulkActionStatus.REQUESTED]
                     )
                 )
             )
@@ -1460,6 +1496,204 @@ class TestRunStorage:
         for backfill in created_after:
             assert backfill.backfill_timestamp > all_backfills[2].backfill_timestamp
 
+    def test_backfill_simple_tags_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={"foo": "bar", "letter": "z"},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "bar", "letter": "z", BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "bar"}))
+        assert len(backfill_with_tags) == 1
+        assert backfill_with_tags[0].backfill_id == backfill.backfill_id
+        assert backfill_with_tags[0].tags == backfill.tags
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        )
+        assert len(backfill_with_tags) == 1
+        assert backfill_with_tags[0].backfill_id == backfill.backfill_id
+        assert backfill_with_tags[0].tags == backfill.tags
+
+        # test for a tag that doesn't exist
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"not": "present"})
+        )
+        assert len(backfill_with_tags) == 0
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "no"}))
+        assert len(backfill_with_tags) == 0
+
+    def test_backfill_tags_on_runs_not_backfills_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={"foo": "bar"},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={
+                    "foo": "bar",
+                    "baz": "qux",
+                    "letter": "z",
+                    BACKFILL_ID_TAG: backfill.backfill_id,
+                },
+            )
+        )
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"baz": "qux"}))
+        assert len(backfill_with_tags) == 0
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        )
+        assert len(backfill_with_tags) == 0
+
+    def test_backfill_tags_filtering_multiple_results(self, storage: RunStorage):
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        all_backfills = []
+        for i in range(3):
+            shared_tags = {"foo": "bar", "iter": str(i), "even": str(i % 2 == 0)}
+            backfill = PartitionBackfill(
+                f"backfill_{i}",
+                partition_set_origin=origin,
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["a", "b", "c"],
+                from_failure=False,
+                tags=shared_tags,
+                backfill_timestamp=time.time(),
+            )
+            storage.add_backfill(backfill)
+            all_backfills.append(backfill)
+
+            storage.add_run(
+                TestRunStorage.build_run(
+                    run_id=make_new_run_id(),
+                    job_name="some_pipeline",
+                    status=DagsterRunStatus.SUCCESS,
+                    tags={**shared_tags, "letter": "z", BACKFILL_ID_TAG: backfill.backfill_id},
+                )
+            )
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"foo": "bar"}))
+        assert len(backfill_with_tags) == 3
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"letter": ["x", "y", "z"]})
+        )
+        assert len(backfill_with_tags) == 0
+
+        backfill_with_tags = storage.get_backfills(filters=BulkActionsFilter(tags={"even": "True"}))
+        assert len(backfill_with_tags) == 2
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"iter": ["1", "2"]})
+        )
+        assert len(backfill_with_tags) == 2
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"iter": ["1", "2"], "even": "True"})
+        )
+        assert len(backfill_with_tags) == 1
+
+        backfill_with_tags = storage.get_backfills(
+            filters=BulkActionsFilter(tags={"not": "present"})
+        )
+        assert len(backfill_with_tags) == 0
+
+    def test_backfill_simple_job_name_filtering(self, storage: RunStorage):
+        if not self.supports_backfill_job_name_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by job_name")
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfills = storage.get_backfills()
+        assert len(backfills) == 0
+
+        backfill = PartitionBackfill(
+            "backfill_1",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+
+        # a run for a different job that is not part of a backfill
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=make_new_run_id(),
+                job_name="a_different_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+            )
+        )
+
+        backfills_for_job = storage.get_backfills(
+            filters=BulkActionsFilter(job_name="some_pipeline")
+        )
+        assert len(backfills_for_job) == 1
+        assert backfills_for_job[0].backfill_id == backfill.backfill_id
+
+        # test for a job_name that doesn't match
+
+        backfills_for_job = storage.get_backfills(
+            filters=BulkActionsFilter(job_name="a_different_pipeline")
+        )
+        assert len(backfills_for_job) == 0
+
     def test_secondary_index(self, storage):
         self._skip_in_memory(storage)
 
@@ -1469,7 +1703,7 @@ class TestRunStorage:
         for name in REQUIRED_DATA_MIGRATIONS.keys():
             assert storage.has_built_index(name)
 
-    def test_handle_run_event_job_success_test(self, storage):
+    def test_handle_run_event_job_success_test(self, storage, instance):
         run_id = make_new_run_id()
         run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
@@ -1484,36 +1718,40 @@ class TestRunStorage:
             logging_tags=None,
         )
 
-        storage.handle_run_event(run_id, dagster_job_start_event)
+        instance.handle_new_event(self._get_run_event_entry(dagster_job_start_event, run_id))
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
-        storage.handle_run_event(
-            make_new_run_id(),  # diff run
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="pipeline_name",
-                step_key=None,
-                node_handle=None,
-                step_kind_value=None,
-                logging_tags=None,
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="pipeline_name",
+                    step_key=None,
+                    node_handle=None,
+                    step_kind_value=None,
+                    logging_tags=None,
+                ),
+                make_new_run_id(),  # diff run
+            )
         )
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
-        storage.handle_run_event(
-            run_id,  # correct run
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="pipeline_name",
-                step_key=None,
-                node_handle=None,
-                step_kind_value=None,
-                logging_tags=None,
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="pipeline_name",
+                    step_key=None,
+                    node_handle=None,
+                    step_kind_value=None,
+                    logging_tags=None,
+                ),
+                run_id,  # correct run
+            )
         )
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS
@@ -1548,7 +1786,7 @@ class TestRunStorage:
         assert not storage.has_snapshot(ep_snapshot_id)
         assert storage.has_snapshot(new_ep_snapshot_id)
 
-    def test_run_record_stats(self, storage):
+    def test_run_record_stats(self, storage, instance):
         assert storage
 
         self._skip_in_memory(storage)
@@ -1563,13 +1801,15 @@ class TestRunStorage:
         assert run_record.start_time is None
         assert run_record.end_time is None
 
-        storage.handle_run_event(
-            run_id,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_START.value,
-                job_name="pipeline_name",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_START.value,
+                    job_name="pipeline_name",
+                ),
+                run_id,
+            )
         )
 
         run_record = storage.get_run_records(RunsFilter(run_ids=[run_id]))[0]
@@ -1577,13 +1817,15 @@ class TestRunStorage:
         assert run_record.start_time is not None
         assert run_record.end_time is None
 
-        storage.handle_run_event(
-            run_id,
-            DagsterEvent(
-                message="a message",
-                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                job_name="pipeline_name",
-            ),
+        instance.handle_new_event(
+            self._get_run_event_entry(
+                DagsterEvent(
+                    message="a message",
+                    event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                    job_name="pipeline_name",
+                ),
+                run_id,
+            )
         )
 
         run_record = storage.get_run_records(RunsFilter(run_ids=[run_id]))[0]

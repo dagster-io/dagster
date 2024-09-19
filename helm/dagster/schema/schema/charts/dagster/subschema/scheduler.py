@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Extra
 
-from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
+from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class SchedulerType(str, Enum):

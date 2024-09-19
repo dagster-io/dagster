@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
@@ -17,6 +16,7 @@ import {
   isOpHighlighted,
 } from './common';
 import {OpGraphOpFragment} from './types/OpGraph.types';
+import {gql} from '../apollo-client';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 const NoOp = () => {};

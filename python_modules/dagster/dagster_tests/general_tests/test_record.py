@@ -1,7 +1,7 @@
 import pickle
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence, TypeVar, Union
 
 import pytest
 from dagster._record import (
@@ -522,3 +522,22 @@ def test_make_hashable():
     y = Yep(stuff=[1, 2, 3])
     assert hash(y)
     assert hash(y) == hash(Yep(stuff=[1, 2, 3]))
+
+
+def test_generic() -> None:
+    T = TypeVar("T")
+
+    @record
+    class Things(Generic[T]):
+        things: Sequence[T]
+
+        @property
+        def first_thing(self) -> T:
+            return self.things[0]
+
+    class StringThings(Things[str]): ...
+
+    class IntThings(Things[int]): ...
+
+    assert StringThings(things=["a", "b"]).first_thing == "a"
+    assert IntThings(things=[1, 2]).first_thing == 1

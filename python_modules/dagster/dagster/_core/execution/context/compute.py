@@ -5,11 +5,10 @@ from typing import Iterator, Optional, Union
 
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.errors import DagsterInvalidDefinitionError
-
-from .asset_check_execution_context import AssetCheckExecutionContext
-from .asset_execution_context import AssetExecutionContext
-from .op_execution_context import OpExecutionContext
-from .system import StepExecutionContext
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from dagster._core.execution.context.op_execution_context import OpExecutionContext
+from dagster._core.execution.context.system import StepExecutionContext
 
 ExecutionContextTypes = Union[OpExecutionContext, AssetExecutionContext, AssetCheckExecutionContext]
 

@@ -1,9 +1,9 @@
 from typing import List
 
-from ..package_spec import PackageSpec
-from ..python_version import AvailablePythonVersion
-from ..steps.packages import build_steps_from_package_specs, gcp_creds_extra_cmds
-from ..utils import BuildkiteStep
+from dagster_buildkite.package_spec import PackageSpec
+from dagster_buildkite.python_version import AvailablePythonVersion
+from dagster_buildkite.steps.packages import build_steps_from_package_specs, gcp_creds_extra_cmds
+from dagster_buildkite.utils import BuildkiteStep
 
 
 def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:

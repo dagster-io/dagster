@@ -40,9 +40,9 @@ class LocalFileSystemIOManager(ConfigurableIOManager):
         if isinstance(obj, PandasDF):
             directory = self._get_fs_path(context.asset_key)
             os.makedirs(directory, exist_ok=True)
-            open(os.path.join(directory, "_SUCCESS"), "wb").close()
             csv_path = os.path.join(directory, "part-00000.csv")
             obj.to_csv(csv_path)
+            open(os.path.join(directory, "_SUCCESS"), "wb").close()
         elif isinstance(obj, SparkDF):
             obj.write.format("csv").options(header="true").save(
                 self._get_fs_path(context.asset_key), mode="overwrite"

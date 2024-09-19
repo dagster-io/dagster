@@ -31,17 +31,20 @@ from packaging import version
 from pydantic import Field, validator
 from typing_extensions import Final
 
-from ..asset_utils import (
+from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
     dagster_name_fn,
     get_manifest_and_translator_from_dbt_assets,
 )
-from ..dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
-from ..dbt_manifest import DbtManifestParam, validate_manifest
-from ..dbt_project import DbtProject
-from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
-from .dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
+from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
+from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
+from dagster_dbt.dbt_project import DbtProject
+from dagster_dbt.utils import (
+    ASSET_RESOURCE_TYPES,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
+)
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
 if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
@@ -376,7 +379,8 @@ class DbtCliResource(ConfigurableResource):
 
         # If the dbt adapter is DuckDB, set the access mode to READ_ONLY, since DuckDB only allows
         # simultaneous connections for read-only access.
-        try:
+
+        if config.credentials and config.credentials.__class__.__name__ == "DuckDBCredentials":
             from dbt.adapters.duckdb.credentials import DuckDBCredentials
 
             if isinstance(config.credentials, DuckDBCredentials):
@@ -387,12 +391,6 @@ class DbtCliResource(ConfigurableResource):
                 # working directory may not be the same as the dbt project directory
                 with pushd(self.project_dir):
                     config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
-
-        except ImportError:
-            logger.warning(
-                "An error was encountered when creating a handle to the dbt adapter in Dagster.",
-                exc_info=True,
-            )
 
         cleanup_event_logger()
 
@@ -624,6 +622,9 @@ class DbtCliResource(ConfigurableResource):
             # See https://docs.getdbt.com/docs/core/connect-data-platform/connection-profiles#advanced-customizing-a-profile-directory
             # for more information.
             **({"DBT_PROFILES_DIR": self.profiles_dir} if self.profiles_dir else {}),
+            # The DBT_PROJECT_DIR environment variable is set to the path containing the dbt project
+            # See https://docs.getdbt.com/reference/dbt_project.yml for more information.
+            **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
         }
 
         selection_args: List[str] = []
@@ -677,8 +678,10 @@ class DbtCliResource(ConfigurableResource):
                 adapter = self._initialize_adapter(cli_vars)
 
             except:
-                # defer exceptions until they can be raised in the runtime context of the invocation
-                pass
+                logger.warning(
+                    "An error was encountered when creating a handle to the dbt adapter in Dagster.",
+                    exc_info=True,
+                )
 
             return DbtCliInvocation.run(
                 args=full_dbt_args,

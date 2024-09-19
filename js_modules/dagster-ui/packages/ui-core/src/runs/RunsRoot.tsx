@@ -1,4 +1,3 @@
-import {ApolloError} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -26,6 +25,7 @@ import {
 } from './RunsFilterInput';
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
 import {usePaginatedRunsTableRuns} from './usePaginatedRunsTableRuns';
+import {ApolloError} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -34,7 +34,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
@@ -46,8 +45,6 @@ export const RunsRoot = () => {
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, PAGE_SIZE);
-
-  useBlockTraceOnQueryResult(queryResult, 'RunsRootQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -168,10 +165,7 @@ export const RunsRoot = () => {
               error.networkError.statusCode === 400
             );
             return (
-              <Box
-                flex={{direction: 'column', gap: 32}}
-                padding={{vertical: 8, left: 24, right: 12}}
-              >
+              <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8, horizontal: 24}}>
                 {actionBar()}
                 <NonIdealState
                   icon="warning"

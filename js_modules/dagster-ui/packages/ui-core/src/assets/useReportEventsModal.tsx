@@ -1,4 +1,3 @@
-import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Body2,
   Box,
@@ -28,9 +27,10 @@ import {
 } from './types/useReportEventsModal.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {keyCountInSelections, usePartitionHealthData} from './usePartitionHealthData';
+import {gql, useMutation, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
-import {usePermissionsForLocation} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetEventType, AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
@@ -42,22 +42,24 @@ type Asset = {
   isPartitioned: boolean;
   assetKey: AssetKeyInput;
   repoAddress: RepoAddress;
+  hasReportRunlessAssetEventPermission: boolean;
 };
 
 export function useReportEventsModal(asset: Asset | null, onEventReported?: () => void) {
   const [isOpen, setIsOpen] = useState(false);
+  const isPartitioned = asset?.isPartitioned;
+  const hasReportRunlessAssetEventPermission = asset?.hasReportRunlessAssetEventPermission;
 
   const dropdownOptions = useMemo(
     () => [
       {
-        label: asset?.isPartitioned
-          ? 'Report materialization events'
-          : 'Report materialization event',
+        label: isPartitioned ? 'Report materialization events' : 'Report materialization event',
         icon: <Icon name="asset_non_sda" />,
         onClick: () => setIsOpen(true),
+        disabled: !hasReportRunlessAssetEventPermission,
       },
     ],
-    [asset?.isPartitioned],
+    [isPartitioned, hasReportRunlessAssetEventPermission],
   );
 
   const element = asset ? (
@@ -119,10 +121,6 @@ const ReportEventDialogBody = ({
   onEventReported?: () => void;
 }) => {
   const [description, setDescription] = useState('');
-  const {
-    permissions: {canReportRunlessAssetEvents},
-    disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
 
   const assetPartitionDefResult = useQuery<
     ReportEventPartitionDefinitionQuery,
@@ -265,10 +263,14 @@ const ReportEventDialogBody = ({
       <DialogFooter topBorder>
         <Button onClick={() => setIsOpen(false)}>Cancel</Button>
         <Tooltip
-          content={disabledReasons.canReportRunlessAssetEvents}
-          canShow={!canReportRunlessAssetEvents}
+          content={DEFAULT_DISABLED_REASON}
+          canShow={!asset.hasReportRunlessAssetEventPermission}
         >
-          <Button intent="primary" onClick={onReportEvent} disabled={!canReportRunlessAssetEvents}>
+          <Button
+            intent="primary"
+            onClick={onReportEvent}
+            disabled={!asset.hasReportRunlessAssetEventPermission}
+          >
             {keysFiltered.length > 1
               ? `Report ${keysFiltered.length.toLocaleString()} events`
               : 'Report event'}

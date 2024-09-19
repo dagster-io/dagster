@@ -8,6 +8,7 @@ from dagster import (
     DagsterInvariantViolationError,
     __version__ as dagster_version,
 )
+from dagster._cli.utils import get_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     get_code_location_from_kwargs,
     get_external_repository_from_code_location,
@@ -24,8 +25,6 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
-
-from .utils import get_instance_for_cli
 
 
 @click.group(name="sensor")

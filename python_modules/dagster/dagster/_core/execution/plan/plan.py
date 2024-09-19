@@ -41,20 +41,13 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterUnmetExecutorRequirementsError,
 )
+from dagster._core.execution.plan.compute import create_step_outputs
 from dagster._core.execution.plan.handle import (
     ResolvedFromDynamicStepHandle,
     StepHandle,
     UnresolvedStepHandle,
 )
-from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
-from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.storage.mem_io_manager import mem_io_manager
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.utils import toposort
-
-from .compute import create_step_outputs
-from .inputs import (
+from dagster._core.execution.plan.inputs import (
     FromConfig,
     FromDefaultValue,
     FromDirectInputValue,
@@ -73,23 +66,32 @@ from .inputs import (
     UnresolvedCollectStepInput,
     UnresolvedMappedStepInput,
 )
-from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
-from .state import KnownExecutionState
-from .step import (
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
+from dagster._core.execution.plan.outputs import (
+    StepOutput,
+    StepOutputHandle,
+    UnresolvedStepOutputHandle,
+)
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.plan.step import (
     ExecutionStep,
     IExecutionStep,
     StepKind,
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
+from dagster._core.execution.retries import RetryMode
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.utils import toposort
 
 if TYPE_CHECKING:
+    from dagster._core.execution.plan.active import ActiveExecution
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionPlanSnapshot,
         ExecutionStepInputSnap,
     )
-
-    from .active import ActiveExecution
 
 
 StepHandleTypes = (StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle)
@@ -895,7 +897,7 @@ class ExecutionPlan(
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         instance_concurrency_context: Optional[InstanceConcurrencyContext] = None,
     ) -> "ActiveExecution":
-        from .active import ActiveExecution
+        from dagster._core.execution.plan.active import ActiveExecution
 
         return ActiveExecution(
             self,

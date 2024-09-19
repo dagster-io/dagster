@@ -1,12 +1,11 @@
-import {gql, useQuery} from '@apollo/client';
 import {FontFamily, Heading, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {gql, useQuery} from '../apollo-client';
 import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
-import {useActivePipelineForName} from '../workspace/WorkspaceContext';
+import {useActivePipelineForName} from '../workspace/WorkspaceContext/util';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 const SNAPSHOT_PARENT_QUERY = gql`
@@ -41,7 +40,6 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   });
 
   const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'SnapshotQuery');
 
   const tag = () => {
     if (loading) {

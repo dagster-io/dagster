@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Icon} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -7,15 +6,14 @@ import {
   RunningBackfillsNoticeQuery,
   RunningBackfillsNoticeQueryVariables,
 } from './types/RunningBackfillsNotice.types';
+import {gql, useQuery} from '../apollo-client';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const RunningBackfillsNotice = ({assetSelection}: {assetSelection: AssetKeyInput[]}) => {
   const queryResult = useQuery<RunningBackfillsNoticeQuery, RunningBackfillsNoticeQueryVariables>(
     RUNNING_BACKFILLS_NOTICE_QUERY,
   );
-  useBlockTraceOnQueryResult(queryResult, 'RunningBackfillsNoticeQuery');
   const {data} = queryResult;
 
   const runningBackfills =

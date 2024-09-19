@@ -1,10 +1,9 @@
-import {useQuery} from '@apollo/client';
 import {Box, NonIdealState, SpinnerWithText} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {CodeLocationSearchableList, SearchableListRow} from './CodeLocationSearchableList';
+import {useQuery} from '../apollo-client';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {WORSKPACE_GRAPHS_QUERY} from '../workspace/WorkspaceGraphsQuery';
 import {extractGraphsForRepo} from '../workspace/extractGraphsForRepo';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -30,7 +29,6 @@ export const CodeLocationGraphsList = (props: Props) => {
     {variables: {selector}},
   );
 
-  useBlockTraceOnQueryResult(queryResult, 'WorkspaceGraphsQuery');
   const {data, loading} = queryResult;
 
   const graphs = useMemo(() => {

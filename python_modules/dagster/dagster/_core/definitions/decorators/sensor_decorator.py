@@ -6,24 +6,23 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Set, Union
 import dagster._check as check
 from dagster._annotations import experimental, experimental_param
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
-
-from ...errors import DagsterInvariantViolationError
-from ..asset_sensor_definition import AssetSensorDefinition
-from ..events import AssetKey
-from ..multi_asset_sensor_definition import (
+from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.multi_asset_sensor_definition import (
     AssetMaterializationFunction,
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
 )
-from ..run_request import SensorResult
-from ..sensor_definition import (
+from dagster._core.definitions.run_request import SensorResult
+from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
     SkipReason,
 )
-from ..target import ExecutableDefinition
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition

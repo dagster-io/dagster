@@ -1,11 +1,15 @@
 from dagster import AutomationCondition
 
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
+    AutomationConditionScenarioState,
+)
 from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
     run_request,
 )
-
-from ...scenario_utils.automation_condition_scenario import AutomationConditionScenarioState
-from ...scenario_utils.scenario_specs import hourly_partitions_def, two_assets_in_sequence
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    hourly_partitions_def,
+    two_assets_in_sequence,
+)
 
 
 def test_eager_unpartitioned() -> None:
@@ -34,7 +38,10 @@ def test_eager_unpartitioned() -> None:
 
     # now B has been materialized, so really shouldn't execute again
     state = state.with_runs(
-        *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
+        *(
+            run_request(ak, pk)
+            for ak, pk in result.true_subset.expensively_compute_asset_partitions()
+        )
     )
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
@@ -76,7 +83,10 @@ def test_eager_hourly_partitioned() -> None:
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
     state = state.with_runs(
-        *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
+        *(
+            run_request(ak, pk)
+            for ak, pk in result.true_subset.expensively_compute_asset_partitions()
+        )
     )
 
     # now B has been materialized, so don't execute again

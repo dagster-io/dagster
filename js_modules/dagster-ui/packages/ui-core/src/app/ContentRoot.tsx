@@ -5,6 +5,8 @@ import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
+import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
+import RunsFeedRoot from '../runs/RunsFeedRoot';
 import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
@@ -13,7 +15,7 @@ const MergedAutomationRoot = lazy(() => import('../automation/MergedAutomationRo
 const FallthroughRoot = lazy(() =>
   import('shared/app/FallthroughRoot.oss').then((mod) => ({default: mod.FallthroughRoot})),
 );
-const AssetsGroupsGlobalGraphRoot = lazy(() => import('../assets/AssetsGroupsGlobalGraphRoot'));
+const AssetsGlobalGraphRoot = lazy(() => import('../assets/AssetsGlobalGraphRoot'));
 const CodeLocationsPage = lazy(() => import('../instance/CodeLocationsPage'));
 const InstanceConfig = lazy(() => import('../instance/InstanceConfig'));
 const InstanceConcurrencyPage = lazy(() => import('../instance/InstanceConcurrency'));
@@ -39,7 +41,7 @@ export const ContentRoot = memo(() => {
       <ErrorBoundary region="page" resetErrorOnChange={[pathname]}>
         <Switch>
           <Route path="/asset-groups(/?.*)">
-            <AssetsGroupsGlobalGraphRoot />
+            <AssetsGlobalGraphRoot />
           </Route>
           <Route path="/assets(/?.*)">
             <AssetFeatureProvider>
@@ -48,6 +50,15 @@ export const ContentRoot = memo(() => {
                 documentTitlePrefix="Assets"
               />
             </AssetFeatureProvider>
+          </Route>
+          <Route path="/runs-feed/b/:requestId/:runId" exact>
+            <RunRoot />
+          </Route>
+          <Route path="/runs-feed/b/:backfillId">
+            <RunsFeedBackfillPage />
+          </Route>
+          <Route path="/runs-feed" exact>
+            <RunsFeedRoot />
           </Route>
           <Route path="/runs" exact>
             <RunsRoot />

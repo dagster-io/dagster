@@ -34,13 +34,13 @@ from starlette.responses import (
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.types import Message
 
-from .external_assets import (
+from dagster_webserver.external_assets import (
     handle_report_asset_check_request,
     handle_report_asset_materialization_request,
     handle_report_asset_observation_request,
 )
-from .graphql import GraphQLServer
-from .version import __version__
+from dagster_webserver.graphql import GraphQLServer
+from dagster_webserver.version import __version__
 
 mimetypes.init()
 

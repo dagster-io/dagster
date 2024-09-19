@@ -1,4 +1,3 @@
-import {useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -14,10 +13,10 @@ import {ChangeEvent, useCallback, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
 import {SearchableListRow} from './CodeLocationSearchableList';
+import {useQuery} from '../apollo-client';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useAssetSearch} from '../assets/useAssetSearch';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Container, HeaderCell, HeaderRow, Inner, Row} from '../ui/VirtualizedTable';
 import {WORKSPACE_ASSETS_QUERY} from '../workspace/WorkspaceAssetsQuery';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -47,7 +46,6 @@ export const CodeLocationAssetsList = ({repoAddress}: Props) => {
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceAssetsQuery');
   const {data, loading} = queryResultOverview;
 
   const assetNodes = useMemo(() => {

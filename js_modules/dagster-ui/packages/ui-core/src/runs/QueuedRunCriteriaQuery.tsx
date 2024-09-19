@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const QUEUED_RUN_CRITERIA_QUERY = gql`
   query QueuedRunCriteriaQuery($runId: ID!) {

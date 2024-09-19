@@ -74,7 +74,7 @@ def workspace_fixture(
 @pytest.fixture(name="external_repo", scope="session")
 def external_repo_fixture(workspace_context: WorkspaceProcessContext) -> ExternalRepository:
     return next(
-        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+        iter(workspace_context.create_request_context().get_code_location_entries().values())
     ).code_location.get_repository(  # type: ignore  # (possible none)
         "the_repo"
     )

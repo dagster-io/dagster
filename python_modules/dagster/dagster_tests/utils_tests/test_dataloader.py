@@ -1,8 +1,11 @@
 import asyncio
+import random
 from functools import cached_property
-from typing import List
+from typing import Iterable, List, NamedTuple
+from unittest import mock
 
 import pytest
+from dagster._core.loader import InstanceLoadableBy, LoadingContext
 from dagster._model import DagsterModel
 from dagster._utils.aiodataloader import DataLoader
 
@@ -30,9 +33,13 @@ class Thing(DagsterModel):
         return await other_other.gen_other_thing(context)
 
 
+async def batch_load_fn(keys: List[str]):
+    return [Thing(key=key, batch_keys=keys) for key in keys]
+
+
 class ThingLoader(DataLoader[str, Thing]):
-    async def batch_load_fn(self, keys: List[str]):
-        return [Thing(key=key, batch_keys=keys) for key in keys]
+    def __init__(self):
+        super().__init__(batch_load_fn=batch_load_fn)
 
 
 def test_basic() -> None:
@@ -81,9 +88,12 @@ def test_event_loop_change() -> None:
 def test_exception() -> None:
     class TestException(Exception): ...
 
+    async def batch_load_fn(keys: List[str]):
+        raise TestException()
+
     class Thrower(DataLoader[str, str]):
-        async def batch_load_fn(self, keys: List[str]):
-            raise TestException()
+        def __init__(self):
+            super().__init__(batch_load_fn=batch_load_fn)
 
     async def _test():
         loader = Thrower()
@@ -127,3 +137,63 @@ def test_bad_load_fn():
             done[0].result()
 
     asyncio.run(_test())
+
+
+class LoadableThing(
+    NamedTuple("_LoadableThing", [("key", str), ("val", int)]), InstanceLoadableBy[str]
+):
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[str], instance: mock.MagicMock
+    ) -> List["LoadableThing"]:
+        instance.query(keys)
+        return [LoadableThing(key, random.randint(0, 100000)) for key in keys]
+
+
+class BasicLoadingContext(LoadingContext):
+    def __init__(self):
+        self._loaders = {}
+        self._mock_instance = mock.MagicMock()
+
+    @property
+    def loaders(self):
+        return self._loaders
+
+    @property
+    def instance(self) -> mock.MagicMock:
+        return self._mock_instance
+
+
+def test_sync_loadable_by() -> None:
+    context = BasicLoadingContext()
+
+    # test caching
+    a1 = LoadableThing.blocking_get(context, "a")
+    a2 = LoadableThing.blocking_get(context, "a")
+
+    assert a1 is a2
+    context.instance.query.assert_called_once_with(["a"])
+
+    # test prepare
+
+    LoadableThing.prepare(context, ["a", "b", "c", "d"])
+    result = list(LoadableThing.blocking_get_many(context, ["b", "c"]))
+    assert len(result) == 2
+    b1 = result[0]
+    c1 = result[1]
+    # queried for b, c, and d as a batch (did not re-query a)
+    context.instance.query.assert_called_with(["b", "c", "d"])
+
+    b2 = LoadableThing.blocking_get(context, "b")
+    assert b1 is b2
+    c2 = LoadableThing.blocking_get(context, "c")
+    assert c1 is c2
+
+    # still just 2 calls
+    assert context.instance.query.call_count == 2
+
+    # don't need another query for d
+    d1 = LoadableThing.blocking_get(context, "d")
+    d2 = LoadableThing.blocking_get(context, "d")
+    assert d1 == d2
+    assert context.instance.query.call_count == 2

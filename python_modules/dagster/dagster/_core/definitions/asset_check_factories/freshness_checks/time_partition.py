@@ -2,6 +2,21 @@ from typing import Any, Dict, Iterable, Sequence, Union
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_check_factories.utils import (
+    DEADLINE_CRON_PARAM_KEY,
+    DEFAULT_FRESHNESS_SEVERITY,
+    DEFAULT_FRESHNESS_TIMEZONE,
+    FRESH_UNTIL_METADATA_KEY,
+    FRESHNESS_PARAMS_METADATA_KEY,
+    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
+    LATEST_CRON_TICK_METADATA_KEY,
+    TIMEZONE_PARAM_KEY,
+    assets_to_keys,
+    ensure_no_duplicate_assets,
+    freshness_multi_asset_check,
+    get_last_updated_timestamp,
+    retrieve_last_update_record,
+)
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -19,22 +34,6 @@ from dagster._utils.schedules import (
     get_latest_completed_cron_tick,
     get_next_cron_tick,
     is_valid_cron_string,
-)
-
-from ..utils import (
-    DEADLINE_CRON_PARAM_KEY,
-    DEFAULT_FRESHNESS_SEVERITY,
-    DEFAULT_FRESHNESS_TIMEZONE,
-    FRESH_UNTIL_METADATA_KEY,
-    FRESHNESS_PARAMS_METADATA_KEY,
-    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
-    LATEST_CRON_TICK_METADATA_KEY,
-    TIMEZONE_PARAM_KEY,
-    assets_to_keys,
-    ensure_no_duplicate_assets,
-    freshness_multi_asset_check,
-    get_last_updated_timestamp,
-    retrieve_last_update_record,
 )
 
 
@@ -156,7 +155,7 @@ def _build_freshness_multi_check(
                 deadline.timestamp(), tz=partitions_def.timezone
             )
             last_completed_time_window = check.not_none(
-                partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)
+                partitions_def.get_last_partition_window(current_time=deadline_in_partitions_def_tz)
             )
             expected_partition_key = partitions_def.get_partition_key_range_for_time_window(
                 last_completed_time_window

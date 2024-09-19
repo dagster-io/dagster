@@ -211,6 +211,9 @@ select = [
   # (isort) detect improperly sorted imports
   "I001",
 
+  # ban relative imports
+  "TID252",
+
   # (performance) perflint rules
   "PERF",
 
@@ -269,10 +272,15 @@ split-on-trailing-comma = false
 # per line. Useful for __init__.py files that just re-export symbols.
 force-wrap-aliases = true
 
+[tool.ruff.lint.flake8-tidy-imports]
+# Disallow all relative imports.
+ban-relative-imports = "all"
+
 [tool.ruff.lint.per-file-ignores]
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
+"examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
 [tool.ruff.lint.pydocstyle]
 
@@ -280,6 +288,9 @@ force-wrap-aliases = true
 # rules incompatible with google-style docstrings. See:
 # https://google.github.io/styleguide/pyguide.html#383-functions-and-methods
 convention = "google"
+
+[tool.ruff.format]
+exclude = ["examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"

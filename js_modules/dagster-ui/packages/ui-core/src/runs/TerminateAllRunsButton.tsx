@@ -1,4 +1,3 @@
-import {gql, useApolloClient} from '@apollo/client';
 import {Button} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import {useState} from 'react';
@@ -9,6 +8,7 @@ import {
   TerminateRunIdsQuery,
   TerminateRunIdsQueryVariables,
 } from './types/TerminateAllRunsButton.types';
+import {gql, useApolloClient} from '../apollo-client';
 import {RunsFilter} from '../graphql/types';
 
 export const TerminateAllRunsButton = ({

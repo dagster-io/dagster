@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const PYTHON_ERROR_FRAGMENT = gql`
   fragment PythonErrorFragment on PythonError {

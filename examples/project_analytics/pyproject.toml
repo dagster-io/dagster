@@ -18,4 +18,8 @@ extend = "../../pyproject.toml"
 extend-ignore = [
   # (print found): Allow prints for demo purposes.
   "T201",
+
+  # (relative imports): relative imports are acceptable in examples & docs
+  "TID252"
+
 ]

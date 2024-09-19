@@ -661,6 +661,7 @@ type AssetNode {
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   tags: [DefinitionTag!]!
+  kinds: [String!]!
   op: SolidDefinition
   opName: String
   opNames: [String!]!
@@ -676,6 +677,7 @@ type AssetNode {
   staleCausesByPartition(partitions: [String!]): [[StaleCause!]!]
   type: DagsterType
   hasMaterializePermission: Boolean!
+  hasReportRunlessAssetEventPermission: Boolean!
   hasAssetChecks: Boolean!
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: Int
@@ -1523,6 +1525,7 @@ type WorkspaceLocationEntry {
   loadStatus: RepositoryLocationLoadStatus!
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
   featureFlags: [FeatureFlag!]!
 }
@@ -2315,7 +2318,8 @@ input PartitionsByAssetSelector {
 }
 
 input PartitionsSelector {
-  range: PartitionRangeSelector!
+  range: PartitionRangeSelector
+  ranges: [PartitionRangeSelector!]
 }
 
 input PartitionRangeSelector {
@@ -2408,6 +2412,8 @@ enum BulkActionStatus {
   FAILED
   CANCELED
   CANCELING
+  COMPLETED_SUCCESS
+  COMPLETED_FAILED
 }
 
 type DaemonHealth {
@@ -3366,6 +3372,7 @@ type WorkspaceLocationStatusEntry {
   name: String!
   loadStatus: RepositoryLocationLoadStatus!
   updateTimestamp: Float!
+  versionKey: String!
   permissions: [Permission!]!
 }
 

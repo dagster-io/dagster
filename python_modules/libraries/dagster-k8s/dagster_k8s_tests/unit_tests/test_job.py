@@ -790,6 +790,32 @@ def test_construct_dagster_k8s_job_with_label_precedence():
     assert job["spec"]["template"]["metadata"]["labels"]["b"] == "job b"
 
 
+def test_construct_dagster_k8s_job_with_user_defined_image():
+    @graph
+    def user_defined_k8s_env_tags_graph():
+        pass
+
+    expected_image = "different_image:tag"
+    user_defined_k8s_config = get_user_defined_k8s_config(
+        user_defined_k8s_env_tags_graph.to_job(
+            tags={USER_DEFINED_K8S_CONFIG_KEY: {"container_config": {"image": expected_image}}}
+        ).tags
+    )
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg, [], "job", user_defined_k8s_config=user_defined_k8s_config
+    ).to_dict()
+
+    image = job["spec"]["template"]["spec"]["containers"][0]["image"]
+    assert image == expected_image
+
+
 def test_sanitize_labels():
     cfg = DagsterK8sJobConfig(
         job_image="test/foo:latest",

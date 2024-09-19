@@ -964,6 +964,7 @@ class ExternalAssetCheck(IHaveNew):
     job_names: Sequence[str]
     blocking: bool
     additional_asset_keys: Sequence[AssetKey]
+    automation_condition: Optional[AutomationCondition]
 
     def __new__(
         cls,
@@ -974,6 +975,7 @@ class ExternalAssetCheck(IHaveNew):
         job_names: Optional[Sequence[str]] = None,
         blocking: bool = False,
         additional_asset_keys: Optional[Sequence[AssetKey]] = None,
+        automation_condition: Optional[AutomationCondition] = None,
     ):
         return super().__new__(
             cls,
@@ -984,6 +986,7 @@ class ExternalAssetCheck(IHaveNew):
             job_names=job_names or [],
             blocking=blocking,
             additional_asset_keys=additional_asset_keys or [],
+            automation_condition=automation_condition,
         )
 
     @property
@@ -1136,9 +1139,6 @@ class ExternalAssetNode(IHaveNew):
             is_source = len(job_names or []) == 0
 
         if auto_materialize_policy and auto_materialize_policy.asset_condition:
-            automation_condition_snapshot = (
-                auto_materialize_policy.to_automation_condition().get_snapshot()
-            )
             # do not include automation conditions containing user-defined info on the ExternalAssetNode
             if not auto_materialize_policy.asset_condition.is_serializable:
                 auto_materialize_policy = None
@@ -1169,7 +1169,7 @@ class ExternalAssetNode(IHaveNew):
             execution_set_identifier=execution_set_identifier,
             required_top_level_resources=required_top_level_resources or [],
             auto_materialize_policy=auto_materialize_policy,
-            automation_condition_snapshot=automation_condition_snapshot,
+            automation_condition_snapshot=None,
             backfill_policy=backfill_policy,
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
@@ -1382,6 +1382,7 @@ def external_asset_checks_from_defs(
                 job_names=job_names,
                 blocking=spec.blocking,
                 additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
+                automation_condition=spec.automation_condition,
             )
         )
 

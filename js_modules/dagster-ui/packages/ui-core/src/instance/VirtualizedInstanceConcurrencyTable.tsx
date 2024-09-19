@@ -1,4 +1,3 @@
-import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -17,8 +16,8 @@ import {
   SingleConcurrencyKeyQuery,
   SingleConcurrencyKeyQueryVariables,
 } from './types/VirtualizedInstanceConcurrencyTable.types';
+import {gql, useLazyQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
 
@@ -106,7 +105,6 @@ const ConcurrencyRow = ({
     variables: {concurrencyKey},
   });
 
-  useBlockTraceOnQueryResult(queryResult, 'SingleConcurrencyKeyQuery');
   useDelayedRowQuery(queryJob);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 

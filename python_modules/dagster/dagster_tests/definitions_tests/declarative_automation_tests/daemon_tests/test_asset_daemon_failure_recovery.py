@@ -19,11 +19,15 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
-from ..legacy_tests.scenarios.auto_materialize_policy_scenarios import (
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.auto_materialize_policy_scenarios import (
     auto_materialize_policy_scenarios,
 )
-from ..legacy_tests.scenarios.auto_observe_scenarios import auto_observe_scenarios
-from ..legacy_tests.scenarios.multi_code_location_scenarios import multi_code_location_scenarios
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.auto_observe_scenarios import (
+    auto_observe_scenarios,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.multi_code_location_scenarios import (
+    multi_code_location_scenarios,
+)
 
 daemon_scenarios = {
     **auto_materialize_policy_scenarios,
@@ -492,10 +496,10 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        asset_key=AssetKey("hourly"), limit=100
+        key=AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("hourly")
     assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }
@@ -601,10 +605,10 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
 
     evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-        asset_key=AssetKey("hourly"), limit=100
+        key=AssetKey("hourly"), limit=100
     )
     assert len(evaluations) == 1
-    assert evaluations[0].get_evaluation_with_run_ids().evaluation.asset_key == AssetKey("hourly")
+    assert evaluations[0].get_evaluation_with_run_ids().evaluation.key == AssetKey("hourly")
     assert evaluations[0].get_evaluation_with_run_ids().run_ids == {
         run.run_id for run in sorted_runs
     }

@@ -13,6 +13,7 @@ import {
   buildDryRunInstigationTicks,
   buildInstigationState,
   buildPipeline,
+  buildPythonError,
   buildRepository,
   buildRepositoryLocation,
   buildRepositoryOrigin,
@@ -24,11 +25,11 @@ import {
 } from '../../graphql/types';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache/HourlyDataCache';
+import {CompletedRunTimelineQueryVersion} from '../types/useRunsForTimeline.types';
 import {
   COMPLETED_RUN_TIMELINE_QUERY,
   FUTURE_TICKS_QUERY,
   ONGOING_RUN_TIMELINE_QUERY,
-  QUERY_VERSION,
   useRunsForTimeline,
 } from '../useRunsForTimeline';
 
@@ -575,7 +576,7 @@ describe('useRunsForTimeline', () => {
     const startHour = Math.floor(start / ONE_HOUR_S);
     mockedCache.get.mockResolvedValue({
       value: {
-        version: QUERY_VERSION,
+        version: CompletedRunTimelineQueryVersion,
         cache: new Map([
           [
             startHour,
@@ -694,5 +695,89 @@ describe('useRunsForTimeline', () => {
       ]);
       expect(mockedCache.set).toHaveBeenCalled();
     });
+  });
+
+  it('does not commit data to the cache if a paginated bucket is not fully fetched', async () => {
+    const start = 0;
+    const interval = [start, start + ONE_HOUR_S] as const;
+    const buckets = getHourlyBuckets(interval[0], interval[1]);
+    expect(buckets).toHaveLength(1);
+
+    const bucket = buckets[0]!;
+    const updatedBefore = bucket[1];
+    const updatedAfter = bucket[0];
+
+    const mockPaginatedRuns = ({cursor, result}: {cursor?: string | undefined; result: any}) => ({
+      request: {
+        query: COMPLETED_RUN_TIMELINE_QUERY,
+        variables: {
+          completedFilter: {
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            updatedBefore,
+            updatedAfter,
+          },
+          cursor,
+          limit: 1,
+        },
+      },
+      result,
+    });
+
+    const firstPageResult = {
+      data: {
+        completed: buildRuns({
+          results: [
+            buildRun({
+              id: '1-1',
+              pipelineName: 'pipeline1',
+              repositoryOrigin: buildRepositoryOrigin({
+                id: '1-1',
+                repositoryName: 'repo1',
+                repositoryLocationName: 'repo1',
+              }),
+              startTime: updatedAfter,
+              endTime: updatedBefore,
+              updateTime: updatedBefore,
+              status: RunStatus.SUCCESS,
+            }),
+          ],
+        }),
+      },
+    };
+
+    // Throw an error when fetching the second page
+    const secondPageResult = {
+      data: {
+        completed: buildPythonError(),
+      },
+    };
+
+    const mocks = [
+      mockPaginatedRuns({result: firstPageResult}),
+      mockPaginatedRuns({cursor: '1-1', result: secondPageResult}),
+    ];
+
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <AppContext.Provider value={contextWithCacheId}>
+        <MockedProvider mocks={mocks} addTypename={false}>
+          {children}
+        </MockedProvider>
+      </AppContext.Provider>
+    );
+
+    const {result} = renderHook(
+      () => useRunsForTimeline({rangeMs: [interval[0] * 1000, interval[1] * 1000], batchLimit: 1}),
+      {wrapper},
+    );
+
+    // Initial state
+    expect(result.current.jobs).toEqual([]);
+    expect(result.current.loading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.jobs).toHaveLength(0);
+    });
+
+    expect(mockedCache.set).not.toHaveBeenCalled();
   });
 });

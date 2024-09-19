@@ -1,10 +1,10 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, ConfigTypeSchema, Icon, IconWrapper} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
 import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
+import {gql} from '../apollo-client';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
 const NO_DESCRIPTION = '';

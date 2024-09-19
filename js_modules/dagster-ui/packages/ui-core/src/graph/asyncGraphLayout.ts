@@ -1,5 +1,5 @@
 import memoize from 'lodash/memoize';
-import {useEffect, useMemo, useReducer, useRef} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useReducer, useRef} from 'react';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {useFeatureFlags} from '../app/Flags';
@@ -206,7 +206,8 @@ export function useAssetLayout(
   const nodeCount = Object.keys(graphData.nodes).length;
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    let canceled = false;
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
       let layout;
@@ -214,6 +215,9 @@ export function useAssetLayout(
         layout = await asyncGetFullAssetLayoutIndexDB(graphData, opts);
       } else {
         layout = await asyncGetFullAssetLayout(graphData, opts);
+      }
+      if (canceled) {
+        return;
       }
       dispatch({type: 'layout', payload: {layout, cacheKey}});
     }
@@ -224,6 +228,10 @@ export function useAssetLayout(
     } else {
       void runAsyncLayout();
     }
+
+    return () => {
+      canceled = true;
+    };
   }, [cacheKey, graphData, runAsync, flags, opts]);
 
   const uid = useRef(0);

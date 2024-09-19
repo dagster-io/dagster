@@ -1,9 +1,9 @@
-import {useApolloClient} from '@apollo/client';
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, renderHook} from '@testing-library/react-hooks';
 import {cache as _cache} from 'idb-lru-cache';
 import {ReactNode, useMemo} from 'react';
 
+import {useApolloClient} from '../../apollo-client';
 import {ASSET_CATALOG_TABLE_QUERY} from '../../assets/AssetsCatalogTable';
 import {AssetCatalogTableMockAssets} from '../../assets/__fixtures__/AssetTables.fixtures';
 import {

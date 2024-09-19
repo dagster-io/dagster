@@ -6,9 +6,13 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
 
-from ..external import get_external_job_or_raise
-from ..utils import ExecutionMetadata, ExecutionParams, assert_permission_for_location
-from .run_lifecycle import create_valid_pipeline_run
+from dagster_graphql.implementation.execution.run_lifecycle import create_valid_pipeline_run
+from dagster_graphql.implementation.external import get_external_job_or_raise
+from dagster_graphql.implementation.utils import (
+    ExecutionMetadata,
+    ExecutionParams,
+    assert_permission_for_location,
+)
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -57,8 +61,8 @@ def do_launch(
 def _launch_pipeline_execution(
     graphene_info: "ResolveInfo", execution_params: ExecutionParams, is_reexecuted: bool = False
 ) -> "GrapheneLaunchRunSuccess":
-    from ...schema.pipelines.pipeline import GrapheneRun
-    from ...schema.runs import GrapheneLaunchRunSuccess
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.runs import GrapheneLaunchRunSuccess
 
     check.inst_param(execution_params, "execution_params", ExecutionParams)
     check.bool_param(is_reexecuted, "is_reexecuted")
@@ -73,8 +77,8 @@ def launch_reexecution_from_parent_run(
     graphene_info: "ResolveInfo", parent_run_id: str, strategy: str
 ) -> "GrapheneLaunchRunSuccess":
     """Launch a re-execution by referencing the parent run id."""
-    from ...schema.pipelines.pipeline import GrapheneRun
-    from ...schema.runs import GrapheneLaunchRunSuccess
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
+    from dagster_graphql.schema.runs import GrapheneLaunchRunSuccess
 
     check.str_param(parent_run_id, "parent_run_id")
 

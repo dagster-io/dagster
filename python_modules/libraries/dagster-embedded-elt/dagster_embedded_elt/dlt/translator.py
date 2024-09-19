@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
-from dagster import AssetKey, AutoMaterializePolicy
+from dagster import AssetKey, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public
 from dlt.extract.resource import DltResource
 
@@ -37,6 +37,24 @@ class DagsterDltTranslator:
 
         """
         return None
+
+    @public
+    def get_automation_condition(self, resource: DltResource) -> Optional[AutomationCondition]:
+        """Defines resource specific automation condition.
+
+        This method can be overridden to provide custom automation condition for a dlt resource.
+
+        Args:
+            resource (DltResource): dlt resource
+
+        Returns:
+            Optional[AutomationCondition]: The automation condition for a resource
+
+        """
+        auto_materialize_policy = self.get_auto_materialize_policy(resource)
+        return (
+            auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
+        )
 
     @public
     def get_deps_asset_keys(self, resource: DltResource) -> Iterable[AssetKey]:

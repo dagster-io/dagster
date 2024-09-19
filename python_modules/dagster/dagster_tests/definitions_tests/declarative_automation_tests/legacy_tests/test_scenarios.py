@@ -1,13 +1,23 @@
 import pytest
 
-from ..scenario_utils.asset_daemon_scenario import AssetDaemonScenario
-from .updated_scenarios.basic_scenarios import basic_scenarios
-from .updated_scenarios.cron_scenarios import cron_scenarios
-from .updated_scenarios.freshness_policy_scenarios import freshness_policy_scenarios
-from .updated_scenarios.latest_materialization_run_tag_scenarios import (
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.updated_scenarios.basic_scenarios import (
+    basic_scenarios,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.updated_scenarios.cron_scenarios import (
+    cron_scenarios,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.updated_scenarios.freshness_policy_scenarios import (
+    freshness_policy_scenarios,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.updated_scenarios.latest_materialization_run_tag_scenarios import (
     latest_materialization_run_tag_scenarios,
 )
-from .updated_scenarios.partition_scenarios import partition_scenarios
+from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.updated_scenarios.partition_scenarios import (
+    partition_scenarios,
+)
+from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.asset_daemon_scenario import (
+    AssetDaemonScenario,
+)
 
 all_scenarios = (
     basic_scenarios

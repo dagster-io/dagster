@@ -1,11 +1,3 @@
-import {
-  ApolloClient,
-  ApolloLink,
-  ApolloProvider,
-  HttpLink,
-  InMemoryCache,
-  split,
-} from '@apollo/client';
 import {RetryLink} from '@apollo/client/link/retry';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
@@ -30,13 +22,21 @@ import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {TimeProvider} from './time/TimeContext';
+import {
+  ApolloClient,
+  ApolloLink,
+  ApolloProvider,
+  HttpLink,
+  InMemoryCache,
+  split,
+} from '../apollo-client';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
 import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {JobFeatureProvider} from '../pipelines/JobFeatureContext';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
+import {WorkspaceProvider} from '../workspace/WorkspaceContext/WorkspaceContext';
 import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names

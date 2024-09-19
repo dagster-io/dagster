@@ -295,6 +295,10 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "examples/docs_beta_snippets",
+        pytest_tox_factors=["all", "integrations"],
+    ),
+    PackageSpec(
         "examples/project_fully_featured",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,  # duckdb
@@ -362,6 +366,18 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "examples/experimental/dagster-airlift/examples/dbt-example",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/perf-harness",
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_12,
+        ],
+    ),
+    PackageSpec(
+        "examples/experimental/dagster-airlift/examples/tutorial-example",
         unsupported_python_versions=[
             AvailablePythonVersion.V3_12,
         ],

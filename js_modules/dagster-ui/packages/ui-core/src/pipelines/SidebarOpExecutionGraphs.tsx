@@ -1,4 +1,3 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -8,9 +7,9 @@ import {
   SidebarOpGraphsQuery,
   SidebarOpGraphsQueryVariables,
 } from './types/SidebarOpExecutionGraphs.types';
+import {gql, useQuery} from '../apollo-client';
 import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
 import {StepStatusDot} from '../gantt/GanttStatusPanel';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RepoAddress} from '../workspace/types';
 
@@ -46,7 +45,6 @@ export const SidebarOpExecutionGraphs = ({
       },
     },
   );
-  useBlockTraceOnQueryResult(result, 'SidebarOpGraphsQuery');
   const stepStats =
     result.data?.pipelineOrError.__typename === 'Pipeline'
       ? result.data.pipelineOrError.solidHandle?.stepStats

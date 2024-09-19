@@ -5,15 +5,15 @@ from dagster._core.definitions.instigation_logger import get_instigation_log_rec
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation.external import CompoundID
+from dagster._core.scheduler.instigation import InstigatorStatus
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.util import ResolveInfo
-
-    from ..schema.instigation import (
+    from dagster_graphql.schema.instigation import (
         GrapheneInstigationEventConnection,
         GrapheneInstigationState,
         GrapheneInstigationStateNotFoundError,
     )
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def get_instigator_state_by_selector(
@@ -21,7 +21,10 @@ def get_instigator_state_by_selector(
     selector: InstigatorSelector,
     instigator_id: Optional[CompoundID],
 ) -> Union["GrapheneInstigationState", "GrapheneInstigationStateNotFoundError"]:
-    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
+    from dagster_graphql.schema.instigation import (
+        GrapheneInstigationState,
+        GrapheneInstigationStateNotFoundError,
+    )
 
     check.inst_param(selector, "selector", InstigatorSelector)
 
@@ -30,7 +33,9 @@ def get_instigator_state_by_selector(
             origin_id=instigator_id.external_origin_id,
             selector_id=instigator_id.selector_id,
         )
-        if state:
+        # if the state tells us the status on its own short cut and return it
+        # if its declared in code we need the full snapshot to resolve
+        if state and state.status in (InstigatorStatus.STOPPED, InstigatorStatus.RUNNING):
             return GrapheneInstigationState(state)
 
     location = graphene_info.context.get_code_location(selector.location_name)
@@ -74,8 +79,11 @@ def get_instigation_states_by_repository_id(
 
 
 def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigationEventConnection":
-    from ..schema.instigation import GrapheneInstigationEvent, GrapheneInstigationEventConnection
-    from ..schema.logs.log_level import GrapheneLogLevel
+    from dagster_graphql.schema.instigation import (
+        GrapheneInstigationEvent,
+        GrapheneInstigationEventConnection,
+    )
+    from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 
     if not tick.log_key:
         return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)

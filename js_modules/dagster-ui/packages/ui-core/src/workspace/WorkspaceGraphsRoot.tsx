@@ -1,4 +1,3 @@
-import {useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
@@ -13,11 +12,11 @@ import {
   WorkspaceGraphsQuery,
   WorkspaceGraphsQueryVariables,
 } from './types/WorkspaceGraphsQuery.types';
+import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -39,7 +38,6 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceGraphsQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

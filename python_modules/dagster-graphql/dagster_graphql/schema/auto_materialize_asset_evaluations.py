@@ -10,12 +10,14 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializeRule
 from dagster_graphql.schema.errors import GrapheneError
-
-from .asset_key import GrapheneAssetKey
-from .auto_materialize_policy import GrapheneAutoMaterializeRule
-from .partition_keys import GraphenePartitionKeys, GraphenePartitionKeysOrError
-from .util import non_null_list
+from dagster_graphql.schema.partition_keys import (
+    GraphenePartitionKeys,
+    GraphenePartitionKeysOrError,
+)
+from dagster_graphql.schema.util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
 
@@ -232,13 +234,13 @@ class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
             id=record.id,
             evaluationId=record.evaluation_id,
             numRequested=evaluation_with_run_ids.evaluation.true_subset.size,
-            numSkipped=evaluation.legacy_num_skipped(),
-            numDiscarded=evaluation.legacy_num_discarded(),
+            numSkipped=0,
+            numDiscarded=0,
             rulesWithRuleEvaluations=rules_with_rule_evaluations,
             timestamp=record.timestamp,
             runIds=evaluation_with_run_ids.run_ids,
             rules=sorted(rules, key=lambda rule: rule.className),
-            assetKey=GrapheneAssetKey(path=record.asset_key.path),
+            assetKey=GrapheneAssetKey(path=record.key.path),
         )
 
 

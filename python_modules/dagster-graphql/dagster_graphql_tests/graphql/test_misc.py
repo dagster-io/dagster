@@ -16,7 +16,7 @@ from dagster._legacy import OutputDefinition
 from dagster_graphql.schema.roots.mutation import execution_params_from_graphql
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
-from .production_query import PRODUCTION_QUERY
+from dagster_graphql_tests.graphql.production_query import PRODUCTION_QUERY
 
 
 @dagster_type_loader(str)

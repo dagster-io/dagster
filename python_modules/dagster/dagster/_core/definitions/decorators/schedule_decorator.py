@@ -5,16 +5,8 @@ from typing import TYPE_CHECKING, Callable, List, Mapping, Optional, Sequence, S
 import dagster._check as check
 from dagster._annotations import experimental_param
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.sensor_definition import get_context_param_name
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    ScheduleExecutionError,
-    user_code_error_boundary,
-)
-from dagster._utils import ensure_gen
-
-from ..run_request import RunRequest, SkipReason
-from ..schedule_definition import (
+from dagster._core.definitions.run_request import RunRequest, SkipReason
+from dagster._core.definitions.schedule_definition import (
     DecoratedScheduleFunction,
     DefaultScheduleStatus,
     RawScheduleEvaluationFunction,
@@ -24,8 +16,15 @@ from ..schedule_definition import (
     has_at_least_one_parameter,
     validate_and_get_schedule_resource_dict,
 )
-from ..target import ExecutableDefinition
-from ..utils import normalize_tags
+from dagster._core.definitions.sensor_definition import get_context_param_name
+from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    ScheduleExecutionError,
+    user_code_error_boundary,
+)
+from dagster._utils import ensure_gen
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
@@ -98,7 +97,7 @@ def schedule(
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             that should execute when the schedule runs.
-        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will immediately be active when starting Dagster. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will immediately be active when starting Dagster. The default status can be overridden from the Dagster UI or via the GraphQL API.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
         target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
             The target that the schedule will execute.

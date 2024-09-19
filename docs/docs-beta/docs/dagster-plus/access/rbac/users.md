@@ -25,7 +25,7 @@ In this guide, you'll learn how to manage users and their permissions using the 
 - **If using Google for Single sign-on (SSO)**, users must be added in Dagster+ before they can log in.
 - **If using an Identity Provider (IdP) like Okta for SSO**, users must be assigned to the Dagster app in the IdP to be able to log in to Dagster+. Refer to the [SSO setup guides](/todo) for setup instructions for each of our supported IdP solutions.
 
-  By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/todo).
+By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/todo).
 
 ## Adding users
 
@@ -73,7 +73,7 @@ In the **Roles** section, you can assign a [user role](/todo) for each deploymen
 
 ## Removing users
 
-Removing a user removes them from the Dagster+ organization. **Note**: If using SSO, you'll also need to remove the user from the IdP. Removing the user in Dagster+ doesn't remove them from the IdP.
+Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the IdP. Removing the user in Dagster+ doesn't remove them from the IdP.
 
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
@@ -85,4 +85,7 @@ Removing a user removes them from the Dagster+ organization. **Note**: If using 
 
 ## Next steps
 
-- [TODO](/todo)
+- Learn more about role-based access control (RBAC) in [Understanding User Roles & Permissions](/dagster-plus/access/rbac/user-roles-permissions)
+- Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/access/rbac/teams)
+- Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/access/authentication/scim-provisioning)
+- Learn more about authentication in [Understanding Authentication](/dagster-plus/access/authentication)

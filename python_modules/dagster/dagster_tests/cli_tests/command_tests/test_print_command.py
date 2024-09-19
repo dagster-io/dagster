@@ -4,7 +4,10 @@ from dagster._cli.job import execute_print_command, job_print_command
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
-from .test_cli_commands import launch_command_contexts, valid_external_job_target_cli_args
+from dagster_tests.cli_tests.command_tests.test_cli_commands import (
+    launch_command_contexts,
+    valid_external_job_target_cli_args,
+)
 
 
 def no_print(_):

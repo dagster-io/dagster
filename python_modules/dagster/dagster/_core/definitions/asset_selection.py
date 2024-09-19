@@ -8,8 +8,18 @@ from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, experimental_param, public
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_key import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+    key_prefix_from_coercible,
+)
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
@@ -19,17 +29,6 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
-
-from .asset_check_spec import AssetCheckKey
-from .asset_key import (
-    AssetKey,
-    CoercibleToAssetKey,
-    CoercibleToAssetKeyPrefix,
-    key_prefix_from_coercible,
-)
-from .assets import AssetsDefinition
-from .base_asset_graph import BaseAssetGraph
-from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[
     str,
@@ -443,7 +442,7 @@ class AssetSelection(ABC, DagsterModel):
         raise NotImplementedError()
 
     def resolve_checks(
-        self, asset_graph: AssetGraph, allow_missing: bool = False
+        self, asset_graph: BaseAssetGraph, allow_missing: bool = False
     ) -> AbstractSet[AssetCheckKey]:
         """We don't need this method currently, but it makes things consistent with resolve_inner. Currently
         we don't store checks in the RemoteAssetGraph, so we only support AssetGraph.
@@ -451,7 +450,7 @@ class AssetSelection(ABC, DagsterModel):
         return self.resolve_checks_inner(asset_graph, allow_missing=allow_missing)
 
     def resolve_checks_inner(
-        self, asset_graph: AssetGraph, allow_missing: bool
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         """By default, resolve to checks that target the selected assets. This is overriden for particular selections."""
         asset_keys = self.resolve(asset_graph)

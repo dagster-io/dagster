@@ -56,20 +56,15 @@ from dagster._core.remote_representation.external_data import (
     job_name_for_external_partition_set_name,
 )
 from dagster._core.remote_representation.origin import CodeLocationOrigin
-from dagster._core.snap.execution_plan_snapshot import (
-    ExecutionPlanSnapshotErrorData,
-    snapshot_from_execution_plan,
-)
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._grpc.types import ExecutionPlanSnapshotArgs
+from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._serdes.ipc import IPCErrorMessage
 from dagster._time import datetime_from_timestamp
 from dagster._utils import start_termination_thread
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
-
-from .types import ExecuteExternalJobArgs
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -453,9 +448,7 @@ def get_partition_config(
 
 
 def get_partition_names(
-    repo_def: RepositoryDefinition,
-    job_name: str,
-    selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    repo_def: RepositoryDefinition, job_name: str
 ) -> Union[ExternalPartitionNamesData, ExternalPartitionExecutionErrorData]:
     try:
         job_def = repo_def.get_job(job_name)
@@ -468,7 +461,7 @@ def get_partition_names(
             ),
         ):
             return ExternalPartitionNamesData(
-                partition_names=job_def.get_partition_keys(selected_asset_keys)
+                partition_names=job_def.get_partition_keys(selected_asset_keys=None)
             )
     except Exception:
         return ExternalPartitionExecutionErrorData(
@@ -480,7 +473,6 @@ def get_partition_tags(
     repo_def: RepositoryDefinition,
     job_name: str,
     partition_name: str,
-    selected_asset_keys: Optional[AbstractSet[AssetKey]],
     instance_ref: Optional[InstanceRef] = None,
 ) -> Union[ExternalPartitionTagsData, ExternalPartitionExecutionErrorData]:
     try:
@@ -493,9 +485,7 @@ def get_partition_tags(
                 f" partitioned config on job '{job_def.name}'"
             ),
         ):
-            tags = job_def.get_tags_for_partition_key(
-                partition_name, selected_asset_keys=selected_asset_keys
-            )
+            tags = job_def.get_tags_for_partition_key(partition_name, selected_asset_keys=None)
             return ExternalPartitionTagsData(name=partition_name, tags=tags)
 
     except Exception:
@@ -509,29 +499,24 @@ def get_external_execution_plan_snapshot(
     job_name: str,
     args: ExecutionPlanSnapshotArgs,
 ):
-    try:
-        job_def = repo_def.get_maybe_subset_job_def(
-            job_name,
-            op_selection=args.op_selection,
-            asset_selection=args.asset_selection,
-            asset_check_selection=args.asset_check_selection,
-        )
+    job_def = repo_def.get_maybe_subset_job_def(
+        job_name,
+        op_selection=args.op_selection,
+        asset_selection=args.asset_selection,
+        asset_check_selection=args.asset_check_selection,
+    )
 
-        return snapshot_from_execution_plan(
-            create_execution_plan(
-                job_def,
-                run_config=args.run_config,
-                step_keys_to_execute=args.step_keys_to_execute,
-                known_state=args.known_state,
-                instance_ref=args.instance_ref,
-                repository_load_data=repo_def.repository_load_data,
-            ),
-            args.job_snapshot_id,
-        )
-    except:
-        return ExecutionPlanSnapshotErrorData(
-            error=serializable_error_info_from_exc_info(sys.exc_info())
-        )
+    return snapshot_from_execution_plan(
+        create_execution_plan(
+            job_def,
+            run_config=args.run_config,
+            step_keys_to_execute=args.step_keys_to_execute,
+            known_state=args.known_state,
+            instance_ref=args.instance_ref,
+            repository_load_data=repo_def.repository_load_data,
+        ),
+        args.job_snapshot_id,
+    )
 
 
 def get_partition_set_execution_param_data(

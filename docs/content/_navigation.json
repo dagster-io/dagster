@@ -379,6 +379,10 @@
                 ]
               },
               {
+                "title": "Dagster Pipes + AWS ECS",
+                "path": "/concepts/dagster-pipes/aws-ecs"
+              },
+              {
                 "title": "Dagster Pipes + AWS Glue",
                 "path": "/concepts/dagster-pipes/aws-glue"
               },
@@ -654,6 +658,10 @@
               {
                 "title": "Setup for Hybrid agents",
                 "path": "/dagster-plus/managing-deployments/setting-environment-variables-agents"
+              },
+              {
+                "title": "Reserved environment variables",
+                "path": "/dagster-plus/managing-deployments/reserved-environment-variables"
               }
             ]
           },
@@ -885,10 +893,6 @@
           {
             "title": "Airbyte Cloud & Dagster",
             "path": "/integrations/airbyte-cloud"
-          },
-          {
-            "title": "Ingestion as code",
-            "path": "/guides/dagster/airbyte-ingestion-as-code"
           }
         ]
       },
@@ -898,7 +902,7 @@
       },
       {
         "title": "Databricks",
-        "path": "/integrations/databricks"
+        "path": "/concepts/dagster-pipes/databricks"
       },
       {
         "title": "dbt",
@@ -932,7 +936,17 @@
           },
           {
             "title": "Using dbt with Dagster+",
-            "path": "/integrations/dbt/using-dbt-with-dagster-plus"
+            "path": "/integrations/dbt/using-dbt-with-dagster-plus",
+            "children": [
+              {
+                "title": "Using dbt with Serverless deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/serverless"
+              },
+              {
+                "title": "Using dbt with Hybrid deployments in Dagster+",
+                "path": "/integrations/dbt/using-dbt-with-dagster-plus/hybrid"
+              }
+            ]
           },
           {
             "title": "Reference",
@@ -989,10 +1003,6 @@
       {
         "title": "Fivetran",
         "path": "/integrations/fivetran"
-      },
-      {
-        "title": "Great Expectations",
-        "path": "/integrations/great-expectations"
       },
       {
         "title": "Google BigQuery",

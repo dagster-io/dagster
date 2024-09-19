@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql} from '../apollo-client';
 
 export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
@@ -11,6 +11,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
     isExecutable
     computeKind
     hasMaterializePermission
+    hasReportRunlessAssetEventPermission
     partitionDefinition {
       description
       dimensionTypes {
@@ -31,6 +32,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    kinds
     repository {
       id
       name

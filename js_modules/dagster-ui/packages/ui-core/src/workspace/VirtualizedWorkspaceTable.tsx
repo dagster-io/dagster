@@ -1,10 +1,10 @@
-import {QueryResult} from '@apollo/client';
 import {Caption, Colors} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {forwardRef} from 'react';
 import styled from 'styled-components';
 
 import {RepoAddress} from './types';
+import {QueryResult} from '../apollo-client';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
 import {Row} from '../ui/VirtualizedTable';

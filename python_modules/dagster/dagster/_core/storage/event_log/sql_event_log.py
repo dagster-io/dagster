@@ -61,6 +61,35 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionRecordStatus,
 )
+from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
+from dagster._core.storage.event_log.base import (
+    AssetCheckSummaryRecord,
+    AssetEntry,
+    AssetRecord,
+    AssetRecordsFilter,
+    EventLogConnection,
+    EventLogCursor,
+    EventLogRecord,
+    EventLogStorage,
+    EventRecordsFilter,
+    PlannedMaterializationInfo,
+)
+from dagster._core.storage.event_log.migration import (
+    ASSET_DATA_MIGRATIONS,
+    ASSET_KEY_INDEX_COLS,
+    EVENT_LOG_DATA_MIGRATIONS,
+)
+from dagster._core.storage.event_log.schema import (
+    AssetCheckExecutionsTable,
+    AssetEventTagsTable,
+    AssetKeyTable,
+    ConcurrencyLimitsTable,
+    ConcurrencySlotsTable,
+    DynamicPartitionsTable,
+    PendingStepsTable,
+    SecondaryIndexMigrationTable,
+    SqlEventLogStorageTable,
+)
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import (
     db_case,
@@ -82,32 +111,6 @@ from dagster._utils.concurrency import (
     get_max_concurrency_limit_value,
 )
 from dagster._utils.warnings import deprecation_warning
-
-from ..dagster_run import DagsterRunStatsSnapshot
-from .base import (
-    AssetCheckSummaryRecord,
-    AssetEntry,
-    AssetRecord,
-    AssetRecordsFilter,
-    EventLogConnection,
-    EventLogCursor,
-    EventLogRecord,
-    EventLogStorage,
-    EventRecordsFilter,
-    PlannedMaterializationInfo,
-)
-from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
-from .schema import (
-    AssetCheckExecutionsTable,
-    AssetEventTagsTable,
-    AssetKeyTable,
-    ConcurrencyLimitsTable,
-    ConcurrencySlotsTable,
-    DynamicPartitionsTable,
-    PendingStepsTable,
-    SecondaryIndexMigrationTable,
-    SqlEventLogStorageTable,
-)
 
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -2912,7 +2915,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        return [AssetCheckExecutionRecord.from_db_row(row) for row in rows]
+        return [AssetCheckExecutionRecord.from_db_row(row, key=check_key) for row in rows]
 
     def get_latest_asset_check_execution_by_key(
         self, check_keys: Sequence[AssetCheckKey]
@@ -2962,13 +2965,14 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)
 
-        return {
-            AssetCheckKey(
+        results = {}
+        for row in rows:
+            check_key = AssetCheckKey(
                 asset_key=check.not_none(AssetKey.from_db_string(cast(str, row["asset_key"]))),
                 name=cast(str, row["check_name"]),
-            ): AssetCheckExecutionRecord.from_db_row(row)
-            for row in rows
-        }
+            )
+            results[check_key] = AssetCheckExecutionRecord.from_db_row(row, key=check_key)
+        return results
 
     @property
     def supports_asset_checks(self):

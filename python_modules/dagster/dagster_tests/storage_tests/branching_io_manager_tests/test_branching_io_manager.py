@@ -10,7 +10,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
-from .utils import (
+from dagster_tests.storage_tests.branching_io_manager_tests.utils import (
     LOG,
     AssetBasedInMemoryIOManager,
     ConfigurableAssetBasedInMemoryIOManager,

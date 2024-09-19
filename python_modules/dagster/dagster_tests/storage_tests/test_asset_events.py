@@ -1,4 +1,3 @@
-import pytest
 from dagster import (
     AssetKey,
     AssetObservation,
@@ -14,10 +13,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.io_manager import IOManager
-from dagster._core.test_utils import instance_for_test
 
 
 def n_asset_keys(path, n):
@@ -175,68 +172,3 @@ def test_asset_materialization_accessors():
         assert len(records) == 1
         assert records[0].event_log_entry
         assert records[0].event_log_entry.asset_materialization is None
-
-
-def test_batch_asset_records_loader():
-    @asset
-    def return_one():
-        return 1
-
-    @asset
-    def return_two():
-        return 2
-
-    with instance_for_test() as instance:
-        defs = Definitions(assets=[return_one, return_two])
-        defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
-
-        asset_records_loader = BatchAssetRecordLoader(instance, asset_keys={return_two.key})
-
-        fake_key = AssetKey(path=["fake_key"])
-
-        assert asset_records_loader._unfetched_asset_keys == {return_two.key}  # noqa
-        assert not asset_records_loader.has_cached_asset_record(return_two.key)
-        assert not asset_records_loader.has_cached_asset_record(fake_key)
-
-        assert asset_records_loader._asset_records == {}  # noqa
-
-        assert (
-            asset_records_loader.get_asset_record(return_two.key).asset_entry.asset_key
-            == return_two.key
-        )
-
-        assert asset_records_loader.has_cached_asset_record(return_two.key)
-        assert not asset_records_loader.has_cached_asset_record(fake_key)
-
-        assert asset_records_loader._unfetched_asset_keys == set()  # noqa
-        assert len(asset_records_loader._asset_records) == 1  # noqa
-
-        with pytest.raises(Exception, match="not recognized for this loader"):
-            asset_records_loader.get_asset_record(return_one.key)
-
-        with pytest.raises(Exception, match="not recognized for this loader"):
-            asset_records_loader.get_asset_record(fake_key)
-
-        asset_records_loader.add_asset_keys({return_one.key, return_two.key, fake_key})
-
-        assert not asset_records_loader.has_cached_asset_record(return_one.key)
-
-        assert asset_records_loader._unfetched_asset_keys == {return_one.key, fake_key}  # noqa
-
-        assert (
-            asset_records_loader.get_asset_record(return_two.key).asset_entry.asset_key
-            == return_two.key
-        )
-        assert (
-            asset_records_loader.get_asset_record(return_one.key).asset_entry.asset_key
-            == return_one.key
-        )
-
-        assert asset_records_loader.has_cached_asset_record(return_two.key)
-        assert asset_records_loader.has_cached_asset_record(return_one.key)
-        assert asset_records_loader.has_cached_asset_record(fake_key)
-
-        assert asset_records_loader.get_asset_record(fake_key) is None
-
-        assert asset_records_loader._unfetched_asset_keys == set()  # noqa
-        assert len(asset_records_loader._asset_records) == 3  # noqa
