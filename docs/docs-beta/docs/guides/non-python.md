@@ -51,7 +51,6 @@ When the asset is materialized, the stdout and stderr will be captured automatic
 
 To send context to your script or emit events back to Dagster, you can use environment variables provided by the `PipesSubprocessClient`.
 
-To specify a file path, use the following environment variables:
 
 - `DAGSTER_PIPES_CONTEXT` - Input context
 - `DAGSTER_PIPES_MESSAGES` - Output context
