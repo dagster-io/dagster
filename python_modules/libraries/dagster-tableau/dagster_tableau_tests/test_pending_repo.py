@@ -22,7 +22,7 @@ def test_using_cached_asset_data(
 
         # Must initialize the resource's client before passing it to the mock response function
         resource.build_client()
-        with workspace_data_api_mocks_fn(client=resource._client) as response:
+        with workspace_data_api_mocks_fn(client=resource._client, include_views=True) as response:
             # Remove the resource's client to properly test the pending repo
             resource._client = None
             assert len(response.calls) == 0
@@ -32,8 +32,8 @@ def test_using_cached_asset_data(
             # 4 calls to creates the defs
             assert len(response.calls) == 4
 
-            # 2 Tableau external assets, one materializable asset
-            assert len(repository_def.assets_defs_by_key) == 2 + 1
+            # 1 Tableau external assets, 2 Tableau materializable asset and 1 Dagster materializable asset
+            assert len(repository_def.assets_defs_by_key) == 1 + 2 + 1
 
             job_def = repository_def.get_job("all_asset_job")
             repository_load_data = repository_def.repository_load_data
@@ -61,8 +61,8 @@ def test_using_cached_asset_data(
                 len(
                     [event for event in events if event.event_type == DagsterEventType.STEP_SUCCESS]
                 )
-                == 1
+                == 2
             ), "Expected two successful steps"
 
-            # 4 calls to create the defs + 3 calls to materialize the Tableau assets with 1 view
-            assert len(response.calls) == 4 + 3
+            # 4 calls to create the defs + 4 calls to materialize the Tableau assets with 1 sheet and 1 dashboard
+            assert len(response.calls) == 4 + 4

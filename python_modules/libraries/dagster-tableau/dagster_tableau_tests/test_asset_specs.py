@@ -45,7 +45,8 @@ def test_fetch_tableau_workspace_data(
     with workspace_data_api_mocks_fn(client=resource._client):
         actual_workspace_data = resource.fetch_tableau_workspace_data()
         assert len(actual_workspace_data.workbooks_by_id) == 1
-        assert len(actual_workspace_data.views_by_id) == 1
+        assert len(actual_workspace_data.sheets_by_id) == 1
+        assert len(actual_workspace_data.dashboards_by_id) == 1
         assert len(actual_workspace_data.data_sources_by_id) == 1
 
 
@@ -85,13 +86,25 @@ def test_translator_spec(
 
     with workspace_data_api_mocks_fn(client=resource._client):
         all_assets = resource.build_defs().get_asset_graph().assets_defs
+        all_assets_keys = [key for asset in all_assets for key in asset.keys]
 
-        # 1 view and 1 data source
+        # 1 multi-asset for tableau assets (sheets and dashboards) and 1 data source external asset
         assert len(all_assets) == 2
+        # 1 sheet, 1 dashboard and 1 data source
+        assert len(all_assets_keys) == 3
 
         # Sanity check outputs, translator tests cover details here
-        view_asset = next(asset for asset in all_assets if "workbook" in asset.key.path[0])
-        assert view_asset.key.path == ["test_workbook", "view", "sales"]
+        sheet_asset_key = next(
+            key for key in all_assets_keys if "workbook" in key.path[0] and "sheet" in key.path[1]
+        )
+        assert sheet_asset_key.path == ["test_workbook", "sheet", "sales"]
 
-        data_source_asset = next(asset for asset in all_assets if "datasource" in asset.key.path[0])
-        assert data_source_asset.key.path == ["superstore_datasource"]
+        dashboard_asset_key = next(
+            key
+            for key in all_assets_keys
+            if "workbook" in key.path[0] and "dashboard" in key.path[1]
+        )
+        assert dashboard_asset_key.path == ["test_workbook", "dashboard", "dashboard_sales"]
+
+        data_source_asset_key = next(key for key in all_assets_keys if "datasource" in key.path[0])
+        assert data_source_asset_key.path == ["superstore_datasource"]
