@@ -75,6 +75,7 @@ PagerDuty
 Pandas
 Pandera
 PingOne
+Polars
 Postgres
 Prometheus
 Pydantic
