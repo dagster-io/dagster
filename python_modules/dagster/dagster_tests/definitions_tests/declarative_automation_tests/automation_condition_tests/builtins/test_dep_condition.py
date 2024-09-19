@@ -37,19 +37,18 @@ def get_hardcoded_condition():
             return "..."
 
         def evaluate(self, context: AutomationContext) -> AutomationResult:
-            true_candidates = {
-                candidate
-                for candidate in context.candidate_slice.convert_to_asset_subset().asset_partitions
-                if candidate in true_set
-            }
-            return AutomationResult(
-                context,
-                true_slice=context.asset_graph_view.get_asset_slice_from_asset_partitions(
-                    true_candidates
+            filtered_true_set = {akpk for akpk in true_set if akpk.asset_key == context.asset_key}
+            if context.partitions_def:
+                true_slice = context.candidate_slice.compute_intersection_with_partition_keys(
+                    {apk.partition_key for apk in filtered_true_set}
                 )
-                if true_candidates
-                else context.get_empty_slice(),
-            )
+            else:
+                true_slice = (
+                    context.asset_graph_view.get_asset_slice(asset_key=context.asset_key)
+                    if filtered_true_set
+                    else context.asset_graph_view.get_empty_slice(asset_key=context.asset_key)
+                )
+            return AutomationResult(context, true_slice=true_slice)
 
     return HardcodedCondition(), true_set
 
@@ -68,20 +67,20 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
 
     # neither parent is true
     state, result = state.evaluate("C")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # one parent true, still one false
     true_set.add(AssetKeyPartitionKey(AssetKey("A")))
     state, result = state.evaluate("C")
     if is_any:
-        assert result.true_subset.size == 1
+        assert result.true_slice.size == 1
     else:
-        assert result.true_subset.size == 0
+        assert result.true_slice.size == 0
 
     # both parents true
     true_set.add(AssetKeyPartitionKey(AssetKey("B")))
     state, result = state.evaluate("C")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
 
 @pytest.mark.parametrize("is_any", [True, False])
@@ -98,41 +97,41 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
 
     # no parents true
     state, result = state.evaluate("C")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     true_set.add(AssetKeyPartitionKey(AssetKey("A"), "1"))
     state, result = state.evaluate("C")
     if is_any:
         # one parent is true for partition 1
-        assert result.true_subset.size == 1
+        assert result.true_slice.size == 1
     else:
         # neither 1 nor 2 have all parents true
-        assert result.true_subset.size == 0
+        assert result.true_slice.size == 0
 
     true_set.add(AssetKeyPartitionKey(AssetKey("A"), "2"))
     state, result = state.evaluate("C")
     if is_any:
         # both partitions 1 and 2 have at least one true parent
-        assert result.true_subset.size == 2
+        assert result.true_slice.size == 2
     else:
         # neither 1 nor 2 have all parents true
-        assert result.true_subset.size == 0
+        assert result.true_slice.size == 0
 
     true_set.add(AssetKeyPartitionKey(AssetKey("B"), "1"))
     state, result = state.evaluate("C")
     if is_any:
-        assert result.true_subset.size == 2
+        assert result.true_slice.size == 2
     else:
         # now partition 1 has all parents true
-        assert result.true_subset.size == 1
+        assert result.true_slice.size == 1
 
     true_set.add(AssetKeyPartitionKey(AssetKey("B"), "2"))
     state, result = state.evaluate("C")
     if is_any:
-        assert result.true_subset.size == 2
+        assert result.true_slice.size == 2
     else:
         # now partition 2 has all parents true
-        assert result.true_subset.size == 2
+        assert result.true_slice.size == 2
 
 
 @pytest.mark.parametrize("is_any", [True, False])
@@ -172,10 +171,10 @@ def test_dep_missing_partitioned_selections(
     ).with_asset_properties(partitions_def=two_partitions_def)
     # all parents are missing
     state, result = state.evaluate("C")
-    assert result.true_subset.size == expected_initial_result_size
+    assert result.true_slice.size == expected_initial_result_size
     state = state.with_runs(*(run_request(s[0], s[1]) for s in materialized_asset_partitions))
     state, result = state.evaluate("C")
-    assert result.true_subset.size == expected_final_result_size
+    assert result.true_slice.size == expected_final_result_size
 
 
 complex_scenario_spec = ScenarioSpec(
@@ -199,17 +198,17 @@ def test_dep_missing_complex_include() -> None:
 
     # all start off as missing
     state, result = state.evaluate("downstream")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
     # A materialized, D and E still missing
     state = state.with_runs(run_request(["A"]))
     state, result = state.evaluate("downstream")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
     # D and E materialized, and all the other missing things are in the exclude selection
     state = state.with_runs(run_request(["D", "E"]))
     state, result = state.evaluate("downstream")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
 
 def test_dep_missing_complex_exclude() -> None:
@@ -221,14 +220,14 @@ def test_dep_missing_complex_exclude() -> None:
 
     # all start off as missing
     state, result = state.evaluate("downstream")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
     # B materialized, C still missing
     state = state.with_runs(run_request(["B"]))
     state, result = state.evaluate("downstream")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
     # C materialized, and all the other missing things are in the exclude selection
     state = state.with_runs(run_request(["C"]))
     state, result = state.evaluate("downstream")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0

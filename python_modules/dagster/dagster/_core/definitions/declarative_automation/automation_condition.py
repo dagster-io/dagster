@@ -556,7 +556,7 @@ class AutomationResult:
         self._extra_state = check.opt_str_param(cursor, "cursor") or structured_cursor
 
         # used to enable the evaluator class to modify the evaluation in some edge cases
-        self._serializable_evaluation_override: Optional[AutomationConditionEvaluation] = None
+        self._serializable_subset_override: Optional[AssetSubset] = None
 
     @property
     def asset_key(self) -> AssetKey:
@@ -565,10 +565,6 @@ class AutomationResult:
     @property
     def true_slice(self) -> AssetSlice:
         return self._true_slice
-
-    @property
-    def true_subset(self) -> AssetSubset:
-        return self.true_slice.convert_to_asset_subset()
 
     @property
     def start_timestamp(self) -> float:
@@ -598,7 +594,7 @@ class AutomationResult:
         components: Sequence[str] = [
             self.condition_unique_id,
             self.condition.description,
-            _compute_subset_value_str(self.true_subset),
+            _compute_subset_value_str(self.get_serializable_subset()),
             _compute_subset_value_str(self._context.candidate_slice.convert_to_asset_subset()),
             *(_compute_subset_with_metadata_value_str(swm) for swm in self._subsets_with_metadata),
             *(child_result.value_hash for child_result in self._child_results),
@@ -611,7 +607,7 @@ class AutomationResult:
         if not self.condition.requires_cursor:
             return None
         return AutomationConditionNodeCursor(
-            true_subset=self.true_subset,
+            true_subset=self.get_serializable_subset(),
             candidate_subset=get_serializable_candidate_subset(
                 self._context.candidate_slice.convert_to_asset_subset()
             ),
@@ -620,10 +616,10 @@ class AutomationResult:
         )
 
     @cached_property
-    def _serializable_evaluation(self) -> AutomationConditionEvaluation:
+    def serializable_evaluation(self) -> AutomationConditionEvaluation:
         return AutomationConditionEvaluation(
             condition_snapshot=self.condition.get_node_snapshot(self.condition_unique_id),
-            true_subset=self.true_subset,
+            true_subset=self.get_serializable_subset(),
             candidate_subset=get_serializable_candidate_subset(
                 self._context.candidate_slice.convert_to_asset_subset()
             ),
@@ -635,18 +631,11 @@ class AutomationResult:
             ],
         )
 
-    @property
-    def serializable_evaluation(self) -> AutomationConditionEvaluation:
-        """Serializable representation of the evaluation of this condition."""
-        return self._serializable_evaluation_override or self._serializable_evaluation
-
-    def set_internal_serializable_evaluation_override(
-        self, override: AutomationConditionEvaluation
-    ) -> None:
+    def set_internal_serializable_subset_override(self, override: AssetSubset) -> None:
         """Internal method for handling edge cases in which the serializable evaluation must be
         updated after evaluation completes.
         """
-        self._serializable_evaluation_override = override
+        self._serializable_subset_override = override
 
     def get_child_node_cursors(self) -> Mapping[str, AutomationConditionNodeCursor]:
         node_cursors = {self.condition_unique_id: self.node_cursor} if self.node_cursor else {}
@@ -662,6 +651,9 @@ class AutomationResult:
             node_cursors_by_unique_id=self.get_child_node_cursors(),
             result_value_hash=self.value_hash,
         )
+
+    def get_serializable_subset(self) -> AssetSubset:
+        return self.true_slice.convert_to_asset_subset() or self._serializable_subset_override
 
 
 def _compute_subset_value_str(subset: AssetSubset) -> str:
@@ -680,7 +672,7 @@ def _compute_subset_value_str(subset: AssetSubset) -> str:
             ]
         )
     else:
-        return str(list(sorted(subset.asset_partitions)))
+        return str(list(sorted(subset.subset_value.get_partition_keys())))
 
 
 def _compute_subset_with_metadata_value_str(subset_with_metadata: AssetSubsetWithMetadata):

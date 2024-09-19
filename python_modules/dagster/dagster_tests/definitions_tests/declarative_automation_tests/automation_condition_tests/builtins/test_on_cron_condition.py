@@ -21,39 +21,42 @@ def test_on_cron_unpartitioned() -> None:
 
     # no cron boundary crossed
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now crossed a cron boundary parent hasn't updated yet
     state = state.with_current_time_advanced(minutes=10)
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # parent updated, now can execute
     state = state.with_runs(run_request("A"))
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
     state = state.with_runs(
-        *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
+        *(
+            run_request(ak, pk)
+            for ak, pk in result.true_slice.expensively_compute_asset_partitions()
+        )
     )
 
     # now B has been materialized, so don't execute again
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # A gets materialized again before the hour, so don't execute B again
     state = state.with_runs(run_request("A"))
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now a new cron tick, but A still hasn't been materialized since the hour
     state = state.with_current_time_advanced(hours=1)
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # A gets materialized again after the hour, so execute B again
     state = state.with_runs(run_request("A"))
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
 
 
 def test_on_cron_hourly_partitioned() -> None:
@@ -69,41 +72,44 @@ def test_on_cron_hourly_partitioned() -> None:
 
     # no cron boundary crossed
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now crossed a cron boundary parent hasn't updated yet
     state = state.with_current_time_advanced(minutes=10)
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # historical parent updated, doesn't matter
     state = state.with_runs(run_request("A", "2019-07-05-00:00"))
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # latest parent updated, now can execute
     state = state.with_runs(run_request("A", "2020-02-02-00:00"))
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1
     state = state.with_runs(
-        *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
+        *(
+            run_request(ak, pk)
+            for ak, pk in result.true_slice.expensively_compute_asset_partitions()
+        )
     )
 
     # now B has been materialized, so don't execute again
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # now a new cron tick, but A still hasn't been materialized since the hour
     state = state.with_current_time_advanced(hours=1)
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # A gets materialized with the previous partition after the hour, but that doesn't matter
     state = state.with_runs(run_request("A", "2020-02-02-00:00"))
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 0
+    assert result.true_slice.size == 0
 
     # A gets materialized with the latest partition, fire
     state = state.with_runs(run_request("A", "2020-02-02-01:00"))
     state, result = state.evaluate("B")
-    assert result.true_subset.size == 1
+    assert result.true_slice.size == 1

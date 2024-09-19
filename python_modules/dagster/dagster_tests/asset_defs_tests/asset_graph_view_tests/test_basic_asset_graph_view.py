@@ -47,18 +47,22 @@ def test_slice_traversal_static_partitions() -> None:
 
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance)
     assert (
-        asset_graph_view_t0.get_asset_slice(asset_key=up_numbers.key).compute_partition_keys()
+        asset_graph_view_t0.get_asset_slice(
+            asset_key=up_numbers.key
+        ).expensively_compute_partition_keys()
         == number_keys
     )
     assert (
-        asset_graph_view_t0.get_asset_slice(asset_key=down_letters.key).compute_partition_keys()
+        asset_graph_view_t0.get_asset_slice(
+            asset_key=down_letters.key
+        ).expensively_compute_partition_keys()
         == letter_keys
     )
 
     # from full up to down
     up_slice = asset_graph_view_t0.get_asset_slice(asset_key=up_numbers.key)
-    assert up_slice.compute_partition_keys() == {"1", "2", "3"}
-    assert up_slice.compute_child_slice(down_letters.key).compute_partition_keys() == {
+    assert up_slice.expensively_compute_partition_keys() == {"1", "2", "3"}
+    assert up_slice.compute_child_slice(down_letters.key).expensively_compute_partition_keys() == {
         "a",
         "b",
         "c",
@@ -66,8 +70,8 @@ def test_slice_traversal_static_partitions() -> None:
 
     # from full up to down
     down_slice = asset_graph_view_t0.get_asset_slice(asset_key=down_letters.key)
-    assert down_slice.compute_partition_keys() == {"a", "b", "c"}
-    assert down_slice.compute_parent_slice(up_numbers.key).compute_partition_keys() == {
+    assert down_slice.expensively_compute_partition_keys() == {"a", "b", "c"}
+    assert down_slice.compute_parent_slice(up_numbers.key).expensively_compute_partition_keys() == {
         "1",
         "2",
         "3",
@@ -76,12 +80,12 @@ def test_slice_traversal_static_partitions() -> None:
     # subset of up to subset of down
     assert up_slice.compute_intersection_with_partition_keys({"2"}).compute_child_slice(
         down_letters.key
-    ).compute_partition_keys() == {"b"}
+    ).expensively_compute_partition_keys() == {"b"}
 
     # subset of down to subset of up
     assert down_slice.compute_intersection_with_partition_keys({"b"}).compute_parent_slice(
         up_numbers.key
-    ).compute_partition_keys() == {"2"}
+    ).expensively_compute_partition_keys() == {"2"}
 
 
 def test_only_partition_keys() -> None:
@@ -98,8 +102,13 @@ def test_only_partition_keys() -> None:
 
     assert asset_graph_view_t0.get_asset_slice(
         asset_key=up_numbers.key
-    ).compute_intersection_with_partition_keys({"1", "2"}).compute_partition_keys() == {"1", "2"}
+    ).compute_intersection_with_partition_keys({"1", "2"}).expensively_compute_partition_keys() == {
+        "1",
+        "2",
+    }
 
     assert asset_graph_view_t0.get_asset_slice(
         asset_key=up_numbers.key
-    ).compute_intersection_with_partition_keys({"3"}).compute_partition_keys() == set(["3"])
+    ).compute_intersection_with_partition_keys({"3"}).expensively_compute_partition_keys() == set(
+        ["3"]
+    )

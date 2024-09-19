@@ -467,14 +467,14 @@ class AssetDaemonScenarioState(ScenarioState):
             for actual_sm, expected_sm in zip(
                 sorted(
                     actual_subsets_with_metadata,
-                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                    key=lambda x: (str(serialize_value(x.subset)), str(x.metadata)),
                 ),
                 sorted(
                     expected_subsets_with_metadata,
-                    key=lambda x: (frozenset(x.subset.asset_partitions), str(x.metadata)),
+                    key=lambda x: (str(serialize_value(x.subset)), str(x.metadata)),
                 ),
             ):
-                assert actual_sm.subset.asset_partitions == expected_sm.subset.asset_partitions
+                assert serialize_value(actual_sm.subset) == serialize_value(expected_sm.subset)
                 # only check evaluation data if it was set on the expected evaluation spec
                 if expected_sm.metadata:
                     assert actual_sm.metadata == expected_sm.metadata
