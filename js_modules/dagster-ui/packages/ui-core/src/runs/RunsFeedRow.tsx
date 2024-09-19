@@ -13,6 +13,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CreatedByTagCell} from './CreatedByTag';
+import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RUN_ACTIONS_MENU_RUN_FRAGMENT, RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTagWithStats} from './RunStatusTag';
@@ -28,7 +29,8 @@ import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/B
 import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillFragments';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
 import {PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
-import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
+import {CellBox, HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
+import {appendCurrentQueryParams} from '../util/appendCurrentQueryParams';
 
 export const RunsFeedRow = ({
   entry,
@@ -56,7 +58,7 @@ export const RunsFeedRow = ({
 
   const isReexecution = entry.tags.some((tag) => tag.key === DagsterTag.ParentRunId);
 
-  const [_showQueueCriteria, setShowQueueCriteria] = React.useState(false);
+  const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const runTime: RunTimeFragment = {
@@ -84,7 +86,7 @@ export const RunsFeedRow = ({
           <Link
             to={
               entry.__typename === 'PartitionBackfill'
-                ? `/runs-feed/b/${entry.id}?tab=runs`
+                ? appendCurrentQueryParams(`/runs-feed/b/${entry.id}?tab=runs`)
                 : `/runs/${entry.id}`
             }
           >
@@ -160,22 +162,20 @@ export const RunsFeedRow = ({
             anchorLabel="View run"
           />
         ) : (
-          <RunActionsMenu
-            run={entry}
-            // onAddTag={onAddTag}
-          />
+          <RunActionsMenu run={entry} onAddTag={onAddTag} />
         )}
       </RowCell>
-      {/* <QueuedRunCriteriaDialog
-        run={run}
+      <QueuedRunCriteriaDialog
+        run={entry}
         isOpen={showQueueCriteria}
         onClose={() => setShowQueueCriteria(false)}
-      /> */}
+      />
     </RowGrid>
   );
 };
 
-const TEMPLATE_COLUMNS = '60px 2fr 2fr 1fr 140px 150px 120px 132px';
+const TEMPLATE_COLUMNS =
+  '60px minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1fr) 140px 150px 120px 132px';
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
@@ -198,6 +198,14 @@ const RowGrid = styled(Box)`
   display: grid;
   grid-template-columns: ${TEMPLATE_COLUMNS};
   height: 100%;
+  ${CellBox}:hover {
+    overflow: visible;
+    z-index: 1;
+  }
+
+  .bp4-popover2-target {
+    background: ${Colors.backgroundDefault()};
+  }
 `;
 
 export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`

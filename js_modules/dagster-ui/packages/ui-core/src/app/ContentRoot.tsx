@@ -57,7 +57,7 @@ export const ContentRoot = memo(() => {
           <Route path="/runs-feed/b/:backfillId">
             <RunsFeedBackfillPage />
           </Route>
-          <Route path="/runs-feed" exact>
+          <Route path={['/runs-feed', '/runs-feed/scheduled']} exact>
             <RunsFeedRoot />
           </Route>
           <Route path="/runs" exact>
