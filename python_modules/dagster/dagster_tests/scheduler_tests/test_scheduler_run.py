@@ -64,7 +64,11 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._record import copy
-from dagster._scheduler.scheduler import ScheduleIterationTimes, launch_scheduled_runs
+from dagster._scheduler.scheduler import (
+    RETAIN_ORPHANED_STATE_INTERVAL_SECONDS,
+    ScheduleIterationTimes,
+    launch_scheduled_runs,
+)
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp, get_timezone
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
@@ -804,7 +808,7 @@ def test_error_load_code_location(instance: DagsterInstance, executor: ThreadPoo
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPoolExecutor):
-    freeze_datetime = feb_27_2019_one_second_to_midnight()
+    initial_datetime = feb_27_2019_one_second_to_midnight()
     with create_test_daemon_workspace_context(
         workspace_load_target(attribute="the_repo"),
         instance,
@@ -819,21 +823,20 @@ def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPool
 
         assert len(instance.all_instigator_state()) == 0
 
-        with freeze_time(freeze_datetime):
+        with freeze_time(initial_datetime):
             instance.start_schedule(simple_schedule)
             assert len(instance.all_instigator_state()) == 1
             assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 0
 
-        freeze_datetime = freeze_datetime + relativedelta(days=1)
-        with freeze_time(freeze_datetime):
+        successful_iteration_time = initial_datetime + relativedelta(days=1)
+        with freeze_time(successful_iteration_time):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert len(instance.all_instigator_state()) == 1
             assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
 
-        # Now try with an error workspace - the job state should not be deleted
-        # since its associated with an errored out location
-        freeze_datetime = freeze_datetime + relativedelta(days=1)
-        with freeze_time(freeze_datetime):
+        # Try with an error workspace - the job state should not be deleted
+        remove_datetime = successful_iteration_time + relativedelta(days=1)
+        with freeze_time(remove_datetime):
             new_location_entry = copy(
                 workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
                 code_location=None,
@@ -855,13 +858,23 @@ def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPool
             # ticks preserved
             assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
 
-    # Now try with an empty workspace - ticks are still there, but the job state is deleted
-    # once it's no longer present in the workspace
-    freeze_datetime = freeze_datetime + relativedelta(days=1)
+    # Try with an empty workspace, schedule does not exist anymore
+    retain_datetime = successful_iteration_time + relativedelta(
+        seconds=RETAIN_ORPHANED_STATE_INTERVAL_SECONDS - 1
+    )
     with create_test_daemon_workspace_context(
         EmptyWorkspaceTarget(), instance
     ) as empty_workspace_ctx:
-        with freeze_time(freeze_datetime):
+        with freeze_time(retain_datetime):
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
+            # state preserved
+            assert instance.get_instigator_state(
+                simple_origin.get_id(), simple_schedule.selector_id
+            )
+            # ticks preserved
+            assert len(instance.get_ticks(simple_origin.get_id(), simple_schedule.selector_id)) == 1
+
+        with freeze_time(remove_datetime):
             evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
             # state removed
             assert not instance.get_instigator_state(

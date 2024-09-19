@@ -70,6 +70,10 @@ LAST_ITERATION_CHECKPOINT_JITTER_SECONDS = int(
     os.getenv("DAGSTER_SCHEDULE_CHECKPOINT_JITTER_SECONDS", "600")
 )
 
+RETAIN_ORPHANED_STATE_INTERVAL_SECONDS = int(
+    os.getenv("DAGSTER_SCHEDULE_ORPHANED_STATE_RETENTION_SECONDS", "43200")  # 12 hours
+)
+
 # How long to wait if an error is raised in the SchedulerDaemon iteration
 ERROR_INTERVAL_TIME = 5
 
@@ -320,6 +324,20 @@ def launch_scheduled_runs(
     ]
     for state in states_to_delete:
         location_name = state.origin.repository_origin.code_location_origin.location_name
+
+        if location_name in error_locations:
+            # don't clean up state if its location is an error state
+            continue
+
+        if (
+            isinstance(state.instigator_data, ScheduleInstigatorData)
+            and end_datetime_utc.timestamp()
+            < (state.instigator_data.last_iteration_timestamp or 0)
+            + RETAIN_ORPHANED_STATE_INTERVAL_SECONDS
+        ):
+            # don't clean up state if its last iteration time is within a grace period
+            continue
+
         # don't clean up state if its location is an error state
         if location_name not in error_locations:
             logger.info(
