@@ -106,7 +106,7 @@ def _handle(
             entry = logs.get(block=False)
         except queue.Empty:
             shutdown.wait(timeout=interval)
-            continue
+            continue  # we will have special entry in the queue for ending the processing
 
         try:
             if entry.log is StopIteration:
