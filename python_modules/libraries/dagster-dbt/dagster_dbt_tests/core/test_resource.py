@@ -40,14 +40,14 @@ def dbt_with_profile_vars_fixture() -> DbtCliResource:
     return DbtCliResource(project_dir=os.fspath(test_jaffle_with_profile_vars_path))
 
 
-@pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
+@pytest.mark.parametrize("global_config_flags", [[], ["--quiet"], ["--full-refresh"]])
 def test_dbt_cli(global_config_flags: List[str]) -> None:
     dbt = DbtCliResource(
         project_dir=os.fspath(test_jaffle_shop_path), global_config_flags=global_config_flags
     )
-    dbt_cli_invocation = dbt.cli(["parse"])
+    dbt_cli_invocation = dbt.cli(["build"])
 
-    assert dbt_cli_invocation.process.args == ["dbt", *global_config_flags, "parse"]
+    assert dbt_cli_invocation.process.args == ["dbt", "build", *global_config_flags]
     assert dbt_cli_invocation.is_successful()
     assert dbt_cli_invocation.process.returncode == 0
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()

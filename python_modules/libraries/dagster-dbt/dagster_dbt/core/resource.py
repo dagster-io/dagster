@@ -661,8 +661,8 @@ class DbtCliResource(ConfigurableResource):
 
         full_dbt_args = [
             self.dbt_executable,
-            *self.global_config_flags,
             *args,
+            *self.global_config_flags,
             *profile_args,
             *selection_args,
         ]
