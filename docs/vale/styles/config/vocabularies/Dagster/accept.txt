@@ -94,6 +94,7 @@ SSH
 Secoda
 Snowflake
 Spark
+Tableau
 Tensorflow
 Trino
 Twilio
