@@ -80,4 +80,5 @@ Finally, update your Dagster asset to pass in the model information that's used 
 
 ## What's next?
 
-From here, you can extend this example to support numerous JavaScript-defined operations and assets, using various combinations of operations and configurations.
+- Schedule your pipeline to run periodically with [Automating Pipelines](/guides/automation)
+- Explore adding asset checks to validate your script with [Understanding Asset Checks](/concepts/assets/asset-checks)
