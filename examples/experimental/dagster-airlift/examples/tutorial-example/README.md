@@ -14,7 +14,7 @@ tutorial_example
 │   ├── definitions.py: Empty starter file for following along with the tutorial
 │
 ├── airflow_dags: Contains the Airflow DAG and associated files
-│   ├── migration_state: Contains migration state files for each DAG, see migration step below
+│   ├── proxying_state: Contains proxying state files for each DAG, see migration step below
 │   ├── dags.py: The Airflow DAG definition
 ```
 
@@ -270,52 +270,53 @@ Kicking off a run of the DAG in Airflow, you should see the newly created assets
 
 _Note: There will be some delay between task completion and assets materializing in Dagster, managed by the sensor. This sensor runs every 30 seconds by default (you can reduce down to one second via the `minimum_interval_seconds` argument to `sensor`), so there will be some delay._
 
-## Migrating Assets
+## Proxying to Assets
 
-Once you have created corresponding definitions in Dagster to your Airflow tasks, you can begin to selectively migrate execution of some or all of these assets to Dagster.
+Once you have created corresponding definitions in Dagster to your Airflow tasks, you can begin to selectively _proxy_ execution of some or all of these assets to Dagster. Airlift provides utilities for 
+remotely kicking off materializations of dagster assets rather than execute the task within airflow.
 
-To begin migration on a DAG, first you will need a file to track migration progress. In your Airflow DAG directory, create a `migration_state` folder, and in it create a yaml file with the same name as your DAG. The included example at [`airflow_dags/migration_state`](./tutorial_example/airflow_dags/migration_state) is used by `make airflow_run`, and can be used as a template for your own migration state files.
+To begin proxying tasks to dagster, you'll need to track proxied state within your airflow repository. In your Airflow DAG directory, create a `proxied_state` folder, and in it create a yaml file with the same name as your DAG. The included example at [`airflow_dags/proxied_state`](./tutorial_example/airflow_dags/proxied_state) is used by `make airflow_run`, and can be used as a template for your own proxied state files.
 
-Given our example DAG `rebuild_customers_list` with three tasks, `load_raw_customers`, `run_dbt_model`, and `export_customers`, [`migration_state/rebuild_customers_list.yaml`](./tutorial_example/airflow_dags/migration_state/rebuild_customers_list.yaml) should look like the following:
+Given our example DAG `rebuild_customers_list` with three tasks, `load_raw_customers`, `run_dbt_model`, and `export_customers`, [`proxied_state/rebuild_customers_list.yaml`](./tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml) should look like the following:
 
 ```yaml
-# tutorial_example/airflow_dags/migration_state/rebuild_customers_list.yaml
+# tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml
 tasks:
   - id: load_raw_customers
-    migrated: False
+    proxied: False
   - id: build_dbt_models
-    migrated: False
+    proxied: False
   - id: export_customers
-    migrated: False
+    proxied: False
 ```
 
-Next, you will need to modify your Airflow DAG to make it aware of the migration status. This is already done in the example DAG:
+Next, you will need to modify your Airflow DAG to make it aware of the proxy status. This is already done in the example DAG:
 
 ```python
 # tutorial_example/airflow_dags/dags.py
-from dagster_airlift.in_airflow import mark_as_dagster_migrating
-from dagster_airlift.migration_state import load_migration_state_from_yaml
+from dagster_airlift.in_airflow import proxy_to_dagster 
+from dagster_airlift.proxied_state import load_proxied_state_from_yaml 
 from pathlib import Path
 from airflow import DAG
 
 dag = DAG("rebuild_customers_list")
 ...
 
-# Set this to True to begin the migration process
-MIGRATING = False
+# Set this to True to begin the proxying process
+PROXIED = False
 
-if MIGRATING:
-   mark_as_dagster_migrating(
-       global_vars=globals(),
-       migration_state=load_migration_state_from_yaml(
-           Path(__file__).parent / "migration_state"
-       ),
-   )
+if PROXIED:
+    proxy_to_dagster(
+        global_vars=globals(),
+        migration_state=load_proxied_state_from_yaml(
+            Path(__file__).parent / "proxied_state"
+        ),
+    )
 ```
 
-Set `MIGRATING` to `True` or eliminate the `if` statement.
+Set `PROXIED` to `True` or eliminate the `if` statement.
 
-The DAG will now display its migration state in the Airflow UI. (There is some latency as Airflow evaluates the Python file periodically.)
+The DAG will now display the proxied state of it's constituent tasks in the Airflow UI. (There is some latency as Airflow evaluates the Python file periodically.)
 
 <p align="center">
 
@@ -323,23 +324,23 @@ The DAG will now display its migration state in the Airflow UI. (There is some l
 
 </p>
 
-### Migrating individual tasks
+### Proxying individual tasks
 
-In order to migrate a task, you must do two things:
+In order to proxy a task, you must do two things:
 
 1. First, ensure all associated assets are executable in Dagster by providing asset definitions in place of bare asset specs.
-2. The `migrated: False` status in the `migration_state` YAML folder must be adjusted to `migrated: True`.
+2. The `proxied: False` status in the `proxied_state` YAML folder must be adjusted to `proxied: True`.
 
-Any task marked as migrated will use the `DefaultProxyToDagsterOperator` when executed as part of the DAG. This operator will use the Dagster GraphQL API to initiate a Dagster run of the assets corresponding to the task.
+Any task marked as proxied will use the `DefaultProxyToDagsterOperator` when executed as part of the DAG. This operator will use the Dagster GraphQL API to initiate a Dagster run of the assets corresponding to the task.
 
-The migration file acts as the source of truth for migration status. The information is attached to the DAG and then accessed by Dagster via the REST API.
+The proxied file acts as the source of truth for proxied status. The information is attached to the DAG and then accessed by Dagster via the REST API.
 
-A task which has been migrated can be easily toggled back to run in Airflow (for example, if a bug in implementation was encountered) simply by editing the file to `migrated: False`.
+A task which has been proxied can be easily toggled back to run in Airflow (for example, if a bug in implementation was encountered) simply by editing the file to `proxied: False`.
 
 #### Supporting custom authorization
 
 If your dagster deployment lives behind a custom auth backend, you can customize the airflow-to-dagster proxying behavior to authenticate to your backend.
-`mark_as_dagster_migrating` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyToDagsterOperator` class. This allows you to
+`proxy_to_dagster` can take a parameter `dagster_operator_klass`, which allows you to define a custom `BaseProxyToDagsterOperator` class. This allows you to
 override how a session is created. Let's say for example, your dagster installation requires an access key to be set whenever a request is made, and that access key is set in an airflow `Variable` called `my_api_key`.
 We can create a custom `BaseProxyToDagsterOperator` subclass which will retrieve that variable value and set it on the session, so that any requests to dagster's graphql API
 will be made using that api key.
@@ -351,8 +352,8 @@ from pathlib import Path
 import requests
 from airflow import DAG
 from airflow.utils.context import Context
-from dagster_airlift.in_airflow import BaseProxyToDagsterOperator, mark_as_dagster_migrating
-from dagster_airlift.migration_state import load_migration_state_from_yaml
+from dagster_airlift.in_airflow import BaseProxyToDagsterOperator, proxy_to_dagster
+from dagster_airlift.migration_state import load_proxied_state_from_yaml
 
 
 class CustomProxyToDagsterOperator(BaseProxyToDagsterOperator):
@@ -373,9 +374,9 @@ dag = DAG(
 )
 
 # At the end of your dag file
-mark_as_dagster_migrating(
+proxy_to_dagster(
     global_vars=globals(),
-    migration_state=load_migration_state_from_yaml(Path(__file__).parent / "migration_state"),
+    migration_state=load_proxied_state_from_yaml(Path(__file__).parent / "migration_state"),
     dagster_operator_klass=CustomProxyToDagsterOperator,
 )
 ```
@@ -410,23 +411,23 @@ class DagsterCloudProxyOperator(BaseProxyToDagsterOperator):
         return f"https://{org_name}.dagster.plus/{deployment_name}"
 ```
 
-#### Migrating common operators
+#### Proxying common operators
 
-For some common operator patterns, like our dbt operator, Dagster supplies factories to build software defined assets for our tasks. In fact, the `dbt_defs` factory used earlier already backs its assets with definitions, so we can toggle the migration status of the `build_dbt_models` task to `migrated: True` in the migration state file:
+For some common operator patterns, like our dbt operator, Dagster supplies factories to build software defined assets for our tasks. In fact, the `dbt_defs` factory used earlier already backs its assets with definitions, so we can toggle the proxied status of the `build_dbt_models` task to `proxied: True` in the proxied state file:
 
 ```yaml
-# tutorial_example/airflow_dags/migration_state/rebuild_customers_list.yaml
+# tutorial_example/airflow_dags/proxied/rebuild_customers_list.yaml
 tasks:
   - id: load_raw_customers
-    migrated: False
+    proxied: False
   - id: build_dbt_models
     # change this to move execution to Dagster
-    migrated: True
+    proxied: True
   - id: export_customers
-    migrated: False
+    proxied: False
 ```
 
-**Important**: It may take up to 30 seconds for the migration status in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster via the UI or by restarting `dagster dev`.
+**Important**: It may take up to 30 seconds for the proxied status in the Airflow UI to reflect this change. You must subsequently reload the definitions in Dagster via the UI or by restarting `dagster dev`.
 
 You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run:
 
@@ -436,7 +437,7 @@ You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_
 
 </p>
 
-You'll note that we migrated a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI, but execution of `build_dbt_models` has moved to Dagster.
+You'll note that we proxied a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI, but execution of `build_dbt_models` has moved to Dagster.
 
 #### Migrating the remaining custom operators
 
@@ -563,7 +564,7 @@ tasks:
 
 ## Decomissioning an Airflow DAG
 
-Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG. First, we can remove the DAG from our Airflow DAG directory.
+Once we are confident in our dagster versions of the tasks, we can decommission the Airflow DAG. First, we can remove the DAG from our Airflow DAG directory.
 
 Next, we can strip the task associations from our Dagster definitions. This can be done by removing the `task_defs` calls and `dag_defs` call. We can use this opportunity to attach our assets to a `ScheduleDefinition` so that Dagster's scheduler can manage their execution:
 
