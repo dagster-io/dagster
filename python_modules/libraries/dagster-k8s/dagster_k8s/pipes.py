@@ -724,24 +724,24 @@ else:
     # handle valid ISO 8601 timestamps with nanoseconds which we receive in k8s
     # e.g. 2024-03-22T02:17:29.185548486Z
 
-    # This is likely fine. We're just trying to confirm whether or not it's a
-    # valid timestamp, not trying to parse it with full correctness.
-    if maybe_timestamp.endswith("Z"):
-        maybe_timestamp = maybe_timestamp[:-1]  # Strip the "Z"
-        if "." in maybe_timestamp:
-            # Split at the decimal point to isolate the fractional seconds
-            date_part, frac_part = maybe_timestamp.split(".")
-            maybe_timestamp = f"{date_part}.{frac_part[:6]}Z"
+        # This is likely fine. We're just trying to confirm whether or not it's a
+        # valid timestamp, not trying to parse it with full correctness.
+        if maybe_timestamp.endswith("Z"):
+            maybe_timestamp = maybe_timestamp[:-1]  # Strip the "Z"
+            if "." in maybe_timestamp:
+                # Split at the decimal point to isolate the fractional seconds
+                date_part, frac_part = maybe_timestamp.split(".")
+                maybe_timestamp = f"{date_part}.{frac_part[:6]}Z"
+            else:
+                maybe_timestamp = f"{maybe_timestamp}Z"  # Add the "Z" back if no fractional part
+            try:
+                datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+                return True
+            except ValueError:
+                return False
         else:
-            maybe_timestamp = f"{maybe_timestamp}Z"  # Add the "Z" back if no fractional part
-        try:
-            datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
-            return True
-        except ValueError:
-            return False
-    else:
-        try:
-            datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S%z")
-            return True
-        except ValueError:
-            return False
+            try:
+                datetime.strptime(maybe_timestamp, "%Y-%m-%dT%H:%M:%S%z")
+                return True
+            except ValueError:
+                return False
