@@ -32,3 +32,15 @@ python3 -m build
 echo "Uploading to pypi..."
 # Capture the output of the twine upload command
 python3 -m twine upload --username "__token__" --password "$PYPI_TOKEN" --repository pypi dist/* --verbose
+
+cd ..
+rm -rf package_prerelease
+
+PACKAGE_NAME=$(echo $PACKAGE_TO_RELEASE_PATH | awk -F/ '{print $NF}')
+git add -A
+git config --global user.email "devtools@dagsterlabs.com"
+git config --global user.name "Dagster Labs"
+git commit -m "$PACKAGE_NAME $VERSION_TO_RELEASE"
+git tag -a "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
+git push
+git push origin "$PACKAGE_NAME/v$VERSION_TO_RELEASE"

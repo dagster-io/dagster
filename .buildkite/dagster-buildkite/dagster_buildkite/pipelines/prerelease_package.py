@@ -62,6 +62,10 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
         .run(
             "pip install build",
             "sh ./scripts/build_and_publish.sh",
+            "git add -A",
+            "git config --global user.email 'devtools@dagsterlabs.com'",
+            "git config --global user.name 'Dagster Labs'",
+            "git commit -m 'Update package version'",
         )
         .on_test_image(AvailablePythonVersion.get_default(), env=["PYPI_TOKEN"])
         .build()
