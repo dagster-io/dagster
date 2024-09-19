@@ -44,6 +44,7 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
 
     steps.append(  CommandStepBuilder(":package: Build and publish package")
         .run(
+            "pip install build",
             "sh ./scripts/build_and_publish.sh",
         )
         .on_test_image(AvailablePythonVersion.get_default())
