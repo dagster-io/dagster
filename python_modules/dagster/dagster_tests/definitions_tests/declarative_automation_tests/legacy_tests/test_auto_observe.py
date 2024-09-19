@@ -1,14 +1,38 @@
+import datetime
 import logging
+from typing import AbstractSet, Mapping, Sequence
 
 from dagster import AssetKey, DagsterInstance, observable_source_asset
-from dagster._core.definitions.asset_daemon_context import (
-    AssetDaemonContext,
-    get_auto_observe_run_requests,
-)
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.automation_tick_evaluation_context import (
+    AutomationTickEvaluationContext,
+)
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.run_request import RunRequest
 from pytest import fixture
+
+
+def get_auto_observe_run_requests(
+    last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
+    current_timestamp: float,
+    asset_graph: BaseAssetGraph,
+    run_tags: Mapping[str, str],
+    auto_observe_asset_keys: AbstractSet[AssetKey],
+) -> Sequence[RunRequest]:
+    return AutomationTickEvaluationContext(
+        0,
+        DagsterInstance.ephemeral(),
+        asset_graph,
+        AssetDaemonCursor(0, last_observe_request_timestamp_by_asset_key, None, None),
+        {},
+        run_tags,
+        auto_observe_asset_keys,
+        set(),
+        logging.getLogger(),
+        datetime.datetime.fromtimestamp(current_timestamp),
+    ).evaluate()[0]
 
 
 def test_single_observable_source_asset_no_auto_observe():
@@ -108,7 +132,7 @@ def test_reconcile() -> None:
     asset_graph = AssetGraph.from_assets([asset1])
     instance = DagsterInstance.ephemeral()
 
-    run_requests, cursor, _ = AssetDaemonContext(
+    run_requests, cursor, _ = AutomationTickEvaluationContext(
         evaluation_id=1,
         auto_observe_asset_keys={AssetKey(["asset1"])},
         asset_graph=asset_graph,

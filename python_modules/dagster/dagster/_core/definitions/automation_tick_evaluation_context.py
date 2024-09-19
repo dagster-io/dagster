@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -39,13 +40,12 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._time import get_current_timestamp
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
 
-class AssetDaemonContext:
+class AutomationTickEvaluationContext:
     def __init__(
         self,
         evaluation_id: int,
@@ -80,24 +80,44 @@ class AssetDaemonContext:
     def asset_graph(self) -> BaseAssetGraph:
         return self._evaluator.asset_graph
 
-    def evaluate(
-        self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
-        observe_request_timestamp = get_current_timestamp()
-        auto_observe_run_requests = (
-            get_auto_observe_run_requests(
-                asset_graph=self.asset_graph,
-                last_observe_request_timestamp_by_asset_key=self.cursor.last_observe_request_timestamp_by_asset_key,
-                current_timestamp=observe_request_timestamp,
-                run_tags=self._observe_run_tags,
-                auto_observe_asset_keys=self._auto_observe_asset_keys,
+    def _legacy_build_auto_observe_run_requests(self) -> Sequence[RunRequest]:
+        current_timestamp = self._evaluator.evaluation_time.timestamp()
+        assets_to_auto_observe: Set[AssetKey] = set()
+        for asset_key in self._auto_observe_asset_keys:
+            last_observe_request_timestamp = (
+                self.cursor.last_observe_request_timestamp_by_asset_key.get(asset_key)
             )
-            if self._auto_observe_asset_keys
-            else []
-        )
+            auto_observe_interval_minutes = self.asset_graph.get(
+                asset_key
+            ).auto_observe_interval_minutes
 
-        results, entity_subsets = self._evaluator.evaluate()
+            if auto_observe_interval_minutes and (
+                last_observe_request_timestamp is None
+                or (
+                    last_observe_request_timestamp + auto_observe_interval_minutes * 60
+                    < current_timestamp
+                )
+            ):
+                assets_to_auto_observe.add(asset_key)
 
+        # create groups of asset keys that share the same repository AND the same partitions definition
+        partitions_def_and_asset_key_groups: List[Sequence[AssetKey]] = []
+        for repository_asset_keys in self.asset_graph.split_asset_keys_by_repository(
+            assets_to_auto_observe
+        ):
+            asset_keys_by_partitions_def = defaultdict(list)
+            for asset_key in repository_asset_keys:
+                partitions_def = self.asset_graph.get(asset_key).partitions_def
+                asset_keys_by_partitions_def[partitions_def].append(asset_key)
+            partitions_def_and_asset_key_groups.extend(asset_keys_by_partitions_def.values())
+
+        return [
+            RunRequest(asset_selection=list(asset_keys), tags=self._observe_run_tags)
+            for asset_keys in partitions_def_and_asset_key_groups
+            if len(asset_keys) > 0
+        ]
+
+    def _build_run_requests(self, entity_subsets: Iterable[EntitySubset]) -> Sequence[RunRequest]:
         if self._evaluator.request_backfills:
             asset_subsets = cast(
                 Iterable[EntitySubset[AssetKey]],
@@ -121,8 +141,28 @@ class AssetDaemonContext:
                 run_tags=self._materialize_run_tags,
             )
 
-        run_requests = [*run_requests, *auto_observe_run_requests]
+        return run_requests
 
+    def _get_updated_cursor(
+        self, results: Iterable[AutomationResult], observe_run_requests: Iterable[RunRequest]
+    ) -> AssetDaemonCursor:
+        return self.cursor.with_updates(
+            evaluation_id=self._evaluation_id,
+            condition_cursors=[result.get_new_cursor() for result in results],
+            newly_observe_requested_asset_keys=[
+                asset_key
+                for run_request in observe_run_requests
+                for asset_key in cast(
+                    Sequence[AssetKey],
+                    run_request.asset_selection,  # auto-observe run requests always have asset_selection
+                )
+            ],
+            evaluation_timestamp=self._evaluator.evaluation_time.timestamp(),
+        )
+
+    def _get_updated_evaluations(
+        self, results: Iterable[AutomationResult]
+    ) -> Sequence[AutomationConditionEvaluation]:
         # only record evaluation results where something changed
         updated_evaluations = []
         for result in results:
@@ -133,23 +173,18 @@ class AssetDaemonContext:
                 or not result.true_subset.is_empty
             ):
                 updated_evaluations.append(result.serializable_evaluation)
+        return updated_evaluations
+
+    def evaluate(
+        self,
+    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AutomationConditionEvaluation]]:
+        observe_run_requests = self._legacy_build_auto_observe_run_requests()
+        results, entity_subsets = self._evaluator.evaluate()
 
         return (
-            run_requests,
-            self.cursor.with_updates(
-                evaluation_id=self._evaluation_id,
-                condition_cursors=[result.get_new_cursor() for result in results],
-                newly_observe_requested_asset_keys=[
-                    asset_key
-                    for run_request in auto_observe_run_requests
-                    for asset_key in cast(
-                        Sequence[AssetKey],
-                        run_request.asset_selection,  # auto-observe run requests always have asset_selection
-                    )
-                ],
-                evaluation_timestamp=self._evaluator.evaluation_time.timestamp(),
-            ),
-            updated_evaluations,
+            [*self._build_run_requests(entity_subsets), *observe_run_requests],
+            self._get_updated_cursor(results, observe_run_requests),
+            self._get_updated_evaluations(results),
         )
 
 
@@ -414,40 +449,3 @@ def _build_run_request_for_partition_key_range(
     }
     partition_key = partition_range_start if partition_range_start == partition_range_end else None
     return RunRequest(asset_selection=asset_keys, partition_key=partition_key, tags=tags)
-
-
-def get_auto_observe_run_requests(
-    last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float],
-    current_timestamp: float,
-    asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
-    auto_observe_asset_keys: AbstractSet[AssetKey],
-) -> Sequence[RunRequest]:
-    assets_to_auto_observe: Set[AssetKey] = set()
-    for asset_key in auto_observe_asset_keys:
-        last_observe_request_timestamp = last_observe_request_timestamp_by_asset_key.get(asset_key)
-        auto_observe_interval_minutes = asset_graph.get(asset_key).auto_observe_interval_minutes
-
-        if auto_observe_interval_minutes and (
-            last_observe_request_timestamp is None
-            or (
-                last_observe_request_timestamp + auto_observe_interval_minutes * 60
-                < current_timestamp
-            )
-        ):
-            assets_to_auto_observe.add(asset_key)
-
-    # create groups of asset keys that share the same repository AND the same partitions definition
-    partitions_def_and_asset_key_groups: List[Sequence[AssetKey]] = []
-    for repository_asset_keys in asset_graph.split_asset_keys_by_repository(assets_to_auto_observe):
-        asset_keys_by_partitions_def = defaultdict(list)
-        for asset_key in repository_asset_keys:
-            partitions_def = asset_graph.get(asset_key).partitions_def
-            asset_keys_by_partitions_def[partitions_def].append(asset_key)
-        partitions_def_and_asset_key_groups.extend(asset_keys_by_partitions_def.values())
-
-    return [
-        RunRequest(asset_selection=list(asset_keys), tags=run_tags)
-        for asset_keys in partitions_def_and_asset_key_groups
-        if len(asset_keys) > 0
-    ]
