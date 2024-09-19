@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Type
+from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Type
 
 import requests
 from dagster import ConfigurableResource
