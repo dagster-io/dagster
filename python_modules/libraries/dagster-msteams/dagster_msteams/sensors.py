@@ -83,7 +83,7 @@ def make_teams_on_run_failure_sensor(
             which means the alert will be sent when any job in the repository matches the requested
             run_status. To monitor jobs in external repositories, use RepositorySelector and JobSelector.
         monitor_all_code_locations (bool): If set to True, the sensor will monitor all runs in the
-            Dagster instance. If set to True, an error will be raised if you also specify
+            Dagster deployment. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
         webserver_base_url: (Optional[str]): The base url of your webserver instance. Specify this to allow
             messages to include deeplinks to the failed run.
