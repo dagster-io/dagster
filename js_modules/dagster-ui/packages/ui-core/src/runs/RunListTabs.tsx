@@ -6,7 +6,7 @@ import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
-import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
+import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunListTabs.types';
 import {gql, useQuery} from '../apollo-client';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -30,8 +30,8 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
 };
 
 export const useRunListTabs = (filter: RunsFilter = {}) => {
-  const queryResult = useQuery<RunTabsCountQuery, RunTabsCountQueryVariables>(
-    RUN_TABS_COUNT_QUERY,
+  const queryResult = useQuery<RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables>(
+    RUN_FEED_TABS_COUNT_QUERY,
     {
       variables: {
         queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
@@ -151,8 +151,9 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   return 'all';
 };
 
-export const RUN_TABS_COUNT_QUERY = gql`
-  query RunTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
+// TODO: Use the RunsFeed resolver once its ready
+export const RUN_FEED_TABS_COUNT_QUERY = gql`
+  query RunFeedTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ... on Runs {
         count

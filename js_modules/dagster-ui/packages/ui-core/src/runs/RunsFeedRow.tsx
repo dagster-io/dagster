@@ -77,11 +77,11 @@ export const RunsFeedRow = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <FeedRowCell>
+      <RowCell>
         <Checkbox checked={!!checked} onChange={onChange} />
-      </FeedRowCell>
+      </RowCell>
 
-      <FeedRowCell>
+      <RowCell>
         <Box flex={{direction: 'column', gap: 5}}>
           <Link
             to={
@@ -120,8 +120,8 @@ export const RunsFeedRow = ({
             ) : null}
           </Box>
         </Box>
-      </FeedRowCell>
-      <FeedRowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
+      </RowCell>
+      <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
         <Tag>
           <Box flex={{direction: 'row', gap: 4}}>
             {entry.__typename === 'Run' ? (
@@ -135,25 +135,25 @@ export const RunsFeedRow = ({
             )}
           </Box>
         </Tag>
-      </FeedRowCell>
-      <FeedRowCell>
+      </RowCell>
+      <RowCell>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} />
-      </FeedRowCell>
-      <FeedRowCell>
+      </RowCell>
+      <RowCell>
         <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
-      </FeedRowCell>
-      <FeedRowCell style={{flexDirection: 'column', gap: 4}}>
+      </RowCell>
+      <RowCell style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
         {isReexecution ? (
           <div>
             <Tag icon="cached">Re-execution</Tag>
           </div>
         ) : null}
-      </FeedRowCell>
-      <FeedRowCell>
+      </RowCell>
+      <RowCell>
         <RunStateSummary run={runTime} />
-      </FeedRowCell>
-      <FeedRowCell>
+      </RowCell>
+      <RowCell>
         {entry.__typename === 'PartitionBackfill' ? (
           <BackfillActionsMenu
             backfill={{...entry, status: entry.backfillStatus}}
@@ -164,7 +164,7 @@ export const RunsFeedRow = ({
         ) : (
           <RunActionsMenu run={entry} onAddTag={onAddTag} />
         )}
-      </FeedRowCell>
+      </RowCell>
       <QueuedRunCriteriaDialog
         run={entry}
         isOpen={showQueueCriteria}
@@ -205,14 +205,6 @@ const RowGrid = styled(Box)`
     display: block;
   }
 `;
-
-const FeedRowCell = (props: React.ComponentProps<typeof RowCell>) => {
-  return (
-    <RowCell {...props}>
-      <div style={{background: Colors.backgroundDefault()}}>{props.children}</div>
-    </RowCell>
-  );
-};
 
 export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
   fragment RunsFeedTableEntryFragment on RunsFeedEntry {
