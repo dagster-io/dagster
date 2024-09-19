@@ -448,20 +448,13 @@ def _fetch_runs_not_in_backfill(
     return runs[:limit]
 
 
-def _bulk_action_status_from_run_status(status: DagsterRunStatus) -> Sequence[BulkActionStatus]:
-    """Converts a DagsterRunStatus to the BulkActionStatuses that display as that DagsterRunStatus in the UI."""
-    if status == DagsterRunStatus.SUCCESS:
-        return [BulkActionStatus.COMPLETED_SUCCESS]
-    if status == DagsterRunStatus.FAILURE:
-        return [BulkActionStatus.FAILED, BulkActionStatus.COMPLETED_FAILED]
-    if status == DagsterRunStatus.CANCELED:
-        return [BulkActionStatus.CANCELED]
-    if status == DagsterRunStatus.CANCELING:
-        return [BulkActionStatus.CANCELING]
-    if status == DagsterRunStatus.STARTED:
-        return [BulkActionStatus.REQUESTED]
-
-    return []
+RUN_STATUS_TO_BULK_ACTION_STATUSES = {
+    DagsterRunStatus.SUCCESS: [BulkActionStatus.COMPLETED_SUCCESS],
+    DagsterRunStatus.FAILURE: [BulkActionStatus.FAILED, BulkActionStatus.COMPLETED_FAILED],
+    DagsterRunStatus.CANCELED: [BulkActionStatus.CANCELED],
+    DagsterRunStatus.CANCELING: [BulkActionStatus.CANCELING],
+    DagsterRunStatus.STARTED: [BulkActionStatus.REQUESTED],
+}
 
 
 def _bulk_action_statuses_from_run_statuses(
@@ -469,7 +462,7 @@ def _bulk_action_statuses_from_run_statuses(
 ) -> Sequence[BulkActionStatus]:
     full_list = []
     for status in statuses:
-        full_list.extend(_bulk_action_status_from_run_status(status))
+        full_list.extend(RUN_STATUS_TO_BULK_ACTION_STATUSES.get(status, []))
 
     return full_list
 
