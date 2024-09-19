@@ -9,8 +9,10 @@ from dagster_buildkite.utils import BlockStep, BuildkiteStep
 def build_prerelease_package_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
-    packages = _get_uncustomized_pkg_roots("python_modules", []) + _get_uncustomized_pkg_roots(
-        "python_modules/libraries", []
+    packages = (
+        _get_uncustomized_pkg_roots("python_modules", [])
+        + _get_uncustomized_pkg_roots("python_modules/libraries", [])
+        + _get_uncustomized_pkg_roots("python_modules/libraries/examples/experimental", [])
     )
 
     input_step: BlockStep = {
