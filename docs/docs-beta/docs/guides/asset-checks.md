@@ -10,7 +10,7 @@ Asset checks are tests that verify specific properties of your data assets, allo
 - Verify that a tabular asset adheres to a specified schema
 - Check if an asset's data needs refreshing
 
-Each asset check should test only a single asset property to keep tests simple, reusable, and easy to track over time.
+Each asset check should test only a single asset property to keep tests uncomplicated, reusable, and easy to track over time.
 
 <details>
 <summary>Prerequisites</summary>
