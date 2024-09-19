@@ -7,8 +7,6 @@ const config: Config = {
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
-  noIndex: true, // TODO - remove when production-ready
-
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
@@ -148,6 +146,20 @@ const config: Config = {
             require.resolve('./node_modules/modern-normalize/modern-normalize.css'),
             require.resolve('./src/styles/custom.scss'),
           ],
+        },
+        // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
+        sitemap: {
+          lastmod: 'date',
+          changefreq: 'weekly',
+          priority: 0.5,
+          ignorePatterns: ['/tags/**'],
+          filename: 'sitemap.xml',
+          createSitemapItems: async (params) => {
+            const {defaultCreateSitemapItems, ...rest} = params;
+            const items = await defaultCreateSitemapItems(rest);
+            //return items.filter((item) => !item.url.includes('/page/'));
+            return items;
+          },
         },
       } satisfies Preset.Options,
     ],
