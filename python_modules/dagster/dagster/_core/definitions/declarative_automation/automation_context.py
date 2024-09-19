@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, EntitySlice
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -43,7 +43,7 @@ def _has_legacy_condition(condition: AutomationCondition):
 class AutomationContext(Generic[T_EntityKey]):
     condition: AutomationCondition
     condition_unique_id: str
-    candidate_slice: EntitySlice[T_EntityKey]
+    candidate_subset: EntitySubset[T_EntityKey]
 
     create_time: datetime.datetime
 
@@ -73,7 +73,7 @@ class AutomationContext(Generic[T_EntityKey]):
         return AutomationContext(
             condition=condition,
             condition_unique_id=condition_unqiue_id,
-            candidate_slice=asset_graph_view.get_full_slice(key=asset_key),
+            candidate_subset=asset_graph_view.get_full_subset(key=asset_key),
             create_time=get_current_datetime(),
             asset_graph_view=asset_graph_view,
             current_tick_results_by_key=current_tick_results_by_key,
@@ -87,7 +87,7 @@ class AutomationContext(Generic[T_EntityKey]):
         self,
         child_condition: AutomationCondition[U_EntityKey],
         child_index: int,
-        candidate_slice: EntitySlice[U_EntityKey],
+        candidate_subset: EntitySubset[U_EntityKey],
     ) -> "AutomationContext[U_EntityKey]":
         condition_unqiue_id = child_condition.get_unique_id(
             parent_unique_id=self.condition_unique_id, index=child_index
@@ -95,14 +95,14 @@ class AutomationContext(Generic[T_EntityKey]):
         return AutomationContext(
             condition=child_condition,
             condition_unique_id=condition_unqiue_id,
-            candidate_slice=candidate_slice,
+            candidate_subset=candidate_subset,
             create_time=get_current_datetime(),
             asset_graph_view=self.asset_graph_view,
             current_tick_results_by_key=self.current_tick_results_by_key,
             parent_context=self,
             _cursor=self._cursor,
             _legacy_context=self._legacy_context.for_child(
-                child_condition, condition_unqiue_id, candidate_slice
+                child_condition, condition_unqiue_id, candidate_subset
             )
             if self._legacy_context
             else None,
@@ -121,7 +121,7 @@ class AutomationContext(Generic[T_EntityKey]):
     @property
     def key(self) -> T_EntityKey:
         """The asset key over which this condition is being evaluated."""
-        return self.candidate_slice.key
+        return self.candidate_subset.key
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -159,12 +159,12 @@ class AutomationContext(Generic[T_EntityKey]):
         return self._node_cursor.get_structured_cursor(as_type=str) if self._node_cursor else None
 
     @property
-    def previous_true_slice(self) -> Optional[EntitySlice[T_EntityKey]]:
-        """Returns the true slice for this node from the previous evaluation, if this node was
+    def previous_true_subset(self) -> Optional[EntitySubset[T_EntityKey]]:
+        """Returns the true subset for this node from the previous evaluation, if this node was
         evaluated on the previous tick.
         """
         return (
-            self.asset_graph_view.get_slice_from_subset(self._node_cursor.true_subset)
+            self.asset_graph_view.get_subset_from_serializable_subset(self._node_cursor.true_subset)
             if self._node_cursor
             else None
         )
@@ -202,34 +202,36 @@ class AutomationContext(Generic[T_EntityKey]):
         )
 
     @property
-    def previous_requested_slice(self) -> Optional[EntitySlice[AssetKey]]:
-        """Returns the requested slice for the previous evaluation. If this asset has never been
+    def previous_requested_subset(self) -> Optional[EntitySubset[AssetKey]]:
+        """Returns the requested subset for the previous evaluation. If this asset has never been
         evaluated, returns None.
         """
         return (
-            self.asset_graph_view.get_slice_from_subset(self._cursor.previous_requested_subset)
+            self.asset_graph_view.get_subset_from_serializable_subset(
+                self._cursor.previous_requested_subset
+            )
             if self._cursor
             else None
         )
 
     @property
-    def previous_candidate_slice(self) -> Optional[EntitySlice[T_EntityKey]]:
-        """Returns the candidate slice for the previous evaluation. If this node has never been
+    def previous_candidate_subset(self) -> Optional[EntitySubset[T_EntityKey]]:
+        """Returns the candidate subset for the previous evaluation. If this node has never been
         evaluated, returns None.
         """
         candidate_subset = self._node_cursor.candidate_subset if self._node_cursor else None
         if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
-            return self.asset_graph_view.get_full_slice(key=self.key)
+            return self.asset_graph_view.get_full_subset(key=self.key)
         else:
             return (
-                self.asset_graph_view.get_slice_from_subset(candidate_subset)
+                self.asset_graph_view.get_subset_from_serializable_subset(candidate_subset)
                 if candidate_subset
                 else None
             )
 
-    def get_empty_slice(self) -> EntitySlice[T_EntityKey]:
-        """Returns an empty AssetSlice of the currently-evaluated asset."""
-        return self.asset_graph_view.get_empty_slice(key=self.key)
+    def get_empty_subset(self) -> EntitySubset[T_EntityKey]:
+        """Returns an empty EntitySubset of the currently-evaluated key."""
+        return self.asset_graph_view.get_empty_subset(key=self.key)
 
     def get_structured_cursor(
         self, as_type: Type[T_StructuredCursor]

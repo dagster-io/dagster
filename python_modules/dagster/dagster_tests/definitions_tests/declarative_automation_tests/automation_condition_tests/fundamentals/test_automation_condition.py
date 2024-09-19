@@ -32,22 +32,22 @@ def test_missing_unpartitioned() -> None:
     )
 
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     original_value_hash = result.value_hash
 
     # still true
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
     assert result.value_hash == original_value_hash
 
     # after a run of A it's now False
     state, result = state.with_runs(run_request("A")).evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
     assert result.value_hash != original_value_hash
 
     # if we evaluate from scratch, it's also False
     _, result = state.without_cursor().evaluate("A")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
 
 def test_missing_time_partitioned() -> None:
@@ -61,22 +61,22 @@ def test_missing_time_partitioned() -> None:
     )
 
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 6
+    assert result.true_subset.size == 6
 
     # still true
     state, result = state.evaluate("A")
-    assert result.true_slice.size == 6
+    assert result.true_subset.size == 6
 
     # after two runs of A those partitions are now False
     state, result = state.with_runs(
         run_request("A", day_partition_key(time_partitions_start_datetime, 1)),
         run_request("A", day_partition_key(time_partitions_start_datetime, 3)),
     ).evaluate("A")
-    assert result.true_slice.size == 4
+    assert result.true_subset.size == 4
 
     # if we evaluate from scratch, they're still False
     _, result = state.without_cursor().evaluate("A")
-    assert result.true_slice.size == 4
+    assert result.true_subset.size == 4
 
 
 def test_serialize_definitions_with_asset_condition() -> None:
@@ -104,7 +104,7 @@ def test_serialize_definitions_with_user_code_asset_condition() -> None:
     class MyAutomationCondition(AutomationCondition):
         def evaluate(self, context: AutomationContext) -> AutomationResult:
             return AutomationResult(
-                context, context.asset_graph_view.get_full_slice(key=context.key)
+                context, context.asset_graph_view.get_full_subset(key=context.key)
             )
 
     automation_condition = AutomationCondition.eager() | MyAutomationCondition()

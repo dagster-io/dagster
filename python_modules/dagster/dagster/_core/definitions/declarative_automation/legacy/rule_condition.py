@@ -36,7 +36,7 @@ class RuleCondition(BuiltinAutomationCondition[AssetKey]):
         # Allow for access to legacy context in legacy rule evaluation
         evaluation_result = self.rule.evaluate_for_asset(context)
         context.log.debug(
-            f"Rule returned {evaluation_result.true_slice.size} partitions "
+            f"Rule returned {evaluation_result.true_subset.size} partitions "
             f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
         )
         return evaluation_result

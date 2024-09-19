@@ -16,12 +16,12 @@ def test_will_be_requested_unpartitioned() -> None:
 
     # no requested parents
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # parent is requested
     state = state.with_requested_asset_partitions([AssetKeyPartitionKey(AssetKey("A"))])
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 1
+    assert result.true_subset.size == 1
 
 
 def test_will_be_requested_static_partitioned() -> None:
@@ -32,13 +32,13 @@ def test_will_be_requested_static_partitioned() -> None:
 
     # no requested parents
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # one requested parent
     state = state.with_requested_asset_partitions([AssetKeyPartitionKey(AssetKey("A"), "1")])
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 1
-    assert result.true_slice.expensively_compute_asset_partitions() == {
+    assert result.true_subset.size == 1
+    assert result.true_subset.expensively_compute_asset_partitions() == {
         AssetKeyPartitionKey(AssetKey("B"), "1")
     }
 
@@ -47,7 +47,7 @@ def test_will_be_requested_static_partitioned() -> None:
         [AssetKeyPartitionKey(AssetKey("A"), "1"), AssetKeyPartitionKey(AssetKey("A"), "2")]
     )
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 2
+    assert result.true_subset.size == 2
 
 
 def test_will_be_requested_different_partitions() -> None:
@@ -58,16 +58,16 @@ def test_will_be_requested_different_partitions() -> None:
 
     # no requested parents
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # one requested parent, but can't execute in same run
     state = state.with_requested_asset_partitions([AssetKeyPartitionKey(AssetKey("A"), "1")])
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0
 
     # two requested parents, but can't execute in same run
     state = state.with_requested_asset_partitions(
         [AssetKeyPartitionKey(AssetKey("A"), "1"), AssetKeyPartitionKey(AssetKey("A"), "2")]
     )
     state, result = state.evaluate("B")
-    assert result.true_slice.size == 0
+    assert result.true_subset.size == 0

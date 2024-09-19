@@ -35,15 +35,15 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         child_results: List[AutomationResult] = []
-        true_slice = context.candidate_slice
+        true_subset = context.candidate_subset
         for i, child in enumerate(self.children):
             child_context = context.for_child_condition(
-                child_condition=child, child_index=i, candidate_slice=true_slice
+                child_condition=child, child_index=i, candidate_subset=true_subset
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_slice = true_slice.compute_intersection(child_result.true_slice)
-        return AutomationResult(context, true_slice, child_results=child_results)
+            true_subset = true_subset.compute_intersection(child_result.true_subset)
+        return AutomationResult(context, true_subset, child_results=child_results)
 
     def without(self, condition: AutomationCondition) -> "AndAutomationCondition":
         """Returns a copy of this condition without the specified child condition."""
@@ -82,16 +82,16 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         child_results: List[AutomationResult] = []
-        true_slice = context.get_empty_slice()
+        true_subset = context.get_empty_subset()
         for i, child in enumerate(self.children):
             child_context = context.for_child_condition(
-                child_condition=child, child_index=i, candidate_slice=context.candidate_slice
+                child_condition=child, child_index=i, candidate_subset=context.candidate_subset
             )
             child_result = child.evaluate(child_context)
             child_results.append(child_result)
-            true_slice = true_slice.compute_union(child_result.true_slice)
+            true_subset = true_subset.compute_union(child_result.true_subset)
 
-        return AutomationResult(context, true_slice, child_results=child_results)
+        return AutomationResult(context, true_subset, child_results=child_results)
 
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
@@ -114,9 +114,9 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
     def evaluate(self, context: AutomationContext[T_EntityKey]) -> AutomationResult[T_EntityKey]:
         child_context = context.for_child_condition(
-            child_condition=self.operand, child_index=0, candidate_slice=context.candidate_slice
+            child_condition=self.operand, child_index=0, candidate_subset=context.candidate_subset
         )
         child_result = self.operand.evaluate(child_context)
-        true_slice = context.candidate_slice.compute_difference(child_result.true_slice)
+        true_subset = context.candidate_subset.compute_difference(child_result.true_subset)
 
-        return AutomationResult(context, true_slice, child_results=[child_result])
+        return AutomationResult(context, true_subset, child_results=[child_result])
