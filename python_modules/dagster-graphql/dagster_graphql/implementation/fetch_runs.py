@@ -477,7 +477,7 @@ def _bulk_action_statuses_from_run_statuses(
 def _filters_apply_to_backfills(filters: RunsFilter) -> bool:
     # the following filters do not apply to backfills, so skip fetching backfills if they are set
     if (
-        len(filters.run_ids) > 0
+        (filters.run_ids is not None and len(filters.run_ids) > 0)
         or filters.updated_after is not None
         or filters.updated_before is not None
         or filters.snapshot_id is not None

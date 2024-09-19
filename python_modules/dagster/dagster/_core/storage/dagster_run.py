@@ -532,7 +532,7 @@ class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
 
     """
 
-    run_ids: Sequence[str]
+    run_ids: Optional[Sequence[str]]
     job_name: Optional[str]
     statuses: Sequence[DagsterRunStatus]
     tags: Mapping[str, Union[str, Sequence[str]]]
@@ -558,7 +558,7 @@ class RunsFilter(IHaveNew, LegacyNamedTupleMixin):
 
         return super().__new__(
             cls,
-            run_ids=run_ids or [],
+            run_ids=run_ids,
             job_name=job_name,
             statuses=statuses or [],
             tags=tags or {},

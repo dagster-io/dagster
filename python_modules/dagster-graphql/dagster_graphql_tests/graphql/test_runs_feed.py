@@ -509,7 +509,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
         _create_run(graphql_context, status=DagsterRunStatus.SUCCESS)
         _create_run(graphql_context, status=DagsterRunStatus.CANCELING)
         _create_run(graphql_context, status=DagsterRunStatus.FAILURE)
-        _create_run(graphql_context, status=DagsterRunStatus.QUEUED)
+        _create_run(graphql_context, status=DagsterRunStatus.NOT_STARTED)
         time.sleep(CREATE_DELAY)
         _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_SUCCESS)
         _create_backfill(graphql_context, status=BulkActionStatus.COMPLETED_FAILED)
@@ -592,7 +592,7 @@ class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
             variables={
                 "limit": 10,
                 "cursor": None,
-                "filter": {"statuses": ["QUEUED"]},
+                "filter": {"statuses": ["NOT_STARTED"]},
             },
         )
         assert not result.errors
