@@ -2,7 +2,7 @@ import datetime
 import uuid
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, Mapping, Optional, Sequence, Type, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Type, Union, cast
 
 import jwt
 import requests
@@ -10,8 +10,10 @@ from dagster import (
     AssetsDefinition,
     ConfigurableResource,
     Definitions,
+    ObserveResult,
     _check as check,
     external_assets_from_specs,
+    multi_asset,
 )
 from dagster._annotations import experimental
 from dagster._core.definitions.cacheable_assets import (
@@ -117,6 +119,15 @@ class BaseTableauClient:
         """Fetches information, including sheets, dashboards and data sources, for a given workbook."""
         data = {"query": self.workbook_graphql_query, "variables": {"luid": workbook_id}}
         return self._fetch_json(url=self.metadata_api_base_url, data=data, method="POST")
+
+    @cached_method
+    def get_view(
+        self,
+        view_id: str,
+    ) -> Mapping[str, object]:
+        """Fetches information for a given view."""
+        endpoint = self._with_site_id(f"views/{view_id}")
+        return self._fetch_json(url=f"{self.rest_api_base_url}/{endpoint}")
 
     def sign_in(self) -> Mapping[str, object]:
         """Sign in to the site in Tableau."""
@@ -288,8 +299,10 @@ class BaseTableauWorkspace(ConfigurableResource):
         if not self._client:
             self.build_client()
         self._client.sign_in()
-        yield self._client
-        self._client.sign_out()
+        try:
+            yield self._client
+        finally:
+            self._client.sign_out()
 
     def fetch_tableau_workspace_data(
         self,
@@ -443,11 +456,51 @@ class TableauCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         translator = self._translator_cls(context=workspace_data)
 
-        all_content = [
-            *workspace_data.views_by_id.values(),
-            *workspace_data.data_sources_by_id.values(),
-        ]
-
-        return external_assets_from_specs(
-            [translator.get_asset_spec(content) for content in all_content]
+        external_assets = external_assets_from_specs(
+            [
+                translator.get_asset_spec(content)
+                for content in workspace_data.data_sources_by_id.values()
+            ]
         )
+
+        tableau_assets = self._build_tableau_assets_from_workspace_data(
+            workspace_data=workspace_data,
+            translator=translator,
+        )
+
+        return external_assets + tableau_assets
+
+    def _build_tableau_assets_from_workspace_data(
+        self,
+        workspace_data: TableauWorkspaceData,
+        translator: DagsterTableauTranslator,
+    ) -> List[AssetsDefinition]:
+        @multi_asset(
+            name=f"tableau_sync_site_{self._workspace.site_name.replace('-', '_')}",
+            compute_kind="tableau",
+            can_subset=False,
+            specs=[
+                translator.get_asset_spec(content)
+                for content in workspace_data.views_by_id.values()
+            ],
+            resource_defs={"tableau": self._workspace.get_resource_definition()},
+        )
+        def _assets(tableau: BaseTableauWorkspace):
+            with tableau.get_client() as client:
+                for view_id in workspace_data.views_by_id.keys():
+                    data = client.get_view(view_id)["view"]
+                    yield ObserveResult(
+                        asset_key=translator.get_view_asset_key(
+                            workspace_data.views_by_id[view_id]
+                        ),
+                        metadata={
+                            "workbook_id": data["workbook"]["id"],
+                            "owner_id": data["owner"]["id"],
+                            "name": data["name"],
+                            "contentUrl": data["contentUrl"],
+                            "createdAt": data["createdAt"],
+                            "updatedAt": data["updatedAt"],
+                        },
+                    )
+
+        return [_assets]
