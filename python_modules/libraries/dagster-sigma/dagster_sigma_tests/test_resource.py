@@ -2,6 +2,7 @@ import uuid
 
 import responses
 from dagster_sigma import SigmaBaseUrl, SigmaOrganization
+from dagster_sigma.resource import _inode_from_url
 
 
 @responses.activate
@@ -53,3 +54,33 @@ def test_basic_fetch(sigma_auth_token: str) -> None:
 
     assert len(responses.calls) == 2
     assert responses.calls[1].request.headers["Authorization"] == f"Bearer {sigma_auth_token}"
+
+
+@responses.activate
+def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None) -> None:
+    fake_client_id = uuid.uuid4().hex
+    fake_client_secret = uuid.uuid4().hex
+
+    resource = SigmaOrganization(
+        base_url=SigmaBaseUrl.AWS_US,
+        client_id=fake_client_id,
+        client_secret=fake_client_secret,
+    )
+
+    data = resource.build_organization_data()
+
+    assert len(data.workbooks) == 1
+    assert data.workbooks[0].properties["name"] == "Sample Workbook"
+
+    assert len(data.datasets) == 1
+    assert data.workbooks[0].datasets == {_inode_from_url(data.datasets[0].properties["url"])}
+
+    assert data.datasets[0].properties["name"] == "Orders Dataset"
+    assert data.datasets[0].columns == {
+        "Customer Id",
+        "Order Date",
+        "Order Id",
+        "Modified Date",
+        "Status",
+    }
+    assert data.datasets[0].inputs == {"TESTDB.JAFFLE_SHOP.STG_ORDERS"}
