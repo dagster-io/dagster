@@ -25,6 +25,10 @@ const config: Config = {
     require.resolve('docusaurus-plugin-image-zoom'),
   ],
   themeConfig: {
+    announcementBar: {
+      id: 'announcementBar',
+      content: `<b>You are viewing a preview of our new docs site. If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/issues/new/choose">GitHub</a>. If you are looking for the legacy docs, go <a target="_blank" href="https://docs.dagster.io/">here</a>!</b>`,
+    },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
