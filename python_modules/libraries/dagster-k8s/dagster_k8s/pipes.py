@@ -708,16 +708,18 @@ def _process_log_stream(stream: Iterator[bytes]) -> Iterator[LogItem]:
         yield LogItem(timestamp=timestamp, log=log)
 
 
-def _is_kube_timestamp(maybe_timestamp: str) -> bool:
+if sys.version_info >= (3, 11):
     # fromisoformat only works properly in Python 3.11+
-    # Once pre 3.11 backwards compatibility is dropped
-    # anything after this if statement can be deleted
-    if sys.version_info >= (3, 11):
+    def _is_kube_timestamp(maybe_timestamp: str) -> bool:
         try:
             datetime.fromisoformat(maybe_timestamp)
             return True
         except ValueError:
             return False
+else:
+    # Once pre 3.11 backwards compatibility is dropped
+    # anything after this if statement can be deleted
+    def _is_kube_timestamp(maybe_timestamp: str) -> bool:
     # This extra stripping logic is necessary, as Python's strptime fn doesn't
     # handle valid ISO 8601 timestamps with nanoseconds which we receive in k8s
     # e.g. 2024-03-22T02:17:29.185548486Z
