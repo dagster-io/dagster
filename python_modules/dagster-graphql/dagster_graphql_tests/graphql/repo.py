@@ -1191,6 +1191,13 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(job_name="no_config_job", default_status=DefaultSensorStatus.STOPPED)
+    def stopped_in_code_sensor(_):
+        return RunRequest(
+            run_key=None,
+            tags={"test": "1234"},
+        )
+
     @sensor(job_name="no_config_job")
     def logging_sensor(context):
         context.log.info("hello hello")
@@ -1248,6 +1255,7 @@ def define_sensors():
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,
+        stopped_in_code_sensor,
         logging_sensor,
         update_cursor_sensor,
         run_status,
