@@ -70,4 +70,3 @@ def test_invalid_project(options, monkeypatch):
         assert result.exit_code == 1
         assert "Validation failed" in result.output
         assert "Duplicate asset key: AssetKey(['my_asset'])" in result.output
-

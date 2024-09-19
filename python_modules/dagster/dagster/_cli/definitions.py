@@ -4,17 +4,16 @@ import sys
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._utils.log import configure_loggers
-
-from .job import apply_click_params
-from .utils import get_possibly_temporary_instance_for_cli
-from .workspace.cli_target import (
+from dagster._cli.job import apply_click_params
+from dagster._cli.utils import get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import (
     ClickArgValue,
     get_workspace_from_kwargs,
     python_file_option,
     python_module_option,
     workspace_option,
 )
+from dagster._utils.log import configure_loggers
 
 
 @click.group(name="definitions")
