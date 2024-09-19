@@ -343,10 +343,11 @@ cycle_defs_a = Definitions(assets=[a])
 cycle_defs_b = Definitions(assets=[b])
 
 
-def test_cycle_status(instance):
-    asset_graph = _make_context(instance, ["cycle_defs_a", "cycle_defs_b"]).asset_graph
+def test_cycle_status(instance) -> None:
+    context = _make_context(instance, ["cycle_defs_a", "cycle_defs_b"])
+    asset_graph = context.asset_graph
 
-    resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph)
+    resolver = CachingStaleStatusResolver(DagsterInstance.ephemeral(), asset_graph, context)
     for key in asset_graph.all_asset_keys:
         resolver.get_status(key)
 

@@ -231,7 +231,10 @@ def _execute_asset_backfill_iteration_no_side_effects(
     asset_backfill_data = backfill.asset_backfill_data
     result = None
     instance_queryer = CachingInstanceQueryer(
-        graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_datetime
+        graphql_context.instance,
+        asset_graph,
+        graphql_context,
+        asset_backfill_data.backfill_start_datetime,
     )
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(

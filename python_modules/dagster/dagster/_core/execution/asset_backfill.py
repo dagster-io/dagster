@@ -936,7 +936,10 @@ def execute_asset_backfill_iteration(
 
     backfill_start_datetime = datetime_from_timestamp(backfill.backfill_timestamp)
     instance_queryer = CachingInstanceQueryer(
-        instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_datetime
+        instance=instance,
+        asset_graph=asset_graph,
+        loading_context=workspace_context,
+        evaluation_time=backfill_start_datetime,
     )
 
     previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(

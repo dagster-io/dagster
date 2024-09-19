@@ -290,6 +290,7 @@ class GrapheneRepository(graphene.ObjectType):
         self._stale_status_loader = StaleStatusLoader(
             instance=instance,
             asset_graph=lambda: repository.asset_graph,
+            loading_context=workspace_context,
         )
         self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
 

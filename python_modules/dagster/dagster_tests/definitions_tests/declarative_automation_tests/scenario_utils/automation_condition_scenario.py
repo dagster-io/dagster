@@ -26,6 +26,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
+from dagster._core.loader import LoadingContextForTest
 from dagster._core.test_utils import freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -93,7 +94,9 @@ class AutomationConditionScenarioState(ScenarioState):
 
         with freeze_time(self.current_time):
             instance_queryer = CachingInstanceQueryer(
-                instance=self.instance, asset_graph=asset_graph
+                instance=self.instance,
+                asset_graph=asset_graph,
+                loading_context=LoadingContextForTest(self.instance),
             )
             daemon_context = AssetDaemonContext(
                 evaluation_id=1,

@@ -38,6 +38,7 @@ from dagster import (
     materialize,
     multi_asset,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -236,6 +237,18 @@ def test_from_asset_partitions_target_subset(
     )
 
 
+def _get_instance_queryer(
+    instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
+) -> CachingInstanceQueryer:
+    return AssetGraphView(
+        temporal_context=TemporalContext(
+            effective_dt=evaluation_time or get_current_datetime(), last_event_id=None
+        ),
+        instance=instance,
+        asset_graph=asset_graph,
+    ).get_inner_queryer_for_back_compat()
+
+
 def _single_backfill_iteration(
     backfill_id, backfill_data, asset_graph, instance, assets_by_repo_name
 ) -> AssetBackfillData:
@@ -265,10 +278,8 @@ def _single_backfill_iteration(
     return backfill_data.with_run_requests_submitted(
         result.run_requests,
         asset_graph,
-        instance_queryer=CachingInstanceQueryer(
-            instance=instance,
-            asset_graph=asset_graph,
-            evaluation_time=backfill_data.backfill_start_datetime,
+        instance_queryer=_get_instance_queryer(
+            instance, asset_graph, backfill_data.backfill_start_datetime
         ),
     )
 
@@ -554,11 +565,12 @@ def execute_asset_backfill_iteration_consume_generator(
 ) -> AssetBackfillIterationResult:
     counter = Counter()
     traced_counter.set(counter)
+
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
-            instance_queryer=CachingInstanceQueryer(
+            instance_queryer=_get_instance_queryer(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
             asset_graph=asset_graph,
@@ -606,10 +618,8 @@ def run_backfill_to_completion(
         # iteration_count += 1
         assert result1.backfill_data != backfill_data
 
-        instance_queryer = CachingInstanceQueryer(
-            instance=instance,
-            asset_graph=asset_graph,
-            evaluation_time=backfill_data.backfill_start_datetime,
+        instance_queryer = _get_instance_queryer(
+            instance, asset_graph, evaluation_time=backfill_data.backfill_start_datetime
         )
 
         backfill_data_with_submitted_runs = result1.backfill_data.with_run_requests_submitted(
@@ -1130,7 +1140,7 @@ def test_asset_backfill_cancellation():
 
     assert len(instance.get_runs()) == 1
 
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
@@ -1215,7 +1225,7 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
         in asset_backfill_data.failed_and_downstream_subset
     )
 
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
 
     canceling_backfill_data = None
     for canceling_backfill_data in get_canceling_asset_backfill_iteration_data(
@@ -1427,7 +1437,7 @@ def test_connected_assets_disconnected_partitions():
     asset_graph = get_asset_graph(assets_by_repo_name)
 
     backfill_start_datetime = create_datetime(2023, 10, 30, 0, 0, 0)
-    instance_queryer = CachingInstanceQueryer(instance, asset_graph, backfill_start_datetime)
+    instance_queryer = _get_instance_queryer(instance, asset_graph, backfill_start_datetime)
     asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
         asset_graph,
         instance_queryer,
