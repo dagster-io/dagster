@@ -23,11 +23,14 @@ export function appendCurrentQueryParams(url: string): string {
   });
 
   // Update the search parameters of the input URL
-  inputUrl.search = inputParams.toString();
+  inputUrl.search = inputParams.toString() ? `?${inputParams.toString()}` : '';
+
+  const ret =
+    url.startsWith('/') || !/^https?:\/\//i.test(url)
+      ? inputUrl.pathname + inputUrl.search
+      : inputUrl.toString();
 
   // Return the relative or absolute URL with updated query parameters
   // If the input URL was relative, return relative; otherwise, return absolute
-  return url.startsWith('/') || !/^https?:\/\//i.test(url)
-    ? inputUrl.pathname + (inputUrl.search ? `?${inputUrl.search}` : '')
-    : inputUrl.toString();
+  return ret;
 }
