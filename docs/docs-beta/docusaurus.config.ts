@@ -27,7 +27,7 @@ const config: Config = {
   themeConfig: {
     announcementBar: {
       id: 'announcementBar',
-      content: `<b>You are viewing a preview of our new docs site. If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/issues/new/choose">GitHub</a>. If you are looking for the legacy docs, go <a target="_blank" href="https://docs.dagster.io/">here</a>!</b>`,
+      content: `<b>This is the preview of the new documentation site. If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/issues/new/choose">GitHub</a>. The legacy documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</b>`,
     },
     colorMode: {
       defaultMode: 'light',
