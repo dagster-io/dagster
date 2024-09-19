@@ -43,6 +43,7 @@ from dagster._core.definitions.asset_selection import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
@@ -144,6 +145,16 @@ def test_asset_selection_all(all_assets: _AssetList):
 def test_asset_selection_and(all_assets: _AssetList):
     sel = AssetSelection.assets("alice", "bob") & AssetSelection.assets("bob", "candace")
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
+
+
+def test_asset_selection_definitions(all_assets: _AssetList):
+    my_defs = Definitions(assets=[earth, alice, bob])
+    sel = AssetSelection.from_definitions(my_defs)
+    assert sel.resolve(all_assets) == _asset_keys_of([earth, alice, bob])
+
+    my_other_defs = Definitions(assets=[zebra])
+    sel = sel | AssetSelection.from_definitions(my_other_defs)
+    assert sel.resolve(all_assets) == _asset_keys_of([earth, alice, bob, zebra])
 
 
 def test_asset_selection_downstream(all_assets: _AssetList):

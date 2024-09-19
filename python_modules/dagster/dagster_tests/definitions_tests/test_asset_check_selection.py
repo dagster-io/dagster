@@ -10,6 +10,8 @@ from dagster import (
     define_asset_job,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 
@@ -82,6 +84,20 @@ def test_job_with_asset_and_all_its_checks():
     assert {check_eval.asset_check_key for check_eval in check_evals} == {
         AssetCheckKey(asset1.key, "asset1_check1"),
         AssetCheckKey(asset1.key, "asset1_check2"),
+    }
+
+
+def test_asset_selection_definitions() -> None:
+    my_defs = Definitions(assets=[asset1])
+    sel = AssetSelection.from_definitions(my_defs)
+    assert sel.resolve([asset1, asset2, asset1_check1, asset1_check2, asset2_check1]) == {
+        AssetKey("asset1")
+    }
+    assert sel.resolve_checks(
+        AssetGraph.from_assets([asset1, asset2, asset1_check1, asset1_check2, asset2_check1])
+    ) == {
+        AssetCheckKey(AssetKey("asset1"), "asset1_check1"),
+        AssetCheckKey(AssetKey("asset1"), "asset1_check2"),
     }
 
 

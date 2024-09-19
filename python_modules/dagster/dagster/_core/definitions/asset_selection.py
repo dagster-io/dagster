@@ -2,9 +2,8 @@ import collections.abc
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Iterable, List, Optional, Sequence, Union, cast
 
-from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
@@ -30,6 +29,9 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
 
 CoercibleToAssetSelection: TypeAlias = Union[
     str,
@@ -150,7 +152,7 @@ class AssetSelection(ABC, DagsterModel):
 
     @public
     @staticmethod
-    def from_definitions(defs: Definitions) -> "AssetSelection":
+    def from_definitions(defs: "Definitions") -> "AssetSelection":
         """Returns a selection that includes all of the assets and asset checks in a
         Definitions object.
 
@@ -165,8 +167,10 @@ class AssetSelection(ABC, DagsterModel):
                 AssetSelection.from_definitions(my_definitions)
 
         """
-        graph= defs.get_asset_graph()
-        return AssetSelection.assets(*graph.all_asset_keys) | AssetSelection.checks(*graph.asset_check_keys)
+        graph = defs.get_asset_graph()
+        return AssetSelection.assets(*graph.all_asset_keys) | AssetSelection.checks(
+            *graph.asset_check_keys
+        )
 
     @public
     @staticmethod
