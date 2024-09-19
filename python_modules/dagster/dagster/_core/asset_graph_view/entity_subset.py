@@ -134,3 +134,6 @@ class EntitySubset(Generic[T_EntityKey]):
 
     def get_internal_bool_value(self) -> bool:
         return check.inst(self._value, bool)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}<{self.key}>({self.get_internal_value()})"
