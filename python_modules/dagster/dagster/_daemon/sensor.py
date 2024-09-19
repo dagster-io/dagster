@@ -60,7 +60,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG, TICK_ID_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -833,7 +833,7 @@ def _evaluate_sensor(
             instance.report_runless_asset_event(asset_event)
         else:
             event_with_tags = asset_event.with_tags(
-                merge_dicts(asset_event.tags or {}, {"dagster/tick_id": context.tick_id})
+                merge_dicts(asset_event.tags or {}, {TICK_ID_TAG: context.tick_id})
             )
             instance.report_runless_asset_event(event_with_tags)
 

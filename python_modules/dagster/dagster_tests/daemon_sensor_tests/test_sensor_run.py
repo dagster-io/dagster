@@ -79,6 +79,7 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
+from dagster._core.storage.tags import TICK_ID_TAG
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -3494,9 +3495,7 @@ def test_asset_event_reporting_sensor(
             last_materialization.asset_materialization
             and last_materialization.asset_materialization.tags
         )
-        assert last_materialization.asset_materialization.tags["dagster/tick_id"] == str(
-            tick.tick_id
-        )
+        assert last_materialization.asset_materialization.tags[TICK_ID_TAG] == str(tick.tick_id)
 
 
 def _get_last_tick(instance, sensor):
