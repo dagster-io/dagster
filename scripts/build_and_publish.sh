@@ -9,8 +9,8 @@ if [ -z "$VERSION_TO_RELEASE" ]; then
     echo "Inferring version to release from package."
     EXISTING_VERSION=$(grep 'version=' $PACKAGE_TO_RELEASE_PATH/setup.py)
     echo "Existing version: $EXISTING_VERSION"
-    MAJOR_VAR=$(echo $LINE | sed -r 's/.*version=[^0-9]*([0-9].*)([0-9]+).*/\1/')
-    MINOR_VAR=$(echo $LINE | sed -r 's/.*version=[^0-9]*([0-9].*)([0-9]+).*/\2/')
+    MAJOR_VAR=$(echo $EXISTING_VERSION | sed -E 's/.*version=[^0-9]([0-9].+)([0-9]+).*/\1/')
+    MINOR_VAR=$(echo $EXISTING_VERSION | sed -E 's/.*version=[^0-9]([0-9].+)([0-9]+).*/\2/')
     INCREMENTED_MINOR_VAR=$((MINOR_VAR + 1))
 
     VERSION_TO_RELEASE="$MAJOR_VAR$INCREMENTED_MINOR_VAR"
