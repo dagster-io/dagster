@@ -1305,7 +1305,7 @@ class GrapheneQuery(graphene.ObjectType):
         cursor: Optional[str] = None,
     ):
         return fetch_asset_check_executions(
-            graphene_info.context.instance,
+            graphene_info.context,
             asset_check_key=AssetCheckKey(
                 asset_key=AssetKey.from_graphql_input(assetKey), name=checkName
             ),
