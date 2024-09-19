@@ -19,7 +19,7 @@ def build_prerelease_package_steps() -> List[BuildkiteStep]:
     )
 
     input_step: BlockStep = {
-        "input": "foo",
+        "block": "Choose package to release",
         "prompt": None,
         "fields": [
             {

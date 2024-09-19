@@ -90,7 +90,7 @@ InputTextField = TypedDict(
 BlockStep = TypedDict(
     "BlockStep",
     {
-        "input": str,
+        "block": str,
         "prompt": Optional[str],
         "fields": List[Union[InputSelectField, InputTextField]],
     },
