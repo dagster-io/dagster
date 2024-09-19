@@ -638,10 +638,8 @@ class RunRecord(
         )
 
     @classmethod
-    async def _batch_load(
-        cls,
-        keys: Iterable[str],
-        instance: "DagsterInstance",
+    def _blocking_batch_load(
+        cls, keys: Iterable[str], instance: "DagsterInstance"
     ) -> Iterable[Optional["RunRecord"]]:
         result_map: Dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
 
