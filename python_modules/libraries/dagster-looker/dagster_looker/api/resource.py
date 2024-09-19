@@ -1,6 +1,9 @@
-from typing import TYPE_CHECKING, List, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence
 
-from dagster import ConfigurableResource
+from dagster import (
+    ConfigurableResource,
+    _check as check,
+)
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.cached_method import cached_method
@@ -11,7 +14,10 @@ from looker_sdk.sdk.api40.methods import Looker40SDK
 from pydantic import Field
 
 from dagster_looker.api.cacheable_assets import LookerCacheableAssetsDefinition
-from dagster_looker.api.translator import LookerInstanceData
+from dagster_looker.api.dagster_looker_api_translator import (
+    DagsterLookerApiTranslator,
+    LookerInstanceData,
+)
 
 if TYPE_CHECKING:
     from looker_sdk.sdk.api40.models import LookmlModelExplore
@@ -70,8 +76,26 @@ class LookerResource(ConfigurableResource):
             explores_by_id={explore.id: explore for explore in explore_data if explore.id}
         )
 
-    def build_assets(self) -> Sequence[CacheableAssetsDefinition]:
-        return [LookerCacheableAssetsDefinition(self)]
+    def build_assets(
+        self,
+        *,
+        dagster_looker_translator: DagsterLookerApiTranslator,
+    ) -> Sequence[CacheableAssetsDefinition]:
+        dagster_looker_translator = check.inst(
+            dagster_looker_translator, DagsterLookerApiTranslator
+        )
 
-    def build_defs(self) -> Definitions:
-        return Definitions(assets=self.build_assets())
+        return [LookerCacheableAssetsDefinition(self, dagster_looker_translator)]
+
+    def build_defs(
+        self,
+        *,
+        dagster_looker_translator: Optional[DagsterLookerApiTranslator] = None,
+    ) -> Definitions:
+        dagster_looker_translator = check.inst(
+            dagster_looker_translator or DagsterLookerApiTranslator(), DagsterLookerApiTranslator
+        )
+
+        return Definitions(
+            assets=self.build_assets(dagster_looker_translator=dagster_looker_translator)
+        )

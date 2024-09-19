@@ -2,7 +2,10 @@ from typing import Iterator
 
 import pytest
 import responses
+from dagster import AssetKey, AssetSpec
+from dagster_looker.api.dagster_looker_api_translator import DagsterLookerApiTranslator
 from dagster_looker.api.resource import LookerResource
+from looker_sdk.sdk.api40.models import LookmlModelExplore
 
 from dagster_looker_tests.api.mock_looker_data import mock_lookml_explore, mock_lookml_models
 
@@ -51,4 +54,30 @@ def test_build_defs(
 
     explore_asset = all_assets[0]
 
-    assert explore_asset.key.path == ["my_model::my_explore"]
+    expected_asset_key = AssetKey(["my_model::my_explore"])
+    assert list(explore_asset.keys) == [expected_asset_key]
+    assert explore_asset.tags_by_key[expected_asset_key] == {
+        "dagster/kind/looker": "",
+        "dagster/kind/explore": "",
+    }
+
+
+@responses.activate
+def test_custom_asset_specs(
+    looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
+) -> None:
+    expected_metadata = {"custom": "metadata"}
+
+    class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
+        def get_asset_spec(self, api_model: LookmlModelExplore) -> AssetSpec:
+            return super().get_asset_spec(api_model)._replace(metadata=expected_metadata)
+
+    all_assets = (
+        looker_resource.build_defs(dagster_looker_translator=CustomDagsterLookerApiTranslator())
+        .get_asset_graph()
+        .assets_defs
+    )
+
+    for asset in all_assets:
+        for metadata in asset.metadata_by_key.values():
+            assert metadata == expected_metadata
