@@ -119,21 +119,94 @@ class SigmaOrganization(ConfigurableResource):
         return self.fetch_json(f"workbooks/{workbook_id}/queries")["entries"]
 
     @cached_method
+    def fetch_dataset_upstreams_by_inode(self) -> Mapping[str, AbstractSet[str]]:
+        """Builds a mapping of dataset inodes to the upstream inputs they depend on.
+        Sigma does not expose this information directly, so we have to infer it from
+        the lineage of workbooks and the workbook queries.
+        """
+        deps_by_dataset_inode = defaultdict(set)
+
+        raw_workbooks = self.fetch_workbooks()
+
+        # We first figure out which tables/visualizations ("elements") in each workbook
+        # depend on which datasets.
+        for workbook in raw_workbooks:
+            queries = self.fetch_queries_for_workbook(workbook["workbookId"])
+            queries_by_element_id = defaultdict(list)
+            for query in queries:
+                queries_by_element_id[query["elementId"]].append(query)
+
+            pages = self.fetch_pages_for_workbook(workbook["workbookId"])
+
+            for page in pages:
+                elements = self.fetch_elements_for_page(workbook["workbookId"], page["pageId"])
+                for element in elements:
+                    # We extract the list of dataset dependencies from the lineage of each element
+                    # If there is a single dataset dependency, we can then know the queries for that element
+                    # are associated with that dataset
+                    lineage = self.fetch_lineage_for_element(
+                        workbook["workbookId"], element["elementId"]
+                    )
+                    dataset_dependencies = [
+                        dep
+                        for dep in lineage["dependencies"].values()
+                        if dep.get("type") == "dataset"
+                    ]
+                    if len(dataset_dependencies) != 1:
+                        continue
+
+                    inode = dataset_dependencies[0]["nodeId"]
+                    for query in queries_by_element_id[element["elementId"]]:
+                        # Use sqlglot to extract the tables used in each query and add them to the dataset's
+                        # list of dependencies
+                        table_deps = set(
+                            [
+                                f"{table.catalog}.{table.db}.{table.this}"
+                                for table in list(parse_one(query["sql"]).find_all(exp.Table))
+                                if table.catalog
+                            ]
+                        )
+
+                        deps_by_dataset_inode[inode] = deps_by_dataset_inode[inode].union(
+                            table_deps
+                        )
+
+        return deps_by_dataset_inode
+
+    @cached_method
+    def fetch_dataset_columns_by_inode(self) -> Mapping[str, AbstractSet[str]]:
+        """Builds a mapping of dataset inodes to the columns they contain. Note that
+        this is a partial list and will only include columns which are referenced in
+        workbooks, since Sigma does not expose a direct API for querying dataset columns.
+        """
+        columns_by_dataset_inode = defaultdict(set)
+
+        for workbook in self.fetch_workbooks():
+            pages = self.fetch_pages_for_workbook(workbook["workbookId"])
+            for page in pages:
+                elements = self.fetch_elements_for_page(workbook["workbookId"], page["pageId"])
+                for element in elements:
+                    # We can't query the list of columns in a dataset directly, so we have to build a partial
+                    # list from the columns which appear in any workbook.
+                    columns = self.fetch_columns_for_element(
+                        workbook["workbookId"], element["elementId"]
+                    )
+                    for column in columns:
+                        split = column["columnId"].split("/")
+                        if len(split) == 2:
+                            inode, column_name = split
+                        columns_by_dataset_inode[inode].add(column_name)
+
+        return columns_by_dataset_inode
+
+    @cached_method
     def build_organization_data(self) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
         """
         raw_workbooks = self.fetch_workbooks()
 
-        dataset_inode_to_name: Mapping[str, str] = {}
-        columns_by_dataset_inode = defaultdict(set)
-        deps_by_dataset_inode = defaultdict(set)
-        dataset_element_to_inode: Mapping[str, str] = {}
-
         workbooks: List[SigmaWorkbook] = []
-
-        # Unfortunately, Sigma's API does not nicely model the relationship between various assets.
-        # We have to do some manual work to infer these relationships ourselves.
         for workbook in raw_workbooks:
             workbook_deps = set()
             pages = self.fetch_pages_for_workbook(workbook["workbookId"])
@@ -147,43 +220,13 @@ class SigmaOrganization(ConfigurableResource):
                     for inode, item in lineage["dependencies"].items():
                         if item.get("type") == "dataset":
                             workbook_deps.add(item["nodeId"])
-                            dataset_inode_to_name[inode] = item["name"]
-                            dataset_element_to_inode[element["elementId"]] = item["nodeId"]
-
-                    # We can't query the list of columns in a dataset directly, so we have to build a partial
-                    # list from the columns which appear in any workbook.
-                    columns = self.fetch_columns_for_element(
-                        workbook["workbookId"], element["elementId"]
-                    )
-                    for column in columns:
-                        split = column["columnId"].split("/")
-                        if len(split) == 2:
-                            inode, column_name = split
-                            columns_by_dataset_inode[inode].add(column_name)
-
-            # Finally, we extract the list of tables used in each query in the workbook with
-            # the help of sqlglot. Each query is associated with an "element", or section of the
-            # workbook. We know which dataset each element is associated with, so we can infer
-            # the dataset for each query, and from there build a list of tables which the dataset
-            # depends on.
-            queries = self.fetch_queries_for_workbook(workbook["workbookId"])
-            for query in queries:
-                element_id = query["elementId"]
-                table_deps = set(
-                    [
-                        f"{table.catalog}.{table.db}.{table.this}"
-                        for table in list(parse_one(query["sql"]).find_all(exp.Table))
-                        if table.catalog
-                    ]
-                )
-
-                deps_by_dataset_inode[dataset_element_to_inode[element_id]] = deps_by_dataset_inode[
-                    dataset_element_to_inode[element_id]
-                ].union(table_deps)
 
             workbooks.append(SigmaWorkbook(properties=workbook, datasets=workbook_deps))
 
         datasets: List[SigmaDataset] = []
+        deps_by_dataset_inode = self.fetch_dataset_upstreams_by_inode()
+        columns_by_dataset_inode = self.fetch_dataset_columns_by_inode()
+
         for dataset in self.fetch_datasets():
             inode = _inode_from_url(dataset["url"])
             datasets.append(
