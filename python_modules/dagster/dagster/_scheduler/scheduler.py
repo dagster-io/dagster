@@ -284,6 +284,8 @@ def launch_scheduled_runs(
     schedules: Dict[str, RemoteSchedule] = {}
     error_locations = set()
 
+    now_timestamp = end_datetime_utc.timestamp()
+
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
         if code_location:
@@ -294,6 +296,17 @@ def launch_scheduled_runs(
                         all_schedule_states.get(selector_id)
                     ).is_running:
                         schedules[selector_id] = schedule
+                    elif all_schedule_states.get(selector_id):
+                        schedule_state = all_schedule_states[selector_id]
+                        # If there is a DB row to update, see if we should still update the
+                        # last_iteration_timestamp
+                        _write_and_get_next_checkpoint_timestamp(
+                            instance,
+                            all_schedule_states[selector_id],
+                            cast(ScheduleInstigatorData, schedule_state.instigator_data),
+                            now_timestamp,
+                        )
+
         elif location_entry.load_error:
             error_locations.add(location_entry.origin.location_name)
 
@@ -991,11 +1004,11 @@ def _write_and_get_next_checkpoint_timestamp(
     instigator_data: ScheduleInstigatorData,
     iteration_timestamp: float,
 ) -> float:
-    # Utility function that writes iteration timestamps for schedules that are running, to record a
+    # Utility function that writes iteration timestamps for schedules, to record a
     # successful iteration, regardless of whether or not a tick was processed or not.  This is so
-    # that when a cron schedule changes, we can modify the evaluation "start time" from the moment
-    # that the schedule was turned on to the last time that the schedule was processed in a valid
-    # state (even in between ticks).
+    # that when a cron schedule changes or a schedule changes state, we can modify the evaluation
+    # "start time" from the moment that the schedule was turned on to the last time that the
+    # schedule was processed in a valid state (even in between ticks).
 
     # Rather than logging every single iteration, we log every hour.  This means that if the cron
     # schedule changes to run to a time that is less than an hour ago, when the code location is
