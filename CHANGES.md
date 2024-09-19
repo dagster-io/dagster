@@ -18,6 +18,7 @@
 - Fixed an issue which could cause errors when using `AutomationCondition.any_downstream_condition()` with downstream `AutoMaterializePolicy` objects.
 - Fixed an issue where `process_config_and_initialize` did not properly handle processing nested resource config.
 - [ui] Fixed an issue that would cause some AutomationCondition evaluations to be labeled `DepConditionWrapperCondition` instead of the key that they were evaluated against.
+- [ui] Fix an issue where the incorrect sensor/schedule state would appear when using DefaultScheduleStatus.STOPPED / DefaultSensorStatus.STOPPED after performing a reset.
 - [dagster-webserver] Fixed an issue with code locations appearing in fluctuating incorrect state in deployments with multiple webserver processes.
 - [dagster-embedded-elt] Fixed an issue where Sling column lineage did not correctly resolve int the Dagster UI.
 - [dagster-k8s] The `wait_for_pod` check now waits until all pods are available, rather than erroneously returning after the first pod becomes available. Thanks [@easontm](https://github.com/easontm)!

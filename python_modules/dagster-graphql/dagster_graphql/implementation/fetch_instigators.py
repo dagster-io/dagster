@@ -5,6 +5,7 @@ from dagster._core.definitions.instigation_logger import get_instigation_log_rec
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation.external import CompoundID
+from dagster._core.scheduler.instigation import InstigatorStatus
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.instigation import (
@@ -32,7 +33,9 @@ def get_instigator_state_by_selector(
             origin_id=instigator_id.external_origin_id,
             selector_id=instigator_id.selector_id,
         )
-        if state:
+        # if the state tells us the status on its own short cut and return it
+        # if its declared in code we need the full snapshot to resolve
+        if state and state.status in (InstigatorStatus.STOPPED, InstigatorStatus.RUNNING):
             return GrapheneInstigationState(state)
 
     location = graphene_info.context.get_code_location(selector.location_name)
