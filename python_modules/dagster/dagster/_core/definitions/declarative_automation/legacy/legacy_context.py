@@ -18,6 +18,7 @@ from typing import (
     TypeVar,
 )
 
+import dagster._check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
@@ -36,11 +37,13 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._time import get_current_timestamp
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.data_time import CachingDataTimeResolver
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationCondition,
+    )
+    from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+        AutomationConditionEvaluator,
     )
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -83,44 +86,12 @@ class LegacyRuleEvaluationContext:
     root_ref: Optional["LegacyRuleEvaluationContext"] = None
 
     @staticmethod
-    def create_within_asset_daemon(
-        asset_key: AssetKey,
-        condition: "AutomationCondition",
-        previous_condition_cursor: Optional[AutomationConditionCursor],
-        instance_queryer: "CachingInstanceQueryer",
-        data_time_resolver: "CachingDataTimeResolver",
-        daemon_context: "AssetDaemonContext",
-        current_results_by_key: Mapping[AssetKey, AutomationResult],
-        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> "LegacyRuleEvaluationContext":
-        return LegacyRuleEvaluationContext.create(
-            asset_key=asset_key,
-            condition=condition,
-            cursor=previous_condition_cursor,
-            instance_queryer=instance_queryer,
-            data_time_resolver=data_time_resolver,
-            current_results_by_key=current_results_by_key,
-            expected_data_time_mapping=expected_data_time_mapping,
-            respect_materialization_data_versions=daemon_context.respect_materialization_data_versions,
-            auto_materialize_run_tags=daemon_context.auto_materialize_run_tags,
-            logger=daemon_context.logger,
-        )
+    def create(asset_key: AssetKey, evaluator: "AutomationConditionEvaluator"):
+        instance_queryer = evaluator.asset_graph_view.get_inner_queryer_for_back_compat()
 
-    @staticmethod
-    def create(
-        *,
-        asset_key: AssetKey,
-        condition: "AutomationCondition",
-        cursor: Optional[AutomationConditionCursor],
-        instance_queryer: "CachingInstanceQueryer",
-        data_time_resolver: "CachingDataTimeResolver",
-        current_results_by_key: Mapping[AssetKey, AutomationResult],
-        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-        respect_materialization_data_versions: bool,
-        auto_materialize_run_tags: Mapping[str, str],
-        logger: logging.Logger,
-    ):
-        partitions_def = instance_queryer.asset_graph.get(asset_key).partitions_def
+        cursor = evaluator.cursor.get_previous_condition_cursor(asset_key)
+        condition = check.not_none(evaluator.asset_graph.get(asset_key).automation_condition)
+        partitions_def = evaluator.asset_graph.get(asset_key).partitions_def
 
         return LegacyRuleEvaluationContext(
             asset_key=asset_key,
@@ -137,14 +108,14 @@ class LegacyRuleEvaluationContext:
                 instance_queryer,
                 instance_queryer.evaluation_time,
             ),
-            data_time_resolver=data_time_resolver,
+            data_time_resolver=evaluator.data_time_resolver,
             instance_queryer=instance_queryer,
-            current_results_by_key=current_results_by_key,
-            expected_data_time_mapping=expected_data_time_mapping,
+            current_results_by_key=evaluator.current_results_by_key,
+            expected_data_time_mapping=evaluator.legacy_expected_data_time_by_key,
             start_timestamp=get_current_timestamp(),
-            respect_materialization_data_versions=respect_materialization_data_versions,
-            auto_materialize_run_tags=auto_materialize_run_tags,
-            logger=logger,
+            respect_materialization_data_versions=evaluator.respect_materialization_data_versions,
+            auto_materialize_run_tags=evaluator.auto_materialize_run_tags,
+            logger=evaluator.logger,
         )
 
     def for_child(
