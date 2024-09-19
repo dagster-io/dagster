@@ -32,6 +32,7 @@ def get_auto_observe_run_requests(
         auto_observe_asset_keys,
         AssetSelection.all(),
         logging.getLogger(),
+        None,
         datetime.datetime.fromtimestamp(current_timestamp),
     ).evaluate()[0]
 

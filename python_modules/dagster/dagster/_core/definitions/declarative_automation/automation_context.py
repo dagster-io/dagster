@@ -64,9 +64,10 @@ class AutomationContext(Generic[T_EntityKey]):
 
     @staticmethod
     def create(key: EntityKey, evaluator: "AutomationConditionEvaluator") -> "AutomationContext":
-        asset_graph = evaluator.asset_graph
         asset_graph_view = evaluator.asset_graph_view
-        condition = check.not_none(asset_graph.get(key).automation_condition)
+        condition = check.not_none(
+            evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition
+        )
         condition_unqiue_id = condition.get_unique_id(parent_unique_id=None, index=None)
 
         if condition.has_rule_condition and evaluator.request_backfills:

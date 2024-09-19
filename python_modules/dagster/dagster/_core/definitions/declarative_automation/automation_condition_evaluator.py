@@ -21,7 +21,10 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey
 from dagster._core.instance import DagsterInstance
@@ -39,6 +42,7 @@ class AutomationConditionEvaluator:
         instance: DagsterInstance,
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
+        default_condition: Optional[AutomationCondition] = None,
         evaluation_time: Optional[datetime.datetime] = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
     ):
@@ -53,6 +57,7 @@ class AutomationConditionEvaluator:
         )
         self.logger = logger
         self.cursor = cursor
+        self.default_condition = default_condition
 
         self.current_results_by_key: Dict[EntityKey, AutomationResult] = {}
         self.condition_cursors = []
