@@ -1,5 +1,5 @@
 import operator
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generic, NamedTuple, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generic, NamedTuple, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -8,13 +8,16 @@ from dagster._core.asset_graph_view.serializable_entity_subset import (
     EntitySubsetValue,
     SerializableEntitySubset,
 )
-from dagster._core.definitions.asset_key import T_EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, T_EntityKey
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+
+
+U_EntityKey = TypeVar("U_EntityKey", AssetKey, AssetCheckKey)
 
 
 class _ValidatedEntitySubsetValue(NamedTuple):
@@ -94,18 +97,16 @@ class EntitySubset(Generic[T_EntityKey]):
         return self.compute_intersection(partition_subset)
 
     @cached_method
-    def compute_parent_subset(
-        self: "EntitySubset[AssetKey]", parent_asset_key: AssetKey
-    ) -> "EntitySubset[AssetKey]":
-        check.inst(self.key, AssetKey)
-        return self._asset_graph_view.compute_parent_asset_subset(parent_asset_key, self)
+    def compute_parent_subset(self, parent_key: AssetKey) -> "EntitySubset[AssetKey]":
+        return self._asset_graph_view.compute_parent_subset(parent_key, self)
 
     @cached_method
     def compute_child_subset(
-        self: "EntitySubset[AssetKey]", child_asset_key: AssetKey
-    ) -> "EntitySubset[AssetKey]":
+        self: "EntitySubset[AssetKey]", child_key: U_EntityKey
+    ) -> "EntitySubset[U_EntityKey]":
         check.inst(self.key, AssetKey)
-        return self._asset_graph_view.compute_child_asset_subset(child_asset_key, self)
+
+        return self._asset_graph_view.compute_child_subset(child_key, self)
 
     @property
     def size(self) -> int:
