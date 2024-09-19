@@ -21,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 import dagster._check as check
@@ -167,11 +168,23 @@ class BaseAssetNode(ABC):
         return f"{self.__class__.__name__}<{self.key.to_user_string()}>"
 
 
+class AssetCheckNode:
+    def __init__(self, key: AssetCheckKey, blocking: bool):
+        self.key = key
+        self.blocking = blocking
+
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        # all checks are unpartitioned
+        return None
+
+
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
 
 
 class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     _asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
+    _asset_check_nodes_by_key: Mapping[AssetCheckKey, AssetCheckNode]
 
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:
@@ -180,8 +193,17 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def has(self, asset_key: AssetKey) -> bool:
         return asset_key in self._asset_nodes_by_key
 
-    def get(self, asset_key: AssetKey) -> T_AssetNode:
-        return self._asset_nodes_by_key[asset_key]
+    @overload
+    def get(self, key: AssetKey) -> T_AssetNode: ...
+
+    @overload
+    def get(self, key: AssetCheckKey) -> AssetCheckNode: ...
+
+    def get(self, key: EntityKey) -> Union[T_AssetNode, AssetCheckNode]:
+        if isinstance(key, AssetKey):
+            return self._asset_nodes_by_key[key]
+        else:
+            return self._asset_check_nodes_by_key[key]
 
     @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
